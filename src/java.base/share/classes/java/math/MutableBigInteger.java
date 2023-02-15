@@ -188,6 +188,9 @@ class MutableBigInteger {
     BigInteger toBigInteger(int sign) {
         if (intLen == 0 || sign == 0)
             return BigInteger.ZERO;
+        
+        // call here and not in toBigInteger() to ensure stripping of leading zeros
+        normalize();
         return new BigInteger(getMagnitudeArray(), sign);
     }
 
@@ -195,7 +198,6 @@ class MutableBigInteger {
      * Converts this number to a nonnegative {@code BigInteger}.
      */
     BigInteger toBigInteger() {
-        normalize();
         return toBigInteger(isZero() ? 0 : 1);
     }
 
@@ -1956,97 +1958,6 @@ class MutableBigInteger {
                 xk1.reset();
             } while (true);
         }
-    }
-    
-    /**
-     * Calculate the integer {@code n}th root {@code floor(pow(this, 1/n))} where
-     * {@code pow(.,.)} denotes the mathematical power. The contents of {@code this}
-     * are <b>not</b> changed. The value of {@code this} is assumed to be
-     * non-negative and {@code n} is assumed to be positive.
-     *
-     * @implNote The implementation is based on the material in Henry S. Warren,
-     *           Jr., <i>Hacker's Delight (2nd ed.)</i> (Addison Wesley, 2013),
-     *           279-282.
-     *
-     * @throws ArithmeticException if the value returned by {@code bitLength()}
-     *                             overflows the range of {@code int}.
-     * @return the integer {@code n}th root of {@code this}
-     * @since 21
-     */
-    MutableBigInteger root(int n) {
-        // Special cases.
-        if (n == 1 || this.isZero())
-            return this;
-
-        MutableBigInteger powerOfTwo = new MutableBigInteger(ONE);
-        powerOfTwo.leftShift(n);
-        if (this.compare(powerOfTwo) < 0) // result is unity
-            return ONE;
-
-        if (bitLength() <= 63) {
-            // Initial estimate is the root of the positive long value.
-            long v = new BigInteger(this.value, 1).longValueExact();
-            long xk = (long) Math.pow(v, 1.0 / n);
-
-            // Refine the estimate.
-            long xk1;
-            do {
-                xk1 = xk - (xk - v / BigInteger.pow(xk, n - 1)) / n;
-                xk = xk1;
-            } while (xk1 < xk); // Terminate when non-decreasing.
-
-            return new MutableBigInteger(new int[] { (int) (xk >>> 32), (int) (xk & LONG_MASK) });
-        }
-
-        // Set up the initial estimate of the iteration.
-
-        // Obtain the bitLength > 63.
-        int bitLength = (int) this.bitLength();
-        if (bitLength != this.bitLength())
-            throw new ArithmeticException("bitLength() integer overflow");
-
-        // Determine a right shift value that is multiple of n into positive long range.
-        int shift = bitLength - 63;
-        int rem = shift % n;
-
-        if (rem != 0)
-            shift += n - rem;
-
-        // Shift the value into non-negative long range.
-        MutableBigInteger xk = new MutableBigInteger(this);
-        xk.rightShift(shift);
-        
-        // shifting could lead to a zero value for xk
-        // so we need to avoid division by zero in Newton's method
-        if (xk.isZero())
-            xk = new MutableBigInteger(ONE);
-        else {
-            // Use the root of the shifted value as an approximation.
-            xk.normalize();
-            double d = new BigInteger(xk.value, 1).doubleValue();
-            BigInteger bi = BigInteger.valueOf((long) Math.ceil(Math.pow(d, 1.0 / n)));
-            xk = new MutableBigInteger(bi.mag);
-        }
-
-        // Shift the approximate root back into the original range.
-        xk.leftShift(shift / n);
-
-        // Refine the estimate.
-        BigInteger xk1;
-        BigInteger v = this.toBigInteger();
-        BigInteger deg = BigInteger.valueOf(n);
-        boolean stop;
-        do {
-            // xk1 = xk + (v / xk**(n - 1) - xk) / n
-            BigInteger xkVal = xk.toBigInteger();
-            xk1 = v.divide(xkVal.pow(n - 1)).subtract(xkVal).divide(deg).add(xkVal);
-            stop = xk1.compareTo(xkVal) >= 0;  // Terminate when non-decreasing.
-
-            if (!stop)
-                xk.copyValue(xk1.mag); // xk = xk1
-        } while (!stop);
-
-        return xk;
     }
 
     /**

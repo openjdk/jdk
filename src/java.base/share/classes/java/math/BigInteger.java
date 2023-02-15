@@ -2707,31 +2707,53 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     
     /**
      * Returns the integer {@code n}th root of this BigInteger. The integer
-     * {@code n}th root of the corresponding mathematical integer {@code x} is the
-     * largest mathematical integer {@code r} such that {@code r**n <= x}. It is
-     * equal to the value of {@code floor(root(x, n))}, where {@code root(x, n)}
+     * {@code n}th root of the corresponding mathematical integer {@code x} has the
+     * same sign of {@code x}, and its magnitude is the largest integer {@code r}
+     * such that {@code r**n <= abs(x)}. It is equal to the value of
+     * {@code (x.signum() * floor(abs(root(x, n))))}, where {@code root(x, n)}
      * denotes the real {@code n}th root of {@code x} treated as a real. Note that
-     * the integer {@code n}th root will be less than the real {@code n}th root if
-     * the latter is not representable as an integral value.
+     * the magnitude of the integer {@code n}th root will be less than the magnitude
+     * of the real {@code n}th root if the latter is not representable as an
+     * integral value.
      *
      * @param n the root degree
      * @return the integer {@code n}th root of {@code this}
-     * @throws ArithmeticException if {@code n == 0} (Zero-degree roots are not
+     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
      *                             defined.)
      * @throws ArithmeticException if {@code n} is negative. (This would cause the
      *                             operation to yield a non-integer value.)
      * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative.
+     *                             negative. (This would cause the operation to
+     *                             yield non-real roots.)
+     * @see #sqrt()
+     * @see Rational#root(int, MathContext)
+     * @see BigDecimal#root(int, MathContext)
      * @since 21
      */
     public BigInteger root(int n) {
+        if (n == 2)
+            return this.sqrt();
+        
         if (n <= 0)
             throw new ArithmeticException("Non-positive root degree");
         
-        if ((n & 1) == 0 && signum < 0)
+        if ((n & 1) == 0 && this.signum < 0)
             throw new ArithmeticException("Negative radicand with even root degree");
+        
+        // Handle easy cases.
+        if (n == 1 || this.signum == 0)
+            return this; // x**1 == x, 0**n == 0
+        // At this point, this != 0
 
-        return new MutableBigInteger(mag).root(n).toBigInteger(signum);
+        // if (1 <= abs(x) < 2^n), result is signed unity
+        if (this.compareMagnitude(ONE.shiftLeft(n)) < 0)
+            return this.signum == 1 ? ONE : NEGATIVE_ONE;
+
+        final BigDecimal x = new BigDecimal(this);
+        final int xDigits = x.precision();
+        final int rootDigits = xDigits / n + (xDigits % n == 0 ? 0 : 1);
+        // Somewhat inefficient, but guaranteed to work.
+        return x.root(n, new MathContext(rootDigits, RoundingMode.DOWN)).toBigIntegerExact();
     }
     
     /**
@@ -2747,7 +2769,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code n} is negative. (This would cause the
      *                             operation to yield a non-integer value.)
      * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative.
+     *                             negative. (This would cause the operation to
+     *                             yield {@code n} complex roots.)
      * @see #sqrt()
      * @see #root(int)
      * @since 21

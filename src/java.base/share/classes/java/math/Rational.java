@@ -404,12 +404,12 @@ public class Rational extends Number implements Comparable<Rational> {
     }
     
     /**
-     * {@code FIVE_POWERS_CACHE.get(n) == 5^(1 << n)}
+     * {@code FIVE_SQUARES.get(n) == 5^(1L << n)}
      */
-    private static final ArrayList<BigInteger> FIVE_POWERS_CACHE = new ArrayList<>(Integer.SIZE);
+    private static final ArrayList<BigInteger> FIVE_SQUARES = new ArrayList<>(Integer.SIZE);
     
     static {
-        FIVE_POWERS_CACHE.add(BigInteger.valueOf(5));
+        FIVE_SQUARES.add(BigInteger.valueOf(5));
     }
     
     /**
@@ -419,18 +419,18 @@ public class Rational extends Number implements Comparable<Rational> {
         BigInteger acc = BigInteger.ONE;
         final int nBits = Integer.SIZE - Integer.numberOfLeadingZeros(n);
         
-        final int end = Math.min(nBits, FIVE_POWERS_CACHE.size());
+        final int end = Math.min(nBits, FIVE_SQUARES.size());
         for (int i = 0; i < end; i++) {
             if ((n & 1) == 1)
-                acc = acc.multiply(FIVE_POWERS_CACHE.get(i));
+                acc = acc.multiply(FIVE_SQUARES.get(i));
             
             n >>>= 1;
         }
         
-        BigInteger pow = FIVE_POWERS_CACHE.get(FIVE_POWERS_CACHE.size() - 1);
-        while (FIVE_POWERS_CACHE.size() < nBits) {
+        BigInteger pow = FIVE_SQUARES.get(FIVE_SQUARES.size() - 1);
+        while (FIVE_SQUARES.size() < nBits) {
             pow = pow.square();
-            FIVE_POWERS_CACHE.add(pow);
+            FIVE_SQUARES.add(pow);
             
             if ((n & 1) == 1)
                 acc = acc.multiply(pow);
@@ -443,12 +443,12 @@ public class Rational extends Number implements Comparable<Rational> {
     
     /**
      * If before calling this method {@code remaining.get() == r}, the method
-     * returns the least positive integer {@code n} such that
+     * returns the least integer {@code n > 0} such that
      * {@code (val == n * 5^(r - remaining.get()) && 0 <= remaining.get() <= r)}
      * will hold after calling this method. Assumes {@code val > 0 && r >= 0}.
      */
     private static BigInteger removePowersOfFive(BigInteger val, AtomicLong remaining) {
-        BigInteger divisor = FIVE_POWERS_CACHE.get(0);
+        BigInteger divisor = FIVE_SQUARES.get(0);
         int i = 0;
         
         // divide val and square the divisor as much as possible
@@ -466,14 +466,14 @@ public class Rational extends Number implements Comparable<Rational> {
                     stop = true;
                 } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
                     final BigInteger square;
-                    final int last = FIVE_POWERS_CACHE.size() - 1;
+                    final int last = FIVE_SQUARES.size() - 1;
                     
                     // compute divisor^2
                     if (i < last) {
-                        square = FIVE_POWERS_CACHE.get(i + 1);
+                        square = FIVE_SQUARES.get(i + 1);
                     } else {
-                        square = FIVE_POWERS_CACHE.get(last).square();
-                        FIVE_POWERS_CACHE.add(square);
+                        square = FIVE_SQUARES.get(last).square();
+                        FIVE_SQUARES.add(square);
                     }
                     
                     if (square.compareTo(val) <= 0) {
@@ -490,18 +490,18 @@ public class Rational extends Number implements Comparable<Rational> {
             // find, if exists, the greatest non-negative n <= i
             // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
             final int highestBit = Math.min(i, Long.SIZE - 1 - Long.numberOfLeadingZeros(remaining.get()));
-            if (FIVE_POWERS_CACHE.get(highestBit).compareTo(val) <= 0) {
+            if (FIVE_SQUARES.get(highestBit).compareTo(val) <= 0) {
                 // easy case, no need to search for n
                 i = highestBit;
             } else {
-                final int pos = Collections.binarySearch(FIVE_POWERS_CACHE.subList(0, highestBit), val);
+                final int pos = Collections.binarySearch(FIVE_SQUARES.subList(0, highestBit), val);
                 i = pos >= 0 ? pos : -(pos + 1) - 1;
             }
             // now i == n
             
             // divide val as much as possible
             if (i >= 0) {
-                divisor = FIVE_POWERS_CACHE.get(i);
+                divisor = FIVE_SQUARES.get(i);
                 do {
                     BigInteger[] divRem = val.divideAndRemainder(divisor);
                     
@@ -512,7 +512,7 @@ public class Rational extends Number implements Comparable<Rational> {
                     
                     i--; // by definition of n, val can no longer be divided by 5^(1 << i)
                     if (i >= 0)
-                        divisor = FIVE_POWERS_CACHE.get(i);
+                        divisor = FIVE_SQUARES.get(i);
                 } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
             }
         }
@@ -1167,24 +1167,16 @@ public class Rational extends Number implements Comparable<Rational> {
      * @throws ArithmeticException if {@code n == Integer.MIN_VALUE}
      */
     public Rational pow(int n) {
+        // check for division by zero
+        if (n < 0 && this.signum == 0)
+            throw new ArithmeticException("Attempted to raise zero to a negative exponent");
+        
+        int mag = Math.absExact(n); // magnitude of n
+        
+        // handle easy cases
         if (n == 0)
             return ONE; // x**0 == 1
         
-        int mag; // magnitude of n
-        // check the sign of n
-        if (n < 0) {
-            if (this.signum == 0)
-                throw new ArithmeticException("Attempted to raise zero to a negative exponent");
-            
-            if (n == Integer.MIN_VALUE)
-                throw new ArithmeticException("Exponent overflow");
-            
-            mag = -n;
-        } else { // n > 0
-            mag = n;
-        }
-        
-        // handle easy cases
         if (n == 1 || this.signum == 0 || this.equals(ONE))
             return this; // x**1 == x, 0**n == 0, 1**n == 1
         // At this point, this != 0
@@ -1210,18 +1202,17 @@ public class Rational extends Number implements Comparable<Rational> {
         // ready to carry out power calculation...
         Rational acc = ONE; // accumulator
         boolean seenbit = false; // set once we've seen a 1-bit
-        int nBits = Integer.SIZE - 1;
 
-        for (int i = 1; i <= nBits; i++) { // for each bit [top bit ignored]
+        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [top bit ignored]
+            if (seenbit)
+                acc = acc.square(); // acc=acc*acc [square]
+            // if (!seenbit) no point in squaring ONE
+            
             mag <<= 1; // shift left 1 bit
             if (mag < 0) { // top bit is set
                 seenbit = true; // OK, we're off
                 acc = acc.multiply(this); // acc=acc*x
             }
-
-            if (seenbit && i < nBits) // don't square at the least bit
-                acc = acc.square(); // acc=acc*acc [square]
-            // if (!seenbit) no point in squaring ONE
         }
         
         // if negative n, calculate the reciprocal
@@ -1370,7 +1361,6 @@ public class Rational extends Number implements Comparable<Rational> {
         // could be applied directly.)
         
         int targetPrec = originalPrec;
-
         /*
          * To avoid the need for post-Newton fix-up logic, in
          * the case of half-way rounding modes, double the
@@ -1392,19 +1382,17 @@ public class Rational extends Number implements Comparable<Rational> {
             // approx = 0.5 * (approx + working / approx)
             approx = working.divide(approx).add(approx).multiply(ONE_HALF);
             guessPrec <<= 1;
-            if(guessPrec < 0) // Overflow
-                guessPrec = Integer.MAX_VALUE;
-        } while (guessPrec < targetPrec + 2);
+        } while (guessPrec < targetPrec + 2 && guessPrec > 0); // Avoid overflow
         // After the Newton iteration loop,
         // first discard the insignificant digits
         // before rounding to the final destination precision,
         // avoiding to incorrectly round the approx value.
-        MathContext mcTmp = new MathContext(guessPrec, RoundingMode.DOWN);
+        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.DOWN);
         // use BigDecimal instead of Rational for speed of computations
-        final BigDecimal approxRounded = approx.toBigDecimal(mcTmp);
+        final BigDecimal approxClean = approx.toBigDecimal(mcTmp);
         
-        // Scale the result back into the original range and round to requested precision
-        BigDecimal decimalRes = approxRounded.scaleByPowerOfTen(-expAdjust / 2).round(mc);
+        // Scale the result back into the original range and round to the requested precision
+        BigDecimal decimalRes = approxClean.scaleByPowerOfTen(-expAdjust / 2).round(mc);
         BigDecimal ulp = decimalRes.ulp();
         Rational result = new Rational(decimalRes);
 
@@ -1416,10 +1404,10 @@ public class Rational extends Number implements Comparable<Rational> {
                 // Adjust increment down in case of 1.0 = 10^0
                 // since the next smaller number is only 1/10
                 // as far way as the next larger at exponent
-                // boundaries. Test approxRounded and *not* result to
+                // boundaries. Test approxClean and *not* result to
                 // avoid having to detect an arbitrary power
                 // of ten.
-                if (approxRounded.compareTo(BigDecimal.ONE) == 0)
+                if (approxClean.compareTo(BigDecimal.ONE) == 0)
                     ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                 result = result.subtract(new Rational(ulp));
@@ -1466,17 +1454,18 @@ public class Rational extends Number implements Comparable<Rational> {
      * @param n  the root degree
      * @param mc the context to use.
      * @return the {@code n}th root of {@code this}.
-     * @throws ArithmeticException if {@code n == 0} (Zero-degree roots are not
+     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
      *                             defined.)
      * @throws ArithmeticException if {@code this == 0} and {@code n} is negative.
      *                             (This would cause a division by zero.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is less
-     *                             than zero.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is
+     *                             negative. (This would cause the operation to
+     *                             yield non-real roots.)
      * @throws ArithmeticException if an exact result is requested
-     *                             ({@code mc.getPrecision()==0}) and there is no
+     *                             ({@code mc.getPrecision() == 0}) and there is no
      *                             fractional representation of the exact result.
      * @throws ArithmeticException if
-     *                             {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY})
+     *                             {@code (mc.getRoundingMode() == RoundingMode.UNNECESSARY})
      *                             and the exact result cannot fit in
      *                             {@code mc.getPrecision()} digits.
      * @throws ArithmeticException if {@code n == Integer.MIN_VALUE}
@@ -1486,8 +1475,6 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see #sqrt(MathContext)
      */
     public Rational root(final int n, MathContext mc) {
-        final int deg; // absolute value of n
-
         // check the sign of n
         if (n <= 0) {
             if (n == 0)
@@ -1495,19 +1482,14 @@ public class Rational extends Number implements Comparable<Rational> {
             // n < 0
             if (this.signum == 0) // radicand is zero
                 throw new ArithmeticException("Attempted negative degree root of zero");
-            
-            if (n == Integer.MIN_VALUE)
-                throw new ArithmeticException("Degree root overflow");
-            
-            deg = -n;
-        } else { // n > 0
-            deg = n;
         }
 
         // even-degree root of negative radicand
         if ((n & 1) == 0 && this.signum == -1)
             throw new ArithmeticException("Attempted " + n + "th root of negative Rational");
 
+        final int deg = Math.absExact(n); // absolute value of n
+        
         // handle easy cases
         if (this.signum == 0 || this.equals(ONE))
             return this; // 0**n == 0, 1**n == 1
@@ -1516,17 +1498,15 @@ public class Rational extends Number implements Comparable<Rational> {
             return this.round(mc); // x**1 == x, rounded according to mc
 
         if (n == -1)
-            return invert().round(mc);
+            return this.invert().round(mc);
         
         if (n == 2)
-            return sqrt(mc);
+            return this.sqrt(mc);
 
-        final RoundingMode targetRm = mc.getRoundingMode();
-        final int targetPrecision = mc.getPrecision();
         // If an exact value is requested, it must be a rational number
         // so compute root(this, n) as root((floor * den + num) / den, n)
         // == root(floor * den + num, n) / root(den, n)
-        if (targetRm == RoundingMode.UNNECESSARY || targetPrecision == 0) {
+        if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) {
             // simplify the radicand to improve the algorithm performance
             BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
@@ -1545,9 +1525,9 @@ public class Rational extends Number implements Comparable<Rational> {
             else // n < 0, invert the result
                 result = valueOf(signum, rootRemDen[0], rootRemNum[0]);
 
-            if (targetPrecision != 0) {
-                // => targetRm == UNNECESSARY, but user-specified number of digits
-                result = result.round(new MathContext(targetPrecision, RoundingMode.DOWN));
+            if (mc.precision != 0) {
+                // => mc.roundingMode == UNNECESSARY, but user-specified number of digits
+                result = result.round(new MathContext(mc.precision, RoundingMode.DOWN));
 
                 // If result**n != this, the root isn't exact
                 if (!result.pow(n).equals(this))
@@ -1571,16 +1551,17 @@ public class Rational extends Number implements Comparable<Rational> {
          * The main steps of the algorithm below are as follows, first argument reduce
          * the value to the numerical range [1, 10) using the following relations:
          *
-         * x = y * 10 ^ exp, root(x, deg) = root(y, deg) * 10^(exp / deg), if exp is a
-         * multiple of deg
+         * x = y * 10 ^ exp
          * 
-         * if exp is not a multiple of deg:
+         * root(x, deg) = root(y, deg) * 10^(exp/deg), if mod(exp, deg) = 0
          * 
-         * sqrt(x) = root(y / 10^(exp % deg), deg) * 10^((exp - (exp % deg)) / deg), if
-         * exp % deg <= deg/2
-         * 
-         * sqrt(x) = root(y / 10^(deg - exp % deg), deg) * 10^((exp + (deg - exp % deg)) /
-         * deg), if exp % deg > deg/2
+         * if mod(exp, deg) > 0:
+         *
+         * root(x, deg) = root(y * 10^-(deg - mod(exp, deg)), deg) * 10^(exp + (deg -
+         * mod(exp, deg))/deg), if exp >= 0
+         *
+         * root(x, deg) = root(y * 10^-mod(exp, deg), deg) * 10^((exp + mod(exp,
+         * deg))/deg), if exp <= 0
          *
          * Then use Newton's iteration on the reduced value to compute the numerical
          * digits of the desired result.
@@ -1590,42 +1571,31 @@ public class Rational extends Number implements Comparable<Rational> {
          */
 
         // To allow binary floating-point hardware to be used to get
-        // approximately a 15 digit approximation to the square
-        // root, it is helpful to instead normalize this so that
-        // the significand portion is to right of the decimal
-        // point.
+        // approximately a 15 digit approximation to the root,
+        // it is helpful to instead normalize this so that
+        // the significand portion is to right of the decimal point
+        // and the value is positive.
 
-        final int expAdjust;
-        Rational working = this.abs();
+        long scale;
         if (floor.signum == 1) { // non-zero integer part
-            int exp = -new BigDecimal(floor).precision() + 1; // 1 <= abs(this) * 10^exp < 10
-            // adjust exp to the nearest multiple of deg, round down in case of a tie
-            int mod = -(exp % deg); // mod is non-negative
-            expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
+            scale = -new BigDecimal(floor).precision(); // 0.1 <= abs(this) * 10^scale < 1
+            // adjust scale to the largest multiple of deg not larger than scale
+            long mod = -(scale % deg); // mod is non-negative
+            if (mod != 0)
+                scale -= deg - mod;
         } else {
             BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
-            int exp = den.precision() - num.precision(); // 0.1 < abs(this) * 10^exp < 10
-
-            int mod = exp % deg;
-            if (mod == 0)
-                expAdjust = exp;
-            else {
-                if (num.scaleByPowerOfTen(exp).compareTo(den) < 0) { // abs(this) * 10^exp < 1
-                    exp++;
-                    mod = mod + 1 == deg ? 0 : mod + 1;
-                }
-                // now 1 < abs(this) * 10^exp < 10
-                // adjust exp to the nearest multiple of deg, round down in case of a tie
-                expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
-            }
+            scale = den.precision() - num.precision(); // 0.1 < abs(this) * 10^scale < 10
+            scale -= scale % deg;
         }
+        
+        final int scaleAdjust = (int) scale;
+        if (scaleAdjust != scale)
+            new ArithmeticException("Underflow");
 
-        working = working.scaleByPowerOfTen(expAdjust);
-        // Verify 1/10^ceil(deg/2) <= working < 10^floor(deg/2)
-        Rational inf = new Rational(1, BigInteger.ZERO, BigInteger.ONE,
-                BigDecimal.bigTenToThe((int) Math.ceil(deg / 2.0)));
-        Rational sup = new Rational(1, BigDecimal.bigTenToThe(deg / 2));
-        assert inf.compareTo(working) <= 0 && working.compareTo(sup) < 0;
+        final Rational working = this.abs().scaleByPowerOfTen(scaleAdjust);
+        // Verify 10^-deg <= working < 10
+        assert ONE.scaleByPowerOfTen(-deg).compareTo(working) <= 0 && working.compareTo(TEN) < 0;
 
         // Use good ole' Math.pow to get the initial guess for
         // the Newton iteration, good to at least 15 decimal
@@ -1650,58 +1620,156 @@ public class Rational extends Number implements Comparable<Rational> {
         // known to be exact and the rounding mode had a
         // low-enough precision, the post-Newton rounding logic
         // could be applied directly.)
+        
+        int targetPrec = mc.precision;
+        /*
+         * To avoid the need for post-Newton fix-up logic, in
+         * the case of half-way rounding modes, double the
+         * target precision so that the "2p + 2" property can
+         * be relied on to accomplish the final rounding.
+         */
+        switch (mc.roundingMode) {
+        case HALF_UP:
+        case HALF_DOWN:
+        case HALF_EVEN:
+            targetPrec <<= 1;
+            if (targetPrec < 0) // Overflow
+                targetPrec = Integer.MAX_VALUE - 2;
+        }
 
-        Rational approx = new Rational(Math.pow(working.doubleValue(), 1.0 / deg));
-        int guessPrecision = 15;
-
-        final Rational degVal = new Rational(deg);
+        double guess = Math.pow(working.doubleValue(), 1.0 / deg);
+        int guessPrec = 15;
+        // Avoid division by zero in Newton's iteration
+        if (guess == 0.0) // Underflow
+            guess = Double.MIN_VALUE;
+        
+        final Rational degR = new Rational(deg);
+        Rational approx = new Rational(guess);
+        Rational delta = ZERO, prevApprox = approx;
+        // cache for power calculations
+        final Rational[] acc = new Rational[Integer.SIZE - Integer.numberOfLeadingZeros(deg)];
+        final Rational[] sqAcc = new Rational[acc.length];
         do {
-            // approx = 0.5 * (approx + fraction / approx)
-            // approx = approx + (working / approx**(deg - 1) - approx) / deg
-            approx = working.divide(approx.pow(deg - 1)).subtract(approx).divide(degVal).add(approx);
-            guessPrecision <<= 1;
-        } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
+            // approx == prevApprox + delta
+            // pow = approx**(deg - 1)
+            Rational pow = prevApprox.addAndPow(delta, deg - 1, acc, sqAcc);
+            // delta = (working / pow - approx) / deg
+            delta = working.divide(pow).subtract(approx).divide(degR);
+            // update
+            prevApprox = approx;
+            approx = approx.add(delta);
+            guessPrec <<= 1;
+        } while (guessPrec < targetPrec + 2 && guessPrec > 0); // avoid overflow
+        // After the Newton iteration loop,
+        // first discard the insignificant digits
+        // before rounding to the final destination precision,
+        // avoiding to incorrectly round the approx value.
+        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.DOWN);
+        // use BigDecimal instead of Rational for speed of computations
+        final BigDecimal approxClean = approx.toBigDecimal(mcTmp);
+        
+        // Scale the result back into the original range
+        Rational result = new Rational(approxClean.scaleByPowerOfTen(-scaleAdjust / deg));
 
-        // Scale the result back into the original range.
-        Rational result = approx.scaleByPowerOfTen(-expAdjust / n);
-
+        // if negative degree, invert the result
         if (n < 0)
             result = result.invert();
 
+        // adjust the sign
         if (signum == -1)
             result = result.negate();
 
-        // round with mc
+        // round to the requested precision
         BigDecimal decimalRes = result.toBigDecimal(mc);
-        result = new Rational(decimalRes);
         BigDecimal ulp = decimalRes.ulp();
+        result = new Rational(decimalRes);
 
-        if (roundFloor(targetRm)) {
+        if (BigDecimal.roundFloor(mc.roundingMode, result.signum)) {
             // Check if too big
             if (result.pow(n).compareTo(this) > 0) {
                 // Adjust increment down in case of 1 = 10^0
                 // since the next smaller number is only 1/10
                 // as far way as the next larger at exponent
-                // boundaries. Test approx and *not* result to
+                // boundaries. Test approxClean and *not* result to
                 // avoid having to detect an arbitrary power
                 // of ten.
-                if (approx.equals(ONE))
+                if (approxClean.equals(ONE))
                     ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                 result = result.subtract(new Rational(ulp));
                 decimalRes = decimalRes.subtract(ulp);
             }
-        } else if (roundCeiling(targetRm)) {
+        } else if (BigDecimal.roundCeiling(mc.roundingMode, result.signum)) {
             // Check if too small
             if (result.pow(n).compareTo(this) < 0) {
                 result = result.add(new Rational(ulp));
                 decimalRes = decimalRes.add(ulp);
             }
         }
+        // No additional work, rely on "2p + 2" property
+        // for correct rounding. Alternatively, could
+        // instead run the Newton iteration to around p
+        // digits and then do tests and fix-ups on the
+        // rounded value. One possible set of tests and
+        // fix-ups is given in the Hull and Abrham paper;
+        // however, additional half-way cases can occur
+        // for Rational given the more varied
+        // combinations of input and output precisions
+        // supported.
 
         // Test numerical properties
         assert rootResultAssertions(n, result, decimalRes, mc);
         return result;
+    }
+    
+    /**
+     * Returns (this + delta)^n.
+     * Assumes:
+     * <ul>
+     *      <li> {@code n > 0}
+     *      <li> {@code accCache.length == sqAccCache.length == (Integer.SIZE - Integer.numberOfLeadingZeros(n))};
+     *      <li> for each {@code i s.t. 0 <= i < accCache.length}:
+     *          <ul>
+     *              <li> {@code accCache[i] == null || accCache[i] == this^(n >> (accCache.length - 1 - i))};
+     *              <li> {@code sqAccCache[i] == null || sqAccCache[i] == accCache[i]^2}.
+     *          </ul>
+     * </ul>
+     * After calling this method, for each {@code i s.t. 0 <= i < accCache.length},
+     * the following will hold:
+     * <ul>
+     *      <li> {@code accCache[i] == (this + delta)^(n >> (accCache.length - 1 - i))};
+     *      <li> {@code sqAccCache[i] == accCache[i]^2}.
+     * </ul>
+     */
+    private Rational addAndPow(Rational delta, int n, Rational[] accCache, Rational[] sqAccCache) {
+        Rational acc = ONE; // accumulator
+        Rational carry = ZERO;
+        boolean seenbit = false; // set once we've seen a 1-bit
+        
+        int k = 0;
+        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [top bit ignored]
+            if (seenbit) {
+                // (acc+carry)^2 == acc^2+2*acc*carry+carry^2
+                carry = acc.multiply(carry).shiftLeft(1).add(carry.square());
+                acc = sqAccCache[k - 1] != null ? sqAccCache[k - 1] : acc.square();
+                sqAccCache[k - 1] = acc.add(carry);
+            } // if (!seenbit) no point in squaring (acc+carry) == 1
+            
+            n <<= 1; // shift left 1 bit
+            if (n < 0) { // top bit is set
+                seenbit = true; // OK, we're off
+                // (acc+carry)*(x+delta) == x*acc+x*carry+delta*(acc+carry)
+                carry = this.multiply(carry).add(delta.multiply(acc.add(carry)));
+                acc = accCache[k] != null ? accCache[k] : this.multiply(acc);
+            }
+            
+            if (seenbit) {
+                accCache[k] = acc.add(carry);
+                k++;
+            } // if (!seenbit) no point in adding carry == 0
+        }
+        
+        return accCache[k - 1];
     }
 
     /**
@@ -1725,10 +1793,10 @@ public class Rational extends Number implements Comparable<Rational> {
      * <li>If {@code this < 0 && n % 2 == 1}:
      * <ul>
      *
-     * <li>For DOWN and CEIL, {@code result^n} must be {@code <=} the input and
+     * <li>For UP and FLOOR, {@code result^n} must be {@code <=} the input and
      * {@code (result+delta)^n} must be {@code >} the input.
      *
-     * <li>Conversely, for UP and FLOOR, {@code result^n} must be {@code >=} the
+     * <li>Conversely, for DOWN and CEIL, {@code result^n} must be {@code >=} the
      * input and {@code (result+delta)^n} must be {@code <} the input.
      * </ul>
      * </ul>
@@ -1749,13 +1817,13 @@ public class Rational extends Number implements Comparable<Rational> {
         // The starting value and result should be concordant.
         assert (result.signum == this.signum) : "Bad signum of this and/or its " + n + "th root.";
 
-        if (roundFloor(rm)) {
+        if (BigDecimal.roundFloor(rm, result.signum)) {
             assert result.pow(n).compareTo(this) <= 0 && neighborCeil.pow(n).compareTo(this) > 0
                     : "Power of result out for bounds rounding " + rm;
             return true;
         }
         
-        if (roundCeiling(rm)) {
+        if (BigDecimal.roundCeiling(rm, result.signum)) {
             assert result.pow(n).compareTo(this) >= 0 && neighborFloor.pow(n).compareTo(this) < 0
                     : "Power of result out for bounds rounding " + rm;
             return true;
@@ -2134,20 +2202,20 @@ public class Rational extends Number implements Comparable<Rational> {
         final BigDecimal den = new BigDecimal(denominator);
 
         final BigDecimal absVal;
-        MathContext workMc;
+        MathContext workMC;
         final int prec = mc.getPrecision();
         if (prec == 0) { // arbitrary precision
             absVal = intPart.add(num.divide(den));
-            workMc = null; // no rounding
+            workMC = null; // no rounding
         } else if (floor.signum == 0) { // bounded precision, no integer part
             // one more digit for rounding
             BigDecimal frac = num.divide(den, new MathContext(prec + 1, RoundingMode.DOWN));
 
             if (frac.multiply(den).compareTo(num) == 0) { // no remainder
-                workMc = mc; // user-supplied MathContext is sufficient
+                workMC = mc; // user-supplied MathContext is sufficient
             } else { // non-zero discarded fraction
                 RoundingMode rm = mc.getRoundingMode();
-                workMc = new MathContext(prec, workRoundingMode(rm));
+                workMC = new MathContext(prec, workRoundingMode(rm));
                 // ensure rounding up if last significand digit is 0
                 if (roundUp(rm))
                     frac = frac.add(frac.ulp());
@@ -2162,10 +2230,10 @@ public class Rational extends Number implements Comparable<Rational> {
 
                 if (frac.multiply(den).compareTo(num) == 0) { // no remainder
                     frac = frac.stripTrailingZeros();
-                    workMc = mc; // user-supplied MathContext is sufficient
+                    workMC = mc; // user-supplied MathContext is sufficient
                 } else { // non-zero discarded fraction
                     RoundingMode rm = mc.getRoundingMode();
-                    workMc = new MathContext(prec, workRoundingMode(rm));
+                    workMC = new MathContext(prec, workRoundingMode(rm));
                     // ensure rounding up if last significand digit is 0
                     if (roundUp(rm))
                         frac = frac.add(frac.ulp());
@@ -2176,10 +2244,10 @@ public class Rational extends Number implements Comparable<Rational> {
                 BigDecimal trunc = intPart.setScale(scale + 1, RoundingMode.DOWN);
 
                 if (numerator.signum == 0 && trunc.compareTo(intPart) == 0) { // no remainder
-                    workMc = mc; // user-supplied MathContext is sufficient
+                    workMC = mc; // user-supplied MathContext is sufficient
                 } else { // non-zero discarded part
                     RoundingMode rm = mc.getRoundingMode();
-                    workMc = new MathContext(prec, workRoundingMode(rm));
+                    workMC = new MathContext(prec, workRoundingMode(rm));
                     // ensure rounding up if last significand digit is 0
                     if (roundUp(rm))
                         trunc = trunc.add(trunc.ulp());
@@ -2189,7 +2257,7 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         BigDecimal res = signum == -1 ? absVal.negate() : absVal;
-        return workMc == null ? res : res.round(workMc);
+        return workMC == null ? res : res.round(workMC);
     }
     
     private static RoundingMode workRoundingMode(RoundingMode rm) {
@@ -2206,24 +2274,6 @@ public class Rational extends Number implements Comparable<Rational> {
         case UP -> true;
         case CEILING -> signum != -1;
         case FLOOR-> signum != 1;
-        default -> false;
-        };
-    }
-
-    private boolean roundCeiling(RoundingMode rm) {
-        return switch (rm) {
-        case CEILING -> true;
-        case UP -> signum != -1;
-        case DOWN-> signum != 1;
-        default -> false;
-        };
-    }
-
-    private boolean roundFloor(RoundingMode rm) {
-        return switch (rm) {
-        case FLOOR -> true;
-        case DOWN -> signum != -1;
-        case UP-> signum != 1;
         default -> false;
         };
     }
