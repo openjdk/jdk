@@ -88,67 +88,18 @@ void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
   }
 }
 
-// Retrieves a limit value from the specified interface file in file_path
-// checking it against an upper bound value in upper_bound, possibly
-// emitting log_line by trace logging.
-//
-// Returns a negative value if there is no container limit specified for
-// the given file. Otherwise, returns a positive value that's smaller than
-// MIN2(upper_bound, jlong_max).
-//
-// Note that the actual negative value returned, determines the cause of *why* it's
-// unlimited. -1 is being returned if the limit exceeds upper_bound. -2 (OS_CONTAINER_ERROR)
-// is being returned if some other error retrieving the limit value occurred. In both
-// cases we treat it as an unlimited container value.
-jlong CgroupV1Subsystem::read_limit_checked(const char* log_line,
-                                            const char* file_path,
-                                            julong upper_bound) {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), file_path,
-                     log_line, JLONG_FORMAT, limit_val);
-  if ((julong)limit_val >= upper_bound) {
-    return -1;
-  }
-  return limit_val;
-}
-
-// Retrieves a limit value from the specified multi-line interface file, matching
-// match_line in file_path. Checks it against an upper bound value in upper_bound,
-// possibly emitting log_line by trace logging.
-//
-// Returns a negative value if there is no container limit specified for
-// the given file and match line combination. Otherwise, returns a positive value
-// that's smaller than MIN2(upper_bound, jlong_max).
-//
-// Note that the actual negative value returned, determines the cause of *why* it's
-// unlimited. -1 is being returned if the limit exceeds upper_bound. -2 (OS_CONTAINER_ERROR)
-// is being returned if some other error retrieving the limit value occurred. In both
-// cases we treat it as an unlimited container value.
-jlong CgroupV1Subsystem::read_limit_match_checked(const char* log_line,
-                                                  const char* file_path,
-                                                  const char* match_line,
-                                                  julong upper_bound) {
-  GET_CONTAINER_INFO_LINE(jlong, _memory->controller(), file_path, match_line,
-                          log_line, JLONG_FORMAT, limit_val)
-  if ((julong)limit_val >= upper_bound) {
-    return -1;
-  }
-  return limit_val;
-}
-
-
 jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
-  julong phys_mem = os::Linux::physical_memory();
-  jlong memlimit = read_limit_checked("Memory Limit is: " JLONG_FORMAT,
-                                      "/memory.limit_in_bytes",
-                                      phys_mem);
-  if (memlimit < 0) {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.limit_in_bytes",
+                     "Memory Limit is: " JLONG_FORMAT, JLONG_FORMAT, memlimit);
+  assert(memlimit > 0, "invariant");
+  if ((julong)memlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
-      jlong hier_memlimit = read_limit_match_checked("Hierarchical Memory Limit is: " JLONG_FORMAT,
-                                                     "/memory.stat",
-                                                     "hierarchical_memory_limit", phys_mem);
-      if (hier_memlimit < 0) {
+      GET_CONTAINER_INFO_LINE(jlong, _memory->controller(), "/memory.stat", "hierarchical_memory_limit",
+                             "Hierarchical Memory Limit is: " JLONG_FORMAT, JLONG_FORMAT, hier_memlimit)
+      assert(hier_memlimit > 0, "invariant");
+      if ((julong)hier_memlimit >= os::Linux::physical_memory()) {
         log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
       } else {
         return hier_memlimit;
@@ -156,33 +107,35 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
     }
     return (jlong)-1;
   }
-  return memlimit;
+  else {
+    return memlimit;
+  }
 }
 
 jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
-  julong host_total_memsw, phys_mem;
-  phys_mem = os::Linux::physical_memory();
-  host_total_memsw = os::Linux::host_swap() + phys_mem;
-  jlong memswlimit = read_limit_checked("Memory and Swap Limit is: " JLONG_FORMAT,
-                                        "/memory.memsw.limit_in_bytes",
-                                        host_total_memsw);
-  if (memswlimit < 0) {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.memsw.limit_in_bytes",
+                     "Memory and Swap Limit is: " JLONG_FORMAT, JLONG_FORMAT, memswlimit);
+  assert(memswlimit > 0, "invariant");
+  julong host_total_memsw;
+  host_total_memsw = os::Linux::host_swap() + os::Linux::physical_memory();
+  if ((julong)memswlimit >= host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
-      jlong hier_memswlimit = read_limit_match_checked("Hierarchical Memory and Swap Limit is : " JLONG_FORMAT,
-                                                       "/memory.stat", "hierarchical_memsw_limit", host_total_memsw);
-      if (hier_memswlimit < 0) {
+      const char* matchline = "hierarchical_memsw_limit";
+      GET_CONTAINER_INFO_LINE(jlong, _memory->controller(), "/memory.stat", matchline,
+                             "Hierarchical Memory and Swap Limit is : " JLONG_FORMAT, JLONG_FORMAT, hier_memswlimit)
+      assert(hier_memswlimit > 0, "invariant");
+      if ((julong)hier_memswlimit >= host_total_memsw) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
         jlong swappiness = read_mem_swappiness();
         if (swappiness == 0) {
-           jlong hier_memlimit = read_limit_match_checked("Hierarchical Memory Limit is : " JLONG_FORMAT,
-                                                          "/memory.stat",
-                                                          "hierarchical_memory_limit",
-                                                          phys_mem);
-           log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swappiness is 0", hier_memlimit);
-           return hier_memlimit;
+            const char* matchmemline = "hierarchical_memory_limit";
+            GET_CONTAINER_INFO_LINE(jlong, _memory->controller(), "/memory.stat", matchmemline,
+                             "Hierarchical Memory Limit is : " JLONG_FORMAT, JLONG_FORMAT, hier_memlimit)
+            log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swappiness is 0", hier_memlimit);
+            return hier_memlimit;
         }
         return hier_memswlimit;
       }
@@ -206,14 +159,15 @@ jlong CgroupV1Subsystem::read_mem_swappiness() {
 }
 
 jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
-  jlong memsoftlimit = read_limit_checked("Memory Soft Limit is: " JLONG_FORMAT,
-                                          "/memory.soft_limit_in_bytes",
-                                          os::Linux::physical_memory())
-  if (memsoftlimit < 0) {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.soft_limit_in_bytes",
+                     "Memory Soft Limit is: " JLONG_FORMAT, JLONG_FORMAT, memsoftlimit);
+  assert(memsoftlimit > 0, "invariant");
+  if ((julong)memsoftlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
     return (jlong)-1;
+  } else {
+    return memsoftlimit;
   }
-  return memsoftlimit;
 }
 
 /* memory_usage_in_bytes
@@ -253,10 +207,13 @@ jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
 }
 
 jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
-  jlong kmem_limit = read_limit_checked("Kernel Memory Limit is: " JLONG_FORMAT,
-                                        "/memory.kmem.limit_in_bytes",
-                                        os::Linux::physical_memory());
-  return kmem_limit < 0 ? (jlong)-1 : kmem_limit;
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.limit_in_bytes",
+                     "Kernel Memory Limit is: " JLONG_FORMAT, JLONG_FORMAT, kmem_limit);
+  assert(kmem_limit > 0, "invariant");
+  if ((julong)kmem_limit >= os::Linux::physical_memory()) {
+    return (jlong)-1;
+  }
+  return kmem_limit;
 }
 
 jlong CgroupV1Subsystem::kernel_memory_max_usage_in_bytes() {
