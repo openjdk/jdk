@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,25 @@
  * questions.
  */
 
-/**
+import java.awt.Frame;
+import java.awt.List;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+
+/*
  * @test
  * @key headful
  * @bug 8040076
  * @summary AwtList not garbage collected
- * @run main/othervm -Xmx100m AwtListGarbageCollectionTest
+ * @run main/othervm -Xmx100m -Xlog:gc=debug AwtListGarbageCollectionTest
  */
-
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.lang.ref.WeakReference;
-
 public class AwtListGarbageCollectionTest {
-    public static void main(String[] args) {
+
+    private static final long ENQUEUE_TIMEOUT = 1_000; // 1 sec, in millis
+    private static final int MAX_ATTEMPTS = 5;
+
+    public static void main(String[] args) throws InterruptedException {
         Frame frame = new Frame("List leak test");
         try {
             test(frame);
@@ -44,30 +48,36 @@ public class AwtListGarbageCollectionTest {
         }
     }
 
-    private static void test(Frame frame) {
-        WeakReference<List> weakListRef = null;
-        try {
-            frame.setSize(300, 200);
-            frame.setVisible(true);
+    private static void test(Frame frame) throws InterruptedException {
+        frame.setSize(300, 200);
+        frame.setVisible(true);
 
-            List strongListRef = new List();
-            frame.add(strongListRef);
-            strongListRef.setMultipleMode(true);
-            frame.remove(strongListRef);
-            weakListRef = new WeakReference<List>(strongListRef);
-            strongListRef = null;
+        List strongListRef = new List();
+        frame.add(strongListRef);
+        strongListRef.setMultipleMode(true);
+        frame.remove(strongListRef);
 
-            //make out of memory to force gc
-            String veryLongString = new String(new char[100]);
-            while (true) {
-                veryLongString += veryLongString;
-            }
-        } catch (OutOfMemoryError e) {
-            if (weakListRef == null) {
-                throw new RuntimeException("Weak list ref wasn't created");
-            } else if (weakListRef.get() != null) {
-                throw new RuntimeException("List wasn't garbage collected");
-            }
+        final ReferenceQueue<List> referenceQueue = new ReferenceQueue<>();
+        final PhantomReference<List> phantomListRef =
+                new PhantomReference<>(strongListRef, referenceQueue);
+        System.out.println("phantomListRef: " + phantomListRef);
+
+        strongListRef = null; // Clear the strong reference
+
+        System.out.println("Waiting for the reference to be cleared");
+        int count = 1;
+        Reference<? extends List> ref;
+        do {
+            System.out.println("Attempt " + count);
+            System.gc();
+            System.out.println("    GC invoked");
+            ref = referenceQueue.remove(ENQUEUE_TIMEOUT);
+            System.out.println("    ref: " + ref);
+        } while (++count <= MAX_ATTEMPTS
+                 && ref != phantomListRef);
+
+        if (ref != phantomListRef) {
+            throw new RuntimeException("List wasn't garbage collected");
         }
     }
 }
