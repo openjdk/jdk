@@ -433,8 +433,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
            test "x$TOOLCHAIN_TYPE" = "xclang"; then
           ASAN_CFLAGS="$ASAN_CFLAGS -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common"
           ASAN_LDFLAGS="$ASAN_LDFLAGS -fsanitize=address"
-        fi
-        if test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+        elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # MSVC produces a warning if you pass -fsanitize=address to the linker.
           ASAN_CFLAGS="$ASAN_CFLAGS -Oy-"
         fi
