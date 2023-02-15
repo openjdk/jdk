@@ -147,28 +147,30 @@ public class ByteBuffer {
         appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
-     /** Append the content of a given input stream.
+     /** Append the content of a given input stream, and then close the stream.
      */
     public void appendStream(InputStream is) throws IOException {
-        try {
-            int start = length;
-            int initialSize = is.available();
-            elems = ArrayUtils.ensureCapacity(elems, length + initialSize);
-            int r = is.read(elems, start, initialSize);
-            int bp = start;
-            while (r != -1) {
-                bp += r;
-                elems = ArrayUtils.ensureCapacity(elems, bp);
-                r = is.read(elems, bp, elems.length - bp);
-            }
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                /* Ignore any errors, as this stream may have already
-                 * thrown a related exception which is the one that
-                 * should be reported.
-                 */
+        try (InputStream input = is) {
+            while (true) {
+
+                // Read another chunk of data, using size hint from available().
+                // If available() is accurate, the array size should be just right.
+                int amountToRead = Math.max(input.available(), 64);
+                elems = ArrayUtils.ensureCapacity(elems, length + amountToRead);
+                int amountRead = input.read(elems, length, amountToRead);
+                if (amountRead == -1)
+                    break;
+                length += amountRead;
+
+                // Check for the common case where input.available() returned the
+                // entire remaining input; in that case, avoid an extra array extension.
+                // Note we are guaranteed that elems.length >= length + 1 at this point.
+                if (amountRead == amountToRead) {
+                    int byt = input.read();
+                    if (byt == -1)
+                        break;
+                    elems[length++] = (byte)byt;
+                }
             }
         }
     }
