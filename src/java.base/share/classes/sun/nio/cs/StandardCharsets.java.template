@@ -31,12 +31,11 @@ package sun.nio.cs;
 
 import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import jdk.internal.vm.annotation.Stable;
+import sun.security.action.GetPropertyAction;
 
 public class StandardCharsets extends CharsetProvider {
 
@@ -215,8 +214,7 @@ public class StandardCharsets extends CharsetProvider {
         if (GB18030_2000 == null) {
             // initialization delayed due to StandardCharsets
             // being initialized during initPhase1
-            GB18030_2000 = AccessController.doPrivileged((PrivilegedAction<String>)
-                () -> System.getProperty("jdk.charset.GB18030", ""));
+            GB18030_2000 = GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", "");
         }
         return "2000".equals(GB18030_2000);
     }
