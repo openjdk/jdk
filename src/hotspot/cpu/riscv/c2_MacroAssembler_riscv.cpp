@@ -1706,12 +1706,12 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
   vmv_x_s(dst, tmp);
 }
 
-void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes) {
+void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (length_in_bytes != MaxVectorSize) {
-    mv(t0, length_in_bytes / type2aelembytes(bt));
-    vsetvli(t0, t0, sew);
+    mv(tmp, length_in_bytes / type2aelembytes(bt));
+    vsetvli(tmp, tmp, sew);
   } else {
-    vsetvli(t0, x0, sew);
+    vsetvli(tmp, x0, sew);
   }
 }
