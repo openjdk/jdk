@@ -58,25 +58,23 @@ class ZipCoder {
     /**
      * This enum represents the three possible return values for
      * {@link #compare(String, byte[], int, int, boolean)} when
-     * this method compares a lookup name to a string encoded in a
-     * byte array range.
+     * this method compares a lookup name to a string encoded in the
+     * CEN byte array.
      */
     enum Comparison {
         /**
-         * The lookup string is exactly equal to
-         * the string encoded in the byte array.
+         * The lookup string is exactly equal
+         * to the encoded string.
           */
         EXACT_MATCH,
         /**
-         * The lookup string and the string encoded in
-         * the byte array differs only by the
-         * latter having a trailing '/' character.
+         * The lookup string and the encoded string differs only
+         * by the encoded string having a trailing '/' character.
          */
         DIRECTORY_MATCH,
         /**
-         * The lookup string and the string encoded in
-         * the byte array do not match. (They are
-         * neither an exact match or a directory match).
+         * The lookup string and the encoded string do not match.
+         * (They are neither an exact match or a directory match.)
          */
         NO_MATCH
     }
