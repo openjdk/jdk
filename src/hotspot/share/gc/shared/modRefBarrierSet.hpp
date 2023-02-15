@@ -49,7 +49,7 @@ public:
   inline void write_ref_field_pre(T* addr) {}
 
   template <DecoratorSet decorators, typename T>
-  inline void write_ref_field_post(T *addr, oop new_value) {}
+  inline void write_ref_field_post(T *addr) {}
 
   // Causes all refs in "mr" to be assumed to be modified.
   virtual void invalidate(MemRegion mr) = 0;
