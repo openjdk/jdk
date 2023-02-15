@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,26 @@
  * questions.
  */
 
-package gc.g1;
+import javax.swing.text.Caret;
+import javax.swing.text.DefaultCaret;
 
-/**
- * @test TestShrinkAuxiliaryData15
- * @bug 8038423 8061715 8078405
- * @key randomness
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData15
+/*
+ * @test
+ * @bug 8301989
+ * @summary Test checks that there is no exception happens
+ *          when setting blink rate on a javax.swing.DefaultCaret that is not
+ *          associated with any text component
+ * @run main SetCaretRateTest
  */
-public class TestShrinkAuxiliaryData15 {
-
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(15).test();
+public class SetCaretRateTest {
+    public static void main(String[] args) {
+        Caret caret = new DefaultCaret();
+        caret.setBlinkRate(0);
+        caret.setBlinkRate(100);
+        caret.setBlinkRate(0);
+        caret = new DefaultCaret();
+        caret.setBlinkRate(100);
+        caret.setBlinkRate(0);
+        caret.setBlinkRate(100);
     }
 }

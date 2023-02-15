@@ -37,8 +37,15 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-    FULL_MEM_BARRIER;
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
+    }
+
+    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
+    }
     return res;
   }
 
@@ -54,8 +61,15 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                      T exchange_value,
                                                      atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
-  FULL_MEM_BARRIER;
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+
+  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
   return res;
 }
 
@@ -88,26 +102,29 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
+
+  T old_value;
+  long rc;
+
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
-  T rv;
-  int tmp;
-  __asm volatile(
-    "1:\n\t"
-    " addiw     %[tmp], %[cv], 0\n\t" // make sure compare_value signed_extend
-    " lr.w.aq   %[rv], (%[dest])\n\t"
-    " bne       %[rv], %[tmp], 2f\n\t"
-    " sc.w.rl   %[tmp], %[ev], (%[dest])\n\t"
-    " bnez      %[tmp], 1b\n\t"
-    "2:\n\t"
-    : [rv] "=&r" (rv), [tmp] "=&r" (tmp)
-    : [ev] "r" (exchange_value), [dest] "r" (dest), [cv] "r" (compare_value)
-    : "memory");
+
+  __asm__ __volatile__ (
+    "1:  sext.w    %1, %3      \n\t" // sign-extend compare_value
+    "    lr.w      %0, %2      \n\t"
+    "    bne       %0, %1, 2f  \n\t"
+    "    sc.w      %1, %4, %2  \n\t"
+    "    bnez      %1, 1b      \n\t"
+    "2:                        \n\t"
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc), /*%2*/"+A" (*dest)
+    : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
+    : "memory" );
+
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
-  return rv;
+  return old_value;
 }
 
 template<size_t byte_size>

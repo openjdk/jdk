@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,27 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package gc.g1;
+package jdk.jfr.jcmd;
 
 /**
- * @test TestShrinkAuxiliaryData25
- * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData25
+ * @test
+ * @summary The test verifies that options can only be specified once with jcmd JFR
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @modules jdk.jfr/jdk.jfr.internal.dcmd
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdOptionSpecifiedOnce
  */
-public class TestShrinkAuxiliaryData25 {
+public class TestJcmdOptionSpecifiedOnce {
 
     public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(25).test();
+
+        testJCmdConflict();
+    }
+
+    private static void testJCmdConflict() {
+        var output= JcmdHelper.jcmd("JFR.start name=hello name=greetings");
+        output.shouldContain("name can only be specified once");
     }
 }
+
