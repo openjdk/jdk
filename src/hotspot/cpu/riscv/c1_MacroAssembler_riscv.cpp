@@ -178,20 +178,21 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   beqz(len_in_bytes, done);
 
   // Zero first 4 bytes, if start offset is not word aligned.
-  if (!is_aligned(hdr_size_in_bytes, BytesPerWord)) {
-    assert(is_aligned(hdr_size_in_bytes, BytesPerInt), "must be 32-bit-aligned");
-    sw(zr, Address(obj, hdr_size_in_bytes));
+  int start_offset_in_bytes = hdr_size_in_bytes;
+  if (!is_aligned(start_offset_in_bytes, BytesPerWord)) {
+    assert(is_aligned(start_offset_in_bytes, BytesPerInt), "must be 32-bit-aligned");
+    sw(zr, Address(obj, start_offset_in_bytes));
     sub(len_in_bytes, len_in_bytes, BytesPerInt);
-    hdr_size_in_bytes += BytesPerInt;
+    start_offset_in_bytes += BytesPerInt;
   }
 
   // Preserve obj
-  if (hdr_size_in_bytes) {
-    add(obj, obj, hdr_size_in_bytes);
+  if (start_offset_in_bytes) {
+    add(obj, obj, start_offset_in_bytes);
   }
   zero_memory(obj, len_in_bytes, tmp);
-  if (hdr_size_in_bytes) {
-    sub(obj, obj, hdr_size_in_bytes);
+  if (start_offset_in_bytes) {
+    sub(obj, obj, start_offset_in_bytes);
   }
 
   bind(done);
