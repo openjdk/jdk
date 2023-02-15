@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,12 @@ abstract class KeyWrapCipher extends CipherSpi {
         if (keyBytes == null) {
             throw new InvalidKeyException("Null key");
         }
+
+        if (fixedKeySize != -1 && fixedKeySize != keyBytes.length) {
+            throw new InvalidKeyException("Invalid key length: " +
+                    keyBytes.length + " bytes, should be " + fixedKeySize);
+        }
+
         this.opmode = opmode;
         boolean decrypting = (opmode == Cipher.DECRYPT_MODE ||
                 opmode == Cipher.UNWRAP_MODE);
