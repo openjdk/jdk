@@ -735,6 +735,34 @@ SafePointNode* GraphKit::clone_map() {
   return clonemap;
 }
 
+//-----------------------------destruct_map_clone------------------------------
+//
+// Order of destruct is important to increase the likelyhood that memory can be re-used. We need
+// to destruct/free/delete in the exact opposite order as clone_map().
+void GraphKit::destruct_map_clone(SafePointNode* m) {
+  if (m == nullptr) return;
+
+  Node* mem = m->memory();
+  JVMState* jvms = m->jvms();
+
+  if (jvms != nullptr) {
+    delete jvms;
+    m->set_jvms(nullptr);
+  }
+
+  if (mem != nullptr) {
+    m->set_memory(nullptr);
+  }
+
+  remove_for_igvn(m);
+  gvn().clear_type(m);
+  m->destruct(&_gvn);
+
+  if (mem != nullptr) {
+    gvn().clear_type(mem);
+    mem->destruct(&_gvn);
+  }
+}
 
 //-----------------------------set_map_clone-----------------------------------
 void GraphKit::set_map_clone(SafePointNode* m) {
