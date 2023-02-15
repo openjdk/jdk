@@ -424,13 +424,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         fi
       ],
       IF_ENABLED: [
-        # ASan is simply incompatible with gcc -Wstringop-truncation. See
-        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
-        # It's harmless to be suppressed in clang as well.
         ASAN_CFLAGS="-fsanitize=address"
         ASAN_LDFLAGS=""
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          # ASan is simply incompatible with gcc -Wstringop-truncation. See
+          # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
+          # It's harmless to be suppressed in clang as well.
           ASAN_CFLAGS="$ASAN_CFLAGS -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common"
           ASAN_LDFLAGS="$ASAN_LDFLAGS -fsanitize=address"
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
