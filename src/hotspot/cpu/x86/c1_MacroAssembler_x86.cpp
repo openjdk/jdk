@@ -71,6 +71,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 #endif
     fast_lock_impl(obj, hdr, thread, tmp, slow_case, LP64_ONLY(false) NOT_LP64(true));
   } else {
+    Label done;
     // and mark it as unlocked
     orptr(hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -102,9 +103,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     movptr(Address(disp_hdr, 0), hdr);
     // otherwise we don't care about the result and handle locking via runtime call
     jcc(Assembler::notZero, slow_case);
+    // done
+    bind(done);
   }
-  // done
-  bind(done);
 
   inc_held_monitor_count();
 
