@@ -1018,7 +1018,10 @@ public class Utils {
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         List<? extends TypeMirror> superTypes = typeUtils.directSupertypes(type);
-        TypeMirror superType = superTypes.isEmpty() ? getObjectType() : superTypes.get(0);
+        if (superTypes.isEmpty()) {
+            return null;
+        }
+        TypeMirror superType = superTypes.get(0); // if non-empty, the first element is always the superclass
         TypeElement superClass = asTypeElement(superType);
         // skip "hidden" classes
         while ((superClass != null && hasHiddenTag(superClass))
@@ -1031,9 +1034,6 @@ public class Utils {
             }
             superType = supersuperType;
             superClass = supersuperClass;
-        }
-        if (typeUtils.isSameType(type, superType)) {
-            return null;
         }
         return superType;
     }
@@ -2380,10 +2380,21 @@ public class Utils {
     }
 
     public ModuleElement containingModule(Element e) {
+        // TODO: remove this short-circuit after JDK-8302545 has been fixed
+        //  or --ignore-source-errors has been removed
+        if (e.getKind() == ElementKind.PACKAGE
+                && e.getEnclosingElement() == null) {
+            return null;
+        }
         return elementUtils.getModuleOf(e);
     }
 
     public PackageElement containingPackage(Element e) {
+        // TODO: remove this short-circuit after JDK-8302545 has been fixed
+        //  or --ignore-source-errors has been removed
+        if (e.getKind() == ElementKind.PACKAGE) {
+            return (PackageElement) e;
+        }
         return elementUtils.getPackageOf(e);
     }
 
