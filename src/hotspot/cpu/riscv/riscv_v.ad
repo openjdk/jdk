@@ -37,12 +37,7 @@ source %{
   static void loadStore(C2_MacroAssembler masm, bool is_store,
                         VectorRegister reg, BasicType bt, Register base, int length_in_bytes) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    if (length_in_bytes != MaxVectorSize) {
-      masm.mv(t0, length_in_bytes / type2aelembytes(bt));
-      masm.vsetvli(t0, t0, sew);
-    } else {
-      masm.vsetvli(t0, x0, sew);
-    }
+    masm.rvv_vsetvli(bt, length_in_bytes);
 
     if (is_store) {
       masm.vsex_v(reg, base, sew);
@@ -973,13 +968,7 @@ instruct reduce_addF(fRegF src1_dst, vReg src2, vReg tmp) %{
             "vfredosum.vs $tmp, $src2, $tmp\n\t"
             "vfmv.f.s $src1_dst, $tmp" %}
   ins_encode %{
-    int length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
-    if (length_in_bytes != MaxVectorSize) {
-      __ mv(t0, length_in_bytes / type2aelembytes(T_FLOAT));
-      __ vsetvli(t0, t0, Assembler::e32);
-    } else {
-      __ vsetvli(t0, x0, Assembler::e32);
-    }
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));
@@ -996,13 +985,7 @@ instruct reduce_addD(fRegD src1_dst, vReg src2, vReg tmp) %{
             "vfredosum.vs $tmp, $src2, $tmp\n\t"
             "vfmv.f.s $src1_dst, $tmp" %}
   ins_encode %{
-    int length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
-    if (length_in_bytes != MaxVectorSize) {
-      __ mv(t0, length_in_bytes / type2aelembytes(T_DOUBLE));
-      __ vsetvli(t0, t0, Assembler::e64);
-    } else {
-      __ vsetvli(t0, x0, Assembler::e64);
-    }
+    __ rvv_vsetvli(T_DOUBLE, Matcher::vector_length_in_bytes(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));

@@ -196,4 +196,6 @@
                           Register src1, VectorRegister src2,
                           BasicType bt, int opc, int length_in_bytes);
 
+ void rvv_vsetvli(BasicType bt, int length_in_bytes);
+
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
