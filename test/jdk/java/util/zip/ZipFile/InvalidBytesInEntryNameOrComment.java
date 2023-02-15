@@ -101,7 +101,7 @@ public class InvalidBytesInEntryNameOrComment {
     @Test
     public void shouldRejectInvalidComment() throws IOException {
         ZipException ex = expectThrows(ZipException.class, () -> {
-            new ZipFile(invalidName.toFile());
+            new ZipFile(invalidComment.toFile());
         });
         assertEquals(ex.getMessage(), BAD_ENTRY_NAME_OR_COMMENT);
     }
