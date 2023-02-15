@@ -1834,7 +1834,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
   }
 }
 
-void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index Register tmp) {
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index, Register tmp) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
