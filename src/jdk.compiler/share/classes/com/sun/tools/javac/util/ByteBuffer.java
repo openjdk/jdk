@@ -178,10 +178,10 @@ public class ByteBuffer {
     /** Extract an integer at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public int getInt(int bp) {
+    public int getInt(int bp) throws UnderflowException {
         verifyRange(bp, 4);
         return
             ((elems[bp] & 0xFF) << 24) +
@@ -194,10 +194,10 @@ public class ByteBuffer {
     /** Extract a long integer at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public long getLong(int bp) {
+    public long getLong(int bp) throws UnderflowException {
         verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
@@ -211,10 +211,10 @@ public class ByteBuffer {
     /** Extract a float at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public float getFloat(int bp) {
+    public float getFloat(int bp) throws UnderflowException {
         verifyRange(bp, 4);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 4));
@@ -228,10 +228,10 @@ public class ByteBuffer {
     /** Extract a double at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public double getDouble(int bp) {
+    public double getDouble(int bp) throws UnderflowException {
         verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
@@ -245,10 +245,10 @@ public class ByteBuffer {
     /** Extract a character at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public char getChar(int bp) {
+    public char getChar(int bp) throws UnderflowException {
         verifyRange(bp, 2);
         return
             (char)(((elems[bp] & 0xFF) << 8) + (elems[bp+1] & 0xFF));
@@ -257,10 +257,10 @@ public class ByteBuffer {
     /** Extract a byte at position bp from elems.
      *
      * @param bp starting offset
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public byte getByte(int bp) {
+    public byte getByte(int bp) throws UnderflowException {
         verifyRange(bp, 1);
         return elems[bp];
     }
@@ -281,11 +281,34 @@ public class ByteBuffer {
      *
      * @param off starting offset
      * @param len required length
-     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws UnderflowException if there is not enough data in this buffer
      * @throws IllegalArgumentException if {@code off} or {@code len} is negative
      */
-    public void verifyRange(int off, int len) {
-        if (off < 0 || len < 0 || off + len < 0 || off + len > length)
-            throw new IllegalArgumentException("off=" + off + ", len=" + len + ", length=" + length);
+    public void verifyRange(int off, int len) throws UnderflowException {
+        if (off < 0 || len < 0)
+            throw new IllegalArgumentException("off=" + off + ", len=" + len);
+        if (off + len < 0 || off + len > length)
+            throw new UnderflowException(length);
+    }
+
+// UnderflowException
+
+    /** Thrown when trying to read past the end of the buffer.
+     */
+    public static class UnderflowException extends Exception {
+
+        private static final long serialVersionUID = 0;
+
+        private final int length;
+
+        public UnderflowException(int length) {
+            this.length = length;
+        }
+
+        /** Get the length of the buffer, which apparently is not long enough.
+         */
+        public int getLength() {
+            return length;
+        }
     }
 }
