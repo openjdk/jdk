@@ -428,15 +428,17 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
         ASAN_CFLAGS="-fsanitize=address"
+        ASAN_LDFLAGS=""
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
            test "x$TOOLCHAIN_TYPE" = "xclang"; then
           ASAN_CFLAGS="$ASAN_CFLAGS -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common"
+          ASAN_LDFLAGS="$ASAN_LDFLAGS -fsanitize=address"
         fi
         if test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+          # MSVC produces a warning if you pass -fsanitize=address to the linker.
           ASAN_CFLAGS="$ASAN_CFLAGS -Oy-"
         fi
         ASAN_CFLAGS="$ASAN_CFLAGS -DADDRESS_SANITIZER"
-        ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
         CFLAGS_JDKLIB="$CFLAGS_JDKLIB $ASAN_CFLAGS"
