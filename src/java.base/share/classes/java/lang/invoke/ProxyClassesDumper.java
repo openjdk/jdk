@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Helper class used by InnerClassLambdaMetafactory to log generated classes
@@ -98,11 +97,15 @@ final class ProxyClassesDumper {
 
     public static String encodeForFilename(String className) {
         final int len = className.length();
-        // stamp can be up to 19 digits, in theory, plus one hyphen
+        // add some padding to `len` for the timestamp
         StringBuilder sb = new StringBuilder(len + 20);
-        sb.append(System.currentTimeMills()).append('-');
+        int lastSlash = className.lastIndexOf('/');
 
         for (int i = 0; i < len; i++) {
+            if (i == lastSlash + 1) {
+                // insert the timestamp
+                sb.append(System.currentTimeMillis()).append('-');
+            }
             char c = className.charAt(i);
             // control characters
             if (c <= 31) {
