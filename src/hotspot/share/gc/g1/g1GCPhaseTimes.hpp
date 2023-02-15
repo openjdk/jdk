@@ -181,8 +181,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_prepare_merge_heap_roots_time_ms;
   double _cur_optional_prepare_merge_heap_roots_time_ms;
 
-  double _cur_resize_tlab_time_ms;
-
   double _cur_pre_evacuate_prepare_time_ms;
 
   double _cur_post_evacuate_cleanup_1_time_ms;

@@ -28,8 +28,8 @@
 #include "gc/g1/g1BatchedTask.hpp"
 
 // Set of pre evacuate collection set tasks containing ("s" means serial):
-// - Retire and Flush Logs (Java threads)
-// - Flush Logs (Non-Java threads)
+// - Retire TLAB and Flush Logs (Java threads)
+// - Flush Logs (s) (Non-Java threads)
 class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
   class JavaThreadRetireTLABAndFlushLogs;
   class NonJavaThreadFlushLogs;
