@@ -1017,27 +1017,20 @@ public class Utils {
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
-        List<? extends TypeMirror> superTypes = typeUtils.directSupertypes(type);
-        if (superTypes.isEmpty()) {
-            return null;
-        }
-        TypeMirror superType = superTypes.get(0); // if non-empty, the first element is always the superclass
-        TypeElement superClass = asTypeElement(superType);
-        // skip "hidden" classes
-        while ((superClass != null && hasHiddenTag(superClass))
-                || (superClass != null &&  !isPublic(superClass) && !isLinkable(superClass))) {
-            TypeMirror supersuperType = superClass.getSuperclass();
-            TypeElement supersuperClass = asTypeElement(supersuperType);
-            if (supersuperClass == null
-                    || supersuperClass.getQualifiedName().equals(superClass.getQualifiedName())) {
-                break;
+        // TODO: this computation should be eventually delegated to VisibleMemberTable
+        for (var t = type; ;) {
+            var supertypes = typeUtils.directSupertypes(t);
+            if (supertypes.isEmpty()) { // end of hierarchy
+                return null;
             }
-            superType = supersuperType;
-            superClass = supersuperClass;
+            t = supertypes.get(0); // if non-empty, the first element is always the superclass
+            var te = asTypeElement(t);
+            if (hasHiddenTag(te) || (!isPublic(te) && !isLinkable(te))) {
+                continue;
+            }
+            return t;
         }
-        return superType;
     }
-
 
     /**
      * Given a class, return the closest visible superclass.
