@@ -75,7 +75,6 @@ class G1ConcurrentRefine;
 class G1GCCounters;
 class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
-class G1HotCardCache;
 class G1NewTracer;
 class G1RemSet;
 class G1ServiceTask;
@@ -775,9 +774,6 @@ public:
   void record_obj_copy_mem_stats();
 
 private:
-  // The hot card cache for remembered set insertion optimization.
-  G1HotCardCache* _hot_card_cache;
-
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
   // Global card set configuration
@@ -931,9 +927,6 @@ public:
   static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
   static void finish_codecache_marking_cycle();
 
-  // Apply the given closure on all cards in the Hot Card Cache, emptying it.
-  void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
-
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
 
@@ -1060,8 +1053,6 @@ public:
   bool is_in_reserved(const void* addr) const {
     return reserved().contains(addr);
   }
-
-  G1HotCardCache* hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {
     return _card_table;
@@ -1264,10 +1255,6 @@ public:
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
   void update_used_after_gc(bool evacuation_failed);
-  // Reset and re-enable the hot card cache.
-  // Note the counts for the cards in the regions in the
-  // collection set are reset when the collection set is freed.
-  void reset_hot_card_cache();
 
   // Rebuild the code root lists for each region
   // after a full GC.

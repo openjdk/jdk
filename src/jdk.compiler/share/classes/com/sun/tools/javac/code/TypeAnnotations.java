@@ -1364,8 +1364,7 @@ public class TypeAnnotations {
                     newattrs.append(new Attribute.TypeCompound(old.type, old.values, pos));
                 }
             }
-
-            sym.owner.appendUniqueTypeAttributes(newattrs.toList());
+            appendTypeAnnotationsToOwner(sym, newattrs.toList());
         }
 
         @Override
