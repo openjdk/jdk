@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 // so no more synchronization is needed.
 class MemJFRReporter : public AllStatic {
 private:
-  static void send_type_event(const Ticks& starttime, const char* tag, size_t reserved, size_t committed);
+  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
  public:
   static void send_total_event();
   static void send_type_events();

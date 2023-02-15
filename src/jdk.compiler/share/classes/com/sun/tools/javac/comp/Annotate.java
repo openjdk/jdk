@@ -521,6 +521,7 @@ public class Annotate {
                 left.name, List.nil(), null);
         left.sym = method;
         left.type = method.type;
+        chk.checkDeprecated(left, env.info.scope.owner, method);
         if (method.owner != thisAnnotationType.tsym && !badAnnotation)
             log.error(left.pos(), Errors.NoAnnotationMember(left.name, thisAnnotationType));
         Type resultType = method.type.getReturnType();

@@ -130,6 +130,9 @@ void ImageLocation::set_data(u1* data) {
         // Extract kind from header byte.
         u1 kind = attribute_kind(byte);
         assert(kind < ATTRIBUTE_COUNT && "invalid image location attribute");
+        if (kind == ATTRIBUTE_END) {
+            break;
+        }
         // Extract length of data (in bytes).
         u1 n = attribute_length(byte);
         // Read value (most significant first.)

@@ -725,6 +725,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_compress_expand();
   case vmIntrinsics::_IndexVector:
     return inline_index_vector();
+  case vmIntrinsics::_IndexPartiallyInUpperRange:
+    return inline_index_partially_in_upper_range();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -5988,7 +5990,6 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   Node* initialValue   = argument(3);
   Node* basic_type     = argument(4);
 
-  array = must_be_not_null(array, true);
   if (basic_type == top()) {
     return false; // failed input validation
   }
@@ -5997,6 +5998,9 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   if (!basic_type_t->is_con()) {
     return false; // Only intrinsify if mode argument is constant
   }
+
+  array = must_be_not_null(array, true);
+
   BasicType bt = (BasicType)basic_type_t->get_con();
 
   // Resolve address of first element

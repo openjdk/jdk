@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,31 +89,14 @@ void DefNewYoungerGenClosure::barrier(T* p) {
 }
 
 inline DefNewScanClosure::DefNewScanClosure(DefNewGeneration* g) :
-    FastScanClosure<DefNewScanClosure>(g), _scanned_cld(NULL) {}
+    FastScanClosure<DefNewScanClosure>(g), _scanned_cld(nullptr) {}
 
 template <class T>
 void DefNewScanClosure::barrier(T* p) {
-  if (_scanned_cld != NULL && !_scanned_cld->has_modified_oops()) {
+  if (_scanned_cld != nullptr && !_scanned_cld->has_modified_oops()) {
     _scanned_cld->record_modified_oops();
   }
 }
-
-#endif // INCLUDE_SERIALGC
-
-template <class T> void FilteringClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
-      _cl->do_oop(p);
-    }
-  }
-}
-
-inline void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
-inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
-
-#if INCLUDE_SERIALGC
 
 // Note similarity to FastScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
