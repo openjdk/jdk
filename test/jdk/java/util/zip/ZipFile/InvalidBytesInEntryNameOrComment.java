@@ -88,7 +88,7 @@ public class InvalidBytesInEntryNameOrComment {
     @Test
     public void shouldRejectInvalidName() throws IOException {
         ZipException ex = expectThrows(ZipException.class, () -> {
-            openZipFile(invalidName);
+            new ZipFile(invalidName.toFile());
         });
         assertEquals(ex.getMessage(), BAD_ENTRY_NAME_OR_COMMENT);
     }
@@ -101,14 +101,9 @@ public class InvalidBytesInEntryNameOrComment {
     @Test
     public void shouldRejectInvalidComment() throws IOException {
         ZipException ex = expectThrows(ZipException.class, () -> {
-            openZipFile(invalidComment);
+            new ZipFile(invalidName.toFile());
         });
         assertEquals(ex.getMessage(), BAD_ENTRY_NAME_OR_COMMENT);
-    }
-
-    private void openZipFile(Path zip) throws IOException {
-        try (ZipFile zf = new ZipFile(zip.toFile())) {
-        }
     }
 
     /**
