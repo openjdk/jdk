@@ -40,7 +40,6 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedHashSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 import java.util.Set;
 
