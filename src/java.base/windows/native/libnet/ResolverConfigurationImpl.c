@@ -33,6 +33,8 @@
 #include "jni_util.h"
 
 #define MAX_STR_LEN         1024
+#define BUFF_SIZE           15360
+#define MAX_TRIES           3
 
 #define STS_NO_CONFIG       0x0             /* no configuration found */
 #define STS_SL_FOUND        0x1             /* search list found */
@@ -46,7 +48,78 @@
 static jfieldID searchlistID;
 static jfieldID nameserversID;
 
-extern int getAdapters(JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters);
+/*
+ * return an array of IP_ADAPTER_ADDRESSES containing one element
+ * for each adapter on the system. Returned in *adapters.
+ * Buffer is malloc'd and must be freed (unless error returned)
+ */
+int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
+    DWORD ret;
+    IP_ADAPTER_ADDRESSES *adapterInfo;
+    ULONG len;
+    int try;
+
+    *adapters = NULL;
+
+    adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
+    if (adapterInfo == NULL) {
+        JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+            "Native heap allocation failure");
+        return -1;
+    }
+
+    len = BUFF_SIZE;
+    ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
+
+    for (try = 0; ret == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
+        IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
+        if (len < (ULONG_MAX - BUFF_SIZE)) {
+            len += BUFF_SIZE;
+        }
+        newAdapterInfo =
+            (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
+        if (newAdapterInfo == NULL) {
+            free(adapterInfo);
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+                "Native heap allocation failure");
+            return -1;
+        }
+
+        adapterInfo = newAdapterInfo;
+
+        ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
+    }
+
+    if (ret != ERROR_SUCCESS) {
+        free (adapterInfo);
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "invalid parameter");
+                break;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                JNU_ThrowOutOfMemoryError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "not enough memory");
+                break;
+            case ERROR_NO_DATA:
+                // not an error
+                *adapters = NULL;
+                return ERROR_SUCCESS;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetAdaptersAddresses function failed");
+                break;
+        }
+
+        return -1;
+    }
+    *adapters = adapterInfo;
+    return ERROR_SUCCESS;
+}
 
 /*
  * Utility routine to append s2 to s1 with a comma delimiter.
@@ -114,6 +187,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     flags |= GAA_FLAG_SKIP_ANYCAST;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_SKIP_FRIENDLY_NAME;
+    flags |= GAA_FLAG_INCLUDE_ALL_INTERFACES;
     ret = getAdapters(env, flags, &adapters);
 
     if (ret != ERROR_SUCCESS) {

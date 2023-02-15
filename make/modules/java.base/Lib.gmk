@@ -48,7 +48,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
     DISABLED_WARNINGS_microsoft_NetworkInterface.c := 4133, \
-    DISABLED_WARNINGS_microsoft_NetworkInterface_winXP.c := 4133, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -57,7 +56,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib winhttp.lib \
-        delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
+        delayimp.lib $(WIN_JAVA_LIB) advapi32.lib ole32.lib oleaut32.lib \
+        wbemuuid.lib, \
     LIBS_macosx := -framework CoreFoundation -framework CoreServices, \
 ))
 
