@@ -1018,6 +1018,8 @@ public class Utils {
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         // TODO: this computation should be eventually delegated to VisibleMemberTable
+        Set<TypeElement> alreadySeen = null;
+        assert (alreadySeen = new HashSet<>()) != null; // create set conditionally
         for (var t = type; ;) {
             var supertypes = typeUtils.directSupertypes(t);
             if (supertypes.isEmpty()) { // end of hierarchy
@@ -1025,6 +1027,7 @@ public class Utils {
             }
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
+            assert alreadySeen.add(te);
             if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
                 return t;
             }
