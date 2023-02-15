@@ -178,14 +178,6 @@
           "Control whether concurrent refinement is performed. "            \
           "Disabling effectively ignores G1RSetUpdatingPauseTimePercent")   \
                                                                             \
-  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
-          "Log base 2 of the length of conc RS hot-card cache.")            \
-          range(0, 27)                                                      \
-                                                                            \
-  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
-          "The threshold that defines (>=) a hot card.")                    \
-          range(0, max_jubyte)                                              \
-                                                                            \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
