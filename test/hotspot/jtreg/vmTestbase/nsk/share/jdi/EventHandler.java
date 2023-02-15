@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,10 @@ public class EventHandler implements Runnable {
         log.display("EventHandler> " + str);
     }
 
+    private void complain(String str) {
+        log.complain("EventHandler> " + str);
+    }
+
     // is EventHandler was interrupted
     private volatile boolean wasInterrupted;
 
@@ -197,7 +201,7 @@ public class EventHandler implements Runnable {
                         break;
                 }
 
-                log.complain("Exception occured in eventHandler thread: " + e.getMessage());
+                complain("Exception occured in eventHandler thread: " + e.getMessage());
                 e.printStackTrace(log.getOutStream());
                 synchronized(EventHandler.this) {
                     // This will make the waiters such as waitForVMDisconnect
@@ -258,7 +262,7 @@ public class EventHandler implements Runnable {
         addListener(
                 new EventListener() {
                     public boolean eventReceived(Event event) {
-                        log.complain("EventHandler>  Unexpected event: " + event.getClass().getName());
+                        complain("Unexpected event: " + event);
                         unexpectedEventCaught = true;
                         return true;
                     }
@@ -320,9 +324,9 @@ public class EventHandler implements Runnable {
         );
 
         /**
-         * This listener catches uncaught exceptions and print a message.
+         * This listener catches uncaught exceptions and prints a message.
          */
-        addListener( new EventListener() {
+        addListener(new EventListener() {
             public boolean eventReceived(Event event) {
                 boolean handled = false;
 
@@ -330,9 +334,8 @@ public class EventHandler implements Runnable {
                     defaultExceptionRequest != null &&
                     defaultExceptionRequest.equals(event.request())) {
 
-                    if (EventFilters.filtered(event) == false) {
-                        log.complain("EventHandler>  Unexpected Debuggee Exception: " +
-                                     (ExceptionEvent)event);
+                    if (!EventFilters.filtered(event)) {
+                        complain("Unexpected Debuggee Exception: " + event);
                         defaultExceptionCaught = true;
                     }
 
@@ -368,28 +371,42 @@ public class EventHandler implements Runnable {
         }
     }
 
+    private class EventNotification {
+        volatile Event event = null;
+        volatile EventSet set = null;
+    }
 
     /**
-     * Returns an event which is received for any of given requests.
+     * Returns an event which was received for one of the specified requests.
      */
-    public Event waitForRequestedEvent( final EventRequest[] requests,
-            long timeout,
-            boolean shouldRemoveListeners) {
-        class EventNotification {
-            volatile Event event = null;
-        }
+    private EventNotification waitForRequestedEventCommon(final EventRequest[] requests,
+                                                          long timeout,
+                                                          boolean shouldRemoveListeners)
+    {
         final EventNotification en = new EventNotification();
 
+        /*
+         * This listener searches for an Event that matches one of the EventRequests.
+         */
         EventListener listener = new EventListener() {
+            public void eventSetReceived(EventSet set) {
+                en.set = set; // Save for retrieval when eventReceived() is called.
+            }
+
             public boolean eventReceived(Event event) {
+                EventSet set = en.set;
+                en.set = null; // We'll reset it below if the event matches a request.
                 for (int i = 0; i < requests.length; i++) {
                     EventRequest request = requests[i];
-                    if (!request.isEnabled())
+                    if (!request.isEnabled()) {
                         continue;
+                    }
                     if (request.equals(event.request())) {
-                        display("waitForRequestedEvent: Received event(" + event + ") for request(" + request + ")");
+                        display("waitForRequestedEventCommon: Received event(" + event +
+                                ") for request(" + request + ")");
                         synchronized (EventHandler.this) {
                             en.event = event;
+                            en.set = set;
                             EventHandler.this.notifyAll();
                         }
                         return true;
@@ -399,7 +416,7 @@ public class EventHandler implements Runnable {
             }
         };
         if (shouldRemoveListeners) {
-            display("waitForRequestedEvent: enabling remove of listener " + listener);
+            display("waitForRequestedEventCommon: enabling remove of listener " + listener);
             listener.enableRemovingThisListener();
         }
         for (int i = 0; i < requests.length; i++) {
@@ -407,88 +424,24 @@ public class EventHandler implements Runnable {
         }
         addListener(listener);
 
-        try {
-            long timeToFinish = System.currentTimeMillis() + timeout;
-            long timeLeft = timeout;
-            synchronized (EventHandler.this) {
-                display("waitForRequestedEvent: vm.resume called");
-                vm.resume();
-
-                while (!isDisconnected() && en.event == null && timeLeft > 0) {
-                    EventHandler.this.wait(timeLeft);
-                    timeLeft = timeToFinish - System.currentTimeMillis();
-                }
-            }
-        } catch (InterruptedException e) {
-            return null;
-        }
-        if (shouldRemoveListeners && !isDisconnected()) {
-            for (int i = 0; i < requests.length; i++) {
-                requests[i].disable();
-            }
-        }
-        if (en.event == null) {
-            throw new Failure("waitForRequestedEvent: no requested events have been received.");
-        }
-        return en.event;
-    }
-
-    /**
-     * Returns an event set which is received for any of given requests.
-     */
-    public EventSet waitForRequestedEventSet( final EventRequest[] requests,
-            long timeout,
-            boolean shouldRemoveListeners) {
-        class EventNotification {
-            volatile EventSet set = null;
-        }
-        final EventNotification en = new EventNotification();
-
-        EventListener listener = new EventListener() {
+        /*
+         * This listener logs each EventSet received.
+         */
+        EventListener eventLogListener = new EventListener() {
             public void eventSetReceived(EventSet set) {
-
-                EventIterator eventIterator = set.eventIterator();
-
-                while (eventIterator.hasNext()) {
-
-                    Event event = eventIterator.nextEvent();
-
-                    for (int i = 0; i < requests.length; i++) {
-                        EventRequest request = requests[i];
-                        if (!request.isEnabled())
-                            continue;
-
-                        if (request.equals(event.request())) {
-                            display("waitForRequestedEventSet: Received event set for request: " + request);
-                            synchronized (EventHandler.this) {
-                                en.set = set;
-                                EventHandler.this.notifyAll();
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-
-            public boolean eventReceived(Event event) {
-                return (en.set != null);
+                display("waitForRequestedEventCommon: Received event set: " + set);
             }
         };
+        addListener(eventLogListener);
 
-        if (shouldRemoveListeners) {
-            display("waitForRequestedEventSet: enabling remove of listener " + listener);
-            listener.enableRemovingThisListener();
-        }
-        for (int i = 0; i < requests.length; i++) {
-            requests[i].enable();
-        }
-        addListener(listener);
-
+        /*
+         * Wait until expected event is recieved.
+         */
         try {
             long timeToFinish = System.currentTimeMillis() + timeout;
             long timeLeft = timeout;
             synchronized (EventHandler.this) {
-                display("waitForRequestedEventSet: vm.resume called");
+                display("waitForRequestedEventCommon: vm.resume called");
                 vm.resume();
 
                 while (!isDisconnected() && en.set == null && timeLeft > 0) {
@@ -504,6 +457,34 @@ public class EventHandler implements Runnable {
                 requests[i].disable();
             }
         }
+        removeListener(eventLogListener);
+        return en;
+    }
+
+    /**
+     * Returns an event which was received for one of the specified requests.
+     */
+    public Event waitForRequestedEvent(final EventRequest[] requests,
+                                       long timeout,
+                                       boolean shouldRemoveListeners)
+    {
+        EventNotification en =
+            waitForRequestedEventCommon(requests, timeout, shouldRemoveListeners);
+        if (en.event == null) {
+            throw new Failure("waitForRequestedEvent: no requested events have been received.");
+        }
+        return en.event;
+    }
+
+    /**
+     * Returns an event set which was received for one of the specified requests.
+     */
+    public EventSet waitForRequestedEventSet(final EventRequest[] requests,
+                                             long timeout,
+                                             boolean shouldRemoveListeners)
+    {
+        EventNotification en =
+            waitForRequestedEventCommon(requests, timeout, shouldRemoveListeners);
         if (en.set == null) {
             throw new Failure("waitForRequestedEventSet: no requested events have been received.");
         }
