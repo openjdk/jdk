@@ -160,24 +160,28 @@ void ClassLoaderMetaspace::verify() const {
 }
 #endif // ASSERT
 
-// This only exists for JFR and jcmd VM.classloader_stats. We may want to
-//  change this. Capacity as a stat is of questionable use since it may
-//  contain committed and uncommitted areas. For now we do this to maintain
-//  backward compatibility with JFR.
-void ClassLoaderMetaspace::calculate_jfr_stats(size_t* p_used_bytes, size_t* p_capacity_bytes) const {
-  // Implement this using the standard statistics objects.
-  size_t used_c = 0, cap_c = 0, used_nc = 0, cap_nc = 0;
-  if (non_class_space_arena() != nullptr) {
-    non_class_space_arena()->usage_numbers(&used_nc, nullptr, &cap_nc);
-  }
-  if (class_space_arena() != nullptr) {
-    class_space_arena()->usage_numbers(&used_c, nullptr, &cap_c);
-  }
-  if (p_used_bytes != nullptr) {
-    *p_used_bytes = used_c + used_nc;
-  }
-  if (p_capacity_bytes != nullptr) {
-    *p_capacity_bytes = cap_c + cap_nc;
-  }
+// Convenience method to get the most important usage statistics.
+void ClassLoaderMetaspace::usage_numbers(Metaspace::MetadataType mdType, size_t* p_used_words,
+                                         size_t* p_committed_words, size_t* p_capacity_words) const {
+  const MetaspaceArena* arena = (mdType == Metaspace::MetadataType::ClassType) ?
+      class_space_arena() : non_class_space_arena();
+  arena->usage_numbers(p_used_words, p_committed_words, p_capacity_words);
 }
 
+// Convenience method to get total usage numbers
+void ClassLoaderMetaspace::usage_numbers(size_t* p_used_words, size_t* p_committed_words,
+                                         size_t* p_capacity_words) const {
+  size_t used_nc, comm_nc, cap_nc;
+  usage_numbers(Metaspace::MetadataType::NonClassType, &used_nc, &comm_nc, &cap_nc);
+  size_t used_c, comm_c, cap_c;
+  usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
+  if (p_used_words != nullptr) {
+    (*p_used_words) = used_nc + used_c;
+  }
+  if (p_committed_words != nullptr) {
+    (*p_committed_words) = comm_nc + comm_c;
+  }
+  if (p_capacity_words != nullptr) {
+    (*p_capacity_words) = cap_nc + cap_c;
+  }
+}

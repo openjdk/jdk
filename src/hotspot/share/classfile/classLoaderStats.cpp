@@ -85,7 +85,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   ClassLoaderMetaspace* ms = cld->metaspace_or_null();
   if (ms != nullptr) {
     size_t used_words, capacity_words;
-    ms->calculate_jfr_stats(&used_words, &capacity_words);
+    ms->usage_numbers(&used_words, nullptr, &capacity_words);
     size_t used_bytes = used_words * BytesPerWord;
     size_t capacity_bytes = capacity_words * BytesPerWord;
     if(cld->has_class_mirror_holder()) {
@@ -99,7 +99,6 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
     _total_block_sz += used_bytes;
   }
 }
-
 
 // Handles the difference in pointer width on 32 and 64 bit platforms
 #ifdef _LP64
