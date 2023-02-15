@@ -35,13 +35,11 @@ import java.lang.reflect.Array;
 public class ArrayUtils {
 
     private static int calculateNewLength(int currentLength, int maxIndex) {
-        if (currentLength == 0)
-            currentLength++;                    // avoid infinite loop
         if (maxIndex == Integer.MAX_VALUE)
             maxIndex--;                         // avoid negative overflow
         while (currentLength < maxIndex + 1) {
             currentLength = currentLength * 2;
-            if (currentLength < 0) {            // avoid negative overflow
+            if (currentLength <= 0) {           // avoid infinite loop and negative overflow
                 currentLength = maxIndex + 1;
                 break;
             }
