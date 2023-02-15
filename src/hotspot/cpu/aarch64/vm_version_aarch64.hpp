@@ -60,6 +60,9 @@ protected:
 public:
   // Initialization
   static void initialize();
+  static void check_virtualizations();
+
+  static void print_platform_virtualization_info(outputStream*);
 
   // Asserts
   static void assert_is_initialized() {

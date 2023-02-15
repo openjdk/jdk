@@ -481,5 +481,41 @@ void VM_Version::initialize() {
 
   _spin_wait = get_spin_wait_desc();
 
+  check_virtualizations();
+
   UNSUPPORTED_OPTION(CriticalJNINatives);
+}
+
+void VM_Version::check_virtualizations() {
+#if defined(LINUX)
+  const char* info_file = "/sys/devices/virtual/dmi/id/product_name";
+  // check for various strings in the dmi data indicating virtualizations
+  char line[500];
+  FILE* fp = os::fopen(info_file, "r");
+  if (fp == nullptr) {
+    return;
+  }
+  while (fgets(line, sizeof(line), fp) != nullptr) {
+    if (strcasestr(line, "KVM") != 0) {
+      Abstract_VM_Version::_detected_virtualization = KVM;
+      break;
+    }
+    if (strcasestr(line, "VMware") != 0) {
+      Abstract_VM_Version::_detected_virtualization = VMWare;
+      break;
+    }
+  }
+  fclose(fp);
+#endif
+}
+
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+#if defined(LINUX)
+    VirtualizationType vrt = VM_Version::get_detected_virtualization();
+    if (vrt == KVM) {
+      st->print_cr("KVM virtualization detected");
+    } else if (vrt == VMWare) {
+      st->print_cr("VMWare virtualization detected");
+    }
+#endif
 }
