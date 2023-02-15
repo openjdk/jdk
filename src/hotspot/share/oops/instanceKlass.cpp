@@ -983,8 +983,8 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
   if (HAS_PENDING_EXCEPTION || cause.is_null()) {
     // Retry with the simple method
-    cause = java_lang_Throwable::get_cause_simple(exception, THREAD);
     CLEAR_PENDING_EXCEPTION;
+    cause = java_lang_Throwable::get_cause_simple(THREAD, exception);
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
