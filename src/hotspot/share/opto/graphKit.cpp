@@ -747,11 +747,6 @@ void GraphKit::destruct_map_clone(SafePointNode* sfp) {
 
   if (jvms != nullptr) {
     delete jvms;
-    sfp->set_jvms(nullptr);
-  }
-
-  if (mem != nullptr) {
-    sfp->set_memory(nullptr);
   }
 
   remove_for_igvn(sfp);
