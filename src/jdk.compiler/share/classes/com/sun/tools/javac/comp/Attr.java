@@ -393,7 +393,7 @@ public class Attr extends JCTree.Visitor {
 
     public Type attribImportQualifier(JCImport tree, Env<AttrContext> env) {
         // Attribute qualifying package or class.
-        JCFieldAccess s = (JCFieldAccess)tree.qualid;
+        JCFieldAccess s = tree.qualid;
         return attribTree(s.selected, env,
                           new ResultInfo(tree.staticImport ?
                                          KindSelector.TYP : KindSelector.TYP_PCK,
