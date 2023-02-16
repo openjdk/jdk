@@ -116,38 +116,17 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-int G1FullGCCompactionPoint::compare(HeapRegion* const& hr, HeapRegion* const& e) {
-  return compare(hr->hrm_index(), e->hrm_index());
-}
-
-void G1FullGCCompactionPoint::sort_regions(){
-  regions()->sort(compare_ptr);
-}
-
-int G1FullGCCompactionPoint::find_sorted(HeapRegion* hr) {
-  bool found = false;
-  int pos = _compaction_regions->find_sorted<HeapRegion*, compare>(hr, found);
-  if (found) {
-    return pos;
-  }
-  return -1;
-}
-
-void G1FullGCCompactionPoint::move_regions_with_higher_hrm_index(G1FullGCCompactionPoint* cp, uint bottom) {
+void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
   HeapRegion* cur = current_region();
   assert(cur->hrm_index() >= bottom, "Sanity!");
 
-  HeapRegion* start = nullptr;
+  int start_index = 0;
   for (HeapRegion* r : *_compaction_regions) {
-    if (r->hrm_index() >= bottom) {
-      cp->add(r);
-      if (start == nullptr) {
-        start = r;
-      }
+    if (r->hrm_index() < bottom) {
+      start_index++;
     }
   }
 
-  int start_index = find_sorted(start);
-  assert(start_index >= 0, "Should have atleast one region");
+  assert(start_index >= 0, "Should have at least one region");
   _compaction_regions->trunc_to(start_index);
 }
