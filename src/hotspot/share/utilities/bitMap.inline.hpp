@@ -388,10 +388,6 @@ inline bool BitMap::iterate_reverse(Function function, idx_t beg, idx_t end) {
     if (!function(index)) {
       return false;
     }
-
-    if (index == beg) {
-      return true;
-    }
   }
 }
 
