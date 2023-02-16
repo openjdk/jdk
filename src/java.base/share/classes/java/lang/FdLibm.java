@@ -60,7 +60,9 @@ package java.lang;
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
-    private static final double TWO54   =  0x1.0p54; // 1.80143985094819840000e+16
+    private static final double TWO54    = 0x1.0p54; // 1.80143985094819840000e+16
+    private static final double HUGE     = 1.0e+300;
+
 
     private FdLibm() {
         throw new UnsupportedOperationException("No FdLibm instances for you.");
@@ -100,6 +102,296 @@ class FdLibm {
         long transX = Double.doubleToRawLongBits(x);
         return Double.longBitsToDouble((transX & 0x0000_0000_FFFF_FFFFL) |
                                        ( ((long)high)) << 32 );
+    }
+
+    /** Returns the arcsine of x.
+     *
+     * Method :
+     *      Since  asin(x) = x + x^3/6 + x^5*3/40 + x^7*15/336 + ...
+     *      we approximate asin(x) on [0,0.5] by
+     *              asin(x) = x + x*x^2*R(x^2)
+     *      where
+     *              R(x^2) is a rational approximation of (asin(x)-x)/x^3
+     *      and its remez error is bounded by
+     *              |(asin(x)-x)/x^3 - R(x^2)| < 2^(-58.75)
+     *
+     *      For x in [0.5,1]
+     *              asin(x) = pi/2-2*asin(sqrt((1-x)/2))
+     *      Let y = (1-x), z = y/2, s := sqrt(z), and pio2_hi+pio2_lo=pi/2;
+     *      then for x>0.98
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio2_hi - (2*(s+s*z*R(z)) - pio2_lo)
+     *      For x<=0.98, let pio4_hi = pio2_hi/2, then
+     *              f = hi part of s;
+     *              c = sqrt(z) - f = (z-f*f)/(s+f)         ...f+c=sqrt(z)
+     *      and
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio4_hi+(pio4-2s)-(2s*z*R(z)-pio2_lo)
+     *                      = pio4_hi+(pio4-2f)-(2s*z*R(z)-(pio2_lo+2c))
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     */
+    static class Asin {
+        private Asin() {throw new UnsupportedOperationException();}
+
+        private static final double
+            pio2_hi = 0x1.921fb54442d18p0,   //  1.57079632679489655800e+00
+            pio2_lo = 0x1.1a62633145c07p-54, //  6.12323399573676603587e-17
+            pio4_hi = 0x1.921fb54442d18p-1,  //  7.85398163397448278999e-01
+        // coefficient for R(x^2)
+            pS0 =  0x1.5555555555555p-3,     //  1.66666666666666657415e-01
+            pS1 = -0x1.4d61203eb6f7dp-2,     // -3.25565818622400915405e-01
+            pS2 =  0x1.9c1550e884455p-3,     //  2.01212532134862925881e-01
+            pS3 = -0x1.48228b5688f3bp-5,     // -4.00555345006794114027e-02
+            pS4 =  0x1.9efe07501b288p-11,    //  7.91534994289814532176e-04
+            pS5 =  0x1.23de10dfdf709p-15,    //  3.47933107596021167570e-05
+            qS1 = -0x1.33a271c8a2d4bp1,      // -2.40339491173441421878e+00
+            qS2 =  0x1.02ae59c598ac8p1,      //  2.02094576023350569471e+00
+            qS3 = -0x1.6066c1b8d0159p-1,     // -6.88283971605453293030e-01
+            qS4 =  0x1.3b8c5b12e9282p-4;     //  7.70381505559019352791e-02
+
+        static double compute(double x) {
+            double t = 0, w, p, q, c, r, s;
+            int hx, ix;
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x3ff0_0000) {           // |x| >= 1
+                if(((ix - 0x3ff0_0000) | __LO(x)) == 0) {
+                    // asin(1) = +-pi/2 with inexact
+                    return x*pio2_hi + x*pio2_lo;
+                }
+                return (x - x)/(x - x);         // asin(|x| > 1) is NaN
+            } else if (ix < 0x3fe0_0000) {     // |x| < 0.5
+                if (ix < 0x3e40_0000) {        // if |x| < 2**-27
+                    if (HUGE + x > 1.0) {// return x with inexact if x != 0
+                        return x;
+                    }
+                } else {
+                    t = x*x;
+                }
+                p = t*(pS0 + t*(pS1 + t*(pS2 + t*(pS3 + t*(pS4 + t*pS5)))));
+                q = 1.0 + t*(qS1 + t*(qS2 + t*(qS3 + t*qS4)));
+                w = p/q;
+                return x + x*w;
+            }
+            // 1 > |x| >= 0.5
+            w = 1.0 - Math.abs(x);
+            t = w*0.5;
+            p = t*(pS0 + t*(pS1 + t*(pS2 + t*(pS3 + t*(pS4 + t*pS5)))));
+            q = 1.0 + t*(qS1 + t*(qS2 + t*(qS3 + t*qS4)));
+            s = Math.sqrt(t);
+            if (ix >= 0x3FEF_3333) {    // if |x| > 0.975
+                w = p/q;
+                t = pio2_hi - (2.0*(s + s*w) - pio2_lo);
+            } else {
+                w  = s;
+                w  = __LO(w, 0);
+                c  = (t - w*w)/(s + w);
+                r  = p/q;
+                p  = 2.0*s*r - (pio2_lo - 2.0*c);
+                q  = pio4_hi - 2.0*w;
+                t  = pio4_hi - (p - q);
+            }
+            return (hx > 0) ? t : -t;
+        }
+    }
+
+    /** Returns the arccosine of x.
+     * Method :
+     *      acos(x)  = pi/2 - asin(x)
+     *      acos(-x) = pi/2 + asin(x)
+     * For |x| <= 0.5
+     *      acos(x) = pi/2 - (x + x*x^2*R(x^2))     (see asin.c)
+     * For x > 0.5
+     *      acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
+     *              = 2asin(sqrt((1-x)/2))
+     *              = 2s + 2s*z*R(z)        ...z=(1-x)/2, s=sqrt(z)
+     *              = 2f + (2c + 2s*z*R(z))
+     *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
+     *     for f so that f+c ~ sqrt(z).
+     * For x <- 0.5
+     *      acos(x) = pi - 2asin(sqrt((1-|x|)/2))
+     *              = pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     * Function needed: sqrt
+     */
+    static class Acos {
+        private Acos() {throw new UnsupportedOperationException();}
+
+        private static final double
+            pio2_hi =  0x1.921fb54442d18p0,   //  1.57079632679489655800e+00
+            pio2_lo =  0x1.1a62633145c07p-54, //  6.12323399573676603587e-17
+            pS0     =  0x1.5555555555555p-3,  //  1.66666666666666657415e-01
+            pS1     = -0x1.4d61203eb6f7dp-2,  // -3.25565818622400915405e-01
+            pS2     =  0x1.9c1550e884455p-3,  //  2.01212532134862925881e-01
+            pS3     = -0x1.48228b5688f3bp-5,  // -4.00555345006794114027e-02
+            pS4     =  0x1.9efe07501b288p-11, //  7.91534994289814532176e-04
+            pS5     =  0x1.23de10dfdf709p-15, //  3.47933107596021167570e-05
+            qS1     = -0x1.33a271c8a2d4bp1,   // -2.40339491173441421878e+00
+            qS2     =  0x1.02ae59c598ac8p1,   //  2.02094576023350569471e+00
+            qS3     = -0x1.6066c1b8d0159p-1,  // -6.88283971605453293030e-01
+            qS4     =  0x1.3b8c5b12e9282p-4;  //  7.70381505559019352791e-02
+
+        static double compute(double x) {
+            double z, p, q, r, w, s, c, df;
+            int hx, ix;
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x3ff0_0000) {    // |x| >= 1
+                if (((ix - 0x3ff0_0000) | __LO(x)) == 0) {  // |x| == 1
+                    if (hx > 0) {// acos(1) = 0
+                        return 0.0;
+                    }else {       // acos(-1)= pi
+                        return Math.PI + 2.0*pio2_lo;
+                    }
+                }
+                return (x-x)/(x-x);         // acos(|x| > 1) is NaN
+            }
+            if (ix < 0x3fe0_0000) {     // |x| < 0.5
+                if (ix <= 0x3c60_0000) {  // if |x| < 2**-57
+                    return pio2_hi + pio2_lo;
+                }
+                z = x*x;
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                r = p/q;
+                return pio2_hi - (x - (pio2_lo - x*r));
+            } else if (hx < 0) {             // x < -0.5
+                z = (1.0 + x)*0.5;
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                s = Math.sqrt(z);
+                r = p/q;
+                w = r*s - pio2_lo;
+                return Math.PI - 2.0*(s+w);
+            } else {                        // x > 0.5
+                z = (1.0 - x)*0.5;
+                s = Math.sqrt(z);
+                df = s;
+                df = __LO(df, 0);
+                c  = (z - df*df)/(s + df);
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                r = p/q;
+                w = r*s + c;
+                return 2.0*(df + w);
+            }
+        }
+    }
+
+    /* Returns the arctangent of x.
+     * Method
+     *   1. Reduce x to positive by atan(x) = -atan(-x).
+     *   2. According to the integer k=4t+0.25 chopped, t=x, the argument
+     *      is further reduced to one of the following intervals and the
+     *      arctangent of t is evaluated by the corresponding formula:
+     *
+     *      [0,7/16]      atan(x) = t-t^3*(a1+t^2*(a2+...(a10+t^2*a11)...)
+     *      [7/16,11/16]  atan(x) = atan(1/2) + atan( (t-0.5)/(1+t/2) )
+     *      [11/16.19/16] atan(x) = atan( 1 ) + atan( (t-1)/(1+t) )
+     *      [19/16,39/16] atan(x) = atan(3/2) + atan( (t-1.5)/(1+1.5t) )
+     *      [39/16,INF]   atan(x) = atan(INF) + atan( -1/t )
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan {
+        private Atan() {throw new UnsupportedOperationException();}
+
+        private static final double atanhi[] = {
+            0x1.dac670561bb4fp-2,  // atan(0.5)hi 4.63647609000806093515e-01
+            0x1.921fb54442d18p-1,  // atan(1.0)hi 7.85398163397448278999e-01
+            0x1.f730bd281f69bp-1,  // atan(1.5)hi 9.82793723247329054082e-01
+            0x1.921fb54442d18p0,   // atan(inf)hi 1.57079632679489655800e+00
+        };
+
+        private static final double atanlo[] = {
+            0x1.a2b7f222f65e2p-56, // atan(0.5)lo 2.26987774529616870924e-17
+            0x1.1a62633145c07p-55, // atan(1.0)lo 3.06161699786838301793e-17
+            0x1.007887af0cbbdp-56, // atan(1.5)lo 1.39033110312309984516e-17
+            0x1.1a62633145c07p-54, // atan(inf)lo 6.12323399573676603587e-17
+        };
+
+        private static final double aT[] = {
+             0x1.555555555550dp-2, //  3.33333333333329318027e-01
+            -0x1.999999998ebc4p-3, // -1.99999999998764832476e-01
+             0x1.24924920083ffp-3, //  1.42857142725034663711e-01
+            -0x1.c71c6fe231671p-4, // -1.11111104054623557880e-01
+             0x1.745cdc54c206ep-4, //  9.09088713343650656196e-02
+            -0x1.3b0f2af749a6dp-4, // -7.69187620504482999495e-02
+             0x1.10d66a0d03d51p-4, //  6.66107313738753120669e-02
+            -0x1.dde2d52defd9ap-5, // -5.83357013379057348645e-02
+             0x1.97b4b24760debp-5, //  4.97687799461593236017e-02
+            -0x1.2b4442c6a6c2fp-5, // -3.65315727442169155270e-02
+             0x1.0ad3ae322da11p-6, //  1.62858201153657823623e-02
+        };
+
+        static double compute(double x) {
+            double w, s1, s2, z;
+            int ix, hx, id;
+
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x4410_0000) {    // if |x| >= 2^66
+                if (ix > 0x7ff0_0000 ||
+                    (ix == 0x7ff0_0000 && (__LO(x) != 0))) {
+                    return x+x;             // NaN
+                }
+                if (hx > 0) {
+                    return atanhi[3] + atanlo[3];
+                } else {
+                    return -atanhi[3] - atanlo[3];
+                }
+            } if (ix < 0x3fdc_0000) {        // |x| < 0.4375
+                if (ix < 0x3e20_0000) {      // |x| < 2^-29
+                    if (HUGE + x > 1.0) { // raise inexact
+                        return x;
+                    }
+                }
+                id = -1;
+            } else {
+                x = Math.abs(x);
+                if (ix < 0x3ff3_0000) {         // |x| < 1.1875
+                    if (ix < 0x3fe60000) {      // 7/16 <= |x| < 11/16
+                        id = 0;
+                        x = (2.0*x - 1.0)/(2.0 + x);
+                    } else {                    // 11/16 <= |x| < 19/16
+                        id = 1;
+                        x  = (x - 1.0)/(x + 1.0);
+                    }
+                } else {
+                    if (ix < 0x4003_8000) {      // |x| < 2.4375
+                        id = 2;
+                        x  = (x - 1.5)/(1.0 + 1.5*x);
+                    } else {                    // 2.4375 <= |x| < 2^66
+                        id = 3;
+                        x  = -1.0/x;
+                    }
+                }
+            }
+            // end of argument reduction
+            z = x*x;
+            w = z*z;
+            // break sum from i=0 to 10 aT[i]z**(i+1) into odd and even poly
+            s1 = z*(aT[0] + w*(aT[2] + w*(aT[4] + w*(aT[6] + w*(aT[8] + w*aT[10])))));
+            s2 = w*(aT[1] + w*(aT[3] + w*(aT[5] + w*(aT[7] + w*aT[9]))));
+            if (id < 0) {
+                return x - x*(s1 + s2);
+            } else {
+                z = atanhi[id] - ((x*(s1+s2) - atanlo[id]) - x);
+                return (hx < 0) ? -z: z;
+            }
+        }
     }
 
     /**
@@ -743,6 +1035,146 @@ class FdLibm {
             } else {
                 y = __HI(y, __HI(y) + ((k + 1000) << 20)); /* add k to y's exponent */
                 return y * twom1000;
+            }
+        }
+    }
+
+    /**
+     * Return the (natural) logarithm of x
+     *
+     * Method :
+     *   1. Argument Reduction: find k and f such that
+     *                      x = 2^k * (1+f),
+     *         where  sqrt(2)/2 < 1+f < sqrt(2) .
+     *
+     *   2. Approximation of log(1+f).
+     *      Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+     *               = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+     *               = 2s + s*R
+     *      We use a special Reme algorithm on [0,0.1716] to generate
+     *      a polynomial of degree 14 to approximate R The maximum error
+     *      of this polynomial approximation is bounded by 2**-58.45. In
+     *      other words,
+     *                      2      4      6      8      10      12      14
+     *          R(z) ~ Lg1*s +Lg2*s +Lg3*s +Lg4*s +Lg5*s  +Lg6*s  +Lg7*s
+     *      (the values of Lg1 to Lg7 are listed in the program)
+     *      and
+     *          |      2          14          |     -58.45
+     *          | Lg1*s +...+Lg7*s    -  R(z) | <= 2
+     *          |                             |
+     *      Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+     *      In order to guarantee error in log below 1ulp, we compute log
+     *      by
+     *              log(1+f) = f - s*(f - R)        (if f is not too large)
+     *              log(1+f) = f - (hfsq - s*(hfsq+R)).     (better accuracy)
+     *
+     *      3. Finally,  log(x) = k*ln2 + log(1+f).
+     *                          = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+     *         Here ln2 is split into two floating point number:
+     *                      ln2_hi + ln2_lo,
+     *         where n*ln2_hi is always exact for |n| < 2000.
+     *
+     * Special cases:
+     *      log(x) is NaN with signal if x < 0 (including -INF) ;
+     *      log(+INF) is +INF; log(0) is -INF with signal;
+     *      log(NaN) is that NaN with no signal.
+     *
+     * Accuracy:
+     *      according to an error analysis, the error is always less than
+     *      1 ulp (unit in the last place).
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static final class Log {
+        private Log() {throw new UnsupportedOperationException();}
+
+        private static final double
+            ln2_hi = 0x1.62e42feep-1,       // 6.93147180369123816490e-01
+            ln2_lo = 0x1.a39ef35793c76p-33, // 1.90821492927058770002e-10
+
+            Lg1    = 0x1.5555555555593p-1,  // 6.666666666666735130e-01
+            Lg2    = 0x1.999999997fa04p-2,  // 3.999999999940941908e-01
+            Lg3    = 0x1.2492494229359p-2,  // 2.857142874366239149e-01
+            Lg4    = 0x1.c71c51d8e78afp-3,  // 2.222219843214978396e-01
+            Lg5    = 0x1.7466496cb03dep-3,  // 1.818357216161805012e-01
+            Lg6    = 0x1.39a09d078c69fp-3,  // 1.531383769920937332e-01
+            Lg7    = 0x1.2f112df3e5244p-3;  // 1.479819860511658591e-01
+
+        private static final double zero = 0.0;
+
+        static double compute(double x) {
+            double hfsq, f, s, z, R, w, t1, t2, dk;
+            int k, hx, i, j;
+            /*unsigned*/ int lx;
+
+            hx = __HI(x);           // high word of x
+            lx = __LO(x);           // low  word of x
+
+            k=0;
+            if (hx < 0x0010_0000) {                  // x < 2**-1022
+                if (((hx & 0x7fff_ffff) | lx) == 0) { // log(+-0) = -inf
+                    return -TWO54/zero;
+                }
+                if (hx < 0) {                        // log(-#) = NaN
+                    return (x - x)/zero;
+                }
+                k -= 54;
+                x *= TWO54;    // subnormal number, scale up x
+                hx = __HI(x);  // high word of x
+            }
+            if (hx >= 0x7ff0_0000) {
+                return x + x;
+            }
+            k += (hx >> 20) - 1023;
+            hx &= 0x000f_ffff;
+            i = (hx + 0x9_5f64) & 0x10_0000;
+            x =__HI(x, hx | (i ^ 0x3ff0_0000));  // normalize x or x/2
+            k += (i >> 20);
+            f = x - 1.0;
+            if ((0x000f_ffff & (2 + hx)) < 3) {// |f| < 2**-20
+                if (f == zero) {
+                    if (k == 0) {
+                        return zero;
+                    } else {
+                        dk = (double)k;
+                        return dk*ln2_hi + dk*ln2_lo;
+                    }
+                }
+                R = f*f*(0.5 - 0.33333333333333333*f);
+                if (k == 0) {
+                    return f - R;
+                } else {
+                    dk = (double)k;
+                    return dk*ln2_hi - ((R - dk*ln2_lo) - f);
+                }
+            }
+            s = f/(2.0 + f);
+            dk = (double)k;
+            z = s*s;
+            i = hx - 0x6_147a;
+            w = z*z;
+            j = 0x6b851 - hx;
+            t1= w*(Lg2 + w*(Lg4 + w*Lg6));
+            t2= z*(Lg1 + w*(Lg3 + w*(Lg5 + w*Lg7)));
+            i |= j;
+            R = t2 + t1;
+            if (i > 0) {
+                hfsq = 0.5*f*f;
+                if (k == 0) {
+                    return f-(hfsq - s*(hfsq + R));
+                } else {
+                    return dk*ln2_hi - ((hfsq - (s*(hfsq + R) + dk*ln2_lo)) - f);
+                }
+            } else {
+                if (k == 0) {
+                    return f - s*(f - R);
+                } else {
+                    return dk*ln2_hi - ((s*(f - R) - dk*ln2_lo) - f);
+                }
             }
         }
     }

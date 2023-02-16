@@ -1980,34 +1980,38 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   Label L_pinned;
 
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpwi(CCR0, R3_RET, 0);
   __ bne(CCR0, L_pinned);
+
+  // yield succeeded
 
   // Pop frames of continuation including this stub's frame
   __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
   // The frame pushed by gen_continuation_enter is on top now again
   continuation_enter_cleanup(masm);
 
-  __ bind(L_pinned); // pinned -- return to caller
+  // Pop frame and return
+  Label L_return;
+  __ bind(L_return);
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ blr();
+
+  // yield failed - continuation is pinned
+
+  __ bind(L_pinned);
 
   // handle pending exception thrown by freeze
-  Label ok;
   __ ld(tmp, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
   __ cmpdi(CCR0, tmp, 0);
-  __ beq(CCR0, ok);
+  __ beq(CCR0, L_return); // return if no exception is pending
   __ pop_frame();
   __ ld(R0, _abi0(lr), R1_SP); // Return pc
   __ mtlr(R0);
   __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
   __ mtctr(tmp);
   __ bctr();
-  __ bind(ok);
-
-  // Pop frame and return
-  __ pop_frame();
-  __ ld(R0, _abi0(lr), R1_SP); // Return pc
-  __ mtlr(R0);
-  __ blr();
 }
 
 // ---------------------------------------------------------------------------

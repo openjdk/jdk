@@ -58,7 +58,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeRS,
     OptMergeRS,
     MergeLB,
-    MergeHCC,
     ScanHR,
     OptScanHR,
     CodeRoots,
@@ -82,7 +81,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
-    ResetHotCardCache,
 #if COMPILER2_OR_JVMCI
     UpdateDerivedPointers,
 #endif
@@ -127,11 +125,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRFoundRoots,
     ScanHRScannedOptRefs,
     ScanHRUsedMemory
-  };
-
-  enum GCMergeHCCWorkItems {
-    MergeHCCDirtyCards,
-    MergeHCCSkippedCards
   };
 
   enum GCMergeLBWorkItems {
