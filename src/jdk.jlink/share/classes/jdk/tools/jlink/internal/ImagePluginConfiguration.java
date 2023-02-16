@@ -54,7 +54,6 @@ public final class ImagePluginConfiguration {
         CATEGORIES_ORDER.add(Category.MODULEINFO_TRANSFORMER);
         CATEGORIES_ORDER.add(Category.SORTER);
         CATEGORIES_ORDER.add(Category.METAINFO_ADDER);
-        CATEGORIES_ORDER.add(Category.IMAGE_TRANSFORMER);
         CATEGORIES_ORDER.add(Category.COMPRESSOR);
         CATEGORIES_ORDER.add(Category.VERIFIER);
         CATEGORIES_ORDER.add(Category.PROCESSOR);
