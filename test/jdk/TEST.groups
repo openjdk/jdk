@@ -619,7 +619,7 @@ jdk_core_manual_no_input = \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
-    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
+    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java
 
 jdk_core_manual_no_input_security = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
