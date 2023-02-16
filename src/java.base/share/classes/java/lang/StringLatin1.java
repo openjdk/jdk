@@ -390,9 +390,10 @@ final class StringLatin1 {
         while (toffset < last) {
             byte b1 = value[toffset++];
             byte b2 = other[ooffset++];
-            if (b1 != b2 && !latin1EqualsIgnoreCase(b1, b2)) {
-                return false;
+            if (b1 == b2 || latin1EqualsIgnoreCase(b1, b2)) {
+                continue;
             }
+            return false;
         }
         return true;
     }
