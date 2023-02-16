@@ -64,11 +64,6 @@
   // These static, partially const, variables are for the AES intrinsics.
   // They are declared/initialized here to make them available across function bodies.
 
-  #if defined(JIT_TIMER)
-      static const int JIT_TIMER_space      = 8;                   // extra space for JIT_TIMER data
-  #else
-      static const int JIT_TIMER_space      = 0;
-  #endif
       static const int AES_parmBlk_align    = 32;                  // octoword alignment.
       static const int AES_stackSpace_incr  = AES_parmBlk_align;   // add'l stack space is allocated in such increments.
                                                                    // Must be multiple of AES_parmBlk_align.
@@ -1878,8 +1873,6 @@ class StubGenerator: public StubCodeGenerator {
   //
   //   |        |
   //   +--------+ <-- SP before expansion
-  //   |        | JIT_TIMER timestamp buffer, only if JIT_TIMER is defined.
-  //   +--------+
   //   |        |
   //   :        :  alignment loss (part 2), 0..(AES_parmBlk_align-1) bytes.
   //   |        |
@@ -2100,8 +2093,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // This len must be known at JIT compile time. Only then are we able to recalc the SP before resize.
     // We buy this knowledge by wasting some (up to AES_parmBlk_align) bytes of stack space.
-    const int resize_len = JIT_TIMER_space                 // timestamp storage for JIT_TIMER
-                         + AES_parmBlk_align               // room for alignment of parmBlk
+    const int resize_len = AES_parmBlk_align               // room for alignment of parmBlk
                          + AES_parmBlk_align               // extra room for alignment
                          + AES_dataBlk_space               // one src and one dst data blk
                          + AES_parmBlk_addspace            // spill space for local data
@@ -2169,7 +2161,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       Label skip2last, skip2done;
       // Z_RET (aka Z_R2) can be used as scratch as well. It will be set from msglen before return.
-      __ z_lgr(Z_RET, Z_SP);                                 // sace extended SP
+      __ z_lgr(Z_RET, Z_SP);                                 // save extended SP
       __ z_lg(Z_SP,    unextSP_offset, parmBlk);             // trim stack back to unextended size
       __ z_sgrk(Z_R1, Z_SP, Z_RET);
 
@@ -2349,7 +2341,7 @@ class StubGenerator: public StubCodeGenerator {
       Register cvIndex   = Z_R13;                // # index of first unused byte of encrypted counter value
       Label    preLoop_end;
 
-      // preLoop is nesessary only if there is a partially used encrypted counter (encCtr).
+      // preLoop is necessary only if there is a partially used encrypted counter (encCtr).
       // Partially used means cvIndex is in [1, dataBlk_len-1].
       // cvIndex == 0:           encCtr is set up but not used at all. Should not occur.
       // cvIndex == dataBlk_len: encCtr is exhausted, all bytes used.
