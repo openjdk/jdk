@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,28 @@
  * questions.
  *
  */
+package com.sun.hotspot.igv.coordinator.actions;
 
-#ifndef SHARE_SERVICES_MEMJFRREPORTER_HPP
-#define SHARE_SERVICES_MEMJFRREPORTER_HPP
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.services.GraphViewer;
+import org.openide.nodes.Node;
 
-#include "memory/allocation.hpp"
-#include "services/nmtUsage.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
+public class NewGraphTabCookie implements Node.Cookie {
 
-// MemJFRReporter is only used by threads sending periodic JFR
-// events. These threads are synchronized at a higher level,
-// so no more synchronization is needed.
-class MemJFRReporter : public AllStatic {
-private:
-  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
- public:
-  static void send_total_event();
-  static void send_type_events();
-};
+    private final GraphViewer viewer;
+    private final InputGraph graph;
 
-#endif //SHARE_SERVICES_MEMJFRREPORTER_HPP
+    public NewGraphTabCookie(GraphViewer viewer, InputGraph graph) {
+        this.viewer = viewer;
+        this.graph = graph;
+    }
+
+    public boolean isActive() {
+        return EditorTopComponent.findEditorForGraph(graph) != null;
+    }
+
+    public void openNewTab() {
+        viewer.view(graph, true);
+    }
+}
