@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,12 @@ Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
-PreservedMark*          MarkSweep::_preserved_marks = NULL;
-ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
-STWGCTimer*             MarkSweep::_gc_timer        = NULL;
-SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
+PreservedMark*          MarkSweep::_preserved_marks = nullptr;
+ReferenceProcessor*     MarkSweep::_ref_processor   = nullptr;
+STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
+SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
 
-StringDedup::Requests*  MarkSweep::_string_dedup_requests = NULL;
+StringDedup::Requests*  MarkSweep::_string_dedup_requests = nullptr;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
@@ -76,7 +76,7 @@ void MarkSweep::push_objarray(oop obj, size_t index) {
 }
 
 void MarkSweep::follow_array(objArrayOop array) {
-  MarkSweep::follow_klass(array->klass());
+  mark_and_push_closure.do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     MarkSweep::push_objarray(array, 0);
@@ -201,11 +201,6 @@ template <class T> void MarkSweep::mark_and_push(T* p) {
       _marking_stack.push(obj);
     }
   }
-}
-
-void MarkSweep::follow_klass(Klass* klass) {
-  oop op = klass->class_loader_data()->holder_no_keepalive();
-  MarkSweep::mark_and_push(&op);
 }
 
 template <typename T>

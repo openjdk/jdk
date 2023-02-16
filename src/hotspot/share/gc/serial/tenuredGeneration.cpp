@@ -282,8 +282,7 @@ void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // iterations; objects allocated as a result of applying the closure are
   // not included.
 
-  HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
+  _rs->younger_refs_in_space_iterate(space(), blk);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -323,7 +322,6 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
-  _the_space->reset_saved_mark();
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -486,7 +484,7 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = (TenuredSpace*)_the_space;
+  TenuredSpace* space = _the_space;
   space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
@@ -498,10 +496,6 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 
 void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
-}
-
-void TenuredGeneration::reset_saved_marks() {
-  _the_space->reset_saved_mark();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {

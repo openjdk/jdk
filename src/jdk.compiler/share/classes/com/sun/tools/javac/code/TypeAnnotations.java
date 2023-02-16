@@ -50,7 +50,6 @@ import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntryKind;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type.ModuleType;
-import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -448,7 +447,7 @@ public class TypeAnnotations {
             }
 
             if (type.hasTag(TypeTag.ARRAY))
-                return rewriteArrayType((ArrayType)type, annotations, pos);
+                return rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
 
             if (type.hasTag(TypeTag.TYPEVAR)) {
                 return type.annotatedType(onlyTypeAnnotations);
@@ -557,54 +556,22 @@ public class TypeAnnotations {
          *
          * SIDE EFFECT: Update position for the annotations to be {@code pos}.
          */
-        private Type rewriteArrayType(ArrayType type, List<TypeCompound> annotations, TypeAnnotationPosition pos) {
-            ArrayType tomodify = new ArrayType(type);
-            if (type.isVarargs()) {
-                tomodify = tomodify.makeVarargs();
-            }
-            ArrayType res = tomodify;
-
-            List<TypePathEntry> loc = List.nil();
-
-            // peel one and update loc
-            Type tmpType = type.elemtype;
-            loc = loc.prepend(TypePathEntry.ARRAY);
-
-            while (tmpType.hasTag(TypeTag.ARRAY)) {
-                ArrayType arr = (ArrayType)tmpType;
-
-                // Update last type with new element type
-                ArrayType tmp = new ArrayType(arr);
-                tomodify.elemtype = tmp;
-                tomodify = tmp;
-
-                tmpType = arr.elemtype;
-                loc = loc.prepend(TypePathEntry.ARRAY);
-            }
-
-            // Fix innermost element type
-            Type elemType;
-            if (tmpType.getMetadata() != null) {
-                List<TypeCompound> tcs;
-                if (tmpType.getAnnotationMirrors().isEmpty()) {
-                    tcs = annotations;
-                } else {
-                    // Special case, lets prepend
-                    tcs =  annotations.appendList(tmpType.getAnnotationMirrors());
-                }
-                elemType = tmpType.cloneWithMetadata(tmpType
-                        .getMetadata()
-                        .without(Kind.ANNOTATIONS)
-                        .combine(new TypeMetadata.Annotations(tcs)));
-            } else {
-                elemType = tmpType.cloneWithMetadata(new TypeMetadata(new TypeMetadata.Annotations(annotations)));
-            }
-            tomodify.elemtype = elemType;
+        private Type rewriteArrayType(JCTree typetree, ArrayType type, List<TypeCompound> annotations,
+                                      List<Attribute.TypeCompound> onlyTypeAnnotations, TypeAnnotationPosition pos) {
+            ArrayType res = new ArrayType(type);
 
             // Update positions
-            pos.location = loc;
+            pos.location = pos.location.append(TypePathEntry.ARRAY);
 
+            res.elemtype = typeWithAnnotations(arrayElemTypeTree(typetree), type.elemtype, annotations, onlyTypeAnnotations, pos);
             return res;
+        }
+
+        private JCTree arrayElemTypeTree(JCTree typetree) {
+            if (typetree.getKind() == JCTree.Kind.ANNOTATED_TYPE) {
+                typetree = ((JCAnnotatedType) typetree).underlyingType;
+            }
+            return ((JCArrayTypeTree) typetree).elemtype;
         }
 
         /** Return a copy of the first type that only differs by
@@ -1364,8 +1331,7 @@ public class TypeAnnotations {
                     newattrs.append(new Attribute.TypeCompound(old.type, old.values, pos));
                 }
             }
-
-            sym.owner.appendUniqueTypeAttributes(newattrs.toList());
+            appendTypeAnnotationsToOwner(sym, newattrs.toList());
         }
 
         @Override

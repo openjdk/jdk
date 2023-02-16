@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,6 +349,10 @@ class methodHandle;
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
    do_signature(equalsB_signature,                               "([B[B)Z")                                             \
+                                                                                                                        \
+  do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
+   do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
+   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \
@@ -1207,6 +1211,16 @@ class methodHandle;
                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
     do_name(index_vector_op_name, "indexVector")                                                                                               \
                                                                                                                                                \
+  do_intrinsic(_IndexPartiallyInUpperRange, jdk_internal_vm_vector_VectorSupport, index_partially_in_upper_range_name, index_partially_in_upper_range_sig, F_S)\
+    do_signature(index_partially_in_upper_range_sig, "(Ljava/lang/Class;"                                                                                      \
+                                                     "Ljava/lang/Class;"                                                                                       \
+                                                     "I"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$IndexPartiallyInUpperRangeOperation;)"                             \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$VectorMask;")                                                      \
+    do_name(index_partially_in_upper_range_name, "indexPartiallyInUpperRange")                                                                                 \
+                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1315,7 +1329,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _IndexVector,
+  LAST_COMPILER_INLINE = _IndexPartiallyInUpperRange,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,

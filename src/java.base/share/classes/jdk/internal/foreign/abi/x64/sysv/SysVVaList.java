@@ -138,7 +138,7 @@ public non-sealed class SysVVaList implements VaList {
     }
 
     private static MemorySegment emptyListAddress() {
-        MemorySegment base = MemorySegment.allocateNative(LAYOUT, SegmentScope.auto());
+        MemorySegment base = MemorySegment.allocateNative(LAYOUT, SegmentScope.global());
         VH_gp_offset.set(base, MAX_GP_OFFSET);
         VH_fp_offset.set(base, MAX_FP_OFFSET);
         VH_overflow_arg_area.set(base, MemorySegment.NULL);

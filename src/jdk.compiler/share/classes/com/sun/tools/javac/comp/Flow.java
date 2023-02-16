@@ -2027,13 +2027,14 @@ public class Flow {
         void letInit(DiagnosticPosition pos, VarSymbol sym) {
             if (sym.adr >= firstadr && trackable(sym)) {
                 if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
-                    if (inits.isMember(sym.adr) || !uninits.isMember(sym.adr)) {
-                        //assignment targeting an effectively final variable makes the
-                        //variable lose its status of effectively final if the variable
-                        //is definitely assigned or _not_ definitively unassigned
+                    if (!uninits.isMember(sym.adr)) {
+                        //assignment targeting an effectively final variable
+                        //makes the variable lose its status of effectively final
+                        //if the variable is _not_ definitively unassigned
                         sym.flags_field &= ~EFFECTIVELY_FINAL;
+                    } else {
+                        uninit(sym);
                     }
-                    uninit(sym);
                 }
                 else if ((sym.flags() & FINAL) != 0) {
                     if ((sym.flags() & PARAMETER) != 0) {

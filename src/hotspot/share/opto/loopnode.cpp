@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ bool Node::is_cloop_ind_var() const {
 // Dump special per-node info
 #ifndef PRODUCT
 void LoopNode::dump_spec(outputStream *st) const {
+  RegionNode::dump_spec(st);
   if (is_inner_loop()) st->print( "inner " );
   if (is_partial_peel_loop()) st->print( "partial_peel " );
   if (partial_peel_has_failed()) st->print( "partial_peel_failed " );
@@ -3137,8 +3138,10 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
   uint i;
 
   // Make a new RegionNode to be the landing pad.
-  Node *landing_pad = new RegionNode( fall_in_cnt+1 );
+  RegionNode* landing_pad = new RegionNode(fall_in_cnt + 1);
   phase->set_loop(landing_pad,_parent);
+  // If _head was irreducible loop entry, landing_pad may now be too
+  landing_pad->set_loop_status(_head->as_Region()->loop_status());
   // Gather all the fall-in control paths into the landing pad
   uint icnt = fall_in_cnt;
   uint oreq = _head->req();
@@ -3942,7 +3945,7 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
-void IdealLoopTree::dump_head() const {
+void IdealLoopTree::dump_head() {
   tty->sp(2 * _nest);
   tty->print("Loop: N%d/N%d ", _head->_idx, _tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
@@ -3990,7 +3993,7 @@ void IdealLoopTree::dump_head() const {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
-    if (cl->range_checks_present()) tty->print(" rc ");
+    if (range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
@@ -4013,7 +4016,7 @@ void IdealLoopTree::dump_head() const {
 
 //------------------------------dump-------------------------------------------
 // Dump loops by loop tree
-void IdealLoopTree::dump() const {
+void IdealLoopTree::dump() {
   dump_head();
   if (_child) _child->dump();
   if (_next)  _next ->dump();
@@ -4600,8 +4603,7 @@ void PhaseIdealLoop::build_and_optimize() {
             IdealLoopTree *lpt_next = lpt->_next;
             if (lpt_next && lpt_next->is_counted()) {
               CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              has_range_checks(lpt_next);
-              if (cl->is_post_loop() && cl->range_checks_present()) {
+              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
                 if (!cl->is_multiversioned()) {
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
                     // Cause the rce loop to be optimized away if we fail
@@ -4627,10 +4629,6 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
   }
-
-  // disable assert until issue with split_flow_path is resolved (6742111)
-  // assert(!_has_irreducible_loops || C->parsed_irreducible_loop() || C->is_osr_compilation(),
-  //        "shouldn't introduce irreducible loops");
 }
 
 #ifndef PRODUCT
@@ -5056,6 +5054,7 @@ void PhaseIdealLoop::build_loop_tree() {
       (void)bltstack.pop(); // Remove post-visited node from stack
     }
   }
+  DEBUG_ONLY(verify_regions_in_irreducible_loops();)
 }
 
 //------------------------------build_loop_tree_impl---------------------------
@@ -5150,21 +5149,34 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         set_loop(C->root(), _ltree_root);
       }
     }
-    // Weeny check for irreducible.  This child was already visited (this
-    // IS the post-work phase).  Is this child's loop header post-visited
-    // as well?  If so, then I found another entry into the loop.
-    if (!_verify_only) {
+    if (is_postvisited(l->_head)) {
+      // We are currently visiting l, but its head has already been post-visited.
+      // l is irreducible: we just found a second entry m.
+      _has_irreducible_loops = true;
+      RegionNode* secondary_entry = m->as_Region();
+      DEBUG_ONLY(secondary_entry->verify_can_be_irreducible_entry();)
+
+      // Walk up the loop-tree, mark all loops that are already post-visited as irreducible
+      // Since m is a secondary entry to them all.
       while( is_postvisited(l->_head) ) {
-        // found irreducible
         l->_irreducible = 1; // = true
+        RegionNode* head = l->_head->as_Region();
+        DEBUG_ONLY(head->verify_can_be_irreducible_entry();)
         l = l->_parent;
-        _has_irreducible_loops = true;
         // Check for bad CFG here to prevent crash, and bailout of compile
         if (l == NULL) {
+#ifndef PRODUCT
+          if (TraceLoopOpts) {
+            tty->print_cr("bailout: unhandled CFG: infinite irreducible loop");
+            m->dump();
+          }
+#endif
           C->record_method_not_compilable("unhandled CFG detected during loop optimization");
           return pre_order;
         }
       }
+    }
+    if (!_verify_only) {
       C->set_has_irreducible_loop(_has_irreducible_loops);
     }
 
@@ -5232,6 +5244,74 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   return pre_order;
 }
 
+#ifdef ASSERT
+//--------------------------verify_regions_in_irreducible_loops----------------
+// Iterate down from Root through CFG, verify for every region:
+// if it is in an irreducible loop it must be marked as such
+void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
+  ResourceMark rm;
+  if (!_has_irreducible_loops) {
+    // last build_loop_tree has not found any irreducible loops
+    // hence no region has to be marked is_in_irreduible_loop
+    return;
+  }
+
+  RootNode* root = C->root();
+  Unique_Node_List worklist; // visit all nodes once
+  worklist.push(root);
+  bool failure = false;
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    if (n->is_Region()) {
+      RegionNode* region = n->as_Region();
+      if (is_in_irreducible_loop(region) &&
+          region->loop_status() == RegionNode::LoopStatus::Reducible) {
+        failure = true;
+        tty->print("irreducible! ");
+        region->dump();
+      }
+    }
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* use = n->fast_out(j);
+      if (use->is_CFG()) {
+        worklist.push(use); // push if was not pushed before
+      }
+    }
+  }
+  assert(!failure, "region in irreducible loop was marked as reducible");
+}
+
+//---------------------------is_in_irreducible_loop-------------------------
+// Analogous to ciTypeFlow::Block::is_in_irreducible_loop
+bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
+  if (!_has_irreducible_loops) {
+    return false; // no irreducible loop in graph
+  }
+  IdealLoopTree* l = get_loop(region); // l: innermost loop that contains region
+  do {
+    if (l->_irreducible) {
+      return true; // found it
+    }
+    if (l == _ltree_root) {
+      return false; // reached root, terimnate
+    }
+    l = l->_parent;
+  } while (l != nullptr);
+  assert(region->is_in_infinite_subgraph(), "must be in infinite subgraph");
+  // We have "l->_parent == nullptr", which happens only for infinite loops,
+  // where no parent is attached to the loop. We did not find any irreducible
+  // loop from this block out to lp. Thus lp only has one entry, and no exit
+  // (it is infinite and reducible). We can always rewrite an infinite loop
+  // that is nested inside other loops:
+  // while(condition) { infinite_loop; }
+  // with an equivalent program where the infinite loop is an outermost loop
+  // that is not nested in any loop:
+  // while(condition) { break; } infinite_loop;
+  // Thus, we can understand lp as an outermost loop, and can terminate and
+  // conclude: this block is in no irreducible loop.
+  return false;
+}
+#endif
 
 //------------------------------build_loop_early-------------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
@@ -5828,6 +5908,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_CountPositives:
       pinned = false;
     }

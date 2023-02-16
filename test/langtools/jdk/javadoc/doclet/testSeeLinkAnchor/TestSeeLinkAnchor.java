@@ -50,8 +50,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestSeeLinkAnchor tester = new TestSeeLinkAnchor();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestSeeLinkAnchor();
+        tester.runTests();
     }
 
     TestSeeLinkAnchor() throws Exception {

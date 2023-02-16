@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2083,8 +2083,8 @@ public abstract sealed class VarHandle implements Constable
 
     @DontInline
     private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
-        throw new WrongMethodTypeException("expected " + accessModeType(ad.type) + " but found "
-                + ad.symbolicMethodTypeExact);
+        throw new WrongMethodTypeException("handle's method type " + accessModeType(ad.type)
+                + " but found " + ad.symbolicMethodTypeExact);
     }
 
     @ForceInline

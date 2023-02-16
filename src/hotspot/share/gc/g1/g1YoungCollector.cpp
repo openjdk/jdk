@@ -36,7 +36,6 @@
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -202,10 +201,6 @@ G1GCPhaseTimes* G1YoungCollector::phase_times() const {
   return _g1h->phase_times();
 }
 
-G1HotCardCache* G1YoungCollector::hot_card_cache() const {
-  return _g1h->hot_card_cache();
-}
-
 G1HRPrinter* G1YoungCollector::hr_printer() const {
   return _g1h->hr_printer();
 }
@@ -271,7 +266,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collectionset_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
                                             collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -519,8 +514,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
-
-  hot_card_cache()->reset_hot_cache_claimed_index();
 
   // Initialize the GC alloc regions.
   allocator()->init_gc_alloc_regions(evacuation_info);
@@ -1020,12 +1013,9 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->record_obj_copy_mem_stats();
 
-  evacuation_info->set_collectionset_used_before(collection_set()->bytes_used_before());
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
 
-  _g1h->start_new_collection_set();
-
-  _g1h->prepare_tlabs_for_mutator();
+  _g1h->prepare_for_mutator_after_young_collection();
 
   _g1h->gc_epilogue(false);
 
