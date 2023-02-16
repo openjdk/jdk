@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-NMTUsage* get_usage(const Ticks& timestamp) {
+static NMTUsage* get_usage(const Ticks& timestamp) {
   static Ticks last_timestamp;
   static NMTUsage* usage = nullptr;
 
