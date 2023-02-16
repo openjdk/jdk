@@ -47,6 +47,8 @@ public:
   {
     assert(_pre_val->is_register(), "should be temporary register");
     assert(_addr->is_address(), "should be the address of the field");
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   // Version that _does not_ generate load of the previous value; the
@@ -104,6 +106,9 @@ public:
     assert(_result->is_register(), "should be register");
     assert(_tmp1->is_register(), "should be register");
     assert(_tmp2->is_register(), "should be register");
+
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   LIR_Opr obj() const { return _obj; }

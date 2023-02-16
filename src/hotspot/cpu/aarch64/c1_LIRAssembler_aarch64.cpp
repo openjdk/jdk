@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2186,7 +2186,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
 void LIR_Assembler::store_parameter(Register r, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
   __ str (r, Address(sp, offset_from_rsp_in_bytes));
 }
 
@@ -2194,7 +2194,7 @@ void LIR_Assembler::store_parameter(Register r, int offset_from_rsp_in_words) {
 void LIR_Assembler::store_parameter(jint c,     int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
   __ mov (rscratch1, c);
   __ str (rscratch1, Address(sp, offset_from_rsp_in_bytes));
 }
@@ -2204,7 +2204,7 @@ void LIR_Assembler::store_parameter(jobject o,  int offset_from_rsp_in_words) {
   ShouldNotReachHere();
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
   __ lea(rscratch1, __ constant_oop_address(o));
   __ str(rscratch1, Address(sp, offset_from_rsp_in_bytes));
 }
