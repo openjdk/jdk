@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2388,7 +2388,7 @@ public final class String
      *          {@code -1} if the character does not occur.
      */
     public int indexOf(int ch) {
-        return indexOf(ch, 0);
+        return indexOf(ch, 0, length());
     }
 
     /**
@@ -2431,8 +2431,55 @@ public final class String
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex)
-                          : StringUTF16.indexOf(value, ch, fromIndex);
+        return indexOf(ch, fromIndex, length());
+    }
+
+    /**
+     * Returns the index within this string of the first occurrence of the
+     * specified character, starting the search at {@code fromIndex} and
+     * stopping before {@code toIndex}.
+     *
+     * <p>If a character with value {@code ch} occurs in the
+     * character sequence represented by this {@code String}
+     * object at an index no smaller than {@code fromIndex} but smaller than
+     * {@code toIndex}, then
+     * the index of the first such occurrence is returned. For values
+     * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
+     * this is the smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.charAt(<i>k</i>) == ch) &amp;&amp; (fromIndex &lt;= <i>k</i> &lt; toIndex)
+     * </pre></blockquote>
+     * is true. For other values of {@code ch}, it is the
+     * smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.codePointAt(<i>k</i>) == ch) &amp;&amp; (fromIndex &lt;= <i>k</i> &lt; toIndex)
+     * </pre></blockquote>
+     * is true. In either case, if no such character occurs in this
+     * string at or after position {@code fromIndex} and before position
+     * {@code toIndex}, then {@code -1} is returned.
+     *
+     * <p>There are no restrictions on the value of {@code fromIndex} and
+     * {@code toIndex}. Negative values have the same effect as it they were zero.
+     * Values greater than the length of this string have the same effect
+     * as if they were equal to the length of this string.
+     *
+     * <p>As consequence of these rules, if {@code fromIndex} is greater than
+     * or equal to {@code toIndex}, then {@code -1} is returned.
+     *
+     * <p>All indices are specified in {@code char} values
+     * (Unicode code units).
+     *
+     * @param   ch          a character (Unicode code point).
+     * @param   fromIndex   the index to start the search from (included).
+     * @param   toIndex     the index to stop the search at (excluded).
+     * @return  the index of the first occurrence of the character in the
+     *          character sequence represented by this object that is greater
+     *          than or equal to {@code fromIndex} and less than {@code toIndex},
+     *          or {@code -1} if the character does not occur.
+     */
+    public int indexOf(int ch, int fromIndex, int toIndex) {
+        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, toIndex)
+                : StringUTF16.indexOf(value, ch, fromIndex, toIndex);
     }
 
     /**

@@ -420,19 +420,21 @@ final class StringUTF16 {
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {
-        int max = value.length >> 1;
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= max) {
-            // Note: fromIndex might be near -1>>>1.
+        return indexOf(value, ch, fromIndex, value.length >> 1);
+    }
+
+    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, value.length >> 1);
+        if (fromIndex >= toIndex) {
             return -1;
         }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            return indexOfChar(value, ch, fromIndex, max);
+            return indexOfChar(value, ch, fromIndex, toIndex);
         } else {
-            return indexOfSupplementary(value, ch, fromIndex, max);
+            return indexOfSupplementary(value, ch, fromIndex, toIndex);
         }
     }
 
@@ -532,13 +534,13 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
-        checkBoundsBeginEnd(fromIndex, max, value);
-        return indexOfCharUnsafe(value, ch, fromIndex, max);
+    private static int indexOfChar(byte[] value, int ch, int fromIndex, int toIndex) {
+        checkBoundsBeginEnd(fromIndex, toIndex, value);
+        return indexOfCharUnsafe(value, ch, fromIndex, toIndex);
     }
 
-    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
-        for (int i = fromIndex; i < max; i++) {
+    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
             if (getChar(value, i) == ch) {
                 return i;
             }
@@ -549,12 +551,12 @@ final class StringUTF16 {
     /**
      * Handles (rare) calls of indexOf with a supplementary character.
      */
-    private static int indexOfSupplementary(byte[] value, int ch, int fromIndex, int max) {
+    private static int indexOfSupplementary(byte[] value, int ch, int fromIndex, int toIndex) {
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
             final char lo = Character.lowSurrogate(ch);
-            checkBoundsBeginEnd(fromIndex, max, value);
-            for (int i = fromIndex; i < max - 1; i++) {
+            checkBoundsBeginEnd(fromIndex, toIndex, value);
+            for (int i = fromIndex; i < toIndex - 1; i++) {
                 if (getChar(value, i) == hi && getChar(value, i + 1) == lo) {
                     return i;
                 }
