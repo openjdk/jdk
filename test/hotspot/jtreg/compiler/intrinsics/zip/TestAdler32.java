@@ -166,7 +166,7 @@ public class TestAdler32 {
         int len1 = 8;    // the  8B/iteration loop
         int len2 = 32;   // the 32B/iteration loop
         int len3 = 4096; // the 4KB/iteration loop
-        int len4 = 5521; // the adler limit
+        int len4 = 5552; // the adler limit
 
         byte[] b = initializedBytes(len3*16, 0);
         int[] offsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 256, 512 };
