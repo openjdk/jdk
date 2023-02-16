@@ -1606,21 +1606,12 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected void onSubscribed() {
+        protected void register() {
             registerResponseSubscriber(this);
         }
 
         @Override
-        protected void complete(Throwable t) {
-            try {
-                unregisterResponseSubscriber(this);
-            } finally {
-                super.complete(t);
-            }
-        }
-
-        @Override
-        protected void onCancel() {
+        protected void unregister() {
             unregisterResponseSubscriber(this);
         }
 

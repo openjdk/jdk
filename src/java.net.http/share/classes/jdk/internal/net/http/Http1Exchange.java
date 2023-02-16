@@ -209,24 +209,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected void onSubscribed() {
+        protected void register() {
             exchange.registerResponseSubscriber(this);
         }
 
         @Override
-        protected void complete(Throwable t) {
-            try {
-                exchange.unregisterResponseSubscriber(this);
-            } finally {
-                super.complete(t);
-            }
-        }
-
-        @Override
-        protected void onCancel() {
-            // If the subscription is cancelled the
-            // subscriber may or may not get completed.
-            // Therefore we need to unregister it
+        protected void unregister() {
             exchange.unregisterResponseSubscriber(this);
         }
     }
