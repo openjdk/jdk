@@ -348,7 +348,8 @@ bool G1FullCollector::phase2b_forward_oops() {
   return task.has_free_compaction_targets();
 }
 
-void G1FullCollector::add_regions_for_serial_compaction() {
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
   // At this point, we know that after parallel compaction there will be regions that
   // are partially compacted into. Thus, the last compaction region of all
   // compaction queues still have space in them. We try to re-compact these regions
@@ -376,37 +377,25 @@ void G1FullCollector::add_regions_for_serial_compaction() {
   }
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
-
+  HeapWord* dense_prefix_top = nullptr;
   for (uint i = lowest_current; i < _heap->max_reserved_regions(); i++) {
     if (_region_attr_table.is_free(i) || _region_attr_table.is_compacting(i)) {
-      serial_cp->add(_heap->region_at(i));
+      HeapRegion* current = _heap->region_at(i);
+      serial_cp->add(current);
+      if (!serial_cp->is_initialized()) {
+        // Initialize the compaction point. Nothing more is needed for the first heap region
+        // since it is already prepared for compaction.
+        serial_cp->initialize(current);
+        dense_prefix_top = compaction_top(current);
+      } else {
+        assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
+        G1SerialRePrepareClosure re_prepare(serial_cp, current, dense_prefix_top);
+        set_compaction_top(current, current->bottom());
+        current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
+      }
     }
   }
-}
-
-void G1FullCollector::phase2c_prepare_serial_compaction() {
-  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
-
-  add_regions_for_serial_compaction();
-  // Update the forwarding information for the regions in the serial
-  // compaction point.
-  G1FullGCCompactionPoint* cp = serial_compaction_point();
-  HeapWord* dense_prefix_top = nullptr;
-  for (GrowableArrayIterator<HeapRegion*> it = cp->regions()->begin(); it != cp->regions()->end(); ++it) {
-    HeapRegion* current = *it;
-    if (!cp->is_initialized()) {
-      // Initialize the compaction point. Nothing more is needed for the first heap region
-      // since it is already prepared for compaction.
-      cp->initialize(current);
-      dense_prefix_top = compaction_top(current);
-    } else {
-      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
-      G1SerialRePrepareClosure re_prepare(cp, current, dense_prefix_top);
-      set_compaction_top(current, current->bottom());
-      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
-    }
-  }
-  cp->update();
+  serial_cp->update();
 }
 
 void G1FullCollector::phase3_adjust_pointers() {
