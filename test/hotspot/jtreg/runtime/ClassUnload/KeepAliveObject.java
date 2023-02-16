@@ -30,7 +30,7 @@
  * @library classes
  * @build jdk.test.whitebox.WhiteBox test.Empty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:+WhiteBoxAPI KeepAliveObject
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI KeepAliveObject
  */
 
 import jdk.test.whitebox.WhiteBox;
@@ -65,6 +65,7 @@ public class KeepAliveObject {
 
         ClassUnloadCommon.failIf(!isAlive, "should be alive");
     }
+    // Don't let `o` get prematurely reclaimed by the GC.
     Reference.reachabilityFence(o);
     o = null;
     ClassUnloadCommon.triggerUnloading();

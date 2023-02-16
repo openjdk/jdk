@@ -32,7 +32,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -Xcomp -XX:+WhiteBoxAPI ConstantPoolDependsTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI ConstantPoolDependsTest
  */
 
 import jdk.test.whitebox.WhiteBox;

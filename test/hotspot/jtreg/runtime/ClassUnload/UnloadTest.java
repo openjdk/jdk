@@ -30,7 +30,7 @@
  * @library classes
  * @build jdk.test.whitebox.WhiteBox test.Empty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=debug -Xcomp UnloadTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=debug UnloadTest
  */
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
@@ -49,7 +49,6 @@ import java.lang.ref.Reference;
  *    and verifies the class is unloaded.
  */
 public class UnloadTest {
-    // Using a global static field to keep the object live in -Xcomp mode.
 
     public static void main(String... args) throws Exception {
         test_unload_instance_klass();
@@ -76,6 +75,7 @@ public class UnloadTest {
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
+        // Don't let `o` get prematurely reclaimed by the GC.
         Reference.reachabilityFence(o);
         o = null;
         ClassUnloadCommon.triggerUnloading();
@@ -105,6 +105,7 @@ public class UnloadTest {
         ClassUnloadCommon.triggerUnloading();
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
+        // Don't let `o` get prematurely reclaimed by the GC.
         Reference.reachabilityFence(o);
         o = null;
         ClassUnloadCommon.triggerUnloading();
