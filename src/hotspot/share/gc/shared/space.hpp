@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class Space: public CHeapObj<mtGC> {
   HeapWord* _saved_mark_word;
 
   Space():
-    _bottom(NULL), _end(NULL) { }
+    _bottom(nullptr), _end(nullptr) { }
 
  public:
   // Accessors
@@ -176,7 +176,7 @@ class Space: public CHeapObj<mtGC> {
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
   // some heaps may not pack objects densely; a chunk may either be an
-  // object or a non-object.  If "p" is not in the space, return NULL.
+  // object or a non-object.  If "p" is not in the space, return null.
   virtual HeapWord* block_start_const(const void* p) const = 0;
 
   // The non-const version may have benevolent side effects on the data
@@ -198,11 +198,11 @@ class Space: public CHeapObj<mtGC> {
   // the block is an object and the object is alive.
   virtual bool obj_is_alive(const HeapWord* addr) const;
 
-  // Allocation (return NULL if full).  Assumes the caller has established
+  // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
   virtual HeapWord* allocate(size_t word_size) = 0;
 
-  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
+  // Allocation (return null if full).  Enforces mutual exclusion internally.
   virtual HeapWord* par_allocate(size_t word_size) = 0;
 
 #if INCLUDE_SERIALGC
@@ -217,9 +217,9 @@ class Space: public CHeapObj<mtGC> {
   virtual void print_short_on(outputStream* st) const;
 
 
-  // IF "this" is a ContiguousSpace, return it, else return NULL.
+  // IF "this" is a ContiguousSpace, return it, else return null.
   virtual ContiguousSpace* toContiguousSpace() {
-    return NULL;
+    return nullptr;
   }
 
   // Debugging
@@ -247,7 +247,7 @@ protected:
                                 // imprecise write barrier; this is the
                                 // lowest location already done (or,
                                 // alternatively, the lowest address that
-                                // shouldn't be done again.  NULL means infinity.)
+                                // shouldn't be done again.  null means infinity.)
   NOT_PRODUCT(HeapWord* _last_bottom;)
 
   // Get the actual top of the area on which the closure will
@@ -278,8 +278,8 @@ protected:
                                OopIterateClosure* cl);
 public:
   DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
-    _cl(cl), _sp(sp), _min_done(NULL) {
-    NOT_PRODUCT(_last_bottom = NULL);
+    _cl(cl), _sp(sp), _min_done(nullptr) {
+    NOT_PRODUCT(_last_bottom = nullptr);
   }
 
   void do_MemRegion(MemRegion mr) override;
@@ -292,8 +292,8 @@ public:
   Generation* gen;
   CompactibleSpace* space;
 
-  CompactPoint(Generation* g = NULL) :
-    gen(g), space(NULL) {}
+  CompactPoint(Generation* g = nullptr) :
+    gen(g), space(nullptr) {}
 };
 
 // A space that supports compaction operations.  This is usually, but not
@@ -314,7 +314,7 @@ private:
 
 public:
   CompactibleSpace() :
-   _compaction_top(NULL), _next_compaction_space(NULL) {}
+   _compaction_top(nullptr), _next_compaction_space(nullptr) {}
 
   void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
   void clear(bool mangle_space) override;
@@ -324,7 +324,7 @@ public:
   HeapWord* compaction_top() const { return _compaction_top;    }
 
   void set_compaction_top(HeapWord* value) {
-    assert(value == NULL || (value >= bottom() && value <= end()),
+    assert(value == nullptr || (value >= bottom() && value <= end()),
       "should point inside space");
     _compaction_top = value;
   }
@@ -409,7 +409,7 @@ class ContiguousSpace: public CompactibleSpace {
 
   GenSpaceMangler* mangler() { return _mangler; }
 
-  // Allocation helpers (return NULL if full).
+  // Allocation helpers (return null if full).
   inline HeapWord* allocate_impl(size_t word_size);
   inline HeapWord* par_allocate_impl(size_t word_size);
 
@@ -445,7 +445,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Do some sparse checking on the area that should have been mangled.
   void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
   // Check the complete area that should have been mangled.
-  // This code may be NULL depending on the macro DEBUG_MANGLING.
+  // This code may be null depending on the macro DEBUG_MANGLING.
   void check_mangled_unused_area_complete() PRODUCT_RETURN;
 
   // Size computations: sizes in bytes.
@@ -458,7 +458,7 @@ class ContiguousSpace: public CompactibleSpace {
   // contain objects.
   MemRegion used_region() const override { return MemRegion(bottom(), top()); }
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   HeapWord* allocate(size_t word_size) override;
   HeapWord* par_allocate(size_t word_size) override;
 

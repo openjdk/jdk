@@ -75,6 +75,7 @@ public class TestMemoryAwareness {
 
             testMemorySoftLimit("500m", "524288000");
             testMemorySoftLimit("1g", "1073741824");
+            testMemorySwapLimitSanity();
 
             // Add extra 10 Mb to allocator limit, to be sure to cause OOM
             testOOM("256m", 256 + 10);
@@ -151,6 +152,31 @@ public class TestMemoryAwareness {
 
         Common.run(opts)
             .shouldMatch("Memory Soft Limit.*" + expectedTraceValue);
+    }
+
+    /*
+     * This test verifies that no confusingly large positive numbers get printed on
+     * systems with swapaccount=0 kernel option. On some systems -2 were converted
+     * to unsigned long and printed that way. Ensure this oddity doesn't occur.
+     */
+    private static void testMemorySwapLimitSanity() throws Exception {
+        String valueToSet = "500m";
+        String expectedTraceValue = "524288000";
+        Common.logNewTestCase("memory swap sanity: " + valueToSet);
+
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
+        Common.addWhiteBoxOpts(opts);
+        opts.addDockerOpts("--memory=" + valueToSet);
+        opts.addDockerOpts("--memory-swap=" + valueToSet);
+
+        String neg2InUnsignedLong = "18446744073709551614";
+
+        Common.run(opts)
+            .shouldMatch("Memory Limit is:.*" + expectedTraceValue)
+            // Either for cgroup v1: a_1) same as memory limit, or b_1) -2 on systems with swapaccount=0
+            // Either for cgroup v2: a_2) 0, or b_2) -2 on systems with swapaccount=0
+            .shouldMatch("Memory and Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
+            .shouldNotMatch("Memory and Swap Limit is:.*" + neg2InUnsignedLong);
     }
 
 

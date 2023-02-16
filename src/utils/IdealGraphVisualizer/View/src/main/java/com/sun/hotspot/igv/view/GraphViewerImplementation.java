@@ -53,8 +53,8 @@ public class GraphViewerImplementation implements GraphViewer {
     }
 
     @Override
-    public void view(InputGraph graph, boolean clone) {
-        if (!clone) {
+    public void view(InputGraph graph, boolean newTab) {
+        if (!newTab) {
             EditorTopComponent etc = EditorTopComponent.findEditorForGraph(graph);
             if (etc != null) {
                 etc.getModel().selectGraph(graph);

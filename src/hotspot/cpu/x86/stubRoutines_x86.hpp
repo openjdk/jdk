@@ -185,6 +185,8 @@ class x86 {
   static address _avx2_shuffle_base64;
   static address _avx2_input_mask_base64;
   static address _avx2_lut_base64;
+  static address _avx2_decode_tables_base64;
+  static address _avx2_decode_lut_tables_base64;
   static address _lookup_lo_base64;
   static address _lookup_hi_base64;
   static address _lookup_lo_base64url;
@@ -325,6 +327,8 @@ class x86 {
   static address base64_vbmi_join_1_2_addr() { return _join_1_2_base64; }
   static address base64_vbmi_join_2_3_addr() { return _join_2_3_base64; }
   static address base64_decoding_table_addr() { return _decoding_table_base64; }
+  static address base64_AVX2_decode_tables_addr() { return _avx2_decode_tables_base64; }
+  static address base64_AVX2_decode_LUT_tables_addr() { return _avx2_decode_lut_tables_base64; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }

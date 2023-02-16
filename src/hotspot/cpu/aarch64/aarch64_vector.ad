@@ -5689,6 +5689,18 @@ instruct vmask_gen_imm(pReg pd, immL con, rFlagsReg cr) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set pd (VectorMaskGen (SubL src1 src2)));
+  effect(KILL cr);
+  format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Popcount vector ------------------------------
 
 // vector popcount - INT
