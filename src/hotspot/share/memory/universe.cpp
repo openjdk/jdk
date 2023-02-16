@@ -812,27 +812,16 @@ jint universe_init() {
   DynamicArchive::check_for_dynamic_dump();
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
-    // system dictionary, symbol table, etc.).  After that, access to
-    // the file (other than the mapped regions) is no longer needed, and
-    // the file is closed. Closing the file does not affect the
-    // currently mapped regions.
+    // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
-    StringTable::create_table();
-    if (ArchiveHeapLoader::is_loaded()) {
-      StringTable::transfer_shared_strings_to_local_table();
-    }
-  } else
-#endif
-  {
-    SymbolTable::create_table();
-    StringTable::create_table();
   }
-
-#if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {
     MetaspaceShared::prepare_for_dumping();
   }
 #endif
+
+  SymbolTable::create_table();
+  StringTable::create_table();
 
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();

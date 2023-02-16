@@ -40,10 +40,12 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -72,21 +74,30 @@ const size_t REHASH_LEN = 100;
 const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
-inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
+constexpr int lower_bits = 14;
+constexpr int secondary_array_length = 1 << lower_bits;
+constexpr int secondary_array_mask = secondary_array_length - 1;
+
+static bool _deep_shared_table = false;
+static OopHandle _shared_table_array;
+static int _shared_table_array_root_index;
+
+inline oop read_string_from_compact_hashtable(address base_address, u4 index) {
   assert(ArchiveHeapLoader::are_archived_strings_available(), "sanity");
-  if (UseCompressedOops) {
-    assert(sizeof(narrowOop) == sizeof(offset), "must be");
-    narrowOop v = CompressedOops::narrow_oop_cast(offset);
-    return ArchiveHeapLoader::decode_from_archive(v);
+  objArrayOop array = (objArrayOop)(_shared_table_array.resolve());
+  oop s;
+
+  if (!_deep_shared_table) {
+    s = array->obj_at((int)index);
   } else {
-    assert(!ArchiveHeapLoader::is_loaded(), "Pointer relocation for uncompressed oops is unimplemented");
-    intptr_t dumptime_oop = (uintptr_t)offset;
-    assert(dumptime_oop != 0, "null strings cannot be interned");
-    intptr_t runtime_oop = dumptime_oop +
-                           (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
-                           (intptr_t)ArchiveHeapLoader::mapped_heap_delta();
-    return (oop)cast_to_oop(runtime_oop);
+    int primary_index = index >> lower_bits;
+    int secondary_index = index & secondary_array_mask;
+    objArrayOop secondary = (objArrayOop)array->obj_at(primary_index);
+    s = secondary->obj_at(secondary_index);
   }
+
+  assert(java_lang_String::is_instance(s), "must be");
+  return s;
 }
 
 typedef CompactHashtable<
@@ -224,6 +235,10 @@ void StringTable::create_table() {
   _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
   _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
   _oop_storage->register_num_dead_callback(&gc_notification);
+
+  if (ArchiveHeapLoader::are_archived_strings_available()) {
+    _shared_table_array = OopHandle(Universe::vm_global(), HeapShared::get_root(_shared_table_array_root_index));
+  }
 }
 
 size_t StringTable::item_added() {
@@ -755,49 +770,101 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
 }
 
-class EncodeSharedStringsAsOffsets : StackObj {
-  CompactHashtableWriter* _writer;
-private:
-  u4 compute_delta(oop s) {
-    HeapWord* start = G1CollectedHeap::heap()->reserved().start();
-    intx offset = ((address)(void*)s) - ((address)(void*)start);
-    assert(offset >= 0, "must be");
-    if (offset > 0xffffffff) {
-      fatal("too large");
-    }
-    return (u4)offset;
+// This is called BEFORE we enter the CDS safepoint. We can allocate heap objects.
+// This should be called when we know no more strings will be added (which will be easy
+// to guarantee because CDS runs with a single Java thread. See JDK-8253495.)
+void StringTable::allocate_shared_table(TRAPS) {
+  assert(DumpSharedSpaces, "must be");
+  if (_items_count > (size_t)max_jint) {
+    fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
   }
-public:
-  EncodeSharedStringsAsOffsets(CompactHashtableWriter* writer) : _writer(writer) {}
-  bool do_entry(oop s, bool value_ignored) {
-    assert(s != nullptr, "sanity");
-    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "must be");
-    oop req_s = ArchiveHeapWriter::source_obj_to_requested_obj(s);
-    assert(req_s != nullptr, "must have been archived");
-    unsigned int hash = java_lang_String::hash_code(s);
-    if (UseCompressedOops) {
-      _writer->add(hash, CompressedOops::narrow_oop_value(req_s));
-    } else {
-      _writer->add(hash, compute_delta(req_s));
-    }
-    return true; // keep iterating
-  }
-};
 
-// Write the _shared_table (a CompactHashtable) into the CDS archive file.
-void StringTable::write_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
+  int total = (int)_items_count;
+  size_t single_array_size = objArrayOopDesc::object_size(total);
+
+  log_info(cds)("allocated string table for %d strings", total);
+
+  if (!ArchiveHeapWriter::is_too_large_to_archive(single_array_size)) {
+    // The entire table can fit in a single array
+    objArrayOop array = oopFactory::new_objArray(vmClasses::String_klass(), total, CHECK);
+    _shared_table_array = OopHandle(Universe::vm_global(), array);
+    _deep_shared_table = false;
+    log_info(cds)("string table array (single level) length = %d", total);
+  } else {
+    // Split the table in two levels of arrays.
+    int secondary_array_length = 16384;
+    int primary_array_length = (total + secondary_array_length - 1) / secondary_array_length;
+    size_t primary_array_size = objArrayOopDesc::object_size(primary_array_length);
+    size_t secondary_array_size = objArrayOopDesc::object_size(secondary_array_length);
+    guarantee(!ArchiveHeapWriter::is_too_large_to_archive(secondary_array_size), "must be");
+
+    if (ArchiveHeapWriter::is_too_large_to_archive(secondary_array_size)) {
+      fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+    }
+
+    objArrayOop primary = oopFactory::new_objArray(vmClasses::Object_klass(), primary_array_length, CHECK);
+    objArrayHandle primaryHandle(THREAD, primary);
+    _shared_table_array = OopHandle(Universe::vm_global(), primary);
+
+    log_info(cds)("string table array (primary) length = %d", primary_array_length);
+    for (int i = 0; i < primary_array_length; i++) {
+      int len;
+      if (total > secondary_array_length) {
+        len = secondary_array_length;
+      } else {
+        len = total;
+      }
+      total -= len;
+
+      objArrayOop secondary = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK);
+      primaryHandle()->obj_at_put(i, secondary);
+
+      log_info(cds)("string table array (secondary)[%d] length = %d", i, len);
+    }
+
+    assert(total == 0, "must be");
+    _deep_shared_table = true;
+  }
+}
+
+// This is called AFTER we enter the CDS safepoint.
+oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::can_write(), "must be");
+  objArrayOop array = (objArrayOop)(_shared_table_array.resolve());
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
 
-  // Encode the strings in the CompactHashtable using offsets -- we know that the
-  // strings will not move during runtime because they are inside the G1 closed
-  // archive region.
-  EncodeSharedStringsAsOffsets offset_finder(&writer);
-  dumped_interned_strings->iterate(&offset_finder);
+  int index = 0;
+  auto copy_into_array = [&] (oop string, bool value_ignored) {
+    unsigned int hash = java_lang_String::hash_code(string);
+    writer.add(hash, index);
+
+    if (!_deep_shared_table) {
+      assert(index < array->length(), "no strings should have been added");
+      array->obj_at_put(index, string);
+    } else {
+      int primary_index = index >> lower_bits;
+      int secondary_index = index & secondary_array_mask;
+
+      assert(primary_index < array->length(), "no strings should have been added");
+      objArrayOop secondary = (objArrayOop)array->obj_at(primary_index);
+
+      assert(secondary_index < secondary->length(), "no strings should have been added");
+      secondary->obj_at_put(secondary_index, string);
+    }
+
+    index ++;
+  };
+  dumped_interned_strings->iterate_all(copy_into_array);
 
   writer.dump(&_shared_table, "string");
+
+  return array;
+}
+
+void StringTable::set_archived_table_index(int root_index) {
+  _shared_table_array_root_index = root_index;
 }
 
 void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
@@ -810,43 +877,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
     _shared_table.reset();
   }
 
+  soc->do_bool(&_deep_shared_table);
+  soc->do_u4((u4*)(&_shared_table_array_root_index));
 }
-
-class SharedStringTransfer {
-  JavaThread* _current;
-public:
-  SharedStringTransfer(JavaThread* current) : _current(current) {}
-
-  void do_value(oop string) {
-    JavaThread* THREAD = _current;
-    ExceptionMark rm(THREAD);
-    HandleMark hm(THREAD);
-    StringTable::intern(string, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      // The archived constant pools contains strings that must be in the interned string table.
-      // If we fail here, it means the VM runs out of memory during bootstrap, so there's no point
-      // of trying to recover from here.
-      vm_exit_during_initialization("Failed to transfer shared strings to interned string table");
-    }
-  }
-};
-
-// If the CDS archive heap is loaded (not mapped) into the old generation,
-// it's possible for the shared strings to move due to full GC, making the
-// _shared_table invalid. Therefore, we proactively copy all the shared
-// strings into the _local_table, which can deal with oop relocation.
-void StringTable::transfer_shared_strings_to_local_table() {
-  assert(ArchiveHeapLoader::is_loaded(), "must be");
-  EXCEPTION_MARK;
-
-  // Reset _shared_table so that during the transfer, StringTable::intern()
-  // will not look up from there. Instead, it will create a new entry in
-  // _local_table for each element in shared_table_copy.
-  SharedStringTable shared_table_copy = _shared_table;
-  _shared_table.reset();
-
-  SharedStringTransfer transfer(THREAD);
-  shared_table_copy.iterate(&transfer);
-}
-
 #endif //INCLUDE_CDS_JAVA_HEAP

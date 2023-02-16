@@ -801,6 +801,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
+  StringTable::allocate_shared_table(CHECK);
   ArchiveHeapWriter::init();
   if (use_full_module_graph()) {
     HeapShared::reset_archived_object_states(CHECK);
@@ -1424,9 +1425,6 @@ void MetaspaceShared::initialize_shared_spaces() {
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);
-
-  // Initialize the run-time symbol table.
-  SymbolTable::create_table();
 
   // Finish up archived heap initialization. These must be
   // done after ReadClosure.

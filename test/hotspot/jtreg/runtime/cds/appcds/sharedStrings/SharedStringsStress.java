@@ -28,7 +28,7 @@
  * @requires vm.cds.write.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
- * @run driver/timeout=500 SharedStringsStress
+ * @run driver/timeout=650 SharedStringsStress
  */
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,7 +52,10 @@ public class SharedStringsStress {
             out.println("VERSION: 1.0");
             out.println("@SECTION: String");
             out.println("31: shared_test_string_unique_14325");
-            for (int i=0; i<200000; i++) {
+            // Create enough entries to require the shared string
+            // table to split into two levels of Object arrays. See
+            // StringTable::allocate_shared_table() in HotSpot.
+            for (int i=0; i<260000; i++) {
                 String s = "generated_string " + i;
                 out.println(s.length() + ": " + s);
             }
@@ -91,8 +94,11 @@ public class SharedStringsStress {
                     "-Xlog:gc+region+cds",
                     "-Xlog:gc+region=trace"));
             TestCommon.checkDump(dumpOutput);
+            dumpOutput.shouldContain("string table array (primary)");
+            dumpOutput.shouldContain("string table array (secondary)");
+
             OutputAnalyzer execOutput = TestCommon.exec(appJar,
-                TestCommon.concat(vmOptionsPrefix, "HelloString"));
+                TestCommon.concat(vmOptionsPrefix, "-Xlog:cds", "HelloString"));
             TestCommon.checkExec(execOutput);
         }
     }

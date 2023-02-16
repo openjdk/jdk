@@ -421,6 +421,13 @@ void HeapShared::archive_java_mirrors() {
     }
   }
 
+  {
+    oop archived_string_table = StringTable::init_shared_table(_dumped_interned_strings);
+    bool success = archive_reachable_objects_from(1, _default_subgraph_info, archived_string_table, /*is_closed_archive=*/ false);
+    guarantee(success, "archived string table should not point to any unachivable objects");
+    StringTable::set_archived_table_index(append_root(archived_string_table));
+  }
+
   delete_seen_objects_table();
 }
 
@@ -551,7 +558,6 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
   }
 
   ArchiveHeapWriter::write(_pending_roots, closed_regions, open_regions, closed_bitmaps, open_bitmaps);
-  StringTable::write_shared_table(_dumped_interned_strings);
 }
 
 void HeapShared::copy_interned_strings() {
@@ -1398,6 +1404,7 @@ void HeapShared::check_default_subgraph_classes() {
     guarantee(subgraph_k->name()->equals("java/lang/Class") ||
               subgraph_k->name()->equals("java/lang/String") ||
               subgraph_k->name()->equals("[Ljava/lang/Object;") ||
+              subgraph_k->name()->equals("[Ljava/lang/String;") ||
               subgraph_k->name()->equals("[C") ||
               subgraph_k->name()->equals("[B"),
               "default subgraph can have only these objects");

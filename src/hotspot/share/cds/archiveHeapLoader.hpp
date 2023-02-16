@@ -66,7 +66,7 @@ public:
   }
 
   static bool are_archived_strings_available() {
-    return is_loaded() || closed_regions_mapped();
+    return is_fully_available();
   }
   static bool are_archived_mirrors_available() {
     return is_fully_available();
