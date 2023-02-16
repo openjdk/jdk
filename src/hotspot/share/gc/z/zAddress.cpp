@@ -89,6 +89,17 @@ void ZGlobalsPointers::set_good_masks() {
   pd_set_good_masks();
 }
 
+static void initialize_check_oop_function() {
+#ifdef CHECK_UNHANDLED_OOPS
+  if (ZVerifyOops) {
+    // Enable extra verification of usages of oops in oopsHierarchy.hpp
+    check_oop_function = [](oopDesc* obj) {
+      (void)to_zaddress(obj);
+    };
+  }
+#endif
+}
+
 void ZGlobalsPointers::initialize() {
   ZAddressOffsetBits = ZPlatformAddressOffsetBits();
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
@@ -112,6 +123,8 @@ void ZGlobalsPointers::initialize() {
   ZPointerRemembered = ZPointerRemembered0;
 
   set_good_masks();
+
+  initialize_check_oop_function();
 }
 
 void ZGlobalsPointers::flip_young_mark_start() {
