@@ -358,10 +358,32 @@ final class StringUTF16 {
 
     // Case insensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
+        // Fast path if cp1 and cp2 are case-folding latin1 letters
         if (latin1EqualsIgnoreCase(cp1, cp2)) {
             return 0;
         }
-        // try converting both characters to uppercase.
+
+        // Fast path if both cp1 and cp2 are latin1
+        boolean lat1 = cp1 <= 0XFF;
+        boolean lat2 = cp2 <= 0XFF;
+        if (lat1 && lat2) {
+            return cp1 - cp2;
+        }
+
+        // Fast path if one of cp1, cp2 is latin1 and the other
+        // does not case-fold into latin1
+        if (lat1) {
+            if (!CharacterData.foldsToLatin1((char) cp2)) {
+                return cp1 - cp2;
+            }
+        } else if (lat2) {
+            if (!CharacterData.foldsToLatin1((char) cp1)) {
+                return cp1 - cp2;
+            }
+        }
+
+        // Slow path:
+        // Try converting both characters to uppercase.
         // If the results match, then the comparison scan should
         // continue.
         cp1 = Character.toUpperCase(cp1);
@@ -388,12 +410,12 @@ final class StringUTF16 {
      * @return true if the two code points are considered equals ignoring case in ISO/IEC 8859-1.
      */
     static boolean latin1EqualsIgnoreCase(int cp1, int cp2) {
-        if (cp1 > 0xDE || cp2 > 0xDE) {
-            return false; // Quicly reject high points
+        if (cp1 > 0xFF || cp2 > 0xFF) {
+            return false; // Quickly reject high points
         }
         int A = cp1 & 0xDF; // Oldest ASCII trick in the book
         return ( (A >= 'A' && A <= 'Z') // In range A-Z
-                || (A >= 0xC0)) // ..or Agrave-Thorn
+                || (A >= 0xC0 && A <= 0xDE)) // ..or Agrave-Thorn
                 && A != 0xD7 // But not multiply
                 && A == (cp2 & 0xDF); // b has same uppercase
     }

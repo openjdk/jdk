@@ -83,4 +83,19 @@ abstract class CharacterData {
             };
         }
     }
+
+    /**
+     * Returns true if the character is a non-latin1 code point
+     * where Character.toLowerCase or Character.toUpperCase
+     * can return values in the Latin1 range.
+     */
+    static boolean foldsToLatin1(char c) {
+        return     c == 0x130
+                || c == 0x131
+                || c == 0x178
+                || c == 0x17F
+                || c == 0x1E9E
+                || c == 0x212A
+                || c == 0x212B;
+    }
 }

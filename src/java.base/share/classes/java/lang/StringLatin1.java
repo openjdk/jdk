@@ -403,7 +403,18 @@ final class StringLatin1 {
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);
             char c2 = StringUTF16.getChar(other, ooffset++);
-            if (c1 == c2 || StringUTF16.latin1EqualsIgnoreCase(c1, c2) || turkicIEqualsIgnoreCase(c1, c2)) {
+            if (c1 == c2 || StringUTF16.latin1EqualsIgnoreCase(c1, c2)) {
+                continue;
+            }
+            if (c2 > 0XFF && !CharacterData.foldsToLatin1(c2)) {
+                return false;
+            }
+            char u1 = (char) CharacterDataLatin1.instance.toUpperCase(c1);
+            char u2 = Character.toUpperCase(c2);
+            if (u1 == u2) {
+                continue;
+            }
+            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
                 continue;
             }
             return false;
@@ -451,29 +462,6 @@ final class StringLatin1 {
                 || (A >= 0xC0 && A <= 0xDE)) // ..or Agrave-Thorn
                 && A != 0xD7 // But not multiply
                 && A == (b & 0xDF); // b has same uppercase
-    }
-
-    /**
-     * Latin1 includes two 'i' code points:
-     *
-     * 0x49: 'Latin Capital Letter I'
-     * 0x69: 'Latin Small Letter I'
-     *
-     * Unicode adds two 'i' code points for Turkic languages:
-     *
-     * 0x130: 'Latin Capital Letter I with Dot Above'
-     * 0x131: 'Latin Small Letter Dotless I'
-     *
-     * These four code points should be considered equals when ignoring case.
-     *
-     * @param lat a latin1 code point
-     * @param uc a unicode code point
-     * @return true if the latin code point is either 'i' or 'I'
-     * and the unicode code point is either 0x130 or 0x131
-      */
-    private static boolean turkicIEqualsIgnoreCase(char lat, char uc) {
-        return (uc == 0x130 || uc == 0x131)  // Turkic  'I' with dot, 'i' without dot
-                && (lat == 'i' || lat == 'I');
     }
 
     public static String toLowerCase(String str, byte[] value, Locale locale) {

@@ -92,11 +92,35 @@ public class EqualsIgnoreCase extends CompactString {
 
                     if (Character.toUpperCase(a) == Character.toUpperCase(b)
                             || Character.toLowerCase(a) == Character.toLowerCase(b)) {
-                        assertTrue(as.equalsIgnoreCase(bs));
+                        assertTrue(as.equalsIgnoreCase(bs),
+                                "Expected %s to equalsIgnoreCase %s".formatted(as, bs));
                     } else {
-                        assertFalse(as.equalsIgnoreCase(bs));
+                        assertFalse(as.equalsIgnoreCase(bs),
+                                "Expected %s to not equalsIgnoreCase %s".formatted(as, bs));
                     }
                 }
+            }
+        }
+    }
+    /**
+     * This guards that CharacterData.foldsToLatins1 is in sync with
+     * Character.toUpperCase and Character.toLowerCase
+     */
+    @Test
+    public void guardUnicodeFoldingToLatin1() {
+        for (char c = 256; c < Character.MAX_VALUE; c++) {
+
+            char lc = Character.toLowerCase(c);
+            if (lc <= 0XFF) {
+                System.out.println(c + " " + Integer.toHexString(c) + " lowercases to " + lc);
+                assertTrue(Character.toString(lc).equalsIgnoreCase(Character.toString(c)),
+                        "%s and its lowercase %s should equalsIgnoreCase".formatted(c, lc));
+            }
+            char uc = Character.toUpperCase(c);
+            if (uc <= 0XFF) {
+                System.out.println(c + " " + Integer.toHexString(c) + " uppercases to " + uc);
+                assertTrue(Character.toString(uc).equalsIgnoreCase(Character.toString(c)),
+                        "%s and its uppercase %s should equalsIgnoreCase".formatted(c, uc));
             }
         }
     }
