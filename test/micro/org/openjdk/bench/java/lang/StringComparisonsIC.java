@@ -38,28 +38,46 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class StringComparisonsIC {
 
-    public static final String LAT_AZ = "lat-az";
-    public static final String LAT_LAT = "lat-lat";
-    public static final String MIXED_AZ = "mixed-az";
-    public static final String MIXED_LAT = "mixed-lat";
-    public static final String MIXED_UTF = "mixed-utf";
-    public static final String UTF_AZ = "utf-az";
-    public static final String UTF_LAT = "utf-lat";
-    public static final String UTF_UTF = "utf-utf";
+    public static final String LAT_LETTER_MATCH = "lat1-letter-match";
+    public static final String LAT_LETTER_MISMATCH = "lat1-letter-mismatch";
+    public static final String LAT_NUMBER_MATCH = "lat1-number-match";
+    public static final String LAT_NUMBER_MISMATCH = "lat1-number-mismatch";
+    public static final String MIXED_LETTER_MATCH = "mixed-letter-match";
+    public static final String MIXED_LETTER_MISMATCH = "mixed-letter-mismatch";
+    public static final String MIXED_NUMBER_MATCH = "mixed-number-match";
+    public static final String MIXED_NUMBER_MISMATCH = "mixed-number-mismatch";
+    public static final String MIXED_UTF_MATCH = "mixed-unicode-match";
+    public static final String MIXED_UTF_MISMATCH = "mixed-unicode-mismatch";
+    public static final String UTF_LETTER_MATCH = "utf16-letter-match";
+    public static final String UTF_LETTER_MISMATCH = "utf16-letter-mismatch";
+    public static final String UTF_NUMBER_MATCH = "utf16-number-match";
+    public static final String UTF_NUMBER_MISMATCH = "utf16-number-minmatch";
+    public static final String UTF_UTF_MATCH = "utf16-unicode-match";
+    public static final String UTF_UTF_MISMATCH = "utf16-unicode-mismatch";
 
-    @Param({"6", "15", "1024"})
+    @Param({"1024"})
     public int size;
 
-    @Param({LAT_AZ,
-            LAT_LAT,
-            MIXED_AZ,
-            MIXED_LAT,
-            MIXED_UTF,
-            UTF_AZ,
-            UTF_LAT,
-            UTF_UTF
+    @Param({
+            LAT_LETTER_MATCH,
+            LAT_LETTER_MISMATCH,
+            LAT_NUMBER_MATCH,
+            LAT_NUMBER_MISMATCH,
+            MIXED_LETTER_MATCH,
+            MIXED_LETTER_MISMATCH,
+            MIXED_NUMBER_MATCH,
+            MIXED_NUMBER_MISMATCH,
+            MIXED_UTF_MATCH,
+            MIXED_UTF_MISMATCH,
+            UTF_LETTER_MATCH,
+            UTF_LETTER_MISMATCH,
+            UTF_NUMBER_MATCH,
+            UTF_NUMBER_MISMATCH,
+            UTF_UTF_MATCH,
+            UTF_UTF_MISMATCH
     })
-    public String coders;
+
+    public String code_content_match;
 
     private String leftString;
     private String rightString;
@@ -68,44 +86,81 @@ public class StringComparisonsIC {
     public void setup() {
 
 
-        String az = "e";
+
+        String let = "e";
+        String otherLet = "f";
         String ue = "\u025b";
-        String lat =  "1";
+        String num =  "1";
+        String otherNum =  "2";
 
 
-        switch (coders) {
-            case LAT_AZ -> {
-                leftString = az + az.repeat(size);
+        switch (code_content_match) {
+            case LAT_LETTER_MATCH -> {
+                leftString = let  + let.repeat(size);
                 rightString = leftString;
             }
-            case LAT_LAT -> {
-                leftString = az + lat.repeat(size);
+
+            case LAT_LETTER_MISMATCH -> {
+                leftString = let  + let.repeat(size);
+                rightString = let + otherLet.repeat(size);
+            }
+            case LAT_NUMBER_MATCH -> {
+                leftString = let  + num.repeat(size);
                 rightString = leftString;
             }
-            case MIXED_AZ -> {
-                leftString = az + az.repeat(size);
-                rightString = ue + az.repeat(size);
+            case LAT_NUMBER_MISMATCH -> {
+                leftString = let  + num.repeat(size);
+                rightString = let + otherNum.repeat(size);
             }
-            case MIXED_LAT -> {
-                leftString = az + lat.repeat(size);
-                rightString = ue + lat.repeat(size);
+            case MIXED_LETTER_MATCH -> {
+                leftString = let  + let.repeat(size);
+                rightString = ue + let.repeat(size);
             }
-            case MIXED_UTF -> {
-                leftString = az + az.repeat(size);
+            case MIXED_LETTER_MISMATCH -> {
+                leftString = let  + let.repeat(size);
+                rightString = ue + otherLet.repeat(size);
+            }
+            case MIXED_NUMBER_MATCH -> {
+                leftString = let  + num.repeat(size);
+                rightString = ue + num.repeat(size);
+            }
+            case MIXED_NUMBER_MISMATCH -> {
+                leftString = let  + num.repeat(size);
+                rightString = ue + otherNum.repeat(size);
+            }
+            case MIXED_UTF_MATCH -> {
+                leftString = let  + "i".repeat(size);
+                rightString = ue + "\u0130".repeat(size);
+            }
+            case MIXED_UTF_MISMATCH -> {
+                leftString = let  + let.repeat(size);
+                rightString = ue + "\u0130".repeat(size);
+            }
+            case UTF_LETTER_MATCH -> {
+                leftString = ue  + let.repeat(size);
+                rightString = ue + let.repeat(size);
+            }
+            case UTF_LETTER_MISMATCH -> {
+                leftString = ue  + let.repeat(size);
+                rightString = ue + otherLet.repeat(size);
+            }
+            case UTF_NUMBER_MATCH -> {
+                leftString = ue  + num.repeat(size);
+                rightString = ue + num.repeat(size);
+            }
+            case UTF_NUMBER_MISMATCH -> {
+                leftString = ue  + num.repeat(size);
+                rightString = ue + otherNum.repeat(size);
+            }
+            case UTF_UTF_MATCH -> {
+                leftString = ue  + ue.repeat(size);
                 rightString = ue + ue.repeat(size);
             }
-            case UTF_AZ -> {
-                leftString = ue + az.repeat(size);
-                rightString = leftString;
+            case UTF_UTF_MISMATCH -> {
+                leftString = ue  + ue.repeat(size);
+                rightString = ue + "\u0130".repeat(size);
             }
-            case UTF_LAT -> {
-                leftString = ue + lat.repeat(size);
-                rightString = leftString;
-            }
-            case UTF_UTF -> {
-                leftString = ue + ue.repeat(size);
-                rightString = leftString;
-            }
+            default -> throw new IllegalArgumentException("Unconfigured coder: " + code_content_match);
         }
         rightString = rightString.toUpperCase(Locale.ENGLISH);
     }
