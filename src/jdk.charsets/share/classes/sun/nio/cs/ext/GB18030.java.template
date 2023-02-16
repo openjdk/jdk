@@ -34,8 +34,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.nio.cs.Surrogate;
 
 public class GB18030

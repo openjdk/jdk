@@ -62,7 +62,7 @@ public class SPI {
                                             alias);
                                 }
                                 out.printf("                });%n%n");
-                        });
+                            });
                     }
                 }
             } else if (type.startsWith("stdcs")) {    // StandardCharsets.java
