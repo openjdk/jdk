@@ -110,7 +110,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   const XMMRegister xtmp4 = xmm9;
   const XMMRegister xtmp5 = xmm10;
 
-  Label SLOOP1, SPRELOOP1A_AVX2, SLOOP1A_AVX2, SLOOP1A_AVX3, AVX3_REDUCE, SKIP_LOOP_1A;
+  Label SLOOP1, SLOOP1A_AVX2, SLOOP1A_AVX3, AVX3_REDUCE, SKIP_LOOP_1A;
   Label SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -133,6 +133,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ movdl(xa, init_d); //vmovd - 32bit
 
   __ bind(SLOOP1);
+  __ vpxor(yb, yb, yb, VM_Version::supports_avx512vl() ? Assembler::AVX_512bit : Assembler::AVX_256bit);
   __ movl(s, LIMIT);
   __ cmpl(s, size);
   __ cmovl(Assembler::above, s, size); // s = min(size, LIMIT)
@@ -144,10 +145,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   if (VM_Version::supports_avx512vl()) {
     // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
     __ cmpl(s, MAX2(128, VM_Version::avx3_threshold()));
-    __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
-
+    __ jcc(Assembler::belowEqual, SLOOP1A_AVX2);
     __ lea(end, Address(s, data, Address::times_1, - (2*CHUNKSIZE -1)));
-    __ vpxor(yb, yb, yb, Assembler::AVX_512bit);
 
     // Some notes on vectorized main loop algorithm.
     // Additions are performed in slices of 16 bytes in the main loop.
@@ -164,8 +163,8 @@ address StubGenerator::generate_updateBytesAdler32() {
     // Since addition was performed in chunks of 16 bytes, thus to match the scalar implementation
     // Oth lane element must be repeatedly added 16 times, 1st element 15 times and so on so forth.
     // Thus we first multiply yb by 16 followed by subtracting appropriately scaled ya value.
-    // yb = 16 x yb  - [0 - 15] x ya
-    //    = 64 x [0 - 15] + 48 x [16 - 31] + 32 x [32 - 47] + 16 x [48 - 63]  -  [0 - 15] x ya
+    // yb = 16 x yb  - [a0 - a15] x ya
+    //    = 64 x [a0 - a15] + 48 x [a16 - a31] + 32 x [a32 - a47] + 16 x [a48 - a63]  -  [a0 - a15] x ya
     //    = 64 x a0 + 63 x a1 + 62 x a2 ...... + a63
     __ bind(SLOOP1A_AVX3);
       __ evpmovzxbd(ydata0, Address(data, 0), Assembler::AVX_512bit);
@@ -220,8 +219,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   }
 
   __ align32();
-  __ bind(SPRELOOP1A_AVX2);
-  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
   __ bind(SLOOP1A_AVX2);
     __ vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
     __ addptr(data, CHUNKSIZE);
@@ -282,7 +279,6 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   // continue loop
   __ movdl(xa, a_d);
-  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
   __ jmp(SLOOP1);
 
   __ bind(FINISH);
