@@ -484,13 +484,13 @@ inline bool BitMapIterator::next(BitMap::idx_t* index) {
 inline BitMapReverseIterator::BitMapReverseIterator(BitMap* bitmap)
   : BitMapReverseIterator(bitmap, 0, bitmap->size()) {}
 
-inline BitMapReverseIterator::BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end)
+inline BitMapReverseIterator::BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end)
   : _bitmap(bitmap),
-    _start(start),
+    _beg(beg),
     _pos(end) {}
 
-inline void BitMapReverseIterator::reset(BitMap::idx_t start, BitMap::idx_t end) {
-  _start = start;
+inline void BitMapReverseIterator::reset(BitMap::idx_t beg, BitMap::idx_t end) {
+  _beg = beg;
   _pos = end;
 }
 
@@ -499,7 +499,7 @@ inline void BitMapReverseIterator::reset(BitMap::idx_t end) {
 }
 
 inline bool BitMapReverseIterator::next(size_t* index) {
-  BitMap::idx_t res = _bitmap->get_prev_one_offset(_start, _pos);
+  BitMap::idx_t res = _bitmap->get_prev_one_offset(_beg, _pos);
   if (res == BitMap::idx_t(-1)) {
     return false;
   }

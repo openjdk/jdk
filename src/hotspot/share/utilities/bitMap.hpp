@@ -532,6 +532,10 @@ class BitMapClosure {
 
 // Stand-alone iterators
 
+// Forward iterator.
+//
+// Iterates over each set bit, starting from the
+// least index in the range to the greatest, in order.
 class BitMapIterator {
 private:
   BitMap* const _bitmap;
@@ -539,25 +543,51 @@ private:
   BitMap::idx_t _end;
 
 public:
-  BitMapIterator(BitMap* bitmap);
-  BitMapIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+  // Iterate over the entire bitmap.
+  explicit BitMapIterator(BitMap* bitmap);
 
+  // Iterator for a given range of the bitmap.
+  //
+  // precondition: beg and end form a valid range.
+  //  beg <= end
+  //  beg - inclusive
+  //  end - exclusive
+  BitMapIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end);
+
+  // Search for the next bit and fill in the index of that bit.
+  //
+  // Returns false iff when there's no more set bits in the range.
   bool next(BitMap::idx_t* index);
 };
 
+// Reverse iterator.
+//
+// Iterates over each set bit, starting from the
+// greatest index in the range to the least, in order.
 class BitMapReverseIterator {
 private:
   BitMap* const _bitmap;
-  BitMap::idx_t _start;
+  BitMap::idx_t _beg;
   BitMap::idx_t _pos;
 
 public:
-  BitMapReverseIterator(BitMap* bitmap);
-  BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+  // Iterate over the entire bitmap.
+  explicit BitMapReverseIterator(BitMap* bitmap);
+
+  // Iterator for a given range of the bitmap.
+  //
+  // precondition: beg and end form a valid range.
+  //  beg <= end
+  //  beg - inclusive
+  //  end - exclusive
+  BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end);
 
   void reset(BitMap::idx_t start, BitMap::idx_t end);
   void reset(BitMap::idx_t end);
 
+  // Search for the next bit and fill in the index of that bit.
+  //
+  // Returns false iff when there's no more set bits in the range.
   bool next(BitMap::idx_t* index);
 };
 
