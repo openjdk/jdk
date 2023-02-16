@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -66,6 +67,7 @@ import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
@@ -1338,6 +1340,12 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
+                public Boolean visitEscape(EscapeTree node, Content content) {
+                    result.add(node.getBody());
+                    return false;
+                }
+
+                @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
                     content.add(output);
@@ -1543,7 +1551,8 @@ public class HtmlDocletWriter {
         Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
-                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
+                && Objects.equals(utils.containingPackage(currentPageElement),
+                utils.containingPackage(element));
     }
 
     /**

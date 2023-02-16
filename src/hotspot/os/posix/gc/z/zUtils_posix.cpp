@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
-  void* res = NULL;
+  void* res = nullptr;
 
   // Use raw posix_memalign as long as we have no wrapper for it
   ALLOW_C_FUNCTION(::posix_memalign, int rc = posix_memalign(&res, alignment, size);)

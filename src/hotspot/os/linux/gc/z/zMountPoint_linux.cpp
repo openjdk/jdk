@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
 
 ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
-  if (AllocateHeapAt != NULL) {
+  if (AllocateHeapAt != nullptr) {
     // Use specified path
     _path = os::strdup(AllocateHeapAt, mtGC);
   } else {
@@ -48,12 +48,12 @@ ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoi
 
 ZMountPoint::~ZMountPoint() {
   os::free(_path);
-  _path = NULL;
+  _path = nullptr;
 }
 
 char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) const {
-  char* line_mountpoint = NULL;
-  char* line_filesystem = NULL;
+  char* line_mountpoint = nullptr;
+  char* line_filesystem = nullptr;
 
   // Parse line and return a newly allocated string containing the mount point if
   // the line contains a matching filesystem and the mount point is accessible by
@@ -64,7 +64,7 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
     ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);)
-    line_mountpoint = NULL;
+    line_mountpoint = nullptr;
   }
 
   ALLOW_C_FUNCTION(::free, ::free(line_filesystem);)
@@ -74,18 +74,18 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
 
 void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpoints) const {
   FILE* fd = os::fopen(PROC_SELF_MOUNTINFO, "r");
-  if (fd == NULL) {
+  if (fd == nullptr) {
     ZErrno err;
     log_error_p(gc)("Failed to open %s: %s", PROC_SELF_MOUNTINFO, err.to_string());
     return;
   }
 
-  char* line = NULL;
+  char* line = nullptr;
   size_t length = 0;
 
   while (getline(&line, &length, fd) != -1) {
     char* const mountpoint = get_mountpoint(line, filesystem);
-    if (mountpoint != NULL) {
+    if (mountpoint != nullptr) {
       mountpoints->append(mountpoint);
     }
   }
@@ -109,7 +109,7 @@ char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
   // Find preferred mount point
   ZArrayIterator<char*> iter1(mountpoints);
   for (char* mountpoint; iter1.next(&mountpoint);) {
-    for (const char** preferred = preferred_mountpoints; *preferred != NULL; preferred++) {
+    for (const char** preferred = preferred_mountpoints; *preferred != nullptr; preferred++) {
       if (!strcmp(mountpoint, *preferred)) {
         // Preferred mount point found
         return os::strdup(mountpoint, mtGC);
@@ -124,11 +124,11 @@ char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
     log_error_p(gc)("  %s", mountpoint);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 char* ZMountPoint::find_mountpoint(const char* filesystem, const char** preferred_mountpoints) const {
-  char* path = NULL;
+  char* path = nullptr;
   ZArray<char*> mountpoints;
 
   get_mountpoints(filesystem, &mountpoints);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,7 +60,7 @@ address os::current_stack_pointer() {
 
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
-  return frame(NULL, NULL); // silence compile warning.
+  return frame(nullptr, nullptr); // silence compile warning.
 }
 
 frame os::current_frame() {
@@ -71,7 +71,7 @@ frame os::current_frame() {
   //     set the sp to a close approximation of the real value in
   //     order to allow this step to complete.
   //   - Step 120 (printing native stack) tries to walk the stack.
-  //     The frame we create has a NULL pc, which is ignored as an
+  //     The frame we create has a null pc, which is ignored as an
   //     invalid frame.
   frame dummy = frame();
   dummy.set_sp((intptr_t *) current_stack_pointer());
@@ -177,7 +177,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) {
       *ret_sp = (intptr_t*) os::Linux::ucontext_get_sp(uc);
@@ -186,7 +186,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
       *ret_fp = (intptr_t*) os::Linux::ucontext_get_fp(uc);
     }
   } else {
-    epc = NULL;
+    epc = nullptr;
     if (ret_sp) {
       *ret_sp = nullptr;
     }
@@ -202,7 +202,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   // This code is only called from error handler to get PC and SP.
   // We don't have the ready ZeroFrame* at this point, so fake the
   // frame with bare minimum.
-  if (ucVoid != NULL) {
+  if (ucVoid != nullptr) {
     const ucontext_t* uc = (const ucontext_t*)ucVoid;
     frame dummy = frame();
     dummy.set_pc(os::Posix::ucontext_get_pc(uc));
@@ -216,7 +216,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  if (info != NULL && thread != NULL) {
+  if (info != nullptr && thread != nullptr) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;

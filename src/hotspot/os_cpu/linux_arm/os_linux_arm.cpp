@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ intptr_t* os::Linux::ucontext_get_fp(const ucontext_t* uc) {
 
 bool is_safe_for_fp(address pc) {
 #ifdef __thumb__
-  if (CodeCache::find_blob(pc) != NULL) {
+  if (CodeCache::find_blob(pc) != nullptr) {
     return true;
   }
   // For thumb C frames, given an fp we have no idea how to access the frame contents.
@@ -155,13 +155,13 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) {
       intptr_t* fp = os::Linux::ucontext_get_fp(uc);
 #ifndef __thumb__
-      if (CodeCache::find_blob(epc) == NULL) {
+      if (CodeCache::find_blob(epc) == nullptr) {
         // It's a C frame. We need to adjust the fp.
         fp += C_frame_offset;
       }
@@ -172,14 +172,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
       // potentially necessary.
       if (!is_safe_for_fp(epc)) {
         // FP unreliable
-        fp = (intptr_t *)NULL;
+        fp = (intptr_t *)nullptr;
       }
       *ret_fp = fp;
     }
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -199,7 +199,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
 #else
   address pc = fr->sender_pc();
   if (! is_safe_for_fp(pc)) {
-    return frame(fr->sender_sp(), (intptr_t *)NULL, pc);
+    return frame(fr->sender_sp(), (intptr_t *)nullptr, pc);
   } else {
     return frame(fr->sender_sp(), fr->link() + C_frame_offset, pc);
   }
@@ -243,10 +243,10 @@ extern "C" address check_vfp3_32_fault_instr;
 extern "C" address check_simd_fault_instr;
 extern "C" address check_mp_ext_fault_instr;
 
-address check_vfp_fault_instr = NULL;
-address check_vfp3_32_fault_instr = NULL;
-address check_simd_fault_instr = NULL;
-address check_mp_ext_fault_instr = NULL;
+address check_vfp_fault_instr = nullptr;
+address check_vfp3_32_fault_instr = nullptr;
+address check_simd_fault_instr = nullptr;
+address check_mp_ext_fault_instr = nullptr;
 
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -264,11 +264,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     return true;
   }
 
-  address stub = NULL;
-  address pc = NULL;
+  address stub = nullptr;
+  address pc = nullptr;
   bool unsafe_access = false;
 
-  if (info != NULL && uc != NULL && thread != NULL) {
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
@@ -324,15 +324,15 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-        if ((nm != NULL && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
+        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        if ((nm != nullptr && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
           CodeBlob* cb = CodeCache::find_blob(pc);
-          if (cb != NULL) {
+          if (cb != nullptr) {
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
           }
       } else if (sig == SIGILL && *(int *)pc == NativeInstruction::not_entrant_illegal_instruction) {
@@ -355,7 +355,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  if (unsafe_access && stub == NULL) {
+  if (unsafe_access && stub == nullptr) {
     // it can be an unsafe access and we haven't found
     // any other suitable exception reason,
     // so assume it is an unsafe access.
@@ -372,7 +372,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
   }
 
-  if (stub != NULL) {
+  if (stub != nullptr) {
 #ifdef __thumb__
     if (uc->uc_mcontext.arm_cpsr & PSR_T_BIT) {
       intptr_t p = (intptr_t)pc | 0x1;
@@ -390,7 +390,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 #endif
 
     // save all thread context in case we need to restore it
-    if (thread != NULL) thread->set_saved_exception_pc(pc);
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
 
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
@@ -442,7 +442,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -471,7 +471,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -488,7 +488,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -514,7 +514,7 @@ int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t ex
   // try to use the stub:
   cmpxchg_long_func_t func = CAST_TO_FN_PTR(cmpxchg_long_func_t, StubRoutines::atomic_cmpxchg_long_entry());
 
-  if (func != NULL) {
+  if (func != nullptr) {
     _cmpxchg_long_func = func;
     return (*func)(compare_value, exchange_value, dest);
   }
@@ -530,7 +530,7 @@ int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
   load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::atomic_load_long_entry());
 
-  if (func != NULL) {
+  if (func != nullptr) {
     _load_long_func = func;
     return (*func)(src);
   }
@@ -544,7 +544,7 @@ void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
   store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::atomic_store_long_entry());
 
-  if (func != NULL) {
+  if (func != nullptr) {
     _store_long_func = func;
     return (*func)(val, dest);
   }
@@ -556,7 +556,7 @@ void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
 int32_t ARMAtomicFuncs::add_bootstrap(int32_t add_value, volatile int32_t *dest) {
   atomic_add_func_t func = CAST_TO_FN_PTR(atomic_add_func_t,
                                           StubRoutines::atomic_add_entry());
-  if (func != NULL) {
+  if (func != nullptr) {
     _add_func = func;
     return (*func)(add_value, dest);
   }
@@ -569,7 +569,7 @@ int32_t ARMAtomicFuncs::add_bootstrap(int32_t add_value, volatile int32_t *dest)
 int32_t ARMAtomicFuncs::xchg_bootstrap(int32_t exchange_value, volatile int32_t *dest) {
   atomic_xchg_func_t func = CAST_TO_FN_PTR(atomic_xchg_func_t,
                                            StubRoutines::atomic_xchg_entry());
-  if (func != NULL) {
+  if (func != nullptr) {
     _xchg_func = func;
     return (*func)(exchange_value, dest);
   }
@@ -583,7 +583,7 @@ int32_t ARMAtomicFuncs::cmpxchg_bootstrap(int32_t compare_value, int32_t exchang
   // try to use the stub:
   cmpxchg_func_t func = CAST_TO_FN_PTR(cmpxchg_func_t, StubRoutines::atomic_cmpxchg_entry());
 
-  if (func != NULL) {
+  if (func != nullptr) {
     _cmpxchg_func = func;
     return (*func)(compare_value, exchange_value, dest);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciNullObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/oop.inline.hpp"
@@ -42,16 +43,16 @@
 ciType* ciInstance::java_mirror_type() {
   VM_ENTRY_MARK;
   oop m = get_oop();
-  // Return NULL if it is not java.lang.Class.
-  if (m == NULL || m->klass() != vmClasses::Class_klass()) {
-    return NULL;
+  // Return null if it is not java.lang.Class.
+  if (m == nullptr || m->klass() != vmClasses::Class_klass()) {
+    return nullptr;
   }
   // Return either a primitive type or a klass.
   if (java_lang_Class::is_primitive(m)) {
     return ciType::make(java_lang_Class::primitive_type(m));
   } else {
     Klass* k = java_lang_Class::as_Klass(m);
-    assert(k != NULL, "");
+    assert(k != nullptr, "");
     return CURRENT_THREAD_ENV->get_klass(k);
   }
 }
@@ -59,17 +60,22 @@ ciType* ciInstance::java_mirror_type() {
 // ------------------------------------------------------------------
 // ciInstance::field_value_impl
 ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
+  ciConstant value = check_constant_value_cache(offset, field_btype);
+  if (value.is_valid()) {
+    return value;
+  }
+  VM_ENTRY_MARK;
   oop obj = get_oop();
-  assert(obj != NULL, "bad oop");
+  assert(obj != nullptr, "bad oop");
   switch(field_btype) {
-    case T_BYTE:    return ciConstant(field_btype, obj->byte_field(offset));
-    case T_CHAR:    return ciConstant(field_btype, obj->char_field(offset));
-    case T_SHORT:   return ciConstant(field_btype, obj->short_field(offset));
-    case T_BOOLEAN: return ciConstant(field_btype, obj->bool_field(offset));
-    case T_INT:     return ciConstant(field_btype, obj->int_field(offset));
-    case T_FLOAT:   return ciConstant(obj->float_field(offset));
-    case T_DOUBLE:  return ciConstant(obj->double_field(offset));
-    case T_LONG:    return ciConstant(obj->long_field(offset));
+    case T_BYTE:    value = ciConstant(field_btype, obj->byte_field(offset)); break;
+    case T_CHAR:    value = ciConstant(field_btype, obj->char_field(offset)); break;
+    case T_SHORT:   value = ciConstant(field_btype, obj->short_field(offset)); break;
+    case T_BOOLEAN: value = ciConstant(field_btype, obj->bool_field(offset)); break;
+    case T_INT:     value = ciConstant(field_btype, obj->int_field(offset)); break;
+    case T_FLOAT:   value = ciConstant(obj->float_field(offset)); break;
+    case T_DOUBLE:  value = ciConstant(obj->double_field(offset)); break;
+    case T_LONG:    value = ciConstant(obj->long_field(offset)); break;
     case T_OBJECT:  // fall through
     case T_ARRAY: {
       oop o = obj->obj_field(offset);
@@ -81,16 +87,18 @@ ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
       // or ciInstance is created.  The compiler may be able to use
       // information about the object's class (which is exact) or length.
 
-      if (o == NULL) {
-        return ciConstant(field_btype, ciNullObject::make());
+      if (o == nullptr) {
+        value = ciConstant(field_btype, ciNullObject::make());
       } else {
-        return ciConstant(field_btype, CURRENT_ENV->get_object(o));
+        value = ciConstant(field_btype, CURRENT_ENV->get_object(o));
       }
+      break;
     }
     default:
       fatal("no field value: %s", type2name(field_btype));
-      return ciConstant();
   }
+  add_to_constant_value_cache(offset, value);
+  return value;
 }
 
 // ------------------------------------------------------------------
@@ -101,8 +109,7 @@ ciConstant ciInstance::field_value(ciField* field) {
   assert(is_loaded(), "invalid access - must be loaded");
   assert(field->holder()->is_loaded(), "invalid access - holder must be loaded");
   assert(field->is_static() || klass()->is_subclass_of(field->holder()), "invalid access - must be subclass");
-
-  GUARDED_VM_ENTRY(return field_value_impl(field->type()->basic_type(), field->offset());)
+  return field_value_impl(field->type()->basic_type(), field->offset());
 }
 
 // ------------------------------------------------------------------
@@ -112,7 +119,7 @@ ciConstant ciInstance::field_value(ciField* field) {
 ciConstant ciInstance::field_value_by_offset(int field_offset) {
   ciInstanceKlass* ik = klass()->as_instance_klass();
   ciField* field = ik->get_field_by_offset(field_offset, false);
-  if (field == NULL)
+  if (field == nullptr)
     return ciConstant();  // T_ILLEGAL
   return field_value(field);
 }

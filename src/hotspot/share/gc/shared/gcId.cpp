@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ uint GCId::current_or_undefined() {
 
 size_t GCId::print_prefix(char* buf, size_t len) {
   Thread* thread = Thread::current_or_null();
-  if (thread != NULL) {
+  if (thread != nullptr) {
     uint gc_id = current_or_undefined();
     if (gc_id != undefined()) {
       int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
