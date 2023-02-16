@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ import org.openide.util.actions.CookieAction;
  *
  * @author Thomas Wuerthinger
  */
-public final class CloneGraphAction extends CookieAction {
+public final class NewGraphTabAction extends CookieAction {
 
     @Override
     protected void performAction(Node[] activatedNodes) {
-        GraphCloneCookie c = activatedNodes[0].getCookie(GraphCloneCookie.class);
+        NewGraphTabCookie c = activatedNodes[0].getCookie(NewGraphTabCookie.class);
         assert c != null;
-        c.openClone();
+        c.openNewTab();
     }
 
     @Override
@@ -51,9 +51,9 @@ public final class CloneGraphAction extends CookieAction {
         boolean b = super.enable(activatedNodes);
         if (b) {
             assert activatedNodes.length == 1;
-            GraphCloneCookie c = activatedNodes[0].getCookie(GraphCloneCookie.class);
+            NewGraphTabCookie c = activatedNodes[0].getCookie(NewGraphTabCookie.class);
             assert c != null;
-            return true;
+            return c.isActive();
         }
 
         return false;
@@ -61,13 +61,13 @@ public final class CloneGraphAction extends CookieAction {
 
     @Override
     public String getName() {
-        return "Open clone";
+        return "Open in new tab";
     }
 
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            GraphCloneCookie.class
+                NewGraphTabCookie.class
         };
     }
 
