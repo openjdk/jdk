@@ -1617,10 +1617,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min) {
+                                    bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, length_in_bytes);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);

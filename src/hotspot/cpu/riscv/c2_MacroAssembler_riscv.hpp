@@ -185,7 +185,7 @@
 
  void minmax_FD_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min);
+                  bool is_double, bool is_min, int length_in_bytes);
 
  void reduce_minmax_FD_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
