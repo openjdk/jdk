@@ -1,0 +1,99 @@
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/EventType.java b/src/jdk.jfr/share/classes/jdk/jfr/EventType.java
+index 0cfb2bee60c..8ced73b2ab9 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/EventType.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/EventType.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -44,9 +44,11 @@ import jdk.jfr.internal.Utils;
+  * @since 9
+  */
+ public final class EventType {
++    private static final String UNKNOWN = new String();
+     private static final List<String> UNCATEGORIZED = List.of("Uncategorized");
+     private final PlatformEventType platformEventType;
+     private Map<String, ValueDescriptor> cache; // create lazy to avoid memory overhead
++    private String label = UNKNOWN;
+     // helper constructor
+     EventType(PlatformEventType platformEventType) {
+         this.platformEventType = platformEventType;
+@@ -117,7 +119,10 @@ public final class EventType {
+      * @see Label
+      */
+     public String getLabel() {
+-        return platformEventType.getLabel();
++        if (label == UNKNOWN) {
++            label = platformEventType.getLabel();;
++        }
++        return label;
+     }
+ 
+     /**
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/ValueDescriptor.java b/src/jdk.jfr/share/classes/jdk/jfr/ValueDescriptor.java
+index 7f517e07b61..75ed52371ec 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/ValueDescriptor.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/ValueDescriptor.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -40,13 +40,15 @@ import jdk.jfr.internal.Utils;
+  * @since 9
+  */
+ public final class ValueDescriptor {
+-
++    private static final String UNKNOWN = new String();
+     private final AnnotationConstruct annotationConstruct;
+     private final Type type;
+     private final String name;
+     private final boolean isArray;
+     private final boolean constantPool;
+     private final String javaFieldName;
++    private String label = UNKNOWN;
++    private String contentType = UNKNOWN;
+ 
+     // package private, invoked by jdk.internal.
+     ValueDescriptor(Type type, String name, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName) {
+@@ -165,7 +167,10 @@ public final class ValueDescriptor {
+      * @return a human-readable name, or {@code null} if doesn't exist
+      */
+     public String getLabel() {
+-        return annotationConstruct.getLabel();
++        if (label == UNKNOWN) {
++            label = annotationConstruct.getLabel();;
++        }
++        return label;
+     }
+ 
+     /**
+@@ -216,14 +221,18 @@ public final class ValueDescriptor {
+      * @see ContentType
+      */
+     public String getContentType() {
+-        for (AnnotationElement anno : getAnnotationElements()) {
+-            for (AnnotationElement meta : anno.getAnnotationElements()) {
+-                if (meta.getTypeName().equals(ContentType.class.getName())) {
+-                    return anno.getTypeName();
++        if (contentType == UNKNOWN) {
++            for (AnnotationElement anno : getAnnotationElements()) {
++                for (AnnotationElement meta : anno.getAnnotationElements()) {
++                    if (meta.getTypeName().equals(ContentType.class.getName())) {
++                        contentType = anno.getTypeName();
++                        return contentType;
++                    }
+                 }
+             }
++            contentType = null;
+         }
+-        return null;
++        return contentType;
+     }
+ 
+     /**
