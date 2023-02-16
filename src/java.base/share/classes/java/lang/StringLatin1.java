@@ -470,7 +470,10 @@ final class StringLatin1 {
      */
     private static boolean latin1EqualsIgnoreCase(byte a, byte b) {
         int A = a & 0xDF; // uppercase a
-        return ( (A >= 'A' && A <= 'Z') // A in range A-Z
+        if (A < 'A') {
+            return false;  // Reject common non-letter ASCII fast
+        }
+        return ( A <= 'Z' // A in range A-Z
                 || (A >= 0xC0 && A <= 0xDE)) // ..or Agrave-Thorn
                 && A != 0xD7 // But not multiply
                 && A == (b & 0xDF); // b has same uppercase
