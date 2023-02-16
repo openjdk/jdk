@@ -241,12 +241,6 @@
           "the samples. Higher values provide more fidelity, at expense "   \
           "of more sampling overhead.")                                     \
                                                                             \
-  product(ccstr, ShenandoahRegionSamplingFile,                              \
-          "./shenandoahSnapshots_pid%p.log",                                \
-          "If ShenandoahLogRegionSampling is on, save sampling data stream "\
-          "to this file [default: ./shenandoahSnapshots_pid%p.log] "        \
-          "(%p replaced with pid)")                                         \
-                                                                            \
   product(uintx, ShenandoahControlIntervalMin, 1, EXPERIMENTAL,             \
           "The minimum sleep interval for the control loop that drives "    \
           "the cycles. Lower values would increase GC responsiveness "      \
