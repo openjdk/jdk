@@ -32,8 +32,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.time.Instant;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Helper class used by InnerClassLambdaMetafactory to log generated classes
@@ -53,6 +53,7 @@ final class ProxyClassesDumper {
     private static final String[] REPLACEMENT = {
         "%5C", "%3A", "%2A", "%3F", "%22", "%3C", "%3E", "%7C"
     };
+    private static AtomicInteger counter = new AtomicInteger();
 
     private final Path dumpDir;
 
@@ -96,17 +97,11 @@ final class ProxyClassesDumper {
         }
     }
 
-    public static String encodeForFilename(String className) {
+    public String encodeForFilename(String className) {
         final int len = className.length();
-        // add some padding to `len` for the timestamp
-        StringBuilder sb = new StringBuilder(len + 30);
-        int lastSlash = className.lastIndexOf('/');
-
+        // add some padding to `len` for the index
+        StringBuilder sb = new StringBuilder(len + 5);
         for (int i = 0; i < len; i++) {
-            if (i == lastSlash + 1) {
-                // insert the timestamp
-                sb.append(Instant.now().toString().replace('-', '_').replace(':', '_')).append('-');
-            }
             char c = className.charAt(i);
             // control characters
             if (c <= 31) {
@@ -126,6 +121,7 @@ final class ProxyClassesDumper {
                 }
             }
         }
+        sb.append(counter.incrementAndGet());
 
         return sb.toString();
     }
