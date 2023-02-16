@@ -770,7 +770,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 // This is called BEFORE we enter the CDS safepoint. We can allocate heap objects.
 // This should be called when we know no more strings will be added (which will be easy
 // to guarantee because CDS runs with a single Java thread. See JDK-8253495.)
-void StringTable::allocate_shared_table(TRAPS) {
+void StringTable::allocate_shared_strings_array(TRAPS) {
   assert(DumpSharedSpaces, "must be");
   if (_items_count > (size_t)max_jint) {
     fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
@@ -783,7 +783,7 @@ void StringTable::allocate_shared_table(TRAPS) {
 
   if (!ArchiveHeapWriter::is_too_large_to_archive(single_array_size)) {
     // The entire table can fit in a single array
-    objArrayOop array = oopFactory::new_objArray(vmClasses::String_klass(), total, CHECK);
+    objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), total, CHECK);
     _shared_strings_array = OopHandle(Universe::vm_global(), array);
     _two_dimensional_shared_strings_array = false;
     log_info(cds)("string table array (single level) length = %d", total);
@@ -811,7 +811,7 @@ void StringTable::allocate_shared_table(TRAPS) {
       }
       total -= len;
 
-      objArrayOop secondary = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK);
+      objArrayOop secondary = oopFactory::new_objArray(vmClasses::Object_klass(), len, CHECK);
       primaryHandle()->obj_at_put(i, secondary);
 
       log_info(cds)("string table array (secondary)[%d] length = %d", i, len);
@@ -823,6 +823,10 @@ void StringTable::allocate_shared_table(TRAPS) {
 }
 
 // This is called AFTER we enter the CDS safepoint.
+//
+// For each shared string:
+// [1] Store it into _shared_strings_array. Encode its position as a 32-bit index.
+// [2] Store the index and hashcode into _shared_table.
 oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::can_write(), "must be");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
@@ -845,6 +849,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
       assert(primary_index < array->length(), "no strings should have been added");
       objArrayOop secondary = (objArrayOop)array->obj_at(primary_index);
 
+      assert(secondary != nullptr && secondary->is_objArray(), "must be");
       assert(secondary_index < secondary->length(), "no strings should have been added");
       secondary->obj_at_put(secondary_index, string);
     }
@@ -858,7 +863,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
   return array;
 }
 
-void StringTable::set_archived_table_index(int root_index) {
+void StringTable::set_shared_strings_array_index(int root_index) {
   _shared_strings_array_root_index = root_index;
 }
 

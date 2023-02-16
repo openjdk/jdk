@@ -344,6 +344,7 @@ private:
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
   static void archive_java_mirrors();
+  static void archive_strings();
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {

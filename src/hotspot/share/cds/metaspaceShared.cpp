@@ -801,7 +801,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  StringTable::allocate_shared_table(CHECK);
+  StringTable::allocate_shared_strings_array(CHECK);
   ArchiveHeapWriter::init();
   if (use_full_module_graph()) {
     HeapShared::reset_archived_object_states(CHECK);

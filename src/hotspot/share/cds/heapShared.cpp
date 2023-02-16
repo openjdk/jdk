@@ -373,8 +373,6 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 }
 
 void HeapShared::archive_java_mirrors() {
-  init_seen_objects_table();
-
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
@@ -420,15 +418,13 @@ void HeapShared::archive_java_mirrors() {
       }
     }
   }
+}
 
-  {
-    oop archived_string_table = StringTable::init_shared_table(_dumped_interned_strings);
-    bool success = archive_reachable_objects_from(1, _default_subgraph_info, archived_string_table, /*is_closed_archive=*/ false);
-    guarantee(success, "archived string table should not point to any unachivable objects");
-    StringTable::set_archived_table_index(append_root(archived_string_table));
-  }
-
-  delete_seen_objects_table();
+void HeapShared::archive_strings() {
+  oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
+  bool success = archive_reachable_objects_from(1, _default_subgraph_info, shared_strings_array, /*is_closed_archive=*/ false);
+  guarantee(success, "shared strings array should not point to any unachivable objects");
+  StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
 void HeapShared::mark_native_pointers(oop orig_obj) {
@@ -593,7 +589,13 @@ void HeapShared::copy_closed_objects() {
 void HeapShared::copy_open_objects() {
   assert(HeapShared::can_write(), "must be");
 
-  archive_java_mirrors();
+  {
+    // Archive special objects that do not belong to any subgraphs
+    init_seen_objects_table();
+    archive_java_mirrors();
+    archive_strings();
+    delete_seen_objects_table();
+  }
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
@@ -1404,7 +1406,6 @@ void HeapShared::check_default_subgraph_classes() {
     guarantee(subgraph_k->name()->equals("java/lang/Class") ||
               subgraph_k->name()->equals("java/lang/String") ||
               subgraph_k->name()->equals("[Ljava/lang/Object;") ||
-              subgraph_k->name()->equals("[Ljava/lang/String;") ||
               subgraph_k->name()->equals("[C") ||
               subgraph_k->name()->equals("[B"),
               "default subgraph can have only these objects");
