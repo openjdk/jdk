@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "utilities/tableStatistics.hpp"
 
@@ -104,6 +105,33 @@ class StringTable : public CHeapObj<mtSymbol>{
   }
 
   // Sharing
+#if INCLUDE_CDS_JAVA_HEAP
+  static inline oop read_string_from_compact_hashtable(address base_address, u4 index);
+
+private:
+  static bool _two_dimensional_shared_strings_array;
+  static OopHandle _shared_strings_array;
+  static int _shared_strings_array_root_index;
+
+  // All the shared strings are referenced through _shared_strings_array to keep them alive.
+  // Each shared string is stored as a 32-bit index in ::_shared_table. The index
+  // is interpreted in two ways:
+  //
+  // [1] _two_dimensional_shared_strings_array = false: _shared_strings_array is an Object[].
+  //     Each shared string is stored as _shared_strings_array[index]
+  //
+  // [2] _two_dimensional_shared_strings_array = true: _shared_strings_array is an Object[][]
+  //     This happens when there are too many elements in the shared table. We store them
+  //     using two levels of objArrays, such that none of the arrays are too big for
+  //     ArchiveHeapWriter::is_too_large_to_archive(). In this case, the index is splited into two
+  //     parts using the follow bit-opts. Each the shared string is stored as
+  //     _shared_strings_array[upper][lower]
+  //
+  const static int _secondary_array_index_bits = 14;
+  const static int _secondary_array_max_length = 1 << _secondary_array_index_bits;
+  const static int _secondary_array_index_mask = _secondary_array_max_length - 1;
+#endif // INCLUDE_CDS_JAVA_HEAP
+
  private:
   static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
