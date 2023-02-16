@@ -75,4 +75,35 @@ public class EqualsIgnoreCase extends CompactString {
                                             source));
                         });
     }
+
+    /**
+     * Exhaustively check that all lat1 code point pairs are equalsIgnoreCased
+     * in a manner consistent with Character.toUpperCase, Character.toLowerCase
+     */
+    @Test
+    public void checkConsistencyWithCharacterUppercaseLowerCase() {
+        for (int a = 0; a < 256; a++) {
+            for (int b = 0; b < 256; b++) {
+                if (a != b) {
+                    char ac = (char) a, bc = (char) b;
+                    byte ab = (byte) a, bb = (byte) b;
+
+                    String as = Character.toString(ac);
+                    String bs = Character.toString(bc);
+
+                    if (Character.toUpperCase(ac) == Character.toUpperCase(bc)
+                            || Character.toLowerCase(ac) == Character.toLowerCase(bc)) {
+
+                        if (!as.equalsIgnoreCase(bs)) {
+                            throw new RuntimeException(ac + " != " + bc);
+                        }
+                    } else {
+                        if (as.equalsIgnoreCase(bs)) {
+                            throw new RuntimeException(ac + " != " + bc);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
