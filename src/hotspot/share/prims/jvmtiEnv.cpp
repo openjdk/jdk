@@ -1023,11 +1023,11 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
       return err;
     }
 
-    // Collect threads from except_list for which resumed status must be restored.
+    // Collect threads from except_list for which resumed status must be restored (only for VirtualThread case)
     for (int idx = 0; idx < except_count; idx++) {
       jthread thread = except_list[idx];
       oop thread_oop = JNIHandles::resolve_external_guard(thread);
-      if (!JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {
+      if (java_lang_VirtualThread::is_instance(thread_oop) && !JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {
           // is not suspended, so its resumed status must be restored
           elist->append(except_list[idx]);
       }
@@ -1134,11 +1134,11 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
   JvmtiVTMSTransitionDisabler disabler(true);
   GrowableArray<jthread>* elist = new GrowableArray<jthread>(except_count);
 
-  // Collect threads from except_list for which suspended status must be restored.
+  // Collect threads from except_list for which suspended status must be restored (only for VirtualThread case)
   for (int idx = 0; idx < except_count; idx++) {
     jthread thread = except_list[idx];
     oop thread_oop = JNIHandles::resolve_external_guard(thread);
-    if (JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {
+    if (java_lang_VirtualThread::is_instance(thread_oop) && JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {
       // is suspended, so its suspended status must be restored
       elist->append(except_list[idx]);
     }
