@@ -1042,7 +1042,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
           ((java_lang_VirtualThread::is_instance(vt_oop) &&
             JvmtiEnvBase::is_vthread_alive(vt_oop) &&
             !JvmtiVTSuspender::is_vthread_suspended(vt_oop)) ||
-            java_thread->is_bound_vthread()) &&
+            (java_thread->is_bound_vthread() && !java_thread->is_suspended())) &&
           !is_in_thread_list(except_count, except_list, vt_oop)
          ) {
         if (java_thread == current) {
@@ -1153,7 +1153,7 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
         ((java_lang_VirtualThread::is_instance(vt_oop) &&
           JvmtiEnvBase::is_vthread_alive(vt_oop) &&
           JvmtiVTSuspender::is_vthread_suspended(vt_oop)) ||
-          java_thread->is_bound_vthread()) &&
+          (java_thread->is_bound_vthread() && java_thread->is_suspended())) &&
         !is_in_thread_list(except_count, except_list, vt_oop)
     ) {
       resume_thread(vt_oop, java_thread, /* single_resume */ false);
