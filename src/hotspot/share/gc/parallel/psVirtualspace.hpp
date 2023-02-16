@@ -35,7 +35,7 @@
 
 class PSVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
- protected:
+
   // The space is committed/uncommitted in chunks of size _alignment.  The
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
@@ -94,10 +94,9 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
 #ifndef PRODUCT
   // Debugging
-  static  bool is_aligned(size_t val, size_t align);
-          bool is_aligned(size_t val) const;
-          bool is_aligned(char* val) const;
-          void verify() const;
+  bool is_aligned(size_t val) const;
+  bool is_aligned(char* val) const;
+  void verify() const;
 
   // Helper class to verify a space when entering/leaving a block.
   class PSVirtualSpaceVerifier: public StackObj {

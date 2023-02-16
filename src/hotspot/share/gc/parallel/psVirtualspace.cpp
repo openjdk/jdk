@@ -26,6 +26,7 @@
 #include "gc/parallel/psVirtualspace.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 
 // PSVirtualSpace
 
@@ -103,14 +104,8 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
 }
 
 #ifndef PRODUCT
-bool PSVirtualSpace::is_aligned(size_t value, size_t align) {
-  const size_t tmp_value = value + align - 1;
-  const size_t mask = ~(align - 1);
-  return (tmp_value & mask) == value;
-}
-
 bool PSVirtualSpace::is_aligned(size_t value) const {
-  return is_aligned(value, alignment());
+  return ::is_aligned(value, alignment());
 }
 
 bool PSVirtualSpace::is_aligned(char* value) const {
@@ -118,7 +113,7 @@ bool PSVirtualSpace::is_aligned(char* value) const {
 }
 
 void PSVirtualSpace::verify() const {
-  assert(is_aligned(alignment(), os::vm_page_size()), "bad alignment");
+  assert(::is_aligned(alignment(), os::vm_page_size()), "bad alignment");
   assert(is_aligned(reserved_low_addr()), "bad reserved_low_addr");
   assert(is_aligned(reserved_high_addr()), "bad reserved_high_addr");
   assert(is_aligned(committed_low_addr()), "bad committed_low_addr");
