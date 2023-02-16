@@ -40,6 +40,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -728,12 +730,14 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   }
 
 #ifndef PRODUCT
-  if (TraceDependencies && target() != nullptr && target() != root_m->get_Method()) {
-    tty->print("found a non-root unique target method");
-    tty->print_cr("  context = %s", actual_recv->get_Klass()->external_name());
-    tty->print("  method  = ");
-    target->print_short_name(tty);
-    tty->cr();
+  LogTarget(Debug, dependencies) lt;
+  if (lt.is_enabled() && target() != nullptr && target() != root_m->get_Method()) {
+    LogStream ls(&lt);
+    ls.print("found a non-root unique target method");
+    ls.print_cr("  context = %s", actual_recv->get_Klass()->external_name());
+    ls.print("  method  = ");
+    target->print_short_name(&ls);
+    ls.cr();
   }
 #endif //PRODUCT
 

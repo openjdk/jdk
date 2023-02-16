@@ -467,7 +467,7 @@ class nmethod : public CompiledMethod {
   }
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
-  void print_dependencies()                       PRODUCT_RETURN;
+  void print_dependencies_on(outputStream* out) PRODUCT_RETURN;
   void flush_dependencies();
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {

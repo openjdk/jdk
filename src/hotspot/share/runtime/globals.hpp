@@ -857,9 +857,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceInlineCacheClearing, false,                            \
           "Trace clearing of inline caches in nmethods")                    \
                                                                             \
-  develop(bool, TraceDependencies, false,                                   \
-          "Trace dependencies")                                             \
-                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \

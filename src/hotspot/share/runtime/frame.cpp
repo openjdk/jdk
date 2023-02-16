@@ -306,10 +306,12 @@ bool frame::should_be_deoptimized() const {
       !is_compiled_frame() ) return false;
   assert(_cb != nullptr && _cb->is_compiled(), "must be an nmethod");
   CompiledMethod* nm = (CompiledMethod *)_cb;
-  if (TraceDependencies) {
-    tty->print("checking (%s) ", nm->is_marked_for_deoptimization() ? "true" : "false");
-    nm->print_value_on(tty);
-    tty->cr();
+  LogTarget(Debug, dependencies) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(&lt);
+    ls.print("checking (%s) ", nm->is_marked_for_deoptimization() ? "true" : "false");
+    nm->print_value_on(&ls);
+    ls.cr();
   }
 
   if( !nm->is_marked_for_deoptimization() )
