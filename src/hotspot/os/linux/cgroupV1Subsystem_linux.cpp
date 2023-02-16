@@ -90,15 +90,16 @@ void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
 
 /* read_mem_swap
  *
- * Returns the memory and swap metric
+ * Returns the memory and swap metric. Note that calling code
+ * needs to handle re-casting for negative values.
  *
  * return:
  *    A number > 0 if available,
- *    OSCONTAINER_ERROR for not supported
+ *    OSCONTAINER_ERROR (as julong) for not supported
  */
-jlong CgroupV1Subsystem::read_mem_swap() {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.memsw.limit_in_bytes",
-                     "Memory and Swap Limit is: ", JLONG_FORMAT, JLONG_FORMAT, memswlimit);
+julong CgroupV1Subsystem::read_mem_swap() {
+  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.limit_in_bytes",
+                     "Memory and Swap Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memswlimit);
   return memswlimit;
 }
 
@@ -126,12 +127,12 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
 }
 
 jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
-  jlong swap_limit = read_mem_swap();
+  julong memswlimit = read_mem_swap();
+  jlong swap_limit = (jlong)memswlimit; // For OSCONTAINER_ERROR which is < 0
   if (swap_limit < 0) {
     // swap disabled on kernel level. Treat it as no swap.
     return read_memory_limit_in_bytes();
   }
-  julong memswlimit = (julong)swap_limit;
   julong host_total_memsw;
   host_total_memsw = os::Linux::host_swap() + os::Linux::physical_memory();
   if (memswlimit >= host_total_memsw) {
