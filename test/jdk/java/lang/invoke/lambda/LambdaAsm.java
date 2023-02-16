@@ -136,7 +136,7 @@ public class LambdaAsm {
         int mcount = 0;
         try (DirectoryStream<Path> ds = newDirectoryStream(new File(".").toPath(),
                 // filter in lambda proxy classes
-                "A$I$$Lambda$*.class")) {
+                "*-A$I$$Lambda$*.class")) {
             for (Path p : ds) {
                 System.out.println(p.toFile());
                 ClassFile cf = ClassFile.read(p.toFile());
