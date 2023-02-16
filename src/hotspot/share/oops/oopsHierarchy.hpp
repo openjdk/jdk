@@ -77,22 +77,13 @@ class oopDesc;
 
 extern "C" bool CheckUnhandledOops;
 
-void z_catch_colored_oops(oopDesc*);
-
 class oop {
   oopDesc* _o;
 
   void register_oop();
   void unregister_oop();
 
-  void check_oop() const {
-#if INCLUDE_ZGC
-    z_catch_colored_oops(_o);
-#endif
-  }
-
   void register_if_checking() {
-    check_oop();
     if (CheckUnhandledOops) register_oop();
   }
 
@@ -104,17 +95,17 @@ public:
     if (CheckUnhandledOops) unregister_oop();
   }
 
-  oopDesc* obj() const                 { check_oop(); return _o; }
-  oopDesc* operator->() const          { return obj(); }
-  operator oopDesc* () const           { return obj(); }
+  oopDesc* obj() const                 { return _o; }
+  oopDesc* operator->() const          { return _o; }
+  operator oopDesc* () const           { return _o; }
 
-  bool operator==(const oop& o) const  { return obj() == o.obj(); }
-  bool operator!=(const oop& o) const  { return obj() != o.obj(); }
+  bool operator==(const oop& o) const  { return _o == o._o; }
+  bool operator!=(const oop& o) const  { return _o != o._o; }
 
-  bool operator==(std::nullptr_t) const     { return obj() == nullptr; }
-  bool operator!=(std::nullptr_t) const     { return obj() != nullptr; }
+  bool operator==(std::nullptr_t) const     { return _o == nullptr; }
+  bool operator!=(std::nullptr_t) const     { return _o != nullptr; }
 
-  oop& operator=(const oop& o)         { _o = o.obj(); return *this; }
+  oop& operator=(const oop& o)         { _o = o._o; return *this; }
 };
 
 template<>

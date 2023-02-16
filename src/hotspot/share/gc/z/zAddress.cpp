@@ -135,9 +135,3 @@ void ZGlobalsPointers::flip_old_relocate_start() {
   ZPointerRemappedOldMask ^= ZPointerRemappedMask;
   set_good_masks();
 }
-
-void z_catch_colored_oops(oopDesc* obj) {
-  if (UseZGC && ZVerifyOops) {
-    (void)to_zaddress(obj);
-  }
-}
