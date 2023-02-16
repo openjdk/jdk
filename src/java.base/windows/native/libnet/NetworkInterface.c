@@ -64,7 +64,8 @@ typedef struct _netaddr {
     struct _netaddr *Next;
 } netaddr;
 
-BOOL getAddressTables(MIB_UNICASTIPADDRESS_TABLE **uniAddrs, MIB_ANYCASTIPADDRESS_TABLE **anyAddrs) {
+BOOL getAddressTables(
+        MIB_UNICASTIPADDRESS_TABLE **uniAddrs, MIB_ANYCASTIPADDRESS_TABLE **anyAddrs) {
     ADDRESS_FAMILY addrFamily = ipv6_available() ? AF_UNSPEC : AF_INET;
     if (GetUnicastIpAddressTable(addrFamily, uniAddrs) != NO_ERROR) {
         return FALSE;
@@ -85,7 +86,9 @@ void freeNetaddrs(netaddr *netaddrP) {
     }
 }
 
-jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs, MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
+jobject createNetworkInterface(
+        JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs,
+        MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
     WCHAR ifName[NDIS_IF_MAX_BUFFER_SIZE];
     jobject netifObj, name, displayName, inetAddr, bcastAddr, bindAddr;
     jobjectArray addrArr, bindsArr, childArr;
@@ -100,10 +103,13 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
     }
 
     // set the NetworkInterface's name
-    if (ConvertInterfaceLuidToNameW(&(ifRow->InterfaceLuid), (PWSTR) &ifName, NDIS_IF_MAX_BUFFER_SIZE) != ERROR_SUCCESS) {
+    if (ConvertInterfaceLuidToNameW(
+            &(ifRow->InterfaceLuid), (PWSTR) &ifName, NDIS_IF_MAX_BUFFER_SIZE)
+            != ERROR_SUCCESS) {
         return NULL;
     }
-    name = (*env)->NewString(env, (const jchar *) &ifName, (jsize) wcslen((const wchar_t *) &ifName));
+    name = (*env)->NewString(
+            env, (const jchar *) &ifName, (jsize) wcslen((const wchar_t *) &ifName));
     if (name == NULL) {
         return NULL;
     }
@@ -111,7 +117,9 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
     (*env)->DeleteLocalRef(env, name);
 
     // set the NetworkInterface's display name
-    displayName = (*env)->NewString(env, (const jchar *) ifRow->Description, (jsize) wcslen((const wchar_t *) &(ifRow->Description)));
+    displayName = (*env)->NewString(
+            env, (const jchar *) ifRow->Description,
+            (jsize) wcslen((const wchar_t *) &(ifRow->Description)));
     if (displayName == NULL) {
         return NULL;
     }
@@ -124,7 +132,8 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
     // find addresses associated with this interface
     for (i = 0; i < uniAddrs->NumEntries; i++) {
         if (uniAddrs->Table[i].InterfaceLuid.Value == ifRow->InterfaceLuid.Value &&
-                (uniAddrs->Table[i].DadState == IpDadStatePreferred || uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
+                (uniAddrs->Table[i].DadState == IpDadStatePreferred ||
+                        uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             addrCount++;
             addrsCurrent = malloc(sizeof(netaddr));
             addrsCurrent->Address = uniAddrs->Table[i].Address;
@@ -168,7 +177,8 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
                 freeNetaddrs(addrsHead);
                 return NULL;
             }
-            setInetAddress_addr(env, inetAddr, ntohl(addrsCurrent->Address.Ipv4.sin_addr.s_addr));
+            setInetAddress_addr(
+                    env, inetAddr, ntohl(addrsCurrent->Address.Ipv4.sin_addr.s_addr));
             if ((*env)->ExceptionCheck(env)) {
                 freeNetaddrs(addrsHead);
                 return NULL;
@@ -182,8 +192,10 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
             }
             (*env)->SetObjectField(env, bindAddr, ni_ibaddressID, inetAddr);
             if (addrsCurrent->PrefixLength != NO_PREFIX) {
-                (*env)->SetShortField(env, bindAddr, ni_ibmaskID, addrsCurrent->PrefixLength);
-                if (ConvertLengthToIpv4Mask(addrsCurrent->PrefixLength, &mask) != NO_ERROR) {
+                (*env)->SetShortField(
+                        env, bindAddr, ni_ibmaskID, addrsCurrent->PrefixLength);
+                if (ConvertLengthToIpv4Mask(
+                        addrsCurrent->PrefixLength, &mask) != NO_ERROR) {
                     freeNetaddrs(addrsHead);
                     return NULL;
                 }
@@ -192,7 +204,9 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
                     freeNetaddrs(addrsHead);
                     return NULL;
                 }
-                setInetAddress_addr(env, bcastAddr, ntohl(addrsCurrent->Address.Ipv4.sin_addr.s_addr | ~mask));
+                setInetAddress_addr(
+                        env, bcastAddr,
+                        ntohl(addrsCurrent->Address.Ipv4.sin_addr.s_addr | ~mask));
                 if ((*env)->ExceptionCheck(env)) {
                     freeNetaddrs(addrsHead);
                     return NULL;
@@ -206,12 +220,17 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
                 freeNetaddrs(addrsHead);
                 return NULL;
             }
-            if (setInet6Address_ipaddress(env, inetAddr, (jbyte *)&(addrsCurrent->Address.Ipv6.sin6_addr.s6_addr)) == JNI_FALSE) {
+            if (setInet6Address_ipaddress(
+                    env, inetAddr,
+                    (jbyte *)&(addrsCurrent->Address.Ipv6.sin6_addr.s6_addr))
+                    == JNI_FALSE) {
                 freeNetaddrs(addrsHead);
                 return NULL;
             }
-            if (addrsCurrent->Address.Ipv6.sin6_scope_id != 0) { /* zero is default value, no need to set */
-                setInet6Address_scopeid(env, inetAddr, addrsCurrent->Address.Ipv6.sin6_scope_id);
+            /* zero is default value, no need to set */
+            if (addrsCurrent->Address.Ipv6.sin6_scope_id != 0) {
+                setInet6Address_scopeid(
+                        env, inetAddr, addrsCurrent->Address.Ipv6.sin6_scope_id);
                 setInet6Address_scopeifname(env, inetAddr, netifObj);
             }
             bindAddr = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
@@ -221,7 +240,8 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
             }
             (*env)->SetObjectField(env, bindAddr, ni_ibaddressID, inetAddr);
             if (addrsCurrent->PrefixLength != NO_PREFIX) {
-                (*env)->SetShortField(env, bindAddr, ni_ibmaskID, addrsCurrent->PrefixLength);
+                (*env)->SetShortField(
+                        env, bindAddr, ni_ibmaskID, addrsCurrent->PrefixLength);
             }
         }
 
@@ -257,7 +277,9 @@ jobject createNetworkInterface(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADD
     return netifObj;
 }
 
-jobject createNetworkInterfaceForSingleRowWithTables(JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs, MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
+jobject createNetworkInterfaceForSingleRowWithTables(
+        JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs,
+        MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
     if (GetIfEntry2(ifRow) != NO_ERROR) {
         return NULL;
     }
@@ -273,7 +295,8 @@ jobject createNetworkInterfaceForSingleRow(JNIEnv *env, MIB_IF_ROW2 *ifRow) {
         return NULL;
     }
 
-    netifObj = createNetworkInterfaceForSingleRowWithTables(env, ifRow, uniAddrs, anyAddrs);
+    netifObj = createNetworkInterfaceForSingleRowWithTables(
+            env, ifRow, uniAddrs, anyAddrs);
 
     FreeMibTable(uniAddrs);
     FreeMibTable(anyAddrs);
@@ -286,7 +309,8 @@ jobject createNetworkInterfaceForSingleRow(JNIEnv *env, MIB_IF_ROW2 *ifRow) {
  * Method:    getByIndex0
  * Signature: (I)LNetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(JNIEnv *env, jclass cls, jint index) {
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(
+        JNIEnv *env, jclass cls, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
@@ -298,7 +322,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(JNIEnv *env
  * Method:    getByName0
  * Signature: (Ljava/lang/String;)Ljava/net/NetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0(JNIEnv *env, jclass cls, jstring name) {
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0(
+        JNIEnv *env, jclass cls, jstring name) {
     const jchar *nameChars;
     DWORD convertResult;
     MIB_IF_ROW2 ifRow = {0};
@@ -317,7 +342,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0(JNIEnv *env,
  * Method:    getByInetAddress0
  * Signature: (Ljava/net/InetAddress;)Ljava/net/NetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(JNIEnv *env, jclass cls, jobject inetAddr) {
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
+        JNIEnv *env, jclass cls, jobject inetAddr) {
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
     MIB_ANYCASTIPADDRESS_TABLE *anyAddrs;
     ULONG i;
@@ -329,17 +355,22 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(JNIEn
     }
 
     for (i = 0; i < uniAddrs->NumEntries; i++) {
-        if (NET_SockaddrEqualsInetAddress(env, (SOCKETADDRESS*) &(uniAddrs->Table[i].Address), inetAddr) &&
-                (uniAddrs->Table[i].DadState == IpDadStatePreferred || uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
+        if (NET_SockaddrEqualsInetAddress(
+                env, (SOCKETADDRESS*) &(uniAddrs->Table[i].Address), inetAddr) &&
+                (uniAddrs->Table[i].DadState == IpDadStatePreferred ||
+                        uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             ifRow.InterfaceLuid = uniAddrs->Table[i].InterfaceLuid;
-            result = createNetworkInterfaceForSingleRowWithTables(env, &ifRow, uniAddrs, anyAddrs);
+            result = createNetworkInterfaceForSingleRowWithTables(
+                    env, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
     for (i = 0; i < anyAddrs->NumEntries; i++) {
-        if (NET_SockaddrEqualsInetAddress(env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
+        if (NET_SockaddrEqualsInetAddress(
+                env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
             ifRow.InterfaceLuid = anyAddrs->Table[i].InterfaceLuid;
-            result = createNetworkInterfaceForSingleRowWithTables(env, &ifRow, uniAddrs, anyAddrs);
+            result = createNetworkInterfaceForSingleRowWithTables(
+                    env, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
@@ -355,7 +386,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(JNIEn
  * Method:    boundInetAddress0
  * Signature: (Ljava/net/InetAddress;)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0(JNIEnv *env, jclass cls, jobject inetAddr) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0(
+        JNIEnv *env, jclass cls, jobject inetAddr) {
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
     MIB_ANYCASTIPADDRESS_TABLE *anyAddrs;
     ULONG i;
@@ -366,14 +398,17 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0(JNIE
     }
 
     for (i = 0; i < uniAddrs->NumEntries; i++) {
-        if (NET_SockaddrEqualsInetAddress(env, (SOCKETADDRESS*) &(uniAddrs->Table[i].Address), inetAddr) &&
-                (uniAddrs->Table[i].DadState == IpDadStatePreferred || uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
+        if (NET_SockaddrEqualsInetAddress(
+                env, (SOCKETADDRESS*) &(uniAddrs->Table[i].Address), inetAddr) &&
+                (uniAddrs->Table[i].DadState == IpDadStatePreferred ||
+                        uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             result = JNI_TRUE;
             goto done;
         }
     }
     for (i = 0; i < anyAddrs->NumEntries; i++) {
-        if (NET_SockaddrEqualsInetAddress(env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
+        if (NET_SockaddrEqualsInetAddress(
+                env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
             result = JNI_TRUE;
             goto done;
         }
@@ -390,7 +425,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0(JNIE
  * Method:    getAll
  * Signature: ()[Ljava/net/NetworkInterface;
  */
-JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(JNIEnv *env, jclass cls) {
+JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(
+        JNIEnv *env, jclass cls) {
     MIB_IF_TABLE2 *ifTable;
     jobjectArray ifArray;
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
@@ -414,7 +450,8 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(JNIEnv *env
     }
 
     for (i = 0; i < ifTable->NumEntries; i++) {
-        ifObj = createNetworkInterface(env, &(ifTable->Table[i]), uniAddrs, anyAddrs);
+        ifObj = createNetworkInterface(
+                env, &(ifTable->Table[i]), uniAddrs, anyAddrs);
         if (ifObj == NULL) {
             FreeMibTable(ifTable);
             FreeMibTable(uniAddrs);
@@ -436,14 +473,17 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(JNIEnv *env
  * Method:    isUp0
  * Signature: (Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0(JNIEnv *env, jclass cls, jstring name, jint index) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0(
+        JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
     if (GetIfEntry2(&ifRow) != NO_ERROR) {
         return JNI_FALSE;
     }
-    return ifRow.AdminStatus == NET_IF_ADMIN_STATUS_UP && ifRow.OperStatus == IfOperStatusUp ? JNI_TRUE : JNI_FALSE;
+    return ifRow.AdminStatus == NET_IF_ADMIN_STATUS_UP &&
+            ifRow.OperStatus == IfOperStatusUp
+            ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -451,7 +491,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0(JNIEnv *env, jcl
  * Method:    isP2P0
  * Signature: (Ljava/lang/String;I)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(JNIEnv *env, jclass cls, jstring name, jint index) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(
+        JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
@@ -466,7 +507,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(JNIEnv *env, jc
  * Method:    isLoopback0
  * Signature: (Ljava/lang/String;I)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0(JNIEnv *env, jclass cls, jstring name, jint index) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0(
+        JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
@@ -481,7 +523,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0(JNIEnv *en
  * Method:    getMacAddr0
  * Signature: ([bLjava/lang/String;I)[b
  */
-JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *env, jclass class, jbyteArray addrArray, jstring name, jint index) {
+JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(
+        JNIEnv *env, jclass class, jbyteArray addrArray, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
     jbyteArray macAddr;
 
@@ -496,7 +539,9 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *
     if (macAddr == NULL) {
         return NULL;
     }
-    (*env)->SetByteArrayRegion(env, macAddr, 0, ifRow.PhysicalAddressLength, (jbyte *) ifRow.PhysicalAddress);
+    (*env)->SetByteArrayRegion(
+            env, macAddr, 0, ifRow.PhysicalAddressLength,
+            (jbyte *) ifRow.PhysicalAddress);
     return macAddr;
 }
 
@@ -505,7 +550,8 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *
  * Method:      getMTU0
  * Signature:   ([bLjava/lang/String;I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclass class, jstring name, jint index) {
+JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(
+        JNIEnv *env, jclass class, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
@@ -520,24 +566,31 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
  * Method:    supportsMulticast0
  * Signature: (Ljava/lang/String;I)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(JNIEnv *env, jclass cls, jstring name, jint index) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(
+        JNIEnv *env, jclass cls, jstring name, jint index) {
     /*
     In older versions of Windows, multicast could be disabled for individual interfaces.
     That does not appear to be supported any longer.
     Now, it seems to be a system-wide setting, but with separate settings for IPv4 vs IPv6.
-    We also have the additional complication that multicast sending can be enabled while receiving is disabled.
+    We also have the additional complication that multicast sending
+    can be enabled while receiving is disabled.
 
     There are not many ways to access these settings.
-    GetAdaptersAddresses has a NO_MULTICAST flag, but I have never seen it set, even when multicast is disabled.
-    The flags appear to be stored in the registry, but the exact location seems to change depending on the Windows version.
-    We could open a socket and try to join a multicast group. If receiving is disabled, that fails. But if enabled, it generates network traffic.
-    I also tried some socket IOCTLs (e.g. SIO_ROUTING_INTERFACE_QUERY) but all of those succeeded even when multicast was disabled.
+    GetAdaptersAddresses has a NO_MULTICAST flag, but I have never seen it set,
+    even when multicast is disabled.
+    The flags appear to be stored in the registry,
+    but the exact location seems to change depending on the Windows version.
+    We could open a socket and try to join a multicast group.
+    If receiving is disabled, that fails. But if enabled, it generates network traffic.
+    I also tried some socket IOCTLs (e.g. SIO_ROUTING_INTERFACE_QUERY)
+    but all of those succeeded even when multicast was disabled.
     Same for various setsockopt params (e.g. IP_MULTICAST_IF).
     So using COM to execute a WMI query was the best solution I could come up with.
 
     The PowerShell equivalent of this code is:
     Get-WmiObject -Query "select MldLevel from MSFT_NetIPv6Protocol" -Namespace "ROOT/StandardCimv2"
-    Subsitute IPv4 if desired. The property is still called MldLevel here even though it is IGMPLevel elsewhere.
+    Subsitute IPv4 if desired.
+    The property is still called MldLevel here even though it is IGMPLevel elsewhere.
 
     You can also change the value using PowerShell (admin rights needed):
     Set-NetIPv4Protocol -IGMPLevel <None, SendOnly, All>
@@ -556,11 +609,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(JNI
         goto done0;
     }
 
-    if (FAILED(CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL))) {
+    if (FAILED(CoInitializeSecurity(
+            NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT,
+            RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL))) {
         goto done1;
     }
 
-    if (FAILED(CoCreateInstance(&CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, &IID_IWbemLocator, &locator))) {
+    if (FAILED(CoCreateInstance(
+            &CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, &IID_IWbemLocator, &locator))) {
         goto done1;
     }
 
@@ -574,20 +630,25 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(JNI
         goto done3;
     }
 
-    query = SysAllocString(ipv6_available() ? L"SELECT MldLevel FROM MSFT_NetIPv6Protocol" : L"SELECT MldLevel FROM MSFT_NetIPv4Protocol");
+    query = SysAllocString(ipv6_available() ?
+            L"SELECT MldLevel FROM MSFT_NetIPv6Protocol" :
+            L"SELECT MldLevel FROM MSFT_NetIPv4Protocol");
     if (query == NULL) {
         goto done4;
     }
 
-    if (FAILED(locator->lpVtbl->ConnectServer(locator, resource, NULL, NULL, NULL, 0, NULL, NULL, &services))) {
+    if (FAILED(locator->lpVtbl->ConnectServer(
+            locator, resource, NULL, NULL, NULL, 0, NULL, NULL, &services))) {
         goto done5;
     }
 
-    if (FAILED(services->lpVtbl->ExecQuery(services, language, query, WBEM_FLAG_BIDIRECTIONAL, NULL, &results))) {
+    if (FAILED(services->lpVtbl->ExecQuery(
+            services, language, query, WBEM_FLAG_BIDIRECTIONAL, NULL, &results))) {
         goto done6;
     }
 
-    if (FAILED(results->lpVtbl->Next(results, WBEM_INFINITE, 1, &result, &returnedCount))) {
+    if (FAILED(results->lpVtbl->Next(
+            results, WBEM_INFINITE, 1, &result, &returnedCount))) {
         goto done7;
     }
 
