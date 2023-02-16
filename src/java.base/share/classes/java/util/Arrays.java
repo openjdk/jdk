@@ -5766,8 +5766,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(boolean[], int, int, boolean[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -5901,8 +5901,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(byte[], int, int, byte[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6156,8 +6156,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(short[], int, int, short[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6410,8 +6410,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(char[], int, int, char[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6545,8 +6545,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(int[], int, int, int[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6799,8 +6799,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(long[], int, int, long[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7053,8 +7053,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(float[], int, int, float[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7188,8 +7188,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(double[], int, int, double[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7347,8 +7347,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(Object[], int, int, Object[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7630,8 +7630,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7643,8 +7643,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7757,8 +7757,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7770,8 +7770,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7884,8 +7884,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7897,8 +7897,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8011,8 +8011,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8024,8 +8024,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8138,8 +8138,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8151,8 +8151,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8265,8 +8265,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8278,8 +8278,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8392,8 +8392,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8405,8 +8405,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8519,8 +8519,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8532,8 +8532,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8650,8 +8650,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8663,8 +8663,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8796,8 +8796,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8809,8 +8809,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
