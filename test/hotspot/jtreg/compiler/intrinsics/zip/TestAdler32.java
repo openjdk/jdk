@@ -146,7 +146,7 @@ public class TestAdler32 {
         if (adler0.getValue() != adler1.getValue()) {
             System.err.printf("ERROR: adler0 = %08x, adler1 = %08x\n",
                               adler0.getValue(), adler1.getValue());
-            throw new AssertionError("TEST FAILED", null);
+            return false;
         }
         return true;
     }
@@ -166,6 +166,7 @@ public class TestAdler32 {
         int len1 = 8;    // the  8B/iteration loop
         int len2 = 32;   // the 32B/iteration loop
         int len3 = 4096; // the 4KB/iteration loop
+        int len4 = 5521; // the adler limit
 
         byte[] b = initializedBytes(len3*16, 0);
         int[] offsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 256, 512 };
@@ -176,6 +177,8 @@ public class TestAdler32 {
                         len2*2, len2*4, len2*8, len2*16, len2*32, len2*64,
                         len3, len3+1, len3+3, len3+5, len3+7,
                         len3*2, len3*4, len3*8,
+                        len4, len4+1, len4+3, len4+5, len4+7, len4+len1, len4+len2, len4+len3,
+                        len4*2, len4*4, len4*2+1, len4*4+4,
                         len1+len2, len1+len2+1, len1+len2+3, len1+len2+5, len1+len2+7,
                         len1+len3, len1+len3+1, len1+len3+3, len1+len3+5, len1+len3+7,
                         len2+len3, len2+len3+1, len2+len3+3, len2+len3+5, len2+len3+7,
@@ -214,8 +217,9 @@ public class TestAdler32 {
         for (i = 0; i < offsets.length; i++) {
             for (j = 0; j < sizes.length; j++) {
                 if (!check(adler0[i*sizes.length + j], adler1[i*sizes.length + j])) {
-                    System.out.printf("offsets[%d] = %d", i, offsets[i]);
-                    System.out.printf("\tsizes[%d] = %d\n", j, sizes[j]);
+                    System.out.printf("Failed at: offsets[%d] = %d", i, offsets[i]);
+                    System.out.printf(", sizes[%d] = %d\n", j, sizes[j]);
+                    throw new AssertionError("TEST FAILED", null);
                 }
             }
         }

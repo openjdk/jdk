@@ -282,6 +282,7 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   // continue loop
   __ movdl(xa, a_d);
+  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
   __ jmp(SLOOP1);
 
   __ bind(FINISH);
