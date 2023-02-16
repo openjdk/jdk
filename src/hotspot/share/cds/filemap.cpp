@@ -2551,9 +2551,8 @@ bool FileMapInfo::_memory_mapping_failed = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 
 // Open the shared archive file, read and validate the header
-// information (version, boot classpath, etc.).  If initialization
-// fails, shared spaces are disabled and the file is closed. [See
-// log_warning(cds).]
+// information (version, boot classpath, etc.). If initialization
+// fails, shared spaces are disabled and the file is closed.
 //
 // Validation of the archive is done in two steps:
 //

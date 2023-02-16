@@ -1012,6 +1012,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     log_info(cds)("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
+    } else if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
     }
   }
 
