@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.ColorFilter;
 import com.sun.hotspot.igv.filter.FilterChain;
+import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.MatcherSelector;
@@ -52,7 +53,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
     private final FilterChain filterChain;
-    private final FilterChain sequenceFilterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
@@ -143,13 +143,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         selectGraph(currentGraph);
     }
 
+    public boolean getHideDuplicates() {
+        return hideDuplicates;
+    }
 
-    public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
-        assert filterChain != null;
-        assert sequenceFilterChain != null;
-
-        this.filterChain = filterChain;
-        this.sequenceFilterChain = sequenceFilterChain;
+    public DiagramViewModel(InputGraph graph) {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        if (provider == null) {
+            filterChain = new FilterChain();
+        } else {
+            filterChain = provider.getFilterChain();
+        }
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
@@ -182,7 +186,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         group.getChangedEvent().addListener(groupContentChangedListener);
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
-        sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
 
         filterGraphs();
         selectGraph(graph);
@@ -430,7 +433,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     void close() {
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
         getChangedEvent().fire();
     }
 
