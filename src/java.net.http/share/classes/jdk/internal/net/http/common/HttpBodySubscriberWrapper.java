@@ -366,7 +366,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      */
     public final boolean cancelled() {
         int state = this.state;
-        return (state & UNREGISTERED) != 0;
+        return (state & CANCELLED) != 0;
     }
 
 
