@@ -188,6 +188,7 @@ public class TestMemoryAwareness {
         String valueToSet = "500m";
         String expectedTraceValue = "524288000";
         Common.logNewTestCase("memory swap sanity: " + valueToSet);
+
         DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
         Common.addWhiteBoxOpts(opts);
         opts.addDockerOpts("--memory=" + valueToSet);
