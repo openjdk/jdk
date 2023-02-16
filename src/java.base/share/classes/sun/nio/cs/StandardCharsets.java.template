@@ -34,6 +34,7 @@ import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
 import sun.security.action.GetPropertyAction;
 
@@ -211,9 +212,12 @@ public class StandardCharsets extends CharsetProvider {
 
     static boolean isGB18030_2000() {
         if (GB18030_2000 == null) {
-            // initialization delayed due to StandardCharsets
-            // being initialized during initPhase1
-            GB18030_2000 = GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", "");
+            if (VM.initLevel() < 1) {
+                // Cannot get the system property yet. Assumes non-2000
+                GB18030_2000 = "";
+            } else {
+                GB18030_2000 = GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", "");
+            }
         }
         return "2000".equals(GB18030_2000);
     }
