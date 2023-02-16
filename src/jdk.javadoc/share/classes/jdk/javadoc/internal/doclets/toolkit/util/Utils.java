@@ -186,17 +186,6 @@ public class Utils {
     }
 
     /**
-     * Test whether a class is a subclass of another class.
-     *
-     * @param t1 the candidate subclass
-     * @param t2 the candidate superclass
-     * @return true if t1 is a superclass of t2
-     */
-    public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
-        return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
-    }
-
-    /**
      * According to <cite>The Java Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
