@@ -223,7 +223,7 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
   // Flipped and shifted first word is zero.  Word search through
   // aligned up r_index for a non-zero flipped word.
   idx_t word_limit = aligned_right
-      ? to_words_aligned(r_index) // Miniscule savings when aligned.
+      ? to_words_align_down(r_index) // Miniscule savings when aligned.
       : to_words_align_up(r_index);
 
   // Check the rest

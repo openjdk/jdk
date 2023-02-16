@@ -80,14 +80,6 @@ class BitMap {
     return bit >> LogBitsPerWord;
   }
 
-  // Converts word-aligned bit it to a word offset.
-  // precondition: bit <= size()
-  idx_t to_words_aligned(idx_t bit) const {
-    verify_limit(bit);
-    assert(is_aligned(bit, BitsPerWord), "Incorrect alignment");
-    return raw_to_words_align_down(bit);
-  }
-
   // Word-aligns bit and converts it to a word offset.
   // precondition: bit <= size()
   idx_t to_words_align_up(idx_t bit) const {
