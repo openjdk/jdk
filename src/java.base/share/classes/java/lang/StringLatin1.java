@@ -415,7 +415,7 @@ final class StringLatin1 {
             if (c2 <= 0XFF) {
                 return false;
             }
-            // Fast path for unicode codepoint which cannot fold with latin1
+            // Fast path for unicode codepoints which cannot fold info latin1
             if (c2 > 0XFF && !CharacterData.foldsToLatin1(c2)) {
                 return false;
             }
