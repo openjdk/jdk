@@ -370,18 +370,6 @@ final class StringUTF16 {
             return cp1 - cp2;
         }
 
-        // Fast path if one of cp1, cp2 is latin1 and the other
-        // does not case-fold into latin1
-        if (lat1) {
-            if (!CharacterData.foldsToLatin1((char) cp2)) {
-                return cp1 - cp2;
-            }
-        } else if (lat2) {
-            if (!CharacterData.foldsToLatin1((char) cp1)) {
-                return cp1 - cp2;
-            }
-        }
-
         // Slow path:
         // Try converting both characters to uppercase.
         // If the results match, then the comparison scan should
