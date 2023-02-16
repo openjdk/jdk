@@ -416,13 +416,13 @@ final class StringLatin1 {
      * following three code point range pairs:
      *
      * 0x41-0x5A: Uppercase ASCII letters (A-Z)
-     * 0x61-0x71: Lowercase ASCII letters (a-z)
+     * 0x61-0x7A: Lowercase ASCII letters (a-z)
      *
      * 0xC0-0xD6: Uppercase non-ASCII letters, range 1 (A-GRAVE - O with Diaeresis)
      * 0xE0-0xF6: Lowercase non-ASCII letters, range 1 (a-grave - o with Diaeresis)
      *
      * 0xD8-0xDE: Uppercase non-ASCII letters, range 2 (O with slash - Thorn)
-     * 0xF0-0xFE: Lowercase non-ASCII letters, range 2 (o with slash - thorn)
+     * 0xF8-0xFE: Lowercase non-ASCII letters, range 2 (o with slash - thorn)
      *
      * While both ASCII letter ranges are contiguous, the non-ASCII letters are not:
      *
