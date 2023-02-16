@@ -285,8 +285,8 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index_excl
     return r_index;
   }
 
-  // Mask out bits not part of the search
-  idx_t cword_mask = r_index_bit + (r_index_bit - 1);
+  // Mask out bits not part of the search; excluding first bit
+  idx_t cword_mask = r_index_bit - 1;
   idx_t cword = cword_unmasked & cword_mask;
 
   // Check first word
