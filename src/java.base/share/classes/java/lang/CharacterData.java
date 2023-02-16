@@ -72,15 +72,19 @@ abstract class CharacterData {
         if (ch >>> 8 == 0) {     // fast-path
             return CharacterDataLatin1.instance;
         } else {
-            return switch (ch >>> 16) {  //plane 00-16
-                case 0 -> CharacterData00.instance;
-                case 1 -> CharacterData01.instance;
-                case 2 -> CharacterData02.instance;
-                case 3 -> CharacterData03.instance;
-                case 14 -> CharacterData0E.instance;
-                case 15, 16 -> CharacterDataPrivateUse.instance; // Both cases Private Use
-                default -> CharacterDataUndefined.instance;
-            };
+            return ofUnicode(ch);
         }
+    }
+    // Fast-path when the caller knows that the code point is not latin1
+    static CharacterData ofUnicode(int ch) {
+        return switch (ch >>> 16) {  //plane 00-16
+            case 0 -> CharacterData00.instance;
+            case 1 -> CharacterData01.instance;
+            case 2 -> CharacterData02.instance;
+            case 3 -> CharacterData03.instance;
+            case 14 -> CharacterData0E.instance;
+            case 15, 16 -> CharacterDataPrivateUse.instance; // Both cases Private Use
+            default -> CharacterDataUndefined.instance;
+        };
     }
 }
