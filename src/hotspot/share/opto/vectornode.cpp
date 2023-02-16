@@ -551,6 +551,7 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_LShiftI:  case Op_LShiftL:
   case Op_RShiftI:  case Op_RShiftL:
   case Op_URShiftI: case Op_URShiftL:
+  case Op_RoundDoubleMode:
     *start = 1;
     *end   = 2; // 1 vector operand
     break;
