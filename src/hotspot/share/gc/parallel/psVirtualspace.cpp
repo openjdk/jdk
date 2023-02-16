@@ -69,7 +69,7 @@ void PSVirtualSpace::release() {
 }
 
 bool PSVirtualSpace::expand_by(size_t bytes) {
-  assert(is_aligned(bytes), "arg not aligned");
+  assert(is_aligned(bytes, _alignment), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
   if (uncommitted_size() < bytes) {
@@ -87,7 +87,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 }
 
 bool PSVirtualSpace::shrink_by(size_t bytes) {
-  assert(is_aligned(bytes), "arg not aligned");
+  assert(is_aligned(bytes, _alignment), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
   if (committed_size() < bytes) {
@@ -104,20 +104,12 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
 }
 
 #ifndef PRODUCT
-bool PSVirtualSpace::is_aligned(size_t value) const {
-  return ::is_aligned(value, alignment());
-}
-
-bool PSVirtualSpace::is_aligned(char* value) const {
-  return is_aligned((size_t)value);
-}
-
 void PSVirtualSpace::verify() const {
-  assert(::is_aligned(alignment(), os::vm_page_size()), "bad alignment");
-  assert(is_aligned(reserved_low_addr()), "bad reserved_low_addr");
-  assert(is_aligned(reserved_high_addr()), "bad reserved_high_addr");
-  assert(is_aligned(committed_low_addr()), "bad committed_low_addr");
-  assert(is_aligned(committed_high_addr()), "bad committed_high_addr");
+  assert(is_aligned(alignment(), os::vm_page_size()), "bad alignment");
+  assert(is_aligned(reserved_low_addr(), _alignment), "bad reserved_low_addr");
+  assert(is_aligned(reserved_high_addr(), _alignment), "bad reserved_high_addr");
+  assert(is_aligned(committed_low_addr(), _alignment), "bad committed_low_addr");
+  assert(is_aligned(committed_high_addr(), _alignment), "bad committed_high_addr");
 
   // Reserved region must be non-empty or both addrs must be 0.
   assert(reserved_low_addr() < reserved_high_addr() ||

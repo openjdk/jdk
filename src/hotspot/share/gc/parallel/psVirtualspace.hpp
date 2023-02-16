@@ -94,8 +94,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
 #ifndef PRODUCT
   // Debugging
-  bool is_aligned(size_t val) const;
-  bool is_aligned(char* val) const;
   void verify() const;
 
   // Helper class to verify a space when entering/leaving a block.
