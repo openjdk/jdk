@@ -185,8 +185,8 @@ class WriteContent : public StackObj {
     return (u4) _content.elements();
   }
 
-  u4 size() const {
-    return (u4)(end_offset() - start_offset());
+  u8 size() const {
+    return (u8)(end_offset() - start_offset());
   }
 
   void write_elements(int64_t offset) {
@@ -194,7 +194,7 @@ class WriteContent : public StackObj {
   }
 
   void write_size() {
-    _cw.write_padded_at_offset<u4>(size(), start_offset());
+    _cw.write_padded_at_offset<u8>(size(), start_offset());
   }
 
   void set_last_checkpoint() {
@@ -209,7 +209,7 @@ class WriteContent : public StackObj {
 static int64_t write_checkpoint_event_prologue(JfrChunkWriter& cw, u8 type_id) {
   const int64_t last_cp_offset = cw.last_checkpoint_offset();
   const int64_t delta_to_last_checkpoint = 0 == last_cp_offset ? 0 : last_cp_offset - cw.current_offset();
-  cw.reserve(sizeof(u4));
+  cw.reserve(sizeof(u8));
   cw.write<u8>(EVENT_CHECKPOINT);
   cw.write(JfrTicks::now());
   cw.write<u8>(0); // duration
