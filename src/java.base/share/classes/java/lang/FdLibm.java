@@ -395,6 +395,116 @@ class FdLibm {
     }
 
     /**
+     * Returns the angle theta from the conversion of rectangular
+     * coordinates (x, y) to polar coordinates (r, theta).
+     *
+     * Method :
+     *      1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
+     *      2. Reduce x to positive by (if x and y are unexceptional):
+     *              ARG (x+iy) = arctan(y/x)           ... if x > 0,
+     *              ARG (x+iy) = pi - arctan[y/(-x)]   ... if x < 0,
+     *
+     * Special cases:
+     *
+     *      ATAN2((anything), NaN ) is NaN;
+     *      ATAN2(NAN , (anything) ) is NaN;
+     *      ATAN2(+-0, +(anything but NaN)) is +-0  ;
+     *      ATAN2(+-0, -(anything but NaN)) is +-pi ;
+     *      ATAN2(+-(anything but 0 and NaN), 0) is +-pi/2;
+     *      ATAN2(+-(anything but INF and NaN), +INF) is +-0 ;
+     *      ATAN2(+-(anything but INF and NaN), -INF) is +-pi;
+     *      ATAN2(+-INF,+INF ) is +-pi/4 ;
+     *      ATAN2(+-INF,-INF ) is +-3pi/4;
+     *      ATAN2(+-INF, (anything but,0,NaN, and INF)) is +-pi/2;
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan2 {
+        private Atan2() {throw new UnsupportedOperationException();}
+
+        private static final double
+            tiny    = 1.0e-300,
+            pi_o_4  = 0x1.921fb54442d18p-1,  // 7.8539816339744827900E-01
+            pi_o_2  = 0x1.921fb54442d18p0,   // 1.5707963267948965580E+00
+            pi_lo   = 0x1.1a62633145c07p-53; // 1.2246467991473531772E-16
+
+        static double compute(double y, double x) {
+            double z;
+            int k, m, hx, hy, ix, iy;
+            /*unsigned*/ int lx, ly;
+
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            lx = __LO(x);
+            hy = __HI(y);
+            iy = hy&0x7fff_ffff;
+            ly = __LO(y);
+            if (((ix | ((lx | -lx) >> 31)) > 0x7ff0_0000)||
+                ((iy |((ly | - ly) >> 31)) > 0x7ff0_0000))    // x or y is NaN
+                return x + y;
+            if (((hx - 0x3ff0_0000) | lx) == 0) // x = 1.0
+                return StrictMath.atan(y);
+            m = ((hy >> 31) & 1)|((hx >> 30) & 2);  // 2*sign(x) + sign(y)
+
+            // when y = 0
+            if ((iy | ly) == 0) {
+                return switch(m) {
+                case 0, 1 ->  y;              // atan(+/-0, +anything)  = +/-0
+                case 2    ->  Math.PI + tiny; // atan(+0,   -anything)  =  pi
+                default   -> -Math.PI - tiny; // atan(-0,   -anything)  = -pi
+                };
+            }
+            // when x = 0
+            if ((ix | lx) == 0) {
+                return (hy < 0)?  -pi_o_2 - tiny : pi_o_2 + tiny;
+            }
+
+            // when x is INF
+            if (ix == 0x7ff0_0000) {
+                if (iy == 0x7ff0_0000) {
+                    return switch(m) {
+                    case 0  ->  pi_o_4 + tiny;      // atan(+INF, +INF)
+                    case 1  -> -pi_o_4 - tiny;      // atan(-INF, +INF)
+                    case 2  ->  3.0*pi_o_4 + tiny;  // atan(+INF, -INF)
+                    default -> -3.0*pi_o_4 - tiny;  // atan(-INF, -INF)
+                    };
+                } else {
+                    return switch(m) {
+                    case 0  ->  0.0;                // atan(+..., +INF)
+                    case 1  -> -0.0;                // atan(-..., +INF)
+                    case 2  ->  Math.PI + tiny;     // atan(+..., -INF)
+                    default -> -Math.PI - tiny;     // atan(-..., -INF)
+                    };
+                }
+            }
+            // when y is INF
+            if (iy == 0x7ff0_0000) {
+                return (hy < 0)? -pi_o_2 - tiny : pi_o_2 + tiny;
+            }
+
+            // compute y/x
+            k = (iy - ix) >> 20;
+            if (k > 60) {   // |y/x| >  2**60
+                z = pi_o_2+0.5*pi_lo;
+            } else if (hx < 0 && k < -60) { // |y|/x < -2**60
+                z = 0.0;
+            } else { // safe to do y/x
+                z = StrictMath.atan(Math.abs(y/x));
+            }
+            return switch (m) {
+            case 0  ->  z;                    // atan(+, +)
+            case 1  -> -z;                    // atan(-, +)
+            case 2  -> Math.PI - (z - pi_lo); // atan(+, -)
+            default -> (z - pi_lo) - Math.PI; // atan(-, -), case 3
+            };
+        }
+    }
+
+    /**
      * cbrt(x)
      * Return cube root of x
      */
