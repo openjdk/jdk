@@ -51,7 +51,7 @@ public class StringComparisonsIC {
     public static final String UTF_LETTER_MATCH = "utf16-letter-match";
     public static final String UTF_LETTER_MISMATCH = "utf16-letter-mismatch";
     public static final String UTF_NUMBER_MATCH = "utf16-number-match";
-    public static final String UTF_NUMBER_MISMATCH = "utf16-number-minmatch";
+    public static final String UTF_NUMBER_MISMATCH = "utf16-number-mismatch";
     public static final String UTF_UTF_MATCH = "utf16-unicode-match";
     public static final String UTF_UTF_MISMATCH = "utf16-unicode-mismatch";
 
@@ -77,7 +77,7 @@ public class StringComparisonsIC {
             UTF_UTF_MISMATCH
     })
 
-    public String code_content_match;
+    public String coding;
 
     private String leftString;
     private String rightString;
@@ -94,7 +94,7 @@ public class StringComparisonsIC {
         String otherNum =  "2";
 
 
-        switch (code_content_match) {
+        switch (coding) {
             case LAT_LETTER_MATCH -> {
                 leftString = let  + let.repeat(size);
                 rightString = leftString;
@@ -160,7 +160,7 @@ public class StringComparisonsIC {
                 leftString = ue  + ue.repeat(size);
                 rightString = ue + "\u0130".repeat(size);
             }
-            default -> throw new IllegalArgumentException("Unconfigured coder: " + code_content_match);
+            default -> throw new IllegalArgumentException("Unconfigured coder: " + coding);
         }
         rightString = rightString.toUpperCase(Locale.ENGLISH);
     }
