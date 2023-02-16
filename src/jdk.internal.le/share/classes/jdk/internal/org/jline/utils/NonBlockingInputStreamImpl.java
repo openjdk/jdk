@@ -123,20 +123,17 @@ public class NonBlockingInputStreamImpl
                 notifyAll();
             }
 
-            boolean isInfinite = (timeout <= 0L);
-
             /*
              * So the thread is currently doing the reading for us. So
              * now we play the waiting game.
              */
-            while (isInfinite || timeout > 0L)  {
-                long start = System.currentTimeMillis ();
-
+            Timeout t = new Timeout(timeout);
+            while (!t.elapsed())  {
                 try {
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
                     }
-                    wait(timeout);
+                    wait(t.timeout());
                 }
                 catch (InterruptedException e) {
                     exception = (IOException) new InterruptedIOException().initCause(e);
@@ -154,10 +151,6 @@ public class NonBlockingInputStreamImpl
                 if (b >= -1) {
                     assert exception == null;
                     break;
-                }
-
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
                 }
             }
         }
