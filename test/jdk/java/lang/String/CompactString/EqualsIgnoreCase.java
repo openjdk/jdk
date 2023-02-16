@@ -25,6 +25,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static p1.Test.assertFalse;
+import static p1.Test.assertTrue;
 
 /*
  * @test
@@ -94,13 +96,9 @@ public class EqualsIgnoreCase extends CompactString {
                     if (Character.toUpperCase(ac) == Character.toUpperCase(bc)
                             || Character.toLowerCase(ac) == Character.toLowerCase(bc)) {
 
-                        if (!as.equalsIgnoreCase(bs)) {
-                            throw new RuntimeException(ac + " != " + bc);
-                        }
+                        assertTrue(as.equalsIgnoreCase(bs));
                     } else {
-                        if (as.equalsIgnoreCase(bs)) {
-                            throw new RuntimeException(ac + " != " + bc);
-                        }
+                        assertFalse(as.equalsIgnoreCase(bs));
                     }
                 }
             }
