@@ -193,8 +193,8 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
   }
 
   // Get the word containing l_index, and shift out low bits.
-  idx_t index = to_words_align_down(l_index);
-  bm_word_t cword = word(index, flip) >> bit_in_word(l_index);
+  idx_t word_index = to_words_align_down(l_index);
+  bm_word_t cword = word(word_index, flip) >> bit_in_word(l_index);
 
   // Check first bit
   if ((cword & 1) != 0) {
@@ -227,15 +227,15 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
       : to_words_align_up(r_index);
 
   // Check the rest
-  while (++index < word_limit) {
-    cword = word(index, flip);
+  while (++word_index < word_limit) {
+    cword = word(word_index, flip);
     if (cword != 0) {
-      idx_t result = bit_index(index) + count_trailing_zeros(cword);
+      idx_t result = bit_index(word_index) + count_trailing_zeros(cword);
       if (aligned_right || (result < r_index)) {
         return result;
       }
       // Result is beyond range bound; return r_index.
-      assert((index + 1) == word_limit, "invariant");
+      assert((word_index + 1) == word_limit, "invariant");
       return r_index;
     }
   }
