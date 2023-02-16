@@ -24,9 +24,7 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static p1.Test.assertFalse;
-import static p1.Test.assertTrue;
+import static org.testng.Assert.*;
 
 /*
  * @test
@@ -84,18 +82,16 @@ public class EqualsIgnoreCase extends CompactString {
      */
     @Test
     public void checkConsistencyWithCharacterUppercaseLowerCase() {
-        for (int a = 0; a < 256; a++) {
-            for (int b = 0; b < 256; b++) {
-                if (a != b) {
-                    char ac = (char) a, bc = (char) b;
-                    byte ab = (byte) a, bb = (byte) b;
+        for (int ab = 0; ab < 256; ab++) {
+            for (int bb = 0; bb < 256; bb++) {
+                if (ab != bb) {
+                    char a = (char) ab, b = (char) bb;
 
-                    String as = Character.toString(ac);
-                    String bs = Character.toString(bc);
+                    String as = Character.toString(a);
+                    String bs = Character.toString(b);
 
-                    if (Character.toUpperCase(ac) == Character.toUpperCase(bc)
-                            || Character.toLowerCase(ac) == Character.toLowerCase(bc)) {
-
+                    if (Character.toUpperCase(a) == Character.toUpperCase(b)
+                            || Character.toLowerCase(a) == Character.toLowerCase(b)) {
                         assertTrue(as.equalsIgnoreCase(bs));
                     } else {
                         assertFalse(as.equalsIgnoreCase(bs));
