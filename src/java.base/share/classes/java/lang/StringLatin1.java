@@ -454,13 +454,17 @@ final class StringLatin1 {
     }
 
     /**
-     * Latin1 includeds two 'i' code points, the uppercase 0x49 'capital I without dot',
-     * and the lowercase 0x69 'lowercase i with dot'.
+     * Latin1 includes two 'i' code points:
      *
-     * Unicode has two additional 'i' code points: 0x130 (LATIN CAPITAL LETTER I WITH DOT ABOVE)
-     * and 0x131 (LATIN SMALL LETTER DOTLESS I).
+     * 0x49: 'Latin Capital Letter I'
+     * 0x69: 'Latin Small Letter I'
      *
-     * These four code points should be considered equals ignoring case.
+     * Unicode adds two 'i' code points for Turkic languages:
+     *
+     * 0x130: 'Latin Capital Letter I with Dot Above'
+     * 0x131: 'Latin Small Letter Dotless I'
+     *
+     * These four code points should be considered equals when ignoring case.
      *
      * @param lat a latin1 code point
      * @param uc a unicode code point
