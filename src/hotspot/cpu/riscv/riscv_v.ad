@@ -1736,7 +1736,7 @@ instruct vsqrtF(vReg dst, vReg src) %{
   ins_cost(VEC_COST);
   format %{ "vfsqrt.v $dst, $src\t#@vsqrtF" %}
   ins_encode %{
-    __ rvv_vsetvli(T_INT, Matcher::vector_length_in_bytes(this));
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this));
     __ vfsqrt_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -1747,7 +1747,7 @@ instruct vsqrtD(vReg dst, vReg src) %{
   ins_cost(VEC_COST);
   format %{ "vfsqrt.v $dst, $src\t#@vsqrtD" %}
   ins_encode %{
-    __ rvv_vsetvli(T_LONG, Matcher::vector_length_in_bytes(this));
+    __ rvv_vsetvli(T_DOUBLE, Matcher::vector_length_in_bytes(this));
     __ vfsqrt_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
