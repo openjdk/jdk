@@ -157,8 +157,8 @@ public class Runtime {
      * conventional and convenient means of invoking this method.
      *
      * @implNote
-     * If the {@link System#getLogger(String) System.getLogger("java.lang.Runtime")}
-     * is enabled for logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * If the {@link System#getLogger(String) the system logger} for {@code java.lang.Runtime}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
      * of the call to {@code Runtime.exit()} is logged.
      *
      * @param  status
