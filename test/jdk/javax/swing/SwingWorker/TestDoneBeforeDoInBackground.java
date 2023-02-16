@@ -85,7 +85,7 @@ public class TestDoneBeforeDoInBackground {
         worker.addPropertyChangeListener(
             new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
-                    System.out.println("doInBackground started: " +
+                    System.out.println("doInBackgroundStarted: " +
                                         doInBackgroundStarted.get() +
                                         " doInBackgroundFinished: " +
                                         doInBackgroundFinished.get() +
