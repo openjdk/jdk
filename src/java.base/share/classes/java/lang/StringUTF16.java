@@ -364,16 +364,15 @@ final class StringUTF16 {
         // try converting both characters to uppercase.
         // If the results match, then the comparison scan should
         // continue.
-
-        cp1 = CharacterData.ofUnicode(cp1).toUpperCase(cp1);
-        cp2 = CharacterData.ofUnicode(cp2).toUpperCase(cp2);
+        cp1 = Character.toUpperCase(cp1);
+        cp2 = Character.toUpperCase(cp2);
         if (cp1 != cp2) {
             // Unfortunately, conversion to uppercase does not work properly
             // for the Georgian alphabet, which has strange rules about case
             // conversion.  So we need to make one last check before
             // exiting.
-            cp1 = CharacterData.ofUnicode(cp1).toLowerCase(cp1);
-            cp2 = CharacterData.ofUnicode(cp2).toLowerCase(cp2);
+            cp1 = Character.toLowerCase(cp1);
+            cp2 = Character.toLowerCase(cp2);
             if (cp1 != cp2) {
                 return cp1 - cp2;
             }
