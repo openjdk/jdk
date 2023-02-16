@@ -111,7 +111,7 @@ public class InputMethod extends Properties.Entity {
 
     public void setBytecodes(String text) {
         Pattern instruction = Pattern.compile("\\s*(\\d+)\\s*:?\\s*(\\w+)\\s*(.*)(?://(.*))?");
-        Pattern isInfo = Pattern.compile("(\\s*)(\\d+)(\\s+)(bci:)(.+)");
+        Pattern isInfo = Pattern.compile("(\\s*)(\\d+)(\\s*)(bci:)(.+)");
         String[] strings = text.split("\n");
         int oldBci = -1;
         for (String s : strings) {
