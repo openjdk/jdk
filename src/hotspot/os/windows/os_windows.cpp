@@ -1898,15 +1898,39 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
   size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
   NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+  int MaxMhz = -1, CurrentMhz = -1, MhzLimit = -1;
+  bool same_vals_for_all_cpus = true;
 
   if (status == ERROR_SUCCESS) {
     PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
     for (int i = 0; i < proc_count; i++) {
+      if (i == 0) {
+        MaxMhz = (int) pppi->MaxMhz;
+        CurrentMhz = (int) pppi->CurrentMhz;
+        MhzLimit = (int) pppi->MhzLimit;
+      } else {
+        if (MaxMhz != (int) pppi->MaxMhz ||
+            CurrentMhz != (int) pppi->CurrentMhz ||
+            MhzLimit != (int) pppi->MhzLimit) {
+          same_vals_for_all_cpus = false;
+        }
+      }
+      // avoid iteration in case buf is too small to hold all proc infos
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+
+    if (same_vals_for_all_cpus && MaxMhz != -1) {
+      st->print_cr("ProcessorInformation for all %d processors :", proc_count);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d", MaxMhz, CurrentMhz, MhzLimit);
+      return;
+    }
+    // differing values, iterate again
+    pppi = (PROCESSOR_POWER_INFORMATION*) buf;
+    for (int i = 0; i < proc_count; i++) {
       st->print_cr("ProcessorInformation for processor %d", (int) pppi->Number);
       st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d",
-                   (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
-      st->print_cr("  MaxIdleState: %d, CurrentIdleState: %d",
-                   (int) pppi->MaxIdleState, (int) pppi->CurrentIdleState);
+                     (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
       if (sz_check > buflen) break;
       pppi++;
     }
