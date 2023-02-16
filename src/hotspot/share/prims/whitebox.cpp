@@ -802,7 +802,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   }
 
   deopt_scope.deoptimize_marked();
-  
+
   return result;
 WB_END
 
