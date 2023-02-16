@@ -43,42 +43,47 @@ public class StringComparisonsIC {
 
     @Param({"mixed", "lat", "utf16"})
     public String coders;
-    @Param({"true","false"})
-    public boolean Az;
+    @Param({"az","lat", "utf"})
+    public String letter;
 
     private String leftString;
     private String rightString;
-    private int offset;
 
     @Setup
     public void setup() {
-        String ue = "\u025b";
+
+        String l;
+        switch (letter) {
+            case "az" -> letter = "e";
+            case "lat" -> letter = "1";
+            case "utf" -> letter = "\u025b";
+        }
+
         String e = "e";
+        String ue = "\u025b";
 
 
         switch (coders) {
             case "utf16" -> {
-                leftString = ue + e.repeat(size) + ue.repeat(size);
+                leftString = ue + letter.repeat(size);
                 rightString = leftString;
             }
             case "mixed" -> {
-                leftString = ue + e.repeat(size) + ue.repeat(size);
-                rightString = e + e.repeat(size) + "1".repeat(size);
+                leftString = ue + letter.repeat(size);
+                rightString = e + letter.repeat(size);
             }
             case "lat" -> {
-                leftString = e + e.repeat(size) + "1".repeat(size);
+                leftString = e + letter.repeat(size);
                 rightString = leftString;
             }
         }
         rightString = rightString.toUpperCase(Locale.ENGLISH);
-
-        offset = 1 + (Az ? 0 : size);
     }
 
 
     @Benchmark
     public boolean regionMatchesIC() {
-        return leftString.regionMatches(true,offset, rightString, offset, size);
+        return leftString.regionMatches(true, 1, rightString, 1, size);
     }
 
 
