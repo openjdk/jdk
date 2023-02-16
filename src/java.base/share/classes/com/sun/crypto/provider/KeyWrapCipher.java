@@ -123,6 +123,25 @@ abstract class KeyWrapCipher extends CipherSpi {
         }
     }
 
+    // validate the key algorithm/encoding and then returns the key bytes
+    // which callers should erase after use
+    private static byte[] checkKey(Key key, int fixedKeySize)
+            throws InvalidKeyException {
+
+        byte[] keyBytes = key.getEncoded();
+        if (keyBytes == null) {
+            throw new InvalidKeyException("Null key");
+        }
+        int keyLen = keyBytes.length;
+        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
+            !AESCrypt.isKeySizeValid(keyLen) ||
+            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
+                throw new InvalidKeyException("Invalid key length: " +
+                        keyLen + " bytes");
+        }
+        return keyBytes;
+    }
+
     // store the specified bytes, e.g. in[inOfs...(inOfs+inLen-1)] into
     // 'dataBuf' starting at 'dataIdx'.
     // NOTE: if 'in' is null, this method will ensure that 'dataBuf' has enough
@@ -292,15 +311,7 @@ abstract class KeyWrapCipher extends CipherSpi {
     // actual impl for various engineInit(...) methods
     private void implInit(int opmode, Key key, byte[] iv, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        byte[] keyBytes = key.getEncoded();
-        if (keyBytes == null) {
-            throw new InvalidKeyException("Null key");
-        }
-
-        if (fixedKeySize != -1 && fixedKeySize != keyBytes.length) {
-            throw new InvalidKeyException("Invalid key length: " +
-                    keyBytes.length + " bytes, should be " + fixedKeySize);
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
 
         this.opmode = opmode;
         boolean decrypting = (opmode == Cipher.DECRYPT_MODE ||
@@ -662,21 +673,11 @@ abstract class KeyWrapCipher extends CipherSpi {
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        byte[] encoded = key.getEncoded();
-        if (encoded == null)  {
-            throw new InvalidKeyException("Cannot decide key length");
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
+        // only need length; erase immediately
+        Arrays.fill(keyBytes, (byte) 0);
+        return Math.multiplyExact(keyBytes.length, 8);
 
-        // only need length
-        Arrays.fill(encoded, (byte) 0);
-        int keyLen = encoded.length;
-        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
-            !AESCrypt.isKeySizeValid(keyLen) ||
-            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
-            throw new InvalidKeyException("Invalid key length: " +
-                    keyLen + " bytes");
-        }
-        return Math.multiplyExact(keyLen, 8);
     }
 
     /**
