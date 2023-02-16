@@ -64,7 +64,7 @@
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.hpp"
+#include "services/memTracker.inline.hpp"
 #include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
@@ -86,8 +86,6 @@ volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 os::PageSizes     os::_page_sizes;
-
-static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
@@ -607,23 +605,6 @@ char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
   return p;
 }
 
-//
-// This function supports testing of the malloc out of memory
-// condition without really running the system out of memory.
-//
-
-static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
-  if (MallocMaxTestWords > 0) {
-    size_t words = (alloc_size / BytesPerWord);
-
-    if ((cur_malloc_words + words) > MallocMaxTestWords) {
-      return true;
-    }
-    Atomic::add(&cur_malloc_words, words);
-  }
-  return false;
-}
-
 #ifdef ASSERT
 static void check_crash_protection() {
   assert(!ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
@@ -658,8 +639,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
-  // For the test flag -XX:MallocMaxTestWords
-  if (has_reached_max_malloc_test_peak(size)) {
+  // Observe MallocLimit
+  if (MemTracker::check_exceeds_limit(size, memflags)) {
     return nullptr;
   }
 
@@ -710,11 +691,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
-  // For the test flag -XX:MallocMaxTestWords
-  if (has_reached_max_malloc_test_peak(size)) {
-    return nullptr;
-  }
-
   if (MemTracker::enabled()) {
     // NMT realloc handling
 
@@ -725,12 +701,20 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
+    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
+
+    // Observe MallocLimit
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
+      return nullptr;
+    }
+
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     assert(memflags == header->flags(), "weird NMT flags mismatch (new:\"%s\" != old:\"%s\")\n",
            NMTUtil::flag_to_name(memflags), NMTUtil::flag_to_name(header->flags()));
     const MallocHeader::FreeInfo free_info = header->free_info();
+
     header->mark_block_as_dead();
 
     // the real realloc
@@ -750,7 +734,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
-    size_t old_size = free_info.size;
+    assert(old_size == free_info.size, "Sanity");
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);

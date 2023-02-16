@@ -1341,20 +1341,22 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(intx, ZombieALotInterval,     5,                               \
           "Number of exits until ZombieALot kicks in")                      \
                                                                             \
-  product(uintx, MallocMaxTestWords,     0, DIAGNOSTIC,                     \
-          "If non-zero, maximum number of words that malloc/realloc can "   \
-          "allocate (for testing only)")                                    \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
-          "Limit malloc allocation size from VM. Reaching the limit will "  \
-          "trigger a fatal error. This feature requires "                   \
+          "Limit malloc allocation size from VM. Reaching a limit will "    \
+          "trigger an action (see flag). This feature requires "            \
           "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
           "Usage:"                                                          \
-          "- MallocLimit=<size> to set a total limit. "                     \
-          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
-          "  to set one or more category-specific limits."                  \
-          "Example: -XX:MallocLimit=compiler:500m")                         \
+          "\"-XX:MallocLimit=<size>[:<flag>]\" sets a total limit."         \
+          "\"-XX:MallocLimit=<category>:<size>[:<flag>][,<category>:<size>[:<flag>] ...]\"" \
+          "sets one or more category-specific limits."                      \
+          "<flag> defines the action upon reaching the limit:"              \
+          "\"fatal\": end VM with a fatal error at the allocation site"     \
+          "\"oom\"  : will mimic a native OOM"                              \
+          "If <flag> is omitted, \"fatal\" is the default."                 \
+          "Examples:\n"                                                     \
+          "-XX:MallocLimit=2g"                                              \
+          "-XX:MallocLimit=2g:oom"                                          \
+          "-XX:MallocLimit=compiler:200m:oom,code:100m")                    \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \

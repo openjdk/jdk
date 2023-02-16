@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -34,6 +33,7 @@
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
+struct malloclimit;
 
 /*
  * This counter class counts memory allocation and deallocation,
@@ -208,34 +208,15 @@ class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
   static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+  static bool _have_limits;
 
-  // Malloc Limit handling (-XX:MallocLimit)
-  static size_t _limits_per_category[mt_number_of_types];
-  static size_t _total_limit;
+  // Called when a total limit break was detected.
+  // Will return true if the limit was handled, false if it was ignored.
+  static bool total_limit_reached(size_t s, size_t so_far, const malloclimit* limit);
 
-  static void initialize_limit_handling();
-  static void total_limit_reached(size_t size, size_t limit);
-  static void category_limit_reached(size_t size, size_t limit, MEMFLAGS flag);
-
-  static void check_limits_after_allocation(MEMFLAGS flag) {
-    // We can only either have a total limit or category specific limits,
-    // not both.
-    if (_total_limit != 0) {
-      size_t s = as_snapshot()->total();
-      if (s > _total_limit) {
-        total_limit_reached(s, _total_limit);
-      }
-    } else {
-      size_t per_cat_limit = _limits_per_category[(int)flag];
-      if (per_cat_limit > 0) {
-        const MallocMemory* mm = as_snapshot()->by_type(flag);
-        size_t s = mm->malloc_size() + mm->arena_size();
-        if (s > per_cat_limit) {
-          category_limit_reached(s, per_cat_limit, flag);
-        }
-      }
-    }
-  }
+  // Called when a total limit break was detected.
+  // Will return true if the limit was handled, false if it was ignored.
+  static bool category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
    static void initialize();
@@ -243,7 +224,6 @@ class MallocMemorySummary : AllStatic {
    static inline void record_malloc(size_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_malloc(size);
      as_snapshot()->_all_mallocs.allocate(size);
-     check_limits_after_allocation(flag);
    }
 
    static inline void record_free(size_t size, MEMFLAGS flag) {
@@ -261,7 +241,6 @@ class MallocMemorySummary : AllStatic {
 
    static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_arena_size_change(size);
-     check_limits_after_allocation(flag);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {
@@ -278,7 +257,10 @@ class MallocMemorySummary : AllStatic {
     return (MallocMemorySnapshot*)_snapshot;
   }
 
-  static void print_limits(outputStream* st);
+  // MallocLimit: returns true if allocating s bytes on f would trigger
+  // either global or the category limit
+  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
+
 };
 
 // Main class called from MemTracker to track malloc activities
@@ -320,6 +302,10 @@ class MallocTracker : AllStatic {
   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
+
+  // MallocLimt: Given an allocation size s, check if mallocing this much
+  // under category f would hit either the global limit or the limit for category f.
+  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
 
   // Given a pointer, if it seems to point to the start of a valid malloced block,
   // print the block. Note that since there is very low risk of memory looking
