@@ -369,7 +369,7 @@ inline bool BitMap::iterate(Function function, idx_t beg, idx_t end) {
 
 template <typename BitMapClosureType>
 inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) {
-  auto cl_to_lambda = [&](idx_t index) -> bool {
+  auto cl_to_lambda = [&] (idx_t index) -> bool {
     return cl->do_bit(index);
   };
 
