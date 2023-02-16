@@ -269,7 +269,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index_excl
   idx_t r_index = r_index_exclusive - 1;
   idx_t word_index = to_words_align_down(r_index);
   idx_t r_index_in_word = bit_in_word(r_index);
-  idx_t r_index_bit = size_t(1) << r_index_in_word;
+  bm_word_t r_index_bit = size_t(1) << r_index_in_word;
 
   bm_word_t cword_unmasked = word(word_index, flip);
 
@@ -286,8 +286,8 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index_excl
   }
 
   // Mask out bits not part of the search; excluding first bit
-  idx_t cword_mask = r_index_bit - 1;
-  idx_t cword = cword_unmasked & cword_mask;
+  bm_word_t cword_mask = r_index_bit - 1;
+  bm_word_t cword = cword_unmasked & cword_mask;
 
   // Check first word
   if (cword != 0) {
