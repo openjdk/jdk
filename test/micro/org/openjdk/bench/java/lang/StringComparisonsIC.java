@@ -38,13 +38,28 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class StringComparisonsIC {
 
+    public static final String LAT_AZ = "lat-az";
+    public static final String LAT_LAT = "lat-lat";
+    public static final String MIXED_AZ = "mixed-az";
+    public static final String MIXED_LAT = "mixed-lat";
+    public static final String MIXED_UTF = "mixed-utf";
+    public static final String UTF_AZ = "utf-az";
+    public static final String UTF_LAT = "utf-lat";
+    public static final String UTF_UTF = "utf-utf";
+
     @Param({"6", "15", "1024"})
     public int size;
 
-    @Param({"mixed", "lat", "utf16"})
+    @Param({LAT_AZ,
+            LAT_LAT,
+            MIXED_AZ,
+            MIXED_LAT,
+            MIXED_UTF,
+            UTF_AZ,
+            UTF_LAT,
+            UTF_UTF
+    })
     public String coders;
-    @Param({"az","lat", "utf"})
-    public String letter;
 
     private String leftString;
     private String rightString;
@@ -52,28 +67,43 @@ public class StringComparisonsIC {
     @Setup
     public void setup() {
 
-        String l;
-        switch (letter) {
-            case "az" -> letter = "e";
-            case "lat" -> letter = "1";
-            case "utf" -> letter = "\u025b";
-        }
 
-        String e = "e";
+        String az = "e";
         String ue = "\u025b";
+        String lat =  "1";
 
 
         switch (coders) {
-            case "utf16" -> {
-                leftString = ue + letter.repeat(size);
+            case LAT_AZ -> {
+                leftString = az + az.repeat(size);
                 rightString = leftString;
             }
-            case "mixed" -> {
-                leftString = ue + letter.repeat(size);
-                rightString = e + letter.repeat(size);
+            case LAT_LAT -> {
+                leftString = az + lat.repeat(size);
+                rightString = leftString;
             }
-            case "lat" -> {
-                leftString = e + letter.repeat(size);
+            case MIXED_AZ -> {
+                leftString = az + az.repeat(size);
+                rightString = ue + az.repeat(size);
+            }
+            case MIXED_LAT -> {
+                leftString = az + lat.repeat(size);
+                rightString = ue + lat.repeat(size);
+            }
+            case MIXED_UTF -> {
+                leftString = az + az.repeat(size);
+                rightString = ue + ue.repeat(size);
+            }
+            case UTF_AZ -> {
+                leftString = ue + az.repeat(size);
+                rightString = leftString;
+            }
+            case UTF_LAT -> {
+                leftString = ue + lat.repeat(size);
+                rightString = leftString;
+            }
+            case UTF_UTF -> {
+                leftString = ue + ue.repeat(size);
                 rightString = leftString;
             }
         }
