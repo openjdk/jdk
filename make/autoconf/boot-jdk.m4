@@ -382,7 +382,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # Finally, set some other options...
 
   # Determine if the boot jdk jar supports the --date option
-  if $JAR --help 2>&1 | $GREP -q "\-\-date=TIMESTAMP"; then
+  if $JAR --help 2>&1 | $GREP -q -e "--date=TIMESTAMP"; then
     BOOT_JDK_JAR_SUPPORTS_DATE=true
   else
     BOOT_JDK_JAR_SUPPORTS_DATE=false
