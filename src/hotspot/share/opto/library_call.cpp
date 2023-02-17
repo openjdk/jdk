@@ -1646,7 +1646,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     set_sp(old_sp);
     return false;
   }
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2361,7 +2361,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2612,7 +2612,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     return false;
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.

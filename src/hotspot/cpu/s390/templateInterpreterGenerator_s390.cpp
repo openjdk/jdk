@@ -1773,8 +1773,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
 #ifdef ASSERT
   __ verify_esp(Z_esp, Z_R1_scratch);
-
-  __ verify_thread();
 #endif
 
   // jvmti support
