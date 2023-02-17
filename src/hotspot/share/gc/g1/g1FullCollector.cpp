@@ -395,10 +395,8 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
       HeapRegion* current = _heap->region_at(i);
-      serial_cp->add(current);
-
-      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
       set_compaction_top(current, current->bottom());
+      serial_cp->add(current);
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }
