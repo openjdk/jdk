@@ -67,7 +67,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     static final AtomicLong IDS = new AtomicLong();
     final long id = IDS.incrementAndGet();
     final BodySubscriber<T> userSubscriber;
-    volatile int state;
+    private volatile int state;
     final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
     volatile Throwable withError;
