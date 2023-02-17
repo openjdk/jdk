@@ -87,24 +87,25 @@ abstract class CharacterData {
     /**
      * Returns true if the character is a non-latin1 Unicode code point
      * where Character.toLowerCase or Character.toUpperCase return values
-     * in the latin1 range, as if the following code was called:
+     * in the latin1 range <= 0xFF, as if the following code was called:
      *
      * {@snippet :
      *   return c > 0xFF && (Character.toLowerCase(c) <= 0XFF || Character.toUpperCase(c) <= 0XFF);
      * }
      *
-     * For performance reasons, the implementation switches over known constants instead.
-     * These constants were found using an exhaustive search over all code points:
+     * For performance reasons, the implementation compares to a set of known
+     * code points instead. These code points were found using an exhaustive
+     * search over all non-latin1 characters:
      *
      * {@snippet :
      *   for (char c = 256; c < Character.MAX_VALUE; c++) {
      *     char lc = Character.toLowerCase(c);
      *     if (lc <= 0XFF) {
-     *         System.out.println(c + " " + Integer.toHexString(c) + " LC: " + lc);
+     *         System.out.println(Integer.toHexString(c) + " LC: " + lc);
      *     }
      *     char uc = Character.toUpperCase(c);
      *     if (uc <= 0XFF) {
-     *         System.out.println(c + " " + Integer.toHexString(c) + " UC " + uc);
+     *         System.out.println(Integer.toHexString(c) + " UC " + uc);
      *     }
      * }
      * }
