@@ -24,11 +24,10 @@
 package gc.g1;
 
 /**
- * @test TestShrinkAuxiliaryData05
+ * @test TestShrinkAuxiliaryDataRunner
  * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
+ * @bug 8038423 8061715
+ * @summary Checks that decommitment occurs for JVM with different ObjectAlignmentInBytes values
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
@@ -36,11 +35,11 @@ package gc.g1;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData05
+ * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryDataRunner
  */
-public class TestShrinkAuxiliaryData05 {
+public class TestShrinkAuxiliaryDataRunner {
 
     public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(5).test();
+        new TestShrinkAuxiliaryData().test();
     }
 }

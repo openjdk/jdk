@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -1632,16 +1633,19 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
     requested_base = nullptr;
   } else if (HeapShared::is_heap_region(region)) {
+    assert(HeapShared::can_write(), "sanity");
+#if INCLUDE_CDS_JAVA_HEAP
     assert(!DynamicDumpSharedSpaces, "must be");
-    requested_base = base;
+    requested_base = (char*)ArchiveHeapWriter::heap_region_requested_bottom(region);
     if (UseCompressedOops) {
-      mapping_offset = (size_t)((address)base - CompressedOops::base());
+      mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
 #if INCLUDE_G1GC
       mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
 #endif
     }
+#endif // INCLUDE_CDS_JAVA_HEAP
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);

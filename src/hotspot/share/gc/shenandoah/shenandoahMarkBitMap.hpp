@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -160,8 +160,8 @@ public:
   inline bool is_marked_weak(HeapWord* addr) const;
 
   // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
+  // "addr", and before "limit", if "limit" is non-null.  If there is no
+  // such bit, returns "limit" if that is non-null, or else "endWord()".
   HeapWord* get_next_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
 

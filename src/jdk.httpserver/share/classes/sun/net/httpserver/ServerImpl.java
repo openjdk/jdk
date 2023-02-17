@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,7 +410,7 @@ class ServerImpl {
                         }
                     }
                     responseCompleted (c);
-                    if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
+                    if (t.close) {
                         c.close();
                         allConnections.remove (c);
                     } else {
@@ -961,9 +961,24 @@ class ServerImpl {
     }
 
     void markIdle(HttpConnection c) {
-        c.idleStartTime = System.currentTimeMillis();
-        c.setState(State.IDLE);
-        idleConnections.add(c);
+        boolean close = false;
+
+        synchronized(idleConnections) {
+            if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
+                // closing the connection here could block
+                // instead set boolean and close outside the synchronized block
+                close = true;
+            } else {
+                c.idleStartTime = System.currentTimeMillis();
+                c.setState(State.IDLE);
+                idleConnections.add(c);
+            }
+        }
+
+        if (close) {
+            c.close();
+            allConnections.remove(c);
+        }
     }
 
     void markNewlyAccepted(HttpConnection c) {
