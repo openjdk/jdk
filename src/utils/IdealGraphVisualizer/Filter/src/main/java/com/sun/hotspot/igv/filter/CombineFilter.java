@@ -110,7 +110,7 @@ public class CombineFilter extends AbstractFilter {
 
                     for (Figure succ : successors) {
                         if (succ.getPredecessors().size() == 1) {
-                            if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() == 1) {
+                            if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() <= 1) {
 
 
                                 OutputSlot oldSlot = null;
@@ -124,7 +124,11 @@ public class CombineFilter extends AbstractFilter {
 
                                 assert oldSlot != null;
 
-                                OutputSlot nextSlot = succ.getOutputSlots().get(0);
+                                OutputSlot nextSlot = null;
+                                if (succ.getOutputSlots().size() == 1) {
+                                    nextSlot = succ.getOutputSlots().get(0);
+                                }
+
                                 int pos = 0;
                                 if (succ.getProperties().get("con") != null) {
                                     pos = Integer.parseInt(succ.getProperties().get("con"));
@@ -155,10 +159,12 @@ public class CombineFilter extends AbstractFilter {
                                         }
                                     }
                                 }
-                                for (FigureConnection c : nextSlot.getConnections()) {
-                                    FigureConnection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel());
-                                    newConn.setColor(c.getColor());
-                                    newConn.setStyle(c.getStyle());
+                                if (nextSlot != null) {
+                                    for (FigureConnection c : nextSlot.getConnections()) {
+                                        FigureConnection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel());
+                                        newConn.setColor(c.getColor());
+                                        newConn.setStyle(c.getStyle());
+                                    }
                                 }
 
 
