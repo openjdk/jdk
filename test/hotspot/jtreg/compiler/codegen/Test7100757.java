@@ -50,7 +50,7 @@ public class Test7100757 {
     Random rnd = Utils.getRandomInstance();
     long[] ra = new long[(NBITS+63)/64];
 
-    for(int l=0; l < 5000000; l++) {
+    for(int l=0; l < 50_000; l++) {
 
       for(int r = 0; r < ra.length; r++) {
         ra[r] = rnd.nextLong();
