@@ -299,6 +299,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaList(actions, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaList(actions, scope);
         };
     }
 
@@ -309,6 +310,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaListOfAddress(address, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaListOfAddress(address, scope);
         };
     }
 
@@ -319,6 +321,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.emptyVaList();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.emptyVaList();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.emptyVaList();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.emptyVaList();
         };
     }
 
