@@ -128,7 +128,7 @@ public class VerifyStackTrace {
         // test output in here (don't forget the final \n):
         private final String expected =
             "1: VerifyStackTrace.lambda$test$1(VerifyStackTrace.java:280)\n" +
-            "2: VerifyStackTrace$$Lambda$1/0x0000000801001848.run(Unknown Source)\n" +
+            "2: VerifyStackTrace$$Lambda/0x0000000801001848.run(Unknown Source)\n" +
             "3: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:206)\n" +
             "4: java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeVirtual(DirectMethodHandle$Holder)\n" +
             "5: java.base/java.lang.invoke.LambdaForm$MH/0x0000000801004800.invoke_MT(LambdaForm$MH)\n" +

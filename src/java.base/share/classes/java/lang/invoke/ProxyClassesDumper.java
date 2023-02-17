@@ -33,7 +33,7 @@ import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Helper class used by InnerClassLambdaMetafactory to log generated classes
@@ -53,7 +53,6 @@ final class ProxyClassesDumper {
     private static final String[] REPLACEMENT = {
         "%5C", "%3A", "%2A", "%3F", "%22", "%3C", "%3E", "%7C"
     };
-    private static AtomicInteger counter = new AtomicInteger();
 
     private final Path dumpDir;
 
@@ -97,10 +96,10 @@ final class ProxyClassesDumper {
         }
     }
 
-    public String encodeForFilename(String className) {
+    public static String encodeForFilename(String className) {
         final int len = className.length();
-        // add some padding to `len` for the index
-        StringBuilder sb = new StringBuilder(len + 5);
+        StringBuilder sb = new StringBuilder(len);
+
         for (int i = 0; i < len; i++) {
             char c = className.charAt(i);
             // control characters
@@ -121,7 +120,6 @@ final class ProxyClassesDumper {
                 }
             }
         }
-        sb.append(counter.incrementAndGet());
 
         return sb.toString();
     }
