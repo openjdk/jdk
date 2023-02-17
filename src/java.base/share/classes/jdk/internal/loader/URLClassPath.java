@@ -59,6 +59,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarFile;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -123,7 +124,7 @@ public class URLClassPath {
     private final ArrayDeque<URL> unopenedUrls;
 
     /* The resulting search path of Loaders */
-    private final ArrayList<Loader> loaders = new ArrayList<>();
+    private final CopyOnWriteArrayList<Loader> loaders = new CopyOnWriteArrayList<>();
 
     /* Map of each URL opened to its corresponding Loader */
     private final HashMap<String, Loader> lmap = new HashMap<>();
@@ -132,7 +133,7 @@ public class URLClassPath {
     private final URLStreamHandler jarHandler;
 
     /* Whether this URLClassLoader has been closed yet */
-    private boolean closed = false;
+    private volatile boolean closed;
 
     /* The context to be used when loading classes and resources.  If non-null
      * this is the context that was captured during the creation of the
@@ -426,18 +427,30 @@ public class URLClassPath {
      * path. The URLs are opened and expanded as needed. Returns null
      * if the specified index is out of range.
      */
-    private synchronized Loader getLoader(int index) {
+    private Loader getLoader(int index) {
         if (closed) {
             return null;
         }
         // Expand URL search path until the request can be satisfied
         // or unopenedUrls is exhausted.
-        while (loaders.size() < index + 1) {
+        if (index >= loaders.size()) {
+            if (!expandSearchPath(index)) {
+                return null;
+            }
+        }
+        return loaders.get(index);
+    }
+
+    private synchronized boolean expandSearchPath(int index) {
+        if (closed) {
+            return false;
+        }
+        while (index >= loaders.size()) {
             final URL url;
             synchronized (unopenedUrls) {
                 url = unopenedUrls.pollFirst();
                 if (url == null)
-                    return null;
+                    return false;
             }
             // Skip this URL if it already has a Loader. (Loader
             // may be null in the case where URL has not been opened
@@ -464,7 +477,7 @@ public class URLClassPath {
                 // this URLClassPath was given during construction will never
                 // have permission to access the URL.
                 if (DEBUG) {
-                    System.err.println("Failed to access " + url + ", " + se );
+                    System.err.println("Failed to access " + url + ", " + se);
                 }
                 continue;
             }
@@ -472,7 +485,7 @@ public class URLClassPath {
             loaders.add(loader);
             lmap.put(urlNoFragString, loader);
         }
-        return loaders.get(index);
+        return true;
     }
 
     /*

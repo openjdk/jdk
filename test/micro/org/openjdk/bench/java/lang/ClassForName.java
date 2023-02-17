@@ -58,13 +58,23 @@ public class ClassForName {
 
     /** Calls Class.forName with the same name over and over again. The class asked for exists. */
     @Benchmark
-    public void test1(Blackhole bh) throws ClassNotFoundException {
-        bh.consume(Class.forName(aName));
+    public Class<?> forNameSingle() throws ClassNotFoundException {
+        return Class.forName(aName);
+    }
+
+    @Benchmark
+    public void forNameWithModule(Blackhole bh) throws ClassNotFoundException {
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Spliterator"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Random"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Arrays"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.String"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringLatin1"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringUTF16"));
     }
 
     /** Calls Class.forName with the three different names over and over again. All classes asked for exist. */
     @Benchmark
-    public void test3(Blackhole bh) throws ClassNotFoundException {
+    public void forNameTriple(Blackhole bh) throws ClassNotFoundException {
         bh.consume(Class.forName(aName));
         bh.consume(Class.forName(bName));
         bh.consume(Class.forName(cName));
