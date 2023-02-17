@@ -86,16 +86,45 @@ abstract class CharacterData {
 
     /**
      * Returns true if the character is a non-latin1 Unicode code point
-     * where Character.toLowerCase or Character.toUpperCase
-     * can return values in the latin1 range.
+     * where Character.toLowerCase or Character.toUpperCase return values
+     * in the latin1 range, as if the following code was called:
+     *
+     * {@snippet :
+     *   return c > 0xFF && (Character.toLowerCase(c) <= 0XFF || Character.toUpperCase(c) <= 0XFF);
+     * }
+     *
+     * For performance reasons, the implementation switches over known constants instead.
+     * These constants were found using an exhaustive search over all code points:
+     *
+     * {@snippet :
+     *   for (char c = 256; c < Character.MAX_VALUE; c++) {
+     *     char lc = Character.toLowerCase(c);
+     *     if (lc <= 0XFF) {
+     *         System.out.println(c + " " + Integer.toHexString(c) + " LC: " + lc);
+     *     }
+     *     char uc = Character.toUpperCase(c);
+     *     if (uc <= 0XFF) {
+     *         System.out.println(c + " " + Integer.toHexString(c) + " UC " + uc);
+     *     }
+     * }
+     * }
+     *
+     * To catch regressions caused by future changes in Unicode code folding rules,
+     * an exchaustive test verifies that the constants in this method is always
+     * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
      */
     static boolean foldsToLatin1(char c) {
-        return     c == 0x130
-                || c == 0x131
-                || c == 0x178
-                || c == 0x17F
-                || c == 0x1E9E
-                || c == 0x212A
-                || c == 0x212B;
+        switch (c) {
+            case 0x130:  // Latin capital letter i with dot above.  Uppercase: i
+            case 0x131:  // Latin small letter dotless i.           Lowercase: I
+            case 0x178:  // Latin capital letter y with diaeresis.  Lowercase: Y with Diaeresis
+            case 0x17F:  // latin small letter long s.              Uppercase: S
+            case 0x1E9E: // latin capital letter sharp s.           Lowercase: Sharp s
+            case 0x212A: // Kelvin sign.                            Lowercase: k
+            case 0x212B: // Angstrom sign.                          Lowercase: A with Overring
+                return true;
+            default:
+                return false;
+        }
     }
 }
