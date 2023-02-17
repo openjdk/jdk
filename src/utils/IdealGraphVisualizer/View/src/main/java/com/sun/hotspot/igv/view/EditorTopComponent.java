@@ -31,6 +31,7 @@ import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -371,9 +372,37 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     @Override
+    public void setDisplayName(String displayName) {
+        super.setDisplayName(displayName);
+        if (useBoldDisplayName) {
+            setHtmlDisplayName("<html><b>" + StringUtils.escapeHTML(getDisplayName()) + "</b>");
+        } else {
+            setHtmlDisplayName(getDisplayName());
+        }
+    }
+
+    private boolean useBoldDisplayName = false;
+
+    private void setBoldDisplayName(boolean bold) {
+        useBoldDisplayName = bold;
+        setDisplayName(getDisplayName());
+    }
+
+
+    @Override
     protected void componentActivated() {
         super.componentActivated();
         getModel().activateModel();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            for (TopComponent topComponent : manager.getOpenedTopComponents(m)) {
+                if (topComponent instanceof EditorTopComponent) {
+                    EditorTopComponent editor = (EditorTopComponent) topComponent;
+                    editor.setBoldDisplayName(false);
+                }
+            }
+        }
+        setBoldDisplayName(true);
         quickSearchToolbar.add(quickSearchPresenter);
         quickSearchPresenter.revalidate();
     }
