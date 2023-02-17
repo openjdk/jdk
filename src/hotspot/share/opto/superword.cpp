@@ -180,11 +180,10 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
       if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
-        _phase->has_range_checks(lpt_next);
         // Main loop SLP works well for manually unrolled loops. But post loop
         // vectorization doesn't work for these. To bail out the optimization
         // earlier, we have range check and loop stride conditions below.
-        if (cl_next->is_post_loop() && !cl_next->range_checks_present() &&
+        if (cl_next->is_post_loop() && !lpt_next->range_checks_present() &&
             cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
           if (!cl_next->is_vectorized_loop()) {
             // Propagate some main loop attributes to its corresponding scalar
@@ -3170,6 +3169,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
           cnt = ConNode::make(TypeInt::make(shift & mask));
+          _igvn.register_new_node_with_optimizer(cnt);
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
@@ -3302,7 +3302,8 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn.hash_delete(def);
     int def_pos = alignment(def) / data_size(def);
 
-    Node* ex = ExtractNode::make(def, def_pos, velt_basic_type(def));
+    ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
+    Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
     _igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);

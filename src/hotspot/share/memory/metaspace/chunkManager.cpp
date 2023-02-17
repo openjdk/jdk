@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "sanitizers/address.h"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -206,11 +206,10 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
       split_chunk_and_add_splinters(c, preferred_level);
       assert(c->level() == preferred_level, "split failed?");
     }
-    // Attempt to commit the chunk (depending on settings, we either fully commit it or just
-    //  commit enough to get the caller going). That may fail if we hit a commit limit. In
+    // Attempt to commit the chunk. That may fail if we hit a commit limit. In
     //  that case put the chunk back to the freelist (re-merging it with its neighbors if we
     //  did split it) and return null.
-    const size_t to_commit = Settings::new_chunks_are_fully_committed() ? c->word_size() : min_committed_words;
+    const size_t to_commit = min_committed_words;
     if (c->committed_words() < to_commit) {
       if (c->ensure_committed_locked(to_commit) == false) {
         UL2(info, "failed to commit " SIZE_FORMAT " words on chunk " METACHUNK_FORMAT ".",
@@ -343,17 +342,15 @@ void ChunkManager::purge() {
   //  free chunks and uncommit the backing memory of those large enough to
   //  contain one or multiple commit granules (chunks larger than a granule
   //  always cover a whole number of granules and start at a granule boundary).
-  if (Settings::uncommit_free_chunks()) {
-    const chunklevel_t max_level =
-        chunklevel::level_fitting_word_size(Settings::commit_granule_words());
-    for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL;
-         l <= max_level;
-         l++) {
-      // Since we uncommit all chunks at this level, we do not break the "committed chunks are
-      //  at the front of the list" condition.
-      for (Metachunk* c = _chunks.first_at_level(l); c != nullptr; c = c->next()) {
-        c->uncommit_locked();
-      }
+  const chunklevel_t max_level =
+      chunklevel::level_fitting_word_size(Settings::commit_granule_words());
+  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL;
+       l <= max_level;
+       l++) {
+    // Since we uncommit all chunks at this level, we do not break the "committed chunks are
+    //  at the front of the list" condition.
+    for (Metachunk* c = _chunks.first_at_level(l); c != nullptr; c = c->next()) {
+      c->uncommit_locked();
     }
   }
 
