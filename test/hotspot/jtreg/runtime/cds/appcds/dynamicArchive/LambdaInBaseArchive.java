@@ -83,8 +83,8 @@ public class LambdaInBaseArchive extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldContain("LambHello source: shared objects file")
-                      .shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file")
-                      .shouldNotMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file.*(top)");
+                      .shouldMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.shared.objects.file")
+                      .shouldNotMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.shared.objects.file.*(top)");
                 });
 
     }

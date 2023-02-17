@@ -77,7 +77,7 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
     private static void checkWarning(OutputAnalyzer output) throws Exception {
         if (output.firstMatch("bytes: [0-9]+ checksum: [0-9a-f]+") != null) {
             // Patterns like this indicate that a class was not loaded from CDS archive:
-            // [info ][class,load] jdk.internal.module.DefaultRoots$$Lambda$1/0x00007f80c4512048 source: jdk.internal.module.DefaultRoots
+            // [info ][class,load] jdk.internal.module.DefaultRoots$$Lambda/0x00007f80c4512048 source: jdk.internal.module.DefaultRoots
             // [debug][class,load]  klass: 0x0000000800b77cf8 super: 0x0000000800007450 interfaces: 0x0000000800162538
             //                      loader: [loader data: 0x00007f80f416a5b0 of 'bootstrap'] bytes: 403 checksum: 753e58aa
             System.out.println("test skipped: this platform uses non-archived classes when running -version");

@@ -53,7 +53,7 @@ public class StaticInnerTest extends DynamicArchiveTestBase {
             "-Xlog:class+load=info,class+nestmates=trace,cds+dynamic=info",
             "-cp", appJar, mainClass, "dump")
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden HelloStaticInner$InnerHello$$Lambda$")
+                output.shouldContain("Archiving hidden HelloStaticInner$InnerHello$$Lambda")
                       .shouldHaveExitValue(0);
             });
 
@@ -63,7 +63,7 @@ public class StaticInnerTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain("HelloStaticInner source: shared objects file (top)")
-                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)");
+                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)");
             });
     }
 }

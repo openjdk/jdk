@@ -62,7 +62,7 @@ public class StaticArchiveWithLambda {
             .addSuffix(appClass);
        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
        output.shouldContain("LambHello source: shared objects file")
-             .shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file")
+             .shouldMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.shared.objects.file")
              .shouldHaveExitValue(0);
     }
 }

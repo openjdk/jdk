@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 public class ClassHierarchyTest {
 
     // $> jcmd DcmdTestClass VM.class_hierarchy  DcmdTestClass | grep DcmdTestClass\$\$Lambda
-    // |--DcmdTestClass$$Lambda$1/4081552/0xa529fbb0
+    // |--DcmdTestClass$$Lambda/4081552/0xa529fbb0
 
     // > VM.class_hierarchy DcmdBaseClass
     // java.lang.Object/null

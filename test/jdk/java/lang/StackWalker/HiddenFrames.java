@@ -101,7 +101,7 @@ public class HiddenFrames {
         if (cn.startsWith("java.lang.reflect.") || cn.startsWith("jdk.internal.reflect.")) {
             reflects.add(frame);
         }
-        if (cn.contains("$$Lambda$")) {
+        if (cn.contains("$$Lambda")) {
             lambdas.add(frame);
         }
     }

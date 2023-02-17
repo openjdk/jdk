@@ -140,7 +140,7 @@ public class ModifyAnonymous {
                     throw new RuntimeException("null class encountered");
                 }
                 final String name = clazz.getName();
-                if (name.contains("$$Lambda$") && name.contains("App")) {
+                if (name.contains("$$Lambda") && name.contains("App")) {
                     if (inst.isModifiableClass(clazz)) {
                         pw.flush();
                         pw.close();
@@ -193,7 +193,7 @@ public class ModifyAnonymous {
         }.start();
 
         // Test that NCDFE is not thrown for anonymous class:
-        // ModifyAnonymous$InstanceMethodCallSiteApp$$Lambda$18
+        // ModifyAnonymous$InstanceMethodCallSiteApp$$Lambda
         try {
             ModifyAnonymous test = new ModifyAnonymous();
             InstanceMethodCallSiteApp.test();

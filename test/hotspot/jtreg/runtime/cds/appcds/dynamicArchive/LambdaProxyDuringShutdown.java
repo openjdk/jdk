@@ -63,7 +63,7 @@ public class LambdaProxyDuringShutdown extends DynamicArchiveTestBase {
                 // Nest host should not be skipped although it is not in the linked state.
                 output.shouldNotContain("Skipping Outer: Not linked")
                 // Lambda proxy is loaded normally.
-                      .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda[$].*0x.*source:.Outer")
+                      .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda.*0x.*source:.Outer")
                       .shouldContain(appOutput)
                       .shouldHaveExitValue(0);
             });
@@ -79,7 +79,7 @@ public class LambdaProxyDuringShutdown extends DynamicArchiveTestBase {
                 // from the dynamic archive.
                 // The lambda proxy is not loaded from the dynamic archive.
                 output.shouldMatch("class.load.*Outer.source:.*shared.*objects.*file.*(top)")
-                      .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda[$].*0x.*source:.Outer")
+                      .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda.*0x.*source:.Outer")
                       .shouldMatch("class.load. Outer[$]Inner.source:.*shared.*objects.*file.*(top)")
                       .shouldContain(appOutput)
                       .shouldHaveExitValue(0);

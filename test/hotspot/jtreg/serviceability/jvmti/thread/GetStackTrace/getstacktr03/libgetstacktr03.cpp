@@ -47,7 +47,7 @@ static frame_info expected_virtual_frames[] = {
     {"Ljava/lang/VirtualThread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread$VThreadContinuation;", "lambda$new$0", "(Ljava/lang/VirtualThread;Ljava/lang/Runnable;)V"},
-    {"Ljava/lang/VirtualThread$VThreadContinuation$$Lambda$31.0x0000000800098810;", "run", "()V"},
+    {"Ljava/lang/VirtualThread$VThreadContinuation$$Lambda.0x0000000800098810;", "run", "()V"},
     {"Ljdk/internal/vm/Continuation;", "enter0", "()V"},
     {"Ljdk/internal/vm/Continuation;", "enter", "(Ljdk/internal/vm/Continuation;Z)V"}
 };

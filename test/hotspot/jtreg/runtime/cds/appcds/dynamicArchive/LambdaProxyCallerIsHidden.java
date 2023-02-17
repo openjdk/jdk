@@ -58,7 +58,7 @@ public class LambdaProxyCallerIsHidden extends DynamicArchiveTestBase {
             "-Xlog:class+load,cds+dynamic,cds=debug",
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldMatch("Skipping.LambdaHello_0x.*[$][$]Lambda[$].*:.Hidden.class")
+                output.shouldMatch("Skipping.LambdaHello_0x.*[$][$]Lambda.*:.Hidden.class")
                       .shouldMatch("Skipping.LambdaHello.0x.*:.Hidden.class")
                       .shouldHaveExitValue(0);
             });
@@ -68,7 +68,7 @@ public class LambdaProxyCallerIsHidden extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldMatch("class.load.*LambdaHello/0x.*source.*LambdaProxyCallerIsHiddenApp")
-                      .shouldMatch("class.load.*LambdaHello_0x.*[$][$]Lambda[$].*source.*LambdaProxyCallerIsHiddenApp")
+                      .shouldMatch("class.load.*LambdaHello_0x.*[$][$]Lambda.*source.*LambdaProxyCallerIsHiddenApp")
                       .shouldHaveExitValue(0);
             });
     }

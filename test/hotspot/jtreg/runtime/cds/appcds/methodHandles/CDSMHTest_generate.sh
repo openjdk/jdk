@@ -130,7 +130,7 @@ public class $i {
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. test.java.lang.invoke.$i[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file")
+        output.shouldMatch(".class.load. test.java.lang.invoke.$i[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }
 }

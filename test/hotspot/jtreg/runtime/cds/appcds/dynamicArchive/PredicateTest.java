@@ -55,7 +55,7 @@ public class PredicateTest extends DynamicArchiveTestBase {
             use_whitebox_jar,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden PredicateApp$$Lambda$")
+                output.shouldContain("Archiving hidden PredicateApp$$Lambda")
                       .shouldHaveExitValue(0);
             });
 

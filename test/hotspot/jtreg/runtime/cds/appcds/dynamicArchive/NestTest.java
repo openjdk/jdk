@@ -58,7 +58,7 @@ public class NestTest extends DynamicArchiveTestBase {
             use_whitebox_jar,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden NestApp$InnerA$InnerInnerA$$Lambda$")
+                output.shouldContain("Archiving hidden NestApp$InnerA$InnerInnerA$$Lambda")
                       .shouldHaveExitValue(0);
             });
 
@@ -69,7 +69,7 @@ public class NestTest extends DynamicArchiveTestBase {
             "-Xlog:class+load=debug,class+resolve=debug,class+unload=info",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)")
+                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)")
                       .shouldHaveExitValue(0);
             });
     }

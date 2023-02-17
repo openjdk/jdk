@@ -162,7 +162,7 @@ public class MethodInvokeTest {
 
             int index = caller.getName().indexOf('/');
             String cn = caller.getName().substring(0, index);
-            assertTrue(cn.startsWith(LambdaTest.class.getName() + "$$Lambda$"), caller + " should be a lambda proxy class");
+            assertTrue(cn.startsWith(LambdaTest.class.getName() + "$$Lambda"), caller + " should be a lambda proxy class");
         }
     }
     static void checkCaller(CSM csm, Class<?> expected, boolean adapter) {

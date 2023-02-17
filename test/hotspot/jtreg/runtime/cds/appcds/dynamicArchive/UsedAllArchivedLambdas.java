@@ -55,7 +55,7 @@ public class UsedAllArchivedLambdas extends DynamicArchiveTestBase {
             use_whitebox_jar,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden UsedAllArchivedLambdasApp$$Lambda$")
+                output.shouldContain("Archiving hidden UsedAllArchivedLambdasApp$$Lambda")
                       .shouldHaveExitValue(0);
             });
 

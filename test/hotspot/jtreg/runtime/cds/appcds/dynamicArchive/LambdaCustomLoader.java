@@ -51,7 +51,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
             "-Xlog:class+load,cds=debug,cds+dynamic",
             "-cp", appJar, mainClass, appJar, "init", "keep-alive")
             .assertNormalExit(output -> {
-                output.shouldMatch("Skipping.LambHello[$][$]Lambda[$].*0x.*:.Hidden.class")
+                output.shouldMatch("Skipping.LambHello[$][$]Lambda.*0x.*:.Hidden.class")
                       .shouldHaveExitValue(0);
             });
 
@@ -59,7 +59,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
             "-Xlog:class+load,class+unload",
             "-cp", appJar, mainClass, appJar, "init")
             .assertNormalExit(output -> {
-                output.shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.LambHello")
+                output.shouldMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.LambHello")
                       .shouldContain("LambHello source: shared objects file (top)")
                       .shouldHaveExitValue(0);
             });

@@ -78,7 +78,7 @@ public class LambdaForOldInfInBaseArchive extends DynamicArchiveTestBase {
               appClass)
             .assertNormalExit(out -> {
                     out.shouldContain("OldProvider source: shared objects file")
-                       .shouldMatch("Archiving hidden LambdaContainsOldInfApp[$][$]Lambda[$][\\d+]*");
+                       .shouldMatch("Archiving hidden LambdaContainsOldInfApp[$][$]Lambda*");
                 });
 
         // Run with both base and dynamic archives. The OldProvider class
@@ -91,7 +91,7 @@ public class LambdaForOldInfInBaseArchive extends DynamicArchiveTestBase {
             .assertNormalExit(out -> {
                     out.shouldContain("OldProvider source: shared objects file")
                        .shouldContain("LambdaContainsOldInfApp source: shared objects file (top)")
-                       .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)");
+                       .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)");
                 });
     }
 }

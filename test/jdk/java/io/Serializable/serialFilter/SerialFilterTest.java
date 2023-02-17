@@ -519,7 +519,7 @@ public class SerialFilterTest implements Serializable {
                     filter.depth(), filter.streamBytes());
             count++;
             if (serialClass != null) {
-                if (serialClass.getName().contains("$$Lambda$")) {
+                if (serialClass.getName().contains("$$Lambda")) {
                     // TBD: proper identification of serialized Lambdas?
                     // Fold the serialized Lambda into the SerializedLambda type
                     classes.add(SerializedLambda.class);
