@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,13 @@ class SymbolHandleBase : public StackObj {
   Symbol* _temp;
 
 public:
-  SymbolHandleBase() : _temp(NULL) { }
+  SymbolHandleBase() : _temp(nullptr) { }
 
   // Conversion from a Symbol* to a SymbolHandleBase.
   // Does not increment the current reference count if temporary.
   SymbolHandleBase(Symbol *s) : _temp(s) {
     if (!TEMP) {
-      assert(s != nullptr, "must not be null");
-      s->increment_refcount();
+      Symbol::maybe_increment_refcount(_temp);
     }
   }
 
