@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,6 +539,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       stringStream ss(buffer, sizeof(buffer) - 1);
       node->as_Bool()->_test.dump_on(&ss);
       print_prop(short_name, buffer);
+    } else if (node->is_CatchProj()) {
+      if (node->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
+        print_prop(short_name, "F");
+      } else {
+        print_prop(short_name, "C");
+      }
     } else if ((node->is_Con() && node->is_Type()) || node->is_Proj()) {
 
       if (t->base() == Type::Int && t->is_int()->is_con()) {
