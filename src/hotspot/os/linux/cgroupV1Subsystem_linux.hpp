@@ -114,7 +114,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     char * pids_max_val();
 
     jlong read_mem_swappiness();
-    julong read_mem_swap();
+    jlong read_mem_swap();
 
   public:
     CgroupV1Subsystem(CgroupV1Controller* cpuset,
