@@ -173,8 +173,9 @@ class Shutdown {
         }
     }
 
-    // Locate and return the logger for Shutdown.exit, if it is functional and DEBUG enabled.
-    // Exceptions should not prevent System.exit; the exception is printed and otherwise ignored.
+    /* Locate and return the logger for Shutdown.exit, if it is functional and DEBUG enabled.
+     * Exceptions should not prevent System.exit; the exception is printed and otherwise ignored.
+     */
     private static System.Logger getRuntimeExitLogger() {
         try {
             System.Logger log = System.getLogger("java.lang.Runtime");
