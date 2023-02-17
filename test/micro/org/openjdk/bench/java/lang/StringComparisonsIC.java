@@ -154,7 +154,7 @@ public class StringComparisonsIC {
             }
             case UTF_UTF_MATCH -> {
                 leftString = ue  + ue.repeat(size);
-                rightString = ue + ue.repeat(size);
+                rightString = leftString;
             }
             case UTF_UTF_MISMATCH -> {
                 leftString = ue  + ue.repeat(size);
