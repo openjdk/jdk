@@ -64,17 +64,17 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return a new constant pool builder}  The new constant pool builder
      * will inherit the classfile processing options of the specified class.
-     * If the processing options include {@link Classfile.Option.Key#CP_SHARING},
+     * If the processing options include {@link Classfile.Option#constantPoolSharing(boolean)},
      * (the default) the new constant pool builder will be also be pre-populated with the
      * contents of the constant pool associated with the class reader.
      *
      * @param classModel the class to copy from
      */
     static ConstantPoolBuilder of(ClassModel classModel) {
-        ClassReader reader = (ClassReader) classModel.constantPool();
-        return reader.optionValue(Classfile.Option.Key.CP_SHARING)
+        ClassReaderImpl reader = (ClassReaderImpl) classModel.constantPool();
+        return reader.options().cpSharing
           ? new SplitConstantPool(reader)
-          : new SplitConstantPool(((ClassReaderImpl) reader).options());
+          : new SplitConstantPool(reader.options());
     }
 
     /**
@@ -88,19 +88,11 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return the value of the specified option}
-     *
-     * @param option the key of the option value
-     * @param <T> the type of the option value
-     */
-    <T> T optionValue(Classfile.Option.Key option);
-
-    /**
      * {@return whether the provided constant pool is index-compatible with this
      * one}  This may be because they are the same constant pool, or because this
      * constant pool was copied from the other.
      *
-     * @param other the other constant pool
+     * @param constantPool the other constant pool
      */
     boolean canWriteDirect(ConstantPool constantPool);
 

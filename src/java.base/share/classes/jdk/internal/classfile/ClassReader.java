@@ -51,17 +51,9 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the table of custom attribute mappers}  This is derived from
-     * the processing option {@link Classfile.Option.Key#ATTRIBUTE_MAPPER}.
+     * the processing option {@link Classfile.Option#attributeMapper(Function)}.
      */
     Function<Utf8Entry, AttributeMapper<?>> customAttributes();
-
-    /**
-     * {@return the value corresponding to the specified processing option}
-     *
-     * @param option the option key to fetch
-     * @param <T> the type of the option value (unchecked)
-     */
-    <T> T optionValue(Classfile.Option.Key option);
 
     // Class context
 

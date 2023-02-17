@@ -44,6 +44,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ClassImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Options;
+import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.attribute.CharacterRangeInfo;
@@ -63,24 +64,13 @@ public class Classfile {
      * An option that affects the writing of classfiles.
      */
     public sealed interface Option permits Options.OptionValue {
-        /** {@return the option key} */
-        Key key();
-
-        /**
-         * Key values for defined options.
-         */
-        enum Key {
-            GENERATE_STACK_MAPS, PROCESS_DEBUG, PROCESS_LINE_NUMBERS, PROCESS_UNKNOWN_ATTRIBUTES,
-            CP_SHARING, FIX_SHORT_JUMPS, PATCH_DEAD_CODE, HIERARCHY_RESOLVER, ATTRIBUTE_MAPPER,
-            FILTER_DEAD_LABELS;
-        }
 
         /**
          * {@return an option describing whether or not to generate stackmaps}
          * Default is to generate stack maps.
          * @param b whether to generate stack maps
          */
-        static Option generateStackmap(boolean b) { return new Options.OptionValue(Key.GENERATE_STACK_MAPS, b); }
+        static Option generateStackmap(boolean b) { return new Options.OptionValue(Options.Key.GENERATE_STACK_MAPS, b); }
 
         /**
          * {@return an option describing whether to process or discard debug elements}
@@ -90,7 +80,7 @@ public class Classfile {
          * Default is to process debug elements.
          * @param b whether or not to process debug elements
          */
-        static Option processDebug(boolean b) { return new Options.OptionValue(Key.PROCESS_DEBUG, b); }
+        static Option processDebug(boolean b) { return new Options.OptionValue(Options.Key.PROCESS_DEBUG, b); }
 
         /**
          * {@return an option describing whether to process or discard line numbers}
@@ -99,7 +89,7 @@ public class Classfile {
          * Default is to process line numbers.
          * @param b whether or not to process line numbers
          */
-        static Option processLineNumbers(boolean b) { return new Options.OptionValue(Key.PROCESS_LINE_NUMBERS, b); }
+        static Option processLineNumbers(boolean b) { return new Options.OptionValue(Options.Key.PROCESS_LINE_NUMBERS, b); }
 
         /**
          * {@return an option describing whether to process or discard unrecognized
@@ -108,7 +98,7 @@ public class Classfile {
          * of {@link UnknownAttribute}.
          * @param b whether or not to process unrecognized attributes
          */
-        static Option processUnknownAttributes(boolean b) { return new Options.OptionValue(Key.PROCESS_UNKNOWN_ATTRIBUTES, b); }
+        static Option processUnknownAttributes(boolean b) { return new Options.OptionValue(Options.Key.PROCESS_UNKNOWN_ATTRIBUTES, b); }
 
         /**
          * {@return an option describing whether to preserve the original constant
@@ -119,7 +109,7 @@ public class Classfile {
          * Default is to preserve the original constant pool.
          * @param b whether or not to preserve the original constant pool
          */
-        static Option constantPoolSharing(boolean b) { return new Options.OptionValue(Key.CP_SHARING, b); }
+        static Option constantPoolSharing(boolean b) { return new Options.OptionValue(Options.Key.CP_SHARING, b); }
 
         /**
          * {@return an option describing whether or not to automatically rewrite
@@ -127,28 +117,28 @@ public class Classfile {
          * Default is to automatically rewrite jump instructions.
          * @param b whether or not to automatically rewrite short jumps to long when necessary
          */
-        static Option fixShortJumps(boolean b) { return new Options.OptionValue(Key.FIX_SHORT_JUMPS, b); }
+        static Option fixShortJumps(boolean b) { return new Options.OptionValue(Options.Key.FIX_SHORT_JUMPS, b); }
 
         /**
          * {@return an option describing whether or not to patch out unreachable code}
          * Default is to automatically patch out unreachable code with NOPs.
          * @param b whether or not to automatically patch out unreachable code
          */
-        static Option patchDeadCode(boolean b) { return new Options.OptionValue(Key.PATCH_DEAD_CODE, b); }
+        static Option patchDeadCode(boolean b) { return new Options.OptionValue(Options.Key.PATCH_DEAD_CODE, b); }
 
         /**
          * {@return an option describing the class hierarchy resolver to use when
          * generating stack maps}
          * @param r the resolver
          */
-        static Option classHierarchyResolver(ClassHierarchyResolver r) { return new Options.OptionValue(Key.HIERARCHY_RESOLVER, r); }
+        static Option classHierarchyResolver(ClassHierarchyResolver r) { return new Options.OptionValue(Options.Key.HIERARCHY_RESOLVER, r); }
 
         /**
          * {@return an option describing attribute mappers for custom attributes}
          * Default is only to process standard attributes.
          * @param r a function mapping attribute names to attribute mappers
          */
-        static Option attributeMapper(Function<Utf8Entry, AttributeMapper<?>> r) { return new Options.OptionValue(Key.ATTRIBUTE_MAPPER, r); }
+        static Option attributeMapper(Function<Utf8Entry, AttributeMapper<?>> r) { return new Options.OptionValue(Options.Key.ATTRIBUTE_MAPPER, r); }
 
         /**
          * {@return an option describing whether or not to filter unresolved labels}
@@ -158,7 +148,7 @@ public class Classfile {
          * Setting this option to true filters the above elements instead.
          * @param b whether or not to automatically patch out unreachable code
          */
-        static Option filterDeadLabels(boolean b) { return new Options.OptionValue(Key.FILTER_DEAD_LABELS, b); }
+        static Option filterDeadLabels(boolean b) { return new Options.OptionValue(Options.Key.FILTER_DEAD_LABELS, b); }
     }
 
     /**
@@ -222,7 +212,7 @@ public class Classfile {
                                ConstantPoolBuilder constantPool,
                                Consumer<? super ClassBuilder> handler) {
         thisClassEntry = constantPool.maybeClone(thisClassEntry);
-        DirectClassBuilder builder = new DirectClassBuilder(constantPool, thisClassEntry);
+        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, thisClassEntry);
         handler.accept(builder);
         return builder.build();
     }

@@ -146,11 +146,6 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public <T> T optionValue(Classfile.Option.Key option) {
-        return options.value(option);
-    }
-
-    @Override
     public int entryCount() {
         return constantPoolCount;
     }

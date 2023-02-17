@@ -33,15 +33,15 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
  * AbstractDirectBuilder
  */
 public class AbstractDirectBuilder<B, M> {
-    protected final ConstantPoolBuilder constantPool;
+    protected final SplitConstantPool constantPool;
     protected final AttributeHolder attributes = new AttributeHolder();
     protected M original;
 
-    public AbstractDirectBuilder(ConstantPoolBuilder constantPool) {
+    public AbstractDirectBuilder(SplitConstantPool constantPool) {
         this.constantPool = constantPool;
     }
 
-    public ConstantPoolBuilder constantPool() {
+    public SplitConstantPool constantPool() {
         return constantPool;
     }
 

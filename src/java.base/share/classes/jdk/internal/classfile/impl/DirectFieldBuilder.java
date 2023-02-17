@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.FieldBuilder;
 import jdk.internal.classfile.FieldElement;
 import jdk.internal.classfile.FieldModel;
@@ -42,7 +41,7 @@ public final class DirectFieldBuilder
     private final Utf8Entry desc;
     private int flags;
 
-    public DirectFieldBuilder(ConstantPoolBuilder constantPool,
+    public DirectFieldBuilder(SplitConstantPool constantPool,
                               Utf8Entry name,
                               Utf8Entry type,
                               FieldModel original) {

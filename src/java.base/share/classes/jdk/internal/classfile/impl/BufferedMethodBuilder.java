@@ -50,7 +50,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
     private final List<MethodElement> elements = new ArrayList<>();
-    private final ConstantPoolBuilder constantPool;
+    private final SplitConstantPool constantPool;
     private final ClassEntry thisClass;
     private final Utf8Entry name;
     private final Utf8Entry desc;
@@ -58,7 +58,7 @@ public final class BufferedMethodBuilder
     private final MethodModel original;
     private int[] parameterSlots;
 
-    public BufferedMethodBuilder(ConstantPoolBuilder constantPool,
+    public BufferedMethodBuilder(SplitConstantPool constantPool,
                                  ClassEntry thisClass,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
@@ -126,7 +126,7 @@ public final class BufferedMethodBuilder
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool(), original);
+        return new BufferedCodeBuilder(this, constantPool, original);
     }
 
     public BufferedMethodBuilder run(Consumer<? super MethodBuilder> handler) {

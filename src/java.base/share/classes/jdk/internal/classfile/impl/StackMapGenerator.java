@@ -184,7 +184,7 @@ public final class StackMapGenerator {
     private final String methodName;
     private final MethodTypeDesc methodDesc;
     private final ByteBuffer bytecode;
-    private final ConstantPoolBuilder cp;
+    private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
     private final List<AbstractPseudoInstruction.ExceptionCatchImpl> exceptionTable;
@@ -216,7 +216,7 @@ public final class StackMapGenerator {
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
                      ByteBuffer bytecode,
-                     ConstantPoolBuilder cp,
+                     SplitConstantPool cp,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
@@ -226,8 +226,8 @@ public final class StackMapGenerator {
         this.cp = cp;
         this.labelContext = labelContext;
         this.exceptionTable = handlers;
-        this.classHierarchy = new ClassHierarchyImpl(cp.optionValue(Classfile.Option.Key.HIERARCHY_RESOLVER));
-        this.patchDeadCode = cp.optionValue(Classfile.Option.Key.PATCH_DEAD_CODE);
+        this.classHierarchy = new ClassHierarchyImpl(cp.options().classHierarchyResolver);
+        this.patchDeadCode = cp.options().patchCode;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -845,7 +845,7 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            ((SplitConstantPool)cp).options.generateStackmaps = false;
+            cp.options.generateStackmaps = false;
             var clb = new DirectClassBuilder(cp, cp.classEntry(ClassDesc.of("FakeClass")));
             clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
                     ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
@@ -943,7 +943,7 @@ public final class StackMapGenerator {
         for (var exhandler : exceptionTable) try {
             offsets.set(labelContext.labelToBci(exhandler.handler()));
         } catch (IllegalArgumentException iae) {
-            if (!(boolean)cp.optionValue(Option.Key.FILTER_DEAD_LABELS))
+            if (!cp.options().filterDeadLabels)
                 generatorError("Detected exception handler out of bytecode range");
         }
         return offsets;

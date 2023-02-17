@@ -39,7 +39,13 @@ import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERAR
  */
 public class Options {
 
-    public record OptionValue(Classfile.Option.Key key, Object value) implements Classfile.Option { }
+    public enum Key {
+        GENERATE_STACK_MAPS, PROCESS_DEBUG, PROCESS_LINE_NUMBERS, PROCESS_UNKNOWN_ATTRIBUTES,
+        CP_SHARING, FIX_SHORT_JUMPS, PATCH_DEAD_CODE, HIERARCHY_RESOLVER, ATTRIBUTE_MAPPER,
+        FILTER_DEAD_LABELS;
+    }
+
+    public record OptionValue(Key key, Object value) implements Classfile.Option { }
 
     public Boolean generateStackmaps = true;
     public Boolean processDebug = true;
@@ -60,8 +66,9 @@ public class Options {
     @SuppressWarnings("unchecked")
     public Options(Collection<Classfile.Option> options) {
         for (var o : options) {
-            var v = ((OptionValue)o).value();
-            switch (o.key()) {
+            var ov = ((OptionValue)o);
+            var v = ov.value();
+            switch (ov.key()) {
                 case GENERATE_STACK_MAPS -> generateStackmaps = (Boolean) v;
                 case PROCESS_DEBUG -> processDebug = (Boolean) v;
                 case PROCESS_LINE_NUMBERS -> processLineNumbers = (Boolean) v;
@@ -74,21 +81,5 @@ public class Options {
                 case FILTER_DEAD_LABELS -> filterDeadLabels = (Boolean) v;
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T value(Classfile.Option.Key key) {
-        return switch (key) {
-            case PROCESS_DEBUG -> (T) processDebug;
-            case PROCESS_LINE_NUMBERS -> (T) processLineNumbers;
-            case PROCESS_UNKNOWN_ATTRIBUTES -> (T) processUnknownAttributes;
-            case CP_SHARING -> (T) cpSharing;
-            case FIX_SHORT_JUMPS -> (T) fixJumps;
-            case PATCH_DEAD_CODE -> (T) patchCode;
-            case ATTRIBUTE_MAPPER -> (T) attributeMapper;
-            case GENERATE_STACK_MAPS -> (T) generateStackmaps;
-            case HIERARCHY_RESOLVER -> (T) classHierarchyResolver;
-            case FILTER_DEAD_LABELS -> (T) filterDeadLabels;
-        };
     }
 }

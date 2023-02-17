@@ -151,9 +151,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                : (T) entry.clone(this);
     }
 
-    @Override
-    public <T> T optionValue(Classfile.Option.Key option) {
-        return options.value(option);
+    public Options options() {
+        return options;
     }
 
     @Override

@@ -150,7 +150,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (classReader.optionValue(Classfile.Option.Key.PROCESS_LINE_NUMBERS))
+            if (((ClassReaderImpl)classReader).options().processLineNumbers)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -181,7 +181,7 @@ public final class CodeImpl
                                             forEachElement(cb);
                                         }
                                     },
-                                    buf.constantPool(),
+                                    (SplitConstantPool)buf.constantPool(),
                                     null).writeTo(buf);
         }
     }
@@ -198,7 +198,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (classReader.optionValue(Classfile.Option.Key.PROCESS_DEBUG))
+        if (((ClassReaderImpl)classReader).options().processDebug)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
