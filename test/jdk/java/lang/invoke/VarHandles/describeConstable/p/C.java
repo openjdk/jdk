@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,8 @@
  * questions.
  */
 
-package gc.g1;
+package p;
 
-/*
- * @test TestNoUseHCC
- * @summary Check that G1 survives a GC without HCC enabled
- * @requires vm.gc.G1
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xlog:gc+phases=debug -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -Xmx64M -XX:G1ConcRSLogCacheSize=0 gc.g1.TestNoUseHCC
- */
-
-import jdk.test.whitebox.WhiteBox;
-
-public class TestNoUseHCC {
-
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-
-    public static void main(String [] args) {
-        WB.youngGC();
-    }
+public class C extends p.q.Q implements I {
+    public static String cString =  "CClass";
 }
-

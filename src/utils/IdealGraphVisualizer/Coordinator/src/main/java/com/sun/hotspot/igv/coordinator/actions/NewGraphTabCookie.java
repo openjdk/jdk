@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package com.sun.hotspot.igv.coordinator.actions;
 
-package gc.g1;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.services.GraphViewer;
+import org.openide.nodes.Node;
 
-/**
- * @test TestShrinkAuxiliaryData00
- * @key randomness
- * @bug 8038423 8061715
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData00
- */
-public class TestShrinkAuxiliaryData00 {
+public class NewGraphTabCookie implements Node.Cookie {
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(0).test();
+    private final GraphViewer viewer;
+    private final InputGraph graph;
+
+    public NewGraphTabCookie(GraphViewer viewer, InputGraph graph) {
+        this.viewer = viewer;
+        this.graph = graph;
+    }
+
+    public boolean isActive() {
+        return EditorTopComponent.findEditorForGraph(graph) != null;
+    }
+
+    public void openNewTab() {
+        viewer.view(graph, true);
     }
 }

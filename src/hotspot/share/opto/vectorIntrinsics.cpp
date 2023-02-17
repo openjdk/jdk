@@ -1113,7 +1113,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     set_result(box);
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   if (needs_cpu_membar) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1372,7 +1372,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     set_result(box);
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   if (can_access_non_heap) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1585,7 +1585,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     set_result(box);
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
@@ -3002,6 +3002,134 @@ bool LibraryCallKit::inline_index_vector() {
     index = gvn().transform(VectorNode::make(vadd_op, opd, index, vt));
   }
   Node* vbox = box_vector(index, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
+// public static
+// <E,
+//  M extends VectorMask<E>>
+// M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<E> eClass, int length,
+//                              long offset, long limit,
+//                              IndexPartiallyInUpperRangeOperation<E, M> defaultImpl)
+bool LibraryCallKit::inline_index_partially_in_upper_range() {
+  const TypeInstPtr* mask_klass   = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+
+  if (mask_klass == NULL || elem_klass == NULL || vlen == NULL ||
+      mask_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** missing constant: mclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()]);
+    }
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(mask_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+    }
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
+
+  // Check whether the necessary ops are supported by current hardware.
+  bool supports_mask_gen = arch_supports_vector(Op_VectorMaskGen, num_elem, elem_bt, VecMaskUseStore);
+  if (!supports_mask_gen) {
+    if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUseStore)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+
+    // Check whether the scalar cast operation is supported by current hardware.
+    if (elem_bt != T_LONG) {
+      int cast_op = is_integral_type(elem_bt) ? Op_ConvL2I
+                                              : (elem_bt == T_FLOAT ? Op_ConvL2F : Op_ConvL2D);
+      if (!Matcher::match_rule_supported(cast_op)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** Rejected op (%s) because architecture does not support it",
+                        NodeClassNames[cast_op]);
+        }
+        return false; // not supported
+      }
+    }
+  }
+
+  Node* offset = argument(3);
+  Node* limit = argument(5);
+  if (offset == NULL || limit == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** offset or limit argument is NULL");
+    }
+    return false; // not supported
+  }
+
+  ciKlass* box_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  assert(is_vector_mask(box_klass), "argument(0) should be a mask class");
+  const TypeInstPtr* box_type = TypeInstPtr::make_exact(TypePtr::NotNull, box_klass);
+
+  // We assume "offset > 0 && limit >= offset && limit - offset < num_elem".
+  // So directly get indexLimit with "indexLimit = limit - offset".
+  Node* indexLimit = gvn().transform(new SubLNode(limit, offset));
+  Node* mask = NULL;
+  if (supports_mask_gen) {
+    mask = gvn().transform(VectorMaskGenNode::make(indexLimit, elem_bt, num_elem));
+  } else {
+    // Generate the vector mask based on "mask = iota < indexLimit".
+    // Broadcast "indexLimit" to a vector.
+    switch (elem_bt) {
+      case T_BOOLEAN: // fall-through
+      case T_BYTE:    // fall-through
+      case T_SHORT:   // fall-through
+      case T_CHAR:    // fall-through
+      case T_INT: {
+        indexLimit = gvn().transform(new ConvL2INode(indexLimit));
+        break;
+      }
+      case T_DOUBLE: {
+        indexLimit = gvn().transform(new ConvL2DNode(indexLimit));
+        break;
+      }
+      case T_FLOAT: {
+        indexLimit = gvn().transform(new ConvL2FNode(indexLimit));
+        break;
+      }
+      case T_LONG: {
+        // no conversion needed
+        break;
+      }
+      default: fatal("%s", type2name(elem_bt));
+    }
+    indexLimit = gvn().transform(VectorNode::scalar2vector(indexLimit, num_elem, Type::get_const_basic_type(elem_bt)));
+
+    // Load the "iota" vector.
+    const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+    Node* iota = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+
+    // Compute the vector mask with "mask = iota < indexLimit".
+    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::lt));
+    const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
+    mask = gvn().transform(new VectorMaskCmpNode(BoolTest::lt, iota, indexLimit, pred_node, vmask_type));
+  }
+  Node* vbox = box_vector(mask, box_type, elem_bt, num_elem);
   set_result(vbox);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;

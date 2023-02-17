@@ -57,6 +57,6 @@ JNIEXPORT jint JNICALL
 void throw_internal_error(JNIEnv* env, const char* msg) {
     char errmsg[128];
 
-    sprintf(errmsg, "errno: %d error: %s\n", errno, msg);
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
     JNU_ThrowInternalError(env, errmsg);
 }
