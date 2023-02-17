@@ -40,7 +40,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/formatBuffer.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -312,9 +311,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     __ pop(rax_temp);           // return address
     __ pop(rbx_member);         // extract last argument
     __ push(rax_temp);          // re-push return address
-    // Adjust sender SP for callee, for proper stack walking.
-    // Note: the caller can’t be compiled as MH intrinsics always have native wrappers.
-    __ addptr(LP64_ONLY(r13) NOT_LP64(rsi), Interpreter::stackElementSize);
     generate_method_handle_dispatch(_masm, iid, rcx_recv, rbx_member, not_for_compiler_entry);
   }
 
