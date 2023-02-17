@@ -714,7 +714,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
     @Override
-    public StringBuffer repeat(char c, int times) {
+    public synchronized StringBuffer repeat(char c, int times) {
         super.repeat(c, times);
         return this;
     }
@@ -725,7 +725,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
     @Override
-    public StringBuffer repeat(String str, int times) {
+    public synchronized StringBuffer repeat(String str, int times) {
         super.repeat(str, times);
         return this;
     }
@@ -736,7 +736,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
     @Override
-    public StringBuffer repeat(CharSequence cs, int times) {
+    public synchronized StringBuffer repeat(CharSequence cs, int times) {
         super.repeat(cs, times);
         return this;
     }
