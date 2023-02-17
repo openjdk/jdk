@@ -51,11 +51,11 @@ void ShenandoahLoadReferenceBarrierStub::emit_code(LIR_Assembler* ce) {
 }
 
 ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
-  _pre_barrier_c1_runtime_code_blob(NULL),
-  _load_reference_barrier_strong_rt_code_blob(NULL),
-  _load_reference_barrier_strong_native_rt_code_blob(NULL),
-  _load_reference_barrier_weak_rt_code_blob(NULL),
-  _load_reference_barrier_phantom_rt_code_blob(NULL) {}
+  _pre_barrier_c1_runtime_code_blob(nullptr),
+  _load_reference_barrier_strong_rt_code_blob(nullptr),
+  _load_reference_barrier_strong_native_rt_code_blob(nullptr),
+  _load_reference_barrier_weak_rt_code_blob(nullptr),
+  _load_reference_barrier_phantom_rt_code_blob(nullptr) {}
 
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
@@ -98,7 +98,7 @@ void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, 
       assert(addr_opr->is_register(), "must be");
       addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
     }
-    slow = new ShenandoahPreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info ? new CodeEmitInfo(info) : NULL);
+    slow = new ShenandoahPreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info ? new CodeEmitInfo(info) : nullptr);
   } else {
     assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
     assert(pre_val->is_register(), "must be");
@@ -257,7 +257,7 @@ class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_pre_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -271,7 +271,7 @@ public:
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_load_reference_barrier_runtime_stub(sasm, _decorators);
-    return NULL;
+    return nullptr;
   }
 };
 

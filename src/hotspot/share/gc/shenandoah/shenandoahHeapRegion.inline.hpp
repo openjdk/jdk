@@ -96,7 +96,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
     assert(is_aligned(aligned_obj, alignment_in_bytes), "obj is not aligned: " PTR_FORMAT, p2i(aligned_obj));
     return aligned_obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -117,7 +117,7 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest req
 
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

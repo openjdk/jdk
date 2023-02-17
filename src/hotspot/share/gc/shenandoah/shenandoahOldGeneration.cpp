@@ -86,7 +86,7 @@ class ShenandoahProcessOldSATB : public SATBBufferClosure {
       oop *p = (oop *) &buffer[i];
       ShenandoahHeapRegion* region = _heap->heap_region_containing(*p);
       if (region->is_old() && region->is_active()) {
-          ShenandoahMark::mark_through_ref<oop, OLD>(p, _queue, NULL, _mark_context, false);
+          ShenandoahMark::mark_through_ref<oop, OLD>(p, _queue, nullptr, _mark_context, false);
       } else {
         ++_trashed_oops;
       }
@@ -417,7 +417,7 @@ bool ShenandoahOldGeneration::validate_transition(State new_state) {
 #endif
 
 ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  assert(ShenandoahOldGCHeuristics != NULL, "ShenandoahOldGCHeuristics should not equal NULL");
+  assert(ShenandoahOldGCHeuristics != nullptr, "ShenandoahOldGCHeuristics should not be unset");
   ShenandoahHeuristics* trigger;
   if (strcmp(ShenandoahOldGCHeuristics, "static") == 0) {
     trigger = new ShenandoahStaticHeuristics(this);
@@ -428,7 +428,7 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
   } else {
     vm_exit_during_initialization("Unknown -XX:ShenandoahOldGCHeuristics option (must be one of: static, adaptive, compact)");
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
   trigger->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
   _old_heuristics = new ShenandoahOldHeuristics(this, trigger);

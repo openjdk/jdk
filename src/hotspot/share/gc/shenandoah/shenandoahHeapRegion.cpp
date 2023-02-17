@@ -67,7 +67,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
-  _new_top(NULL),
+  _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
@@ -469,7 +469,7 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce_wo_cancel() {
   while (obj_addr < t) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != NULL, "klass should not be NULL");
+      assert(obj->klass() != nullptr, "klass should not be nullptr");
       obj_addr += obj->size();
     } else {
       // Object is not marked.  Coalesce and fill dead object with dead neighbors.
@@ -514,7 +514,7 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
   while (obj_addr < t) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != NULL, "klass should not be NULL");
+      assert(obj->klass() != nullptr, "klass should not be nullptr");
       obj_addr += obj->size();
     } else {
       // Object is not marked.  Coalesce and fill dead object with dead neighbors.
@@ -564,7 +564,7 @@ void ShenandoahHeapRegion::global_oop_iterate_objects_and_fill_dead(OopIterateCl
   while (obj_addr < t) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != NULL, "klass should not be NULL");
+      assert(obj->klass() != nullptr, "klass should not be nullptr");
       // when promoting an entire region, we have to register the marked objects as well
       obj_addr += obj->oop_iterate_size(blk);
     } else {
@@ -701,7 +701,7 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
       last = cur;
       cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, cast_to_oop(last));
+    shenandoah_assert_correct(nullptr, cast_to_oop(last));
     return last;
   }
 }

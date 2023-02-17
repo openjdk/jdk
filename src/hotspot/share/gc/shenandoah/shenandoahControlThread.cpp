@@ -62,7 +62,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _requested_gc_cause(GCCause::_no_cause_specified),
   _requested_generation(GenerationMode::GLOBAL),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
-  _degen_generation(NULL),
+  _degen_generation(nullptr),
   _allocs_seen(0),
   _mode(none) {
   set_name("Shenandoah Control Thread");
@@ -143,7 +143,7 @@ void ShenandoahControlThread::run_service() {
       if (degen_point == ShenandoahGC::_degenerated_outside_cycle) {
         _degen_generation = heap->mode()->is_generational() ? heap->young_generation() : heap->global_generation();
       } else {
-        assert(_degen_generation != NULL, "Need to know which generation to resume.");
+        assert(_degen_generation != nullptr, "Need to know which generation to resume.");
       }
 
       ShenandoahHeuristics* heuristics = _degen_generation->heuristics();

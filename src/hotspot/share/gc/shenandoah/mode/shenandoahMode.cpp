@@ -31,7 +31,7 @@
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
 ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahGeneration* generation) const {
-  if (ShenandoahGCHeuristics == NULL) {
+  if (ShenandoahGCHeuristics == nullptr) {
     vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
 
@@ -48,6 +48,6 @@ ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahGeneration
   }
 
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 

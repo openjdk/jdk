@@ -63,7 +63,7 @@ public:
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
     ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
-    assert(rp != NULL, "need reference processor");
+    assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
                    true /*cancellable*/,
@@ -87,9 +87,9 @@ public:
     // Transfer any partial buffer to the qset for completed buffer processing.
     _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
     if (thread->is_Java_thread()) {
-      if (_cl != NULL) {
+      if (_cl != nullptr) {
         ResourceMark rm;
-        thread->oops_do(_cl, NULL);
+        thread->oops_do(_cl, nullptr);
       }
     }
   }
@@ -126,7 +126,7 @@ public:
 
       ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp, old);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
-                                               ShenandoahIUBarrier ? &mark_cl : NULL);
+                                               ShenandoahIUBarrier ? &mark_cl : nullptr);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
@@ -177,7 +177,7 @@ template<GenerationMode GENERATION>
 void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahObjToScanQueue* old = _old_queue_set == NULL ? NULL : _old_queue_set->queue(worker_id);
+  ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
   ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old);
   _root_scanner.roots_do(&cl, worker_id);
 }
@@ -196,7 +196,7 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
       break;
     }
     case GLOBAL: {
-      assert(old_task_queues() == NULL, "Global mark should not have old gen mark queues.");
+      assert(old_task_queues() == nullptr, "Global mark should not have old gen mark queues.");
       ShenandoahMarkConcurrentRootsTask<GLOBAL> task(task_queues(), old_task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;

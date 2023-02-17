@@ -78,7 +78,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field, oop new_val);
+  void write_ref_field_post(T* field);
   void write_ref_field_post_slow(volatile CardValue* byte);
 
   virtual void on_thread_create(Thread* thread);

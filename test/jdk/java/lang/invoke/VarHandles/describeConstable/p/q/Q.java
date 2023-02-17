@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,12 @@
  * questions.
  */
 
-package gc.g1;
+package p.q;
 
-/**
- * @test TestShrinkAuxiliaryData20
- * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
-  *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData20
- */
-public class TestShrinkAuxiliaryData20 {
+public class Q {
+    public static String stringField = "QClass";
+    public static long longField = 100L;
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(20).test();
-    }
+    public static String stringField2 = "QClass2";
+    public static long longField2 = 102L;
 }

@@ -33,7 +33,7 @@
 #include "logging/log.hpp"
 
 static ShenandoahHeuristics* get_heuristics(ShenandoahGeneration* nullable) {
-  return nullable != NULL ? nullable->heuristics() : NULL;
+  return nullable != nullptr ? nullable->heuristics() : nullptr;
 }
 
 ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahControlThread* control_thread) :
@@ -65,8 +65,8 @@ void ShenandoahRegulatorThread::run_service() {
 }
 
 void ShenandoahRegulatorThread::regulate_concurrent_cycles() {
-  assert(_young_heuristics != NULL, "Need young heuristics.");
-  assert(_old_heuristics != NULL, "Need old heuristics.");
+  assert(_young_heuristics != nullptr, "Need young heuristics.");
+  assert(_old_heuristics != nullptr, "Need old heuristics.");
 
   while (!should_terminate()) {
     ShenandoahControlThread::GCMode mode = _control_thread->gc_mode();
@@ -93,8 +93,8 @@ void ShenandoahRegulatorThread::regulate_concurrent_cycles() {
 }
 
 void ShenandoahRegulatorThread::regulate_interleaved_cycles() {
-  assert(_young_heuristics != NULL, "Need young heuristics.");
-  assert(_global_heuristics != NULL, "Need global heuristics.");
+  assert(_young_heuristics != nullptr, "Need young heuristics.");
+  assert(_global_heuristics != nullptr, "Need global heuristics.");
 
   while (!should_terminate()) {
     if (_control_thread->gc_mode() == ShenandoahControlThread::none) {
@@ -110,7 +110,7 @@ void ShenandoahRegulatorThread::regulate_interleaved_cycles() {
 }
 
 void ShenandoahRegulatorThread::regulate_heap() {
-  assert(_global_heuristics != NULL, "Need global heuristics.");
+  assert(_global_heuristics != nullptr, "Need global heuristics.");
 
   while (!should_terminate()) {
     if (_control_thread->gc_mode() == ShenandoahControlThread::none) {

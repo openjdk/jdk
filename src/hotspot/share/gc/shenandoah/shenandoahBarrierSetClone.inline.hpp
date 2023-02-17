@@ -102,7 +102,7 @@ void ShenandoahBarrierSet::clone_update(oop obj) {
 
 void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
-  shenandoah_assert_correct(NULL, obj);
+  shenandoah_assert_correct(nullptr, obj);
 
   // We only need to handle YOUNG_MARKING here because the clone barrier
   // is only invoked during marking if Shenandoah is in incremental update

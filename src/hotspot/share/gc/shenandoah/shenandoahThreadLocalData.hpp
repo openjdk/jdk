@@ -72,10 +72,10 @@ private:
     _oom_scope_nesting_level(0),
     _oom_during_evac(false),
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
-    _gclab(NULL),
+    _gclab(nullptr),
     _gclab_size(0),
     _paced_time(0),
-    _plab(NULL),
+    _plab(nullptr),
     _plab_size(0),
     _plab_evacuated(0),
     _plab_promoted(0),
@@ -86,10 +86,10 @@ private:
   }
 
   ~ShenandoahThreadLocalData() {
-    if (_gclab != NULL) {
+    if (_gclab != nullptr) {
       delete _gclab;
     }
-    if (_plab != NULL) {
+    if (_plab != nullptr) {
       ShenandoahHeap::heap()->retire_plab(_plab);
       delete _plab;
     }
@@ -131,7 +131,7 @@ public:
 
   static void initialize_gclab(Thread* thread) {
     assert (thread->is_Java_thread() || thread->is_Worker_thread(), "Only Java and GC worker threads are allowed to get GCLABs");
-    assert(data(thread)->_gclab == NULL, "Only initialize once");
+    assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
     data(thread)->_plab = new PLAB(PLAB::min_size());

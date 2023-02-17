@@ -47,7 +47,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
     return false;
   }
   obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-  shenandoah_assert_not_forwarded_if(NULL, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
+  shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
   return _mark_context->is_marked_or_old(obj);
 }
 
@@ -59,7 +59,7 @@ bool ShenandoahIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  shenandoah_assert_not_forwarded(NULL, obj);
+  shenandoah_assert_not_forwarded(nullptr, obj);
   return _mark_context->is_marked_or_old(obj);
 }
 
@@ -111,7 +111,7 @@ void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <bool concurrent, bool stable_thread>
 ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::ShenandoahEvacuateUpdateRootClosureBase() :
-  _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : NULL) {
+  _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : nullptr) {
 }
 
 template <bool concurrent, bool stable_thread>
@@ -199,7 +199,7 @@ ShenandoahCodeBlobAndDisarmClosure::ShenandoahCodeBlobAndDisarmClosure(OopClosur
 
 void ShenandoahCodeBlobAndDisarmClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
     CodeBlobToOopClosure::do_code_blob(cb);
     _bs->disarm(nm);

@@ -152,6 +152,10 @@ public class DocCommentParser {
         }
     }
 
+    char peekChar() {
+        return buf[bp < buflen ? bp + 1 : buflen];
+    }
+
     protected List<DCTree> blockContent() {
         return blockContent(Phase.BODY);
     }
@@ -224,9 +228,32 @@ public class DocCommentParser {
                     break;
 
                 case '@':
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
                     if (newline) {
-                        addPendingText(trees, lastNonWhite);
-                        break loop;
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            newline = false;
+                            nextChar();
+                            textStart = bp;
+                            break;
+                        } else {
+                            addPendingText(trees, lastNonWhite);
+                            break loop;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        newline = false;
+                        nextChar();
+                        textStart = bp;
+                        break;
                     }
                     // fallthrough
 
@@ -294,10 +321,24 @@ public class DocCommentParser {
         newline = false;
         nextChar();
         if (ch == '@') {
-            addPendingText(list, bp - 2);
-            list.add(inlineTag());
-            textStart = bp;
-            lastNonWhite = -1;
+            // check for context-sensitive escape-sequence
+            //   {@@
+            if (peekChar() == '@') {
+                if (textStart == -1) {
+                    textStart = bp - 1;
+                }
+                addPendingText(list, bp - 1);
+                nextChar();
+                list.add(m.at(bp - 1).newEscapeTree('@'));
+                nextChar();
+                textStart = -1;
+                lastNonWhite = bp;
+            } else {
+                addPendingText(list, bp - 2);
+                list.add(inlineTag());
+                textStart = bp;
+                lastNonWhite = -1;
+            }
         } else {
             if (textStart == -1)
                 textStart = bp - 1;
@@ -623,6 +664,33 @@ public class DocCommentParser {
                     }
                     nextChar();
                     break;
+
+                case '@':
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
+                    if (newline) {
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            newline = false;
+                            nextChar();
+                            textStart = bp;
+                            break;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        newline = false;
+                        nextChar();
+                        textStart = bp;
+                        break;
+                    }
+                    // fallthrough
 
                 default:
                     if (textStart == -1)

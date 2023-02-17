@@ -72,7 +72,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::ScanClusters, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahObjToScanQueue* old = _old_queue_set == NULL ? NULL : _old_queue_set->queue(worker_id);
+  ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
   ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   RememberedScanner* scanner = heap->card_scan();

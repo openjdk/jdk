@@ -56,7 +56,7 @@ ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
   // Initialize everything to sane defaults
   for (uint i = 0; i < _num_phases; i++) {
 #define SHENANDOAH_WORKER_DATA_NULL(type, title) \
-    _worker_data[i] = NULL;
+    _worker_data[i] = nullptr;
     SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_NULL)
 #undef SHENANDOAH_WORKER_DATA_NULL
     _cycle_data[i] = uninitialized();
@@ -69,14 +69,14 @@ ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
     if (is_worker_phase(Phase(i))) {
       int c = 0;
 #define SHENANDOAH_WORKER_DATA_INIT(type, title) \
-      if (c++ != 0) _worker_data[i + c] = new ShenandoahWorkerData(NULL, title, _max_workers);
+      if (c++ != 0) _worker_data[i + c] = new ShenandoahWorkerData(nullptr, title, _max_workers);
       SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_INIT)
 #undef SHENANDOAH_WORKER_DATA_INIT
     }
   }
 
   _policy = ShenandoahHeap::heap()->shenandoah_policy();
-  assert(_policy != NULL, "Can not be NULL");
+  assert(_policy != nullptr, "Can not be null");
 }
 
 ShenandoahPhaseTimings::Phase ShenandoahPhaseTimings::worker_par_phase(Phase phase, ParPhase par_phase) {
@@ -89,7 +89,7 @@ ShenandoahPhaseTimings::Phase ShenandoahPhaseTimings::worker_par_phase(Phase pha
 ShenandoahWorkerData* ShenandoahPhaseTimings::worker_data(Phase phase, ParPhase par_phase) {
   Phase p = worker_par_phase(phase, par_phase);
   ShenandoahWorkerData* wd = _worker_data[p];
-  assert(wd != NULL, "Counter initialized: %s", phase_name(p));
+  assert(wd != nullptr, "Counter initialized: %s", phase_name(p));
   return wd;
 }
 
@@ -221,7 +221,7 @@ void ShenandoahPhaseTimings::flush_cycle_to_global() {
       _global_data[i].add(_cycle_data[i]);
       _cycle_data[i] = uninitialized();
     }
-    if (_worker_data[i] != NULL) {
+    if (_worker_data[i] != nullptr) {
       _worker_data[i]->reset();
     }
   }
@@ -245,7 +245,7 @@ void ShenandoahPhaseTimings::print_cycle_on(outputStream* out) const {
         }
       }
 
-      if (_worker_data[i] != NULL) {
+      if (_worker_data[i] != nullptr) {
         out->print(", workers (us): ");
         for (uint c = 0; c < _max_workers; c++) {
           double tv = _worker_data[i]->get(c);

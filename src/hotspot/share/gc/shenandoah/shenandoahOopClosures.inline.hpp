@@ -62,10 +62,10 @@ inline void ShenandoahVerifyRemSetClosure::work(T* p) {
     if (_heap->is_in_young(obj)) {
       size_t card_index = _scanner->card_index_for_addr((HeapWord*) p);
       if (_init_mark && !_scanner->is_card_dirty(card_index)) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                         "Verify init-mark remembered set violation", "clean card should be dirty", __FILE__, __LINE__);
       } else if (!_init_mark && !_scanner->is_write_card_dirty(card_index)) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                         "Verify init-update-refs remembered set violation", "clean card should be dirty", __FILE__, __LINE__);
       }
     }

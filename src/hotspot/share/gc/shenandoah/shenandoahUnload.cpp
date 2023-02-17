@@ -92,7 +92,7 @@ public:
   virtual bool lock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
@@ -100,7 +100,7 @@ public:
   virtual void unlock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
@@ -111,7 +111,7 @@ public:
 
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }
 };

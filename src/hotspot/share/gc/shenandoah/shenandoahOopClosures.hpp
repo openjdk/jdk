@@ -51,7 +51,7 @@ protected:
   void work(T *p);
 
 public:
-  ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp,  ShenandoahObjToScanQueue* old_queue = NULL);
+  ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp,  ShenandoahObjToScanQueue* old_queue = nullptr);
 
   bool is_weak() const {
     return _weak;
@@ -75,7 +75,7 @@ protected:
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = NULL) :
+  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = nullptr) :
     ShenandoahMarkRefsSuperClosure(q, rp, old),
     _heap(ShenandoahHeap::heap()) {
     assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
@@ -89,7 +89,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = NULL) :
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = nullptr) :
     ShenandoahMarkUpdateRefsSuperClosure(q, rp, old) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -103,7 +103,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
 
 public:
-  ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = NULL) :
+  ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old = nullptr) :
     ShenandoahMarkRefsSuperClosure(q, rp, old) {};
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }

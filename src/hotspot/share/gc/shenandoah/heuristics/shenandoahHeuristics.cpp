@@ -49,7 +49,7 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
   _generation(generation),
-  _region_data(NULL),
+  _region_data(nullptr),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
   _guaranteed_gc_interval(0),
@@ -195,7 +195,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   collection_set->set_immediate_trash(immediate_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
-    if (old_heuristics != NULL) {
+    if (old_heuristics != nullptr) {
       old_heuristics->prime_collection_set(collection_set);
     }
     // else, this is global collection and doesn't need to prime_collection_set

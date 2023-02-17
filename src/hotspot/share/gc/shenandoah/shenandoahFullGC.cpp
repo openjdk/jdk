@@ -83,7 +83,7 @@ public:
     RememberedScanner* scanner = heap->card_scan();
     ShenandoahSetRememberedCardsToDirtyClosure dirty_cards_for_interesting_pointers;
 
-    while (r != NULL) {
+    while (r != nullptr) {
       if (r->is_old() && r->is_active()) {
         HeapWord* obj_addr = r->bottom();
         if (r->is_humongous_start()) {
@@ -467,7 +467,7 @@ public:
       _empty_regions_pos(0),
       _old_to_region(old_to_region),
       _young_to_region(young_to_region),
-      _from_region(NULL),
+      _from_region(nullptr),
       _old_compact_point((old_to_region != nullptr)? old_to_region->bottom(): nullptr),
       _young_compact_point((young_to_region != nullptr)? young_to_region->bottom(): nullptr),
       _worker_id(worker_id) {}
@@ -523,7 +523,7 @@ public:
   }
 
   void do_object(oop p) {
-    assert(_from_region != NULL, "must set before work");
+    assert(_from_region != nullptr, "must set before work");
     assert((_from_region->bottom() <= cast_from_oop<HeapWord*>(p)) && (cast_from_oop<HeapWord*>(p) < _from_region->top()),
            "Object must reside in _from_region");
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
@@ -557,7 +557,7 @@ public:
     }
 
     if (promote_object || (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION)) {
-      assert(_old_to_region != nullptr, "_old_to_region should not be NULL when evacuating to OLD region");
+      assert(_old_to_region != nullptr, "_old_to_region should not be nullptr when evacuating to OLD region");
       if (_old_compact_point + obj_size > _old_to_region->end()) {
         ShenandoahHeapRegion* new_to_region;
 
@@ -579,21 +579,21 @@ public:
         }
 
         assert(new_to_region != _old_to_region, "must not reuse same OLD to-region");
-        assert(new_to_region != NULL, "must not be NULL");
+        assert(new_to_region != nullptr, "must not be nullptr");
         _old_to_region = new_to_region;
         _old_compact_point = _old_to_region->bottom();
       }
 
       // Object fits into current region, record new location:
       assert(_old_compact_point + obj_size <= _old_to_region->end(), "must fit");
-      shenandoah_assert_not_forwarded(NULL, p);
+      shenandoah_assert_not_forwarded(nullptr, p);
       _preserved_marks->push_if_necessary(p, p->mark());
       p->forward_to(cast_to_oop(_old_compact_point));
       _old_compact_point += obj_size;
     } else {
       assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION,
              "_from_region must be OLD_GENERATION or YOUNG_GENERATION");
-      assert(_young_to_region != nullptr, "_young_to_region should not be NULL when compacting YOUNG _from_region");
+      assert(_young_to_region != nullptr, "_young_to_region should not be nullptr when compacting YOUNG _from_region");
 
       // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
       // tenuring progress.
@@ -624,14 +624,14 @@ public:
         }
 
         assert(new_to_region != _young_to_region, "must not reuse same OLD to-region");
-        assert(new_to_region != NULL, "must not be NULL");
+        assert(new_to_region != nullptr, "must not be nullptr");
         _young_to_region = new_to_region;
         _young_compact_point = _young_to_region->bottom();
       }
 
       // Object fits into current region, record new location:
       assert(_young_compact_point + obj_size <= _young_to_region->end(), "must fit");
-      shenandoah_assert_not_forwarded(NULL, p);
+      shenandoah_assert_not_forwarded(nullptr, p);
       _preserved_marks->push_if_necessary(p, p->mark());
       p->forward_to(cast_to_oop(_young_compact_point));
       _young_compact_point += obj_size;
@@ -659,7 +659,7 @@ public:
     _empty_regions(empty_regions),
     _empty_regions_pos(0),
     _to_region(to_region),
-    _from_region(NULL),
+    _from_region(nullptr),
     _compact_point(to_region->bottom()) {}
 
   void set_from_region(ShenandoahHeapRegion* from_region) {
@@ -667,7 +667,7 @@ public:
   }
 
   void finish_region() {
-    assert(_to_region != NULL, "should not happen");
+    assert(_to_region != nullptr, "should not happen");
     assert(!_heap->mode()->is_generational(), "Generational GC should use different Closure");
     _to_region->set_new_top(_compact_point);
   }
@@ -681,7 +681,7 @@ public:
   }
 
   void do_object(oop p) {
-    assert(_from_region != NULL, "must set before work");
+    assert(_from_region != nullptr, "must set before work");
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
@@ -700,14 +700,14 @@ public:
       }
 
       assert(new_to_region != _to_region, "must not reuse same to-region");
-      assert(new_to_region != NULL, "must not be NULL");
+      assert(new_to_region != nullptr, "must not be null");
       _to_region = new_to_region;
       _compact_point = _to_region->bottom();
     }
 
     // Object fits into current region, record new location:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
-    shenandoah_assert_not_forwarded(NULL, p);
+    shenandoah_assert_not_forwarded(nullptr, p);
     _preserved_marks->push_if_necessary(p, p->mark());
     p->forward_to(cast_to_oop(_compact_point));
     _compact_point += obj_size;
@@ -729,7 +729,7 @@ void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
   ShenandoahHeapRegionSetIterator it(slice);
   ShenandoahHeapRegion* from_region = it.next();
   // No work?
-  if (from_region == NULL) {
+  if (from_region == nullptr) {
     return;
   }
 
@@ -744,7 +744,7 @@ void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
     ShenandoahHeapRegion* young_to_region = (from_region->is_young())? from_region: nullptr;
     ShenandoahPrepareForGenerationalCompactionObjectClosure cl(this, _preserved_marks->get(worker_id), empty_regions,
                                                                old_to_region, young_to_region, worker_id);
-    while (from_region != NULL) {
+    while (from_region != nullptr) {
       assert(is_candidate_region(from_region), "Sanity");
       log_debug(gc)("Worker %u compacting %s Region " SIZE_FORMAT " which had used " SIZE_FORMAT " and %s live",
                     worker_id, affiliation_name(from_region->affiliation()),
@@ -768,7 +768,7 @@ void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
     }
   } else {
     ShenandoahPrepareForCompactionObjectClosure cl(_preserved_marks->get(worker_id), empty_regions, from_region);
-    while (from_region != NULL) {
+    while (from_region != nullptr) {
       assert(is_candidate_region(from_region), "Sanity");
       cl.set_from_region(from_region);
       if (from_region->has_live()) {
@@ -1031,7 +1031,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   for (size_t wid = 0; wid < n_workers; wid++) {
     ShenandoahHeapRegionSetIterator it(worker_slices[wid]);
     ShenandoahHeapRegion* r = it.next();
-    while (r != NULL) {
+    while (r != nullptr) {
       size_t idx = r->index();
       assert(ShenandoahPrepareForCompactionTask::is_candidate_region(r), "Sanity: " SIZE_FORMAT, idx);
       assert(!map.at(idx), "No region distributed twice: " SIZE_FORMAT, idx);
@@ -1153,7 +1153,7 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersObjectClosure obj_cl;
     ShenandoahHeapRegion* r = _regions.next();
-    while (r != NULL) {
+    while (r != nullptr) {
       if (!r->is_humongous_continuation() && r->has_live()) {
         _heap->marked_object_iterate(r, &obj_cl);
       }
@@ -1253,7 +1253,7 @@ public:
 
     ShenandoahCompactObjectsClosure cl(worker_id);
     ShenandoahHeapRegion* r = slice.next();
-    while (r != NULL) {
+    while (r != nullptr) {
       assert(!r->is_humongous(), "must not get humongous regions here");
       if (r->has_live()) {
         _heap->marked_object_iterate(r, &cl);
@@ -1419,7 +1419,7 @@ public:
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
-    while (region != NULL) {
+    while (region != nullptr) {
       if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
         ctx->clear_bitmap(region);
       }
