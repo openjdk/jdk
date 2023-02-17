@@ -208,3 +208,6 @@ compiler.warn.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
 compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing
+
+# this one needs a forged class file to be reproduced
+compiler.err.annotation.unrecognized.attribute.name
