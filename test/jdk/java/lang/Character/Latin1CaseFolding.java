@@ -45,19 +45,19 @@ public class Latin1CaseFolding {
             } else if (c <= 0x5A) { // A-Z
                 assertEquals(upper, c);
                 assertEquals(lower, c + 32);
-            }  else if (c < 0x61) { // Between Z and a
+            } else if (c < 0x61) { // Between Z and a
                 assertUnchanged(upper, lower, c);
-            }  else if (c <= 0x7A) { // a-z
+            } else if (c <= 0x7A) { // a-z
                 assertEquals(upper, c - 32);
                 assertEquals(lower, c);
-            }  else if (c < 0xB5) { // Between z and my
+            } else if (c < 0xB5) { // Between z and my
                 assertUnchanged(upper, lower, c);
             } else if (c == 0xB5) { // Special case for my
                 assertEquals(upper, 0x39C);
                 assertEquals(lower, c);
             } else if (c < 0xC0) { // Between my and A-grave
                 assertUnchanged(upper, lower, c);
-            }  else if (c < 0xD7) { // A-grave - O with Diaeresis
+            } else if (c < 0xD7) { // A-grave - O with Diaeresis
                 assertEquals(upper, c);
                 assertEquals(lower, c + 32);
             } else if (c == 0xD7) { // Multiplication
@@ -72,7 +72,7 @@ public class Latin1CaseFolding {
                 assertEquals(lower, c);
             } else if (c == 0xF7) { // Division
                 assertUnchanged(upper, lower, c);
-            }  else if (c < 0xFF) { // o with slash - thorn
+            } else if (c < 0xFF) { // o with slash - thorn
                 assertEquals(upper, c - 32);
                 assertEquals(lower, c);
             } else if (c == 0XFF) { // Special case for y with Diaeresis
