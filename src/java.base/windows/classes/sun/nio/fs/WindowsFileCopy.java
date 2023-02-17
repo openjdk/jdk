@@ -81,7 +81,7 @@ class WindowsFileCopy {
             }
             if (option == null)
                 throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported copy option: " + option);
         }
 
         // check permissions. If the source file is a symbolic link then
@@ -301,7 +301,7 @@ class WindowsFileCopy {
                 continue;
             }
             if (option == null) throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported move option: " + option);
         }
 
         @SuppressWarnings("removal")
