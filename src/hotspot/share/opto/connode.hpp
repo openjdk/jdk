@@ -75,7 +75,7 @@ public:
 
   // Factory methods:
   static ConPNode* make(address con) {
-    if (con == NULL)
+    if (con == nullptr)
       return new ConPNode( TypePtr::NULL_PTR ) ;
     else
       return new ConPNode( TypeRawPtr::make(con) );
