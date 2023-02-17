@@ -381,9 +381,6 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
-  if (start_serial >= _heap->max_reserved_regions()) {
-    return;
-  }
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
