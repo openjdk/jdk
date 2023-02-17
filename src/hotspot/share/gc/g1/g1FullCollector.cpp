@@ -357,6 +357,11 @@ uint G1FullCollector::truncate_parallel_cps() {
     }
   }
 
+  if (lowest_current == (uint)-1) {
+    // worker compaction points are empty
+    return lowest_current;
+  }
+
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
     if (cp->has_regions()) {
@@ -381,6 +386,9 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
+  if (start_serial >= _heap->max_reserved_regions()) {
+    return;
+  }
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
