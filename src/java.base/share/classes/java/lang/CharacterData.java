@@ -111,7 +111,7 @@ abstract class CharacterData {
      * }
      *
      * To catch regressions caused by future changes in Unicode code folding rules,
-     * an exchaustive test verifies that the constants in this method is always
+     * an exhaustive test verifies that the constants in this method is always
      * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
      */
     static boolean foldsToLatin1(int c) {
