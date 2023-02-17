@@ -303,7 +303,7 @@ public class TestOptionVectorizeIR {
 
     @Test
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     static void test13(long[] data) {
        // 128-bit vectors -> can vectorize because only 2 elements
        for (int j = 2; j < RANGE - 2; j++) {
@@ -668,7 +668,7 @@ public class TestOptionVectorizeIR {
 
     @Test
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     static void test63(double[] data) {
        // 128-bit vectors -> can vectorize because only 2 elements
        for (int j = 2; j < RANGE - 2; j++) {
