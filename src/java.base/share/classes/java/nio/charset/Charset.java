@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package java.nio.charset;
 
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
+import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -48,7 +49,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.jar.JarFile;
 
 
 /**
@@ -628,7 +628,7 @@ public abstract class Charset
             });
     }
 
-    private static volatile Charset defaultCharset;
+    private @Stable static Charset defaultCharset;
 
     /**
      * Returns the default charset of this Java virtual machine.
@@ -651,9 +651,8 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
-                String csn = GetPropertyAction
-                        .privilegedGetProperty("file.encoding");
-                Charset cs = lookup(csn);
+                // do not look for providers other than the standard one
+                Charset cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
                 if (cs != null)
                     defaultCharset = cs;
                 else

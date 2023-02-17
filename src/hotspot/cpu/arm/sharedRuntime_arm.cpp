@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -873,6 +874,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ mov(FP, SP);
   __ sub_slow(SP, SP, stack_size - 2*wordSize);
 
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  assert(bs != NULL, "Sanity");
+  bs->nmethod_entry_barrier(masm);
+
   int frame_complete = __ pc() - start;
 
   OopMapSet* oop_maps = new OopMapSet();
@@ -1601,13 +1606,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
 
   // setup code generation tools
-  int pad = VerifyThread ? 512 : 0;
 #ifdef _LP64
-  CodeBuffer buffer("uncommon_trap_blob", 2700+pad, 512);
+  CodeBuffer buffer("uncommon_trap_blob", 2700, 512);
 #else
-  // Measured 8/7/03 at 660 in 32bit debug build (no VerifyThread)
-  // Measured 8/7/03 at 1028 in 32bit debug build (VerifyThread)
-  CodeBuffer buffer("uncommon_trap_blob", 2000+pad, 512);
+  // Measured 8/7/03 at 660 in 32bit debug build
+  CodeBuffer buffer("uncommon_trap_blob", 2000, 512);
 #endif
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,22 @@
  * @test
  * @summary Test that virtual threads are GC'ed
  * @enablePreview
- * @run testng Collectable
+ * @run junit Collectable
  */
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class Collectable {
+class Collectable {
 
     /**
      * Test that an unstarted virtual thread can be GC"ed.
      */
     @Test
-    public void testUnstartedThread() {
+    void testUnstartedThread() {
         var thread = Thread.ofVirtual().unstarted(() -> { });
         var ref = new WeakReference<>(thread);
         thread = null;
@@ -51,7 +51,7 @@ public class Collectable {
      * Test that a terminated virtual thread can be GC'ed.
      */
     @Test
-    public void testTerminatedThread() throws Exception {
+    void testTerminatedThread() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         var ref = new WeakReference<>(thread);

@@ -561,7 +561,7 @@ MTLRenderer_FillParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
         }};
 
     // Encode render command.
-    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];;
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
 
     if (mtlEncoder == nil) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLRenderer_FillParallelogram: error creating MTLRenderCommandEncoder.");

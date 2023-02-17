@@ -359,7 +359,7 @@ static jmethodID sjm_getAccessibleEditableText = NULL;
         // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
         NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__);
         return nil;
-    };
+    }
     NSRect bounds;
     bounds.origin.x = values[0];
     bounds.origin.y = [[[[self view] window] screen] frame].size.height - values[1] - values[3]; //values[1] is y-coord from top-left of screen. Flip. Account for the height (values[3]) when flipping

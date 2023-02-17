@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -91,7 +92,7 @@ static void fail_exit(const char *msg, va_list ap) {
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
   jio_fprintf(defaultStream::error_stream(), "\n");
   // Do not change the text of the below message because some tests check for it.
-  vm_exit_during_initialization("Unable to use shared archive.", NULL);
+  vm_exit_during_initialization("Unable to use shared archive.", nullptr);
 }
 
 
@@ -180,10 +181,10 @@ FileMapInfo::FileMapInfo(const char* full_path, bool is_static) :
   _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
   _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {
   if (_is_static) {
-    assert(_current_info == NULL, "must be singleton"); // not thread safe
+    assert(_current_info == nullptr, "must be singleton"); // not thread safe
     _current_info = this;
   } else {
-    assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
+    assert(_dynamic_archive_info == nullptr, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
   }
 }
@@ -191,10 +192,10 @@ FileMapInfo::FileMapInfo(const char* full_path, bool is_static) :
 FileMapInfo::~FileMapInfo() {
   if (_is_static) {
     assert(_current_info == this, "must be singleton"); // not thread safe
-    _current_info = NULL;
+    _current_info = nullptr;
   } else {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
-    _dynamic_archive_info = NULL;
+    _dynamic_archive_info = nullptr;
   }
 
   if (_header != nullptr) {
@@ -207,7 +208,7 @@ FileMapInfo::~FileMapInfo() {
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
-  assert(_header == NULL, "Sanity check");
+  assert(_header == nullptr, "Sanity check");
   size_t c_header_size;
   size_t header_size;
   size_t base_archive_name_size = 0;
@@ -428,7 +429,7 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
   _from_class_path_attr = ent->_from_class_path_attr;
   set_name(ent->name(), CHECK);
 
-  if (ent->is_jar() && !ent->is_signed() && ent->manifest() != NULL) {
+  if (ent->is_jar() && !ent->is_signed() && ent->manifest() != nullptr) {
     Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                     ent->manifest_size(),
                                                     CHECK);
@@ -561,12 +562,12 @@ void FileMapInfo::clone_shared_path_table(TRAPS) {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
 
-  assert(jrt != NULL,
+  assert(jrt != nullptr,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
-  if (_saved_shared_path_table_array != NULL) {
+  if (_saved_shared_path_table_array != nullptr) {
     MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table_array);
-    _saved_shared_path_table_array = NULL;
+    _saved_shared_path_table_array = nullptr;
   }
 
   copy_shared_path_table(loader_data, CHECK);
@@ -578,7 +579,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
 
-  assert(jrt != NULL,
+  assert(jrt != nullptr,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
   _shared_path_table.dumptime_init(loader_data, CHECK);
@@ -599,7 +600,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
-  while (cpe != NULL) {
+  while (cpe != nullptr) {
     bool is_jrt = (cpe == ClassLoader::get_jrt_entry());
     bool is_module_path = i >= ClassLoaderExt::app_module_paths_start_index();
     const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
@@ -643,14 +644,14 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
   }
 
   if (has_nonempty_dir) {
-    ClassLoader::exit_with_path_failure("Cannot have non-empty directory in paths", NULL);
+    ClassLoader::exit_with_path_failure("Cannot have non-empty directory in paths", nullptr);
   }
 }
 
 void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
   Arguments::assert_is_dumping_archive();
   log_info(class, path)("non-existent Class-Path entry %s", path);
-  if (_non_existent_class_paths == NULL) {
+  if (_non_existent_class_paths == nullptr) {
     _non_existent_class_paths = new (mtClass) GrowableArray<const char*>(10, mtClass);
   }
   _non_existent_class_paths->append(os::strdup(path));
@@ -658,7 +659,7 @@ void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
 
 int FileMapInfo::num_non_existent_class_paths() {
   Arguments::assert_is_dumping_archive();
-  if (_non_existent_class_paths != NULL) {
+  if (_non_existent_class_paths != nullptr) {
     return _non_existent_class_paths->length();
   } else {
     return 0;
@@ -729,9 +730,9 @@ class ManifestStream: public ResourceObj {
       if (*_current == '\n') {
         *_current = '\0';
         u1* value = (u1*)strchr((char*)attr, ':');
-        if (value != NULL) {
+        if (value != nullptr) {
           assert(*(value+1) == ' ', "Unrecognized format" );
-          if (strstr((char*)attr, "-Digest") != NULL) {
+          if (strstr((char*)attr, "-Digest") != nullptr) {
             isSigned = true;
             break;
           }
@@ -752,7 +753,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
 
   assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
   char* manifest = ClassLoaderExt::read_manifest(THREAD, cpe, &manifest_size);
-  if (manifest != NULL) {
+  if (manifest != nullptr) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
     if (stream->check_is_signed()) {
@@ -773,7 +774,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
 char* FileMapInfo::skip_first_path_entry(const char* path) {
   size_t path_sep_len = strlen(os::path_separator());
   char* p = strstr((char*)path, os::path_separator());
-  if (p != NULL) {
+  if (p != nullptr) {
     debug_only( {
       size_t image_name_len = strlen(MODULES_IMAGE_NAME);
       assert(strncmp(p - image_name_len, MODULES_IMAGE_NAME, image_name_len) == 0,
@@ -790,15 +791,15 @@ char* FileMapInfo::skip_first_path_entry(const char* path) {
 }
 
 int FileMapInfo::num_paths(const char* path) {
-  if (path == NULL) {
+  if (path == nullptr) {
     return 0;
   }
   int npaths = 1;
   char* p = (char*)path;
-  while (p != NULL) {
+  while (p != nullptr) {
     char* prev = p;
     p = strstr((char*)p, os::path_separator());
-    if (p != NULL) {
+    if (p != nullptr) {
       p++;
       // don't count empty path
       if ((p - prev) > 1) {
@@ -828,7 +829,7 @@ GrowableArray<const char*>* FileMapInfo::create_dumptime_app_classpath_array() {
   Arguments::assert_is_dumping_archive();
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
   ClassPathEntry* cpe = ClassLoader::app_classpath_entries();
-  while (cpe != NULL) {
+  while (cpe != nullptr) {
     path_array->append(cpe->name());
     cpe = cpe->next();
   }
@@ -849,10 +850,10 @@ GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
       }
     } else {
       const char* canonical_path = ClassLoader::get_canonical_path(path, current);
-      if (canonical_path != NULL) {
-        char* error_msg = NULL;
+      if (canonical_path != nullptr) {
+        char* error_msg = nullptr;
         jzfile* zip = ClassLoader::open_zip_file(canonical_path, &error_msg, current);
-        if (zip != NULL && error_msg == NULL) {
+        if (zip != nullptr && error_msg == nullptr) {
           path_array->append(path);
         }
       }
@@ -880,11 +881,13 @@ unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
       if (rp_array->at(i)[pos] != '\0' && rp_array->at(i)[pos] == rp_array->at(0)[pos]) {
         continue;
       }
-
       // search backward for the pos before the file separator char
-      while (pos > 0 && rp_array->at(0)[--pos] != *os::file_separator());
-      // return the file separator char position
-      return pos + 1;
+      while (pos > 0) {
+        if (rp_array->at(0)[--pos] == *os::file_separator()) {
+          return pos + 1;
+        }
+      }
+      return 0;
     }
   }
   return 0;
@@ -937,9 +940,9 @@ bool FileMapInfo::validate_boot_class_paths() {
   bool mismatch = false;
 
   bool relaxed_check = !header()->has_platform_or_app_classes();
-  if (dp_len == 0 && rp == NULL) {
+  if (dp_len == 0 && rp == nullptr) {
     return true;   // ok, both runtime and dump time boot paths have modules_images only
-  } else if (dp_len == 0 && rp != NULL) {
+  } else if (dp_len == 0 && rp != nullptr) {
     if (relaxed_check) {
       return true;   // ok, relaxed check, runtime has extra boot append path entries
     } else {
@@ -950,7 +953,7 @@ bool FileMapInfo::validate_boot_class_paths() {
         mismatch = true;
       }
     }
-  } else if (dp_len > 0 && rp != NULL) {
+  } else if (dp_len > 0 && rp != nullptr) {
     int num;
     ResourceMark rm;
     GrowableArray<const char*>* rp_array = create_path_array(rp);
@@ -982,7 +985,7 @@ bool FileMapInfo::validate_boot_class_paths() {
 
 bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
-  assert(appcp != NULL, "NULL app classpath");
+  assert(appcp != nullptr, "null app classpath");
   int rp_len = num_paths(appcp);
   bool mismatch = false;
   if (rp_len < shared_app_paths_len) {
@@ -1022,8 +1025,12 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       //     java -Xshare:auto -cp /x/y/Foo.jar:/x/y/b/Bar.jar  ...
       unsigned int dumptime_prefix_len = header()->common_app_classpath_prefix_size();
       unsigned int runtime_prefix_len = longest_common_app_classpath_prefix_len(shared_app_paths_len, rp_array);
-      mismatch = check_paths(j, shared_app_paths_len, rp_array,
-                             dumptime_prefix_len, runtime_prefix_len);
+      if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
+        log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
+                              dumptime_prefix_len, runtime_prefix_len);
+        mismatch = check_paths(j, shared_app_paths_len, rp_array,
+                               dumptime_prefix_len, runtime_prefix_len);
+      }
       if (mismatch) {
         return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }
@@ -1103,7 +1110,7 @@ bool FileMapInfo::validate_shared_path_table() {
         }
         log_info(class, path)("ok");
       } else {
-        if (_dynamic_archive_info != NULL && _dynamic_archive_info->_is_static) {
+        if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
           assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
         }
         return false;
@@ -1112,7 +1119,7 @@ bool FileMapInfo::validate_shared_path_table() {
       if (shared_path(i)->validate(false /* not a class path entry */)) {
         log_info(class, path)("ok");
       } else {
-        if (_dynamic_archive_info != NULL && _dynamic_archive_info->_is_static) {
+        if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
           assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
         }
         return false;
@@ -1138,7 +1145,7 @@ bool FileMapInfo::validate_shared_path_table() {
   _validating_shared_path_table = false;
 
 #if INCLUDE_JVMTI
-  if (_classpath_entries_for_jvmti != NULL) {
+  if (_classpath_entries_for_jvmti != nullptr) {
     os::free(_classpath_entries_for_jvmti);
   }
   size_t sz = sizeof(ClassPathEntry*) * get_number_of_shared_paths();
@@ -1203,7 +1210,7 @@ public:
   }
 
   bool initialize() {
-    assert(_archive_name != nullptr, "Archive name is NULL");
+    assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
       FileMapInfo::fail_continue("Specified shared archive not found (%s)", _archive_name);
@@ -1214,7 +1221,7 @@ public:
 
   // for an already opened file, do not set _fd
   bool initialize(int fd) {
-    assert(_archive_name != nullptr, "Archive name is NULL");
+    assert(_archive_name != nullptr, "Archive name is null");
     assert(fd != -1, "Archive must be opened already");
     // First read the generic header so we know the exact size of the actual header.
     GenericCDSFileMapHeader gen_header;
@@ -1352,14 +1359,14 @@ public:
 // Return value:
 // false:
 //      <archive_name> is not a valid archive. *base_archive_name is set to null.
-// true && (*base_archive_name) == NULL:
+// true && (*base_archive_name) == nullptr:
 //      <archive_name> is a valid static archive.
-// true && (*base_archive_name) != NULL:
+// true && (*base_archive_name) != nullptr:
 //      <archive_name> is a valid dynamic archive.
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
                                                     char** base_archive_name) {
   FileHeaderHelper file_helper(archive_name, false);
-  *base_archive_name = NULL;
+  *base_archive_name = nullptr;
 
   if (!file_helper.initialize()) {
     return false;
@@ -1559,7 +1566,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
   _allow_exec = allow_exec;
   _crc = crc;
   _mapped_from_file = false;
-  _mapped_base = NULL;
+  _mapped_base = nullptr;
 }
 
 void FileMapRegion::init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap) {
@@ -1621,21 +1628,24 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   size_t mapping_offset = 0;
 
   if (region == MetaspaceShared::bm) {
-    requested_base = NULL; // always NULL for bm region
+    requested_base = nullptr; // always null for bm region
   } else if (size == 0) {
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
-    requested_base = NULL;
+    requested_base = nullptr;
   } else if (HeapShared::is_heap_region(region)) {
+    assert(HeapShared::can_write(), "sanity");
+#if INCLUDE_CDS_JAVA_HEAP
     assert(!DynamicDumpSharedSpaces, "must be");
-    requested_base = base;
+    requested_base = (char*)ArchiveHeapWriter::heap_region_requested_bottom(region);
     if (UseCompressedOops) {
-      mapping_offset = (size_t)((address)base - CompressedOops::base());
+      mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
 #if INCLUDE_G1GC
       mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
 #endif
     }
+#endif // INCLUDE_CDS_JAVA_HEAP
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);
@@ -1654,7 +1664,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 
   r->init(region, mapping_offset, size, read_only, allow_exec, crc);
 
-  if (base != NULL) {
+  if (base != nullptr) {
     write_bytes_aligned(base, size);
   }
 }
@@ -1682,7 +1692,7 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
   size_t size_in_bits = ptrmap->size();
   size_in_bytes = ptrmap->size_in_bytes();
 
-  if (closed_bitmaps != NULL && open_bitmaps != NULL) {
+  if (closed_bitmaps != nullptr && open_bitmaps != nullptr) {
     size_in_bytes = set_bitmaps_offset(closed_bitmaps, size_in_bytes);
     size_in_bytes = set_bitmaps_offset(open_bitmaps, size_in_bytes);
   }
@@ -1691,7 +1701,7 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
   ptrmap->write_to((BitMap::bm_word_t*)buffer, ptrmap->size_in_bytes());
   header()->set_ptrmap_size_in_bits(size_in_bits);
 
-  if (closed_bitmaps != NULL && open_bitmaps != NULL) {
+  if (closed_bitmaps != nullptr && open_bitmaps != nullptr) {
     size_t curr_offset = write_bitmaps(closed_bitmaps, ptrmap->size_in_bytes(), buffer);
     write_bitmaps(open_bitmaps, curr_offset, buffer);
   }
@@ -1736,7 +1746,7 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
                                        int first_region_id, int max_num_regions) {
   assert(max_num_regions <= 2, "Only support maximum 2 memory regions");
 
-  int arr_len = regions == NULL ? 0 : regions->length();
+  int arr_len = regions == nullptr ? 0 : regions->length();
   if (arr_len > max_num_regions) {
     fail_stop("Unable to write archive heap memory regions: "
               "number of memory regions exceeds maximum due to fragmentation. "
@@ -1747,7 +1757,7 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
   size_t total_size = 0;
   for (int i = 0; i < max_num_regions; i++) {
-    char* start = NULL;
+    char* start = nullptr;
     size_t size = 0;
     if (i < arr_len) {
       start = (char*)regions->at(i).start();
@@ -1844,7 +1854,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
                                 r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
-  if (base == NULL) {
+  if (base == nullptr) {
     log_error(cds)("Unable to remap shared readonly space (errno=%d).", errno);
     vm_exit(1);
   }
@@ -1861,7 +1871,7 @@ static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
 MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
-  DEBUG_ONLY(FileMapRegion* last_region = NULL);
+  DEBUG_ONLY(FileMapRegion* last_region = nullptr);
   intx addr_delta = mapped_base_address - header()->requested_base_address();
 
   // Make sure we don't attempt to use header()->mapped_base_address() unless
@@ -1875,7 +1885,7 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
       return result;
     }
     FileMapRegion* r = region_at(idx);
-    DEBUG_ONLY(if (last_region != NULL) {
+    DEBUG_ONLY(if (last_region != nullptr) {
         // Ensure that the OS won't be able to allocate new memory spaces between any mapped
         // regions, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
         assert(r->mapped_base() == last_region->mapped_end(), "must have no gaps");
@@ -1924,8 +1934,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
-  assert(r->mapped_base() == NULL, "must be not mapped yet");
-  assert(requested_addr != NULL, "must be specified");
+  assert(r->mapped_base() == nullptr, "must be not mapped yet");
+  assert(requested_addr != nullptr, "must be specified");
 
   r->set_mapped_from_file(false);
 
@@ -1978,16 +1988,16 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 // The return value is the location of the archive relocation bitmap.
 char* FileMapInfo::map_bitmap_region() {
   FileMapRegion* r = region_at(MetaspaceShared::bm);
-  if (r->mapped_base() != NULL) {
+  if (r->mapped_base() != nullptr) {
     return r->mapped_base();
   }
   bool read_only = true, allow_exec = false;
-  char* requested_addr = NULL; // allow OS to pick any location
+  char* requested_addr = nullptr; // allow OS to pick any location
   char* bitmap_base = os::map_memory(_fd, _full_path, r->file_offset(),
                                      requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
-  if (bitmap_base == NULL) {
+  if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
-    return NULL;
+    return nullptr;
   }
 
   if (VerifySharedSpaces && !region_crc_check(bitmap_base, r->used(), r->crc())) {
@@ -1995,7 +2005,7 @@ char* FileMapInfo::map_bitmap_region() {
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
     }
-    return NULL;
+    return nullptr;
   }
 
   r->set_mapped_base(bitmap_base);
@@ -2013,7 +2023,7 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
   char* bitmap_base = map_bitmap_region();
 
-  if (bitmap_base == NULL) {
+  if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {
     size_t ptrmap_size_in_bits = header()->ptrmap_size_in_bits();
@@ -2074,8 +2084,8 @@ size_t FileMapInfo::readonly_total() {
   return total;
 }
 
-static MemRegion *closed_heap_regions = NULL;
-static MemRegion *open_heap_regions = NULL;
+static MemRegion *closed_heap_regions = nullptr;
+static MemRegion *open_heap_regions = nullptr;
 static int num_closed_heap_regions = 0;
 static int num_open_heap_regions = 0;
 
@@ -2090,7 +2100,7 @@ bool FileMapInfo::has_heap_regions() {
 // if/how these regions should be relocated at run time.
 MemRegion FileMapInfo::get_heap_regions_requested_range() {
   address start = (address) max_uintx;
-  address end   = NULL;
+  address end   = nullptr;
 
   for (int i = MetaspaceShared::first_closed_heap_region;
            i <= MetaspaceShared::last_valid_region;
@@ -2110,7 +2120,7 @@ MemRegion FileMapInfo::get_heap_regions_requested_range() {
       }
     }
   }
-  assert(end != NULL, "must have at least one used heap region");
+  assert(end != nullptr, "must have at least one used heap region");
 
   start = align_down(start, HeapRegion::GrainBytes);
   end = align_up(end, HeapRegion::GrainBytes);
@@ -2313,7 +2323,7 @@ void FileMapInfo::map_heap_regions_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       _heap_pointers_need_patching = false;
       return;
@@ -2341,12 +2351,12 @@ bool FileMapInfo::map_heap_regions() {
   map_heap_regions_impl();
 
   if (!ArchiveHeapLoader::closed_regions_mapped()) {
-    assert(closed_heap_regions == NULL &&
+    assert(closed_heap_regions == nullptr &&
            num_closed_heap_regions == 0, "sanity");
   }
 
   if (!ArchiveHeapLoader::open_regions_mapped()) {
-    assert(open_heap_regions == NULL && num_open_heap_regions == 0, "sanity");
+    assert(open_heap_regions == nullptr && num_open_heap_regions == 0, "sanity");
     return false;
   } else {
     return true;
@@ -2407,7 +2417,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     char* base = os::map_memory(_fd, _full_path, r->file_offset(),
                                 addr, regions[i].byte_size(), r->read_only(),
                                 r->allow_exec());
-    if (base == NULL || base != addr) {
+    if (base == nullptr || base != addr) {
       // dealloc the regions from java heap
       dealloc_heap_regions(regions, num_regions);
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
@@ -2457,7 +2467,7 @@ narrowOop FileMapInfo::encoded_heap_region_dumptime_address(FileMapRegion* r) {
 void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                                int first_region_idx) {
   char* bitmap_base = map_bitmap_region();
-  assert(bitmap_base != NULL, "must have already been mapped");
+  assert(bitmap_base != nullptr, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
     int region_idx = i + first_region_idx;
     FileMapRegion* r = region_at(region_idx);
@@ -2474,9 +2484,9 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
 void FileMapInfo::fixup_mapped_heap_regions() {
   assert(vmClasses::Object_klass_loaded(), "must be");
   // If any closed regions were found, call the fill routine to make them parseable.
-  // Note that closed_heap_regions may be non-NULL even if no regions were found.
+  // Note that closed_heap_regions may be non-null even if no regions were found.
   if (num_closed_heap_regions != 0) {
-    assert(closed_heap_regions != NULL,
+    assert(closed_heap_regions != nullptr,
            "Null closed_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
                                                   num_closed_heap_regions);
@@ -2489,7 +2499,7 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 
   // do the same for mapped open archive heap regions
   if (num_open_heap_regions != 0) {
-    assert(open_heap_regions != NULL, "NULL open_heap_regions array with non-zero count");
+    assert(open_heap_regions != nullptr, "Null open_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(open_heap_regions,
                                                   num_open_heap_regions);
 
@@ -2505,7 +2515,7 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 // dealloc the archive regions from java heap
 void FileMapInfo::dealloc_heap_regions(MemRegion* regions, int num) {
   if (num > 0) {
-    assert(regions != NULL, "Null archive regions array with non-zero count");
+    assert(regions != nullptr, "Null archive regions array with non-zero count");
     G1CollectedHeap::heap()->dealloc_archive_regions(regions, num);
   }
 }
@@ -2546,7 +2556,7 @@ void FileMapInfo::unmap_region(int i) {
   char* mapped_base = r->mapped_base();
   size_t size = r->used_aligned();
 
-  if (mapped_base != NULL) {
+  if (mapped_base != nullptr) {
     if (size > 0 && r->mapped_from_file()) {
       log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
                     shared_region_name[i]);
@@ -2554,7 +2564,7 @@ void FileMapInfo::unmap_region(int i) {
         fatal("os::unmap_memory failed");
       }
     }
-    r->set_mapped_base(NULL);
+    r->set_mapped_base(nullptr);
   }
 }
 
@@ -2572,15 +2582,15 @@ void FileMapInfo::metaspace_pointers_do(MetaspaceClosure* it, bool use_copy) {
   }
 }
 
-FileMapInfo* FileMapInfo::_current_info = NULL;
-FileMapInfo* FileMapInfo::_dynamic_archive_info = NULL;
+FileMapInfo* FileMapInfo::_current_info = nullptr;
+FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 SharedPathTable FileMapInfo::_saved_shared_path_table;
-Array<u8>*      FileMapInfo::_saved_shared_path_table_array = NULL;
+Array<u8>*      FileMapInfo::_saved_shared_path_table_array = nullptr;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
-GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;
+GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.).  If initialization
@@ -2673,7 +2683,7 @@ bool FileMapHeader::validate() {
   // This must be done after header validation because it might change the
   // header data
   const char* prop = Arguments::get_property("java.system.class.loader");
-  if (prop != NULL) {
+  if (prop != nullptr) {
     warning("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
             "To use archived non-system classes, this property must not be set", prop);
@@ -2749,31 +2759,8 @@ bool FileMapInfo::validate_header() {
   }
 }
 
-// Unmap mapped regions of shared space.
-void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
-  MetaspaceShared::set_shared_metaspace_range(NULL, NULL, NULL);
-
-  FileMapInfo *map_info = FileMapInfo::current_info();
-  if (map_info) {
-    map_info->fail_continue("%s", msg);
-    for (int i = 0; i < MetaspaceShared::num_non_heap_regions; i++) {
-      if (!HeapShared::is_heap_region(i)) {
-        map_info->unmap_region(i);
-      }
-    }
-    // Dealloc the archive heap regions only without unmapping. The regions are part
-    // of the java heap. Unmapping of the heap regions are managed by GC.
-    map_info->dealloc_heap_regions(open_heap_regions,
-                                   num_open_heap_regions);
-    map_info->dealloc_heap_regions(closed_heap_regions,
-                                   num_closed_heap_regions);
-  } else if (DumpSharedSpaces) {
-    fail_stop("%s", msg);
-  }
-}
-
 #if INCLUDE_JVMTI
-ClassPathEntry** FileMapInfo::_classpath_entries_for_jvmti = NULL;
+ClassPathEntry** FileMapInfo::_classpath_entries_for_jvmti = nullptr;
 
 ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
   if (i == 0) {
@@ -2782,7 +2769,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
     return ClassLoader::get_jrt_entry();
   }
   ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
-  if (ent == NULL) {
+  if (ent == nullptr) {
     SharedClassPathEntry* scpe = shared_path(i);
     assert(scpe->is_jar(), "must be"); // other types of scpe will not produce archived classes
 
@@ -2791,18 +2778,18 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
     if (os::stat(path, &st) != 0) {
       char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
       jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
-      THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+      THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
     } else {
       ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
-      if (ent == NULL) {
+      if (ent == nullptr) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
-        THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+        THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
       }
     }
 
     MutexLocker mu(THREAD, CDSClassFileStream_lock);
-    if (_classpath_entries_for_jvmti[i] == NULL) {
+    if (_classpath_entries_for_jvmti[i] == nullptr) {
       _classpath_entries_for_jvmti[i] = ent;
     } else {
       // Another thread has beat me to creating this entry
@@ -2820,7 +2807,7 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   assert(path_index < (int)get_number_of_shared_paths(), "sanity");
 
   ClassPathEntry* cpe = get_classpath_entry_for_jvmti(path_index, CHECK_NULL);
-  assert(cpe != NULL, "must be");
+  assert(cpe != nullptr, "must be");
 
   Symbol* name = ik->name();
   const char* const class_name = name->as_C_string();
@@ -2828,7 +2815,7 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
-  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  assert(cfs != nullptr, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;

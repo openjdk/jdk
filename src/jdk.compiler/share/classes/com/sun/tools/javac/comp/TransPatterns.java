@@ -334,7 +334,7 @@ public class TransPatterns extends TreeTranslator {
             }
             JCMethodInvocation componentAccessor =
                     make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
-                             component.accessor));
+                             component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
             if (deconstructorCalls == null) {
                 deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
             }
@@ -539,10 +539,10 @@ public class TransPatterns extends TreeTranslator {
                                     pattern = parenthesized.pattern;
                                 }
                                 Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
-                                VarSymbol binding = ((JCBindingPattern) pattern).var.sym;
+                                BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
                                 guard = makeBinary(Tag.OR,
                                                    makeBinary(Tag.EQ,
-                                                              make.Ident(binding),
+                                                              make.Ident(bindingContext.getBindingFor(binding)),
                                                               makeNull()),
                                                    guard);
                             }
@@ -590,14 +590,10 @@ public class TransPatterns extends TreeTranslator {
                     }
                 }
                 c.labels = translatedLabels.toList();
-                if (c.caseKind == CaseTree.CaseKind.STATEMENT) {
-                    previousCompletesNormally = c.completesNormally;
-                } else {
-                    previousCompletesNormally = false;
-                    JCBreak brk = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
-                    brk.target = tree;
-                    c.stats = c.stats.append(brk);
-                }
+                previousCompletesNormally =
+                        c.caseKind == CaseTree.CaseKind.STATEMENT &&
+                        c.completesNormally;
+                appendBreakIfNeeded(tree, c);
             }
 
             if (tree.hasTag(Tag.SWITCH)) {
@@ -641,6 +637,14 @@ public class TransPatterns extends TreeTranslator {
                 }
             }.scan(c.stats);
         }
+
+    private void appendBreakIfNeeded(JCTree switchTree, JCCase c) {
+        if (c.caseKind == CaseTree.CaseKind.RULE) {
+            JCBreak brk = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
+            brk.target = switchTree;
+            c.stats = c.stats.append(brk);
+        }
+    }
 
     JCMethodInvocation makeApply(JCExpression selector, Name name, List<JCExpression> args) {
         MethodSymbol method = rs.resolveInternalMethod(
@@ -736,10 +740,11 @@ public class TransPatterns extends TreeTranslator {
                         List<JCCaseLabel> newLabel;
                         if (hasUnconditional) {
                             newLabel = List.of(make.ConstantCaseLabel(makeNull()),
-                                               make.DefaultCaseLabel());
+                                    make.PatternCaseLabel(binding, newGuard));
                         } else {
                             newLabel = List.of(make.PatternCaseLabel(binding, newGuard));
                         }
+                        appendBreakIfNeeded(currentSwitch, accummulated);
                         nestedCases.add(make.Case(CaseKind.STATEMENT, newLabel, accummulated.stats, null));
                     }
                     if (!hasUnconditional) {
