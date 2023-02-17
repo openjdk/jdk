@@ -363,7 +363,6 @@ uint G1FullCollector::truncate_parallel_cps() {
       cp->remove_at_or_above(lowest_current);
     }
   }
-
   return lowest_current;
 }
 
@@ -382,14 +381,20 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
-  HeapRegion* start_hr = _heap->region_at(start_serial);
+  if (start_serial >= _heap->max_reserved_regions()) {
+    return;
+  }
+
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
 
+  HeapRegion* start_hr = _heap->region_at(start_serial);
   serial_cp->add(start_hr);
   serial_cp->initialize(start_hr);
+
   HeapWord* dense_prefix_top = compaction_top(start_hr);
+  G1SerialRePrepareClosure re_prepare(serial_cp, dense_prefix_top);
 
   for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
@@ -397,7 +402,6 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
       serial_cp->add(current);
 
       assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
-      G1SerialRePrepareClosure re_prepare(serial_cp, current, dense_prefix_top);
       set_compaction_top(current, current->bottom());
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
