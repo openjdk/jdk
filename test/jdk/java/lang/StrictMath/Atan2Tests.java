@@ -80,6 +80,23 @@ public class Atan2Tests {
         // The exact special cases for infinity, NaN, zero,
         // etc. inputs are checked in the Math tests.
 
+        // Test exotic NaN bit patterns
+        double[][] exoticNaNs = {
+            {Double.longBitsToDouble(0x7FF0_0000_0000_0001L), 0.0},
+            {0.0, Double.longBitsToDouble(0x7FF0_0000_0000_0001L)},
+            {Double.longBitsToDouble(0xFFF_00000_0000_0001L), 0.0},
+            {0.0, Double.longBitsToDouble(0xFFF0_0000_0000_0001L)},
+            {Double.longBitsToDouble(0x7FF_00000_7FFF_FFFFL), 0.0},
+            {0.0, Double.longBitsToDouble(0x7FF0_7FFF_0000_FFFFL)},
+            {Double.longBitsToDouble(0xFFF_00000_7FFF_FFFFL), 0.0},
+            {0.0, Double.longBitsToDouble(0xFFF0_7FFF_0000_FFFFL)},
+        };
+
+        for (double[] exoticNaN: exoticNaNs) {
+            failures += testAtan2Case(exoticNaN[0], exoticNaN[1],
+                                      FdlibmTranslit.atan2(exoticNaN[0], exoticNaN[1]));
+        }
+
         // Probe near decision points in the FDLIBM algorithm.
         double[][] decisionPoints = {
             // If x == 1, return atan(y)

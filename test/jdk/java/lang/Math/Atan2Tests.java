@@ -63,6 +63,16 @@ public class Atan2Tests {
             {NaNd,      InfinityD, NaNd},
             {InfinityD, NaNd,      NaNd},
 
+            // Test exotic NaN bit patterns
+            {Double.longBitsToDouble(0x7FF0_0000_0000_0001L), 0.0, NaNd},
+            {0.0, Double.longBitsToDouble(0x7FF0_0000_0000_0001L), NaNd},
+            {Double.longBitsToDouble(0xFFF_00000_0000_0001L), 0.0, NaNd},
+            {0.0, Double.longBitsToDouble(0xFFF0_0000_0000_0001L), NaNd},
+            {Double.longBitsToDouble(0x7FF_00000_7FFF_FFFFL), 0.0, NaNd},
+            {0.0, Double.longBitsToDouble(0x7FF0_7FFF_0000_FFFFL), NaNd},
+            {Double.longBitsToDouble(0xFFF_00000_7FFF_FFFFL), 0.0, NaNd},
+            {0.0, Double.longBitsToDouble(0xFFF0_7FFF_0000_FFFFL), NaNd},
+
             /*
              * If the first argument is positive zero and the second
              * argument is positive, or the first argument is positive

@@ -443,8 +443,7 @@ class FdLibm {
             hy = __HI(y);
             iy = hy&0x7fff_ffff;
             ly = __LO(y);
-            if (((ix | ((lx | -lx) >> 31)) > 0x7ff0_0000)||
-                ((iy |((ly | - ly) >> 31)) > 0x7ff0_0000))    // x or y is NaN
+            if (Double.isNaN(x) || Double.isNaN(y))
                 return x + y;
             if (((hx - 0x3ff0_0000) | lx) == 0) // x = 1.0
                 return StrictMath.atan(y);
