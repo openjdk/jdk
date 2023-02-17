@@ -382,24 +382,24 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
+  HeapRegion* start_hr = _heap->region_at(start_serial);
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
-  HeapWord* dense_prefix_top = nullptr;
-  for (uint i = start_serial; i < _heap->max_reserved_regions(); i++) {
+  assert(!serial_cp->is_initialized(), "sanity!");
+
+  serial_cp->add(start_hr);
+  serial_cp->initialize(start_hr);
+  HeapWord* dense_prefix_top = compaction_top(start_hr);
+
+  for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
       HeapRegion* current = _heap->region_at(i);
       serial_cp->add(current);
-      if (!serial_cp->is_initialized()) {
-        // Initialize the compaction point. Nothing more is needed for the first heap region
-        // since it is already prepared for compaction.
-        serial_cp->initialize(current);
-        dense_prefix_top = compaction_top(current);
-      } else {
-        assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
-        G1SerialRePrepareClosure re_prepare(serial_cp, current, dense_prefix_top);
-        set_compaction_top(current, current->bottom());
-        current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
-      }
+
+      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
+      G1SerialRePrepareClosure re_prepare(serial_cp, current, dense_prefix_top);
+      set_compaction_top(current, current->bottom());
+      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }
   serial_cp->update();

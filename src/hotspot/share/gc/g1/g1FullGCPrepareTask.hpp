@@ -121,7 +121,6 @@ class G1SerialRePrepareClosure : public StackObj {
   G1FullGCCompactionPoint* _cp;
   HeapRegion* _current;
   HeapWord* _dense_prefix_top;
-  uint _bottom_index;
 
 public:
   G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr, HeapWord* dense_prefix_top) :
