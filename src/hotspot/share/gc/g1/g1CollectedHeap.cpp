@@ -2603,16 +2603,6 @@ void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
 }
 #endif
 
-class VerifyRegionRemSetClosure : public HeapRegionClosure {
-  public:
-    bool do_heap_region(HeapRegion* hr) {
-      if (!hr->is_archive() && !hr->is_continues_humongous()) {
-        hr->verify_rem_set();
-      }
-      return false;
-    }
-};
-
 void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();
 
@@ -2644,11 +2634,6 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   _verifier->prepare_for_verify();
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
-  if (VerifyRememberedSets) {
-    log_info(gc, verify)("[Verifying RemSets before GC]");
-    VerifyRegionRemSetClosure v_cl;
-    heap_region_iterate(&v_cl);
-  }
   _verifier->verify_before_gc(type);
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
@@ -2659,11 +2644,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     return;
   }
   Ticks start = Ticks::now();
-  if (VerifyRememberedSets) {
-    log_info(gc, verify)("[Verifying RemSets after GC]");
-    VerifyRegionRemSetClosure v_cl;
-    heap_region_iterate(&v_cl);
-  }
   _verifier->verify_after_gc(type);
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
