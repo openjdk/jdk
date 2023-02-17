@@ -302,15 +302,15 @@ AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
   AC_SUBST(BUILD_FAILURE_HANDLER)
 ])
 
-AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_JTREG_MAIN_WRAPPER],
+AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_JTREG_TEST_THREAD_FACTORY],
 [
-  UTIL_ARG_ENABLE(NAME: jtreg-main-wrapper, DEFAULT: auto,
-      RESULT: BUILD_JTREG_MAIN_WRAPPER,
-      DESC: [enable building of the jtreg main wrapper],
+  UTIL_ARG_ENABLE(NAME: jtreg-test-thread-factory, DEFAULT: auto,
+      RESULT: BUILD_JTREG_TEST_THREAD_FACTORY,
+      DESC: [enable building of the jtreg test thread factory],
       DEFAULT_DESC: [enabled if jtreg is present],
-      CHECKING_MSG: [if the jtreg main wrapper should be built],
+      CHECKING_MSG: [if the jtreg test thread factory should be built],
       CHECK_AVAILABLE: [
-        AC_MSG_CHECKING([if the jtreg main wrapper is available])
+        AC_MSG_CHECKING([if the jtreg test thread factory is available])
         if test "x$JT_HOME" != "x"; then
           AC_MSG_RESULT([yes])
         else
@@ -318,5 +318,5 @@ AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_JTREG_MAIN_WRAPPER],
           AC_MSG_RESULT([no (jtreg not present)])
         fi
       ])
-  AC_SUBST(BUILD_JTREG_MAIN_WRAPPER)
+  AC_SUBST(BUILD_JTREG_TEST_THREAD_FACTORY)
 ])

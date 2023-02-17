@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,42 +34,42 @@ TARGETS :=
 
 ################################################################################
 
-MW_BASEDIR := $(TOPDIR)/test/jtreg_main_wrapper
-MW_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_main_wrapper
-MW_JAR := $(MW_SUPPORT)/jtregMainWrapper.jar
+TTF_BASEDIR := $(TOPDIR)/test/jtreg_test_thread_factory
+TTF_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_test_thread_factory
+TTF_JAR := $(TTF_SUPPORT)/jtregTestThreadFactory.jar
 
 JTREG_JAR := $(JT_HOME)/lib/jtreg.jar
 ifeq ($(wildcard $(JTREG_JAR)), )
-  $(error Cannot build main wrapper without jtreg)
+  $(error Cannot build main wrr without jtreg)
 endif
 
-MW_CLASSPATH := $(JTREG_JAR)
+TTF_CLASSPATH := $(JTREG_JAR)
 
-$(eval $(call SetupJavaCompilation, BUILD_JTREG_MAIN_WRAPPER, \
+$(eval $(call SetupJavaCompilation, BUILD_JTREG_TEST_THREAD_FACTORY, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
-    SRC := $(MW_BASEDIR)/src/share/classes, \
-    BIN := $(MW_SUPPORT)/classes, \
+    SRC := $(TTF_BASEDIR)/src/share/classes, \
+    BIN := $(TTF_SUPPORT)/classes, \
     DISABLED_WARNINGS := options serial try, \
     COPY := .properties, \
     CLASSPATH := $(JTREG_JAR), \
-    JAR := $(MW_JAR), \
+    JAR := $(TTF_JAR), \
     JAVAC_FLAGS := -XDstringConcat=inline, \
 ))
 
-TARGETS += $(BUILD_JTREG_MAIN_WRAPPER)
+TARGETS += $(BUILD_JTREG_TEST_THREAD_FACTORY)
 
 ################################################################################
 # Targets for building test-image.
 ################################################################################
 
 # Copy to hotspot jtreg test image
-$(eval $(call SetupCopyFiles, COPY_MW, \
-    SRC := $(MW_SUPPORT), \
-    DEST := $(TEST_IMAGE_DIR)/jtreg_main_wrapper, \
-    FILES := $(MW_JAR), \
+$(eval $(call SetupCopyFiles, COPY_TTF, \
+    SRC := $(TTF_SUPPORT), \
+    DEST := $(TEST_IMAGE_DIR)/jtreg_test_thread_factory, \
+    FILES := $(TTF_JAR), \
 ))
 
-IMAGES_TARGETS += $(COPY_MW)
+IMAGES_TARGETS += $(COPY_TTF)
 
 build: $(TARGETS)
 images: $(IMAGES_TARGETS)

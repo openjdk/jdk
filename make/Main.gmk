@@ -707,19 +707,19 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
   ))
 endif
 
-ifeq ($(BUILD_JTREG_MAIN_WRAPPER), true)
-  # Builds the main wrapper jtreg extension
-  $(eval $(call SetupTarget, build-test-main-wrapper, \
-      MAKEFILE := test/BuildJtregMainWrapper, \
+ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
+  # Builds the test thread factory jtreg extension
+  $(eval $(call SetupTarget, build-test-test-thread-factory, \
+      MAKEFILE := test/BuildJtregTestThreadFactory, \
       TARGET := build, \
       DEPS := interim-langtools, \
   ))
 
-  # Copies the jtreg main wrapper into the test image
-  $(eval $(call SetupTarget, test-image-main-wrapper, \
-      MAKEFILE := test/BuildJtregMainWrapper, \
+  # Copies the jtreg test thread factory into the test image
+  $(eval $(call SetupTarget, test-image-test-thread-factory, \
+      MAKEFILE := test/BuildJtregTestThreadFactory, \
       TARGET := images, \
-      DEPS := build-test-main-wrapper, \
+      DEPS := build-test-test-thread-factory, \
   ))
 endif
 
@@ -1203,8 +1203,8 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
   test-image: test-image-failure-handler
 endif
 
-ifeq ($(BUILD_JTREG_MAIN_WRAPPER), true)
-  test-image: test-image-main-wrapper
+ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
+  test-image: test-image-test-thread-factory
 endif
 
 ifneq ($(JMH_CORE_JAR), )
