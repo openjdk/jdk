@@ -163,11 +163,10 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public void runTest(String[] args) {
+    public void runTest(int testNumber) {
+        System.out.println("Running test " + testNumber);
 
-        int test = Integer.parseInt(args[0]);
-
-        switch (test) {
+        switch (testNumber) {
             /* default constructor - default config */
             case 1 -> run(new ServerFactory(), false);
 
@@ -224,6 +223,9 @@ public class SSLSocketParametersTest implements Serializable {
                         "dummy_protocol");
                 run(new ServerFactory(), true);
             }
+
+            default ->
+                    throw new RuntimeException("Unknown test number: " + testNumber);
         }
     }
 
@@ -244,9 +246,7 @@ public class SSLSocketParametersTest implements Serializable {
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.trustStorePassword", "trustword");
 
-        // Run test
-        //
         SSLSocketParametersTest test = new SSLSocketParametersTest();
-        test.runTest(args);
+        test.runTest(Integer.parseInt(args[0]));
     }
 }
