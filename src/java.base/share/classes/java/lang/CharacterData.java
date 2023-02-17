@@ -114,17 +114,13 @@ abstract class CharacterData {
      * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
      */
     static boolean foldsToLatin1(char c) {
-        switch (c) {
-            case 0x130:  // Latin capital letter i with dot above.  Uppercase: i
-            case 0x131:  // Latin small letter dotless i.           Lowercase: I
-            case 0x178:  // Latin capital letter y with diaeresis.  Lowercase: Y with Diaeresis
-            case 0x17F:  // latin small letter long s.              Uppercase: S
-            case 0x1E9E: // latin capital letter sharp s.           Lowercase: Sharp s
-            case 0x212A: // Kelvin sign.                            Lowercase: k
-            case 0x212B: // Angstrom sign.                          Lowercase: A with Overring
-                return true;
-            default:
-                return false;
-        }
+        // This seems to be slightly faster than a switch:
+        return  c == 0x130      // Latin capital letter i with dot above. Upper: i
+                || c == 0x131   // Latin small letter dotless i.          Lower: I
+                || c == 0x178   // Latin capital letter y with diaeresis. Lower: Y with Diaeresis
+                || c == 0x17F   // Latin small letter long s.             Upper: S
+                || c == 0x1E9E  // Latin capital letter sharp s.          Lower: Sharp s
+                || c == 0x212A  // Kelvin sign.                           Lower: k
+                || c == 0x212B; // Angstrom sign.                         Lower: A with Overring
     }
 }
