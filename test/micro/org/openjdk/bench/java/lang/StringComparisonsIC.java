@@ -55,6 +55,9 @@ public class StringComparisonsIC {
     public static final String UTF_UTF_MATCH = "utf16-unicode-match";
     public static final String UTF_UTF_MISMATCH = "utf16-unicode-mismatch";
 
+    public static final String UTF_MIXED_MATCH = "utf16-mixed-match";
+    public static final String UTF_MIXED_MISMATCH = "utf16-mixed-mismatch";
+
     @Param({"1024"})
     public int size;
 
@@ -74,7 +77,9 @@ public class StringComparisonsIC {
             UTF_NUMBER_MATCH,
             UTF_NUMBER_MISMATCH,
             UTF_UTF_MATCH,
-            UTF_UTF_MISMATCH
+            UTF_UTF_MISMATCH,
+            UTF_MIXED_MATCH,
+            UTF_MIXED_MISMATCH
     })
 
     public String coding;
@@ -159,6 +164,14 @@ public class StringComparisonsIC {
             case UTF_UTF_MISMATCH -> {
                 leftString = ue  + ue.repeat(size);
                 rightString = ue + "\u0130".repeat(size);
+            }
+            case UTF_MIXED_MATCH -> {
+                leftString = ue  + "i".repeat(size);
+                rightString = ue + "\u0130".repeat(size);
+            }
+            case UTF_MIXED_MISMATCH -> {
+                leftString = ue  + "i".repeat(size);
+                rightString = ue + ue.repeat(size);
             }
             default -> throw new IllegalArgumentException("Unconfigured coder: " + coding);
         }

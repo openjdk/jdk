@@ -114,7 +114,7 @@ abstract class CharacterData {
      * an exchaustive test verifies that the constants in this method is always
      * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
      */
-    static boolean foldsToLatin1(char c) {
+    static boolean foldsToLatin1(int c) {
         // This seems to be slightly faster than a switch:
         return  c == 0x130      // Latin capital letter i with dot above. Upper: i
                 || c == 0x131   // Latin small letter dotless i.          Lower: I

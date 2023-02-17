@@ -358,19 +358,18 @@ final class StringUTF16 {
 
     // Case insensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
-        // Fast path if cp1 and cp2 are case-folding latin1 letters
-        if (cp1 > 0XFF && cp2 >= 0XFF && latin1EqualsIgnoreCase(cp1, cp2)) {
-            return 0;
-        }
-
-        // Fast path if both cp1 and cp2 are latin1
-        boolean lat1 = cp1 <= 0XFF;
-        boolean lat2 = cp2 <= 0XFF;
-        if (lat1 && lat2) {
+        boolean cp1Lat = cp1 <= 0XFF; // Is cp1 latin1?
+        boolean cp2Lat = cp2 <= 0XFF; // Is cp2 latin1?
+        if (cp1Lat && cp2Lat) {
+            // Check case folding
+            if (latin1EqualsIgnoreCase(cp1, cp2)) {
+                return 0;
+            }
+            // Comparing '1' vs '2', 'A' vs 'B' etc
             return cp1 - cp2;
         }
+        // Slow path when both code points are non-latin1
 
-        // Slow path:
         // Try converting both characters to uppercase.
         // If the results match, then the comparison scan should
         // continue.
@@ -398,7 +397,7 @@ final class StringUTF16 {
      * @return true if the two code points are considered equals ignoring case in ISO/IEC 8859-1.
      */
     static boolean latin1EqualsIgnoreCase(int cp1, int cp2) {
-        // Callers should verify this
+        // Callers should verify that both code points are <= 0XFF
         assert cp1 <= 0XFF;
         assert cp2 <= 0XFF;
 
