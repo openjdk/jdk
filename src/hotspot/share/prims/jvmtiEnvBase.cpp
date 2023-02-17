@@ -1837,7 +1837,7 @@ VM_GetAllStackTraces::doit() {
         !jt->is_exiting() &&
         java_lang_Thread::is_alive(thread_oop) &&
         !jt->is_hidden_from_external_view() &&
-        !jt->is_bound_vthread()) {
+        !thread_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
       ++_final_thread_count;
       // Handle block of the calling thread is used to create local refs.
       _collector.fill_frames((jthread)JNIHandles::make_local(_calling_thread, thread_oop),

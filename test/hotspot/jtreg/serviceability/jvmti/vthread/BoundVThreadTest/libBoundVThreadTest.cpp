@@ -131,13 +131,6 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, 
   err = jvmti->GetThreadCpuTime(vthread, &nanos);
   check_jvmti_error_unsupported_operation(jni, "GetThreadCpuTime", err);
 
-  jthread cur_thread = get_current_thread(jvmti, jni);
-  if (jni->IsVirtualThread(cur_thread)) {
-    LOG("Testing GetCurrentThreadCpuTime\n");
-    err = jvmti->GetCurrentThreadCpuTime(&nanos);
-    check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
-  }
-
   LOG("Testing RunAgentThread\n");
   err = jvmti->RunAgentThread(vthread, agent_proc, (const void*)nullptr, JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_error_unsupported_operation(jni, "RunAgentThread", err);

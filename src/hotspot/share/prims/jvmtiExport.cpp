@@ -1468,7 +1468,7 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
   // do JVMTI thread initialization (if needed)
   JvmtiEventController::thread_started(thread);
 
-  if (JvmtiExport::can_support_virtual_threads() && thread->is_bound_vthread()) {
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
     // Check for VirtualThreadStart event instead.
     HandleMark hm(thread);
     Handle vthread(thread, thread->threadObj());
@@ -1512,7 +1512,7 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
     return;
   }
 
-  if (JvmtiExport::can_support_virtual_threads() && thread->is_bound_vthread()) {
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
     // Check for VirtualThreadEnd event instead.
     HandleMark hm(thread);
     Handle vthread(thread, thread->threadObj());

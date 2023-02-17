@@ -1042,7 +1042,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
           ((java_lang_VirtualThread::is_instance(vt_oop) &&
             JvmtiEnvBase::is_vthread_alive(vt_oop) &&
             !JvmtiVTSuspender::is_vthread_suspended(vt_oop)) ||
-            (java_thread->is_bound_vthread() && !java_thread->is_suspended())) &&
+            (vt_oop->is_a(vmClasses::BoundVirtualThread_klass()) && !java_thread->is_suspended())) &&
           !is_in_thread_list(except_count, except_list, vt_oop)
          ) {
         if (java_thread == current) {
@@ -1153,7 +1153,7 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
         ((java_lang_VirtualThread::is_instance(vt_oop) &&
           JvmtiEnvBase::is_vthread_alive(vt_oop) &&
           JvmtiVTSuspender::is_vthread_suspended(vt_oop)) ||
-          (java_thread->is_bound_vthread() && java_thread->is_suspended())) &&
+          (vt_oop->is_a(vmClasses::BoundVirtualThread_klass()) && java_thread->is_suspended())) &&
         !is_in_thread_list(except_count, except_list, vt_oop)
     ) {
       resume_thread(vt_oop, java_thread, /* single_resume */ false);
@@ -3891,9 +3891,8 @@ JvmtiEnv::GetCurrentThreadCpuTime(jlong* nanos_ptr) {
 
   // Surprisingly the GetCurrentThreadCpuTime is used by non-JavaThread's.
   if (thread->is_Java_thread()) {
-    JavaThread* jt = JavaThread::cast(thread);
-    if (jt->is_vthread_mounted() || jt->is_bound_vthread()) {
-      // No support for virtual threads (yet).
+    if (JavaThread::cast(thread)->is_vthread_mounted()) {
+      // No support for a VirtualThread (yet).
       return JVMTI_ERROR_UNSUPPORTED_OPERATION;
     }
   }
