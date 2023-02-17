@@ -385,7 +385,6 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     return;
   }
 
-
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
 
