@@ -122,7 +122,7 @@ public abstract sealed class ConcreteEntry {
         return tag;
     }
 
-    public int poolEntries() {
+    public int width() {
         return (tag == Classfile.TAG_LONG || tag == Classfile.TAG_DOUBLE) ? 2 : 1;
     }
 

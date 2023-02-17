@@ -637,7 +637,7 @@ public final class ClassPrinterImpl {
                                 "value", String.valueOf(ve.constantValue())
                             );
                         }));
-                i += e.poolEntries();
+                i += e.width();
             }
             return new Node[]{cpNode};
         } else {

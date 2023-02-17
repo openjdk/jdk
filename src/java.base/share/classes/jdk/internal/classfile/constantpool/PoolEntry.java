@@ -52,5 +52,5 @@ public sealed interface PoolEntry extends WritableElement<PoolEntry>
     /**
      * {@return the number of constant pool slots this entry consumes}
      */
-    int poolEntries();
+    int width();
 }

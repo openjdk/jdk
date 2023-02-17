@@ -193,7 +193,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int i = writeFrom; i < entryCount(); ) {
             PoolEntry info = entryByIndex(i);
             info.writeTo(buf);
-            i += info.poolEntries();
+            i += info.width();
         }
     }
 
@@ -219,7 +219,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             for (int i = Math.max(parentSize, 1); i < size; ) {
                 PoolEntry cpi = myEntries[i - parentSize];
                 map.put(cpi.hashCode(), cpi.index());
-                i += cpi.poolEntries();
+                i += cpi.width();
             }
         }
         return map;
@@ -229,7 +229,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int i=1; i<parentSize;) {
             PoolEntry cpi = parent.entryByIndex(i);
             map.put(cpi.hashCode(), cpi.index());
-            i += cpi.poolEntries();
+            i += cpi.width();
         }
         doneFullScan = true;
     }
@@ -264,7 +264,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             myEntries = Arrays.copyOf(myEntries, 2 * newIndex, PoolEntry[].class);
         }
         myEntries[newIndex] = cpi;
-        size += cpi.poolEntries();
+        size += cpi.width();
         map().put(hash, cpi.index());
         return cpi;
     }
