@@ -119,7 +119,7 @@ public class ConstantWriter extends BasicWriter {
                 default ->
                     throw new IllegalArgumentException("unknown entry: "+ cpInfo);
             }
-            cpx += cpInfo.poolEntries();
+            cpx += cpInfo.width();
         }
         indent(-1);
     }
