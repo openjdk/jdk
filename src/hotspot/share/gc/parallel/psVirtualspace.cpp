@@ -105,7 +105,7 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
 
 #ifndef PRODUCT
 void PSVirtualSpace::verify() const {
-  assert(is_aligned(alignment(), os::vm_page_size()), "bad alignment");
+  assert(is_aligned(_alignment, os::vm_page_size()), "bad alignment");
   assert(is_aligned(reserved_low_addr(), _alignment), "bad reserved_low_addr");
   assert(is_aligned(reserved_high_addr(), _alignment), "bad reserved_high_addr");
   assert(is_aligned(committed_low_addr(), _alignment), "bad committed_low_addr");
