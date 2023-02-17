@@ -189,6 +189,7 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
         run2(baseArchiveName, null,
              "-XX:+RecordDynamicDumpInfo",
              "-Xlog:cds+dynamic=debug",
+             "-Xshare:auto",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     output.shouldNotMatch("\\[cds,dynamic");

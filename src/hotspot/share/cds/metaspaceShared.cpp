@@ -1017,11 +1017,20 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     }
   }
 
+  // If mapping failed and -XShare:on, the vm should exit
+  bool has_failed = false;
+  has_failed = (static_mapinfo == nullptr) || (dynamic_mapinfo == nullptr);
+  has_failed = static_mapinfo == nullptr;
   if (static_mapinfo != nullptr && !static_mapinfo->is_mapped()) {
+    has_failed = true;
     delete static_mapinfo;
   }
   if (dynamic_mapinfo != nullptr && !dynamic_mapinfo->is_mapped()) {
+    has_failed = true;
     delete dynamic_mapinfo;
+  }
+  if (RequireSharedSpaces && has_failed) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
   }
 }
 

@@ -2916,6 +2916,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     RequireSharedSpaces = true;
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
+  if (UseSharedSpaces && RequireSharedSpaces) {
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(cds));
+  }
 
   fix_appclasspath();
 
