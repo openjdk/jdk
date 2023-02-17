@@ -147,6 +147,7 @@ hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
+  compiler/memoryinitialization/ZeroTLABTest.java \
   resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
