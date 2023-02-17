@@ -32,7 +32,7 @@ extern "C" {
 static jvmtiEnv *jvmti = nullptr;
 static int vthread_start_count = 0;
 static int vthread_end_count = 0;
-static bool passed = JNI_TRUE;
+static bool status = JNI_TRUE;
 
 static void
 check_jvmti_error_unsupported_operation(JNIEnv* jni, const char* msg, jvmtiError err) {
@@ -67,7 +67,7 @@ check_suspended_state(JNIEnv* jni, jthread thread) {
 
   if ((state & (JVMTI_THREAD_STATE_SUSPENDED | JVMTI_THREAD_STATE_TERMINATED)) == 0) {
     LOG("\n## Agent: FAILED: SUSPENDED flag is not set:\n");
-    passed = JNI_FALSE;
+    status = JNI_FALSE;
   }
   deallocate(jvmti, jni, (void*)tname);
 }
@@ -84,7 +84,7 @@ check_resumed_state(JNIEnv* jni, jthread thread) {
 
   if ((state & (JVMTI_THREAD_STATE_SUSPENDED | JVMTI_THREAD_STATE_TERMINATED)) != 0) {
     LOG("\n## Agent: FAILED: SUSPENDED flag is set:\n");
-    passed = JNI_FALSE;
+    status = JNI_FALSE;
   }
   deallocate(jvmti, jni, (void*)tname);
 }
@@ -287,17 +287,17 @@ Java_BoundVThreadTest_check(JNIEnv *jni, jclass cls) {
   LOG("check: vthread_end_count: %d\n", vthread_end_count);
 
   if (vthread_start_count == 0) {
-    passed = JNI_FALSE;
+    status = JNI_FALSE;
     LOG("FAILED: vthread_start_count == 0\n");
   }
   if (vthread_end_count == 0) {
-    passed = JNI_FALSE;
+    status = JNI_FALSE;
     LOG("FAILED: vthread_end_count == 0\n");
   }
 
   LOG("check: finished\n");
   LOG("\n");
-  return passed;
+  return status;
 }
 
 } // extern "C"
