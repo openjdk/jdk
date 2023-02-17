@@ -4946,20 +4946,21 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         int scaleStep;
         while (intVal.compareMagnitude(BigInteger.TEN) >= 0
                 && scale > preferredScale) {
-            if (intVal.testBit(0))
-                break; // odd number cannot end in 0
-            scaleStep = checkScale(intVal, Math.max(((long)scale - preferredScale) / 2, 1));
-            qr = intVal.divideAndRemainder(bigTenToThe(scaleStep));
-            if (qr[1].signum() != 0) {
-                if (scaleStep == 1) {
-                    break;
-                } else {
-                    preferredScale = scale - scaleStep;
+            scaleStep = checkScale(intVal, Math.max(((long) scale - preferredScale) / 2, 1));
+            if (intVal.getLowestSetBit() >= scaleStep) {
+                // intVal can be divided by pow(10, scaleStep) only if intVal has more trailing zeros than scaleStep
+                qr = intVal.divideAndRemainder(bigTenToThe(scaleStep));
+                if (qr[1].signum() == 0) {
+                    intVal = qr[0];
+                    scale = checkScale(intVal, (long) scale - scaleStep); // could Overflow
                     continue;
                 }
             }
-            intVal = qr[0];
-            scale = checkScale(intVal, (long) scale - scaleStep); // could Overflow
+            if (scaleStep == 1) {
+                break;
+            } else {
+                preferredScale = scale - scaleStep;
+            }
         }
         return valueOf(intVal, scale, 0);
     }
