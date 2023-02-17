@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,30 +135,36 @@ class CharacterDataLatin1 extends CharacterData {
     }
 
     int toLowerCase(int ch) {
-        int mapChar = ch;
-        int val = getProperties(ch);
-
-        if (((val & $$maskLowerCase) != 0) && 
-                ((val & $$maskCaseOffset) != $$maskCaseOffset)) { 
-            int offset = val << $$shiftCaseOffsetSign >> ($$shiftCaseOffsetSign+$$shiftCaseOffset);
-            mapChar = ch + offset;
+        if (ch < 'A') { // Fast path for low code points
+            return ch;
         }
-        return mapChar;
+        int l = ch | 0x20; // Lowercase using 'oldest ASCII trick in the book'
+        if ( l <= 'z' // In range a-z
+                || (l >= 0xE0 && l <= 0xFE && l != 0xF7)) { // ..or agrave-thorn, excluding division
+            return l;
+        }
+        return ch;
     }
 
     int toUpperCase(int ch) {
-        int mapChar = ch;
-        int val = getProperties(ch);
-
-        if ((val & $$maskUpperCase) != 0) {
-            if ((val & $$maskCaseOffset) != $$maskCaseOffset) {
-                int offset = val  << $$shiftCaseOffsetSign >> ($$shiftCaseOffsetSign+$$shiftCaseOffset);
-                mapChar =  ch - offset;
-            } else if (ch == 0x00B5) {
-                mapChar = 0x039C;
-            }
+        if (ch < 'a') { // Fast path for low code points
+            return ch;
         }
-        return mapChar;
+        int U = ch & 0xDF; // Uppercase using 'oldest ASCII trick in the book'
+        if (U <= 'Z' // In range A-Z
+                || (U >= 0xC0 && U <= 0xDE && U != 0xD7)) { // ..or Agrave-Thorn, excluding multiplication
+            return U;
+        }
+
+        // Special-case for 'Y with Diaeresis' which uppercases out of latin1
+        if (ch == 0xFF) {
+            return 0x178;
+        }
+        // Special-case for 'Mu' which uppercases out of latin1
+        if (ch == 0xB5) {
+            return 0x39C;
+        }
+        return ch;
     }
 
     int toTitleCase(int ch) {
