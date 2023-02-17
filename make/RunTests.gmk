@@ -761,8 +761,8 @@ define SetupRunJtregTestBody
   endif
 
   ifneq ($$(JTREG_MAIN_WRAPPER), )
-    $1_JTREG_BASIC_OPTIONS += -mainWrapperPath:$$(JTREG_MAIN_WRAPPER_JAR)
-    $1_JTREG_BASIC_OPTIONS += -mainWrapper:$$(JTREG_MAIN_WRAPPER)
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_MAIN_WRAPPER_JAR)
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_MAIN_WRAPPER)
     $1_JTREG_BASIC_OPTIONS += -javaoption:--enable-preview
   endif
 

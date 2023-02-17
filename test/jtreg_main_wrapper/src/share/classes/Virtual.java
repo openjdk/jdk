@@ -23,8 +23,6 @@
  * questions.
  */
 
-import com.sun.javatest.regtest.agent.CustomMainWrapper;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -32,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-public class Virtual implements CustomMainWrapper {
+public class Virtual implements ThreadFactory {
 
     static {
         // This property is used by ProcessTools and some tests
@@ -44,7 +42,7 @@ public class Virtual implements CustomMainWrapper {
     }
 
     @Override
-    public Thread createThread(ThreadGroup tg, Runnable task) {
+    public Thread newThread(Runnable task) {
         try {
             ThreadFactory factory = VirtualAPI.instance().factory(true);
             return factory.newThread(task);
