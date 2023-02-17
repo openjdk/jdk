@@ -72,9 +72,31 @@ public class ClassForName {
         bh.consume(Class.forName(getClass().getModule(), "java.lang.StringUTF16"));
     }
 
+    @Benchmark
+    public void forNameWithModuleMany(Blackhole bh) throws ClassNotFoundException {
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Spliterator"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Random"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Arrays"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.String"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringLatin1"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringUTF16"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.List"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Map"));
+        bh.consume(Class.forName(getClass().getModule(), "java.util.Set"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Class"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Float"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Integer"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Double"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Boolean"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.System"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.Long"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringBuilder"));
+        bh.consume(Class.forName(getClass().getModule(), "java.lang.StringBuffer"));
+    }
+
     /** Calls Class.forName with the three different names over and over again. All classes asked for exist. */
     @Benchmark
-    public void forNameTriple(Blackhole bh) throws ClassNotFoundException {
+    public void forName(Blackhole bh) throws ClassNotFoundException {
         bh.consume(Class.forName(aName));
         bh.consume(Class.forName(bName));
         bh.consume(Class.forName(cName));

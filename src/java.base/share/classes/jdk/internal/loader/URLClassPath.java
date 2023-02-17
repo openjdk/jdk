@@ -224,6 +224,7 @@ public class URLClassPath {
         if (closed) {
             return Collections.emptyList();
         }
+        closed = true;
         List<IOException> result = new ArrayList<>();
         for (Loader loader : loaders) {
             try {
@@ -232,7 +233,6 @@ public class URLClassPath {
                 result.add(e);
             }
         }
-        closed = true;
         return result;
     }
 
