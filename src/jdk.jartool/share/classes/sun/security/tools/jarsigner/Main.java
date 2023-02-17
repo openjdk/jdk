@@ -1965,9 +1965,9 @@ public class Main {
         builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
         builder.setProperty("internalSF", Boolean.toString(!externalSF));
 
-        OutputStream os = null;
+        FileOutputStream fos = null;
         try {
-            os = new BufferedOutputStream(new FileOutputStream(signedJarFile));
+            fos = new FileOutputStream(signedJarFile);
         } catch (IOException ioe) {
             error(rb.getString("unable.to.create.")+tmpJarName, ioe);
         }
@@ -1978,7 +1978,7 @@ public class Main {
         try {
             Event.setReportListener(Event.ReporterCategory.ZIPFILEATTRS,
                     (t, o) -> extraAttrsDetected = true);
-            builder.build().sign(zipFile, os);
+            builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
             failedCause = e.getCause();
             if (failedCause instanceof SocketTimeoutException
@@ -2008,8 +2008,8 @@ public class Main {
                 zipFile = null;
             }
 
-            if (os != null) {
-                os.close();
+            if (fos != null) {
+                fos.close();
             }
 
             Event.clearReportListener(Event.ReporterCategory.ZIPFILEATTRS);
