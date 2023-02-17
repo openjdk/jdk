@@ -617,7 +617,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Static properties for incremental drawing.
      * @see #imageUpdate
      */
-    static boolean isInc;
+    @SuppressWarnings("removal")
+    static final boolean isInc = Boolean.parseBoolean(AccessController.doPrivileged(new GetPropertyAction("awt.image.incrementaldraw")));
     static int incRate;
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -626,11 +627,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
-
-        @SuppressWarnings("removal")
-        String s = java.security.AccessController.doPrivileged(
-                                                               new GetPropertyAction("awt.image.incrementaldraw"));
-        isInc = (s == null || s.equals("true"));
 
         @SuppressWarnings("removal")
         String s2 = java.security.AccessController.doPrivileged(
