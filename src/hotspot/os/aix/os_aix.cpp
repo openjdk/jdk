@@ -1009,9 +1009,9 @@ bool os::address_is_in_vm(address addr) {
   // Input could be a real pc or a function pointer literal. The latter
   // would be a function descriptor residing in the data segment of a module.
   loaded_module_t lm;
-  if (LoadedLibraries::find_for_text_address(addr, &lm) != nullptr) {
+  if (LoadedLibraries::find_for_text_address(addr, &lm)) {
     return lm.is_in_vm;
-  } else if (LoadedLibraries::find_for_data_address(addr, &lm) != nullptr) {
+  } else if (LoadedLibraries::find_for_data_address(addr, &lm)) {
     return lm.is_in_vm;
   } else {
     return false;
@@ -1028,13 +1028,13 @@ bool os::address_is_in_vm(address addr) {
 //   null is returned.
 static address resolve_function_descriptor_to_code_pointer(address p) {
 
-  if (LoadedLibraries::find_for_text_address(p, nullptr) != nullptr) {
+  if (LoadedLibraries::find_for_text_address(p, nullptr)) {
     // It is a real code pointer.
     return p;
-  } else if (LoadedLibraries::find_for_data_address(p, nullptr) != nullptr) {
+  } else if (LoadedLibraries::find_for_data_address(p, nullptr)) {
     // Pointer to data segment, potential function descriptor.
     address code_entry = (address)(((FunctionDescriptor*)p)->entry());
-    if (LoadedLibraries::find_for_text_address(code_entry, nullptr) != nullptr) {
+    if (LoadedLibraries::find_for_text_address(code_entry, nullptr)) {
       // It is a function descriptor.
       return code_entry;
     }
@@ -2429,8 +2429,8 @@ bool os::find(address addr, outputStream* st) {
   st->print(PTR_FORMAT ": ", addr);
 
   loaded_module_t lm;
-  if (LoadedLibraries::find_for_text_address(addr, &lm) != nullptr ||
-      LoadedLibraries::find_for_data_address(addr, &lm) != nullptr) {
+  if (LoadedLibraries::find_for_text_address(addr, &lm) ||
+      LoadedLibraries::find_for_data_address(addr, &lm)) {
     st->print_cr("%s", lm.path);
     return true;
   }

@@ -163,7 +163,7 @@ bool AixSymbols::get_function_name (
 
   // Find start of traceback table.
   // (starts after code, is marked by word-aligned (32bit) zeros)
-  while ((*pc2 != nullptr) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
+  while ((*pc2 != 0) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
     CHECK_POINTER_READABLE(pc2)
     pc2++;
   }
@@ -280,7 +280,7 @@ bool AixSymbols::get_module_name(address pc,
   if (p_name && namelen > 0) {
     p_name[0] = '\0';
     loaded_module_t lm;
-    if (LoadedLibraries::find_for_text_address(pc, &lm) != nullptr) {
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
       strncpy(p_name, lm.shortname, namelen);
       p_name[namelen - 1] = '\0';
       return true;
@@ -575,10 +575,7 @@ static bool is_valid_codepointer(codeptr_t p) {
   if (((uintptr_t)p) & 0x3) {
     return false;
   }
-  if (LoadedLibraries::find_for_text_address(p, nullptr) == nullptr) {
-    return false;
-  }
-  return true;
+  return LoadedLibraries::find_for_text_address(p, nullptr);
 }
 
 // Function tries to guess if the given combination of stack pointer, stack base
@@ -691,7 +688,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // Retrieve current stack base, size from the current thread. If there is none,
   // retrieve it from the OS.
   stackptr_t stack_base = nullptr;
-  size_t stack_size = nullptr;
+  size_t stack_size = 0;
   {
     AixMisc::stackbounds_t stackbounds;
     if (!AixMisc::query_stack_bounds_for_current_thread(&stackbounds)) {
