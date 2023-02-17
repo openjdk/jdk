@@ -91,7 +91,7 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public class ClientFactory extends SslRMIClientSocketFactory {
+    public static class ClientFactory extends SslRMIClientSocketFactory {
 
         public ClientFactory() {
             super();
@@ -104,7 +104,7 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public class ServerFactory extends SslRMIServerSocketFactory {
+    public static class ServerFactory extends SslRMIServerSocketFactory {
 
         public ServerFactory() {
             super();
@@ -130,7 +130,7 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public void run(RMIServerSocketFactory serverFactory, boolean expectException) {
+    public void testRmiCommunication(RMIServerSocketFactory serverFactory, boolean expectException) {
 
         HelloImpl server = null;
         try {
@@ -168,60 +168,34 @@ public class SSLSocketParametersTest implements Serializable {
 
         switch (testNumber) {
             /* default constructor - default config */
-            case 1 -> run(new ServerFactory(), false);
+            case 1 -> testRmiCommunication(new ServerFactory(), false);
 
             /* non-default constructor - default config */
-            case 2 -> run(new ServerFactory(null, null, false), false);
+            case 2 -> testRmiCommunication(new ServerFactory(null, null, false), false);
 
             /* needClientAuth=true */
-            case 3 -> run(new ServerFactory(null, null, null, true), false);
+            case 3 -> testRmiCommunication(new ServerFactory(null, null, null, true), false);
 
             /* server side dummy_ciphersuite */
-            case 4 -> {
-                try {
-                    new ServerFactory(SSLContext.getDefault(),
-                            new String[]{"dummy_ciphersuite"}, null, false);
-                    throw new RuntimeException(
-                            "The expected exception for unsupported ciphersuite was not thrown.");
-                } catch (NoSuchAlgorithmException exc) {
-                    throw new RuntimeException("Could not create SSLContext.", exc);
-                } catch (IllegalArgumentException exc) {
-                    // expecting the exception for unsupported ciphersuite,
-                    // anything else is an error
-                    if (!exc.getMessage().toLowerCase().contains("unsupported ciphersuite")) {
-                        throw exc;
-                    }
-                }
-            }
+            case 4 ->
+                testServerFactory(new String[]{"dummy_ciphersuite"}, null, "unsupported ciphersuite");
 
             /* server side dummy_protocol */
-            case 5 -> {
-                try {
-                    new ServerFactory(null,
-                            new String[]{"dummy_protocol"}, false);
-                    throw new RuntimeException(
-                            "The expected exception for unsupported protocol was not thrown.");
-                } catch (IllegalArgumentException exc) {
-                    // expecting the exception for unsupported protocol,
-                    // anything else is an error
-                    if (!exc.getMessage().toLowerCase().contains("unsupported protocol")) {
-                        throw exc;
-                    }
-                }
-            }
+            case 5 ->
+                testServerFactory(null, new String[]{"dummy_protocol"}, "unsupported protocol");
 
             /* client side dummy_ciphersuite */
             case 6 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
                         "dummy_ciphersuite");
-                run(new ServerFactory(), true);
+                testRmiCommunication(new ServerFactory(), true);
             }
 
             /* client side dummy_protocol */
             case 7 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledProtocols",
                         "dummy_protocol");
-                run(new ServerFactory(), true);
+                testRmiCommunication(new ServerFactory(), true);
             }
 
             default ->
@@ -229,11 +203,28 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
+    private static void testServerFactory(String[] cipherSuites, String[] protocol, String expectedMessage) {
+        try {
+            new ServerFactory(SSLContext.getDefault(),
+                    cipherSuites, protocol, false);
+            throw new RuntimeException(
+                    "The expected exception for "+ expectedMessage + " was not thrown.");
+        } catch (NoSuchAlgorithmException exc) {
+            throw new RuntimeException("Could not create SSLContext.", exc);
+        } catch (IllegalArgumentException exc) {
+            // expecting the exception for unsupported ciphersuite,
+            // anything else is an error
+            if (!exc.getMessage().toLowerCase().contains(expectedMessage)) {
+                throw exc;
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         // Set keystore properties (server-side)
         //
         final String keystore = System.getProperty("test.src") +
-            File.separator + "keystore";
+                File.separator + "keystore";
         System.out.println("KeyStore = " + keystore);
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", "password");
@@ -241,12 +232,20 @@ public class SSLSocketParametersTest implements Serializable {
         // Set truststore properties (client-side)
         //
         final String truststore = System.getProperty("test.src") +
-            File.separator + "truststore";
+                File.separator + "truststore";
         System.out.println("TrustStore = " + truststore);
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.trustStorePassword", "trustword");
 
-        SSLSocketParametersTest test = new SSLSocketParametersTest();
-        test.runTest(Integer.parseInt(args[0]));
+        try {
+            SSLSocketParametersTest test = new SSLSocketParametersTest();
+            test.runTest(Integer.parseInt(args[0]));
+        } catch (Exception exc) {
+            // an exception may be thrown trying to unexport RMI object
+            // in which case we want to explicitly call System.exit to
+            // make sure the JVM exits.
+            exc.printStackTrace(System.err);
+            System.exit(1);
+        }
     }
 }
