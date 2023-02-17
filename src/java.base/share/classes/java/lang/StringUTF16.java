@@ -359,7 +359,7 @@ final class StringUTF16 {
     // Case insensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
         // Fast path if cp1 and cp2 are case-folding latin1 letters
-        if (latin1EqualsIgnoreCase(cp1, cp2)) {
+        if (cp1 > 0XFF && cp2 >= 0XFF && latin1EqualsIgnoreCase(cp1, cp2)) {
             return 0;
         }
 
@@ -391,16 +391,17 @@ final class StringUTF16 {
     }
     /**
      *  Version of {@link StringLatin1#isLatinEqualIC(byte, byte)} for comparing
-     *  unicode code points. See the StringLatin1 version for a more extensive explanation.
+     *  int code points. See the StringLatin1 version for a more extensive explanation.
      *
-     * @param cp1 a unicode code point
-     * @param cp2 another unicode code point
+     * @param cp1 a latin1 code point
+     * @param cp2 another latin1 code point
      * @return true if the two code points are considered equals ignoring case in ISO/IEC 8859-1.
      */
     static boolean latin1EqualsIgnoreCase(int cp1, int cp2) {
-        if (cp1 > 0xFF || cp2 > 0xFF) {
-            return false; // Quickly reject high points
-        }
+        // Callers should verify this
+        assert cp1 <= 0XFF;
+        assert cp2 <= 0XFF;
+
         int A = cp1 & 0xDF; // Oldest ASCII trick in the book
         return ( (A >= 'A' && A <= 'Z') // In range A-Z
                 || (A >= 0xC0 && A <= 0xDE)) // ..or Agrave-Thorn
