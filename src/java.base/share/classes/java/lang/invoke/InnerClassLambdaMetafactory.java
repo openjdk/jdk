@@ -119,7 +119,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private final ClassWriter cw;                    // ASM class writer
     private final String[] argNames;                 // Generated names for the constructor arguments
     private final String[] argDescs;                 // Type descriptors for the constructor arguments
-    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
+    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
     /**

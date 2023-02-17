@@ -96,7 +96,7 @@ public class MetaUtil {
      * by {@link Class#getName()} that are not package separators.
      * These are distinguished by being followed by a character that is not a
      * {@link Character#isJavaIdentifierStart(char)} (e.g.,
-     * "jdk.vm.ci.runtime.test.TypeUniverse$$Lambda$1/869601985").
+     * "jdk.vm.ci.runtime.test.TypeUniverse$$Lambda/869601985").
      *
      * @param name the name to perform the replacements on
      * @param packageSeparator the {@link Character} used as the package separator, e.g. {@code /} in internal form
