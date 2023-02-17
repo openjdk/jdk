@@ -783,7 +783,7 @@ bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWP
     // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
     //     address = base + k*iv + constant [+ invar]
     //     memory_alignment ignores the invariant.
-    SWPointer p2(best_align_to_mem_ref, this, NULL, false);
+    SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
     if (!align_to_ref_p.invar_equals(p2)) {
       // Do not vectorize memory accesses with different invariants
       // if unaligned memory accesses are not allowed.
@@ -1846,7 +1846,7 @@ void SuperWord::combine_packs() {
     // Hence: remove the pack if there is a dependence.
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p = _packset.at(i);
-      if (p != NULL) {
+      if (p != nullptr) {
         Node* dependence = find_dependence(p);
         if (dependence != nullptr) {
 #ifndef PRODUCT
@@ -1859,7 +1859,7 @@ void SuperWord::combine_packs() {
             print_pack(p);
           }
 #endif
-          _packset.at_put(i, NULL);
+          _packset.at_put(i, nullptr);
         }
       }
     }

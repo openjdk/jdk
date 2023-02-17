@@ -257,7 +257,7 @@ public class TestCyclicDependency {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
     static void test1(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 1; i++) {
-            // dataI has cyclid dependency of distance 1, cannot vectorize
+            // dataI has cyclic dependency of distance 1, cannot vectorize
             int v = dataI[i];
             dataI[i + 1] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -269,7 +269,7 @@ public class TestCyclicDependency {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
     static void test2(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 2; i++) {
-            // dataI has cyclid dependency of distance 2, cannot vectorize
+            // dataI has cyclic dependency of distance 2, cannot vectorize
             int v = dataI[i];
             dataI[i + 2] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -281,7 +281,7 @@ public class TestCyclicDependency {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
     static void test3(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 3; i++) {
-            // dataI has cyclid dependency of distance 3, cannot vectorize
+            // dataI has cyclic dependency of distance 3, cannot vectorize
             int v = dataI[i];
             dataI[i + 3] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -293,7 +293,7 @@ public class TestCyclicDependency {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
     static void test4(int[] dataI, float[] dataF) {
         for (int i = 1; i < RANGE - 1; i++) {
-            // dataI has cyclid dependency of distance 2, cannot vectorize
+            // dataI has cyclic dependency of distance 2, cannot vectorize
             int v = dataI[i - 1];
             dataI[i + 1] = v;
             dataF[i] = v; // let's not get confused by another type
