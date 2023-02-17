@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package gc.g1;
+#ifndef SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
+#define SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 
-/**
- * @test TestShrinkAuxiliaryData25
- * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData25
- */
-public class TestShrinkAuxiliaryData25 {
+#include "memory/allocation.hpp"
+#include "services/nmtUsage.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(25).test();
-    }
-}
+// MemJFRReporter is only used by threads sending periodic JFR
+// events. These threads are synchronized at a higher level,
+// so no more synchronization is needed.
+class JfrNativeMemoryEvent : public AllStatic {
+private:
+  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
+ public:
+  static void send_total_event(const Ticks& timestamp);
+  static void send_type_events(const Ticks& timestamp);
+};
+
+#endif //SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP

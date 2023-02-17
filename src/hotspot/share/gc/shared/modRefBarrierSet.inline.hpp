@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ oop_store_in_heap(T* addr, oop value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
   Raw::oop_store(addr, value);
-  bs->template write_ref_field_post<decorators>(addr, value);
+  bs->template write_ref_field_post<decorators>(addr);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -74,7 +74,7 @@ oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
   bs->template write_ref_field_pre<decorators>(addr);
   oop result = Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
   if (result == compare_value) {
-    bs->template write_ref_field_post<decorators>(addr, new_value);
+    bs->template write_ref_field_post<decorators>(addr);
   }
   return result;
 }
@@ -86,7 +86,7 @@ oop_atomic_xchg_in_heap(T* addr, oop new_value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
   oop result = Raw::oop_atomic_xchg(addr, new_value);
-  bs->template write_ref_field_post<decorators>(addr, new_value);
+  bs->template write_ref_field_post<decorators>(addr);
   return result;
 }
 
@@ -105,10 +105,10 @@ oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
     // Optimized covariant case
     bs->write_ref_array_pre(dst_raw, length,
                             HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value);
-    Raw::oop_arraycopy(NULL, 0, src_raw, NULL, 0, dst_raw, length);
+    Raw::oop_arraycopy(nullptr, 0, src_raw, nullptr, 0, dst_raw, length);
     bs->write_ref_array((HeapWord*)dst_raw, length);
   } else {
-    assert(dst_obj != NULL, "better have an actual oop");
+    assert(dst_obj != nullptr, "better have an actual oop");
     Klass* bound = objArrayOop(dst_obj)->element_klass();
     T* from = const_cast<T*>(src_raw);
     T* end = from + length;

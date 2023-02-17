@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,12 @@
  * questions.
  */
 
-package gc.g1;
+package p;
 
-/**
- * @test TestShrinkAuxiliaryData15
- * @bug 8038423 8061715 8078405
- * @key randomness
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData15
- */
-public class TestShrinkAuxiliaryData15 {
+public interface I {
+    String stringField = "I";
+    long longField = 10l;
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(15).test();
-    }
+    String stringField3 = "I3";
+    long longField3 = 13L;
 }

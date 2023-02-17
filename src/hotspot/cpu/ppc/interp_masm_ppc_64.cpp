@@ -890,7 +890,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   verify_oop(R17_tos, state);
-  verify_thread();
 
   merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
   mtlr(R0);
@@ -1129,7 +1128,6 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
     // compiled code in threads for which the event is enabled. Check here for
     // interp_only_mode if these events CAN be enabled.
     Label done;
-    verify_thread();
     cmpwi(CCR0, Rinterp_only, 0);
     beq(CCR0, done);
     ld(Rtarget_addr, in_bytes(Method::interpreter_entry_offset()), Rtarget_method);
