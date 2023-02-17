@@ -137,6 +137,8 @@ public:
   inline void set_compaction_top(HeapRegion* r, HeapWord* value);
   inline HeapWord* compaction_top(HeapRegion* r) const;
 
+  uint truncate_parallel_cps();
+
 private:
   void phase1_mark_live_objects();
   void phase2_prepare_compaction();

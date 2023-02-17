@@ -348,19 +348,7 @@ bool G1FullCollector::phase2b_forward_oops() {
   return task.has_free_compaction_targets();
 }
 
-void G1FullCollector::phase2c_prepare_serial_compaction() {
-  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
-  // At this point, we know that after parallel compaction there will be regions that
-  // are partially compacted into. Thus, the last compaction region of all
-  // compaction queues still have space in them. We try to re-compact these regions
-  // in serial to avoid a premature OOM when the mutator wants to allocate the first
-  // eden region after gc.
-
-  // For maximum compaction, we need to re-prepare all objects above the lowest
-  // region among the current regions for all thread compaction points. It may
-  // happen that due to the uneven distribution of objects to parallel threads, holes
-  // have been created as threads compact to different target regions between the
-  // lowest and the highest region in the tails of the compaction points.
+uint G1FullCollector::truncate_parallel_cps() {
   uint lowest_current = (uint)-1;
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
@@ -376,10 +364,29 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     }
   }
 
+  return lowest_current;
+}
+
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+  // At this point, we know that after parallel compaction there will be regions that
+  // are partially compacted into. Thus, the last compaction region of all
+  // compaction queues still have space in them. We try to re-compact these regions
+  // in serial to avoid a premature OOM when the mutator wants to allocate the first
+  // eden region after gc.
+
+  // For maximum compaction, we need to re-prepare all objects above the lowest
+  // region among the current regions for all thread compaction points. It may
+  // happen that due to the uneven distribution of objects to parallel threads, holes
+  // have been created as threads compact to different target regions between the
+  // lowest and the highest region in the tails of the compaction points.
+
+  uint start_serial = truncate_parallel_cps();
+
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   HeapWord* dense_prefix_top = nullptr;
-  for (uint i = lowest_current; i < _heap->max_reserved_regions(); i++) {
-    if (_region_attr_table.is_free(i) || _region_attr_table.is_compacting(i)) {
+  for (uint i = start_serial; i < _heap->max_reserved_regions(); i++) {
+    if (is_compaction_target(i)) {
       HeapRegion* current = _heap->region_at(i);
       serial_cp->add(current);
       if (!serial_cp->is_initialized()) {
