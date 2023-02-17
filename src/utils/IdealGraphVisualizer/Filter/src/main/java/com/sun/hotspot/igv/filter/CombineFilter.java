@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ public class CombineFilter extends AbstractFilter {
                         }
 
                         slot.getSource().addSourceNode(f.getInputNode());
-                        if (r.getShortProperty() != null) {
-                            String s = f.getProperties().get(r.getShortProperty());
+                        if (r.getPropertyNames() != null && r.getPropertyNames().length > 0) {
+                            String s = r.getFirstMatchingProperty(f);
                             if (s != null && s.length() > 0) {
                                 slot.setShortName(s);
                                 slot.setText(s);
@@ -109,7 +109,7 @@ public class CombineFilter extends AbstractFilter {
                 } else {
 
                     for (Figure succ : successors) {
-                        if (succ.getPredecessors().size() == 1 && succ.getInputSlots().size() == 1) {
+                        if (succ.getPredecessors().size() == 1) {
                             if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() == 1) {
 
 
@@ -131,8 +131,8 @@ public class CombineFilter extends AbstractFilter {
                                 }
                                 OutputSlot slot = f.createOutputSlot(pos);
                                 slot.getSource().addSourceNode(succ.getInputNode());
-                                if (r.getShortProperty() != null) {
-                                    String s = succ.getProperties().get(r.getShortProperty());
+                                if (r.getPropertyNames() != null && r.getPropertyNames().length > 0) {
+                                    String s = r.getFirstMatchingProperty(succ);
                                     if (s != null && s.length() > 0) {
                                         slot.setShortName(s);
                                         slot.setText(s);
@@ -186,22 +186,18 @@ public class CombineFilter extends AbstractFilter {
         private PropertyMatcher first;
         private PropertyMatcher second;
         private boolean reversed;
-        private String shortProperty;
+        private String[] propertyNames;
 
         public CombineRule(PropertyMatcher first, PropertyMatcher second) {
             this(first, second, false);
 
         }
 
-        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed) {
-            this(first, second, reversed, null);
-        }
-
-        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed, String shortProperty) {
+        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed, String... propertyNames) {
             this.first = first;
             this.second = second;
             this.reversed = reversed;
-            this.shortProperty = shortProperty;
+            this.propertyNames = propertyNames;
         }
 
         public boolean isReversed() {
@@ -216,8 +212,18 @@ public class CombineFilter extends AbstractFilter {
             return second;
         }
 
-        public String getShortProperty() {
-            return shortProperty;
+        public String[] getPropertyNames() {
+            return propertyNames;
+        }
+
+        public String getFirstMatchingProperty(Figure figure) {
+            for (String propertyName : propertyNames) {
+                String s = figure.getProperties().resolveString(propertyName);
+                if (s != null && !s.isEmpty()) {
+                    return s;
+                }
+            }
+            return null;
         }
     }
 }
