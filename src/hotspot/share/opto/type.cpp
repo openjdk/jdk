@@ -201,7 +201,7 @@ const Type* Type::get_typeflow_type(ciType* type) {
     assert(type == ciTypeFlow::StateVector::top_type(), "");
     return Type::TOP;
 
-  case ciTypeFlow::StateVector::T_nullptr:
+  case ciTypeFlow::StateVector::T_NULL:
     assert(type == ciTypeFlow::StateVector::null_type(), "");
     return TypePtr::NULL_PTR;
 
