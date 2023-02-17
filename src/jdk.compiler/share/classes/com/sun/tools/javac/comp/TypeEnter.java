@@ -1378,7 +1378,7 @@ public class TypeEnter implements Completer {
 
         @Override
         public List<Name> superArgs() {
-            List<JCVariableDecl> params = make.Params(constructorType().getParameterTypes(), constructorSymbol());
+            List<JCVariableDecl> params = make.Params(constructorSymbol(), constructorType().getParameterTypes());
             if (!enclosingType().hasTag(NONE)) {
                 params = params.tail;
             }

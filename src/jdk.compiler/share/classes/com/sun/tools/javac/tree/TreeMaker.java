@@ -1035,7 +1035,7 @@ public class TreeMaker implements JCTree.Factory {
                 m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
-                Params(mtype.getParameterTypes(), m),
+                Params(m, mtype.getParameterTypes()),
                 Types(mtype.getThrownTypes()),
                 body,
                 null,
@@ -1064,19 +1064,20 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a list of value parameter trees x0, ..., xn from a list of
-     *  their types and their owner.
+    /** Create a list of value parameter trees for a method's parameters.
+     *  If the method has parameter names defined, use those same symbols,
+     *  otherwse create placeholders x0, x1, ..., xn.
      */
-    public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
+    public List<JCVariableDecl> Params(MethodSymbol mth, List<Type> argtypes) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();
-        MethodSymbol mth = (owner.kind == MTH) ? ((MethodSymbol)owner) : null;
-        if (mth != null && mth.params != null && argtypes.length() == mth.params.length()) {
-            for (VarSymbol param : ((MethodSymbol)owner).params)
+        if (mth.params != null) {
+            Assert.check(argtypes.length() == mth.params.length());
+            for (VarSymbol param : mth.params)
                 params.append(VarDef(param, null));
         } else {
             int i = 0;
             for (List<Type> l = argtypes; l.nonEmpty(); l = l.tail)
-                params.append(Param(paramName(i++), l.head, owner));
+                params.append(Param(paramName(i++), l.head, mth));
         }
         return params.toList();
     }
