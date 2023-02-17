@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classPrelinker.hpp"
@@ -89,7 +90,7 @@ void ConstantPool::copy_fields(const ConstantPool* orig) {
 // MetaspaceObj allocation invariant is calloc equivalent memory
 // simple verification of this here (JVM_CONSTANT_Invalid == 0 )
 static bool tag_array_is_zero_initialized(Array<u1>* tags) {
-  assert(tags != NULL, "invariant");
+  assert(tags != nullptr, "invariant");
   const int length = tags->length();
   for (int index = 0; index < length; ++index) {
     if (JVM_CONSTANT_Invalid != tags->at(index)) {
@@ -105,31 +106,31 @@ ConstantPool::ConstantPool(Array<u1>* tags) :
   _tags(tags),
   _length(tags->length()) {
 
-    assert(_tags != NULL, "invariant");
+    assert(_tags != nullptr, "invariant");
     assert(tags->length() == _length, "invariant");
     assert(tag_array_is_zero_initialized(tags), "invariant");
     assert(0 == flags(), "invariant");
     assert(0 == version(), "invariant");
-    assert(NULL == _pool_holder, "invariant");
+    assert(nullptr == _pool_holder, "invariant");
 }
 
 void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
-  if (cache() != NULL) {
+  if (cache() != nullptr) {
     MetadataFactory::free_metadata(loader_data, cache());
-    set_cache(NULL);
+    set_cache(nullptr);
   }
 
   MetadataFactory::free_array<Klass*>(loader_data, resolved_klasses());
-  set_resolved_klasses(NULL);
+  set_resolved_klasses(nullptr);
 
   MetadataFactory::free_array<jushort>(loader_data, operands());
-  set_operands(NULL);
+  set_operands(nullptr);
 
   release_C_heap_structures();
 
   // free tag array
   MetadataFactory::free_array<u1>(loader_data, tags());
-  set_tags(NULL);
+  set_tags(nullptr);
 }
 
 void ConstantPool::release_C_heap_structures() {
@@ -164,8 +165,8 @@ objArrayOop ConstantPool::resolved_references() const {
 // Called from outside constant pool resolution where a resolved_reference array
 // may not be present.
 objArrayOop ConstantPool::resolved_references_or_null() const {
-  if (_cache == NULL) {
-    return NULL;
+  if (_cache == nullptr) {
+    return nullptr;
   } else {
     return _cache->resolved_references();
   }
@@ -224,7 +225,7 @@ void ConstantPool::allocate_resolved_klasses(ClassLoaderData* loader_data, int n
   // This allows us to use 0xffff (ConstantPool::_temp_resolved_klass_index) to indicate
   // UnresolvedKlass entries that are temporarily created during class redefinition.
   assert(num_klasses < CPKlassSlot::_temp_resolved_klass_index, "sanity");
-  assert(resolved_klasses() == NULL, "sanity");
+  assert(resolved_klasses() == nullptr, "sanity");
   Array<Klass*>* rk = MetadataFactory::new_array<Klass*>(loader_data, num_klasses, CHECK);
   set_resolved_klasses(rk);
 }
@@ -255,22 +256,23 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
 
 // Hidden class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
-  assert(k != NULL, "must be valid klass");
+  assert(k != nullptr, "must be valid klass");
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
   Atomic::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
-  // and the Klass* non-NULL, so we need hardware store ordering here.
+  // and the Klass* non-null, so we need hardware store ordering here.
   release_tag_at_put(class_index, JVM_CONSTANT_Class);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-// Archive the resolved references
-void ConstantPool::archive_resolved_references() {
-  if (_cache == NULL) {
-    return; // nothing to do
+// Returns the _resolved_reference array after removing unarchivable items from it.
+// Returns null if this class is not supported, or _resolved_reference doesn't exist.
+objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
+  if (_cache == nullptr) {
+    return nullptr; // nothing to do
   }
 
   InstanceKlass *ik = pool_holder();
@@ -278,48 +280,39 @@ void ConstantPool::archive_resolved_references() {
         ik->is_shared_app_class())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
-    return;
+    return nullptr;
   }
 
   objArrayOop rr = resolved_references();
-  Array<u2>* ref_map = reference_map();
-  if (rr != NULL) {
-    int ref_map_len = ref_map == NULL ? 0 : ref_map->length();
+  if (rr != nullptr) {
+    Array<u2>* ref_map = reference_map();
+    int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop obj = rr->obj_at(i);
-      rr->obj_at_put(i, NULL);
-      if (obj != NULL && i < ref_map_len) {
+      rr->obj_at_put(i, nullptr);
+      if (obj != nullptr && i < ref_map_len) {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
-          oop archived_string = HeapShared::find_archived_heap_object(obj);
-          // Update the reference to point to the archived copy
-          // of this string.
-          // If the string is too large to archive, NULL is
-          // stored into rr. At run time, string_at_impl() will create and intern
-          // the string.
-          rr->obj_at_put(i, archived_string);
+          assert(java_lang_String::is_instance(obj), "must be");
+          if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
+            rr->obj_at_put(i, obj);
+          }
         }
       }
     }
-
-    oop archived = HeapShared::archive_object(rr);
-    // If the resolved references array is not archived (too large),
-    // the 'archived' object is NULL. No need to explicitly check
-    // the return value of archive_object() here. At runtime, the
-    // resolved references will be created using the normal process
-    // when there is no archived value.
-    _cache->set_archived_references(archived);
   }
+  return rr;
 }
 
 void ConstantPool::add_dumped_interned_strings() {
   objArrayOop rr = resolved_references();
-  if (rr != NULL) {
+  if (rr != nullptr) {
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop p = rr->obj_at(i);
-      if (java_lang_String::is_instance(p)) {
+      if (java_lang_String::is_instance(p) &&
+          !ArchiveHeapWriter::is_string_too_large_to_archive(p)) {
         HeapShared::add_to_dumped_interned_strings(p);
       }
     }
@@ -336,16 +329,16 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
-  assert(_cache != NULL, "constant pool _cache should not be NULL");
+  assert(_cache != nullptr, "constant pool _cache should not be null");
 
   // Only create the new resolved references array if it hasn't been attempted before
-  if (resolved_references() != NULL) return;
+  if (resolved_references() != nullptr) return;
 
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
     if (ArchiveHeapLoader::is_fully_available() &&
-        _cache->archived_references() != NULL) {
+        _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
       Handle refs_handle(THREAD, archived);
@@ -382,7 +375,7 @@ void ConstantPool::remove_unshareable_info() {
   // re-creating the resolved reference array if archived heap data cannot be map
   // at runtime.
   set_resolved_reference_length(
-    resolved_references() != NULL ? resolved_references()->length() : 0);
+    resolved_references() != nullptr ? resolved_references()->length() : 0);
   set_resolved_references(OopHandle());
 
   bool archived = false;
@@ -407,8 +400,8 @@ void ConstantPool::remove_unshareable_info() {
     }
   }
 
-  if (cache() != NULL) {
-    // cache() is NULL if this class is not yet linked.
+  if (cache() != nullptr) {
+    // cache() is null if this class is not yet linked.
     cache()->remove_unshareable_info();
   }
 }
@@ -427,10 +420,10 @@ bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
   CPKlassSlot kslot = klass_slot_at(cp_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass* k = resolved_klasses()->at(resolved_klass_index);
-  // k could be NULL if the referenced class has been excluded via
+  // k could be null if the referenced class has been excluded via
   // SystemDictionaryShared::is_excluded_class().
 
-  if (k != NULL) {
+  if (k != nullptr) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     if (ClassPrelinker::can_archive_resolved_klass(src_cp, cp_index)) {
       if (log_is_enabled(Debug, cds, resolve)) {
@@ -444,7 +437,7 @@ bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
 
   // This referenced class cannot be archived. Revert the tag to UnresolvedClass,
   // so that the proper class loading and initialization can happen at runtime.
-  resolved_klasses()->at_put(resolved_klass_index, NULL);
+  resolved_klasses()->at_put(resolved_klass_index, nullptr);
   tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
   return false;
 }
@@ -465,21 +458,21 @@ void ConstantPool::string_at_put(int which, int obj_index, oop str) {
 void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Klass* k) {
   ResourceMark rm;
   int line_number = -1;
-  const char * source_file = NULL;
+  const char * source_file = nullptr;
   if (JavaThread::current()->has_last_Java_frame()) {
     // try to identify the method which called this function.
     vframeStream vfst(JavaThread::current());
     if (!vfst.at_end()) {
       line_number = vfst.method()->line_number_from_bci(vfst.bci());
       Symbol* s = vfst.method()->method_holder()->source_file_name();
-      if (s != NULL) {
+      if (s != nullptr) {
         source_file = s->as_C_string();
       }
     }
   }
   if (k != this_cp->pool_holder()) {
     // only print something if the classes are different
-    if (source_file != NULL) {
+    if (source_file != nullptr) {
       log_debug(class, resolve)("%s %s %s:%d",
                  this_cp->pool_holder()->external_name(),
                  k->external_name(), source_file, line_number);
@@ -507,7 +500,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   // the unresolved_klasses() array.
   if (this_cp->tag_at(which).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    if (klass != NULL) {
+    if (klass != nullptr) {
       return klass;
     }
   }
@@ -553,7 +546,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     // some other thread has beaten us and has resolved the class.
     // To preserve old behavior, we return the resolved class.
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(klass != NULL, "must be resolved if exception was cleared");
+    assert(klass != nullptr, "must be resolved if exception was cleared");
     return klass;
   }
 
@@ -565,7 +558,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
   Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
-  // and the Klass* stored in _resolved_klasses is non-NULL, so we need
+  // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
 
@@ -576,7 +569,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, NULL);
+    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
     throw_resolution_error(this_cp, which, CHECK_NULL);
   }
 
@@ -586,7 +579,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
 
 // Does not update ConstantPool* - to avoid any exception throwing. Used
 // by compiler and exception handling.  Also used to avoid classloads for
-// instanceof operations. Returns NULL if the class has not been loaded or
+// instanceof operations. Returns null if the class has not been loaded or
 // if the verification of constant pool failed
 Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int which) {
   CPKlassSlot kslot = this_cp->klass_slot_at(which);
@@ -596,10 +589,10 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 
   if (this_cp->tag_at(which).is_klass()) {
     Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(k != NULL, "should be resolved");
+    assert(k != nullptr, "should be resolved");
     return k;
   } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
-    return NULL;
+    return nullptr;
   } else {
     Thread* current = Thread::current();
     Symbol* name = this_cp->symbol_at(name_index);
@@ -610,15 +603,15 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
-    if (k != NULL && current->is_Java_thread()) {
+    if (k != nullptr && current->is_Java_thread()) {
       // Make sure that resolving is legal
       JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
       ExceptionMark em(THREAD);
-      // return NULL if verification fails
+      // return null if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
-        return NULL;
+        return nullptr;
       }
       return k;
     } else {
@@ -629,12 +622,12 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 
 Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
                                                    int which) {
-  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
+  if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
     // FIXME: should be an assert
     log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
-    return NULL;
+    return nullptr;
   }
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->method_if_resolved(cpool);
@@ -642,14 +635,14 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 
 
 bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
-  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  if (cpool->cache() == nullptr)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->has_appendix();
 }
 
 oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
-  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
+  if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->appendix_if_resolved(cpool);
@@ -657,7 +650,7 @@ oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int whi
 
 
 bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
-  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  if (cpool->cache() == nullptr)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->has_local_signature();
@@ -676,7 +669,7 @@ Symbol* ConstantPool::impl_signature_ref_at(int which, bool uncached) {
 
 int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
-  if (!uncached && cache() != NULL) {
+  if (!uncached && cache() != nullptr) {
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into the constant pool cache
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
@@ -701,7 +694,7 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
 
 constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
   int pool_index = which;
-  if (!uncached && cache() != NULL) {
+  if (!uncached && cache() != nullptr) {
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into resolved_references
       pool_index = invokedynamic_bootstrap_ref_index_at(which);
@@ -717,7 +710,7 @@ int ConstantPool::impl_klass_ref_index_at(int which, bool uncached) {
   guarantee(!ConstantPool::is_invokedynamic_index(which),
             "an invokedynamic instruction does not have a klass");
   int i = which;
-  if (!uncached && cache() != NULL) {
+  if (!uncached && cache() != nullptr) {
     // change byte-ordering and go via cache
     i = remap_instruction_operand_from_cache(which);
   }
@@ -796,7 +789,7 @@ void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_
 static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
   // Dig out the detailed message to reuse if possible
   Symbol* message = java_lang_Throwable::detail_message(pending_exception);
-  if (message != NULL) {
+  if (message != nullptr) {
     return message;
   }
 
@@ -832,9 +825,9 @@ static void add_resolution_error(const constantPoolHandle& this_cp, int which,
   oop cause = java_lang_Throwable::cause(pending_exception);
 
   // Also dig out the exception cause, if present.
-  Symbol* cause_sym = NULL;
-  Symbol* cause_msg = NULL;
-  if (cause != NULL && cause != pending_exception) {
+  Symbol* cause_sym = nullptr;
+  Symbol* cause_msg = nullptr;
+  if (cause != nullptr && cause != pending_exception) {
     cause_sym = cause->klass()->name();
     cause_msg = java_lang_Throwable::detail_message(cause);
   }
@@ -846,24 +839,24 @@ static void add_resolution_error(const constantPoolHandle& this_cp, int which,
 
 void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   ResourceMark rm(THREAD);
-  Symbol* message = NULL;
-  Symbol* cause = NULL;
-  Symbol* cause_msg = NULL;
+  Symbol* message = nullptr;
+  Symbol* cause = nullptr;
+  Symbol* cause_msg = nullptr;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message, &cause, &cause_msg);
-  assert(error != NULL, "checking");
-  const char* cause_str = cause_msg != NULL ? cause_msg->as_C_string() : NULL;
+  assert(error != nullptr, "checking");
+  const char* cause_str = cause_msg != nullptr ? cause_msg->as_C_string() : nullptr;
 
   CLEAR_PENDING_EXCEPTION;
-  if (message != NULL) {
+  if (message != nullptr) {
     char* msg = message->as_C_string();
-    if (cause != NULL) {
+    if (cause != nullptr) {
       Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
       THROW_MSG_CAUSE(error, msg, h_cause);
     } else {
       THROW_MSG(error, msg);
     }
   } else {
-    if (cause != NULL) {
+    if (cause != nullptr) {
       Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
       THROW_CAUSE(error, h_cause);
     } else {
@@ -934,7 +927,7 @@ BasicType ConstantPool::basic_type_for_constant_at(int which) {
 oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                                            int index, int cache_index,
                                            bool* status_return, TRAPS) {
-  oop result_oop = NULL;
+  oop result_oop = nullptr;
   Handle throw_exception;
 
   if (cache_index == _possible_index_sentinel) {
@@ -950,13 +943,13 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
   if (cache_index >= 0) {
     result_oop = this_cp->resolved_reference_at(cache_index);
-    if (result_oop != NULL) {
+    if (result_oop != nullptr) {
       if (result_oop == Universe::the_null_sentinel()) {
         DEBUG_ONLY(int temp_index = (index >= 0 ? index : this_cp->object_to_cp_index(cache_index)));
         assert(this_cp->tag_at(temp_index).is_dynamic_constant(), "only condy uses the null sentinel");
-        result_oop = NULL;
+        result_oop = nullptr;
       }
-      if (status_return != NULL)  (*status_return) = true;
+      if (status_return != nullptr)  (*status_return) = true;
       return result_oop;
       // That was easy...
     }
@@ -967,16 +960,16 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
   constantTag tag = this_cp->tag_at(index);
 
-  if (status_return != NULL) {
+  if (status_return != nullptr) {
     // don't trigger resolution if the constant might need it
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
     {
       CPKlassSlot kslot = this_cp->klass_slot_at(index);
       int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == NULL) {
+      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
         (*status_return) = false;
-        return NULL;
+        return nullptr;
       }
       // the klass is waiting in the CP; go get it
       break;
@@ -990,7 +983,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       break;
     default:
       (*status_return) = false;
-      return NULL;
+      return nullptr;
     }
     // from now on there is either success or an OOME
     (*status_return) = true;
@@ -1036,8 +1029,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       if (!is_reference_type(type)) {
         // Make sure the primitive value is properly boxed.
         // This is a JDK responsibility.
-        const char* fail = NULL;
-        if (result_oop == NULL) {
+        const char* fail = nullptr;
+        if (result_oop == nullptr) {
           fail = "null result instead of box";
         } else if (!is_java_primitive(type)) {
           // FIXME: support value types via unboxing
@@ -1045,7 +1038,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
         } else if (!java_lang_boxing_object::is_instance(result_oop, type)) {
           fail = "primitive is not properly boxed";
         }
-        if (fail != NULL) {
+        if (fail != nullptr) {
           // Since this exception is not a LinkageError, throw exception
           // but do not save a DynamicInError resolution result.
           // See section 5.4.3 of the VM spec.
@@ -1171,7 +1164,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // The important thing here is that all threads pick up the same result.
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
-    oop new_result = (result_oop == NULL ? Universe::the_null_sentinel() : result_oop);
+    oop new_result = (result_oop == nullptr ? Universe::the_null_sentinel() : result_oop);
     oop old_result = this_cp->set_resolved_reference_at(cache_index, new_result);
     if (old_result == nullptr) {
       return result_oop;  // was installed
@@ -1179,7 +1172,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       // Return the winning thread's result.  This can be different than
       // the result here for MethodHandles.
       if (old_result == Universe::the_null_sentinel())
-        old_result = NULL;
+        old_result = nullptr;
       return old_result;
     }
   } else {
@@ -1190,7 +1183,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
 oop ConstantPool::uncached_string_at(int which, TRAPS) {
   Symbol* sym = unresolved_string_at(which);
-  oop str = StringTable::intern(sym, CHECK_(NULL));
+  oop str = StringTable::intern(sym, CHECK_(nullptr));
   assert(java_lang_String::is_instance(str), "must be string");
   return str;
 }
@@ -1236,9 +1229,9 @@ oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, i
   // If the string has already been interned, this entry will be non-null
   oop str = this_cp->resolved_reference_at(obj_index);
   assert(str != Universe::the_null_sentinel(), "");
-  if (str != NULL) return str;
+  if (str != nullptr) return str;
   Symbol* sym = this_cp->unresolved_string_at(which);
-  str = StringTable::intern(sym, CHECK_(NULL));
+  str = StringTable::intern(sym, CHECK_(nullptr));
   this_cp->string_at_put(which, obj_index, str);
   assert(java_lang_String::is_instance(str), "must be string");
   return str;
@@ -1488,7 +1481,7 @@ void ConstantPool::resize_operands(int delta_len, int delta_size, TRAPS) {
                                (min_size - 2*min_len) * sizeof(u2));
   // Explicitly deallocate old operands array.
   // Note, it is not needed for 7u backport.
-  if ( operands() != NULL) { // the safety check
+  if ( operands() != nullptr) { // the safety check
     MetadataFactory::free_array<u2>(loader_data, operands());
   }
   set_operands(new_ops);
@@ -2289,7 +2282,7 @@ void ConstantPool::print_on(outputStream* st) const {
     if (on_stack()) st->print(" on_stack");
     st->cr();
   }
-  if (pool_holder() != NULL) {
+  if (pool_holder() != nullptr) {
     st->print_cr(" - holder: " PTR_FORMAT, p2i(pool_holder()));
   }
   st->print_cr(" - cache: " PTR_FORMAT, p2i(cache()));
@@ -2319,7 +2312,7 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
   switch (tag_at(index).value()) {
     case JVM_CONSTANT_Class :
       { Klass* k = klass_at(index, CATCH);
-        guarantee(k != NULL, "need klass");
+        guarantee(k != nullptr, "need klass");
         k->print_value_on(st);
         st->print(" {" PTR_FORMAT "}", p2i(k));
       }
@@ -2416,15 +2409,15 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (operands() != NULL)  st->print("/operands[%d]", operands()->length());
+  if (operands() != nullptr)  st->print("/operands[%d]", operands()->length());
   print_address_on(st);
-  if (pool_holder() != NULL) {
+  if (pool_holder() != nullptr) {
     st->print(" for ");
     pool_holder()->print_value_on(st);
     bool extra = (pool_holder()->constants() != this);
     if (extra)  st->print(" (extra)");
   }
-  if (cache() != NULL) {
+  if (cache() != nullptr) {
     st->print(" cache=" PTR_FORMAT, p2i(cache()));
   }
 }
@@ -2445,8 +2438,8 @@ void ConstantPool::verify_on(outputStream* st) {
       guarantee(entry->refcount() != 0, "should have nonzero reference count");
     }
   }
-  if (pool_holder() != NULL) {
-    // Note: pool_holder() can be NULL in temporary constant pools
+  if (pool_holder() != nullptr) {
+    // Note: pool_holder() can be null in temporary constant pools
     // used during constant pool merging
     guarantee(pool_holder()->is_klass(),    "should be klass");
   }

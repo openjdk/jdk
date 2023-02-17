@@ -1763,8 +1763,9 @@ void Assembler::cmpl_imm32(Address dst, int32_t imm32) {
 
 void Assembler::cmpw(Address dst, int imm16) {
   InstructionMark im(this);
-  assert(!dst.base_needs_rex() && !dst.index_needs_rex(), "no extended registers");
-  emit_int16(0x66, (unsigned char)0x81);
+  emit_int8(0x66);
+  prefix(dst);
+  emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 2);
   emit_int16(imm16);
 }
@@ -4867,6 +4868,23 @@ void Assembler::evpmovzxbw(XMMRegister dst, KRegister mask, Address src, int vec
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x30);
   emit_operand(dst, src, 0);
+}
+
+void Assembler::evpmovzxbd(XMMRegister dst, KRegister mask, Address src, int vector_len) {
+  assert(VM_Version::supports_avx512vl(), "");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_HVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_is_evex_instruction();
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x31);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::evpmovzxbd(XMMRegister dst, Address src, int vector_len) {
+  evpmovzxbd(dst, k0, src, vector_len);
 }
 
 void Assembler::evpandd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {

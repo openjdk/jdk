@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,8 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
           break;
         }
         result = proj_in->in(TypeFunc::Memory);
+      } else if (proj_in->is_top()) {
+        break; // dead code
       } else {
         assert(false, "unexpected projection");
       }
@@ -4004,9 +4006,11 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
       ins_req(i, C->top());     // build a new edge
   }
   Node* new_st = st->clone();
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   new_st->set_req(MemNode::Control, in(Control));
   new_st->set_req(MemNode::Memory,  prev_mem);
   new_st->set_req(MemNode::Address, make_raw_address(start, phase));
+  bs->eliminate_gc_barrier_data(new_st);
   new_st = phase->transform(new_st);
 
   // At this point, new_st might have swallowed a pre-existing store

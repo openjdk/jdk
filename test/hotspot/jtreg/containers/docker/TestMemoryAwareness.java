@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,23 +35,27 @@
  *          jdk.jartool/sun.tools.jar
  * @build AttemptOOM jdk.test.whitebox.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
- * @run driver TestMemoryAwareness
+ * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestMemoryAwareness
  */
+import java.util.function.Consumer;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import static jdk.test.lib.Asserts.assertNotNull;
 
 public class TestMemoryAwareness {
     private static final String imageName = Common.imageName("memory");
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    private static String getHostMaxMemory() throws Exception {
-        DockerRunOptions opts = Common.newOpts(imageName);
-        String goodMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
-        assertNotNull(goodMem, "no match for 'total physical memory' in trace output");
-        return goodMem;
+    private static String getHostMaxMemory() {
+        return Long.valueOf(wb.hostPhysicalMemory()).toString();
+    }
+
+    private static String getHostSwap() {
+        return Long.valueOf(wb.hostPhysicalSwap()).toString();
     }
 
     public static void main(String[] args) throws Exception {
@@ -71,6 +75,7 @@ public class TestMemoryAwareness {
 
             testMemorySoftLimit("500m", "524288000");
             testMemorySoftLimit("1g", "1073741824");
+            testMemorySwapLimitSanity();
 
             // Add extra 10 Mb to allocator limit, to be sure to cause OOM
             testOOM("256m", 256 + 10);
@@ -92,10 +97,11 @@ public class TestMemoryAwareness {
                 "200M", Integer.toString(((int) Math.pow(2, 20)) * (200 - 100)),
                 true /* additional cgroup fs mounts */
             );
-            final String hostMaxMem = getHostMaxMemory();
-            testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
-            testMetricsIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
-            testContainerMemExceedsPhysical(hostMaxMem);
+            testOSMXBeanIgnoresMemLimitExceedingPhysicalMemory();
+            testOSMXBeanIgnoresSwapLimitExceedingPhysical();
+            testMetricsExceedingPhysicalMemory();
+            testMetricsSwapExceedingPhysical();
+            testContainerMemExceedsPhysical();
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageName);
@@ -122,9 +128,10 @@ public class TestMemoryAwareness {
 
     // JDK-8292083
     // Ensure that Java ignores container memory limit values above the host's physical memory.
-    private static void testContainerMemExceedsPhysical(final String hostMaxMem)
+    private static void testContainerMemExceedsPhysical()
             throws Exception {
         Common.logNewTestCase("container memory limit exceeds physical memory");
+        String hostMaxMem = getHostMaxMemory();
         String badMem = hostMaxMem + "0";
         // set a container memory limit to the bad value
         DockerRunOptions opts = Common.newOpts(imageName)
@@ -145,6 +152,31 @@ public class TestMemoryAwareness {
 
         Common.run(opts)
             .shouldMatch("Memory Soft Limit.*" + expectedTraceValue);
+    }
+
+    /*
+     * This test verifies that no confusingly large positive numbers get printed on
+     * systems with swapaccount=0 kernel option. On some systems -2 were converted
+     * to unsigned long and printed that way. Ensure this oddity doesn't occur.
+     */
+    private static void testMemorySwapLimitSanity() throws Exception {
+        String valueToSet = "500m";
+        String expectedTraceValue = "524288000";
+        Common.logNewTestCase("memory swap sanity: " + valueToSet);
+
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
+        Common.addWhiteBoxOpts(opts);
+        opts.addDockerOpts("--memory=" + valueToSet);
+        opts.addDockerOpts("--memory-swap=" + valueToSet);
+
+        String neg2InUnsignedLong = "18446744073709551614";
+
+        Common.run(opts)
+            .shouldMatch("Memory Limit is:.*" + expectedTraceValue)
+            // Either for cgroup v1: a_1) same as memory limit, or b_1) -2 on systems with swapaccount=0
+            // Either for cgroup v2: a_2) 0, or b_2) -2 on systems with swapaccount=0
+            .shouldMatch("Memory and Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
+            .shouldNotMatch("Memory and Swap Limit is:.*" + neg2InUnsignedLong);
     }
 
 
@@ -180,6 +212,13 @@ public class TestMemoryAwareness {
 
     private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
             String swapAllocation, String expectedSwap, boolean addCgroupMounts) throws Exception {
+        Consumer<OutputAnalyzer> noOp = o -> {};
+        testOperatingSystemMXBeanAwareness(memoryAllocation, expectedMemory, swapAllocation, expectedSwap, false, noOp);
+    }
+
+    private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
+            String swapAllocation, String expectedSwap, boolean addCgroupMounts,
+            Consumer<OutputAnalyzer> additionalMatch) throws Exception {
 
         Common.logNewTestCase("Check OperatingSystemMXBean");
 
@@ -188,6 +227,7 @@ public class TestMemoryAwareness {
                 "--memory", memoryAllocation,
                 "--memory-swap", swapAllocation
             )
+            .addJavaOpts("-esa")
             // CheckOperatingSystemMXBean uses Metrics (jdk.internal.platform) for
             // diagnostics
             .addJavaOpts("--add-exports")
@@ -207,12 +247,17 @@ public class TestMemoryAwareness {
 
         // in case of warnings like : "Your kernel does not support swap limit capabilities
         // or the cgroup is not mounted. Memory limited without swap."
-        // the getTotalSwapSpaceSize and getFreeSwapSpaceSize return the system
-        // values as the container setup isn't supported in that case.
+        // the getTotalSwapSpaceSize either returns the system (or host) values, or 0
+        // if a container memory limit is in place and gets detected. A value of 0 is because,
+        // Metrics.getMemoryLimit() returns the same value as Metrics.getMemoryAndSwapLimit().
+        //
+        // getFreeSwapSpaceSize() are a function of what getTotalSwapSpaceSize() returns. Either
+        // a number > 0, or 0 if getTotalSwapSpaceSize() == 0.
         try {
             out.shouldContain("OperatingSystemMXBean.getTotalSwapSpaceSize: " + expectedSwap);
         } catch(RuntimeException ex) {
-            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: [0-9]+");
+            String hostSwap = getHostSwap();
+            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: (0|" + hostSwap + ")");
         }
 
         try {
@@ -220,21 +265,51 @@ public class TestMemoryAwareness {
         } catch(RuntimeException ex) {
             out.shouldMatch("OperatingSystemMXBean\\.getFreeSwapSpaceSize: 0");
         }
+        additionalMatch.accept(out);
     }
 
-
     // JDK-8292541: Ensure OperatingSystemMXBean ignores container memory limits above the host's physical memory.
-    private static void testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
+    private static void testOSMXBeanIgnoresMemLimitExceedingPhysicalMemory()
             throws Exception {
+        String hostMaxMem = getHostMaxMemory();
         String badMem = hostMaxMem + "0";
         testOperatingSystemMXBeanAwareness(badMem, hostMaxMem, badMem, hostMaxMem);
     }
 
+    private static void testOSMXBeanIgnoresSwapLimitExceedingPhysical()
+            throws Exception {
+        long totalSwap = wb.hostPhysicalSwap() + wb.hostPhysicalMemory();
+        String expectedSwap = Long.valueOf(totalSwap).toString();
+        String hostMaxMem = getHostMaxMemory();
+        String badMem = hostMaxMem + "0";
+        final String badSwap = expectedSwap + "0";
+        testOperatingSystemMXBeanAwareness(badMem, hostMaxMem, badSwap, expectedSwap, false, o -> {
+            o.shouldNotContain("Metrics.getMemoryAndSwapLimit() == " + badSwap);
+        });
+    }
+
+    private static void testMetricsSwapExceedingPhysical()
+            throws Exception {
+        Common.logNewTestCase("Metrics ignore container swap memory limit exceeding physical");
+        long totalSwap = wb.hostPhysicalSwap() + wb.hostPhysicalMemory();
+        String expectedSwap = Long.valueOf(totalSwap).toString();
+        final String badSwap = expectedSwap + "0";
+        String badMem = getHostMaxMemory() + "0";
+        DockerRunOptions opts = Common.newOpts(imageName)
+            .addJavaOpts("-XshowSettings:system")
+            .addDockerOpts("--memory", badMem)
+            .addDockerOpts("--memory-swap", badSwap);
+
+        OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
+        out.shouldContain("Memory Limit: Unlimited");
+        out.shouldContain("Memory & Swap Limit: Unlimited");
+    }
+
     // JDK-8292541: Ensure Metrics ignores container memory limits above the host's physical memory.
-    private static void testMetricsIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
+    private static void testMetricsExceedingPhysicalMemory()
             throws Exception {
         Common.logNewTestCase("Metrics ignore container memory limit exceeding physical memory");
-        String badMem = hostMaxMem + "0";
+        String badMem = getHostMaxMemory() + "0";
         DockerRunOptions opts = Common.newOpts(imageName)
             .addJavaOpts("-XshowSettings:system")
             .addDockerOpts("--memory", badMem);

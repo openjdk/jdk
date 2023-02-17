@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcInitLogger.hpp"
@@ -56,10 +56,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
-PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
-PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = NULL;
-PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
+PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
+PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
+PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
+PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
@@ -283,7 +283,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
   uint gc_count = 0;
   uint gclocker_stalled_count = 0;
 
-  while (result == NULL) {
+  while (result == nullptr) {
     // We don't want to have multiple collections for a single filled generation.
     // To prevent this, each thread tracks the total_collections() value, and if
     // the count has changed, does not do a new collection.
@@ -300,18 +300,18 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       gc_count = total_collections();
 
       result = young_gen()->allocate(size);
-      if (result != NULL) {
+      if (result != nullptr) {
         return result;
       }
 
       // If certain conditions hold, try allocating from the old gen.
       result = mem_allocate_old_gen(size);
-      if (result != NULL) {
+      if (result != nullptr) {
         return result;
       }
 
       if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
-        return NULL;
+        return nullptr;
       }
 
       // Failed to allocate without a gc.
@@ -333,12 +333,12 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
             fatal("Possible deadlock due to allocating while"
                   " in jni critical section");
           }
-          return NULL;
+          return nullptr;
         }
       }
     }
 
-    if (result == NULL) {
+    if (result == nullptr) {
       // Generate a VM operation
       VM_ParallelGCFailedAllocation op(size, gc_count);
       VMThread::execute(&op);
@@ -352,16 +352,16 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         // If GC was locked out during VM operation then retry allocation
         // and/or stall as necessary.
         if (op.gc_locked()) {
-          assert(op.result() == NULL, "must be NULL if gc_locked() is true");
+          assert(op.result() == nullptr, "must be null if gc_locked() is true");
           continue;  // retry and/or stall as necessary
         }
 
         // Exit the loop if the gc time limit has been exceeded.
         // The allocation must have failed above ("result" guarding
-        // this path is NULL) and the most recent collection has exceeded the
+        // this path is null) and the most recent collection has exceeded the
         // gc overhead limit (although enough may have been collected to
         // satisfy the allocation).  Exit the loop so that an out-of-memory
-        // will be thrown (return a NULL ignoring the contents of
+        // will be thrown (return a null ignoring the contents of
         // op.result()),
         // but clear gc_overhead_limit_exceeded so that the next collection
         // starts with a clean slate (i.e., forgets about previous overhead
@@ -373,11 +373,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         if (limit_exceeded && softrefs_clear) {
           *gc_overhead_limit_was_exceeded = true;
           size_policy()->set_gc_overhead_limit_exceeded(false);
-          log_trace(gc)("ParallelScavengeHeap::mem_allocate: return NULL because gc_overhead_limit_exceeded is set");
-          if (op.result() != NULL) {
+          log_trace(gc)("ParallelScavengeHeap::mem_allocate: return null because gc_overhead_limit_exceeded is set");
+          if (op.result() != nullptr) {
             CollectedHeap::fill_with_object(op.result(), size);
           }
-          return NULL;
+          return nullptr;
         }
 
         return op.result();
@@ -387,7 +387,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
     // The policy object will prevent us from looping forever. If the
     // time spent in gc crosses a threshold, we will bail out.
     loop_count++;
-    if ((result == NULL) && (QueuedAllocationWarningCount > 0) &&
+    if ((result == nullptr) && (QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
       log_warning(gc)("\tsize=" SIZE_FORMAT, size);
@@ -405,7 +405,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
 // that young gen allocation attempt.
 void
 ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
-  if (addr != NULL) {
+  if (addr != nullptr) {
     _death_march_count = 0;  // death march has ended
   } else if (_death_march_count == 0) {
     if (should_alloc_in_eden(size)) {
@@ -417,7 +417,7 @@ ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
 HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
   assert_locked_or_safepoint(Heap_lock);
   HeapWord* res = old_gen()->allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _size_policy->tenured_allocation(size * HeapWordSize);
   }
   return res;
@@ -439,7 +439,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
       _death_march_count = 0;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
@@ -471,7 +471,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
 
   // Second level allocation failure.
   //   Mark sweep and allocate in young generation.
-  if (result == NULL && !invoked_full_gc) {
+  if (result == nullptr && !invoked_full_gc) {
     do_full_collection(false);
     result = young_gen()->allocate(size);
   }
@@ -481,20 +481,20 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   // Third level allocation failure.
   //   After mark sweep and young generation allocation failure,
   //   allocate in old generation.
-  if (result == NULL) {
+  if (result == nullptr) {
     result = allocate_old_gen_and_record(size);
   }
 
   // Fourth level allocation failure. We're running out of memory.
   //   More complete mark sweep and allocate in young generation.
-  if (result == NULL) {
+  if (result == nullptr) {
     do_full_collection(true);
     result = young_gen()->allocate(size);
   }
 
   // Fifth level allocation failure.
   //   After more complete mark sweep, allocate in old generation.
-  if (result == NULL) {
+  if (result == nullptr) {
     result = allocate_old_gen_and_record(size);
   }
 
@@ -520,7 +520,7 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   HeapWord* result = young_gen()->allocate(requested_size);
-  if (result != NULL) {
+  if (result != nullptr) {
     *actual_size = requested_size;
   }
 
@@ -628,7 +628,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
     // called from os::print_location by find or VMError
-    if (Debugging || VMError::is_error_reported())  return NULL;
+    if (Debugging || VMError::is_error_reported())  return nullptr;
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
@@ -676,10 +676,10 @@ bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void ParallelScavengeHeap::print_on(outputStream* st) const {
-  if (young_gen() != NULL) {
+  if (young_gen() != nullptr) {
     young_gen()->print_on(st);
   }
-  if (old_gen() != NULL) {
+  if (old_gen() != nullptr) {
     old_gen()->print_on(st);
   }
   MetaspaceUtils::print_on(st);
@@ -859,4 +859,12 @@ GrowableArray<MemoryPool*> ParallelScavengeHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
+}
+
+void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }

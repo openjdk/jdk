@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,8 +124,9 @@ class AutoJavaByteArray {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaByteArray(JNIEnv* env, jbyteArray byteArray, jint releaseMode = JNI_ABORT)
-    : env(env), byteArray(byteArray), releaseMode(releaseMode),
-      bytePtr(env->GetByteArrayElements(byteArray, nullptr)) {
+    : env(env), byteArray(byteArray),
+      bytePtr(env->GetByteArrayElements(byteArray, nullptr)),
+      releaseMode(releaseMode) {
   }
 
   ~AutoJavaByteArray() {
@@ -625,7 +626,7 @@ static bool addThreads(JNIEnv* env, jobject obj) {
     ptrRegs[REG_INDEX(RIP)] = context.Rip;
 #endif
 
-    env->ReleaseLongArrayElements(regs, ptrRegs, JNI_COMMIT);
+    env->ReleaseLongArrayElements(regs, ptrRegs, 0);
     CHECK_EXCEPTION_(false);
 
     env->CallVoidMethod(obj, setThreadIntegerRegisterSet_ID, (jlong)ptrThreadIds[t], regs);

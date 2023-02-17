@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test virtual threads doing blocking I/O on NIO channels
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm BlockingChannelOps
+ * @run junit BlockingChannelOps
  */
 
 /**
@@ -36,7 +36,7 @@
  *    the I/O poller configured to use direct registration
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm -Djdk.useDirectRegister BlockingChannelOps
+ * @run junit/othervm -Djdk.useDirectRegister BlockingChannelOps
  */
 
 /**
@@ -44,7 +44,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */
 
 import java.io.Closeable;
@@ -67,16 +67,16 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BlockingChannelOps {
+class BlockingChannelOps {
 
     /**
      * SocketChannel read/write, no blocking.
      */
     @Test
-    public void testSocketChannelReadWrite1() throws Exception {
+    void testSocketChannelReadWrite1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc1 = connection.channel1();
@@ -100,7 +100,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in SocketChannel read.
      */
     @Test
-    public void testSocketChannelRead() throws Exception {
+    void testSocketChannelRead() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc1 = connection.channel1();
@@ -123,7 +123,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in SocketChannel write.
      */
     @Test
-    public void testSocketChannelWrite() throws Exception {
+    void testSocketChannelWrite() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc1 = connection.channel1();
@@ -151,7 +151,7 @@ public class BlockingChannelOps {
      * SocketChannel close while virtual thread blocked in read.
      */
     @Test
-    public void testSocketChannelReadAsyncClose() throws Exception {
+    void testSocketChannelReadAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
@@ -168,7 +168,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in SocketChannel read.
      */
     @Test
-    public void testSocketChannelReadInterrupt() throws Exception {
+    void testSocketChannelReadInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
@@ -191,7 +191,7 @@ public class BlockingChannelOps {
      * SocketChannel close while virtual thread blocked in write.
      */
     @Test
-    public void testSocketChannelWriteAsyncClose() throws Exception {
+    void testSocketChannelWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             boolean retry = true;
             while (retry) {
@@ -222,7 +222,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in SocketChannel write.
      */
     @Test
-    public void testSocketChannelWriteInterrupt() throws Exception {
+    void testSocketChannelWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             boolean retry = true;
             while (retry) {
@@ -256,7 +256,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in SocketChannel adaptor read.
      */
     @Test
-    public void testSocketAdaptorRead1() throws Exception {
+    void testSocketAdaptorRead1() throws Exception {
         testSocketAdaptorRead(0);
     }
 
@@ -264,7 +264,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in SocketChannel adaptor read with timeout.
      */
     @Test
-    public void testSocketAdaptorRead2() throws Exception {
+    void testSocketAdaptorRead2() throws Exception {
         testSocketAdaptorRead(60_000);
     }
 
@@ -293,7 +293,7 @@ public class BlockingChannelOps {
      * ServerSocketChannel accept, no blocking.
      */
     @Test
-    public void testServerSocketChannelAccept1() throws Exception {
+    void testServerSocketChannelAccept1() throws Exception {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
@@ -310,7 +310,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in ServerSocketChannel accept.
      */
     @Test
-    public void testServerSocketChannelAccept2() throws Exception {
+    void testServerSocketChannelAccept2() throws Exception {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
@@ -331,7 +331,7 @@ public class BlockingChannelOps {
      * SeverSocketChannel close while virtual thread blocked in accept.
      */
     @Test
-    public void testServerSocketChannelAcceptAsyncClose() throws Exception {
+    void testServerSocketChannelAcceptAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -350,7 +350,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in ServerSocketChannel accept.
      */
     @Test
-    public void testServerSocketChannelAcceptInterrupt() throws Exception {
+    void testServerSocketChannelAcceptInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -375,7 +375,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in ServerSocketChannel adaptor accept.
      */
     @Test
-    public void testSocketChannelAdaptorAccept1() throws Exception {
+    void testSocketChannelAdaptorAccept1() throws Exception {
         testSocketChannelAdaptorAccept(0);
     }
 
@@ -383,7 +383,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in ServerSocketChannel adaptor accept with timeout.
      */
     @Test
-    public void testSocketChannelAdaptorAccept2() throws Exception {
+    void testSocketChannelAdaptorAccept2() throws Exception {
         testSocketChannelAdaptorAccept(60_000);
     }
 
@@ -410,7 +410,7 @@ public class BlockingChannelOps {
      * DatagramChannel receive/send, no blocking.
      */
     @Test
-    public void testDatagramChannelSendReceive1() throws Exception {
+    void testDatagramChannelSendReceive1() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc1 = DatagramChannel.open();
                  DatagramChannel dc2 = DatagramChannel.open()) {
@@ -435,7 +435,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in DatagramChannel receive.
      */
     @Test
-    public void testDatagramChannelSendReceive2() throws Exception {
+    void testDatagramChannelSendReceive2() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc1 = DatagramChannel.open();
                  DatagramChannel dc2 = DatagramChannel.open()) {
@@ -459,7 +459,7 @@ public class BlockingChannelOps {
      * DatagramChannel close while virtual thread blocked in receive.
      */
     @Test
-    public void testDatagramChannelReceiveAsyncClose() throws Exception {
+    void testDatagramChannelReceiveAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -477,7 +477,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in DatagramChannel receive.
      */
     @Test
-    public void testDatagramChannelReceiveInterrupt() throws Exception {
+    void testDatagramChannelReceiveInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -501,7 +501,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in DatagramSocket adaptor receive.
      */
     @Test
-    public void testDatagramSocketAdaptorReceive1() throws Exception {
+    void testDatagramSocketAdaptorReceive1() throws Exception {
         testDatagramSocketAdaptorReceive(0);
     }
 
@@ -509,7 +509,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in DatagramSocket adaptor receive with timeout.
      */
     @Test
-    public void testDatagramSocketAdaptorReceive2() throws Exception {
+    void testDatagramSocketAdaptorReceive2() throws Exception {
         testDatagramSocketAdaptorReceive(60_1000);
     }
 
@@ -540,7 +540,7 @@ public class BlockingChannelOps {
      * DatagramChannel close while virtual thread blocked in adaptor receive.
      */
     @Test
-    public void testDatagramSocketAdaptorReceiveAsyncClose1() throws Exception {
+    void testDatagramSocketAdaptorReceiveAsyncClose1() throws Exception {
         testDatagramSocketAdaptorReceiveAsyncClose(0);
     }
 
@@ -549,7 +549,7 @@ public class BlockingChannelOps {
      * with timeout.
      */
     @Test
-    public void testDatagramSocketAdaptorReceiveAsyncClose2() throws Exception {
+    void testDatagramSocketAdaptorReceiveAsyncClose2() throws Exception {
         testDatagramSocketAdaptorReceiveAsyncClose(60_1000);
     }
 
@@ -576,7 +576,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in DatagramSocket adaptor receive.
      */
     @Test
-    public void testDatagramSocketAdaptorReceiveInterrupt1() throws Exception {
+    void testDatagramSocketAdaptorReceiveInterrupt1() throws Exception {
         testDatagramSocketAdaptorReceiveInterrupt(0);
     }
 
@@ -585,7 +585,7 @@ public class BlockingChannelOps {
      * with timeout.
      */
     @Test
-    public void testDatagramSocketAdaptorReceiveInterrupt2() throws Exception {
+    void testDatagramSocketAdaptorReceiveInterrupt2() throws Exception {
         testDatagramSocketAdaptorReceiveInterrupt(60_1000);
     }
 
@@ -618,7 +618,7 @@ public class BlockingChannelOps {
      * Pipe read/write, no blocking.
      */
     @Test
-    public void testPipeReadWrite1() throws Exception {
+    void testPipeReadWrite1() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
@@ -642,7 +642,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in Pipe.SourceChannel read.
      */
     @Test
-    public void testPipeReadWrite2() throws Exception {
+    void testPipeReadWrite2() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
@@ -665,7 +665,7 @@ public class BlockingChannelOps {
      * Virtual thread blocks in Pipe.SinkChannel write.
      */
     @Test
-    public void testPipeReadWrite3() throws Exception {
+    void testPipeReadWrite3() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
@@ -693,7 +693,7 @@ public class BlockingChannelOps {
      * Pipe.SourceChannel close while virtual thread blocked in read.
      */
     @Test
-    public void testPipeReadAsyncClose() throws Exception {
+    void testPipeReadAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
@@ -711,7 +711,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in Pipe.SourceChannel read.
      */
     @Test
-    public void testPipeReadInterrupt() throws Exception {
+    void testPipeReadInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
@@ -735,7 +735,7 @@ public class BlockingChannelOps {
      * Pipe.SinkChannel close while virtual thread blocked in write.
      */
     @Test
-    public void testPipeWriteAsyncClose() throws Exception {
+    void testPipeWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             boolean retry = true;
             while (retry) {
@@ -767,7 +767,7 @@ public class BlockingChannelOps {
      * Virtual thread interrupted while blocked in Pipe.SinkChannel write.
      */
     @Test
-    public void testPipeWriteInterrupt() throws Exception {
+    void testPipeWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             boolean retry = true;
             while (retry) {

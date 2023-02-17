@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     movptr(_locals_register, Address(rbp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(_locals_register, Address(rbp, _locals_register, Address::times_ptr));
   }
 
   // Helpers for runtime call arguments/results

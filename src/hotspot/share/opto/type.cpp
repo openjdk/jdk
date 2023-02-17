@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -786,9 +786,155 @@ bool Type::is_nan()    const {
   return false;
 }
 
-void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  const Type* mt2 = t->xmeet(this);
+class VerifyMeet;
+class VerifyMeetResult : public ArenaObj {
+  friend class VerifyMeet;
+  friend class Type;
+private:
+  class VerifyMeetResultEntry {
+  private:
+    const Type* _in1;
+    const Type* _in2;
+    const Type* _res;
+  public:
+    VerifyMeetResultEntry(const Type* in1, const Type* in2, const Type* res):
+            _in1(in1), _in2(in2), _res(res) {
+    }
+    VerifyMeetResultEntry():
+            _in1(NULL), _in2(NULL), _res(NULL) {
+    }
+
+    bool operator==(const VerifyMeetResultEntry& rhs) const {
+      return _in1 == rhs._in1 &&
+             _in2 == rhs._in2 &&
+             _res == rhs._res;
+    }
+
+    bool operator!=(const VerifyMeetResultEntry& rhs) const {
+      return !(rhs == *this);
+    }
+
+    static int compare(const VerifyMeetResultEntry& v1, const VerifyMeetResultEntry& v2) {
+      if ((intptr_t) v1._in1 < (intptr_t) v2._in1) {
+        return -1;
+      } else if (v1._in1 == v2._in1) {
+        if ((intptr_t) v1._in2 < (intptr_t) v2._in2) {
+          return -1;
+        } else if (v1._in2 == v2._in2) {
+          assert(v1._res == v2._res || v1._res == NULL || v2._res == NULL, "same inputs should lead to same result");
+          return 0;
+        }
+        return 1;
+      }
+      return 1;
+    }
+    const Type* res() const { return _res; }
+  };
+  uint _depth;
+  GrowableArray<VerifyMeetResultEntry> _cache;
+
+  // With verification code, the meet of A and B causes the computation of:
+  // 1- meet(A, B)
+  // 2- meet(B, A)
+  // 3- meet(dual(meet(A, B)), dual(A))
+  // 4- meet(dual(meet(A, B)), dual(B))
+  // 5- meet(dual(A), dual(B))
+  // 6- meet(dual(B), dual(A))
+  // 7- meet(dual(meet(dual(A), dual(B))), A)
+  // 8- meet(dual(meet(dual(A), dual(B))), B)
+  //
+  // In addition the meet of A[] and B[] requires the computation of the meet of A and B.
+  //
+  // The meet of A[] and B[] triggers the computation of:
+  // 1- meet(A[], B[][)
+  //   1.1- meet(A, B)
+  //   1.2- meet(B, A)
+  //   1.3- meet(dual(meet(A, B)), dual(A))
+  //   1.4- meet(dual(meet(A, B)), dual(B))
+  //   1.5- meet(dual(A), dual(B))
+  //   1.6- meet(dual(B), dual(A))
+  //   1.7- meet(dual(meet(dual(A), dual(B))), A)
+  //   1.8- meet(dual(meet(dual(A), dual(B))), B)
+  // 2- meet(B[], A[])
+  //   2.1- meet(B, A) = 1.2
+  //   2.2- meet(A, B) = 1.1
+  //   2.3- meet(dual(meet(B, A)), dual(B)) = 1.4
+  //   2.4- meet(dual(meet(B, A)), dual(A)) = 1.3
+  //   2.5- meet(dual(B), dual(A)) = 1.6
+  //   2.6- meet(dual(A), dual(B)) = 1.5
+  //   2.7- meet(dual(meet(dual(B), dual(A))), B) = 1.8
+  //   2.8- meet(dual(meet(dual(B), dual(A))), B) = 1.7
+  // etc.
+  // The number of meet operations performed grows exponentially with the number of dimensions of the arrays but the number
+  // of different meet operations is linear in the number of dimensions. The function below caches meet results for the
+  // duration of the meet at the root of the recursive calls.
+  //
+  const Type* meet(const Type* t1, const Type* t2) {
+    bool found = false;
+    const VerifyMeetResultEntry meet(t1, t2, NULL);
+    int pos = _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+    const Type* res = NULL;
+    if (found) {
+      res = _cache.at(pos).res();
+    } else {
+      res = t1->xmeet(t2);
+      _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+      found = false;
+      _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+      assert(found, "should be in table after it's added");
+    }
+    return res;
+  }
+
+  void add(const Type* t1, const Type* t2, const Type* res) {
+    _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+  }
+
+  bool empty_cache() const {
+    return _cache.length() == 0;
+  }
+public:
+  VerifyMeetResult(Compile* C) :
+          _depth(0), _cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
+  }
+};
+
+void Type::assert_type_verify_empty() const {
+  assert(Compile::current()->_type_verify == NULL || Compile::current()->_type_verify->empty_cache(), "cache should have been discarded");
+}
+
+class VerifyMeet {
+private:
+  Compile* _C;
+public:
+  VerifyMeet(Compile* C) : _C(C) {
+    if (C->_type_verify == NULL) {
+      C->_type_verify = new (C->comp_arena())VerifyMeetResult(C);
+    }
+    _C->_type_verify->_depth++;
+  }
+
+  ~VerifyMeet() {
+    assert(_C->_type_verify->_depth != 0, "");
+    _C->_type_verify->_depth--;
+    if (_C->_type_verify->_depth == 0) {
+      _C->_type_verify->_cache.trunc_to(0);
+    }
+  }
+
+  const Type* meet(const Type* t1, const Type* t2) const {
+    return _C->_type_verify->meet(t1, t2);
+  }
+
+  void add(const Type* t1, const Type* t2, const Type* res) const {
+    _C->_type_verify->add(t1, t2, res);
+  }
+};
+
+void Type::check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& verify) const {
+  Compile* C = Compile::current();
+  const Type* mt2 = verify.meet(t, this);
   if (mt != mt2) {
     tty->print_cr("=== Meet Not Commutative ===");
     tty->print("t           = ");   t->dump(); tty->cr();
@@ -798,8 +944,8 @@ void Type::check_symmetrical(const Type* t, const Type* mt) const {
     fatal("meet not commutative");
   }
   const Type* dual_join = mt->_dual;
-  const Type* t2t    = dual_join->xmeet(t->_dual);
-  const Type* t2this = dual_join->xmeet(this->_dual);
+  const Type* t2t    = verify.meet(dual_join,t->_dual);
+  const Type* t2this = verify.meet(dual_join,this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
@@ -820,8 +966,8 @@ void Type::check_symmetrical(const Type* t, const Type* mt) const {
 
     fatal("meet not symmetric");
   }
-#endif
 }
+#endif
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
@@ -836,32 +982,26 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
     return result->make_narrowklass();
   }
 
+#ifdef ASSERT
+  Compile* C = Compile::current();
+  VerifyMeet verify(C);
+#endif
+
   const Type *this_t = maybe_remove_speculative(include_speculative);
   t = t->maybe_remove_speculative(include_speculative);
 
   const Type *mt = this_t->xmeet(t);
 #ifdef ASSERT
-  if (isa_narrowoop() || t->isa_narrowoop()) return mt;
-  if (isa_narrowklass() || t->isa_narrowklass()) return mt;
-  Compile* C = Compile::current();
-  if (!C->_type_verify_symmetry) {
+  verify.add(this_t, t, mt);
+  if (isa_narrowoop() || t->isa_narrowoop()) {
     return mt;
   }
-  this_t->check_symmetrical(t, mt);
-  // In the case of an array, computing the meet above, caused the
-  // computation of the meet of the elements which at verification
-  // time caused the computation of the meet of the dual of the
-  // elements. Computing the meet of the dual of the arrays here
-  // causes the meet of the dual of the elements to be computed which
-  // would cause the meet of the dual of the dual of the elements,
-  // that is the meet of the elements already computed above to be
-  // computed. Avoid redundant computations by requesting no
-  // verification.
-  C->_type_verify_symmetry = false;
-  const Type *mt_dual = this_t->_dual->xmeet(t->_dual);
-  this_t->_dual->check_symmetrical(t->_dual, mt_dual);
-  assert(!C->_type_verify_symmetry, "shouldn't have changed");
-  C->_type_verify_symmetry = true;
+  if (isa_narrowklass() || t->isa_narrowklass()) {
+    return mt;
+  }
+  this_t->check_symmetrical(t, mt, verify);
+  const Type *mt_dual = verify.meet(this_t->_dual, t->_dual);
+  this_t->_dual->check_symmetrical(t->_dual, mt_dual, verify);
 #endif
   return mt;
 }
@@ -1637,17 +1777,17 @@ bool TypeInt::is_finite() const {
 //------------------------------dump2------------------------------------------
 // Dump TypeInt
 #ifndef PRODUCT
-static const char* intname(char* buf, jint n) {
+static const char* intname(char* buf, size_t buf_size, jint n) {
   if (n == min_jint)
     return "min";
   else if (n < min_jint + 10000)
-    sprintf(buf, "min+" INT32_FORMAT, n - min_jint);
+    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
   else if (n == max_jint)
     return "max";
   else if (n > max_jint - 10000)
-    sprintf(buf, "max-" INT32_FORMAT, max_jint - n);
+    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
   else
-    sprintf(buf, INT32_FORMAT, n);
+    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
   return buf;
 }
 
@@ -1656,7 +1796,7 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_lo == min_jint && _hi == max_jint)
     st->print("int");
   else if (is_con())
-    st->print("int:%s", intname(buf, get_con()));
+    st->print("int:%s", intname(buf, sizeof(buf), get_con()));
   else if (_lo == BOOL->_lo && _hi == BOOL->_hi)
     st->print("bool");
   else if (_lo == BYTE->_lo && _hi == BYTE->_hi)
@@ -1666,11 +1806,11 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   else if (_lo == SHORT->_lo && _hi == SHORT->_hi)
     st->print("short");
   else if (_hi == max_jint)
-    st->print("int:>=%s", intname(buf, _lo));
+    st->print("int:>=%s", intname(buf, sizeof(buf), _lo));
   else if (_lo == min_jint)
-    st->print("int:<=%s", intname(buf, _hi));
+    st->print("int:<=%s", intname(buf, sizeof(buf), _hi));
   else
-    st->print("int:%s..%s", intname(buf, _lo), intname(buf2, _hi));
+    st->print("int:%s..%s", intname(buf, sizeof(buf), _lo), intname(buf2, sizeof(buf2), _hi));
 
   if (_widen != 0 && this != TypeInt::INT)
     st->print(":%.*s", _widen, "wwww");
@@ -1903,37 +2043,37 @@ bool TypeLong::is_finite() const {
 //------------------------------dump2------------------------------------------
 // Dump TypeLong
 #ifndef PRODUCT
-static const char* longnamenear(jlong x, const char* xname, char* buf, jlong n) {
+static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
   if (n > x) {
     if (n >= x + 10000)  return NULL;
-    sprintf(buf, "%s+" JLONG_FORMAT, xname, n - x);
+    os::snprintf_checked(buf, buf_size, "%s+" JLONG_FORMAT, xname, n - x);
   } else if (n < x) {
     if (n <= x - 10000)  return NULL;
-    sprintf(buf, "%s-" JLONG_FORMAT, xname, x - n);
+    os::snprintf_checked(buf, buf_size, "%s-" JLONG_FORMAT, xname, x - n);
   } else {
     return xname;
   }
   return buf;
 }
 
-static const char* longname(char* buf, jlong n) {
+static const char* longname(char* buf, size_t buf_size, jlong n) {
   const char* str;
   if (n == min_jlong)
     return "min";
   else if (n < min_jlong + 10000)
-    sprintf(buf, "min+" JLONG_FORMAT, n - min_jlong);
+    os::snprintf_checked(buf, buf_size, "min+" JLONG_FORMAT, n - min_jlong);
   else if (n == max_jlong)
     return "max";
   else if (n > max_jlong - 10000)
-    sprintf(buf, "max-" JLONG_FORMAT, max_jlong - n);
-  else if ((str = longnamenear(max_juint, "maxuint", buf, n)) != NULL)
+    os::snprintf_checked(buf, buf_size, "max-" JLONG_FORMAT, max_jlong - n);
+  else if ((str = longnamenear(max_juint, "maxuint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(max_jint, "maxint", buf, n)) != NULL)
+  else if ((str = longnamenear(max_jint, "maxint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(min_jint, "minint", buf, n)) != NULL)
+  else if ((str = longnamenear(min_jint, "minint", buf, buf_size, n)) != NULL)
     return str;
   else
-    sprintf(buf, JLONG_FORMAT, n);
+    os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
   return buf;
 }
 
@@ -1942,13 +2082,13 @@ void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_lo == min_jlong && _hi == max_jlong)
     st->print("long");
   else if (is_con())
-    st->print("long:%s", longname(buf, get_con()));
+    st->print("long:%s", longname(buf, sizeof(buf), get_con()));
   else if (_hi == max_jlong)
-    st->print("long:>=%s", longname(buf, _lo));
+    st->print("long:>=%s", longname(buf, sizeof(buf), _lo));
   else if (_lo == min_jlong)
-    st->print("long:<=%s", longname(buf, _hi));
+    st->print("long:<=%s", longname(buf, sizeof(buf), _hi));
   else
-    st->print("long:%s..%s", longname(buf, _lo), longname(buf2, _hi));
+    st->print("long:%s..%s", longname(buf, sizeof(buf), _lo), longname(buf2,sizeof(buf2),  _hi));
 
   if (_widen != 0 && this != TypeLong::LONG)
     st->print(":%.*s", _widen, "wwww");
@@ -3370,7 +3510,6 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
                              _offset != arrayOopDesc::length_offset_in_bytes());
     } else if (klass()->is_instance_klass()) {
       ciInstanceKlass* ik = klass()->as_instance_klass();
-      ciField* field = NULL;
       if (this->isa_klassptr()) {
         // Perm objects don't use compressed references
       } else if (_offset == OffsetBot || _offset == OffsetTop) {
@@ -3402,7 +3541,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
           }
         } else {
           // Instance fields which contains a compressed oop references.
-          field = ik->get_field_by_offset(_offset, false);
+          ciField* field = ik->get_field_by_offset(_offset, false);
           if (field != NULL) {
             BasicType basic_elem_type = field->layout_type();
             _is_ptr_to_narrowoop = UseCompressedOops && ::is_reference_type(basic_elem_type);
@@ -3578,7 +3717,7 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     ciKlass* eklass = klass->as_obj_array_klass()->element_klass();
-    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, try_for_exact, false, interface_handling);
+    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, false, try_for_exact, interface_handling);
     bool xk = etype->klass_is_exact();
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
     // We used to pass NotNull in here, asserting that the sub-arrays
