@@ -11,6 +11,7 @@ removeInputs("name", "AllocateArray", 9);
 var anyNode = new Properties.RegexpPropertyMatcher("name", ".*");
 var f = new CombineFilter("Combine Filter");
 f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "Proj|IfFalse|IfTrue|JProj|MachProj|JumpProj|CatchProj|Parm")));
+f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "SCMemProj"), false, "SCM"));
 f.addRule(new CombineFilter.CombineRule(new Properties.RegexpPropertyMatcher("name", "Cmp.*"), new Properties.RegexpPropertyMatcher("name", "Bool"), false, "[short_name]", "[dump_spec]"));
 f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "Decode(N|NarrowPtr|NKlass)"), false, "DC"));
 f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "Conv[LFD]2I"), false, "2I"));
