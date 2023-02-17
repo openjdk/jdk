@@ -143,17 +143,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                : myBsmEntries[index - parentBsmSize];
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends PoolEntry> T maybeClone(T entry) {
-        return canWriteDirect(entry.constantPool())
-               ? entry
-               : (T) entry.clone(this);
-    }
-
-    @Override
-    public <T> T optionValue(Classfile.Option.Key option) {
-        return options.value(option);
+    public Options options() {
+        return options;
     }
 
     @Override
@@ -202,7 +193,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int i = writeFrom; i < entryCount(); ) {
             PoolEntry info = entryByIndex(i);
             info.writeTo(buf);
-            i += info.poolEntries();
+            i += info.width();
         }
     }
 
@@ -228,7 +219,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             for (int i = Math.max(parentSize, 1); i < size; ) {
                 PoolEntry cpi = myEntries[i - parentSize];
                 map.put(cpi.hashCode(), cpi.index());
-                i += cpi.poolEntries();
+                i += cpi.width();
             }
         }
         return map;
@@ -238,7 +229,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int i=1; i<parentSize;) {
             PoolEntry cpi = parent.entryByIndex(i);
             map.put(cpi.hashCode(), cpi.index());
-            i += cpi.poolEntries();
+            i += cpi.width();
         }
         doneFullScan = true;
     }
@@ -273,7 +264,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             myEntries = Arrays.copyOf(myEntries, 2 * newIndex, PoolEntry[].class);
         }
         myEntries[newIndex] = cpi;
-        size += cpi.poolEntries();
+        size += cpi.width();
         map().put(hash, cpi.index());
         return cpi;
     }
@@ -592,7 +583,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 // copy args list
                 LoadableConstantEntry[] arr = arguments.toArray(new LoadableConstantEntry[0]);
                 for (int i = 0; i < arr.length; i++)
-                    arr[i] = (LoadableConstantEntry) arr[i].clone(this);
+                    arr[i] = ConcreteEntry.maybeClone(this, arr[i]);
                 arguments = List.of(arr);
 
                 break;

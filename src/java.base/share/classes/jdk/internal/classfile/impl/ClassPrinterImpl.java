@@ -637,7 +637,7 @@ public final class ClassPrinterImpl {
                                 "value", String.valueOf(ve.constantValue())
                             );
                         }));
-                i += e.poolEntries();
+                i += e.width();
             }
             return new Node[]{cpNode};
         } else {
@@ -847,12 +847,10 @@ public final class ClassPrinterImpl {
                         var mh = bm.bootstrapMethod();
                         var mref = mh.reference();
                         return map("bm",
-                                "kind", DirectMethodHandleDesc.Kind.valueOf(mh.kind(), mref.isInterface()).name(),
+                                "kind", DirectMethodHandleDesc.Kind.valueOf(mh.kind(), mref instanceof InterfaceMethodRefEntry).name(),
                                 "owner", mref.owner().name().stringValue(),
                                 "name", mref.nameAndType().name().stringValue(),
-                                "type", mref.nameAndType().type().stringValue(),
-                                "is interface", String.valueOf(mref.isInterface()),
-                                "is method", String.valueOf(mref.isMethod()));
+                                "type", mref.nameAndType().type().stringValue());
                     })));
                 case ConstantValueAttribute cva ->
                     nodes.add(leaf("constant value", cva.constant().constantValue()));

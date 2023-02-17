@@ -63,11 +63,6 @@ public interface AttributeMapper<A> {
     void writeAttribute(BufWriter buf, A attr);
 
     /**
-     * Indicates in what places in the classfile this attribute can appear.
-     */
-    Set<AttributedElement.Kind> whereApplicable();
-
-    /**
      * {@return The earliest classfile version for which this attribute is
      * applicable}
      */

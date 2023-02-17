@@ -87,6 +87,17 @@ public abstract sealed class ConcreteEntry {
         return h ^ (h >> 16);
     }
 
+    public static Utf8Entry rawUtf8EntryFromStandardAttributeName(String name) {
+        //assuming standard attribute names are all US_ASCII
+        var raw = name.getBytes(StandardCharsets.US_ASCII);
+        return new ConcreteUtf8Entry(null, 0, raw, 0, raw.length);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends PoolEntry> T maybeClone(ConstantPoolBuilder cp, T entry) {
+        return (T)((ConcreteEntry)entry).clone(cp);
+    }
+
     final ConstantPool constantPool;
     public final byte tag;
     private final int index;
@@ -111,9 +122,11 @@ public abstract sealed class ConcreteEntry {
         return tag;
     }
 
-    public int poolEntries() {
+    public int width() {
         return (tag == Classfile.TAG_LONG || tag == Classfile.TAG_DOUBLE) ? 2 : 1;
     }
+
+    abstract PoolEntry clone(ConstantPoolBuilder cp);
 
     public static final class ConcreteUtf8Entry extends ConcreteEntry implements Utf8Entry {
         // Processing UTF8 from the constant pool is one of the more expensive
@@ -173,7 +186,7 @@ public abstract sealed class ConcreteEntry {
         }
 
         /**
-         * JVMS 4.4.7. String content is encoded in modified UTF-8.
+         * {@jvms 4.4.7} String content is encoded in modified UTF-8.
          *
          * Modified UTF-8 strings are encoded so that code point sequences that
          * contain only non-null ASCII characters can be represented using only 1
@@ -701,16 +714,6 @@ public abstract sealed class ConcreteEntry {
         public FieldRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.fieldRefEntry(ref1, ref2);
         }
-
-        @Override
-        public boolean isMethod() {
-            return false;
-        }
-
-        @Override
-        public boolean isInterface() {
-            return false;
-        }
     }
 
     public static final class ConcreteMethodRefEntry extends MemberRefEntry implements MethodRefEntry {
@@ -724,16 +727,6 @@ public abstract sealed class ConcreteEntry {
         public MethodRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.methodRefEntry(ref1, ref2);
         }
-
-        @Override
-        public boolean isInterface() {
-            return false;
-        }
-
-        @Override
-        public boolean isMethod() {
-            return true;
-        }
     }
 
     public static final class ConcreteInterfaceMethodRefEntry extends MemberRefEntry implements InterfaceMethodRefEntry {
@@ -746,16 +739,6 @@ public abstract sealed class ConcreteEntry {
         @Override
         public InterfaceMethodRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.interfaceMethodRefEntry(ref1, ref2);
-        }
-
-        @Override
-        public boolean isInterface() {
-            return true;
-        }
-
-        @Override
-        public boolean isMethod() {
-            return true;
         }
     }
 
@@ -913,7 +896,7 @@ public abstract sealed class ConcreteEntry {
         @Override
         public DirectMethodHandleDesc asSymbol() {
             return MethodHandleDesc.of(
-                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference().isInterface()),
+                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).owner().asSymbol(),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).nameAndType().name().stringValue(),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).nameAndType().type().stringValue());

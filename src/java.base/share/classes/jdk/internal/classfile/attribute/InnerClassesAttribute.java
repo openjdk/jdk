@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code InnerClasses} attribute (JVMS 4.7.6), which can
+ * Models the {@code InnerClasses} attribute {@jvms 4.7.6}, which can
  * appear on classes, and records which classes referenced by this classfile
  * are inner classes. Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.

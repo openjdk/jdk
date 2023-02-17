@@ -64,17 +64,17 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return a new constant pool builder}  The new constant pool builder
      * will inherit the classfile processing options of the specified class.
-     * If the processing options include {@link Classfile.Option.Key#CP_SHARING},
+     * If the processing options include {@link Classfile.Option#constantPoolSharing(boolean)},
      * (the default) the new constant pool builder will be also be pre-populated with the
      * contents of the constant pool associated with the class reader.
      *
      * @param classModel the class to copy from
      */
     static ConstantPoolBuilder of(ClassModel classModel) {
-        ClassReader reader = (ClassReader) classModel.constantPool();
-        return reader.optionValue(Classfile.Option.Key.CP_SHARING)
+        ClassReaderImpl reader = (ClassReaderImpl) classModel.constantPool();
+        return reader.options().cpSharing
           ? new SplitConstantPool(reader)
-          : new SplitConstantPool(((ClassReaderImpl) reader).options());
+          : new SplitConstantPool(reader.options());
     }
 
     /**
@@ -83,20 +83,25 @@ public sealed interface ConstantPoolBuilder
      *
      * @param options the processing options
      */
-    static ConstantPoolBuilder of(Collection<Classfile.Option<?>> options) {
+    static ConstantPoolBuilder of(Collection<Classfile.Option> options) {
         return new SplitConstantPool(new Options(options));
     }
 
     /**
-     * {@return the value of the specified option}
+     * {@return whether the provided constant pool is index-compatible with this
+     * one}  This may be because they are the same constant pool, or because this
+     * constant pool was copied from the other.
      *
-     * @param option the key of the option value
-     * @param <T> the type of the option value
+     * @param constantPool the other constant pool
      */
-    <T> T optionValue(Classfile.Option.Key option);
-
     boolean canWriteDirect(ConstantPool constantPool);
 
+    /**
+     * Writes associated bootstrap method entries to the specified writer
+     *
+     * @param buf the writer
+     * @return false when no bootstrap method entry has been written
+     */
     boolean writeBootstrapMethods(BufWriter buf);
 
     /**
@@ -184,7 +189,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module whose name
      * is encoded in the provided {@linkplain Utf8Entry}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
@@ -195,7 +200,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module described by
      * provided {@linkplain ModuleDesc}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
@@ -361,7 +366,7 @@ public sealed interface ConstantPoolBuilder
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
-     * @param refKind the reference kind of the method handle (JVMS  4.4.8)
+     * @param refKind the reference kind of the method handle {@jvms 4.4.8}
      * @param reference the constant pool entry describing the field or method
      */
     MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference);
@@ -524,17 +529,6 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return utf8Entry(mtd);
         throw new IllegalArgumentException("Illegal type: " + c.getClass());
     }
-
-    /**
-     * {@return a constant pool entry describing the same constant as the provided
-     * entry}  If the entry already corresponds to a constant in this constant
-     * pool, it is returned, otherwise the contents are copied to this
-     * constant pool.
-     *
-     * @param entry the entry
-     * @param <T> the type of the entry
-     */
-    <T extends PoolEntry> T maybeClone(T entry);
 
     /**
      * {@return a {@link BootstrapMethodEntry} describing the provided

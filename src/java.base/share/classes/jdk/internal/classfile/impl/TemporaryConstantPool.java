@@ -55,7 +55,6 @@ import java.util.List;
 import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
-    private static final Options options = new Options(Collections.emptyList());
 
     private TemporaryConstantPool() {};
 
@@ -160,11 +159,6 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public <T extends PoolEntry> T maybeClone(T entry) {
-        return entry;
-    }
-
-    @Override
     public BootstrapMethodEntry bsmEntry(MethodHandleEntry methodReference, List<LoadableConstantEntry> arguments) {
         throw new UnsupportedOperationException();
     }
@@ -187,11 +181,6 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     @Override
     public int bootstrapMethodCount() {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T optionValue(Classfile.Option.Key option) {
-        return options.value(option);
     }
 
     @Override

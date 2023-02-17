@@ -41,7 +41,7 @@ public sealed interface ModuleDesc
      * Returns a {@linkplain ModuleDesc} for a module,
      * given the name of the module.
      * <p>
-     * JVMS: 4.2.3. Module names are not encoded in "internal form" like class and interface names, that is,
+     * {@jvms 4.2.3} Module names are not encoded in "internal form" like class and interface names, that is,
      * the ASCII periods (.) that separate the identifiers in a module name are not replaced by ASCII forward slashes (/).
      * <p>
      * Module names may be drawn from the entire Unicode codespace, subject to the following constraints:

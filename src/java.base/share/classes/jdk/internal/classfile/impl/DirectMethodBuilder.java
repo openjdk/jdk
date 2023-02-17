@@ -32,7 +32,6 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.MethodBuilder;
 import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
@@ -48,7 +47,7 @@ public final class DirectMethodBuilder
     int flags;
     int[] parameterSlots;
 
-    public DirectMethodBuilder(ConstantPoolBuilder constantPool,
+    public DirectMethodBuilder(SplitConstantPool constantPool,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,

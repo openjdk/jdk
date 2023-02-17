@@ -63,10 +63,10 @@ public sealed interface ClassEntry
     ClassDesc asSymbol();
 
     /**
-     * Return a List composed by appending the additions to the base list.
+     * Return a {@link List} composed by appending the additions to the base list.
      * @param base The base elements for the list, must not include null
-     * @param additions The ClassEntrys to add to the list, must not include null
-     * @return the combined List
+     * @param additions The {@link ClassEntry} instances to add to the list, must not include null
+     * @return the combined {@link List}
      */
     static List<ClassEntry> adding(List<ClassEntry> base, List<ClassEntry> additions) {
         ArrayList<ClassEntry> members = new ArrayList<>(base);
@@ -75,10 +75,10 @@ public sealed interface ClassEntry
     }
 
     /**
-     * Return a List composed by appending the additions to the base list.
+     * Return a {@link List} composed by appending the additions to the base list.
      * @param base The base elements for the list, must not include null
-     * @param additions The ClassEntrys to add to the list, must not include null
-     * @return the combined List
+     * @param additions The {@link ClassEntry} instances to add to the list, must not include null
+     * @return the combined {@link List}
      */
     static List<ClassEntry> adding(List<ClassEntry> base, ClassEntry... additions) {
         ArrayList<ClassEntry> members = new ArrayList<>(base);
@@ -89,10 +89,10 @@ public sealed interface ClassEntry
     }
 
     /**
-     * Return a List composed by appending the additions to the base list.
+     * Return a {@link List} composed by appending the additions to the base list.
      * @param base The base elements for the list, must not include null
-     * @param additions The ClassDescs to add to the list, must not include null
-     * @return the combined List
+     * @param additions The {@link ClassDesc} instances to add to the list, must not include null
+     * @return the combined {@link List}
      */
     static List<ClassEntry> addingSymbols(List<ClassEntry> base, List<ClassDesc> additions) {
         ArrayList<ClassEntry> members = new ArrayList<>(base);
@@ -101,10 +101,10 @@ public sealed interface ClassEntry
     }
 
       /**
-     * Return a List composed by appending the additions to the base list.
+     * Return a {@link List} composed by appending the additions to the base list.
      * @param base The base elements for the list, must not include null
-     * @param additions The ClassDescs to add to the list, must not include null
-     * @return the combined List
+     * @param additions The {@link ClassDesc} instances to add to the list, must not include null
+     * @return the combined {@link List}
      */
     static List<ClassEntry> addingSymbols(List<ClassEntry> base, ClassDesc...additions) {
         ArrayList<ClassEntry> members = new ArrayList<>(base);
@@ -115,10 +115,10 @@ public sealed interface ClassEntry
     }
 
     /**
-     * Remove duplicate ClassEntry elements from the List.
+     * Remove duplicate {@link ClassEntry} elements from the {@link List}.
      *
      * @param original The list to deduplicate
-     * @return a List without any duplicate ClassEntry
+     * @return a {@link List} without any duplicate {@link ClassEntry}
      */
     static List<ClassEntry> deduplicate(List<ClassEntry> original) {
         ArrayList<ClassEntry> newList = new ArrayList<>(original.size());

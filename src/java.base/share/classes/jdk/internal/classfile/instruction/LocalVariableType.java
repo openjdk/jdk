@@ -26,7 +26,6 @@ package jdk.internal.classfile.instruction;
 
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Label;
@@ -41,7 +40,7 @@ import jdk.internal.classfile.impl.BoundLocalVariableType;
  * A pseudo-instruction which models a single entry in the {@link
  * LocalVariableTypeTableAttribute}.  Delivered as a {@link CodeElement} during
  * traversal of the elements of a {@link CodeModel}, according to the setting of
- * the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
+ * the {@link Classfile.Option#processDebug(boolean)} option.
  */
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {

@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code MethodParameters} attribute (JVMS 4.7.24), which can
+ * Models the {@code MethodParameters} attribute {@jvms 4.7.24}, which can
  * appear on methods, and records optional information about the method's
  * parameters.  Delivered as a {@link jdk.internal.classfile.MethodElement} when
  * traversing the elements of a {@link jdk.internal.classfile.MethodModel}.

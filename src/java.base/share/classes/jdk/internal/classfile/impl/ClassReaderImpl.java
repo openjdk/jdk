@@ -89,7 +89,7 @@ public final class ClassReaderImpl
 
     @SuppressWarnings("unchecked")
     ClassReaderImpl(byte[] classfileBytes,
-                    Collection<Classfile.Option<?>> options) {
+                    Collection<Classfile.Option> options) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.options = new Options(options);
@@ -143,11 +143,6 @@ public final class ClassReaderImpl
     @Override
     public Function<Utf8Entry, AttributeMapper<?>> customAttributes() {
         return attributeMapper;
-    }
-
-    @Override
-    public <T> T optionValue(Classfile.Option.Key option) {
-        return options.value(option);
     }
 
     @Override

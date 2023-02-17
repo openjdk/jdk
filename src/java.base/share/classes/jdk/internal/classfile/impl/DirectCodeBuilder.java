@@ -101,14 +101,14 @@ public final class DirectCodeBuilder
 
     public static Attribute<CodeAttribute> build(MethodInfo methodInfo,
                                                  Consumer<? super CodeBuilder> handler,
-                                                 ConstantPoolBuilder constantPool,
+                                                 SplitConstantPool constantPool,
                                                  CodeModel original) {
         DirectCodeBuilder cb;
         try {
             handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (constantPool.optionValue(Classfile.Option.Key.FIX_SHORT_JUMPS)) {
+            if (constantPool.options().fixJumps) {
                 handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, true));
                 cb.buildContent();
             }
@@ -119,14 +119,14 @@ public final class DirectCodeBuilder
     }
 
     private DirectCodeBuilder(MethodInfo methodInfo,
-                              ConstantPoolBuilder constantPool,
+                              SplitConstantPool constantPool,
                               CodeModel original,
                               boolean transformFwdJumps) {
         super(constantPool);
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = constantPool.optionValue(Classfile.Option.Key.FIX_SHORT_JUMPS);
+        this.transformBackJumps = constantPool.options().fixJumps;
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, cai.codeLength())
                                                                : new BufWriterImpl(constantPool);
         this.startLabel = new LabelImpl(this, 0);
@@ -197,7 +197,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                if (constantPool.options().filterDeadLabels) {
                     handlersSize--;
                 } else {
                     throw new IllegalStateException("Unbound label in exception handler");
@@ -221,7 +221,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (constantPool.optionValue(Classfile.Option.Key.PROCESS_DEBUG)) {
+        if (constantPool.options().processDebug) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -234,7 +234,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                if (constantPool.options().filterDeadLabels) {
                                     crSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in character range");
@@ -263,7 +263,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                if (constantPool.options().filterDeadLabels) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -286,7 +286,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                if (constantPool.options().filterDeadLabels) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -316,7 +316,7 @@ public final class DirectCodeBuilder
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (!constantPool.<Boolean>optionValue(Classfile.Option.Key.GENERATE_STACK_MAPS)) {
+                if (!constantPool.options().generateStackmaps) {
                     maxStack = maxLocals = 255;
                     stackMapAttr = null;
                 }
@@ -613,7 +613,7 @@ public final class DirectCodeBuilder
     public void writeLoadConstant(Opcode opcode, LoadableConstantEntry value) {
         // Make sure Long and Double have LDC2_W and
         // rewrite to _W if index is > 256
-        int index = constantPool.maybeClone(value).index();
+        int index = ConcreteEntry.maybeClone(constantPool, value).index();
         Opcode op = opcode;
         if (value instanceof LongEntry || value instanceof DoubleEntry) {
             op = LDC2_W;
@@ -720,7 +720,7 @@ public final class DirectCodeBuilder
         AbstractPseudoInstruction.ExceptionCatchImpl el = (AbstractPseudoInstruction.ExceptionCatchImpl) element;
         ClassEntry type = el.catchTypeEntry();
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
-            el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), constantPool.maybeClone(type));
+            el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), ConcreteEntry.maybeClone(constantPool, type));
         handlers.add(el);
     }
 

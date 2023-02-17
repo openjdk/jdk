@@ -25,17 +25,15 @@
 package jdk.internal.classfile.impl;
 
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.BufWriter;
+import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.WritableElement;
-
-import java.nio.ByteBuffer;
-
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
@@ -176,7 +174,7 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeIndex(PoolEntry entry) {
-        int idx = constantPool.maybeClone(entry).index();
+        int idx = ConcreteEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
             throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
         writeU2(idx);

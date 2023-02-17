@@ -74,79 +74,77 @@ public sealed interface TypeAnnotation
      */
     public enum TargetType {
         /** For annotations on a class type parameter declaration. */
-        CLASS_TYPE_PARAMETER(TAT_CLASS_TYPE_PARAMETER, 1, AttributedElement.Kind.CLASS_ONLY),
+        CLASS_TYPE_PARAMETER(TAT_CLASS_TYPE_PARAMETER, 1),
 
         /** For annotations on a method type parameter declaration. */
-        METHOD_TYPE_PARAMETER(TAT_METHOD_TYPE_PARAMETER, 1, AttributedElement.Kind.METHOD_ONLY),
+        METHOD_TYPE_PARAMETER(TAT_METHOD_TYPE_PARAMETER, 1),
 
         /** For annotations on the type of an "extends" or "implements" clause. */
-        CLASS_EXTENDS(TAT_CLASS_EXTENDS, 2, AttributedElement.Kind.CLASS_ONLY),
+        CLASS_EXTENDS(TAT_CLASS_EXTENDS, 2),
 
         /** For annotations on a bound of a type parameter of a class. */
-        CLASS_TYPE_PARAMETER_BOUND(TAT_CLASS_TYPE_PARAMETER_BOUND, 2, AttributedElement.Kind.CLASS_ONLY),
+        CLASS_TYPE_PARAMETER_BOUND(TAT_CLASS_TYPE_PARAMETER_BOUND, 2),
 
         /** For annotations on a bound of a type parameter of a method. */
-        METHOD_TYPE_PARAMETER_BOUND(TAT_METHOD_TYPE_PARAMETER_BOUND, 2, AttributedElement.Kind.METHOD_ONLY),
+        METHOD_TYPE_PARAMETER_BOUND(TAT_METHOD_TYPE_PARAMETER_BOUND, 2),
 
         /** For annotations on a field. */
-        FIELD(TAT_FIELD, 0, Set.of(AttributedElement.Kind.FIELD, AttributedElement.Kind.RECORD_COMPONENT)),
+        FIELD(TAT_FIELD, 0),
 
         /** For annotations on a method return type. */
-        METHOD_RETURN(TAT_METHOD_RETURN, 0, AttributedElement.Kind.METHOD_ONLY),
+        METHOD_RETURN(TAT_METHOD_RETURN, 0),
 
         /** For annotations on the method receiver. */
-        METHOD_RECEIVER(TAT_METHOD_RECEIVER, 0, AttributedElement.Kind.METHOD_ONLY),
+        METHOD_RECEIVER(TAT_METHOD_RECEIVER, 0),
 
         /** For annotations on a method parameter. */
-        METHOD_FORMAL_PARAMETER(TAT_METHOD_FORMAL_PARAMETER, 1, AttributedElement.Kind.METHOD_ONLY),
+        METHOD_FORMAL_PARAMETER(TAT_METHOD_FORMAL_PARAMETER, 1),
 
         /** For annotations on a throws clause in a method declaration. */
-        THROWS(TAT_THROWS, 2, AttributedElement.Kind.METHOD_ONLY),
+        THROWS(TAT_THROWS, 2),
 
         /** For annotations on a local variable. */
-        LOCAL_VARIABLE(TAT_LOCAL_VARIABLE, -1, AttributedElement.Kind.CODE_ONLY),
+        LOCAL_VARIABLE(TAT_LOCAL_VARIABLE, -1),
 
         /** For annotations on a resource variable. */
-        RESOURCE_VARIABLE(TAT_RESOURCE_VARIABLE, -1, AttributedElement.Kind.CODE_ONLY),
+        RESOURCE_VARIABLE(TAT_RESOURCE_VARIABLE, -1),
 
         /** For annotations on an exception parameter. */
-        EXCEPTION_PARAMETER(TAT_EXCEPTION_PARAMETER, 2, AttributedElement.Kind.CODE_ONLY),
+        EXCEPTION_PARAMETER(TAT_EXCEPTION_PARAMETER, 2),
 
         /** For annotations on a type test. */
-        INSTANCEOF(TAT_INSTANCEOF, 2, AttributedElement.Kind.CODE_ONLY),
+        INSTANCEOF(TAT_INSTANCEOF, 2),
 
         /** For annotations on an object creation expression. */
-        NEW(TAT_NEW, 2, AttributedElement.Kind.CODE_ONLY),
+        NEW(TAT_NEW, 2),
 
         /** For annotations on a constructor reference receiver. */
-        CONSTRUCTOR_REFERENCE(TAT_CONSTRUCTOR_REFERENCE, 2, AttributedElement.Kind.CODE_ONLY),
+        CONSTRUCTOR_REFERENCE(TAT_CONSTRUCTOR_REFERENCE, 2),
 
         /** For annotations on a method reference receiver. */
-        METHOD_REFERENCE(TAT_METHOD_REFERENCE, 2, AttributedElement.Kind.CODE_ONLY),
+        METHOD_REFERENCE(TAT_METHOD_REFERENCE, 2),
 
         /** For annotations on a typecast. */
-        CAST(TAT_CAST, 3, AttributedElement.Kind.CODE_ONLY),
+        CAST(TAT_CAST, 3),
 
         /** For annotations on a type argument of an object creation expression. */
-        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, 3, AttributedElement.Kind.CODE_ONLY),
+        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a method call. */
-        METHOD_INVOCATION_TYPE_ARGUMENT(TAT_METHOD_INVOCATION_TYPE_ARGUMENT, 3, AttributedElement.Kind.CODE_ONLY),
+        METHOD_INVOCATION_TYPE_ARGUMENT(TAT_METHOD_INVOCATION_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a constructor reference. */
-        CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, 3, AttributedElement.Kind.CODE_ONLY),
+        CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a method reference. */
-        METHOD_REFERENCE_TYPE_ARGUMENT(TAT_METHOD_REFERENCE_TYPE_ARGUMENT, 3, AttributedElement.Kind.CODE_ONLY);
+        METHOD_REFERENCE_TYPE_ARGUMENT(TAT_METHOD_REFERENCE_TYPE_ARGUMENT, 3);
 
         private final int targetTypeValue;
         private final int sizeIfFixed;
-        private final Set<AttributedElement.Kind> whereApplicable;
 
-        private TargetType(int targetTypeValue, int sizeIfFixed, Set<AttributedElement.Kind> whereApplicable) {
+        private TargetType(int targetTypeValue, int sizeIfFixed) {
             this.targetTypeValue = targetTypeValue;
             this.sizeIfFixed = sizeIfFixed;
-            this.whereApplicable = whereApplicable;
         }
 
         public int targetTypeValue() {
@@ -155,10 +153,6 @@ public sealed interface TypeAnnotation
 
         public int sizeIfFixed() {
             return sizeIfFixed;
-        }
-
-        Set<AttributedElement.Kind> whereApplicable() {
-            return whereApplicable;
         }
     }
 
@@ -574,8 +568,6 @@ public sealed interface TypeAnnotation
     }
 
     /**
-     * type_path.path.
-     *
      * JVMS: Wherever a type is used in a declaration or expression, the type_path structure identifies which part of
      * the type is annotated. An annotation may appear on the type itself, but if the type is a reference type, then
      * there are additional locations where an annotation may appear:
@@ -584,7 +576,7 @@ public sealed interface TypeAnnotation
      * of the array type, including the element type.
      *
      * If a nested type T1.T2 is used in a declaration or expression, then an annotation may appear on the name of the
-     * innermost member type and any enclosing type for which a type annotation is admissible (JLS 9.7.4).
+     * innermost member type and any enclosing type for which a type annotation is admissible {@jls 9.7.4}.
      *
      * If a parameterized type {@literal T<A> or T<? extends A> or T<? super A>} is used in a declaration or expression, then an
      * annotation may appear on any type argument or on the bound of any wildcard type argument.
@@ -614,13 +606,13 @@ public sealed interface TypeAnnotation
             }
         }
 
-        public static final TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
-        public static final TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
-        public static final TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
+        TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
+        TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
+        TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
 
 
         /**
-         * THe type path kind items from JVMS Table 4.7.20.2-A.
+         * The type path kind items from JVMS Table 4.7.20.2-A.
          *
          * @return the kind of path element
          */
@@ -638,14 +630,13 @@ public sealed interface TypeAnnotation
          */
         int typeArgumentIndex();
 
-        static TypePathComponent of(int typePathKind, int typeArgumentIndex) {
+        static TypePathComponent of(Kind typePathKind, int typeArgumentIndex) {
 
             return switch (typePathKind) {
-                case 0 -> ARRAY;
-                case 1 -> INNER_TYPE;
-                case 2 -> WILDCARD;
-                case 3 -> new UnboundAttribute.TypePathComponentImpl(Kind.TYPE_ARGUMENT, typeArgumentIndex);
-                default -> throw new IllegalArgumentException("Unknown type annotation path component kind: " + typePathKind);
+                case ARRAY -> ARRAY;
+                case INNER_TYPE -> INNER_TYPE;
+                case WILDCARD -> WILDCARD;
+                case TYPE_ARGUMENT -> new UnboundAttribute.TypePathComponentImpl(Kind.TYPE_ARGUMENT, typeArgumentIndex);
             };
         }
     }

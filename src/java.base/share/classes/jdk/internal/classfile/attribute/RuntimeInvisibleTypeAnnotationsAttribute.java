@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code RuntimeInvisibleTypeAnnotations} attribute (JVMS 4.7.21), which
+ * Models the {@code RuntimeInvisibleTypeAnnotations} attribute {@jvms 4.7.21}, which
  * can appear on classes, methods, fields, and code attributes. Delivered as a
  * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement},
  * {@link jdk.internal.classfile.MethodElement}, or {@link CodeElement} when traversing
