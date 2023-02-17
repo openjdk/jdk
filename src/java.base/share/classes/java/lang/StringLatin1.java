@@ -397,30 +397,35 @@ final class StringLatin1 {
         }
         return true;
     }
+    /**
+     * Case-insensitive matching of a LATIN1-coded string region
+     * against a UTF16-encoded string region
+     */
     public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
                                                 byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);
             char c2 = StringUTF16.getChar(other, ooffset++);
-            // Fast path when codepoints are the same
+            // Equal is equal, also when ignoring case
             if (c1 == c2) {
                 continue;
             }
-            // Fast path for latin1 letters with folding case
-            if (StringUTF16.latin1EqualsIgnoreCase(c1, c2)) {
-                continue;
-            }
-            // Fast path if both code points are latin1
-            if (c2 <= 0XFF) {
+            // Fast paths if both code points are latin1
+            if (c2 <= 0xFF) {
+                // Letters with folding case
+                if (StringUTF16.latin1EqualsIgnoreCase(c1, c2)) {
+                    continue;
+                }
+                // A != B, 1 != 2 etc.
                 return false;
             }
-            // Fast path for unicode codepoints which cannot fold info latin1
-            if (c2 > 0XFF && !CharacterData.foldsToLatin1(c2)) {
+            // Fast path for the majority of unicode codepoints which do not fold info latin1
+            if (!CharacterData.foldsToLatin1(c2)) {
                 return false;
             }
 
-            // Slow path for unicode code points folding into latin1
+            // Slow path for the 7 unicode code points folding into latin1
             char u1 = (char) CharacterDataLatin1.instance.toUpperCase(c1);
             char u2 = Character.toUpperCase(c2);
             if (u1 == u2) {
