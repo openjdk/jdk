@@ -642,18 +642,24 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 }
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+  return os::realloc(nullptr, size, memflags, stack);
+}
+
+void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
+  return os::realloc(memblock, size, flags, CALLER_PC);
+}
+
+void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because DumpSharedSpaces doesn't use these
-    // early allocations.
+  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
     return rc;
   }
 
-  DEBUG_ONLY(check_crash_protection());
+  DEBUG_ONLY(check_crash_protection();)
 
-  // On malloc(0), implementations of malloc(3) have the choice to return either
+  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -670,95 +676,50 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
-  if (outer_ptr == nullptr) {
-    return nullptr;
-  }
-
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
-
-  if (DumpSharedSpaces) {
-    // Need to deterministically fill all the alignment gaps in C++ structures.
-    ::memset(inner_ptr, 0, size);
-  } else {
-    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
-  }
-  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-  return inner_ptr;
-}
-
-void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
-  return os::realloc(memblock, size, flags, CALLER_PC);
-}
-
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-
-  // Special handling for NMT preinit phase before arguments are parsed
-  void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
-    return rc;
-  }
-
-  if (memblock == nullptr) {
-    return os::malloc(size, memflags, stack);
-  }
-
-  DEBUG_ONLY(check_crash_protection());
-
-  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
-  // null or a unique non-null pointer. To unify libc behavior across our platforms
-  // we chose the latter.
-  size = MAX2((size_t)1, size);
-
-  // For the test flag -XX:MallocMaxTestWords
-  if (has_reached_max_malloc_test_peak(size)) {
-    return nullptr;
-  }
-
   if (MemTracker::enabled()) {
-    // NMT realloc handling
-
-    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
-
-    // Handle size overflow.
-    if (new_outer_size < size) {
-      return nullptr;
+    MallocHeader* header = nullptr;
+    MallocHeader::FreeInfo free_info;
+    size_t old_size = 0;
+    if (memblock != nullptr) {
+      // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
+      // since it may invalidate the old block, including its header.
+      header = MallocHeader::resolve_checked(memblock);
+      free_info = header->free_info();
+      old_size = free_info.size;
+      header->mark_block_as_dead();
     }
-
-    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
-    // may invalidate the old block, including its header.
-    MallocHeader* header = MallocHeader::resolve_checked(memblock);
-    assert(memflags == header->flags(), "weird NMT flags mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::flag_to_name(memflags), NMTUtil::flag_to_name(header->flags()));
-    const MallocHeader::FreeInfo free_info = header->free_info();
-    header->mark_block_as_dead();
 
     // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
-
-    if (new_outer_ptr == nullptr) {
-      // realloc(3) failed and the block still exists.
-      // We have however marked it as dead, revert this change.
-      header->revive();
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(header, outer_size);)
+    if (rc == nullptr) {
+      if (header != nullptr) {
+        // realloc(3) failed and the block still exists.
+        // We have however marked it as dead, revert this change.
+        header->revive();
+      }
       return nullptr;
     }
-    // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
-    MemTracker::deaccount(free_info);
 
-    // After a successful realloc(3), we account the resized block with its new size
-    // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
-
-#ifdef ASSERT
-    size_t old_size = free_info.size;
-    if (old_size < size) {
-      // We also zap the newly extended region.
-      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+    if (header != nullptr) {
+      // realloc(3) succeeded, variable header now points to invalid memory
+      // and we need to deaccount the old block.
+      MemTracker::deaccount(free_info);
     }
+
+    // After a successful realloc(3), we account the resized block with its new size to NMT.
+    rc = MemTracker::record_malloc(rc, size, memflags, stack);
+
+    if (old_size < size) {
+      if (DumpSharedSpaces) {
+        // Need to deterministically fill all the alignment gaps in C++ structures.
+        ::memset((char*)rc + old_size, 0, size - old_size);
+#ifdef ASSERT
+      } else {
+        // We also zap the newly allocated region.
+        DEBUG_ONLY(::memset((char*)rc + old_size, uninitBlockPad, size - old_size);)
 #endif
-
-    rc = new_inner_ptr;
-
+      }
+    }
   } else {
 
     // NMT disabled.
@@ -774,7 +735,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   return rc;
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {

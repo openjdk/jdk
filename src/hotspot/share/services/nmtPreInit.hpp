@@ -220,7 +220,6 @@ class NMTPreInit : public AllStatic {
   static NMTPreInitAllocationTable* _table;
 
   // Some statistics
-  static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
   static unsigned _num_reallocs_pre;          // Number of pre-init reallocs
   static unsigned _num_frees_pre;             // Number of pre-init frees
 
@@ -259,34 +258,26 @@ public:
   // Called from os::malloc.
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
-  static bool handle_malloc(void** rc, size_t size) {
-    size = MAX2((size_t)1, size);         // malloc(0)
-    if (!MemTracker::is_initialized()) {
-      // pre-NMT-init:
-      // Allocate entry and add address to lookup table
-      NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
-      add_to_map(a);
-      (*rc) = a->payload();
-      _num_mallocs_pre++;
-      return true;
-    }
-    return false;
+  static bool handle_malloc(void** rc, size_t size, MEMFLAGS memflags) {
+    return handle_realloc(rc, nullptr, size, memflags);
   }
 
   // Called from os::realloc.
   // Returns true if reallocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_realloc(void** rc, void* old_p, size_t new_size, MEMFLAGS memflags) {
-    if (old_p == nullptr) {                  // realloc(null, n)
-      return handle_malloc(rc, new_size);
-    }
-    new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
     if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
-      // - the address must already be in the lookup table
-      // - find the old entry, remove from table, reallocate, add to table
-      NMTPreInitAllocation* a = find_and_remove_in_map(old_p);
+      new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
+      NMTPreInitAllocation* a = nullptr;
+      if (old_p != nullptr) {
+        // - the address must already be in the lookup table
+        // - find the old entry, remove from table
+        a = find_and_remove_in_map(old_p);
+      }
+      // - reallocate
       a = NMTPreInitAllocation::do_reallocate(a, new_size);
+      // - add address to lookup table
       add_to_map(a);
       (*rc) = a->payload();
       _num_reallocs_pre++;

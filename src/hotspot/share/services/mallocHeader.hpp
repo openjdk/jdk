@@ -120,9 +120,9 @@ class MallocHeader {
 public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
-    const size_t size;
-    const MEMFLAGS flags;
-    const uint32_t mst_marker;
+    size_t size;
+    MEMFLAGS flags;
+    uint32_t mst_marker;
   };
 
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);

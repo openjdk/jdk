@@ -31,9 +31,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
-// raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
+// Obviously we cannot use os::realloc for any dynamic allocation during pre-NMT-init,
+// so we must use raw realloc; to make this very clear, wrap them.
 static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
 static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
 
@@ -51,18 +50,12 @@ static void fail_oom(size_t size) {
 // --------- NMTPreInitAllocation --------------
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
-  const size_t outer_size = sizeof(NMTPreInitAllocation) + payload_size;
-  guarantee(outer_size > payload_size, "Overflow");
-  void* p = raw_malloc(outer_size);
-  if (p == nullptr) {
-    fail_oom(outer_size);
-  }
-  NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(payload_size);
-  return a;
+  return do_reallocate(nullptr, payload_size);
 }
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* old, size_t new_payload_size) {
-  assert(old->next == nullptr, "unhang from map first");
+  DEBUG_ONLY(if (old != nullptr) assert(old->next == nullptr, "unhang from map first");)
+
   // We just reallocate the old block, header and all.
   const size_t new_outer_size = sizeof(NMTPreInitAllocation) + new_payload_size;
   guarantee(new_outer_size > new_payload_size, "Overflow");
@@ -161,13 +154,12 @@ void NMTPreInitAllocationTable::verify() const {
 NMTPreInitAllocationTable* NMTPreInit::_table = nullptr;
 
 // Some statistics
-unsigned NMTPreInit::_num_mallocs_pre = 0;
 unsigned NMTPreInit::_num_reallocs_pre = 0;
 unsigned NMTPreInit::_num_frees_pre = 0;
 
 void NMTPreInit::create_table() {
   assert(_table == nullptr, "just once");
-  void* p = raw_malloc(sizeof(NMTPreInitAllocationTable));
+  void* p = raw_realloc(nullptr, sizeof(NMTPreInitAllocationTable));
   _table = new(p) NMTPreInitAllocationTable();
 }
 
@@ -188,8 +180,7 @@ void NMTPreInit::verify() {
   if (_table != nullptr) {
     _table->verify();
   }
-  assert(_num_reallocs_pre <= _num_mallocs_pre &&
-         _num_frees_pre <= _num_mallocs_pre, "stats are off");
+  assert(_num_frees_pre <= _num_reallocs_pre, "stats are off");
 }
 #endif // ASSERT
 
@@ -198,6 +189,5 @@ void NMTPreInit::print_state(outputStream* st) {
     _table->print_state(st);
     st->cr();
   }
-  st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
-               _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
+  st->print_cr("pre-init reallocs: %u, pre-init frees: %u", _num_reallocs_pre, _num_frees_pre);
 }
