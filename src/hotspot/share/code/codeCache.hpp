@@ -320,7 +320,7 @@ class CodeCache : AllStatic {
   static void unregister_old_nmethod(CompiledMethod* c) NOT_JVMTI_RETURN;
 
   // Support for fullspeed debugging
-  static void flush_dependents_on_method_for_breakpoint(const methodHandle& dependee);
+  static void mark_dependents_on_method_for_breakpoint(const methodHandle& dependee);
 
   // tells if there are nmethods with dependencies
   static bool has_nmethods_with_dependencies();

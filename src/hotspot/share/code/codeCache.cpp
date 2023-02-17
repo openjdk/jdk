@@ -1414,9 +1414,8 @@ void CodeCache::flush_dependents_on(DeoptimizationScope* deopt_scope, InstanceKl
 }
 
 // Flushes compiled methods dependent on dependee
-void CodeCache::flush_dependents_on_method_for_breakpoint(const methodHandle& m_h) {
-  // --- Compile_lock is not held. However we are at a safepoint.
-  assert_locked_or_safepoint(Compile_lock);
+void CodeCache::mark_dependents_on_method_for_breakpoint(const methodHandle& m_h) {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
   DeoptimizationScope deopt_scope;
   // Compute the dependent nmethods

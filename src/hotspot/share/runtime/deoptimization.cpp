@@ -102,12 +102,12 @@ uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
 uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
 bool     DeoptimizationScope::_committing_in_progress = false;
 
-DeoptimizationScope::DeoptimizationScope() : _gen(0) {
+DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
   DEBUG_ONLY(_deopted = false;)
 
   MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
   // If there is nothing to deopt _gen is the same as comitted.
-  _gen = DeoptimizationScope::_committed_deopt_gen;
+  _required_gen = DeoptimizationScope::_committed_deopt_gen;
 }
 
 DeoptimizationScope::~DeoptimizationScope() {
@@ -120,7 +120,7 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 
   // If it's already marked but we still need it to be deopted.
   if (cm->is_marked_for_deoptimization()) {
-    dependant(cm);
+    dependent(cm);
     return;
   }
 
@@ -128,28 +128,28 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
     inc_recompile_counts ? CompiledMethod::deoptimize : CompiledMethod::deoptimize_noupdate;
   Atomic::store(&cm->_deoptimization_status, status);
 
-  // Make sure active is not committted
+  // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
   assert(cm->_deoptimization_generation == 0, "Is already marked");
 
   cm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
-  _gen                           = DeoptimizationScope::_active_deopt_gen;
+  _required_gen                  = DeoptimizationScope::_active_deopt_gen;
 }
 
-void DeoptimizationScope::dependant(CompiledMethod* cm) {
+void DeoptimizationScope::dependent(CompiledMethod* cm) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   // A method marked by someone else may have a _gen lower than what we marked with.
   // Therefore only store it if it's higher than _gen.
-  if (_gen < cm->_deoptimization_generation) {
-    _gen = cm->_deoptimization_generation;
+  if (_required_gen < cm->_deoptimization_generation) {
+    _required_gen = cm->_deoptimization_generation;
   }
 }
 
 void DeoptimizationScope::deoptimize_marked() {
-  assert(!_deopted, "Already deopt");
+  assert(!_deopted, "Already deopted");
 
-  // Safepoint are a special case, handled here.
+  // Safepoints are a special case, handled here.
   if (SafepointSynchronize::is_at_safepoint()) {
     DeoptimizationScope::_committed_deopt_gen = DeoptimizationScope::_active_deopt_gen;
     DeoptimizationScope::_active_deopt_gen++;
@@ -165,7 +165,7 @@ void DeoptimizationScope::deoptimize_marked() {
       MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
       // First we check if we or someone else already deopted the gen we want.
-      if (DeoptimizationScope::_committed_deopt_gen >= _gen) {
+      if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
         DEBUG_ONLY(_deopted = true;)
         return;
       }
@@ -187,19 +187,19 @@ void DeoptimizationScope::deoptimize_marked() {
       os::naked_yield();
     } else {
       // Performs the handshake.
-      Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occured.
+      Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
       DEBUG_ONLY(_deopted = true;)
       {
         MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                        Mutex::_no_safepoint_check_flag);
-        // Make sure that committed don't go backwards.
+        // Make sure that committed doesn't go backwards.
         // Should only happen if we did a deopt during a safepoint above.
         if (DeoptimizationScope::_committed_deopt_gen < comitting) {
           DeoptimizationScope::_committed_deopt_gen = comitting;
         }
         _committing_in_progress = false;
 
-        assert(DeoptimizationScope::_committed_deopt_gen >= _gen, "Must be");
+        assert(DeoptimizationScope::_committed_deopt_gen >= _required_gen, "Must be");
 
         return;
       }

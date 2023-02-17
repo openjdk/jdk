@@ -950,7 +950,7 @@ void MethodHandles::clean_dependency_context(oop call_site) {
   deps.clean_unloading_dependents();
 }
 
-void MethodHandles::flush_dependent_nmethods(DeoptimizationScope* deopt_scope, Handle call_site, Handle target) {
+void MethodHandles::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Handle call_site, Handle target) {
   assert_lock_strong(Compile_lock);
 
   CallSiteDepChange changes(call_site, target);
@@ -1217,7 +1217,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(thread, Compile_lock);
-    MethodHandles::flush_dependent_nmethods(&deopt_scope, call_site, target);
+    MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
     // This assumed to be an 'atomic' operation by verification.
     // So keep it under lock for now.
@@ -1233,7 +1233,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(thread, Compile_lock);
-    MethodHandles::flush_dependent_nmethods(&deopt_scope, call_site, target);
+    MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
     // This assumed to be an 'atomic' operation by verification.
     // So keep it under lock for now.
@@ -1327,17 +1327,15 @@ JVM_END
 // deallocate their dependency information.
 JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
   Handle context(THREAD, JNIHandles::resolve_non_null(context_jh));
+  DeoptimizationScope deopt_scope;
   {
-    DeoptimizationScope deopt_scope;
-    {
-      NoSafepointVerifier nsv;
-      MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      deps.remove_and_mark_for_deoptimization_all_dependents(&deopt_scope);
-      // This assumed to be an 'atomic' operation by verification.
-      // So keep it under lock for now.
-      deopt_scope.deoptimize_marked();
-    }
+    NoSafepointVerifier nsv;
+    MutexLocker ml(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
+    deps.remove_and_mark_for_deoptimization_all_dependents(&deopt_scope);
+    // This assumed to be an 'atomic' operation by verification.
+    // So keep it under lock for now.
+    deopt_scope.deoptimize_marked();
   }
 }
 JVM_END

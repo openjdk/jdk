@@ -46,23 +46,23 @@ class DeoptimizationScope {
   static uint64_t _committed_deopt_gen;
   // What gen to mark a method with, hence larger than _committed_deopt_gen.
   static uint64_t _active_deopt_gen;
-  // Indicate a in-progress deopt handshake.
+  // Indicate an in-progress deopt handshake.
   static bool     _committing_in_progress;
 
-  // The highest gen we need to execute/wait for
-  uint64_t _gen;
+  // The required gen we need to execute/wait for
+  uint64_t _required_gen;
   DEBUG_ONLY(bool _deopted;)
 
  public:
   DeoptimizationScope();
   ~DeoptimizationScope();
-  // Mark a method, if already marked as dependant.
+  // Mark a method, if already marked as dependent.
   void mark(CompiledMethod* cm, bool inc_recompile_counts = true);
-  // Record this as a dependant method.
-  void dependant(CompiledMethod* cm);
+  // Record this as a dependent method.
+  void dependent(CompiledMethod* cm);
 
   // Execute the deoptimization.
-  // Mmake the nmethods not entrant, stackwalks and patch return pcs and sets post call nops.
+  // Make the nmethods not entrant, stackwalks and patch return pcs and sets post call nops.
   void deoptimize_marked();
 };
 

@@ -63,14 +63,14 @@ void DependencyContext::init() {
 //
 // Walk the list of dependent nmethods searching for nmethods which
 // are dependent on the changes that were passed in and mark them for
-// deoptimization.  Returns the number of nmethods found.
+// deoptimization.
 //
 void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     if (b->count() > 0) {
       if (nm->is_marked_for_deoptimization()) {
-        deopt_scope->dependant(nm);
+        deopt_scope->dependent(nm);
       } else if (nm->check_dependency_on(changes)) {
         if (TraceDependencies) {
           ResourceMark rm;
