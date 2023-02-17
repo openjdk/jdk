@@ -28,7 +28,6 @@
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*" | vm.cpu.features ~= ".*sve.*"
  * @library /test/lib /
  * @run driver TestCyclicDependency
  */
@@ -241,9 +240,8 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0"})
-    @IR(counts = {IRNode.ADD_VI, "> 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test0(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE; i++) {
             // All perfectly aligned, expect vectorization
@@ -253,8 +251,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test1(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 1; i++) {
             // dataI has cyclic dependency of distance 1, cannot vectorize
@@ -265,8 +262,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test2(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 2; i++) {
             // dataI has cyclic dependency of distance 2, cannot vectorize
@@ -277,8 +273,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test3(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 3; i++) {
             // dataI has cyclic dependency of distance 3, cannot vectorize
@@ -289,8 +284,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test4(int[] dataI, float[] dataF) {
         for (int i = 1; i < RANGE - 1; i++) {
             // dataI has cyclic dependency of distance 2, cannot vectorize
@@ -301,8 +295,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test5a(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 1, but no cyclic dependency
@@ -313,8 +306,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test5b(int[] dataI, float[] dataF) {
         for (int i = 1; i < RANGE; i++) {
             // dataI has read / write distance 1, but no cyclic dependency
@@ -326,8 +318,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test6a(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 2, but no cyclic dependency
@@ -338,8 +329,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test6b(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 2, but no cyclic dependency
@@ -351,8 +341,8 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"})
-    @IR(counts = {IRNode.ADD_VF, "= 0"})
+    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.ADD_VF, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test7(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
@@ -366,8 +356,8 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "= 0"})
-    @IR(counts = {IRNode.ADD_VF, "> 0"})
+    @IR(counts = {IRNode.ADD_VI, "= 0", IRNode.ADD_VF, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test8(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
@@ -381,7 +371,8 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_REDUCTION_VI, "> 0"})
+    @IR(counts = {IRNode.ADD_REDUCTION_VI, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test9(int[] dataI, float[] dataF) {
         int sI = 666;
         for (int i = 0; i < RANGE; i++) {
