@@ -894,9 +894,6 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg);
   }
 
-  // Verify R16_thread contents.
-  void verify_thread();
-
   // Calls verify_oop. If UseCompressedOops is on, decodes the oop.
   // Preserves reg.
   void verify_coop(Register reg, const char*);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -152,15 +152,13 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // by avoiding running compiled code in threads for which the
     // event is enabled. Check here for interp_only_mode if these
     // events CAN be enabled.
-    __ verify_thread();
 
     Label run_compiled_code;
 
     __ load_and_test_int(temp, Address(Z_thread, JavaThread::interp_only_mode_offset()));
     __ z_bre(run_compiled_code);
 
-    // Null method test is replicated below in compiled case,
-    // it might be able to address across the verify_thread().
+    // Null method test is replicated below in compiled case.,
     __ z_ltgr(temp, method);
     __ z_bre(L_no_such_method);
 
