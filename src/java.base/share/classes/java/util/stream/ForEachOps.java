@@ -369,7 +369,7 @@ final class ForEachOps {
         private final ForEachOrderedTask<S, T> leftPredecessor;
         private Node<T> node;
 
-        @SuppressWarnings("unused") private volatile ForEachOrderedTask<S, T> next; // Only accessed through the NEXT VarHandle
+        private ForEachOrderedTask<S, T> next;
         private static final VarHandle NEXT;
         static {
             try {
@@ -419,6 +419,10 @@ final class ForEachOps {
                 ForEachOrderedTask<S, T> rightChild =
                     new ForEachOrderedTask<>(task, rightSplit, leftChild);
 
+                // leftChild and rightChild were just created and not fork():ed
+                // yet so no need for a volatile write
+                leftChild.next = rightChild;
+
                 // Fork the parent task
                 // Completion of the left and right children "happens-before"
                 // completion of the parent
@@ -426,9 +430,6 @@ final class ForEachOps {
                 // Completion of the left child "happens-before" completion of
                 // the right child
                 rightChild.addToPendingCount(1);
-                // leftChild and rightChild were just created and not fork():ed
-                // yet so no need for a volatile write
-                NEXT.set(leftChild, rightChild);
 
                 // If task is not on the left spine
                 if (task.leftPredecessor != null) {
