@@ -217,13 +217,7 @@ public class CombineFilter extends AbstractFilter {
         }
 
         public String getFirstMatchingProperty(Figure figure) {
-            for (String propertyName : propertyNames) {
-                String s = figure.getProperties().resolveString(propertyName);
-                if (s != null && !s.isEmpty()) {
-                    return s;
-                }
-            }
-            return null;
+            return AbstractFilter.getFirstMatchingProperty(figure, propertyNames);
         }
     }
 }

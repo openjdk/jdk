@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@ public class SplitFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
-    private String propertyName;
+    private String[] propertyNames;
 
-    public SplitFilter(String name, Selector selector, String propertyName) {
+    public SplitFilter(String name, Selector selector, String... propertyNames) {
         this.name = name;
         this.selector = selector;
-        this.propertyName = propertyName;
+        this.propertyNames = propertyNames;
     }
 
     @Override
@@ -52,6 +52,7 @@ public class SplitFilter extends AbstractFilter {
         List<Figure> list = selector.selected(d);
 
         for (Figure f : list) {
+            String s = AbstractFilter.getFirstMatchingProperty(f, propertyNames);
 
             for (InputSlot is : f.getInputSlots()) {
                 for (FigureConnection c : is.getConnections()) {
@@ -60,9 +61,6 @@ public class SplitFilter extends AbstractFilter {
                         os.getSource().addSourceNode(f.getInputNode());
                         os.setColor(f.getColor());
                     }
-
-
-                    String s = f.getProperties().resolveString(propertyName);
                     if (s != null) {
                         os.setShortName(s);
                     }
@@ -76,8 +74,6 @@ public class SplitFilter extends AbstractFilter {
                         is.getSource().addSourceNode(f.getInputNode());
                         is.setColor(f.getColor());
                     }
-
-                    String s = f.getProperties().resolveString(propertyName);
                     if (s != null) {
                         is.setShortName(s);
                     }

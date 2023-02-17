@@ -22,4 +22,6 @@ f.apply(graph);
 
 // Inline (split) constant nodes.
 split("name", "BoxLock");
-split("name", "(Con.*)|(loadCon.*)", "[dump_spec]");
+new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "MachTemp")), "T").apply(graph);
+new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "ThreadLocal")), "TL").apply(graph);
+new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)")), "[short_name]", "[name]").apply(graph);
