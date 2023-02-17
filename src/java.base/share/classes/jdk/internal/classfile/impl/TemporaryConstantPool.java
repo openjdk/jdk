@@ -159,11 +159,6 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public <T extends PoolEntry> T maybeClone(T entry) {
-        return entry;
-    }
-
-    @Override
     public BootstrapMethodEntry bsmEntry(MethodHandleEntry methodReference, List<LoadableConstantEntry> arguments) {
         throw new UnsupportedOperationException();
     }

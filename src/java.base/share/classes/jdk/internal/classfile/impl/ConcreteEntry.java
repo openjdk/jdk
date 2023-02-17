@@ -93,6 +93,11 @@ public abstract sealed class ConcreteEntry {
         return new ConcreteUtf8Entry(null, 0, raw, 0, raw.length);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T extends PoolEntry> T maybeClone(ConstantPoolBuilder cp, T entry) {
+        return (T)((ConcreteEntry)entry).clone(cp);
+    }
+
     final ConstantPool constantPool;
     public final byte tag;
     private final int index;
@@ -120,6 +125,8 @@ public abstract sealed class ConcreteEntry {
     public int poolEntries() {
         return (tag == Classfile.TAG_LONG || tag == Classfile.TAG_DOUBLE) ? 2 : 1;
     }
+
+    abstract PoolEntry clone(ConstantPoolBuilder cp);
 
     public static final class ConcreteUtf8Entry extends ConcreteEntry implements Utf8Entry {
         // Processing UTF8 from the constant pool is one of the more expensive

@@ -531,17 +531,6 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return a constant pool entry describing the same constant as the provided
-     * entry}  If the entry already corresponds to a constant in this constant
-     * pool, it is returned, otherwise the contents are copied to this
-     * constant pool.
-     *
-     * @param entry the entry
-     * @param <T> the type of the entry
-     */
-    <T extends PoolEntry> T maybeClone(T entry);
-
-    /**
      * {@return a {@link BootstrapMethodEntry} describing the provided
      * bootstrap method and static arguments}
      *

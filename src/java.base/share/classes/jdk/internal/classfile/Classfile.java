@@ -42,6 +42,7 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ClassImpl;
+import jdk.internal.classfile.impl.ConcreteEntry;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Options;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -211,7 +212,7 @@ public class Classfile {
     public static byte[] build(ClassEntry thisClassEntry,
                                ConstantPoolBuilder constantPool,
                                Consumer<? super ClassBuilder> handler) {
-        thisClassEntry = constantPool.maybeClone(thisClassEntry);
+        thisClassEntry = ConcreteEntry.maybeClone(constantPool, thisClassEntry);
         DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, thisClassEntry);
         handler.accept(builder);
         return builder.build();
@@ -279,8 +280,8 @@ public class Classfile {
             if (!packages.isEmpty()) {
                 var cp = clb.constantPool();
                 var allPackages = new LinkedHashSet<PackageEntry>();
-                for (var exp : moduleAttribute.exports()) allPackages.add(cp.maybeClone(exp.exportedPackage()));
-                for (var opn : moduleAttribute.opens()) allPackages.add(cp.maybeClone(opn.openedPackage()));
+                for (var exp : moduleAttribute.exports()) allPackages.add(ConcreteEntry.maybeClone(cp, exp.exportedPackage()));
+                for (var opn : moduleAttribute.opens()) allPackages.add(ConcreteEntry.maybeClone(cp, opn.openedPackage()));
                 boolean emitMPA = false;
                 for (var p : packages)
                     emitMPA |= allPackages.add(cp.packageEntry(p));

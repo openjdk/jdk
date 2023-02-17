@@ -143,14 +143,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                : myBsmEntries[index - parentBsmSize];
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends PoolEntry> T maybeClone(T entry) {
-        return canWriteDirect(entry.constantPool())
-               ? entry
-               : (T) entry.clone(this);
-    }
-
     public Options options() {
         return options;
     }
@@ -591,7 +583,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 // copy args list
                 LoadableConstantEntry[] arr = arguments.toArray(new LoadableConstantEntry[0]);
                 for (int i = 0; i < arr.length; i++)
-                    arr[i] = (LoadableConstantEntry) arr[i].clone(this);
+                    arr[i] = ConcreteEntry.maybeClone(this, arr[i]);
                 arguments = List.of(arr);
 
                 break;
