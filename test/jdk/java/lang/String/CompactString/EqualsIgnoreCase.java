@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
@@ -74,5 +76,32 @@ public class EqualsIgnoreCase extends CompactString {
                                             escapeNonASCIIs(anotherString),
                                             source));
                         });
+    }
+
+    /**
+     * Exhaustively check that all latin1 code point pairs are equalsIgnoreCased
+     * in a manner consistent with Character.toUpperCase, Character.toLowerCase
+     */
+    @Test
+    public void checkConsistencyWithCharacterUppercaseLowerCase() {
+        for (int ab = 0; ab < 256; ab++) {
+            for (int bb = 0; bb < 256; bb++) {
+                if (ab != bb) {
+                    char a = (char) ab, b = (char) bb;
+
+                    String as = Character.toString(a);
+                    String bs = Character.toString(b);
+
+                    if (Character.toUpperCase(a) == Character.toUpperCase(b)
+                            || Character.toLowerCase(a) == Character.toLowerCase(b)) {
+                        assertTrue(as.equalsIgnoreCase(bs),
+                                "Expected %s to equalsIgnoreCase %s".formatted(as, bs));
+                    } else {
+                        assertFalse(as.equalsIgnoreCase(bs),
+                                "Expected %s to not equalsIgnoreCase %s".formatted(as, bs));
+                    }
+                }
+            }
+        }
     }
 }

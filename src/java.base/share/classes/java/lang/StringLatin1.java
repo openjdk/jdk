@@ -388,14 +388,9 @@ final class StringLatin1 {
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
-            char c1 = (char)(value[toffset++] & 0xff);
-            char c2 = (char)(other[ooffset++] & 0xff);
-            if (c1 == c2) {
-                continue;
-            }
-            int u1 = CharacterDataLatin1.instance.toUpperCase(c1);
-            int u2 = CharacterDataLatin1.instance.toUpperCase(c2);
-            if (u1 == u2) {
+            byte b1 = value[toffset++];
+            byte b2 = other[ooffset++];
+            if (CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
                 continue;
             }
             return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,27 @@ class CharacterDataLatin1 extends CharacterData {
             }
         }
         return mapChar;
+    }
+    /**
+     * Compares two latin1 code points, ignoring case considerations
+     *
+     * @param b1 byte representing a latin1 code point
+     * @param b2 another byte representing a latin1 code point
+     * @return true if the two bytes are considered equals ignoring case in latin1
+     */
+     static boolean equalsIgnoreCase(byte b1, byte b2) {
+         if (b1 == b2) {
+             return true;
+         }
+         // uppercase b1 using 'the oldest ASCII trick in the book'
+         int U = b1 & 0xDF;
+         if (U < 'A') {
+             return false;  // Low ASCII
+         }
+         return ( U <= 'Z' // In range A-Z
+                 || (U >= 0xC0 && U <= 0XDE)) // ..or A-grave-Thorn
+                 && U != 0xD7 // But not multiplication
+                 && U == (b2 & 0xDF); // b2 has same uppercase
     }
 
     int toTitleCase(int ch) {
