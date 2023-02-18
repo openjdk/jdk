@@ -1035,7 +1035,7 @@ public class TreeMaker implements JCTree.Factory {
                 m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
-                Params(m, mtype.getParameterTypes()),
+                m.params != null ? Params(m) : Params(m, mtype.getParameterTypes()),
                 Types(mtype.getThrownTypes()),
                 body,
                 null,
@@ -1064,21 +1064,27 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a list of value parameter trees for a method's parameters.
-     *  If the method has parameter names defined, use those same symbols,
-     *  otherwse create placeholders x0, x1, ..., xn.
+    /** Create a list of value parameter trees for a method's parameters
+     *  using the same names as the method's existing parameters.
+     */
+    public List<JCVariableDecl> Params(MethodSymbol mth) {
+        Assert.check(mth.params != null);
+        ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+        for (VarSymbol param : mth.params)
+            params.append(VarDef(param, null));
+        return params.toList();
+    }
+
+    /** Synthesize a list of parameter trees for a method's parameters.
+     *  Used for methods with no parameters defined, e.g. bridge methods.
+     *  The placeholder names will be x0, x1, ..., xn.
      */
     public List<JCVariableDecl> Params(MethodSymbol mth, List<Type> argtypes) {
+        Assert.check(mth.params == null);
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();
-        if (mth.params != null) {
-            Assert.check(argtypes.length() == mth.params.length());
-            for (VarSymbol param : mth.params)
-                params.append(VarDef(param, null));
-        } else {
-            int i = 0;
-            for (List<Type> l = argtypes; l.nonEmpty(); l = l.tail)
-                params.append(Param(paramName(i++), l.head, mth));
-        }
+        int i = 0;
+        for (List<Type> l = argtypes; l.nonEmpty(); l = l.tail)
+            params.append(Param(paramName(i++), l.head, mth));
         return params.toList();
     }
 
