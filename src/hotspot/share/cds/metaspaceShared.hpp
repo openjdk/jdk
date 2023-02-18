@@ -181,7 +181,7 @@ public:
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
-  static FileMapInfo* open_dynamic_archive();
+  static FileMapInfo* open_dynamic_archive(bool &has_failed);
   // use_requested_addr: If true (default), attempt to map at the address the
   static MapArchiveResult map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                        bool use_requested_addr);
