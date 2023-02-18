@@ -80,7 +80,7 @@ protected:
   // either precise or imprecise. We make non-virtual inline variants of
   // these functions here for performance.
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field, oop newVal);
+  void write_ref_field_post(T* field);
 
   virtual void invalidate(MemRegion mr);
 

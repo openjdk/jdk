@@ -28,10 +28,10 @@
  * @key stress randomness
  *
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
- *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test*
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=2160808391
- *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test*
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
  */
 

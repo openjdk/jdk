@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1634,9 +1634,6 @@ void TemplateTable::branch_conditional(ConditionRegister crx, TemplateTable::Con
 }
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
-
-  // Note: on SPARC, we use InterpreterMacroAssembler::if_cmp also.
-  __ verify_thread();
 
   const Register Rscratch1    = R11_scratch1,
                  Rscratch2    = R12_scratch2,

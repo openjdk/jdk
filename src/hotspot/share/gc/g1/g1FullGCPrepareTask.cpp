@@ -30,7 +30,6 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -119,11 +118,6 @@ G1FullGCPrepareTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1FullCollec
 void G1FullGCPrepareTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
-
-  G1HotCardCache* hcc = _g1h->hot_card_cache();
-  if (G1HotCardCache::use_cache()) {
-    hcc->reset_card_counts(hr);
-  }
 }
 
 bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {

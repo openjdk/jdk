@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ static const char* ref_type_2_string(ReferenceType ref_type) {
 
 RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id) :
   _worker_time(worker_time), _start_time(os::elapsedTime()), _worker_id(worker_id) {
-  assert(worker_time != NULL, "Invariant");
+  assert(worker_time != nullptr, "Invariant");
 }
 
 RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
@@ -108,7 +108,7 @@ RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
                                                          ReferenceProcessor::RefProcPhases phase_number,
                                                          ReferenceProcessorPhaseTimes* phase_times) :
   _phase_times(phase_times), _start_ticks(), _end_ticks(), _phase_number(phase_number) {
-  assert(_phase_times != NULL, "Invariant");
+  assert(_phase_times != nullptr, "Invariant");
 
   _start_ticks.stamp();
   _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
@@ -157,9 +157,9 @@ ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, ui
   _processing_is_mt(false), _gc_timer(gc_timer) {
   assert(gc_timer != nullptr, "pre-condition");
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
-    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
+    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(nullptr, SubPhasesParWorkTitle[i], max_gc_threads);
   }
-  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(NULL, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
+  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(nullptr, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
 
   reset();
 }
