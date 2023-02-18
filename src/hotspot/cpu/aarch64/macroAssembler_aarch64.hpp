@@ -638,7 +638,9 @@ public:
     return false;
   }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  static int max_trampoline_stub_size();
   void emit_static_call_stub();
+  static int static_call_stub_size();
 
   // The following 4 methods return the offset of the appropriate move instruction
 
@@ -1420,12 +1422,18 @@ public:
                                Register yz_idx1, Register yz_idx2,
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp7, Register product_hi);
+  void kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3);
   void kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+  void kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        size_t table_offset);
 
   void ghash_modmul (FloatRegister result,
                      FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,

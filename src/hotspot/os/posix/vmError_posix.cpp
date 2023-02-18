@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,7 +69,7 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
   PosixSignals::unblock_error_signals();
 
   ucontext_t* const uc = (ucontext_t*) context;
-  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != nullptr) ? os::Posix::ucontext_get_pc(uc) : nullptr;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
   if (sig == SIGILL || sig == SIGFPE) {
@@ -83,14 +83,14 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison) {
     if (handle_assert_poison_fault(context, info->si_addr)) {
       return;
     }
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-  VMError::report_and_die(NULL, sig, pc, info, context);
+  VMError::report_and_die(nullptr, sig, pc, info, context);
 }
 
 const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
@@ -116,7 +116,7 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     const siginfo_t* const si = (siginfo_t*)siginfo;
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
       const void* const fault_addr = si->si_addr;
-      if (fault_addr != NULL) {
+      if (fault_addr != nullptr) {
         if (MetaspaceShared::is_in_shared_metaspace(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");

@@ -615,4 +615,19 @@ MINMAX_DRAW_INSN(Max, I, _, 1, gt)
 MINMAX_DRAW_INSN(Max, I, _, 1, gt, rev)
 MINMAX_DRAW_INSN(Max, I, _, M1, ge)
 MINMAX_DRAW_INSN(Max, I, _, M1, ge, rev)
-
+dnl
+define(`BITS_REVERSE', `// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bits_reverse_$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src)
+%{
+  match(Set dst (Reverse$1 src));
+  ins_cost(INSN_COST);
+  format %{ "$2  $dst, $src" %}
+  ins_encode %{
+    __ $2($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+')dnl
+BITS_REVERSE(I, rbitw)
+BITS_REVERSE(L, rbit)

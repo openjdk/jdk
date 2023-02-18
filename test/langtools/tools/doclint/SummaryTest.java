@@ -9,13 +9,22 @@
 public class SummaryTest {
     /**
      {@summary legal} **/
-    public void m0() {}
+    public void m_legal() {}
 
     /** <p> {@summary illegal} **/
-    public void m1() {}
+    public void m_illegal_html() {}
+
+    /** text {@summary illegal} **/
+    public void m_illegal_text() {}
+
+    /** &amp;{@summary illegal} **/
+    public void m_illegal_entity() {}
+
+    /** @@{@summary illegal} **/
+    public void m_illegal_escape() {}
 
     /** {@summary legal} text {@summary illegal} **/
-    public void m2() {}
+    public void m_illegal_repeat() {}
 
     /** . */
     private SummaryTest() { }
