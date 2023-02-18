@@ -69,11 +69,7 @@
 
 #endif // clang/gcc version check
 
-#if (__GNUC__ >= 10)
-// TODO: Re-enable warning attribute for Clang once
-// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
-// || (defined(__clang_major__) && (__clang_major__ >= 14))
-
+#if (__GNUC__ >= 10)|| (defined(__clang_major__) && (__clang_major__ >= 14))
 // Use "warning" attribute to detect uses of "forbidden" functions.
 //
 // Note: The warning attribute is available since GCC 9, but disabling pragmas
