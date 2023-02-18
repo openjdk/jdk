@@ -86,20 +86,18 @@ public class EqualsIgnoreCase extends CompactString {
     public void checkConsistencyWithCharacterUppercaseLowerCase() {
         for (int ab = 0; ab < 256; ab++) {
             for (int bb = 0; bb < 256; bb++) {
-                if (ab != bb) {
-                    char a = (char) ab, b = (char) bb;
+                char a = (char) ab, b = (char) bb;
+                String as = Character.toString(a);
+                String bs = Character.toString(b);
 
-                    String as = Character.toString(a);
-                    String bs = Character.toString(b);
-
-                    if (Character.toUpperCase(a) == Character.toUpperCase(b)
-                            || Character.toLowerCase(a) == Character.toLowerCase(b)) {
-                        assertTrue(as.equalsIgnoreCase(bs),
-                                "Expected %s to equalsIgnoreCase %s".formatted(as, bs));
-                    } else {
-                        assertFalse(as.equalsIgnoreCase(bs),
-                                "Expected %s to not equalsIgnoreCase %s".formatted(as, bs));
-                    }
+                int na = Character.toLowerCase(Character.toUpperCase(a));
+                int nb = Character.toLowerCase(Character.toUpperCase(b));
+                if (na == nb) {
+                    assertTrue(as.equalsIgnoreCase(bs),
+                            "Expected %s to equalsIgnoreCase %s".formatted(as, bs));
+                } else {
+                    assertFalse(as.equalsIgnoreCase(bs),
+                            "Expected %s to not equalsIgnoreCase %s".formatted(as, bs));
                 }
             }
         }
