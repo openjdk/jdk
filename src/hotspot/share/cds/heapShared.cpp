@@ -397,7 +397,7 @@ void HeapShared::archive_java_mirrors() {
     if (m != nullptr) {
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
       bool success = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
-      guarantee(success, "scratch mirrors should not point to any unachivable objects");
+      guarantee(success, "scratch mirrors must point to only archivable objects");
       buffered_k->set_archived_java_mirror(append_root(m));
       ResourceMark rm;
       log_trace(cds, heap, mirror)(
@@ -423,7 +423,7 @@ void HeapShared::archive_java_mirrors() {
 void HeapShared::archive_strings() {
   oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _default_subgraph_info, shared_strings_array, /*is_closed_archive=*/ false);
-  guarantee(success, "shared strings array should not point to any unachivable objects");
+  guarantee(success, "shared strings array must point to only archivable objects");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
