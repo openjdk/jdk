@@ -2018,6 +2018,7 @@ public abstract class ImageWriter implements ImageTranscoder, AutoCloseable {
 
     /**
      * @implNote The default implementation of this method invokes {@link #dispose()}.
+     * @since 21
      */
     public void close() {
         dispose();

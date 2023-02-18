@@ -2879,6 +2879,7 @@ public abstract class ImageReader implements AutoCloseable {
 
     /**
      * @implNote The default implementation of this method invokes {@link #dispose()}.
+     * @since 21
      */
     public void close() {
         dispose();
