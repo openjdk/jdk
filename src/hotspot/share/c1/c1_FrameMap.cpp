@@ -162,6 +162,10 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
   assert(monitors >= 0, "not set");
   _num_monitors = monitors;
   assert(reserved_argument_area_size >= 0, "not set");
+
+  // reserved_argument_area_size does not include stack space that needs to be occupied in the stub
+  // and the stub will modify the value through update_reserved_argument_area_size(int size) if needed.
+  // see the constructor of class CounterOverflowStub for example.
   _reserved_argument_area_size = reserved_argument_area_size * BytesPerWord;
 
   _argcount = method->arg_size();
