@@ -78,7 +78,7 @@ OopHandle StringTable::_shared_strings_array;
 int StringTable::_shared_strings_array_root_index;
 
 inline oop StringTable::read_string_from_compact_hashtable(address base_address, u4 index) {
-  assert(ArchiveHeapLoader::are_archived_strings_available(), "sanity");
+  assert(ArchiveHeapLoader::is_in_use(), "sanity");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
   oop s;
 
@@ -232,7 +232,7 @@ void StringTable::create_table() {
   _oop_storage->register_num_dead_callback(&gc_notification);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (ArchiveHeapLoader::are_archived_strings_available()) {
+  if (ArchiveHeapLoader::is_in_use()) {
     _shared_strings_array = OopHandle(Universe::vm_global(), HeapShared::get_root(_shared_strings_array_root_index));
   }
 #endif
@@ -873,7 +873,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!ArchiveHeapLoader::are_archived_strings_available()) {
+  } else if (!ArchiveHeapLoader::is_in_use()) {
     _shared_table.reset();
   }
 

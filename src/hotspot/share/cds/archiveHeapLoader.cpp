@@ -91,7 +91,7 @@ void ArchiveHeapLoader::fixup_regions() {
   } else if (_loading_failed) {
     fill_failed_loaded_heap();
   }
-  if (is_fully_available()) {
+  if (is_in_use()) {
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
