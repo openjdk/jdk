@@ -974,9 +974,12 @@ public final class String
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
             byte[] dst = Arrays.copyOf(val, val.length);
-            for (int i = 0; i < dst.length; i++) {
-                if (dst[i] < 0) {
-                    dst[i] = '?';
+            int positives = StringCoding.countPositives(dst, 0, dst.length);
+            if (positives < dst.length) {
+                for (int i = positives; i < dst.length; i++) {
+                    if (dst[i] < 0) {
+                        dst[i] = '?';
+                    }
                 }
             }
             return dst;
