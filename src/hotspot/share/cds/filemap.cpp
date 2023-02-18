@@ -1567,7 +1567,7 @@ bool FileMapRegion::check_region_crc() const {
   assert(mapped_base() != nullptr, "must be initialized");
   int crc = ClassLoader::crc32(0, mapped_base(), (jint)sz);
   if (crc != this->crc()) {
-    FileMapInfo::fail_continue("Checksum verification failed.");
+    log_warning(cds)("Checksum verification failed.");
     return false;
   }
   return true;
