@@ -298,7 +298,8 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-qnoopt"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # -O2 is a combination of optimizations that favors speed over size.
+    # -O2 is a combination of optimizations that favors speed over size. -Oy- is equivalent to
+    # -fno-omit-frame-pointer for GCC/Clang.
     C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
     C_O_FLAG_HIGHEST="-O2 -Oy-"
     C_O_FLAG_HI="-O2 -Oy-"
@@ -307,7 +308,8 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG="-Od"
     C_O_FLAG_DEBUG_JVM="-Od"
     C_O_FLAG_NONE="-Od"
-    # -O1 is a combination of optimizations that favors size over speed.
+    # -O1 is a combination of optimizations that favors size over speed. -Oy- is equivalent to
+    # -fno-omit-frame-pointer for GCC/Clang.
     C_O_FLAG_SIZE="-O1 -Oy-"
   fi
 
