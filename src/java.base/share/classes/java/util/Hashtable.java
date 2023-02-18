@@ -1270,7 +1270,7 @@ public class Hashtable<K,V>
         float lf = fields.get("loadFactor", 0.75f);
         if (lf <= 0 || Float.isNaN(lf))
             throw new StreamCorruptedException("Illegal load factor: " + lf);
-        lf = Math.min(Math.max(0.25f, lf), 4.0f);
+        lf = Math.clamp(lf, 0.25f, 4.0f);
 
         // Read the original length of the array and number of elements
         int origlength = s.readInt();

@@ -1538,7 +1538,7 @@ public class FloatingDecimal{
                     }
                 }
             }
-            fValue = Math.max(Float.MIN_VALUE, Math.min(Float.MAX_VALUE, (float) dValue));
+            fValue = Math.clamp((float) dValue, Float.MIN_VALUE, Float.MAX_VALUE);
 
             //
             // fValue is now approximately the result.

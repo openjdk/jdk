@@ -50,7 +50,7 @@ final class SliceOps {
      * @return the sliced size
      */
     private static long calcSize(long size, long skip, long limit) {
-        return size >= 0 ? Math.max(0, Math.min(size - skip, limit)) : -1;
+        return size >= 0 ? Math.clamp(size - skip, 0, limit) : -1;
     }
 
     /**

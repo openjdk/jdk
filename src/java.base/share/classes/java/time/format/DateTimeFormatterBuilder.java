@@ -3572,7 +3572,7 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
             } else {
-                int outputScale = Math.min(Math.max(fraction.scale(), minWidth), maxWidth);
+                int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);
                 fraction = fraction.setScale(outputScale, RoundingMode.FLOOR);
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
