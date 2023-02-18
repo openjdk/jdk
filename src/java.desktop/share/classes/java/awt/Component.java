@@ -618,7 +618,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #imageUpdate
      */
     @SuppressWarnings("removal")
-    static final boolean isInc = Boolean.parseBoolean(AccessController.doPrivileged(new GetPropertyAction("awt.image.incrementaldraw")));
+    private static final boolean isInc = Boolean.parseBoolean(AccessController.doPrivileged(new GetPropertyAction("awt.image.incrementaldraw")));
     static int incRate;
     static {
         /* ensure that the necessary native libraries are loaded */
