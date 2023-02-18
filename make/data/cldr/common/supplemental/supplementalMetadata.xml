@@ -1799,12 +1799,12 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="Asia/Kashgar" replacement="Asia/Urumqi" reason="deprecated"/>
         </alias>
 		<defaultContent locales="
-			aa_ET ab_GE af_ZA agq_CM ajp_JO ak_GH am_ET an_ES ann_NG ar_001 arn_CL as_IN asa_TZ
+			aa_ET ab_GE af_ZA agq_CM ak_GH am_ET an_ES ann_NG apc_SY ar_001 arn_CL as_IN asa_TZ
 			ast_ES az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
 			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgc_IN
 			bgn_PK bho_IN blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN bs_Cyrl_BA
 			bs_Latn bs_Latn_BA bss_CM byn_ER
-			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ
+			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG cho_US chr_US cic_US ckb_IQ co_FR cs_CZ
 			cu_RU cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_Shaw_GB en_US eo_001 es_ES et_EE eu_ES ewo_CM

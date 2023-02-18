@@ -1501,23 +1501,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -1542,12 +1542,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -2530,23 +2530,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -2571,12 +2571,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -3618,23 +3618,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -3659,12 +3659,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -3826,13 +3826,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
@@ -3887,23 +3887,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d.–d. M.</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -3928,12 +3928,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -4437,13 +4437,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
@@ -4498,23 +4498,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d.–d. M.</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
@@ -4539,12 +4539,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d.–d. M. y</greatestDifference>
-							<greatestDifference id="M">d. M. – d. M. y</greatestDifference>
+							<greatestDifference id="M">d. M. – d. M. y</greatestDifference>
 							<greatestDifference id="y">d. M. y – d. M. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d. M. – E d. M. y</greatestDifference>
-							<greatestDifference id="M">E d. M. – E d. M. y</greatestDifference>
+							<greatestDifference id="d">E d. M. – E d. M. y</greatestDifference>
+							<greatestDifference id="M">E d. M. – E d. M. y</greatestDifference>
 							<greatestDifference id="y">E d. M. y – E d. M. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -4804,23 +4804,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -4845,12 +4845,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -5098,23 +5098,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -5139,12 +5139,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -5392,23 +5392,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -5433,12 +5433,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -6301,23 +6301,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -6342,12 +6342,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -6595,23 +6595,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M.</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
@@ -6636,12 +6636,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -19135,6 +19135,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}″ Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<displayName>bar</displayName>
 				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="few">{0} bar</unitPattern>
 				<unitPattern count="many">{0} bar</unitPattern>
@@ -19751,156 +19752,179 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und cs</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2}, {credentials}</namePattern>
+			<namePattern>{title} {given} {given2} {surname} {surname2}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern draft="provisional">{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2}</namePattern>
+			<namePattern>{title} {given} {given2} {surname} {surname2}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-core-monogram}</namePattern>
+			<namePattern>{given-monogram}{given2-monogram}{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram}{surname-core-monogram}</namePattern>
+			<namePattern>{given-informal-monogram}{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {given} {surname}</namePattern>
+			<namePattern>{title} {given} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern draft="provisional">{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{given-monogram}{surname-core-monogram}</namePattern>
+			<namePattern>{given-monogram}{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram}{surname-core-monogram}</namePattern>
+			<namePattern>{given-informal-monogram}{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{surname}</namePattern>
+			<namePattern>{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-core-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram}</namePattern>
+			<namePattern>{given-informal-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {surname} {surname2} {given} {given2}, {credentials}</namePattern>
+			<namePattern>{title} {surname} {surname2} {given} {given2}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname} {surname2} {given} {given2}</namePattern>
+			<namePattern>{title} {surname} {surname2} {given} {given2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{surname} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-core-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{surname-core-monogram}{given-informal-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}{given-informal-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {surname} {given}</namePattern>
+			<namePattern>{title} {surname} {given}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-core-monogram}{given-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}{given-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{surname-core-monogram}{given-informal-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}{given-informal-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{surname}</namePattern>
+			<namePattern>{surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern draft="provisional">{given-informal}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-core-monogram}</namePattern>
+			<namePattern>{surname-core-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram}</namePattern>
+			<namePattern>{given-informal-monogram}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern draft="provisional">{surname-core}, {given} {given2} {surname-prefix} ({title}, {credentials})</namePattern>
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix} ({title}, {credentials})</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname-core}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern draft="provisional">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname-core}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{surname-core}, {given-initial} {given2-initial}</namePattern>
+			<namePattern>{surname-core}, {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname-core}, {given-informal-initial}</namePattern>
+			<namePattern>{surname-core}, {given-informal-initial}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given" draft="provisional">Jiří</nameField>
+			<nameField type="given">Jiří</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given" draft="provisional">Jana</nameField>
-			<nameField type="surname" draft="provisional">Nováková</nameField>
+			<nameField type="given">Jana</nameField>
+			<nameField type="surname">Nováková</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given" draft="provisional">Josef</nameField>
-			<nameField type="given2" draft="provisional">Václav</nameField>
-			<nameField type="surname" draft="provisional">Svoboda</nameField>
+			<nameField type="given">Josef</nameField>
+			<nameField type="given2">Václav</nameField>
+			<nameField type="surname">Svoboda</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">paní</nameField>
+			<nameField type="given">Alexandra</nameField>
+			<nameField type="given-informal">Saša</nameField>
+			<nameField type="given2">Zuzana</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Machová</nameField>
+			<nameField type="surname2">Ondřejová</nameField>
+			<nameField type="generation">st.</nameField>
+			<nameField type="credentials">PhD</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Jack</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Käthe</nameField>
+			<nameField type="surname">Müller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zäzilia</nameField>
+			<nameField type="given2">Hamish</nameField>
+			<nameField type="surname">Stöber</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title" draft="provisional">Mgr. Ing.</nameField>
-			<nameField type="given" draft="provisional">Anna Jaroslava</nameField>
-			<nameField type="given-informal" draft="provisional">Slávka</nameField>
-			<nameField type="given2" draft="provisional">Eva Lucie</nameField>
-			<nameField type="surname-prefix" draft="provisional">de la</nameField>
-			<nameField type="surname-core" draft="provisional">Mancha</nameField>
-			<nameField type="surname2" draft="provisional">Novotná Dvořáková</nameField>
-			<nameField type="credentials" draft="provisional">CSc.</nameField>
+			<nameField type="title">Mgr. Ing.</nameField>
+			<nameField type="given">Anna Jaroslava</nameField>
+			<nameField type="given-informal">Slávka</nameField>
+			<nameField type="given2">Eva Lucie</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Kant</nameField>
+			<nameField type="surname2">Novotná Dvořáková</nameField>
+			<nameField type="generation">ml.</nameField>
+			<nameField type="credentials">CSc.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

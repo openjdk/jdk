@@ -766,9 +766,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -776,9 +782,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1111,6 +1123,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">pt</day>
 							<day type="sat" draft="unconfirmed">sb</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">niydziela</day>
+							<day type="mon" draft="unconfirmed">pyńdziałek</day>
+							<day type="tue" draft="unconfirmed">wtorek</day>
+							<day type="wed" draft="unconfirmed">strzoda</day>
+							<day type="thu" draft="unconfirmed">sztwortek</day>
+							<day type="fri" draft="unconfirmed">piōntek</day>
+							<day type="sat" draft="unconfirmed">sobota</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -1161,6 +1182,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">do połedniŏ</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">po połedniu</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
@@ -1170,6 +1195,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">do połedniŏ</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">po połedniu</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
@@ -1242,9 +1271,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1252,9 +1287,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -4078,6 +4119,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed"> </group>
 		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="PLN">
 				<symbol>zł</symbol>
@@ -4092,6 +4141,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="long">
 			<compoundUnit type="per">
 				<compoundUnitPattern draft="unconfirmed">{0} na {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">stało grawitacyje</displayName>
@@ -5172,6 +5224,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="other" draft="unconfirmed">{0} G</unitPattern>
 			</unit>
@@ -5180,6 +5238,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="angle-arc-second">
 				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">procynt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName draft="unconfirmed">l/100 km</displayName>
@@ -5208,12 +5270,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">minuty</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="unconfirmed">sekundy</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sek.</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">milisekundy</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">km</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">metry</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">cyntymetry</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">mm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="unconfirmed">mile</displayName>
@@ -5226,18 +5307,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/cal</perUnitPattern>
 			</unit>
+			<unit type="mass-kilogram">
+				<displayName draft="unconfirmed">kg</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName draft="unconfirmed">g</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName draft="unconfirmed">funty</displayName>
 			</unit>
 			<unit type="power-horsepower">
 				<unitPattern count="other" draft="unconfirmed">{0} KM</unitPattern>
 			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName draft="unconfirmed">km/h</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} km/h</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
+				<displayName draft="unconfirmed">°C</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">liter</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} l</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">rychtōnek</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
@@ -5259,10 +5361,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, abo {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, abo {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
 		</listPattern>
@@ -5279,14 +5385,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>

@@ -332,11 +332,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName draft="unconfirmed">ие</displayName>
+				<relative type="-1" draft="unconfirmed">мелят</relative>
+				<relative type="0" draft="unconfirmed">тедиде</relative>
+				<relative type="1" draft="unconfirmed">сы иестэ</relative>
 			</field>
 			<field type="year-narrow">
 				<displayName draft="unconfirmed">ие</displayName>
 			</field>
 			<field type="quarter">
+				<displayName draft="unconfirmed">нилеце пелькс</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">нилеце пелькс</displayName>
+			</field>
+			<field type="quarter-narrow">
 				<displayName draft="unconfirmed">нилеце пелькс</displayName>
 			</field>
 			<field type="month">
@@ -345,12 +354,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">те ковсто</relative>
 				<relative type="1" draft="unconfirmed">сы ковсто</relative>
 			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">ков</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">ков</displayName>
+			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">тарго</displayName>
 				<relative type="-1" draft="unconfirmed">ютазь таргосто</relative>
 				<relative type="0" draft="unconfirmed">те таргосто</relative>
 				<relative type="1" draft="unconfirmed">сы таргосто</relative>
 				<relativePeriod draft="unconfirmed">{0} таргостонть</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">тарго</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">тарго</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">чи</displayName>

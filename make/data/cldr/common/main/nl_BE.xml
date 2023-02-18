@@ -148,9 +148,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern draft="provisional">{surname}, {title} {given} {given2}, {credentials}</namePattern>
 		</personName>
-		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{surname}, {given-initial}{given2-initial}</namePattern>
-		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given" draft="provisional">Liam</nameField>
 		</sampleName>
@@ -166,7 +163,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<sampleName item="nativeFull">
 			<nameField type="given" draft="provisional">Juliette</nameField>
 			<nameField type="given-informal" draft="provisional">Juli</nameField>
-			<nameField type="surname" draft="provisional">Van den Berg</nameField>
 			<nameField type="surname-prefix" draft="provisional">Van den</nameField>
 			<nameField type="surname-core" draft="provisional">Berg</nameField>
 		</sampleName>

@@ -743,6 +743,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">श्वः</relative>
 			</field>
 			<field type="day-short">
+				<displayName>वासर:</displayName>
 				<relative type="-1">ह्यः</relative>
 				<relative type="0">अद्य</relative>
 				<relative type="1">श्वः</relative>

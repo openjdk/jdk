@@ -386,6 +386,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3" draft="unconfirmed">T3</quarter>
 							<quarter type="4" draft="unconfirmed">T4</quarter>
 						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">1u trimestru</quarter>
 							<quarter type="2" draft="unconfirmed">2u trimestru</quarter>
@@ -411,6 +417,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
 						</dayPeriodWidth>
@@ -447,6 +457,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" draft="unconfirmed">dp à C.</era>
 						<era type="1" alt="variant" draft="unconfirmed">EC</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="unconfirmed">nz à C.</era>
+						<era type="0" alt="variant" draft="unconfirmed">NEC</era>
+						<era type="1" draft="unconfirmed">dp à C.</era>
+						<era type="1" alt="variant" draft="unconfirmed">EC</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -505,9 +521,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -515,9 +537,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'à' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -651,9 +679,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName draft="unconfirmed">an.</displayName>
+				<relative type="-1" draft="unconfirmed">l’annu scorsu</relative>
+				<relative type="0" draft="unconfirmed">quist’annu</relative>
+				<relative type="1" draft="unconfirmed">l’annu chì vene</relative>
 			</field>
 			<field type="year-narrow">
 				<displayName draft="unconfirmed">a.</displayName>
+				<relative type="-1" draft="unconfirmed">l’annu scorsu</relative>
+				<relative type="0" draft="unconfirmed">quist’annu</relative>
+				<relative type="1" draft="unconfirmed">l’annu chì vene</relative>
 			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">trimestru</displayName>
@@ -672,9 +706,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName draft="unconfirmed">m.</displayName>
+				<relative type="-1" draft="unconfirmed">u mese scorsu</relative>
+				<relative type="0" draft="unconfirmed">stu mese</relative>
+				<relative type="1" draft="unconfirmed">u mese chì vene</relative>
 			</field>
 			<field type="month-narrow">
 				<displayName draft="unconfirmed">m.</displayName>
+				<relative type="-1" draft="unconfirmed">u mese scorsu</relative>
+				<relative type="0" draft="unconfirmed">stu mese</relative>
+				<relative type="1" draft="unconfirmed">u mese chì vene</relative>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">settimana</displayName>
@@ -685,9 +725,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName draft="unconfirmed">sett.</displayName>
+				<relative type="-1" draft="unconfirmed">a settimana scorsa</relative>
+				<relative type="0" draft="unconfirmed">sta settimana</relative>
+				<relative type="1" draft="unconfirmed">a settimana chì vene</relative>
+				<relativePeriod draft="unconfirmed">a settimana di u {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName draft="unconfirmed">st.</displayName>
+				<relative type="-1" draft="unconfirmed">a settimana scorsa</relative>
+				<relative type="0" draft="unconfirmed">sta settimana</relative>
+				<relative type="1" draft="unconfirmed">a settimana chì vene</relative>
+				<relativePeriod draft="unconfirmed">a settimana di u {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">ghjornu</displayName>
@@ -697,9 +745,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName draft="unconfirmed">ghj.</displayName>
+				<relative type="-1" draft="unconfirmed">eri</relative>
+				<relative type="0" draft="unconfirmed">oghje</relative>
+				<relative type="1" draft="unconfirmed">dumane</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">g</displayName>
+				<relative type="-1" draft="unconfirmed">eri</relative>
+				<relative type="0" draft="unconfirmed">oghje</relative>
+				<relative type="1" draft="unconfirmed">dumane</relative>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">ghjornu di a settimana</displayName>
@@ -773,6 +827,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">NaN</nan>
 		</symbols>
+		<decimalFormats numberSystem="adlm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -780,6 +841,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<scientificFormats numberSystem="adlm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -787,6 +855,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<percentFormats numberSystem="adlm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -796,7 +871,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</percentFormats>
 		<currencyFormats numberSystem="adlm">
 			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
 				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00 ¤;(#,##0.00) ¤</pattern>
 					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>

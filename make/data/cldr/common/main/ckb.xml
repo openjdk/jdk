@@ -1453,6 +1453,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
 				<relative type="1" draft="unconfirmed">سبەی</relative>
 			</field>
+			<field type="day-short">
+				<relative type="-1" draft="unconfirmed">دوێنێ</relative>
+				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
+				<relative type="1" draft="unconfirmed">سبەی</relative>
+			</field>
+			<field type="day-narrow">
+				<relative type="-1" draft="unconfirmed">دوێنێ</relative>
+				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
+				<relative type="1" draft="unconfirmed">سبەی</relative>
+			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">ڕۆژی ھەفتە</displayName>
 			</field>
@@ -1618,6 +1628,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
+				<displayName count="one" draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
+				<displayName count="other" draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
 			</currency>
 			<currency type="XAU">
 				<displayName draft="unconfirmed">زێڕ</displayName>

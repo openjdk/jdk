@@ -10,6 +10,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<version number="$Revision$"/>
 		<language type="ken"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ken" draft="contributed">Kɛnyaŋ</language>
+		</languages>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a á à ǎ b c d e é è ě ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u030C} f g {gb} {gh} h i ɨ {ɨ\u0301} {ɨ\u0300} {ɨ\u030C} j k {kp} m n {ny} ŋ o ó ò ǒ ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u030C} p r s t u ú ù ǔ ʉ {ʉ\u0301} {ʉ\u0300} {ʉ\u030C} w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[l q v x z]</exemplarCharacters>

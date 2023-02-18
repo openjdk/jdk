@@ -1567,6 +1567,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>Sn</displayName>
+				<relative type="-1" draft="unconfirmed">is-sena l-oħra</relative>
+				<relative type="0" draft="unconfirmed">din is-sena</relative>
+				<relative type="1" draft="unconfirmed">is-sena d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
@@ -1584,6 +1587,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>Sena</displayName>
+				<relative type="-1" draft="unconfirmed">is-sena l-oħra</relative>
+				<relative type="0" draft="unconfirmed">din is-sena</relative>
+				<relative type="1" draft="unconfirmed">is-sena d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
@@ -1742,6 +1748,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>ġm</displayName>
+				<relative type="-1" draft="unconfirmed">il-ġimgħa li għaddiet</relative>
+				<relative type="0" draft="unconfirmed">din il-ġimgħa</relative>
+				<relative type="1" draft="unconfirmed">il-ġimgħa d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
@@ -1760,6 +1769,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName draft="provisional">Ġimgħa</displayName>
+				<relative type="-1" draft="unconfirmed">il-ġimgħa li għaddiet</relative>
+				<relative type="0" draft="unconfirmed">din il-ġimgħa</relative>
+				<relative type="1" draft="unconfirmed">il-ġimgħa d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
@@ -1807,6 +1819,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>Jum</displayName>
+				<relative type="-1" draft="unconfirmed">lbieraħ</relative>
+				<relative type="0" draft="unconfirmed">illum</relative>
+				<relative type="1" draft="unconfirmed">għada</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
@@ -1977,6 +1992,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-short">
 				<displayName>siegħa</displayName>
+				<relative type="0" draft="unconfirmed">din is-siegħa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
@@ -1994,6 +2010,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-narrow">
 				<displayName>siegħa</displayName>
+				<relative type="0" draft="unconfirmed">din is-siegħa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
@@ -2029,6 +2046,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-short">
 				<displayName>min.</displayName>
+				<relative type="0" draft="unconfirmed">din il-minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
@@ -2046,6 +2064,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-narrow">
 				<displayName>m</displayName>
+				<relative type="0" draft="unconfirmed">din il-minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
@@ -2081,6 +2100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
+				<relative type="0" draft="unconfirmed">issa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>
@@ -2098,6 +2118,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-narrow">
 				<displayName>s</displayName>
+				<relative type="0" draft="unconfirmed">issa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>

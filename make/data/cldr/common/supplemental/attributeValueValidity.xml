@@ -11,7 +11,7 @@
 			<!-- and is maintained manually by the CLDR TC -->
 			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
 			<variable id='$language' type='choice'>
-				af agq ajp ak am ann ar as asa ast az
+				af agq ak am ann apc ar as asa ast az
 				bas be bem bez bg bgc bho bm bn bo br brx bs
 				ca ccp ce ceb cgg chr ckb cs cu cv cy
 				da dav de dje doi dsb dua dyo dz

@@ -863,6 +863,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ߣ</month>
 							<month type="12">ߞ</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ߓߌ߲ߠߊߥߎߟߋ߲</month>
+							<month type="2">ߞߏ߲ߞߏߜߍ</month>
+							<month type="3">ߕߙߊߓߊ</month>
+							<month type="4">ߞߏ߲ߞߏߘߌ߬ߓߌ</month>
+							<month type="5">ߘߓߊ߬ߕߊ</month>
+							<month type="6">ߥߊ߬ߛߌ߬ߥߙߊ</month>
+							<month type="7">ߞߊ߬ߙߌߝߐ߭</month>
+							<month type="8">ߘߓߊ߬ߓߌߟߊ</month>
+							<month type="9">ߕߎߟߊߝߌ߲</month>
+							<month type="10">ߞߏ߲ߓߌߕߌ߮</month>
+							<month type="11">ߣߍߣߍߓߊ</month>
+							<month type="12">ߞߏߟߌ߲ߞߏߟߌ߲</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -965,11 +979,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ߞߛ߁</quarter>
+							<quarter type="2">ߞߛ߂</quarter>
+							<quarter type="3">ߞߛ߃</quarter>
+							<quarter type="4">ߞߛ߄</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">߁</quarter>
 							<quarter type="2">߂</quarter>
 							<quarter type="3">߃</quarter>
 							<quarter type="4">߄</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ߞߊߙߏߛߓߊ߫ ߁߭</quarter>
+							<quarter type="2">ߞߊߙߏߛߓߊ߫ ߂߲</quarter>
+							<quarter type="3">ߞߊߙߏߛߓߊ߫ ߃߲</quarter>
+							<quarter type="4">ߞߊߙߏߛߓߊ߫ ߄߲</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>

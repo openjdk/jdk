@@ -607,6 +607,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">جنوری</month>
+							<month type="2" draft="unconfirmed">فروری</month>
+							<month type="3" draft="unconfirmed">مارچ</month>
+							<month type="4" draft="unconfirmed">اپریل</month>
+							<month type="5" draft="unconfirmed">مئ</month>
+							<month type="6" draft="unconfirmed">جون</month>
+							<month type="7" draft="unconfirmed">جولائی</month>
+							<month type="8" draft="unconfirmed">اگست</month>
+							<month type="9" draft="unconfirmed">ستمبر</month>
+							<month type="10" draft="unconfirmed">اکتوبر</month>
+							<month type="11" draft="unconfirmed">نومبر</month>
+							<month type="12" draft="unconfirmed">دسمبر</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">ج</month>
 							<month type="2" draft="unconfirmed">ف</month>
@@ -683,6 +697,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">ایکشیمے</day>
+							<day type="mon" draft="unconfirmed">دُوشیمے</day>
+							<day type="tue" draft="unconfirmed">گھن آنگا</day>
+							<day type="wed" draft="unconfirmed">چارشیمے</day>
+							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
+							<day type="fri" draft="unconfirmed">شُوگار</day>
+							<day type="sat" draft="unconfirmed">لَو آنگا</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">ا</day>
 							<day type="mon" draft="unconfirmed">د</day>
@@ -739,6 +762,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">شُوگار</day>
 							<day type="sat" draft="unconfirmed">لَو آنگا</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">ایکشیمے</day>
+							<day type="mon" draft="unconfirmed">دُوشیمے</day>
+							<day type="tue" draft="unconfirmed">گھن آنگا</day>
+							<day type="wed" draft="unconfirmed">چارشیمے</day>
+							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
+							<day type="fri" draft="unconfirmed">شُوگار</day>
+							<day type="sat" draft="unconfirmed">لَو آنگا</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -748,6 +780,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="unconfirmed">دوھیم ڇامای</quarter>
 							<quarter type="3" draft="unconfirmed">ڇوی ڇامای</quarter>
 							<quarter type="4" draft="unconfirmed">چوٹھوم ڇامای</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">اول ڇامای</quarter>
@@ -777,11 +815,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">عیسٰیؑ ما مُش</era>
+						<era type="0" alt="variant" draft="unconfirmed">ع-م</era>
 						<era type="1" draft="unconfirmed">عیسوی</era>
 						<era type="1" alt="variant" draft="unconfirmed">عام دور</era>
 					</eraNames>
@@ -991,6 +1048,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="unconfirmed">دور</displayName>
 			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">دور</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">دور</displayName>
+			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">کال</displayName>
 				<relative type="-1" draft="unconfirmed">پیوک کال</relative>
@@ -1096,6 +1159,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتائے موش</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">{0} سی ہفتہ</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName draft="unconfirmed">ہفتہ</displayName>
@@ -1108,6 +1172,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتائے موش</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">{0} سی ہفتہ</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName draft="unconfirmed">ما سی ہفتہ</displayName>
@@ -1166,6 +1231,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
+			</field>
 			<field type="sun">
 				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
 				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
@@ -1177,7 +1248,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} ایکشیمے</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
+				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
+				<relative type="1" draft="unconfirmed">دوی ایکشیمے</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} ایکشیمے</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} ایکشیمے</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="sun-narrow">
+				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
+				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
+				<relative type="1" draft="unconfirmed">دوی ایکشیمے</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} ایکشیمے</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} ایکشیمے</relativeTimePattern>
 				</relativeTime>
@@ -1208,6 +1296,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">موشوم دوشیمے</relative>
 				<relative type="0" draft="unconfirmed">مے دوشیمے</relative>
 				<relative type="1" draft="unconfirmed">دوی دوشیمے</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} دوشیمے</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} دوشیمے</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1" draft="unconfirmed">موشوم گھن آنگا</relative>
@@ -1352,7 +1446,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="unconfirmed">موشوم لَو آنگا</relative>
+				<relative type="0" draft="unconfirmed">مے لَو آنگا</relative>
+				<relative type="1" draft="unconfirmed">دوی لَو آنگا</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} لَو آنگا</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1" draft="unconfirmed">موشوم لَو آنگا</relative>
+				<relative type="0" draft="unconfirmed">مے لَو آنگا</relative>
+				<relative type="1" draft="unconfirmed">دوی لَو آنگا</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} لَو آنگا</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
+			</field>
 			<field type="dayperiod">
+				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
+			</field>
+			<field type="dayperiod-narrow">
 				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
 			</field>
 			<field type="hour">
@@ -1367,6 +1489,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-short">
 				<displayName draft="unconfirmed">گینٹہ</displayName>
+				<relative type="0" draft="unconfirmed">میں گینٹہ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹہ میں</relativeTimePattern>
 				</relativeTime>
@@ -1376,6 +1499,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-narrow">
 				<displayName draft="unconfirmed">گینٹہ</displayName>
+				<relative type="0" draft="unconfirmed">میں گینٹہ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹہ میں</relativeTimePattern>
 				</relativeTime>
@@ -1395,6 +1519,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-short">
 				<displayName draft="unconfirmed">میلٹ</displayName>
+				<relative type="0" draft="unconfirmed">میں میلٹ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} میلڑا میں</relativeTimePattern>
 				</relativeTime>
@@ -1404,6 +1529,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-narrow">
 				<displayName draft="unconfirmed">میلٹ</displayName>
+				<relative type="0" draft="unconfirmed">میں میلٹ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} میلٹ میں</relativeTimePattern>
 				</relativeTime>
@@ -1423,6 +1549,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName draft="unconfirmed">سیکنڈ</displayName>
+				<relative type="0" draft="unconfirmed">مھیرے</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} سیکنڈ میں</relativeTimePattern>
 				</relativeTime>
@@ -1432,6 +1559,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-narrow">
 				<displayName draft="unconfirmed">سیکنڈ</displayName>
+				<relative type="0" draft="unconfirmed">مھیرے</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} سیکنڈ میں</relativeTimePattern>
 				</relativeTime>
@@ -1440,6 +1568,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
+			</field>
+			<field type="zone-narrow">
 				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
 			</field>
 		</fields>
@@ -3628,6 +3762,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native draft="unconfirmed">arabext</native>
 		</otherNumberingSystems>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName draft="unconfirmed">متحدہ عرب اماراتی درہم</displayName>
@@ -3724,6 +3865,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BYN">
 				<displayName draft="unconfirmed">بیلاروسی روبل</displayName>
 				<displayName count="other" draft="unconfirmed">بیلاروسی روبل</displayName>
+				<symbol alt="narrow" draft="unconfirmed">BYN</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">بیلیز ڈالر</displayName>
@@ -4661,6 +4803,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-em">
 				<displayName draft="unconfirmed">ٹائپوگرافک em</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName draft="unconfirmed">پکسلز</displayName>
@@ -4943,6 +5086,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ناٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ناٹ</unitPattern>
 			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="unconfirmed">°</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName draft="unconfirmed">ڈگری سیلسیس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈگری سیلسیس</unitPattern>
@@ -5076,13 +5223,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">بیرلز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بیرل</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="unconfirmed">dstspn</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="unconfirmed">dstspn Imp</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} dstspn Imp</unitPattern>
+			</unit>
 			<unit type="volume-drop">
 				<displayName draft="unconfirmed">ٹیگیل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ٹیگیل</unitPattern>
 			</unit>
+			<unit type="volume-dram">
+				<displayName draft="unconfirmed">dram fluid</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="unconfirmed">jigger</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} jigger</unitPattern>
+			</unit>
 			<unit type="volume-pinch">
 				<displayName draft="unconfirmed">پینچ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پینچ</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="unconfirmed">qt Imp</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">کارڈینل ڈائریکشن</displayName>
@@ -5333,6 +5500,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">وولٹ</displayName>
 			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName draft="unconfirmed">kcal</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kcal</unitPattern>
+			</unit>
 			<unit type="energy-electronvolt">
 				<displayName draft="unconfirmed">الیکٹرون وولٹ</displayName>
 			</unit>
@@ -5351,6 +5522,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName draft="unconfirmed">میگا پکسلز</displayName>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName draft="unconfirmed">ppcm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="unconfirmed">ppi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName draft="unconfirmed">ڈاٹ</displayName>
@@ -5608,6 +5787,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern draft="unconfirmed">ملی {0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern draft="unconfirmed">μ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern draft="unconfirmed">نینو {0}</unitPrefixPattern>
 			</compoundUnit>
@@ -5659,17 +5841,92 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern draft="unconfirmed">کیبی{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="unconfirmed">Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="unconfirmed">Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="unconfirmed">Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="unconfirmed">Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="unconfirmed">Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="unconfirmed">Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="unconfirmed">Yi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="area-hectare">
+				<displayName draft="unconfirmed">ہیکٹر</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ہیکٹر</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName draft="unconfirmed">مربع میٹر</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} m²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">cm²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">مربع میل</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sq mi</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">ایکڑ</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ایکڑ</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">مربع گز</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">مربع فٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع فٹ</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">مربع انچا</displayName>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">دُنامز</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} دُنام</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">فیصد</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName draft="unconfirmed">لیٹر/100 کلو میٹر</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} L/100km</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">قرن</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} قرن</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">دہائی</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} دہائی</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">کال</displayName>
@@ -5678,10 +5935,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">ما</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ما</unitPattern>
+				<perUnitPattern draft="unconfirmed">فی ما {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="unconfirmed">ہفتہ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ہفتہ</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} فی ہفتہ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">دی</displayName>
@@ -5690,26 +5949,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-hour">
 				<displayName draft="unconfirmed">گینٹہ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} گینٹہ</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} فی گینٹہ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">میلٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میلٹ</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} فی میلٹ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="unconfirmed">سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} سیکنڈ</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} فی سیکنڈ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="unconfirmed">ملی سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ملی س</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">مائیکرو سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} م س</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">نینو سیکنڈز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ن س</unitPattern>
 			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">پکسلز</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">میگا پکسلز</displayName>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName draft="unconfirmed">ڈاٹ</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ڈاٹ</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">کلو میٹر</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} کلو میٹر</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} فی کلو میٹر</perUnitPattern>
+			</unit>
 			<unit type="length-meter">
+				<displayName draft="unconfirmed">میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میٹر</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
@@ -5721,23 +6001,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ملی میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ملی میٹر</unitPattern>
 			</unit>
+			<unit type="length-picometer">
+				<displayName draft="unconfirmed">پیکو میٹر</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} پیکو میٹر</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">میل</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} میل</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">گز</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} گز</unitPattern>
+			</unit>
 			<unit type="length-foot">
+				<displayName draft="unconfirmed">فٹ</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} فٹ</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/فٹ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="unconfirmed">انچا</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} انچا</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/انچا</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
+				<displayName draft="unconfirmed">پارسیک</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پارسیک</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName draft="unconfirmed">نوری کال</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} نوری کال</unitPattern>
 			</unit>
 			<unit type="length-furlong">
+				<displayName draft="unconfirmed">فرلانگ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} فرلانگ</unitPattern>
 			</unit>
 			<unit type="length-fathom">
+				<displayName draft="unconfirmed">فیتھامز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} فیتھامز</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
@@ -5745,17 +6044,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} بحری میل</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<displayName draft="unconfirmed">پوائنٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پوائنٹس</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">شمسی رداس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} شمسی ر</unitPattern>
 			</unit>
+			<unit type="mass-kilogram">
+				<displayName draft="unconfirmed">kg</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
+			</unit>
 			<unit type="mass-gram">
+				<displayName draft="unconfirmed">گرام</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} گرام</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="unconfirmed">km/hr</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}kph</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName draft="unconfirmed">ڈگری سیلسیس</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}‎°C</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">لیٹر</displayName>
@@ -5763,7 +6073,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ڈائریکشن</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 	</units>
@@ -5780,6 +6093,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
 			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
 			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
@@ -5787,7 +6112,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0}،{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

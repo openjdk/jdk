@@ -387,6 +387,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>پيالے</displayName>
 			</unit>
 		</unitLength>
+		<unitLength type="narrow">
+			<unit type="angle-degree">
+				<displayName>درجے</displayName>
+			</unit>
+		</unitLength>
 	</units>
 	<characterLabels>
 		<characterLabel type="east_asian_scripts">د ختيځے اسيا سکرېپټ</characterLabel>

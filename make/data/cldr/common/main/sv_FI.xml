@@ -79,6 +79,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<timeSeparator draft="contributed">.</timeSeparator>
 			<timeSeparator alt="variant">:</timeSeparator>
 		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator>.</timeSeparator>
+			<timeSeparator alt="variant">:</timeSeparator>
+		</symbols>
 	</numbers>
 	<units>
 		<unitLength type="narrow">

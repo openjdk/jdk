@@ -8,7 +8,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <ldml>
 	<identity>
 		<version number="$Revision$"/>
-		<language type="ajp"/>
-		<territory type="JO"/>
+		<language type="cho"/>
+		<territory type="US"/>
 	</identity>
 </ldml>

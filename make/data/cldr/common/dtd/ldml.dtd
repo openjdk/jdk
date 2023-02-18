@@ -1,5 +1,5 @@
 <!--
-Copyright © 1991-2022 Unicode, Inc.
+Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -68,6 +68,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
 <!ATTLIST language references CDATA #IMPLIED >
+    <!--@MATCH:any-->
     <!--@METADATA-->
 
 <!ELEMENT script ( #PCDATA ) >
@@ -465,6 +466,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
     <!--@DEPRECATED-->
 <!ATTLIST exemplarCharacters references CDATA #IMPLIED >
+    <!--@MATCH:any-->
     <!--@METADATA-->
 <!ATTLIST exemplarCharacters validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
@@ -2825,10 +2827,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT cr ( #PCDATA ) >
 <!ATTLIST cr alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/variant, proposed, short-->
 <!ATTLIST cr draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 <!ATTLIST cr references CDATA #IMPLIED >
+    <!--@MATCH:any-->
     <!--@METADATA-->
 
 <!-- # Use the cr element instead, with ICU syntax. -->
@@ -3123,7 +3126,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:or/range/-1.0E20~1.0E20||literal/-x, 0, 0.x, NaN, -Inf, Inf, x,x, x.x-->
     <!--@VALUE-->
 <!ATTLIST rbnfrule radix CDATA #IMPLIED >
-    <!--@MATCH:literal/1,000, 100, 1000, 100000, 20-->
+    <!--@MATCH:literal/1,000, 100, 1000, 100000, 5, 20, 400, 8000, 160,000, 3,200,000, 64,000,000-->
     <!--@VALUE-->
 <!ATTLIST rbnfrule decexp CDATA #IMPLIED >
     <!--@VALUE-->
@@ -3214,7 +3217,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT sampleName ( alias | ( nameField+, special* ) ) >
     <!--@TECHPREVIEW-->
 <!ATTLIST sampleName item NMTOKENS #REQUIRED >
-    <!--@MATCH:literal/nativeG, nativeGS, nativeGGS, nativeFull, foreignG, foreignGS, foreignGGS, foreignFull -->
+    <!--@MATCH:literal/nativeG, nativeGS, nativeGGS, nativeFull, foreignG, foreignGS, foreignGGS, foreignFull-->
 
 <!ELEMENT nameField ( #PCDATA ) >
     <!--@TECHPREVIEW-->

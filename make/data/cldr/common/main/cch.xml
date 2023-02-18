@@ -10,6 +10,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<version number="$Revision$"/>
 		<language type="cch"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="cch" draft="contributed">Atsam</language>
+		</languages>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters draft="unconfirmed">[a {a\u0331} b c {ch} d {dy} e f g {g\u0331} {gb} {gw} {gy} h {hy} i j k ḵ {kp} {kw} l {ly} m n ṉ {ny} o p {ph} {py} r {ry} s {sh} t u v w {wh} y {y\u0331} z ʼ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ʼ]</exemplarCharacters>

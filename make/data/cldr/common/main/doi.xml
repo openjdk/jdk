@@ -408,6 +408,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
+						<era type="0">ई.पू.</era>
 						<era type="1">ई. सन्</era>
 					</eraNames>
 					<eraAbbr>

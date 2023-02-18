@@ -314,6 +314,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="contributed">vatios</displayName>
 			</unit>
 		</unitLength>
+		<unitLength type="narrow">
+			<unit type="electric-volt">
+				<displayName>voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>vatios</displayName>
+			</unit>
+		</unitLength>
 		<durationUnit type="hms">
 			<durationUnitPattern draft="contributed">hh:mm:ss</durationUnitPattern>
 		</durationUnit>

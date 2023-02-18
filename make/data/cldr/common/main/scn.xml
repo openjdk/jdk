@@ -306,6 +306,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">jin</month>
+							<month type="2" draft="unconfirmed">fri</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">apr</month>
+							<month type="5" draft="unconfirmed">maj</month>
+							<month type="6" draft="unconfirmed">giu</month>
+							<month type="7" draft="unconfirmed">gnt</month>
+							<month type="8" draft="unconfirmed">agu</month>
+							<month type="9" draft="unconfirmed">sit</month>
+							<month type="10" draft="unconfirmed">utt</month>
+							<month type="11" draft="unconfirmed">nuv</month>
+							<month type="12" draft="unconfirmed">dic</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -477,9 +491,233 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 	</dates>
 	<numbers>
+		<symbols numberSystem="adlm">
+			<decimal draft="unconfirmed">,</decimal>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed">.</group>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 	</numbers>
 	<posix>

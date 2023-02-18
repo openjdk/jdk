@@ -15,9 +15,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ff">Fulah</language>
 		</languages>
-		<territories>
-			<territory type="TR">Turkey</territory>
-		</territories>
 	</localeDisplayNames>
 	<dates>
 		<calendars>
@@ -1433,4 +1430,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
+	<personNames>
+		<initialPattern type="initial">{0}</initialPattern>
+		<sampleName item="nativeFull">
+			<nameField type="title">Mr</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof Dr</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -16,6 +16,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ar_001">جدید معیاری عربی</language>
 			<language type="awa">اودھی</language>
 			<language type="ckb">سورانی کردی</language>
+			<language type="ckb" alt="menu">سورانی کردی</language>
+			<language type="ckb" alt="variant">سورانی کردی</language>
 			<language type="dje">زرمہ</language>
 			<language type="hr">کروشین</language>
 			<language type="jv">جاوانیز</language>

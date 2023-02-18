@@ -540,9 +540,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -550,9 +556,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -771,6 +783,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ܚܕܒܫܒܐ</day>
+							<day type="mon">ܬܪܝܢܒܫܒܐ</day>
+							<day type="tue">ܬܠܬܒܫܒܐ</day>
+							<day type="wed">ܐܪܒܥܒܫܒܐ</day>
+							<day type="thu">ܚܡܫܒܫܒܐ</day>
+							<day type="fri">ܥܪܘܒܬܐ</day>
+							<day type="sat">ܫܒܬܐ</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ܐ</day>
 							<day type="mon">ܒ</day>
@@ -860,6 +881,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ܪܘܒܥܐ ܐ</quarter>
+							<quarter type="2">ܪܘܒܥܐ ܒ</quarter>
+							<quarter type="3">ܪܘܒܥܐ ܓ</quarter>
+							<quarter type="4">ܪܘܒܥܐ ܕ</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">ܐ</quarter>
 							<quarter type="2">ܒ</quarter>
@@ -890,6 +917,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">ܩܛ</dayPeriod>
+							<dayPeriod type="pm">ܒܛ</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ܩܛ</dayPeriod>
 							<dayPeriod type="pm">ܒܛ</dayPeriod>
@@ -914,7 +945,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" alt="variant">܏ܕܚ</era>
 					</eraAbbr>
 					<eraNarrow>
+						<era type="0">܏ܩܡ</era>
 						<era type="0" alt="variant">܏ܩܕܚ</era>
+						<era type="1">܏ܫܡ</era>
+						<era type="1" alt="variant">܏ܕܚ</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -974,9 +1008,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -984,9 +1024,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1099,6 +1145,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>ܕܪܐ</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>ܕܪܐ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>ܕܪܐ</displayName>
+			</field>
 			<field type="year">
 				<displayName>ܫܢܬܐ</displayName>
 				<relative type="-1">ܐܫܬܩܕܝ</relative>
@@ -1115,8 +1167,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>ܫܢ܊</displayName>
+				<relative type="-1">ܐܫܬܩܕܝ</relative>
+				<relative type="0">ܗܕܐ ܫܢܬܐ</relative>
+				<relative type="1">ܫܢܬܐ ܐܚܪܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>ܫܢ܊</displayName>
+				<relative type="-1">ܐܫܬܩܕܝ</relative>
+				<relative type="0">ܗܕܐ ܫܢܬܐ</relative>
+				<relative type="1">ܫܢܬܐ ܐܚܪܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
+				<displayName>ܪܘܒܥܐ ܕܫܢܬܐ</displayName>
+				<relative type="-1">ܪܘܒܥܐ ܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܪܘܒܥܐ</relative>
+				<relative type="1">ܪܘܒܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName>ܪܘܒܥܐ ܕܫܢܬܐ</displayName>
+				<relative type="-1">ܪܘܒܥܐ ܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܪܘܒܥܐ</relative>
+				<relative type="1">ܪܘܒܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
 				<displayName>ܪܘܒܥܐ ܕܫܢܬܐ</displayName>
 				<relative type="-1">ܪܘܒܥܐ ܕܥܒܪ</relative>
 				<relative type="0">ܗܢܐ ܪܘܒܥܐ</relative>
@@ -1145,6 +1250,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
+				<displayName>ܝܪܚܐ</displayName>
+				<relative type="-1">ܝܪܚܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܝܪܚܐ</relative>
+				<relative type="1">ܝܪܚܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܝܪܚܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܝܪ̈ܚܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܝܪܚܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܖ̈ܚܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>ܝܪܚܐ</displayName>
+				<relative type="-1">ܝܪܚܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܝܪܚܐ</relative>
+				<relative type="1">ܝܪܚܐ ܕܐܬܐ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ܒ{0} ܝܪܚܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܒ{0} ܝܪ̈ܚܐ</relativeTimePattern>
@@ -1171,8 +1294,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>ܫܒ܊</displayName>
+				<relative type="-1">ܫܒܘܥܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܘܥܐ</relative>
+				<relative type="1">ܫܒܘܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ܫܒܘܥܐ ܕ{0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>ܫܒ܊</displayName>
+				<relative type="-1">ܫܒܘܥܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܘܥܐ</relative>
+				<relative type="1">ܫܒܘܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ܫܒܘܥܐ ܕ{0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
+				<displayName>ܫܒܘܥܐ ܕܝܪܚܐ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ܫܒܘܥܐ ܕܝܪܚܐ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
 				<displayName>ܫܒܘܥܐ ܕܝܪܚܐ</displayName>
 			</field>
 			<field type="day">
@@ -1189,16 +1345,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܢ̈ܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-short">
+				<displayName>ܝܘܡܐ</displayName>
+				<relative type="-1">ܐܬܡܠܝ</relative>
+				<relative type="0">ܐܕܝܘܡ</relative>
+				<relative type="1">ܝܘܡܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>ܝܘܡܐ</displayName>
+				<relative type="-1">ܐܬܡܠܝ</relative>
+				<relative type="0">ܐܕܝܘܡ</relative>
+				<relative type="1">ܝܘܡܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="dayOfYear">
+				<displayName>ܝܘܡܐ ܕܫܢܬܐ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ܝܘܡܐ ܕܫܢܬܐ</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
 				<displayName>ܝܘܡܐ ܕܫܢܬܐ</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>ܝܘܡܐ ܕܫܒܘܥܐ</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>ܝܘܡܐ ܕܫܒܘܥܐ</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ܝܘܡܐ ܕܫܒܘܥܐ</displayName>
+			</field>
 			<field type="weekdayOfMonth">
 				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܘܥܐ</displayName>
 			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܘܥܐ</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܘܥܐ</displayName>
+			</field>
 			<field type="sun">
+				<relative type="-1">ܚܕܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܕܒܫܒܐ</relative>
+				<relative type="1">ܚܕܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">ܚܕܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܕܒܫܒܐ</relative>
+				<relative type="1">ܚܕܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
 				<relative type="-1">ܚܕܒܫܒܐ ܕܕܥܒܪ</relative>
 				<relative type="0">ܗܕܐ ܚܕܒܫܒܐ</relative>
 				<relative type="1">ܚܕܒܫܒܐ ܕܐܬܐ</relative>
@@ -1224,7 +1452,59 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="mon-short">
+				<relative type="-1">ܬܪܝܢܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܪܝܢܒܫܒܐ</relative>
+				<relative type="1">ܬܪܝܢܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">ܬܪܝܢܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܪܝܢܒܫܒܐ</relative>
+				<relative type="1">ܬܪܝܢܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="tue">
+				<relative type="-1">ܬܠܬܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܠܬܒܫܒܐ</relative>
+				<relative type="1">ܬܠܬܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">ܬܠܬܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܠܬܒܫܒܐ</relative>
+				<relative type="1">ܬܠܬܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
 				<relative type="-1">ܬܠܬܒܫܒܐ ܕܕܥܒܪ</relative>
 				<relative type="0">ܗܕܐ ܬܠܬܒܫܒܐ</relative>
 				<relative type="1">ܬܠܬܒܫܒܐ ܕܐܬܐ</relative>
@@ -1251,12 +1531,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="wed-short">
+				<relative type="-1">ܐܪܒܥܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܐܪܒܥܒܫܒܐ</relative>
+				<relative type="1">ܐܪܒܥܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܐܪܒܥܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">ܐܪܒܥܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܐܪܒܥܒܫܒܐ</relative>
+				<relative type="1">ܐܪܒܥܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܐܪܒܥܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu">
+				<relative type="-1">ܚܡܫܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܡܫܒܫܒܐ</relative>
+				<relative type="1">ܚܡܫܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">ܚܡܫܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܡܫܒܫܒܐ</relative>
+				<relative type="1">ܚܡܫܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
 				<relative type="-1">ܚܡܫܒܫܒܐ ܕܕܥܒܪ</relative>
 				<relative type="0">ܗܕܐ ܚܡܫܒܫܒܐ</relative>
 				<relative type="1">ܚܡܫܒܫܒܐ ܕܐܬܐ</relative>
@@ -1282,6 +1608,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="fri-short">
+				<relative type="-1">ܥܪܘܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܥܪܘܒܬܐ</relative>
+				<relative type="1">ܥܪܘܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">ܥܪܘܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܥܪܘܒܬܐ</relative>
+				<relative type="1">ܥܪܘܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="sat">
 				<relative type="-1">ܫܒܬܐ ܕܕܥܒܪ</relative>
 				<relative type="0">ܗܕܐ ܫܒܬܐ</relative>
@@ -1295,7 +1647,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܬܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="sat-short">
+				<relative type="-1">ܫܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܬܐ</relative>
+				<relative type="1">ܫܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">ܫܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܬܐ</relative>
+				<relative type="1">ܫܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ܩܛ/ܒܛ</displayName>
+			</field>
 			<field type="dayperiod">
+				<displayName>ܩܛ/ܒܛ</displayName>
+			</field>
+			<field type="dayperiod-narrow">
 				<displayName>ܩܛ/ܒܛ</displayName>
 			</field>
 			<field type="hour">
@@ -1312,6 +1696,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-short">
 				<displayName>ܫܥ܊</displayName>
+				<relative type="0">ܗܕܐ ܫܥܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ܫܥ܊</displayName>
+				<relative type="0">ܗܕܐ ܫܥܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>ܩܛܝܢܬܐ</displayName>
@@ -1325,7 +1730,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܩܛܝ̈ܢܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="minute-short">
+				<displayName>ܩܛܝܢܬܐ</displayName>
+				<relative type="0">ܗܢܐ ܩܛܝܢܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܩܛܝܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܩܛܝ̈ܢܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܩܛܝܢܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܩܛܝ̈ܢܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName>ܩܛܝܢܬܐ</displayName>
+				<relative type="0">ܗܢܐ ܩܛܝܢܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܩܛܝܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܩܛܝ̈ܢܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܩܛܝܢܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܩܛܝ̈ܢܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="second">
+				<displayName>ܪܦܦܐ</displayName>
+				<relative type="0">ܗܫܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܖ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName>ܪܦܦܐ</displayName>
+				<relative type="0">ܗܫܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒ{0} ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ {0} ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܖ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
 				<displayName>ܪܦܦܐ</displayName>
 				<relative type="0">ܗܫܐ</relative>
 				<relativeTime type="future">
@@ -3606,8 +4059,141 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="adlm">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<nan draft="unconfirmed">ܠܝܬ ܡܢܝܢܐ</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<nan draft="unconfirmed">ܠܝܬ ܡܢܝܢܐ</nan>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<decimalFormats>
 			<decimalFormatLength>
@@ -3622,6 +4208,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern draft="unconfirmed">¤ #,##0.00;¤ #,##0.00-</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="SYP">
@@ -3720,6 +4315,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>ܝܘܒܝ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">{0} ܡܪܒܥܐ</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} ܡܪܒܥܐ</compoundUnitPattern1>
@@ -3728,6 +4326,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one">{0} ܡܩܦܣܐ</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} ܡܩܦܣܐ</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>ܚܝܠܐ ܢܬܘܦܘܬܐ</displayName>
+				<unitPattern count="one">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>ܡܝܬܪ̈ܐ ܒܪܦܦܐ ܡܪܒܥܐ</displayName>
 				<unitPattern count="one">{0} ܡܝܬܪܐ ܒܪܦܦܐ ܡܪܒܥܐ</unitPattern>
@@ -3738,15 +4344,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܚܘܕܪܐ</unitPattern>
 				<unitPattern count="other">{0} ܚܘܕܖ̈ܐ</unitPattern>
 			</unit>
+			<unit type="angle-radian">
+				<displayName>ܪܐܕܝܐܢ</displayName>
+				<unitPattern count="one">{0} ܪܐܕܝܐܢ</unitPattern>
+				<unitPattern count="other">{0} ܪܐܕܝܐܢ</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>ܕܪ̈ܓ݂ܐ</displayName>
 				<unitPattern count="one">ܕܪܓ݂ܐ</unitPattern>
 				<unitPattern count="other">{0} ܕܪ̈ܓ݂ܐ</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</displayName>
 				<unitPattern count="one">ܩܛܝܢܐ ܩܫܬܢܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>ܪ̈ܦܦܐ ܩܫܬܢܝܐ</displayName>
 				<unitPattern count="one">{0} ܪ̈ܦܦܐ ܩܫܬܢܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܪ̈ܦܦܐ ܩܫܬܢ̈ܝܐ</unitPattern>
 			</unit>
@@ -3779,6 +4393,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܡܪܒܥܐ</unitPattern>
 				<perUnitPattern>{0} ܒܡܝܠ̈ܐ ܡܪܒܥܐ</perUnitPattern>
 			</unit>
+			<unit type="area-acre">
+				<displayName>ܦ̈ܕܢܐ</displayName>
+				<unitPattern count="one">{0} ܦܕܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܦ̈ܕܢܐ</unitPattern>
+			</unit>
 			<unit type="area-square-yard">
 				<displayName>ܝܪ̈ܕܐ ܡܪܒܥܐ</displayName>
 				<unitPattern count="one">{0} ܝܪܕܐ ܡܪܒܥܐ</unitPattern>
@@ -3796,6 +4415,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ܒܐܢܟ ܡܪܒܥܐ</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
+				<displayName>ܩܪ̈ܛܐ</displayName>
 				<unitPattern count="one">ܩܪܛܐ</unitPattern>
 				<unitPattern count="other">{0} ܩܪ̈ܛܐ</unitPattern>
 			</unit>
@@ -3820,12 +4440,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
+				<displayName>ܒܡܐܐ</displayName>
 				<unitPattern count="one">{0} ܒܡܐܐ</unitPattern>
 				<unitPattern count="other">{0} ܒܡܐܐ</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
+				<displayName>ܒܐܠܦܐ</displayName>
 				<unitPattern count="one">{0} ܒܐܠܦܐ</unitPattern>
 				<unitPattern count="other">{0} ܒܐܠܦܐ</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="unconfirmed">‱</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ܡܘܠ</displayName>
+				<unitPattern count="one">{0} ܡܘܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܘܠ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ܠܝܬܪ̈ܐ ܒܟܝܠܘܡܝܬܪܐ</displayName>
@@ -3847,6 +4479,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܝܠܐ ܒܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܒܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName draft="unconfirmed">ܦܝܬܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName draft="unconfirmed">ܬܝܪܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="unconfirmed">ܬܝܪܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܬܝܪܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܬܝܪܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName draft="unconfirmed">ܓܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="unconfirmed">ܓܝܓܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName draft="unconfirmed">ܡܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="unconfirmed">ܡܝܓܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName draft="unconfirmed">ܟܝܠܘܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="unconfirmed">ܟܝܠܘܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName draft="unconfirmed">ܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="unconfirmed">ܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܬ</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>ܕܪ̈ܐ</displayName>
 				<unitPattern count="one">ܕܪܐ</unitPattern>
@@ -3854,6 +4541,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-decade">
 				<displayName>ܥܣܝܪ̈ܘܬܐ</displayName>
+				<unitPattern count="one">ܥܣܝܪܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܣܝܪ̈ܘܬܐ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ܫ̈ܢܐ</displayName>
@@ -3863,9 +4552,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>ܪ̈ܘܒܥܐ</displayName>
+				<unitPattern count="one">ܪܘܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ</unitPattern>
 				<perUnitPattern>{0}/ܪܘܒܥܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
+				<displayName>ܝܪ̈ܚܐ</displayName>
+				<unitPattern count="one">ܝܪܚܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܚܐ</unitPattern>
 				<perUnitPattern>{0} ܒܝܪܚܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -3875,9 +4569,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ܒܫܒ݂ܘܥܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
+				<displayName>ܝܘ̈ܡܬܐ</displayName>
+				<unitPattern count="one">ܝܘܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܘ̈ܡܬܐ</unitPattern>
 				<perUnitPattern>{0} ܒܝܘܡܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
+				<displayName>ܫ̈ܥܐ</displayName>
 				<unitPattern count="one">ܫܥܬܐ</unitPattern>
 				<unitPattern count="other">{0} ܫ̈ܥܐ</unitPattern>
 				<perUnitPattern>{0} ܒܫܥܬܐ</perUnitPattern>
@@ -3889,11 +4587,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ܒܩܛܝܢܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
+				<displayName>ܪ̈ܦܦܐ</displayName>
 				<unitPattern count="one">ܪܦܦܐ</unitPattern>
 				<unitPattern count="other">{0} ܪ̈ܦܦܐ</unitPattern>
 				<perUnitPattern>{0} ܒܪܦܦܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<displayName>ܡܝܠܝܪ̈ܦܦܐ</displayName>
 				<unitPattern count="one">{0} ܡܝܠܝܪܦܦܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܝܠܝܪ̈ܦܦܐ</unitPattern>
 			</unit>
@@ -3907,19 +4607,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܢܐܢܘܪܦܦܐ</unitPattern>
 				<unitPattern count="other">{0} ܢܐܢܘܪ̈ܦܦܐ</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName draft="unconfirmed">ܐܡܦܝܪ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName draft="unconfirmed">ܡܝܠܝܐܡܦܝܪ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡ ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡ ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="unconfirmed">ܘܗܡ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܘܗܡ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܘܗܡ</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName draft="unconfirmed">ܒܘܠܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܘܠܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܘܠܬ</unitPattern>
+			</unit>
 			<unit type="energy-kilocalorie">
+				<displayName draft="unconfirmed">ܟ ܟܐܠܘܪܝ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܟ ܟܐܠܘܪܝ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܟܐܠܘܪܝ</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName draft="unconfirmed">ܟܐܠ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܐܠ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܐܠ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName draft="unconfirmed">ܟܝܠܘܓܝܐܘܠ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܓܝܐܘܠ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܓܝܐܘܠ</unitPattern>
 			</unit>
+			<unit type="energy-joule">
+				<displayName draft="unconfirmed">ܓܝܐܘܠ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܐܘܠ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܐܘܠ</unitPattern>
+			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName draft="unconfirmed">ܟܝܠܘܘܐܬ-ܫܥ̈ܐ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܘܐܬ-ܫܥܬܐ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܘܐܬ-ܫܥ̈ܐ</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="unconfirmed">ܐܠܝܟܬܪܘܢ ܒܘܠܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܐܠܝܟܬܪܘܢ ܒܘܠܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܐܠܝܟܬܪܘܢ ܒܘܠܬ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="unconfirmed">ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="unconfirmed">ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>ܢܝܘܬܢ</displayName>
@@ -3930,6 +4676,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܟܝܠܘܘܐܬ-ܫܥ̈ܐ ܒ 100 ܟܝܠܘܡܝܬܪ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܟܝܠܘܘܐܬ-ܫܥܬܐ ܒ 100 ܟܝܠܘܡܝܬܪ̈ܐ</unitPattern>
 				<unitPattern count="other">{0} ܟܝܠܘܘܐܬ-ܫܥ̈ܐ ܒ 100 ܟܝܠܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName draft="unconfirmed">ܓܝܓܐܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="unconfirmed">ܡܝܓܐܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName draft="unconfirmed">ܟܝܠܘܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="unconfirmed">ܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܗܪܬܙ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>ܦܝ̈ܟܣܠܐ</displayName>
@@ -4000,12 +4766,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ܦܝܟܘܡܝܬܪ̈ܐ</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>ܡܝܠ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܡܝܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܝܠ̈ܐ</unitPattern>
 			</unit>
+			<unit type="length-yard">
+				<displayName>ܝܪܕ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܕ̈ܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪܕ̈ܐ</unitPattern>
+			</unit>
 			<unit type="length-foot">
+				<displayName>ܐܩܠ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܐܩܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܩܠ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܐܩܠܐ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ܐܢܟ̈ܐ</displayName>
@@ -4042,6 +4816,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</displayName>
 				<unitPattern count="one">{0} ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
 				<unitPattern count="other">{0} ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ܢܘܩܙ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܢܘܩܙܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܘܩܙ̈ܐ</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ܥܘܒܐ ܦܫܝܬܐ ܫܡܫܝܐ</displayName>
@@ -4138,16 +4917,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ܦܪ̈ܕܐ</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<displayName draft="unconfirmed">ܓ ܘܐܬ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܘܐܬ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܘܐܬ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<displayName draft="unconfirmed">ܡ ܘܐܬ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܘܐܬ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܘܐܬ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName draft="unconfirmed">ܟ ܘܐܬ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܘܐܬ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName draft="unconfirmed">ܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="unconfirmed">ܡܝܠܝܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܠܝܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܠܝܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName draft="unconfirmed">ܚܝܠܐ ܕܣܘܣܝܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܣܘܣܝܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܣܘܣܝܐ</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>ܦܣܟ̈ܠܐ</displayName>
@@ -4158,6 +4955,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܗܟܬܘܦܣܟ̈ܠܐ</displayName>
 				<unitPattern count="one">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ܟܝܠܘܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ܡܝܓܐܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ܟܝܠܘܡܝܬܪ̈ܐ ܒܫܥܬܐ</displayName>
@@ -4176,6 +4983,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="speed-knot">
 				<displayName>ܩܛܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܩܛܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>ܕܪ̈ܓܐ ܡܐܢܝܐ</displayName>
@@ -4246,6 +5060,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܠܝܬܪ̈ܐ</unitPattern>
 				<perUnitPattern>{0}/ܠܝܬܪܐ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -4263,30 +5079,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܝܠܝܠܝܬܪܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܝܠܝܠܝܬܪ̈ܐ</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ܐܩܠ̈ܐ-ܦܕܢܐ</displayName>
 				<unitPattern count="one">{0} ܐܩܠܐ-ܦܕܢܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܩܠ̈ܐ-ܦܕܢܐ</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
+				<displayName>ܓܠܘܢ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܓܠܘܢܐ</unitPattern>
 				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ</unitPattern>
 				<perUnitPattern>{0}/ܓܠܘܢܐ</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<perUnitPattern>{0}/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</displayName>
 				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</displayName>
 				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
 			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ܬܪ̈ܘܕܐ ܪ̈ܒܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܪܒܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܪ̈ܒܐ</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܙܥܘܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
 			<unit type="volume-drop">
 				<displayName>ܛܘܦ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܛܘܦܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܛܘܦ̈ܐ</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>ܕܪ̈ܟܡܐ ܪ̈ܕܘܝܐ</displayName>
+				<unitPattern count="one">{0} ܕܪܟܡܐ ܪܕܘܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܟܡܐ ܪ̈ܕܘܝܐ</unitPattern>
 			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>ܦܢܝܬܐ ܫܪܫܢܝܬܐ</displayName>
+				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<compoundUnit type="10p-1">
@@ -4372,6 +5243,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>ܝܘܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ܚܝܠܐ ܢܬܘܦܘܬܐ</displayName>
@@ -4485,9 +5364,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>ܒܡܐܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>ܒܐܠܦܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}‰</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>ܡܘܠ</displayName>
@@ -5021,6 +5908,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܩܛܪܐ</unitPattern>
 				<unitPattern count="other">{0} ܩܛܪ̈ܐ</unitPattern>
 			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>ܕܪܓܐ ܡܐܢܝܐ</displayName>
 				<unitPattern count="one">{0}°ܡ</unitPattern>
@@ -5109,6 +6000,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܠܬܪ܊</unitPattern>
 				<unitPattern count="other">{0} ܡܠܬܪ̈܊</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ܐܩܠ̈ܐ-ܦܕܢܐ</displayName>
 				<unitPattern count="one">{0} ܐܩܠ̈ܐ-ܦܕܢܐ</unitPattern>
@@ -5185,6 +6080,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ܕܝܣܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ܣܢܬܝ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern>ܡ{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -5263,10 +6164,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>ܝܘܒܝ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>ܚܝܠܐ ܢܬܘܦܘܬܐ</displayName>
+				<unitPattern count="one">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>ܡ/ܪ²</displayName>
+				<unitPattern count="one">{0} ܡ/ܪ²</unitPattern>
+				<unitPattern count="other">{0} ܡ/ܪ²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>ܚܘܕ</displayName>
+				<unitPattern count="one">{0} ܚܘܕ</unitPattern>
+				<unitPattern count="other">{0} ܚܘܕ</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>ܪܐܕܝܐܢ</displayName>
+				<unitPattern count="one">{0} ܪܐܕܝܐܢ</unitPattern>
+				<unitPattern count="other">{0} ܪܐܕܝܐܢ</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>ܕܪ̈ܓ݂ܐ</displayName>
+				<unitPattern count="one">ܕܪܓ݂ܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܓ݂ܐ</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</displayName>
+				<unitPattern count="one">ܩܛܝܢܐ ܩܫܬܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>ܪ̈ܦܦܐ ܩܫܬܢܝܐ</displayName>
+				<unitPattern count="one">ܪܦܦܐ ܩܫܬܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܦܦܐ ܩܫܬܢ̈ܝܐ</unitPattern>
+			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>ܟܡ²</displayName>
 				<unitPattern count="one">{0} ܟܡ²</unitPattern>
@@ -5298,13 +6244,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-acre">
 				<displayName>ܦܕܢܐ</displayName>
+				<unitPattern count="one">{0} ܦܕܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܦ̈ܕܢܐ</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
+				<displayName>ܝܪ̈ܕܐ²</displayName>
 				<unitPattern count="one">{0} ܝܪܕܐ²</unitPattern>
 				<unitPattern count="other">{0} ܝܪ̈ܕܐ²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ܐܩܠ̈ܐ²</displayName>
+				<unitPattern count="one">{0} ܐܩܠܐ²</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>ܐܢ²</displayName>
@@ -5314,6 +6265,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>ܩܪܛܐ</displayName>
+				<unitPattern count="one">ܩܪܛܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܪ̈ܛܐ</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ܡܓ/ܕܝܣܝܠܝܬܪܐ</displayName>
@@ -5325,9 +6278,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܡܘܠ܊/ܠ</unitPattern>
 				<unitPattern count="other">{0} ܡܡܘܠ܊/ܠ</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>ܡܠܘܐܐ</displayName>
+				<unitPattern count="one">ܡܠܘܐܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܠܘܐ̈ܐ</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
+				<displayName>ܡܢܘ̈ܬܐ/ܡܠܝܘܢ</displayName>
 				<unitPattern count="one">{0} ܡܢܘܬܐ/ܡܠ܊</unitPattern>
 				<unitPattern count="other">{0} ܡܢܘ̈ܬܐ/ܡܠ܊</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ܒܡܐܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>ܒܐܠܦܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}‰</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="unconfirmed">‱</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ܡܘܠ</displayName>
+				<unitPattern count="one">{0} ܡܘܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܘܠ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ܠ/ܟܡ</displayName>
@@ -5339,12 +6318,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܠ/100ܟܡ</unitPattern>
 				<unitPattern count="other">{0} ܠ/100ܟܡ</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>ܡܝܠ̈ܐ/ܓܠܘܢܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܒܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܒܓܠܘܢܐ</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ܡܝܠ̈ܐ/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܐ/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName draft="unconfirmed">ܦܝܬܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName draft="unconfirmed">ܬܝܪܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="unconfirmed">ܬܝܪܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܬܝܪܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܬܝܪܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName draft="unconfirmed">ܓܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="unconfirmed">ܓܝܓܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName draft="unconfirmed">ܡܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="unconfirmed">ܡܝܓܐܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName draft="unconfirmed">ܟܝܠܘܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="unconfirmed">ܟܝܠܘܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName draft="unconfirmed">ܒܐܝܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܐܝܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="unconfirmed">ܒܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܬ</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>ܕܪܐ</displayName>
 				<unitPattern count="one">{0} ܕܪܐ</unitPattern>
 				<unitPattern count="other">{0} ܕܪ̈ܐ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
+				<displayName>ܥܣܝܪܘܬܐ</displayName>
 				<unitPattern count="one">{0} ܥܣܝܪܘܬܐ</unitPattern>
 				<unitPattern count="other">{0} ܥܣܝܪ̈ܘܬܐ</unitPattern>
 			</unit>
@@ -5352,8 +6397,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܫܢܬܐ</displayName>
 				<unitPattern count="one">{0} ܫܢܬܐ</unitPattern>
 				<unitPattern count="other">{0} ܫ̈ܢܐ</unitPattern>
+				<perUnitPattern>{0}/ܫܢܬܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
+				<displayName>ܪܘܒܥܐ</displayName>
 				<unitPattern count="one">{0} ܪܘܒܥܐ</unitPattern>
 				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ</unitPattern>
 				<perUnitPattern>{0}/ܪܘܒܥܐ</perUnitPattern>
@@ -5362,6 +6409,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܝܪܚܐ</displayName>
 				<unitPattern count="one">{0} ܝܪܚܐ</unitPattern>
 				<unitPattern count="other">{0} ܝܪ̈ܚܐ</unitPattern>
+				<perUnitPattern>{0}/ܝܪܚܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>ܫܒܘܥܐ</displayName>
@@ -5373,65 +6421,181 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܝܘܡܐ</displayName>
 				<unitPattern count="one">{0} ܝ</unitPattern>
 				<unitPattern count="other">{0} ܝ</unitPattern>
+				<perUnitPattern>{0}/ܝܘܡܐ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ܫܥܬܐ</displayName>
+				<unitPattern count="one">{0} ܫܥ</unitPattern>
+				<unitPattern count="other">{0} ܫܥ</unitPattern>
+				<perUnitPattern>{0}/ܫܥ</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ܩ</displayName>
+				<unitPattern count="one">{0} ܩ</unitPattern>
+				<unitPattern count="other">{0} ܩ</unitPattern>
+				<perUnitPattern>{0}/ܩ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>ܪ</displayName>
+				<unitPattern count="one">{0} ܪ</unitPattern>
+				<unitPattern count="other">{0} ܪ</unitPattern>
 				<perUnitPattern>{0}/ܪ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ܡܝܠܝ ܪ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝ ܪ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝ ܪ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>ܡܝܟܪܘ ܪ</displayName>
+				<unitPattern count="one">{0} ܡܝܟܪܘ ܪ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܟܪܘ ܪ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ܢܐܢܘ ܪ</displayName>
+				<unitPattern count="one">{0} ܢܐܢܘ ܪ</unitPattern>
+				<unitPattern count="other">{0} ܢܐܢܘ ܪ</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName draft="unconfirmed">ܐܡܦܝܪ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName draft="unconfirmed">ܡܝܠܝܐܡܦܝܪ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡ ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡ ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="unconfirmed">ܘܗܡ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܘܗܡ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܘܗܡ</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName draft="unconfirmed">ܒܘܠܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܒܘܠܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܒܘܠܬ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName draft="unconfirmed">ܟ ܟܐܠܘܪܝ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟ ܟܐܠܘܪܝ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟ ܟܐܠܘܪܝ</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<displayName draft="unconfirmed">ܟܐܠ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܐܠ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܐܠ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName draft="unconfirmed">ܟ ܓܝܐܘܠ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟ ܓܝܐܘܠ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟ ܓܝܐܘܠ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName draft="unconfirmed">ܓܝܐܘܠ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܐܘܠ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܐܘܠ</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName draft="unconfirmed">ܟܘܫ܏-ܫ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܘܫ܏-ܫ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܘܫ܏-ܫ</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="unconfirmed">ܐܠܝܟܬܪܘܢ ܒܘܠܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܐܠܝܟܬܪܘܢ ܒܘܠܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܐܠܝܟܬܪܘܢ ܒܘܠܬ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="unconfirmed">ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܒܪܝܛܢܝܐ</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="unconfirmed">ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܫܘܚܬܐ ܕܫܚܝܢܘܬܐ ܕܐܡܪܝܟܐ</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ܢܝܘܬܢ</displayName>
+				<unitPattern count="one">{0} ܢܝܘܬܢ</unitPattern>
+				<unitPattern count="other">{0} ܢܝܘܬܢ</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>ܟܘܫ܊/100 ܟܡ</displayName>
+				<unitPattern count="one">{0} ܟܘܫ܊ ܒ 100 ܟܡ</unitPattern>
+				<unitPattern count="other">{0} ܟܘܫ܊ ܒ 100 ܟܡ</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName draft="unconfirmed">ܓܝܓܐܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓܝܓܐܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓܝܓܐܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="unconfirmed">ܡܝܓܐܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܓܐܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܓܐܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName draft="unconfirmed">ܟܝܠܘܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟܝܠܘܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟܝܠܘܗܪܬܙ</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="unconfirmed">ܗܪܬܙ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܗܪܬܙ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܗܪܬܙ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>ܦܝ̈ܟܣܠܐ</displayName>
+				<unitPattern count="one">{0} ܦܝܟܣܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܝܟܣܠܐ</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>ܡܝܓܐܦܝ̈ܟܣܠܐ</displayName>
+				<unitPattern count="one">{0} ܡ.ܦܝܟܣܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܡ.ܦܝܟܣܠܐ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>ܦܝ̈ܟܣܠܐ/ܣܡ</displayName>
+				<unitPattern count="one">{0} ܦܝ̈ܟܣܠܐ/ܣܡ</unitPattern>
+				<unitPattern count="other">{0} ܦܝ̈ܟܣܠܐ/ܣܡ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>ܦܝ̈ܟܣܠܐ ܒܐܢܟ</displayName>
+				<unitPattern count="one">{0} ܦܝ̈ܟܣܠܐ/ܐܢ</unitPattern>
+				<unitPattern count="other">{0} ܦܝ̈ܟܣܠܐ/ܐܢ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>ܥܘܒܐ ܐܪܥܝܐ</displayName>
+				<unitPattern count="one">{0} ܥܘܒܐ ܐܪܥܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܒܐ ܐܪܥܝܐ</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<displayName>ܟܡ</displayName>
 				<unitPattern count="one">{0}ܟܡ</unitPattern>
 				<unitPattern count="other">{0}ܟܡ</unitPattern>
+				<perUnitPattern>{0}/ܟܡ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>ܡ</displayName>
 				<unitPattern count="one">{0}ܡ</unitPattern>
 				<unitPattern count="other">{0}ܡ</unitPattern>
+				<perUnitPattern>{0}/ܡ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<displayName>ܕܣܡ</displayName>
 				<unitPattern count="one">{0}ܕܣܡ</unitPattern>
 				<unitPattern count="other">{0}ܕܣܡ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<displayName>ܣܡ</displayName>
 				<unitPattern count="one">{0}ܣܡ</unitPattern>
 				<unitPattern count="other">{0}ܣܡ</unitPattern>
+				<perUnitPattern>{0}/ܣܡ</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">ܡܡ</displayName>
 				<unitPattern count="one">{0}ܡܡ</unitPattern>
 				<unitPattern count="other">{0}ܡܡ</unitPattern>
 			</unit>
@@ -5455,33 +6619,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܝܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܝܠ̈ܐ</unitPattern>
 			</unit>
+			<unit type="length-yard">
+				<displayName>ܝܪܕ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܕ̈ܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪܕ̈ܐ</unitPattern>
+			</unit>
 			<unit type="length-foot">
+				<displayName>ܐܩܠ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܐܩܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܩܠ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܐܩܠܐ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ܐܢ܊</displayName>
+				<unitPattern count="one">ܚܕܐ ܐܢ܊</unitPattern>
+				<unitPattern count="other">{0} ܐܢ܊</unitPattern>
 				<perUnitPattern>{0}/ܐܢܟ</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ܦܪܣܚܐ</displayName>
+				<unitPattern count="one">{0} ܦܪܣܚܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܪ̈ܣܚܐ</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName>ܫ̈ܢܐ ܕܢܘܗܪܐ</displayName>
 				<unitPattern count="one">{0} ܫ ܢ</unitPattern>
 				<unitPattern count="other">{0} ܫ ܢ</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>ܡ.ܪ.</displayName>
+				<unitPattern count="one">{0} ܡ.ܪ.</unitPattern>
+				<unitPattern count="other">{0} ܡ.ܪ.</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName>ܦܘܪܠܢܓ</displayName>
+				<unitPattern count="one">{0} ܦܘܪܠܢܓ</unitPattern>
+				<unitPattern count="other">{0} ܦܘܪ̈ܠܢܓ</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>ܡܝ̈ܠܐ ܝܡܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܝܡܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝ̈ܠܐ ܝܡܝ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</displayName>
+				<unitPattern count="one">{0} ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
+				<unitPattern count="other">{0} ܡܝ̈ܠܐ-ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ܢܘܩܙ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܢܘܩܙܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܘܩܙ̈ܐ</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ܥܘܒܐ ܫܡܫܝܐ</displayName>
+				<unitPattern count="one">{0} ܥܘܒܐ ܫܡܫܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܒܐ ܫܡܫܝܐ</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>ܠܘܩܣ</displayName>
+				<unitPattern count="one">{0} ܠܘܩܣ</unitPattern>
+				<unitPattern count="other">{0} ܠܘܩܣ</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ܢܗܝܪܐ</displayName>
+				<unitPattern count="one">{0} ܢܗܝܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܗܝܪܐ</unitPattern>
 			</unit>
 			<unit type="light-lumen">
+				<displayName>ܠܘܡܝܢ</displayName>
 				<unitPattern count="one">{0} ܠܘܡܝܢ</unitPattern>
 				<unitPattern count="other">{0} ܠܘܡܝܢ</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>ܬ.ܡ</displayName>
+				<unitPattern count="one">{0} ܬ.ܡ</unitPattern>
+				<unitPattern count="other">{0} ܬ.ܡ</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>ܟܓ</displayName>
@@ -5510,6 +6723,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܬܘܢܐ</unitPattern>
 				<unitPattern count="other">{0} ܬܘܢ̈ܐ</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>ܣܬܘܢ</displayName>
+				<unitPattern count="one">{0} ܣܛܘܢ</unitPattern>
+				<unitPattern count="other">{0} ܣܛܘܢ</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ܡܢܝܐ</displayName>
 				<unitPattern count="one">{0} ܡܢܝܐ</unitPattern>
@@ -5527,51 +6745,152 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܩܪܛܐ</unitPattern>
 				<unitPattern count="other">{0} ܩܪ̈ܛܐ</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>ܕܐܠܬܘܢ</displayName>
+				<unitPattern count="one">{0} ܕܐܠܬܘܢ</unitPattern>
+				<unitPattern count="other">{0} ܕܐܠܬܘܢ</unitPattern>
+			</unit>
 			<unit type="mass-earth-mass">
+				<displayName>ܥܘܫܢܐ ܐܪܥܝܐ</displayName>
 				<unitPattern count="one">{0} ܥܘܫܢܐ ܐܪܥܝܐ</unitPattern>
 				<unitPattern count="other">{0} ܥܘܫܢܐ ܐܪܥܝܐ</unitPattern>
 			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>ܥܘܫܢܐ ܫܡܫܝܐ</displayName>
+				<unitPattern count="one">{0} ܥܘܫܢܐ ܫܡܫܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܫܢܐ ܫܡܫܝܐ</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>ܦܪܕܐ</displayName>
+				<unitPattern count="one">{0} ܦܪܕܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܪ̈ܕܐ</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName draft="unconfirmed">ܓ ܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܓ ܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܓ ܘܐܬ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName draft="unconfirmed">ܡ ܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡ ܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡ ܘܐܬ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName draft="unconfirmed">ܟ ܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܟ ܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܟ ܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName draft="unconfirmed">ܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="unconfirmed">ܡܝܠܝܘܐܬ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܡܝܠܝܘܐܬ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܡܝܠܝܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName draft="unconfirmed">ܚܝܠܐ ܕܣܘܣܝܐ</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ܣܘܣܝܐ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ܣܘܣܝܐ</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
+				<displayName>ܦܣܟܠ</displayName>
 				<unitPattern count="one">{0} ܦܣܟ̈ܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܦܣܟ̈ܠܐ</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>ܗܟܬܘܦܣܟܠ</displayName>
 				<unitPattern count="one">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
 				<unitPattern count="other">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
 			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ܟܝܠܘܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ܡܝܓܐܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>ܟܡ/ܫ</displayName>
+				<unitPattern count="one">{0} ܟܡ/ܫ</unitPattern>
+				<unitPattern count="other">{0} ܟܡ/ܫ</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>ܡ/ܪ</displayName>
+				<unitPattern count="one">{0} ܡ/ܪ</unitPattern>
+				<unitPattern count="other">{0} ܡ/ܪ</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>ܡܝܠ̈ܐ/ܫ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ/ܫ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ/ܫ</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>ܩܛܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܩܛܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°ܡ</displayName>
+				<unitPattern count="one">{0}°ܡ</unitPattern>
+				<unitPattern count="other">{0}°ܡ</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>°ܦ</displayName>
+				<unitPattern count="one">{0}°ܦ</unitPattern>
+				<unitPattern count="other">{0}°ܦ</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>ܕ ܟܠܒܝܢ</displayName>
+				<unitPattern count="one">{0} ܕ ܟܠܒܝܢ</unitPattern>
+				<unitPattern count="other">{0} ܕ ܟܠܒܝܢ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<displayName>ܢܝܘܬܢ-ܡܝܬܪ̈ܐ</displayName>
 				<unitPattern count="one">{0} ܢܝܘܬܢ-ܡܝܬܪ̈ܐ</unitPattern>
 				<unitPattern count="other">{0} ܢܝܘܬܢ-ܡܝܬܪ̈ܐ</unitPattern>
 			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>ܟܡ³</displayName>
+				<unitPattern count="one">{0} ܟܡ³</unitPattern>
+				<unitPattern count="other">{0} ܟܡ³</unitPattern>
+			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>ܡ³</displayName>
+				<unitPattern count="one">{0} ܡ³</unitPattern>
+				<unitPattern count="other">{0} ܡ³</unitPattern>
+				<perUnitPattern>{0}/ܡ³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>ܣܡ³</displayName>
+				<unitPattern count="one">{0} ܣܡ³</unitPattern>
+				<unitPattern count="other">{0} ܣܡ³</unitPattern>
+				<perUnitPattern>{0}/ܣܡ³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>ܡܝܠ̈ܐ³</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ³</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>ܝܪ̈ܕܐ³</displayName>
+				<unitPattern count="one">{0} ܝܪܕܐ³</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܕܐ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>ܐܩܠ̈ܐ³</displayName>
+				<unitPattern count="one">{0} ܐܩܠܐ³</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>ܐܢ³</displayName>
@@ -5590,6 +6909,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ܠܝܬܪܐ</displayName>
+				<unitPattern count="one">{0} ܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܠܝܬܪ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܠ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>ܕܝܣܝܠܝܬܪ̈ܐ</displayName>
@@ -5606,17 +6928,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ܡܠܬܪ܊</unitPattern>
 				<unitPattern count="other">{0} ܡܠܬܪ̈܊</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ܐܩܠ̈ܐ-ܦܕܢܐ</displayName>
 				<unitPattern count="one">{0} ܐܩܠ̈ܐ-ܦܕܢܐ</unitPattern>
 				<unitPattern count="other">{0} ܐܩܠ̈ܐ-ܦܕܢܐ</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
+				<displayName>ܓܠܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ</unitPattern>
 				<perUnitPattern>{0}/ܓܠܘܢ̈ܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<perUnitPattern>{0}/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</displayName>
+				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ܬܪ̈ܘܕܐ ܪ̈ܒܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܪܒܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܪ̈ܒܐ</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܙܥܘܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ܛܘܦܬܐ</displayName>
+				<unitPattern count="one">{0} ܛܘܦܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܛܘܦ̈ܐ</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>ܕܪܟܡܐ ܪܕܘܝܐ</displayName>
+				<unitPattern count="one">{0} ܕܪܟܡܐ ܪܕܘܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܟܡܐ ܪ̈ܕܘܝܐ</unitPattern>
 			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>ܦܢܝܬܐ ܫܪܫܢܝܬܐ</displayName>
+				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -5627,6 +7017,48 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<listPattern type="or">
 			<listPatternPart type="end">{0}، ܝܐ {1}</listPatternPart>
 			<listPatternPart type="2">{0} ܝܐ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܝܐ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ܝܐ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܝܐ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ܝܐ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -5643,6 +7075,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern draft="provisional">{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{title} {given} {given2} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="provisional">{title} {given} {given2} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
 			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
@@ -5717,10 +7155,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}.</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram-allCaps}.</namePattern>
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
 			<namePattern draft="provisional">{surname}، {given-initial}</namePattern>
@@ -5735,10 +7173,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}.</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram-allCaps}.</namePattern>
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern draft="provisional">{surname-prefix} {surname-core}، {given} {given2}</namePattern>

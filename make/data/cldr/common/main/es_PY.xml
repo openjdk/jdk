@@ -257,6 +257,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-day">
 				<displayName draft="contributed">día</displayName>
 			</unit>
+			<unit type="electric-volt">
+				<displayName>voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>vatios</displayName>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>

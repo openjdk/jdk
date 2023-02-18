@@ -163,4 +163,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 	</numbers>
+	<personNames>
+		<sampleName item="nativeG">
+			<nameField type="given">ज़ेनडाया</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">आइरिन</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">मेरी सू</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given">बेरत्राम विल्बरफोर्स</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">सिंबाद</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">कैथी</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ज़ज़ीलिया</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given">ऐडा कोर्निलिया</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

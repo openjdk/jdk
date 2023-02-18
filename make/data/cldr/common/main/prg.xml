@@ -636,7 +636,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="unconfirmed">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
@@ -666,7 +666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">dd.MM 'st'. y – dd.MM 'st'. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, dd. – E, dd.MM 'st'. y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, dd. – E, dd.MM 'st'. y</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM 'st'. y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">E, dd.MM 'st'. y – E, dd.MM 'st'. y</greatestDifference>
 						</intervalFormatItem>

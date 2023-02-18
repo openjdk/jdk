@@ -307,6 +307,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-hour">
 				<displayName draft="contributed">hora</displayName>
 			</unit>
+			<unit type="electric-volt">
+				<displayName>voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>vatios</displayName>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>acre pie</displayName>
+			</unit>
 		</unitLength>
 	</units>
 </ldml>

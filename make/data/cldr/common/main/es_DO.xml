@@ -48,19 +48,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<days>
-					<dayContext type="format">
-						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">D</day>
-							<day type="mon" draft="contributed">L</day>
-							<day type="tue" draft="contributed">M</day>
-							<day type="wed" draft="contributed">M</day>
-							<day type="thu" draft="contributed">J</day>
-							<day type="fri" draft="contributed">V</day>
-							<day type="sat" draft="contributed">S</day>
-						</dayWidth>
-					</dayContext>
-				</days>
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
@@ -225,6 +212,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-day">
 				<unitPattern count="one" draft="contributed">{0}d.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}d.</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>vatios</displayName>
 			</unit>
 		</unitLength>
 	</units>

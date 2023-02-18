@@ -689,6 +689,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">V</day>
 							<day type="sat" draft="unconfirmed">S</day>
 						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">dom</day>
+							<day type="mon" draft="unconfirmed">lun</day>
+							<day type="tue" draft="unconfirmed">mar</day>
+							<day type="wed" draft="unconfirmed">mie</day>
+							<day type="thu" draft="unconfirmed">chu</day>
+							<day type="fri" draft="unconfirmed">vie</day>
+							<day type="sat" draft="unconfirmed">sab</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">dominche</day>
 							<day type="mon" draft="unconfirmed">luns</day>
@@ -717,6 +726,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">Ch</day>
 							<day type="fri" draft="unconfirmed">V</day>
 							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">dom</day>
+							<day type="mon" draft="unconfirmed">lun</day>
+							<day type="tue" draft="unconfirmed">mar</day>
+							<day type="wed" draft="unconfirmed">mie</day>
+							<day type="thu" draft="unconfirmed">chu</day>
+							<day type="fri" draft="unconfirmed">vie</day>
+							<day type="sat" draft="unconfirmed">sab</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">dominche</day>
@@ -796,6 +814,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">a.C.</era>
+						<era type="0" alt="variant" draft="unconfirmed">AEC</era>
+						<era type="1" draft="unconfirmed">d.C.</era>
+						<era type="1" alt="variant" draft="unconfirmed">EC</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">a.C.</era>
 						<era type="0" alt="variant" draft="unconfirmed">AEC</era>
@@ -1326,6 +1350,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MYR">
 				<displayName draft="unconfirmed">ringgit de Malasia</displayName>
+				<displayName count="one" draft="unconfirmed">ringgit de Malasia</displayName>
+				<displayName count="other" draft="unconfirmed">ringgit de Malasia</displayName>
 			</currency>
 			<currency type="PHP">
 				<displayName draft="unconfirmed">piso filipino</displayName>
@@ -1372,6 +1398,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="long">
 			<compoundUnit type="per">
 				<compoundUnitPattern draft="unconfirmed">{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="angle-revolution">
 				<displayName draft="unconfirmed">revolución</displayName>
@@ -1495,8 +1524,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="angle-revolution">
+				<unitPattern count="one" draft="unconfirmed">{0} rev</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} rev</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one" draft="unconfirmed">{0} rad</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
 				<displayName draft="unconfirmed">º</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one" draft="unconfirmed">{0} arcmin</unitPattern>
@@ -1506,8 +1545,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} arcsec</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} arcsec</unitPattern>
 			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="one" draft="unconfirmed">{0} kt</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="one" draft="unconfirmed">{0}‰</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
+			</unit>
 			<unit type="energy-joule">
 				<displayName draft="unconfirmed">J</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} J</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} J</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="unconfirmed">cm</displayName>
@@ -1520,11 +1577,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} tm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} tm</unitPattern>
 			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="one" draft="unconfirmed">{0} kg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
+			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">g</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} g</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one" draft="unconfirmed">{0} tn</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} tn</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one" draft="unconfirmed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one" draft="unconfirmed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName draft="unconfirmed">W</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} W</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} W</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one" draft="unconfirmed">{0} hp</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} hp</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="one" draft="unconfirmed">{0}°C</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">punto</displayName>
@@ -1532,16 +1617,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">%</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="unconfirmed">cm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} cm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
 			</unit>
+			<unit type="mass-kilogram">
+				<displayName draft="unconfirmed">kg</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} kg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
+			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">g</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} g</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName draft="unconfirmed">°C</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}°C</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">punto</displayName>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west" draft="unconfirmed">{0}U</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
@@ -1568,11 +1678,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0} u {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} u {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} u {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} u {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} u {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} u {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} y {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} y {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} y {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} y {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} y {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} y {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} y {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} y {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

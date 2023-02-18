@@ -6427,5 +6427,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und brx</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ja ko si ta te vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">जेन्दाया</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">आईरिन</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">मेरि सु</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given">बारत्राम विलबारफर्स</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">सिन्दबाद</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">कैथ</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">जाजीलिया</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given">आह-दा कर्नेलिया</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

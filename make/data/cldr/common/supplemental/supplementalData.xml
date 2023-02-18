@@ -1296,7 +1296,6 @@ XXX Code for transations where no currency is involved
 		<language type="aii" scripts="Cyrl"/>
 		<language type="aii" scripts="Syrc" alt="secondary"/>
 		<language type="ain" scripts="Kana Latn" alt="secondary"/>
-		<language type="ajp" scripts="Arab" territories="JO"/>
 		<language type="ak" scripts="Latn"/>
 		<language type="ak" territories="GH" alt="secondary"/>
 		<language type="akk" scripts="Xsux" alt="secondary"/>
@@ -1312,6 +1311,7 @@ XXX Code for transations where no currency is involved
 		<language type="ann" scripts="Latn"/>
 		<language type="anp" scripts="Deva"/>
 		<language type="aoz" scripts="Latn"/>
+		<language type="apc" scripts="Arab" territories="SY"/>
 		<language type="ar" scripts="Arab" territories="AE BH DJ DZ EG EH ER IL IQ JO KM KW LB LY MA MR OM PS QA SA SD SO SY TD TN YE"/>
 		<language type="ar" scripts="Syrc" territories="IR SS" alt="secondary"/>
 		<language type="arc" scripts="Armi Nbat Palm" alt="secondary"/>
@@ -3210,7 +3210,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="he" populationPercent="100" officialStatus="official"/>	<!--Hebrew-->
 			<languagePopulation type="en" populationPercent="85"/>	<!--English-->
 			<languagePopulation type="ar" populationPercent="20" officialStatus="official"/>	<!--Arabic-->
-			<languagePopulation type="ajp" populationPercent="16.5"/>	<!--South Levantine Arabic-->
+			<languagePopulation type="apc" populationPercent="16.5"/>	<!--Levantine Arabic-->
 			<languagePopulation type="ru" populationPercent="11"/>	<!--Russian-->
 			<languagePopulation type="ro" populationPercent="3.7"/>	<!--Romanian-->
 			<languagePopulation type="yi" populationPercent="3"/>	<!--Yiddish-->
@@ -3374,7 +3374,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="JO" gdp="89000000000" literacyPercent="95.9" population="10820600">	<!--Jordan-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official" references="R1036"/>	<!--Arabic-->
-			<languagePopulation type="ajp" populationPercent="51.4"/>	<!--South Levantine Arabic-->
+			<languagePopulation type="apc" populationPercent="51.4"/>	<!--Levantine Arabic-->
 			<languagePopulation type="en" populationPercent="45" references="R1036"/>	<!--English-->
 		</territory>
 		<territory type="JP" gdp="5443000000000" literacyPercent="99" population="125507000">	<!--Japan-->
@@ -3885,7 +3885,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="PS" gdp="21220000000" literacyPercent="95.3" population="4818260">	<!--Palestinian Territories-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
-			<languagePopulation type="ajp" populationPercent="83"/>	<!--South Levantine Arabic-->
+			<languagePopulation type="apc" populationPercent="83"/>	<!--Levantine Arabic-->
 		</territory>
 		<territory type="PT" gdp="314100000000" literacyPercent="95.4" population="10302700">	<!--Portugal-->
 			<languagePopulation type="pt" populationPercent="96" officialStatus="official"/>	<!--Portuguese-->
@@ -4107,6 +4107,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="SY" gdp="50280000000" literacyPercent="84.1" population="19398400">	<!--Syria-->
 			<languagePopulation type="ar" populationPercent="80" officialStatus="official"/>	<!--Arabic-->
+			<languagePopulation type="apc" populationPercent="75"/>	<!--Levantine Arabic-->
 			<languagePopulation type="ku" populationPercent="8"/>	<!--Kurdish-->
 			<languagePopulation type="fr" populationPercent="5.9" officialStatus="official" references="R1088"/>	<!--French-->
 			<languagePopulation type="hy" populationPercent="1.8"/>	<!--Armenian-->
@@ -4402,8 +4403,8 @@ XXX Code for transations where no currency is involved
         <calendar type="gregorian">
            <calendarSystem type="solar" />
            <eras>
-               <era type="0" end="0-12-31" />
-               <era type="1" start="1-01-01" />
+               <era type="0" end="0-12-31" code="gregory-inverse" aliases="bc bce"/>
+               <era type="1" start="1-01-01" code="gregory" aliases="ad ce"/>
            </eras>
         </calendar>
         <calendar type="generic"/>
@@ -4411,6 +4412,8 @@ XXX Code for transations where no currency is involved
         <calendar type="japanese">
           <calendarSystem type="solar" />
           <eras>
+              <era type="-2" end="0-12-31" code="japanese-inverse" aliases="gregory-inverse bc bce"/>
+              <era type="-1" start="1-01-01" code="japanese" aliases="gregory ad ce"/>
               <era type="0" start="645-6-19"/>
               <era type="1" start="650-2-15"/>
               <era type="2" start="672-1-1"/>
@@ -4643,101 +4646,101 @@ XXX Code for transations where no currency is involved
               <era type="229" start="1861-2-19"/>
               <era type="230" start="1864-2-20"/>
               <era type="231" start="1865-4-7"/>
-              <era type="232" start="1868-9-8"/>
-              <era type="233" start="1912-7-30"/>
-              <era type="234" start="1926-12-25"/>
-              <era type="235" start="1989-1-8"/>
-              <era type="236" start="2019-5-1"/>
+              <era type="232" start="1868-9-8" code="meiji"/>
+              <era type="233" start="1912-7-30" code="taisho"/>
+              <era type="234" start="1926-12-25" code="showa"/>
+              <era type="235" start="1989-1-8" code="heisei"/>
+              <era type="236" start="2019-5-1" code="reiwa"/>
           </eras>
         </calendar>
         <calendar type="islamic">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-civil">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-16"/>
+              <era type="0" start="622-7-16" code="islamic-civil" aliases="islamicc ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-rgsa">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-rgsa" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-tbla">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-tbla" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-umalqura">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-umalqura" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="chinese">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2636-01-01"/> <!-- 'sequential' year -->
+              <era type="0" start="-2636-01-01" code="chinese"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="hebrew">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-3760-10-7"/>
+              <era type="0" start="-3760-10-7" code="hebrew" aliases="am"/>
           </eras>
         </calendar>
         <calendar type="buddhist">
           <calendarSystem type="solar" />
           <eras>
-              <era type="0" start="-542-01-01"/>
+              <era type="0" start="-542-01-01" code="buddhist" aliases="be"/>
           </eras>
         </calendar>
         <calendar type="coptic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="284-08-28"/>
-              <era type="1" start="284-08-29"/>
+              <era type="0" end="284-08-28" code="coptic-inverse"/>
+              <era type="1" start="284-08-29" code="coptic"/>
           </eras>
         </calendar>
         <calendar type="persian">
           <calendarSystem type="solar"/>
           <eras>
-              <era type="0" start="622-01-01"/>
+              <era type="0" start="622-01-01" code="persian" aliases="ap"/>
           </eras>
         </calendar>
         <calendar type="dangi">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2332-01-01"/> <!-- 'sequential' year -->
+              <era type="0" start="-2332-01-01" code="dangi"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="ethiopic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="8-08-28"/>
-              <era type="1" start="8-08-29"/>
+              <era type="0" end="8-08-28" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
+              <era type="1" start="8-08-29" code="ethiopic" aliases="incar"/>
           </eras>
         </calendar>
         <calendar type="ethiopic-amete-alem">
           <eras>
-              <era type="0" end="-5492-08-29"/>
+              <era type="0" end="-5492-08-29" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
           </eras>
         </calendar>
         <calendar type="indian">
           <eras>
-              <era type="0" start="79-01-01"/>
+              <era type="0" start="79-01-01" code="indian" aliases="saka"/>
           </eras>
         </calendar>
         <calendar type="roc">
           <eras>
-              <era type="0" end="1911-12-31"/>
-              <era type="1" start="1912-01-01"/>
+              <era type="0" end="1911-12-31" code="roc-inverse" aliases="before-roc"/>
+              <era type="1" start="1912-01-01" code="roc" aliases="minguo"/>
           </eras>
         </calendar>
 
@@ -5411,9 +5414,22 @@ XXX Code for transations where no currency is involved
 		<parentLocale parent="en_IN" locales="hi_Latn"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
 		<parentLocale parent="fr_HT" locales="ht"/>
-		<parentLocale parent="no" locales="nb nn"/>
+		<parentLocale parent="no" locales="nb nn no_NO"/>
 		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
+	</parentLocales>
+
+	<parentLocales component="segmentations">
+		<parentLocale parent="zh" locales="zh_Hant"/>
+	</parentLocales>
+
+	<parentLocales component="collations">
+		<parentLocale parent="bs" locales="bs_Cyrl"/>
+		<parentLocale parent="sr" locales="sr_Latn"/>
+		<parentLocale parent="sr_ME" locales="sr_Cyrl_ME"/>
+		<parentLocale parent="zh" locales="zh_Hant"/>
+		<parentLocale parent="zh_Hant" locales="yue yue_Hant"/>
+		<parentLocale parent="zh_Hans" locales="yue_CN yue_Hans yue_Hans_CN"/>
 	</parentLocales>
 
 	<personNamesDefaults>

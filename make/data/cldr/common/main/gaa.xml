@@ -730,12 +730,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">LB</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">SN</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">LB</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">SN</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="unconfirmed">LEEBI</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">SHWANE</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">LB</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">SN</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">LB</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">SN</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="unconfirmed">LEEBI</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">SHWANE</dayPeriod>
@@ -1587,6 +1599,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BYN">
 				<displayName draft="unconfirmed">Belarus Rubol</displayName>
 				<displayName count="other" draft="unconfirmed">Belarus rubolii</displayName>
+				<symbol alt="narrow" draft="unconfirmed">BYN</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">Belize Dɔla</displayName>
@@ -1940,6 +1953,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="angle-degree">
+				<displayName draft="unconfirmed">deg</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">%</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">afii ohai</displayName>
 				<unitPattern count="other" draft="unconfirmed">afii ohai {0}</unitPattern>
@@ -2104,6 +2125,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">%</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">afi</displayName>
 				<unitPattern count="other" draft="unconfirmed">a{0}</unitPattern>
@@ -2142,8 +2167,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">m</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">mm</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}mm</unitPattern>
 			</unit>
 			<coordinateUnit>

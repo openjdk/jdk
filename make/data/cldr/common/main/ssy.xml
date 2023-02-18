@@ -13,6 +13,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="aa" draft="unconfirmed">Qafar</language>
+			<language type="ssy" draft="contributed">Saho</language>
 		</languages>
 		<scripts>
 			<script type="Latn" draft="unconfirmed">Latin</script>
@@ -24,9 +25,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b c d e f g h i k l m n o q r s t u w x y]</exemplarCharacters>
+		<exemplarCharacters>[a b t s e c k x i d q r f g o l m n u w h y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[j p v z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D E F G H I K L M N O Q R S T U W X Y]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B T S E C K X I D Q R F G O L M N U W H Y]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

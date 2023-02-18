@@ -1411,6 +1411,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<symbol>SHP</symbol>
 			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leonean Leone (1964–2022)</displayName>
+				<displayName count="one">Sierra Leonean leone (1964–2022)</displayName>
+				<displayName count="other">Sierra Leonean leones (1964–2022)</displayName>
+			</currency>
 			<currency type="SOS">
 				<symbol>SOS</symbol>
 			</currency>
@@ -1772,11 +1777,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>min.</displayName>
 				<unitPattern count="one">{0}min.</unitPattern>
 				<unitPattern count="other">{0}min.</unitPattern>
+				<perUnitPattern>{0}/min.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sec.</displayName>
 				<unitPattern count="one">{0}s.</unitPattern>
 				<unitPattern count="other">{0}s.</unitPattern>
+				<perUnitPattern>{0} ps.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>msec.</displayName>
@@ -1909,8 +1916,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultra heavy</styleName>
 	</typographicNames>
 	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="title">Mr</nameField>
+		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title" draft="provisional">Prof Dr</nameField>
+			<nameField type="title">Prof Dr</nameField>
 		</sampleName>
 	</personNames>
 </ldml>
