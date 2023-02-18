@@ -28,7 +28,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @summary Provides exchaustive verification of Character.toUpperCase and Character.toLowerCase
+ * @summary Provides exhaustive verification of Character.toUpperCase and Character.toLowerCase
  * for all code points in the latin1 range 0-255.
  * @run testng Latin1CaseConversion
  */
