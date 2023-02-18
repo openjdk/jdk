@@ -164,7 +164,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 vmTestbase/nsk/stress/except/except012.java 8297977 generic-all
-vmTestbase/nsk/stress/strace/strace002.java 8288912 macosx-x64,windows-x64
-vmTestbase/nsk/stress/strace/strace003.java 8297824 macosx-x64,windows-x64
-vmTestbase/nsk/stress/strace/strace004.java 8297824 macosx-x64,windows-x64
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
