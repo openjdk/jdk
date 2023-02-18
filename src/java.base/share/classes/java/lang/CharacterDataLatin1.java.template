@@ -156,13 +156,13 @@ class CharacterDataLatin1 extends CharacterData {
             return U;
         }
 
-        // Special-case for 'Y with Diaeresis' which uppercases out of latin1
+        // Special-case for 'y with Diaeresis' which uppercases out of latin1
         if (ch == 0xFF) {
-            return 0x178;
+            return 0x178; // Capital Letter Y with Diaeresis
         }
-        // Special-case for 'Mu' which uppercases out of latin1
+        // Special-case for 'Micro Sign' which uppercases out of latin1
         if (ch == 0xB5) {
-            return 0x39C;
+            return 0x39C; // Greek Capital Letter Mu
         }
         return ch;
     }
