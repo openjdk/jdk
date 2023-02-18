@@ -36,10 +36,27 @@ public class StraceBase {
             "jdk.internal.vm.StackableScope",
     };
 
+    private static boolean isValidJavaName(String name) {
+        if (!Character.isJavaIdentifierStart(name.charAt(0))) {
+            return false;
+        }
+        for (var ch : name.toCharArray()) {
+            if (!(Character.isJavaIdentifierPart(ch) || ch == '.')) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     *   Method verifies that StackTraceElement is sane and might be expected it the current stack.
+     */
     final static boolean checkElement(StackTraceElement element) {
         String className = element.getClassName();
+        String methodName = element.getMethodName();
+        if (!isValidJavaName(className) || !isValidJavaName(methodName)) {
+            return false;
+        }
         if (className.startsWith("nsk.stress.strace.strace")) {
-            String methodName = element.getMethodName();
             if (methodName.startsWith("recursiveMethod")
                     || methodName.startsWith("run")) {
                 return true;
