@@ -398,19 +398,31 @@ final class StringLatin1 {
                                                 byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
-            char c1 = (char)(value[toffset++] & 0xff);
-            char c2 = StringUTF16.getChar(other, ooffset++);
-            if (c1 == c2) {
+            int l = value[toffset++] & 0xff;
+            int u = StringUTF16.getChar(other, ooffset++);
+            if (l == u) {
                 continue;
             }
-            char u1 = (char) CharacterDataLatin1.instance.toUpperCase(c1);
-            char u2 = Character.toUpperCase(c2);
-            if (u1 == u2) {
-                continue;
+            // Fast path if both code points are latin1
+            if (u <= 0xFF) {
+                if (CharacterDataLatin1.equalsIgnoreCase((byte) l, (byte) u)) {
+                    continue; // Equals ignoring case
+                } else {
+                    return false;
+                }
             }
-            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
-                continue;
+            // If u folds to latin1, we compare lowercases
+            int latLowerCase = CharacterData.latin1LowerCase(u);
+            if (latLowerCase != -1) {
+                // c2 is a code point like \u0130 which folds into the latin1 range
+                int l1 = CharacterDataLatin1.instance.toLowerCase(l);
+                if (l1 == latLowerCase) {
+                    continue; // Equals ignoring case
+                } else {
+                    return false;
+                }
             }
+            // Non-latin Unicode which does not fold into latin1
             return false;
         }
         return true;

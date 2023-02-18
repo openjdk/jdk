@@ -97,5 +97,82 @@ public class RegionMatchesIC {
 
     }
 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Benchmark)
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(value = 3)
+    public static class Mixed {
+
+        @Param({"1024"})
+        public int size;
+
+        @Param({"ascii-match",
+                "ascii-mismatch",
+                "number-match",
+                "number-mismatch",
+                "lat1-match",
+                "lat1-mismatch",
+                "utf16-match",
+                "utf16-mismatch"
+        })
+        String codePoints;
+        private String leftString;
+        private String rightString;
+
+
+        @Setup
+        public void setup() {
+
+            switch (codePoints) {
+                case "ascii-match" -> {
+                    leftString =   "a".repeat(size);
+                    rightString = "A".repeat(size);
+                }
+                case "ascii-mismatch" -> {
+                    leftString =   "a".repeat(size);
+                    rightString = "b".repeat(size);
+                }
+                case "number-match" -> {
+                    leftString =   "7".repeat(size);
+                    rightString = "7".repeat(size);
+                }
+                case "number-mismatch" -> {
+                    leftString =   "7".repeat(size);
+                    rightString = "9".repeat(size);
+                }
+                case "lat1-match" -> {
+                    leftString =   "\u00e5".repeat(size);
+                    rightString = "\u00c5".repeat(size);
+                }
+                case "lat1-mismatch" -> {
+                    leftString =   "\u00e5".repeat(size);
+                    rightString = "\u00c6".repeat(size);
+                }
+                case "utf16-match" -> {
+                    leftString =   "i".repeat(size);
+                    rightString = "\u0130".repeat(size);
+                }
+                case "utf16-mismatch" -> {
+                    leftString =   "a".repeat(size);
+                    rightString = "\u0130".repeat(size);
+                }
+                default -> throw new IllegalArgumentException("Unsupported coding: " + codePoints);
+            }
+            // Make sure strings do not String.equals by adding a prefix.
+            // Prefix the right String with a UTF16 code point to force mixed coders.
+            leftString = "l" + leftString;
+            rightString = "\u025b" + rightString;
+        }
+
+
+        @Benchmark
+        public boolean regionMatchesIC() {
+            return leftString.regionMatches(true, 1, rightString, 1, size);
+        }
+
+    }
+
 
 }

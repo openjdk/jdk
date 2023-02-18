@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,5 +82,47 @@ abstract class CharacterData {
                 default -> CharacterDataUndefined.instance;
             };
         }
+    }
+
+    /**
+     * There are a few Unicode code points which case folds into the latin1
+     * range. This method returns that latin 1 lowercase fold,
+     * or -1 if the code point does not fold into latin1.
+     *
+     * This method is equivalent to the following code:
+     *
+     * {@snippet :
+     *   int folded = Character.toLowerCase(Character.toUpperCase(c));
+     *   return folded <= 0XFF ? folded : -1;
+     * }
+     *
+     * For performance reasons, the implementation compares to a set of known
+     * code points instead. These code points were found using an exhaustive
+     * search over all non-latin1 characters:
+     *
+     * {@snippet :
+     *   for (int c = 256; c < Character.MAX_VALUE; c++) {
+     *       int folded = Character.toLowerCase(Character.toUpperCase(c));
+     *       if (folded <= 0XFF) {
+     *           System.out.printf("0x%x folds to 0x%x%n", c, folded);
+     *       }
+     *   }
+     * }
+     *
+     * To catch regressions caused by future changes in Unicode code folding rules,
+     * an exhaustive test verifies that the constants in this method is always
+     * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
+     */
+    static int latin1LowerCase(int c) {
+        return switch (c) {
+            case 0x130 -> 0x69;   // Latin capital letter I with dot above. Upper: i
+            case 0x131 -> 0x69;   // Latin small letter dotless i.          Lower: I
+            case 0x178 -> 0xFF;   // Latin capital letter Y with diaeresis. Lower: Y with Diaeresis
+            case 0x17f -> 0x73;   // Latin small letter long s.             Upper: S
+            case 0x1e9e -> 0xDF;  // Latin capital letter sharp s.          Lower: Sharp s
+            case 0x212a -> 0x6B;  // Kelvin sign.                           Lower: k
+            case 0x212b -> 0xE5;  // Angstrom sign.                         Lower: A with Overring
+            default -> -1;
+        };
     }
 }
