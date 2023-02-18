@@ -30,6 +30,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -70,7 +71,7 @@ import javax.imageio.stream.ImageInputStream;
  * @see javax.imageio.spi.ImageReaderSpi
  *
  */
-public abstract class ImageReader implements AutoCloseable {
+public abstract class ImageReader implements Closeable {
 
     /**
      * The {@code ImageReaderSpi} that instantiated this object,

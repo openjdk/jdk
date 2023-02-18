@@ -30,6 +30,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.awt.image.Raster;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ import javax.imageio.spi.ImageWriterSpi;
  * @see javax.imageio.spi.ImageWriterSpi
  *
  */
-public abstract class ImageWriter implements ImageTranscoder, AutoCloseable {
+public abstract class ImageWriter implements ImageTranscoder, Closeable {
 
     /**
      * The {@code ImageWriterSpi} that instantiated this object,
