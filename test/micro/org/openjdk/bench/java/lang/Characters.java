@@ -89,14 +89,14 @@ public class Characters {
     @Warmup(iterations = 5, time = 1)
     @Measurement(iterations = 5, time = 1)
     @Fork(3)
-    public static class Latin1CaseFolding {
+    public static class Latin1CaseConversions {
         @Param({
                 "low",   // 0x09 pre A
                 "A",  // 0x41 uppercase A
                 "a",  // 0x61 lowercase a
                 "A-grave", // 0xC0 uppercase A-grave
                 "a-grave", // 0xE0 lowercase a-grave
-                "mu", // 0xB5 lowercase 'my'
+                "micro", // 0xB5 lowercase 'Micro Sign'
                 "yD" // 0xFF lowercase 'y with Diaeresis'
         })
         private String codePoint;
@@ -111,7 +111,7 @@ public class Characters {
                 case "A-grave" -> 0xC0;
                 case "a-grave" -> 0xE0;
                 case "yD" -> 0xE0;
-                case "mu" -> 0xFF;
+                case "micro" -> 0xFF;
                 default -> throw new IllegalArgumentException("Unknown character: " + codePoint);
             };
         }

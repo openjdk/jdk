@@ -30,12 +30,12 @@ import static org.testng.Assert.fail;
  * @test
  * @summary Provides exchaustive verification of Character.toUpperCase and Character.toLowerCase
  * for all code points in the latin1 range 0-255.
- * @run testng Latin1CaseFolding
+ * @run testng Latin1CaseConversion
  */
-public class Latin1CaseFolding {
+public class Latin1CaseConversion {
 
     @Test
-    public void shouldCaseFoldLatin1() {
+    public void shouldUpperCaseAndLowerCaseLatin1() {
         for (int c = 0; c < 256; c++) {
             int upper = Character.toUpperCase(c);
             int lower = Character.toLowerCase(c);
@@ -50,9 +50,9 @@ public class Latin1CaseFolding {
             } else if (c <= 0x7A) { // a-z
                 assertEquals(upper, c - 32);
                 assertEquals(lower, c);
-            } else if (c < 0xB5) { // Between z and my
+            } else if (c < 0xB5) { // Between z and Micro Sign
                 assertUnchanged(upper, lower, c);
-            } else if (c == 0xB5) { // Special case for my
+            } else if (c == 0xB5) { // Special case for Micro Sign
                 assertEquals(upper, 0x39C);
                 assertEquals(lower, c);
             } else if (c < 0xC0) { // Between my and A-grave
