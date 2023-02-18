@@ -8929,26 +8929,6 @@ instruct cmpU_branch(cmpOpU cmp, iRegI op1, iRegI op2, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpU_loop(cmpOpU cmp, iRegI op1, iRegI op2, label lbl)
-%{
-  // Same match rule as `far_cmpU_loop'.
-  match(CountedLoopEnd cmp (CmpU op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpU_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                  as_Register($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-  ins_short_branch(1);
-%}
-
 // Compare signed long and branch near instructions
 instruct cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl)
 %{
@@ -8969,25 +8949,6 @@ instruct cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpL_loop(cmpOp cmp, iRegL op1, iRegL op2, label lbl)
-%{
-  // Same match rule as `far_cmpL_loop'.
-  match(CountedLoopEnd cmp (CmpL op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpL_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), as_Register($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-  ins_short_branch(1);
-%}
-
 // Compare unsigned long and branch near instructions
 instruct cmpUL_branch(cmpOpU cmp, iRegL op1, iRegL op2, label lbl)
 %{
@@ -8998,25 +8959,6 @@ instruct cmpUL_branch(cmpOpU cmp, iRegL op1, iRegL op2, label lbl)
 
   ins_cost(BRANCH_COST);
   format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpUL_branch" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                  as_Register($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-  ins_short_branch(1);
-%}
-
-instruct cmpUL_loop(cmpOpU cmp, iRegL op1, iRegL op2, label lbl)
-%{
-  // Same match rule as `far_cmpUL_loop'.
-  match(CountedLoopEnd cmp (CmpUL op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpUL_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
@@ -9048,26 +8990,6 @@ instruct cmpP_branch(cmpOpU cmp, iRegP op1, iRegP op2, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpP_loop(cmpOpU cmp, iRegP op1, iRegP op2, label lbl)
-%{
-  // Same match rule as `far_cmpP_loop'.
-  match(CountedLoopEnd cmp (CmpP op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpP_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                  as_Register($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-  ins_short_branch(1);
-%}
-
 // Compare narrow pointer and branch near instructions
 instruct cmpN_branch(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
 %{
@@ -9079,26 +9001,6 @@ instruct cmpN_branch(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
   ins_cost(BRANCH_COST);
 
   format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpN_branch" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                  as_Register($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-  ins_short_branch(1);
-%}
-
-instruct cmpN_loop(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
-%{
-  // Same match rule as `far_cmpN_loop'.
-  match(CountedLoopEnd cmp (CmpN op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpN_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
@@ -9128,23 +9030,6 @@ instruct cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   ins_short_branch(1);
 %}
 
-instruct cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
-%{
-  // Same match rule as `far_cmpF_loop'.
-  match(CountedLoopEnd cmp (CmpF op1 op2));
-  effect(USE lbl);
-
-  ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "float_b$cmp $op1, $op2, $lbl\t#@cmpF_loop"%}
-
-  ins_encode %{
-    __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_class_compare);
-  ins_short_branch(1);
-%}
-
 // Compare double and branch near instructions
 instruct cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
 %{
@@ -9154,24 +9039,6 @@ instruct cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
 
   ins_cost(XFER_COST + BRANCH_COST);
   format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_branch"%}
-
-  ins_encode %{
-    __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
-                        as_FloatRegister($op2$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_class_compare);
-  ins_short_branch(1);
-%}
-
-instruct cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
-%{
-  // Same match rule as `far_cmpD_loop'.
-  match(CountedLoopEnd cmp (CmpD op1 op2));
-  effect(USE lbl);
-
-  ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9240,26 +9107,6 @@ instruct cmpUEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero,
   ins_short_branch(1);
 %}
 
-instruct cmpUEqNeLeGt_reg_imm0_loop(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero, label lbl)
-%{
-  // Same match rule as `far_cmpUEqNeLeGt_reg_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpU op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, zr, $lbl\t#@cmpUEqNeLeGt_reg_imm0_loop" %}
-
-
-  ins_encode %{
-    __ enc_cmpUEqNeLeGt_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
 // Compare signed long with zero and branch near instructions
 instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
 %{
@@ -9271,25 +9118,6 @@ instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_cost(BRANCH_COST);
 
   format %{ "b$cmp  $op1, zr, $lbl\t#@cmpL_reg_imm0_branch" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
-instruct cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
-%{
-  // Same match rule as `far_cmpL_reg_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpL op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, zr, $lbl\t#@cmpL_reg_imm0_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label));
@@ -9319,25 +9147,6 @@ instruct cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero
   ins_short_branch(1);
 %}
 
-instruct cmpULEqNeLeGt_reg_imm0_loop(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero, label lbl)
-%{
-  // Same match rule as `far_cmpULEqNeLeGt_reg_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpUL op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, zr, $lbl\t#@cmpULEqNeLeGt_reg_imm0_loop" %}
-
-  ins_encode %{
-    __ enc_cmpUEqNeLeGt_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
 // Compare pointer with zero and branch near instructions
 instruct cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
   // Same match rule as `far_cmpP_reg_imm0_branch'.
@@ -9346,22 +9155,6 @@ instruct cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
 
   ins_cost(BRANCH_COST);
   format %{ "b$cmp   $op1, zr, $lbl\t#@cmpP_imm0_branch" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
-instruct cmpP_imm0_loop(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
-  // Same match rule as `far_cmpP_reg_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpP op1 zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  format %{ "b$cmp   $op1, zr, $lbl\t#@cmpP_imm0_loop" %}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
@@ -9389,23 +9182,6 @@ instruct cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
   ins_short_branch(1);
 %}
 
-instruct cmpN_imm0_loop(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
-  // Same match rule as `far_cmpN_reg_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpN op1 zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "b$cmp  $op1, zr, $lbl\t#@cmpN_imm0_loop" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
 // Compare narrow pointer with pointer zero and branch near instructions
 instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
   // Same match rule as `far_cmpP_narrowOop_imm0_branch'.
@@ -9414,22 +9190,6 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label 
 
   ins_cost(BRANCH_COST);
   format %{ "b$cmp   $op1, zr, $lbl\t#@cmpP_narrowOop_imm0_branch" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
-instruct cmpP_narrowOop_imm0_loop(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
-  // Same match rule as `far_cmpP_narrowOop_imm0_loop'.
-  match(CountedLoopEnd cmp (CmpP (DecodeN op1) zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  format %{ "b$cmp   $op1, zr, $lbl\t#@cmpP_narrowOop_imm0_loop" %}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
@@ -9502,21 +9262,6 @@ instruct far_cmpU_branch(cmpOpU cmp, iRegI op1, iRegI op2, label lbl) %{
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct far_cmpU_loop(cmpOpU cmp, iRegI op1, iRegI op2, label lbl) %{
-  match(CountedLoopEnd cmp (CmpU op1 op2));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp $op1, $op2, $lbl\t#@far_cmpU_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                       as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-%}
-
 instruct far_cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl) %{
   match(If cmp (CmpL op1 op2));
   effect(USE lbl);
@@ -9531,41 +9276,12 @@ instruct far_cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl) %{
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct far_cmpLloop(cmpOp cmp, iRegL op1, iRegL op2, label lbl) %{
-  match(CountedLoopEnd cmp (CmpL op1 op2));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpL_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-%}
-
 instruct far_cmpUL_branch(cmpOpU cmp, iRegL op1, iRegL op2, label lbl) %{
   match(If cmp (CmpUL op1 op2));
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
   format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpUL_branch" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                       as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-%}
-
-instruct far_cmpUL_loop(cmpOpU cmp, iRegL op1, iRegL op2, label lbl) %{
-  match(CountedLoopEnd cmp (CmpUL op1 op2));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpUL_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
@@ -9593,24 +9309,6 @@ instruct far_cmpP_branch(cmpOpU cmp, iRegP op1, iRegP op2, label lbl)
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct far_cmpP_loop(cmpOpU cmp, iRegP op1, iRegP op2, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpP op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpP_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                       as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-%}
-
 instruct far_cmpN_branch(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
 %{
   match(If cmp (CmpN op1 op2));
@@ -9624,24 +9322,6 @@ instruct far_cmpN_branch(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
                        as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmp_branch);
-%}
-
-instruct far_cmpN_loop(cmpOpU cmp, iRegN op1, iRegN op2, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpN op1 op2));
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpN_loop" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode | C2_MacroAssembler::unsigned_branch_mask, as_Register($op1$$reg),
-                  as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
   %}
 
   ins_pipe(pipe_cmp_branch);
@@ -9665,22 +9345,6 @@ instruct far_cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   ins_pipe(pipe_class_compare);
 %}
 
-instruct far_cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpF op1 op2));
-  effect(USE lbl);
-
-  ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_float_b$cmp $op1, $op2, $lbl\t#@far_cmpF_loop"%}
-
-  ins_encode %{
-    __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
-                        *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_class_compare);
-%}
-
 // Double compare and branch instructions
 instruct far_cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
 %{
@@ -9689,22 +9353,6 @@ instruct far_cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
   format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_branch"%}
-
-  ins_encode %{
-    __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
-                        as_FloatRegister($op2$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct far_cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpD op1 op2));
-  effect(USE lbl);
-
-  ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9765,24 +9413,6 @@ instruct far_cmpUEqNeLeGt_imm0_branch(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero,
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpUEqNeLeGt_reg_imm0_loop(cmpOpUEqNeLeGt cmp, iRegI op1, immI0 zero, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpU op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpUEqNeLeGt_reg_imm0_loop" %}
-
-
-  ins_encode %{
-    __ enc_cmpUEqNeLeGt_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
 // compare lt/ge unsigned instructs has no short instruct with same match
 instruct far_cmpULtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegI op1, immI0 zero, label lbl)
 %{
@@ -9799,21 +9429,6 @@ instruct far_cmpULtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegI op1, immI0 zero, lab
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpULtGe_reg_imm0_loop(cmpOpULtGe cmp, iRegI op1, immI0 zero, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpU op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "j  $lbl if $cmp == ge\t#@far_cmpULtGe_reg_imm0_loop" %}
-
-  ins_encode(riscv_enc_far_cmpULtGe_imm0_branch(cmp, op1, lbl));
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
 instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
 %{
   match(If cmp (CmpL op1 zero));
@@ -9823,23 +9438,6 @@ instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_cost(BRANCH_COST * 2);
 
   format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpL_reg_imm0_branch" %}
-
-  ins_encode %{
-    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
-instruct far_cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpL op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpL_reg_imm0_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label), /* is_far */ true);
@@ -9865,23 +9463,6 @@ instruct far_cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpULEqNeLeGt_reg_imm0_loop(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpUL op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpULEqNeLeGt_reg_imm0_loop" %}
-
-  ins_encode %{
-    __ enc_cmpUEqNeLeGt_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
 // compare lt/ge unsigned instructs has no short instruct with same match
 instruct far_cmpULLtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegL op1, immL0 zero, label lbl)
 %{
@@ -9898,41 +9479,12 @@ instruct far_cmpULLtGe_reg_imm0_branch(cmpOpULtGe cmp, iRegL op1, immL0 zero, la
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpULLtGe_reg_imm0_loop(cmpOpULtGe cmp, iRegL op1, immL0 zero, label lbl)
-%{
-  match(CountedLoopEnd cmp (CmpUL op1 zero));
-
-  effect(USE op1, USE lbl);
-
-  ins_cost(BRANCH_COST);
-
-  format %{ "j  $lbl if $cmp == ge\t#@far_cmpULLtGe_reg_imm0_loop" %}
-
-  ins_encode(riscv_enc_far_cmpULtGe_imm0_branch(cmp, op1, lbl));
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
 instruct far_cmpP_imm0_branch(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
   match(If cmp (CmpP op1 zero));
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
   format %{ "far_b$cmp   $op1, zr, $lbl\t#@far_cmpP_imm0_branch" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
-instruct far_cmpP_imm0_loop(cmpOpEqNe cmp, iRegP op1, immP0 zero, label lbl) %{
-  match(CountedLoopEnd cmp (CmpP op1 zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp   $op1, zr, $lbl\t#@far_cmpP_imm0_loop" %}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
@@ -9956,41 +9508,12 @@ instruct far_cmpN_imm0_branch(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %
   ins_pipe(pipe_cmpz_branch);
 %}
 
-instruct far_cmpN_imm0_loop(cmpOpEqNe cmp, iRegN op1, immN0 zero, label lbl) %{
-  match(CountedLoopEnd cmp (CmpN op1 zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-
-  format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpN_imm0_loop" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
 instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
   match(If cmp (CmpP (DecodeN op1) zero));
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
   format %{ "far_b$cmp   $op1, zr, $lbl\t#@far_cmpP_narrowOop_imm0_branch" %}
-
-  ins_encode %{
-    __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
-  %}
-
-  ins_pipe(pipe_cmpz_branch);
-%}
-
-instruct far_cmpP_narrowOop_imm0_loop(cmpOpEqNe cmp, iRegN op1, immP0 zero, label lbl) %{
-  match(CountedLoopEnd cmp (CmpP (DecodeN op1) zero));
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp   $op1, zr, $lbl\t#@far_cmpP_narrowOop_imm0_loop" %}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label), /* is_far */ true);
