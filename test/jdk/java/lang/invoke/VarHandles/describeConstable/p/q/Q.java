@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.coordinator.actions;
 
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.services.GraphViewer;
-import org.openide.nodes.Node;
+package p.q;
 
-public class GraphCloneCookie implements Node.Cookie {
+public class Q {
+    public static String stringField = "QClass";
+    public static long longField = 100L;
 
-    private final GraphViewer viewer;
-    private final InputGraph graph;
-
-    public GraphCloneCookie(GraphViewer viewer, InputGraph graph) {
-        this.viewer = viewer;
-        this.graph = graph;
-    }
-
-    public void openClone() {
-        viewer.view(graph, true);
-    }
+    public static String stringField2 = "QClass2";
+    public static long longField2 = 102L;
 }

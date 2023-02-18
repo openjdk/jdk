@@ -55,7 +55,7 @@ public:
   // previous value is assumed to have already been loaded into pre_val.
   ShenandoahPreBarrierStub(LIR_Opr pre_val) :
     _do_load(false), _addr(LIR_OprFact::illegalOpr), _pre_val(pre_val),
-    _patch_code(lir_patch_none), _info(NULL)
+    _patch_code(lir_patch_none), _info(nullptr)
   {
     assert(_pre_val->is_register(), "should be a register");
   }
@@ -71,7 +71,7 @@ public:
     if (_do_load) {
       // don't pass in the code emit info since it's processed in the fast
       // path
-      if (_info != NULL)
+      if (_info != nullptr)
         visitor->do_slow_case(_info);
       else
         visitor->do_slow_case();
@@ -147,7 +147,7 @@ private:
 public:
   LIR_OpShenandoahCompareAndSwap(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
                                  LIR_Opr t1, LIR_Opr t2, LIR_Opr result)
-    : LIR_Op(lir_none, result, NULL)  // no info
+    : LIR_Op(lir_none, result, nullptr)  // no info
     , _addr(addr)
     , _cmp_value(cmp_value)
     , _new_value(new_value)
@@ -210,27 +210,27 @@ public:
   ShenandoahBarrierSetC1();
 
   CodeBlob* pre_barrier_c1_runtime_code_blob() {
-    assert(_pre_barrier_c1_runtime_code_blob != NULL, "");
+    assert(_pre_barrier_c1_runtime_code_blob != nullptr, "");
     return _pre_barrier_c1_runtime_code_blob;
   }
 
   CodeBlob* load_reference_barrier_strong_rt_code_blob() {
-    assert(_load_reference_barrier_strong_rt_code_blob != NULL, "");
+    assert(_load_reference_barrier_strong_rt_code_blob != nullptr, "");
     return _load_reference_barrier_strong_rt_code_blob;
   }
 
   CodeBlob* load_reference_barrier_strong_native_rt_code_blob() {
-    assert(_load_reference_barrier_strong_native_rt_code_blob != NULL, "");
+    assert(_load_reference_barrier_strong_native_rt_code_blob != nullptr, "");
     return _load_reference_barrier_strong_native_rt_code_blob;
   }
 
   CodeBlob* load_reference_barrier_weak_rt_code_blob() {
-    assert(_load_reference_barrier_weak_rt_code_blob != NULL, "");
+    assert(_load_reference_barrier_weak_rt_code_blob != nullptr, "");
     return _load_reference_barrier_weak_rt_code_blob;
   }
 
   CodeBlob* load_reference_barrier_phantom_rt_code_blob() {
-    assert(_load_reference_barrier_phantom_rt_code_blob != NULL, "");
+    assert(_load_reference_barrier_phantom_rt_code_blob != nullptr, "");
     return _load_reference_barrier_phantom_rt_code_blob;
   }
 
