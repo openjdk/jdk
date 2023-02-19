@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.DoubleToIntFunction;
+import static java.lang.Double.longBitsToDouble;
 
 /*
  * Shared static test methods for numerical tests.  Sharing these
@@ -36,6 +37,38 @@ import java.util.function.DoubleToIntFunction;
 
 public class Tests {
     private Tests(){}; // do not instantiate
+
+    static volatile double zero = 0.0;
+
+    // Create NaN value at runtime; use volatile to foil compile-time
+    // constant folding.
+    private static final double PLATFORM_NAN = zero / zero;
+
+    public static final double[] NaNs = {
+            Double.NaN,
+            PLATFORM_NAN,
+            bitwiseNegate(PLATFORM_NAN),
+            // Exotic NaN bit patterns. Includes values that would
+            // *not* be considered a NaN if only the high-order
+            // 32-bits were examined.
+            longBitsToDouble(0x7FF0_0000_0000_0001L),
+            longBitsToDouble(0xFFF0_0000_0000_0001L),
+            longBitsToDouble(0x7FF8_5555_5555_5555L),
+            longBitsToDouble(0xFFF8_5555_5555_5555L),
+            longBitsToDouble(0x7FFF_FFFF_FFFF_FFFFL),
+            longBitsToDouble(0xFFFF_FFFF_FFFF_FFFFL),
+            longBitsToDouble(0x7FF0_0000_7FFF_FFFFL),
+            longBitsToDouble(0xFFF0_0000_7FFF_FFFFL),
+            longBitsToDouble(0x7FF0_Dead_Beef_0000L),
+            longBitsToDouble(0xFFF0_Dead_Beef_0000L),
+            longBitsToDouble(0x7FF0_Cafe_Babe_0000L),
+            longBitsToDouble(0xFFF0_Cafe_Babe_0000L),
+    };
+
+    public static double bitwiseNegate(double d) {
+        long SIGNBIT = 0x8000_0000_0000_0000L;
+        return longBitsToDouble(Double.doubleToRawLongBits(d) ^ SIGNBIT );
+    }
 
     public static String toHexString(float f) {
         if (!Float.isNaN(f))
