@@ -73,7 +73,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 public final class StalePreferredSize {
 
     // Some text to be tested
-    static final String TEXT[] = new String[]{
+    static final String[] TEXT = new String[]{
             "<span>A few words to get started before the "
                     + "bug</span><span>overlapping text</span>",
             "A quick brown fox jumps over the lazy dog",
@@ -85,7 +85,6 @@ public final class StalePreferredSize {
 
     static JFrame frame;
     static Popup popup;
-    static JComponent component;
     static int typeFont = 0; // 0 - default, 1 - bold, 2 - italic
     static boolean addViaPopup;
 
@@ -97,13 +96,9 @@ public final class StalePreferredSize {
                 for (boolean usePopup : new boolean[]{true, false}) {
                     addViaPopup = usePopup;
                     System.err.println("Use popup: " + usePopup);
-                    for (final boolean html : new boolean[]{true, false}) {
-                        for (String text : TEXT) {
-                            if (html) {
-                                text = "<html>" + text + "</html>";
-                            }
-                            test(text);
-                        }
+                    for (String text : TEXT) {
+                        test("<html>" + text + "</html>");
+                        test(text);
                     }
                 }
             }
@@ -112,52 +107,35 @@ public final class StalePreferredSize {
 
     private static void test(String text) throws Exception {
         System.err.println("text = " + text);
-        // Each Callable create a component to be tested
-        final List<Callable<JComponent>> comps = List.of(
-                () -> new JLabel(text),
-                () -> new JButton(text),
-                () -> new JMenuItem(text),
-                () -> new JMenu(text),
-                () -> new JList<>(new String[]{text}),
-                () -> new JComboBox<>(new String[]{text}),
-                () -> new JTextField(text),
-                () -> new JTextArea(text),
-                () -> new JCheckBox(text),
-                () -> new JFormattedTextField(text),
-                () -> new JRadioButton(text),
-                () -> new JTree(new DefaultMutableTreeNode(text)),
-                () -> new JSpinner(new SpinnerListModel(new String[]{text})),
-                () -> {
-                    JToolTip tip = new JToolTip();
-                    tip.setTipText(text);
-                    return tip;
-                    },
-                () -> {
-                    JEditorPane pane = new JEditorPane();
-                    pane.setText(text);
-                    return pane;
-                    },
-                () -> {
-                    JTable table = new JTable(1, 1);
-                    table.getModel().setValueAt(text, 0, 0);
-                    return table;
-                    }
-        );
 
-        for (final Callable<JComponent> creator : comps) {
-            checkComponent(creator);
-        }
+        checkComponent(new JButton(text));
+        checkComponent(new JMenuItem(text));
+        checkComponent(new JMenu(text));
+        checkComponent(new JList<>(new String[]{text}));
+        checkComponent(new JComboBox<>(new String[]{text}));
+        checkComponent(new JTextField(text));
+        checkComponent(new JTextArea(text));
+        checkComponent(new JCheckBox(text));
+        checkComponent(new JFormattedTextField(text));
+        checkComponent(new JRadioButton(text));
+        checkComponent(new JTree(new DefaultMutableTreeNode(text)));
+        checkComponent(new JSpinner(new SpinnerListModel(new String[]{text})));
+
+        JToolTip tip = new JToolTip();
+        tip.setToolTipText(text);
+        checkComponent(tip);
+
+        JEditorPane pane = new JEditorPane();
+        pane.setText(text);
+        checkComponent(pane);
+
+        JTable table = new JTable(1, 1);
+        table.getModel().setValueAt(text, 0, 0);
+        checkComponent(table);
     }
 
-    static void checkComponent(Callable<JComponent> creator) throws Exception {
+    static void checkComponent(JComponent component) throws Exception {
         EventQueue.invokeAndWait(() -> {
-
-            try {
-                component = creator.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
             component.setEnabled(false); // minimize paint/focus events amount
             Font font = component.getFont();
             if (typeFont == 1) {
