@@ -2042,6 +2042,7 @@ public abstract class Toolkit {
         }
     }
 
+    @SuppressWarnings("overloads")
     private static class ToolkitEventMulticaster extends AWTEventMulticaster
         implements AWTEventListener {
         // Implementation cloned from AWTEventMulticaster.

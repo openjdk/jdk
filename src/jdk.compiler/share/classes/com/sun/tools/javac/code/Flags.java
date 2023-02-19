@@ -275,9 +275,9 @@ public class Flags {
     public static final long THROWS = 1L<<47;
 
     /**
-     * Flag that marks potentially ambiguous overloads
+     * Currently available.
      */
-    public static final long POTENTIALLY_AMBIGUOUS = 1L<<48;
+    public static final long UNUSED_1 = 1L<<48;
 
     /**
      * Flag that marks a synthetic method body for a lambda expression
@@ -526,7 +526,7 @@ public class Flags {
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
         HAS_RESOURCE(Flags.HAS_RESOURCE),
-        POTENTIALLY_AMBIGUOUS(Flags.POTENTIALLY_AMBIGUOUS),
+        UNUSED_1(Flags.UNUSED_1),
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
