@@ -48,7 +48,7 @@ import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8048330
+ * @bug 8048330 8203818
  * @summary Test convenience static factory methods on Set.
  * @run testng SetFactories
  */
@@ -70,7 +70,8 @@ public class SetFactories {
         return new Object[] { act, exp };
     }
 
-    static Set<String> hashSetOf(String... args) {
+    @SafeVerargs
+    static <E> Set<E> hashSetOf(E... args) {
         return new HashSet<>(Arrays.asList(args));
     }
 
@@ -341,5 +342,77 @@ public class SetFactories {
     public void copyOfAcceptsDuplicates() {
         Set<Integer> set = Set.copyOf(Arrays.asList(1, 1, 2, 3, 3, 3));
         assertEquals(set, Set.of(1, 2, 3));
+    }
+
+    // Test enum elements
+
+    enum Enum1 {
+        E0, E1, E2, E3, E4, E5, E6, E7, E8, E9
+    }
+
+    enum Enum2 {
+        E0, E1, E2, E3, E4, E5, E6, E7, E8, E9,
+        E10, E11, E12, E13, E14, E15, E16, E17, E18, E19,
+        E20, E21, E22, E23, E24, E25, E26, E27, E28, E29,
+        E30, E31, E32, E33, E34, E35, E36, E37, E38, E39,
+        E40, E41, E42, E43, E44, E45, E46, E47, E48, E49,
+        E50, E51, E52, E53, E54, E55, E56, E57, E58, E59,
+        E60, E61, E62, E63, E64, E65, E66, E67, E68, E69,
+        E70, E71, E72, E73, E74, E75, E76, E77, E78, E79
+    }
+
+    @Test
+    public void setOfPureLittleEnums() {
+        Set<Enum1> set = Set.of(Enum1.E0, Enum1.E1, Enum1.E2, Enum1.E3);
+        assertEquals(set, EnumSet.of(Enum1.E0, Enum1.E1, Enum1.E2, Enum1.E3));
+        assertTrue(set.contains(Enum1.E0));
+        assertFalse(set.contains(Enum1.E4));
+        assertFalse(set.contains(Enum2.E0));
+        assertFalse(set.contains("I'm not a enum"));
+    }
+
+    @Test
+    public void setOfPureBigEnums() {
+        Set<Enum2> set = Set.of(Enum2.E0, Enum2.E1, Enum2.E2, Enum2.E3, Enum2.E4,
+                Enum2.E5, Enum2.E6, Enum2.E7, Enum2.E8, Enum2.E9,
+                Enum2.E10, Enum2.E11, Enum2.E12, Enum2.E13, Enum2.E14,
+                Enum2.E15, Enum2.E16, Enum2.E17, Enum2.E18, Enum2.E19);
+        assertEquals(set, EnumSet.of(Enum2.E0, Enum2.E1, Enum2.E2, Enum2.E3, Enum2.E4,
+                Enum2.E5, Enum2.E6, Enum2.E7, Enum2.E8, Enum2.E9, Enum2.E10,
+                Enum2.E11, Enum2.E12, Enum2.E13, Enum2.E14, Enum2.E15,
+                Enum2.E16, Enum2.E17, Enum2.E18, Enum2.E19));
+        assertTrue(set.contains(Enum2.E0));
+        assertFalse(set.contains(Enum2.E20));
+        assertFalse(set.contains(Enum1.E0));
+        assertFalse(set.contains("I'm not a enum"));
+    }
+
+    @Test
+    public void setOfDifferentEnums() {
+        Object[] objs = {Enum1.E0, Enum1.E1, Enum2.E0, Enum2.E1};
+        Set<Object> set = Set.of(objs);
+        assertEquals(set, hashSetOf(objs));
+    }
+
+    @Test
+    public void setOfEnumsAndRegularObjects() {
+        Object[] objs = {Enum1.E0, Enum2.E1, Integer.valueOf(42), "I'm not a enum either"};
+        Set<Object> set = Set.of(objs);
+        assertEquals(set, hashSetOf(objs));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void enumDupsDisallowed1() {
+        Set<Enum1> set = Set.of(Enum1.E0, Enum1.E1, Enum1.E0);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void enumDupsDisallowed2() {
+        Set<Enum2> set = Set.of(Enum2.E0, Enum2.E1, Enum2.E0);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void enumNullsDisallowed() {
+        Set<Enum2> set = Set.of(Enum2.E0, Enum2.E1, null, Enum2.E2);
     }
 }

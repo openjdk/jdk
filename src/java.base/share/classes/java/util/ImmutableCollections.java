@@ -922,10 +922,10 @@ class ImmutableCollections {
             }
         }
         if (es instanceof RegularEnumSet<?> res) {
-            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), esElementType);
+            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), res.elementType());
         }
         if (es instanceof JumboEnumSet<?> jes) {
-            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), esElementType, jes.size());
+            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
         }
         // Should not be reached here. This is a fallback.
         return new SetN<>(input);
