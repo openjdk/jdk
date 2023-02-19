@@ -1150,11 +1150,11 @@ public class Collections {
         if (s.getClass() == UnmodifiableSet.class) {
             return (Set<T>) s;
         }
-        if (s instanceof RegularEnumSetCompatible) {
-            return (Set<T>)new UnmodifiableRegularEnumSet<>((RegularEnumSetCompatible<?>)s);
+        if (s instanceof RegularEnumSetCompatible<?> res) {
+            return (Set<T>)new UnmodifiableRegularEnumSet<>(res);
         }
-        if (s instanceof JumboEnumSetCompatible) {
-            return (Set<T>)new UnmodifiableJumboEnumSet<>((JumboEnumSetCompatible<?>)s);
+        if (s instanceof JumboEnumSetCompatible<?> jes) {
+            return (Set<T>)new UnmodifiableJumboEnumSet<>(jes);
         }
         return new UnmodifiableSet<>(s);
     }
@@ -1191,17 +1191,16 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -1110577510253015312L;
 
-        final RegularEnumSetCompatible<? extends E> es;
+        final RegularEnumSetCompatible<E> es;
 
-        UnmodifiableRegularEnumSet(RegularEnumSetCompatible<? extends E> es) {
+        UnmodifiableRegularEnumSet(RegularEnumSetCompatible<E> es) {
             super(es);
             this.es = es;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public Class<E> elementType() {
-            return (Class<E>)es.elementType();
+            return es.elementType();
         }
 
         @Override
@@ -1223,17 +1222,16 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1730197349714300593L;
 
-        final JumboEnumSetCompatible<? extends E> es;
+        final JumboEnumSetCompatible<E> es;
 
-        UnmodifiableJumboEnumSet(JumboEnumSetCompatible<? extends E> es) {
+        UnmodifiableJumboEnumSet(JumboEnumSetCompatible<E> es) {
             super(es);
             this.es = es;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public Class<E> elementType() {
-            return (Class<E>)es.elementType();
+            return es.elementType();
         }
 
         @Override
@@ -2406,7 +2404,7 @@ public class Collections {
         @Override
         public long[] elements() {
             synchronized (mutex) {
-                return es.elements();
+                return es.elements().clone();   // defensive copy
             }
         }
 
