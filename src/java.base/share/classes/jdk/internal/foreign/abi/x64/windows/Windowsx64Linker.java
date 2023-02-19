@@ -58,8 +58,8 @@ public final class Windowsx64Linker extends AbstractLinker {
     }
 
     @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return CallArranger.arrangeUpcall(target, targetType, function, scope);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
+        return CallArranger.arrangeUpcall(targetType, function);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
@@ -76,4 +76,3 @@ public final class Windowsx64Linker extends AbstractLinker {
         return WinVaList.empty();
     }
 }
-

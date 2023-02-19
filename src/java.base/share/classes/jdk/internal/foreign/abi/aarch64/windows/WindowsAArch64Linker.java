@@ -31,7 +31,6 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentScope;
 import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
@@ -58,8 +57,8 @@ public final class WindowsAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return  CallArranger.WINDOWS.arrangeUpcall(target, targetType, function, scope);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
+        return  CallArranger.WINDOWS.arrangeUpcall(targetType, function);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
