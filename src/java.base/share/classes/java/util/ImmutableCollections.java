@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
@@ -892,33 +893,39 @@ class ImmutableCollections {
 
     /**
      * Creates a new Set from an untrusted array and checking for and
-     * rejecting null elements.
+     * rejecting null and duplicate elements.
      *
      * @param <E> the Set's element type
-     * @param input the input array
+     * @param input the non-empty input array
      * @return the new set
      */
     @SafeVarargs
-    @SuppressWarnings({"varargs", "unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "varargs"})
     static <E> Set<E> setFromArray(E... input) {
-        if (input.length == 0) {
-            return (Set<E>)EMPTY_SET;
-        }
-        if (!(input[0] instanceof Enum)) {
+        // assert input.length > 2;
+        if (!(input[0] instanceof Enum<?> enum0)) {
             return new SetN<>(input);
         }
-        EnumSet<?> es;
-        try {
-            // Sorry, I have to use a raw type here.
-            es = EnumSet.copyOf((Collection)Arrays.asList(input));  // rejects null
-        } catch (ClassCastException e) {
-            return new SetN<>(input);
+        @SuppressWarnings("rawtypes")
+        EnumSet es = EnumSet.<Enum>of(enum0);
+        Class<?> esElementType = es.elementType;
+        for (int i = 1; i < input.length; i++) {
+            Object element = input[i];
+            if (element == null) {
+                throw new NullPointerException();
+            }
+            if (!esElementType.isInstance(element)) {
+                return new SetN<>(input);
+            }
+            if (!es.add(element)) {
+                throw new IllegalArgumentException("duplicate element: " + element);
+            }
         }
         if (es instanceof RegularEnumSet<?> res) {
-            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), res.elementType());
+            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), esElementType);
         }
         if (es instanceof JumboEnumSet<?> jes) {
-            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
+            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), esElementType, jes.size());
         }
         // Should not be reached here. This is a fallback.
         return new SetN<>(input);
@@ -1096,102 +1103,33 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
-    static final class ImmutableRegularEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
-            implements RegularEnumSetCompatible<E>, Serializable {
-        @Stable
-        final long elements;
+    abstract static sealed class AbstractImmutableEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
+            implements Serializable {
+        static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         @Stable
         final Class<E> elementType;
 
-        ImmutableRegularEnumSet(long elements, Class<E> elementType) {
-            this.elements = elements;
+        AbstractImmutableEnumSet(Class<E> elementType) {
             this.elementType = elementType;
         }
 
-        @Override
-        public long elements() {
-            return elements;
-        }
-
-        @Override
-        public Class<E> elementType() {
+        // Overrides elementType() in RegularEnumSetCompatible and JumboEnumSetCompatible
+        public final Class<E> elementType() {
             return elementType;
         }
 
-        @Override
-        public Iterator<E> iterator() {
-            return new ImmutableRESIterator();
-        }
-
-        private final class ImmutableRESIterator implements Iterator<E> {
-            long unseen = elements;
-            long lastReturned = 0;
-            final Enum<?>[] universe
-                = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
-
-            @Override
-            public boolean hasNext() {
-                return unseen != 0;
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public E next() {
-                if (unseen == 0)
-                    throw new NoSuchElementException();
-                lastReturned = unseen & -unseen;
-                unseen -= lastReturned;
-                return (E) universe[Long.numberOfTrailingZeros(lastReturned)];
-            }
-        }
+        abstract boolean containsOrdinal(int ordinal);
 
         @Override
-        public int size() {
-            return Long.bitCount(elements);
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return elements == 0;
-        }
-
-        @Override
-        public boolean contains(Object e) {
+        public final boolean contains(Object e) {
             if (e == null)
                 throw new NullPointerException();
             Class<?> eClass = e.getClass();
             if (eClass != elementType && eClass.getSuperclass() != elementType)
                 return false;
 
-            return (elements & (1L << ((Enum<?>)e).ordinal())) != 0;
-        }
-
-        @Override
-        public boolean containsAll(Collection<?> c) {
-            if ((c instanceof RegularEnumSetCompatible<?> es)) {
-                if (es.elementType() != elementType)
-                    return es.isEmpty();
-
-                return (es.elements() & ~elements) == 0;
-            } else {
-                for (Object o : c) {
-                    if (!contains(o)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof RegularEnumSetCompatible<?> es))
-                return super.equals(o);
-
-            if (es.elementType() != elementType)
-                return elements == 0 && es.elements() == 0;
-            return es.elements() == elements;
+            return containsOrdinal(((Enum<?>)e).ordinal());
         }
 
         @Override
@@ -1228,6 +1166,86 @@ class ImmutableCollections {
             }
             return result;
         }
+    }
+
+    @jdk.internal.ValueBased
+    static final class ImmutableRegularEnumSet<E extends Enum<E>> extends AbstractImmutableEnumSet<E>
+            implements RegularEnumSetCompatible<E>, Serializable {
+        @Stable
+        final long elements;
+
+        ImmutableRegularEnumSet(long elements, Class<E> elementType) {
+            super(elementType);
+            this.elements = elements;
+        }
+
+        @Override
+        public long elements() {
+            return elements;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new ImmutableRESIterator();
+        }
+
+        private final class ImmutableRESIterator implements Iterator<E> {
+            long unseen = elements;
+            long lastReturned = 0;
+            final Enum<?>[] universe = JLA.getEnumConstantsShared(elementType);
+
+            @Override
+            public boolean hasNext() {
+                return unseen != 0;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public E next() {
+                if (unseen == 0)
+                    throw new NoSuchElementException();
+                lastReturned = unseen & -unseen;
+                unseen -= lastReturned;
+                return (E) universe[Long.numberOfTrailingZeros(lastReturned)];
+            }
+        }
+
+        @Override
+        public int size() {
+            return Long.bitCount(elements);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return elements == 0;
+        }
+
+        @Override
+        boolean containsOrdinal(int ordinal) {
+            return (elements & (1L << ordinal)) != 0;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            if ((c instanceof RegularEnumSetCompatible<?> es)) {
+                if (es.elementType() != elementType)
+                    return es.isEmpty();
+
+                return (es.elements() & ~elements) == 0;
+            } else {
+                return super.containsAll(c);
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof RegularEnumSetCompatible<?> es))
+                return super.equals(o);
+
+            if (es.elementType() != elementType)
+                return elements == 0 && es.elements() == 0;
+            return es.elements() == elements;
+        }
 
         @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -1241,31 +1259,23 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
-    static final class ImmutableJumboEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
+    static final class ImmutableJumboEnumSet<E extends Enum<E>> extends AbstractImmutableEnumSet<E>
             implements JumboEnumSetCompatible<E>, Serializable {
         @Stable
         final long[] elements;
 
         @Stable
-        final Class<E> elementType;
-
-        @Stable
         final int size;
 
         ImmutableJumboEnumSet(long[] elements, Class<E> elementType, int size) {
+            super(elementType);
             this.elements = elements;
-            this.elementType = elementType;
             this.size = size;
         }
 
         @Override
         public long[] elements() {
             return elements;
-        }
-
-        @Override
-        public Class<E> elementType() {
-            return elementType;
         }
 
         @Override
@@ -1278,8 +1288,7 @@ class ImmutableCollections {
             int unseenIndex = 0;
             long lastReturned = 0;
             int lastReturnedIndex = 0;
-            final Enum<?>[] universe
-                = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
+            final Enum<?>[] universe = JLA.getEnumConstantsShared(elementType);
 
             @Override
             public boolean hasNext() {
@@ -1312,15 +1321,8 @@ class ImmutableCollections {
         }
 
         @Override
-        public boolean contains(Object e) {
-            if (e == null)
-                return false;
-            Class<?> eClass = e.getClass();
-            if (eClass != elementType && eClass.getSuperclass() != elementType)
-                return false;
-
-            int eOrdinal = ((Enum<?>)e).ordinal();
-            return (elements[eOrdinal >>> 6] & (1L << eOrdinal)) != 0;
+        boolean containsOrdinal(int ordinal) {
+            return (elements[ordinal >>> 6] & (1L << ordinal)) != 0;
         }
 
         @Override
@@ -1347,40 +1349,6 @@ class ImmutableCollections {
                 return size == 0 && es.size() == 0;
 
             return Arrays.equals(es.elements(), elements);
-        }
-
-        @Override
-        public int hashCode() {
-            int h = 0;
-            for (Object o : this) {
-                h += o.hashCode();
-            }
-            return h;
-        }
-
-        @Override
-        public Object[] toArray() {
-            Object[] result = new Object[size];
-            int i = 0;
-            for (Object o : this) {
-                result[i++] = o;
-            }
-            return result;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T[] toArray(T[] a) {
-            T[] result = a.length >= size ? a :
-                    (T[])Array.newInstance(a.getClass().getComponentType(), size);
-            int i = 0;
-            for (Object o : this) {
-                result[i++] = (T)o;
-            }
-            if (result.length > size) {
-                result[i] = null;
-            }
-            return result;
         }
 
         @java.io.Serial
