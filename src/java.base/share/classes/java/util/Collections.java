@@ -1147,7 +1147,9 @@ public class Collections {
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
         // Not checking for subclasses because of heap pollution and information leakage.
-        if (s.getClass() == UnmodifiableSet.class) {
+        if (s.getClass() == UnmodifiableSet.class
+            || s.getClass() == UnmodifiableRegularEnumSet.class
+            || s.getClass() == UnmodifiableJumboEnumSet.class) {
             return (Set<T>) s;
         }
         if (s instanceof RegularEnumSetCompatible<?> res) {
