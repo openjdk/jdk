@@ -55,13 +55,13 @@ suburbs of Rome the rules are a little different; these differences
 can be pointed out here.
 
 Proposed changes should be discussed on the
-[HotSpot Developers](mailto:hotspot-dev@openjdk.java.net) mailing
+[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
 list.  Changes are likely to be cautious and incremental, since HotSpot
 coders have been using these guidelines for years.
 
 Substantive changes are approved by
 [rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
-the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
+the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
 
 Editorial changes (changes that only affect the description of HotSpot
@@ -550,7 +550,7 @@ turned off.  Many Standard Library facilities implicitly or explicitly
 use exceptions.
 
 * `assert`.  An issue that is quickly encountered is the `assert` macro name
-collision ([JDK-8007770](https://bugs.openjdk.java.net/browse/JDK-8007770)).
+collision ([JDK-8007770](https://bugs.openjdk.org/browse/JDK-8007770)).
 Some mechanism for addressing this would be needed before much of the
 Standard Library could be used.  (Not all Standard Library implementations
 use assert in header files, but some do.)
@@ -573,7 +573,7 @@ There are a few exceptions to this rule.
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
 * `#include <type_traits>`.
-* `#include <cstddef>` to use `std::nullptr_t`.
+* `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -651,6 +651,51 @@ constant members.  Compilers having such bugs are no longer supported.
 Except where an enum is semantically appropriate, new code should use
 integral constants.
 
+### alignas
+
+_Alignment-specifiers_ (`alignas`
+[n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
+are permitted, with restrictions.
+
+_Alignment-specifiers_ are permitted when the requested alignment is a
+_fundamental alignment_ (not greater than `alignof(std::max_align_t)`
+[C++14 3.11/2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+
+_Alignment-specifiers_ with an _extended alignment_ (greater than
+`alignof(std::max_align_t)`
+[C++14 3.11/3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf))
+may only be used to align variables with static or automatic storage duration
+([C++14 3.7.1, 3.7.3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+As a consequence, _over-aligned types_ are forbidden; this may change if
+HotSpot updates to using C++17 or later
+([p0035r4](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html)).
+
+Large _extended alignments_ should be avoided, particularly for stack
+allocated objects. What is a large value may depend on the platform and
+configuration. There may also be hard limits for some platforms.
+
+An _alignment-specifier_ must always be applied to a definition
+([C++14 10.6.2/6](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+(C++ allows an _alignment-specifier_ to optionally also be applied to a
+declaration, so long as the definition has equivalent alignment. There isn't
+any known benefit from duplicating the alignment in a non-definition
+declaration, so such duplication should be avoided in HotSpot code.)
+
+Enumerations are forbidden from having _alignment-specifiers_. Aligned
+enumerations were originally permitted but insufficiently specified, and were
+later (C++20) removed
+([CWG 2354](https://cplusplus.github.io/CWG/issues/2354.html)).
+Permitting such usage in HotSpot now would just cause problems in the future.
+
+_Alignment-specifiers_ are forbidden in `typedef` and _alias-declarations_.
+This may work or may have worked in some versions of some compilers, but was
+later (C++14) explicitly disallowed
+([CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html)).
+
+The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
+platforms that define it. This macro predates the use by HotSpot of C++
+versions providing `alignas`. New code should use `alignas`.
+
 ### thread_local
 
 Avoid use of `thread_local`
@@ -661,7 +706,7 @@ be a constant expression. When `thread_local` must be used, use the Hotspot macr
 consideration.
 
 As was discussed in the review for
-[JDK-8230877](https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html),
+[JDK-8230877](https://mail.openjdk.org/pipermail/hotspot-dev/2019-September/039487.html),
 `thread_local` allows dynamic initialization and destruction
 semantics.  However, that support requires a run-time penalty for
 references to non-function-local `thread_local` variables defined in a
@@ -671,7 +716,7 @@ non-local `thread_local` variables also has the same ordering
 problems as for ordinary non-local variables. So we avoid use of
 `thread_local` in general, limiting its use to only those cases where dynamic
 initialization or destruction are essential. See
-[JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+[JDK-8282469](https://bugs.openjdk.org/browse/JDK-8282469)
 for further discussion.
 
 ### nullptr

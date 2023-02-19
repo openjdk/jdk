@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ class ConstantPool : public Metadata {
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
+  friend class ClassPrelinker;       // CDS
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -185,7 +186,7 @@ class ConstantPool : public Metadata {
   // generics support
   Symbol* generic_signature() const {
     return (_generic_signature_index == 0) ?
-      (Symbol*)NULL : symbol_at(_generic_signature_index);
+      nullptr : symbol_at(_generic_signature_index);
   }
   u2 generic_signature_index() const                   { return _generic_signature_index; }
   void set_generic_signature_index(u2 sig_index)       { _generic_signature_index = sig_index; }
@@ -193,7 +194,7 @@ class ConstantPool : public Metadata {
   // source file name
   Symbol* source_file_name() const {
     return (_source_file_name_index == 0) ?
-      (Symbol*)NULL : symbol_at(_source_file_name_index);
+      nullptr : symbol_at(_source_file_name_index);
   }
   u2 source_file_name_index() const                    { return _source_file_name_index; }
   void set_source_file_name_index(u2 sourcefile_index) { _source_file_name_index = sourcefile_index; }
@@ -235,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_reference_at(int obj_index) const;
+  oop set_resolved_reference_at(int index, oop new_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -473,7 +477,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_reference_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
@@ -561,7 +565,7 @@ class ConstantPool : public Metadata {
     operands->at_put(n+1, extract_high_short_from_int(offset));
   }
   static int operand_array_length(Array<u2>* operands) {
-    if (operands == NULL || operands->length() == 0)  return 0;
+    if (operands == nullptr || operands->length() == 0)  return 0;
     int second_part = operand_offset_at(operands, 0);
     return (second_part / 2);
   }
@@ -693,9 +697,9 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
+  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 #endif
@@ -712,17 +716,17 @@ class ConstantPool : public Metadata {
   // Resolve late bound constants.
   oop resolve_constant_at(int index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, nullptr, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, nullptr, THREAD);
   }
 
   oop resolve_possibly_cached_constant_at(int pool_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, nullptr, THREAD);
   }
 
   oop find_cached_constant_at(int pool_index, bool& found_it, TRAPS) {
@@ -807,7 +811,7 @@ class ConstantPool : public Metadata {
  private:
 
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
-  Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
+  Array<u2>* reference_map() const        {  return (_cache == nullptr) ? nullptr :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
 
   Symbol* impl_name_ref_at(int which, bool uncached);
@@ -887,7 +891,7 @@ class ConstantPool : public Metadata {
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
    public:
     void add_if_absent(const Symbol* sym, u2 value) {

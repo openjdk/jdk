@@ -3,7 +3,7 @@
 <filesystem>
     <folder name="Shortcuts">
         <file name="D-F.shadow">
-            <attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
+            <attr name="originalFile" stringvalue="Actions/Search/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
         </file>
     </folder>
     <folder name="Actions">
@@ -23,7 +23,7 @@
         <folder name="File">
             <file name="ExportActionSeparator.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-                <attr name="position" intvalue="700"/>
+                <attr name="position" intvalue="2000"/>
             </file>
         </folder>
     </folder>

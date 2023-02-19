@@ -95,6 +95,7 @@ public class URLUtil {
             String urlString = url.toString();
             int bangPos = urlString.indexOf("!/");
             urlString = urlString.substring(4, bangPos > -1 ? bangPos : urlString.length());
+            @SuppressWarnings("deprecation")
             URL u = new URL(urlString);
             return getURLConnectPermission(u);
             // If protocol is HTTP or HTTPS than use URLPermission object

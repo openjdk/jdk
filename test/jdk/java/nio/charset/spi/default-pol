@@ -9,16 +9,6 @@ grant codeBase "jrt:/jdk.charsets" {
 // default permissions granted to all domains
 
 grant { 
-	// Allows any thread to stop itself using the java.lang.Thread.stop()
-	// method that takes no argument.
-	// Note that this permission is granted by default only to remain
-	// backwards compatible.
-	// It is strongly recommended that you either remove this permission
-	// from this policy file or further restrict it to code sources
-	// that you specify, because Thread.stop() is potentially unsafe.
-	// See "http://java.sun.com/notes" for more information.
-	permission java.lang.RuntimePermission "stopThread";
-
 	// allows anyone to listen on un-privileged ports
 	permission java.net.SocketPermission "localhost:1024-", "listen";
 

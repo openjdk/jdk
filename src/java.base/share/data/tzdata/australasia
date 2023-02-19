@@ -274,13 +274,6 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 			10:00	1:00	AEDT	2011
 			10:00	AT	AE%sT
 
-# Christmas
-# See Asia/Bangkok.
-
-# Cocos (Keeling) Is
-# See Asia/Yangon.
-
-
 # Fiji
 
 # Milne gives 11:55:44 for Suva.
@@ -416,8 +409,14 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 # concerned shifting arrival and departure times, which may look like a simple
 # thing but requires some significant logistical adjustments domestically and
 # internationally."
-# Assume for now that DST will resume with the recent pre-2020 rules for the
-# 2022/2023 season.
+
+# From Shalvin Narayan (2022-10-27):
+# Please note that there will not be any daylight savings time change
+# in Fiji for 2022-2023....
+# https://www.facebook.com/FijianGovernment/posts/pfbid0mmWVTYmTibn66ybpFda75pDcf34SSpoSaskJW5gXwaKo5Sgc7273Q4fXWc6kQV6Hl
+#
+# From Paul Eggert (2022-10-27):
+# For now, assume DST is suspended indefinitely.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
@@ -432,8 +431,6 @@ Rule	Fiji	2014	2018	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	2015	2021	-	Jan	Sun>=12	3:00	0	-
 Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
 Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
-Rule	Fiji	2022	max	-	Nov	Sun>=8	2:00	1:00	-
-Rule	Fiji	2023	max	-	Jan	Sun>=12	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13
@@ -449,7 +446,9 @@ Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
 # Clipperton (near North America) is administered from French Polynesia;
 # it is uninhabited.
 
+
 # Guam
+# N Mariana Is
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # http://guamlegislature.com/Public_Laws_5th/PL05-025.pdf
@@ -489,17 +488,20 @@ Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 			 9:00	-	+09	1944 Jul 31
 			10:00	Guam	G%sT	2000 Dec 23
 			10:00	-	ChST	# Chamorro Standard Time
-Link Pacific/Guam Pacific/Saipan # N Mariana Is
 
-# Kiribati
+
+# Kiribati (Gilbert Is)
+# Marshall Is
+# Tuvalu
+# Wake
+# Wallis & Futuna
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
 			 12:00	-	+12
-Link Pacific/Tarawa Pacific/Funafuti
-Link Pacific/Tarawa Pacific/Majuro
-Link Pacific/Tarawa Pacific/Wake
-Link Pacific/Tarawa Pacific/Wallis
 
+# Kiribati (except Gilbert Is)
+# See Pacific/Tarawa for the Gilbert Is.
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Kanton	  0	-	-00	1937 Aug 31
 			-12:00	-	-12	1979 Oct
 			-11:00	-	-11	1994 Dec 31
@@ -508,9 +510,6 @@ Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 			-10:40	-	-1040	1979 Oct
 			-10:00	-	-10	1994 Dec 31
 			 14:00	-	+14
-
-# N Mariana Is
-# See Pacific/Guam.
 
 # Marshall Is
 # See Pacific/Tarawa for most locations.
@@ -561,6 +560,7 @@ Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
 ###############################################################################
 
 # New Zealand
+# McMurdo Station and Scott Base in Antarctica use Auckland time.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NZ	1927	only	-	Nov	 6	2:00	1:00	S
@@ -596,7 +596,6 @@ Rule	Chatham	2008	max	-	Apr	Sun>=1	2:45s	0	-
 Zone Pacific/Auckland	11:39:04 -	LMT	1868 Nov  2
 			11:30	NZ	NZ%sT	1946 Jan  1
 			12:00	NZ	NZ%sT
-Link Pacific/Auckland Antarctica/McMurdo
 
 Zone Pacific/Chatham	12:13:48 -	LMT	1868 Nov  2
 			12:15	-	+1215	1946 Jan  1
@@ -695,8 +694,6 @@ Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
 			10:00	-	+10
-Link Pacific/Port_Moresby Antarctica/DumontDUrville
-Link Pacific/Port_Moresby Pacific/Chuuk
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -729,10 +726,10 @@ Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
 			-8:00	-	-08
 
 # American Samoa
+# Midway
 Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1892 Jul  5
 			-11:22:48 -	LMT	1911
 			-11:00	-	SST	            # S=Samoa
-Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 
 # Samoa (formerly and also known as Western Samoa)
 
@@ -824,7 +821,6 @@ Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
 			11:00	-	+11
-Link Pacific/Guadalcanal Pacific/Pohnpei
 
 # Tokelau
 #
@@ -863,9 +859,6 @@ Zone Pacific/Tongatapu	12:19:12 -	LMT	1945 Sep 10
 			12:20	-	+1220	1961
 			13:00	-	+13	1999
 			13:00	Tonga	+13/+14
-
-# Tuvalu
-# See Pacific/Tarawa.
 
 
 # US minor outlying islands
@@ -917,14 +910,8 @@ Zone Pacific/Tongatapu	12:19:12 -	LMT	1945 Sep 10
 # Kingman
 # uninhabited
 
-# Midway
-# See Pacific/Pago_Pago.
-
 # Palmyra
 # uninhabited since World War II; was probably like Pacific/Kiritimati
-
-# Wake
-# See Pacific/Tarawa.
 
 
 # Vanuatu
@@ -961,9 +948,6 @@ Rule	Vanuatu	1992	only	-	Oct	Sat>=22	24:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	+11/+12
-
-# Wallis and Futuna
-# See Pacific/Tarawa.
 
 ###############################################################################
 

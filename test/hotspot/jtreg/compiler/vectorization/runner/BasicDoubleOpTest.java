@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,17 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicDoubleOpTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicDoubleOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private double[] a;
     private double[] b;
@@ -61,6 +64,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.NEG_V, ">0"})
     public double[] vectorNeg() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +75,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ABS_V, ">0"})
     public double[] vectorAbs() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +86,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.SQRT_V, ">0"})
     public double[] vectorSqrt() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +97,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorCeil() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +108,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorFloor() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +119,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorRint() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +130,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public double[] vectorAdd() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -124,6 +141,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public double[] vectorSub() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,6 +152,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public double[] vectorMul() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -142,6 +163,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.DIV_V, ">0"})
     public double[] vectorDiv() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -151,6 +174,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.MAX_V, ">0"})
     public double[] vectorMax() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -160,6 +185,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.MIN_V, ">0"})
     public double[] vectorMin() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -169,6 +196,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorMulAdd() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -178,6 +209,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorMulSub1() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -187,6 +222,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorMulSub2() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -196,6 +235,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorNegateMulAdd1() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -205,6 +248,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorNegateMulAdd2() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -214,6 +261,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public double[] vectorNegateMulSub() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -250,4 +301,3 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

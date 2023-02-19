@@ -40,7 +40,8 @@ public class MulLNodeIdealizationTests {
     @Run(test = {"combineConstants", "moveConstants", "moveConstantsAgain",
                  "multiplyZero", "multiplyZeroAgain", "distribute",
                  "identity",  "identityAgain", "powerTwo",
-                 "powerTwoAgain", "powerTwoPlusOne", "powerTwoMinusOne"})
+                 "powerTwoAgain", "powerTwoPlusOne", "powerTwoMinusOne",
+                 "negativeCancelledOut", "maxMin"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -56,18 +57,20 @@ public class MulLNodeIdealizationTests {
 
     @DontCompile
     public void assertResult(long a, long b) {
-        Asserts.assertEQ((a * 13) * 14 * 15, combineConstants(a));
-        Asserts.assertEQ((a * 13) * b      , moveConstants(a, b));
-        Asserts.assertEQ(a * (b * 13)      , moveConstantsAgain(a, b));
-        Asserts.assertEQ(0 * a             , multiplyZero(a));
-        Asserts.assertEQ(a * 0             , multiplyZeroAgain(a));
-        Asserts.assertEQ((13 + a) * 14     , distribute(a));
-        Asserts.assertEQ(1 * a             , identity(a));
-        Asserts.assertEQ(a * 1             , identityAgain(a));
-        Asserts.assertEQ(a * 64            , powerTwo(a));
-        Asserts.assertEQ(a * (1025 - 1)    , powerTwoAgain(a));
-        Asserts.assertEQ(a * (64 + 1)      , powerTwoPlusOne(a));
-        Asserts.assertEQ(a * (64 - 1)      , powerTwoMinusOne(a));
+        Asserts.assertEQ((a * 13) * 14 * 15             , combineConstants(a));
+        Asserts.assertEQ((a * 13) * b                   , moveConstants(a, b));
+        Asserts.assertEQ(a * (b * 13)                   , moveConstantsAgain(a, b));
+        Asserts.assertEQ(0 * a                          , multiplyZero(a));
+        Asserts.assertEQ(a * 0                          , multiplyZeroAgain(a));
+        Asserts.assertEQ((13 + a) * 14                  , distribute(a));
+        Asserts.assertEQ(1 * a                          , identity(a));
+        Asserts.assertEQ(a * 1                          , identityAgain(a));
+        Asserts.assertEQ(a * 64                         , powerTwo(a));
+        Asserts.assertEQ(a * (1025 - 1)                 , powerTwoAgain(a));
+        Asserts.assertEQ(a * (64 + 1)                   , powerTwoPlusOne(a));
+        Asserts.assertEQ(a * (64 - 1)                   , powerTwoMinusOne(a));
+        Asserts.assertEQ((0 - a) * (0 - b)              , negativeCancelledOut(a, b));
+        Asserts.assertEQ(Math.max(a, b) * Math.min(a, b), maxMin(a, b));
     }
 
     @Test
@@ -162,5 +165,21 @@ public class MulLNodeIdealizationTests {
     // Checks x * (2^n - 1) => (x << n) - x
     public long powerTwoMinusOne(long x) {
         return x * (64 - 1);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.SUB })
+    @IR(counts = { IRNode.MUL, "1" })
+    // Checks (0 - x) * (0 - y) => x * y
+    public long negativeCancelledOut(long x, long y) {
+        return (0 - x) * (0 - y);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MAX, IRNode.MIN })
+    @IR(counts = { IRNode.MUL, "1" })
+    // Checks Math.max(x, y) * Math.min(x, y) => x * y
+    public long maxMin(long x, long y) {
+        return Math.max(x, y) * Math.min(x, y);
     }
 }

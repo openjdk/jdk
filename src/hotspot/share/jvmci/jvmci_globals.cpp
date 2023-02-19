@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 
-fileStream* JVMCIGlobals::_jni_config_file = NULL;
+fileStream* JVMCIGlobals::_jni_config_file = nullptr;
 
 // Return true if jvmci flags are consistent.
 bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
@@ -151,9 +151,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 #endif // PRODUCT
 #undef CHECK_NOT_SET
 
-  if (JVMCILibDumpJNIConfig != NULL) {
-    _jni_config_file = new(ResourceObj::C_HEAP, mtJVMCI) fileStream(JVMCILibDumpJNIConfig);
-    if (_jni_config_file == NULL || !_jni_config_file->is_open()) {
+  if (JVMCILibDumpJNIConfig != nullptr) {
+    _jni_config_file = new(mtJVMCI) fileStream(JVMCILibDumpJNIConfig);
+    if (_jni_config_file == nullptr || !_jni_config_file->is_open()) {
       jio_fprintf(defaultStream::error_stream(),
           "Could not open file for dumping JVMCI shared library JNI config: %s\n", JVMCILibDumpJNIConfig);
       return false;
@@ -184,12 +184,12 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
     "UseJVMCINativeLibrary",
     "JVMCINativeLibraryThreadFraction",
     "JVMCINativeLibraryErrorFile",
-    NULL
+    nullptr
   };
 
-  for (int i = 0; JVMCIFlags[i] != NULL; i++) {
+  for (int i = 0; JVMCIFlags[i] != nullptr; i++) {
     JVMFlag *jvmciFlag = (JVMFlag *)JVMFlag::find_declared_flag(JVMCIFlags[i]);
-    if (jvmciFlag == NULL) {
+    if (jvmciFlag == nullptr) {
       return false;
     }
     jvmciFlag->clear_experimental();

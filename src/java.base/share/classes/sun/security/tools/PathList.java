@@ -99,7 +99,9 @@ public class PathList {
             name = name + "/";
         }
         try {
-            return new URL("file", "", name);
+            @SuppressWarnings("deprecation")
+            var result = new URL("file", "", name);
+            return result;
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("file");
         }

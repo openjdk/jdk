@@ -167,7 +167,7 @@ Display * dpy = NULL;
 
 static void DestroyXIMCallback(XIM, XPointer, XPointer);
 static void OpenXIMCallback(Display *, XPointer, XPointer);
-/* Solaris XIM Extention */
+/* Solaris XIM Extension */
 #define XNCommitStringCallback "commitStringCallback"
 static void CommitStringCallback(XIC, XPointer, XPointer);
 
@@ -1013,7 +1013,7 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
         }
     }
 
-    // The code set the IC mode that the preedit state is not initialied
+    // The code set the IC mode that the preedit state is not initialized
     // at XmbResetIC.  This attribute can be set at XCreateIC.  I separately
     // set the attribute to avoid the failure of XCreateIC at some platform
     // which does not support the attribute.

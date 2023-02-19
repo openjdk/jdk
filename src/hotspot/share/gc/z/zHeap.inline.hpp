@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
-#include "gc/z/zHash.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -41,11 +40,6 @@ inline ZHeap* ZHeap::heap() {
 
 inline ReferenceDiscoverer* ZHeap::reference_discoverer() {
   return &_reference_processor;
-}
-
-inline uint32_t ZHeap::hash_oop(uintptr_t addr) const {
-  const uintptr_t offset = ZAddress::offset(addr);
-  return ZHash::address_to_uint32(offset);
 }
 
 inline bool ZHeap::is_object_live(uintptr_t addr) const {

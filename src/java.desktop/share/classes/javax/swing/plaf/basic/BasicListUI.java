@@ -132,7 +132,7 @@ public class BasicListUI extends ListUI
     private int columnCount;
     /**
      * Preferred height to make the list, this is only used if the
-     * the list is layed out horizontally.
+     * the list is laid out horizontally.
      */
     private int preferredHeight;
     /**
@@ -142,7 +142,7 @@ public class BasicListUI extends ListUI
     private int rowsPerColumn;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -1464,7 +1464,7 @@ public class BasicListUI extends ListUI
     }
 
     /**
-     * Invoked when the list is layed out horizontally to determine how
+     * Invoked when the list is laid out horizontally to determine how
      * many columns to create.
      * <p>
      * This updates the <code>rowsPerColumn, </code><code>columnCount</code>,
@@ -3020,10 +3020,10 @@ public class BasicListUI extends ListUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         @SuppressWarnings("deprecation")

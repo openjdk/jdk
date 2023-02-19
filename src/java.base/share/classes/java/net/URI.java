@@ -219,12 +219,20 @@ import sun.nio.cs.UTF_8;
  * {@code demo/b/index.html}
  * </blockquote>
  *
- * <p> <i>Relativization</i>, finally, is the inverse of resolution: For any
- * two normalized URIs <i>u</i> and&nbsp;<i>v</i>,
+ * <p> <i>Relativization</i>, finally, can be regarded as the inverse of resolution.
+ * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
+ * and <i>v</i> be any normalized relative URI not beginning with a period character ({@code '.'})
+ * or slash character ({@code '/'}). Then, the following statement is true:
  *
  * <blockquote>
- *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}&nbsp;&nbsp;and<br>
- *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}&nbsp;&nbsp;.<br>
+ *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
+ * </blockquote>
+ *
+ * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
+ * and <i>v</i> be any normalized absolute URI. Then, the following statement is true:
+ *
+ * <blockquote>
+ *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
  * </blockquote>
  *
  * This operation is often useful when constructing a document containing URIs
@@ -1133,7 +1141,7 @@ public final class URI
      *          or if some other error occurred while constructing the URL
      */
     public URL toURL() throws MalformedURLException {
-        return URL.fromURI(this);
+        return URL.of(this, null);
     }
 
     // -- Component access methods --
@@ -3231,6 +3239,7 @@ public final class URI
         {
             int p = start;
             int q = p;
+            int qreg = p;
             URISyntaxException ex = null;
 
             boolean serverChars;
@@ -3242,7 +3251,7 @@ public final class URI
             } else {
                 serverChars = (scan(p, n, L_SERVER, H_SERVER) == n);
             }
-            regChars = (scan(p, n, L_REG_NAME, H_REG_NAME) == n);
+            regChars = ((qreg = scan(p, n, L_REG_NAME, H_REG_NAME)) == n);
 
             if (regChars && !serverChars) {
                 // Must be a registry-based authority
@@ -3286,7 +3295,7 @@ public final class URI
                     // a malformed IPv6 address
                     throw ex;
                 } else {
-                    fail("Illegal character in authority", q);
+                    fail("Illegal character in authority", serverChars ? q : qreg);
                 }
             }
 

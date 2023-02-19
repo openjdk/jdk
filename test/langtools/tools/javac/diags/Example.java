@@ -234,7 +234,7 @@ class Example implements Comparable<Example> {
                 //automatic modules:
                 Map<String, List<Path>> module2Files =
                         modulePathFiles.stream()
-                                       .map(f -> f.toPath())
+                                       .map(f -> f.toPath().toAbsolutePath())
                                        .collect(Collectors.groupingBy(p -> modulePath.relativize(p)
                                                                             .getName(0)
                                                                             .toString()));

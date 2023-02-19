@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
-#include "jvm_io.h"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jvm_io.h"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
@@ -69,7 +69,7 @@ public:
   // Computes the size of a JVMCINMethodData object
   static int compute_size(const char* nmethod_mirror_name) {
     int size = sizeof(JVMCINMethodData);
-    if (nmethod_mirror_name != NULL) {
+    if (nmethod_mirror_name != nullptr) {
       size += (int) strlen(nmethod_mirror_name) + 1;
     }
     return size;
@@ -82,8 +82,8 @@ public:
   // Adds `speculation` to the failed speculations list.
   void add_failed_speculation(nmethod* nm, jlong speculation);
 
-  // Gets the JVMCI name of the nmethod (which may be NULL).
-  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : NULL; }
+  // Gets the JVMCI name of the nmethod (which may be null).
+  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
 
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
@@ -210,7 +210,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // If such a runtime exists, its _num_attached_threads is incremented
   // and the caller must subsequently attach `thread` to it.
   // JVMCI_lock must be held by current thread.
-  // If nullptr is returned, then `*count` contains the number of JVMCIRuntimes
+  // If null is returned, then `*count` contains the number of JVMCIRuntimes
   // currently allocated.
   static JVMCIRuntime* select_runtime(JavaThread* thread, JVMCIRuntime* skip, int* count);
 
@@ -235,7 +235,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
-  // interface pointer for the JavaVM is returned otherwise nullptr is returned.
+  // interface pointer for the JavaVM is returned otherwise null is returned.
   JNIEnv* init_shared_library_javavm();
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
@@ -338,7 +338,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then
-  // `_HotSpotJVMCIRuntime_instance` is set to nullptr and `_init_state`
+  // `_HotSpotJVMCIRuntime_instance` is set to null and `_init_state`
   // to uninitialized.
   void shutdown();
 
@@ -349,7 +349,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   void bootstrap_finished(TRAPS);
 
   // Look up a klass by name from a particular class loader (the accessor's).
-  // If require_local, result must be defined in that class loader, or NULL.
+  // If require_local, result must be defined in that class loader, or null.
   // If !require_local, a result from remote class loader may be reported,
   // if sufficient class loader constraints exist such that initiating
   // a class loading request from the given loader is bound to return
@@ -429,7 +429,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::fatal_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(nullptr, buf); \
     return; \
   } \
   (void)(0
@@ -438,7 +438,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::fatal_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(nullptr, buf); \
     return v; \
   } \
   (void)(0
@@ -474,7 +474,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // When allocation fails, these stubs:
   // 1. Exercise -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError handling and also
   //    post a JVMTI_EVENT_RESOURCE_EXHAUSTED event if the failure is an OutOfMemroyError
-  // 2. Return NULL with a pending exception.
+  // 2. Return null with a pending exception.
   // Compiled code must ensure these stubs are not called twice for the same allocation
   // site due to the non-repeatable side effects in the case of OOME.
   static void new_instance(JavaThread* current, Klass* klass) { new_instance_common(current, klass, false); }
@@ -483,7 +483,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static void dynamic_new_array(JavaThread* current, oopDesc* element_mirror, jint length) { dynamic_new_array_common(current, element_mirror, length, false); }
   static void dynamic_new_instance(JavaThread* current, oopDesc* type_mirror) { dynamic_new_instance_common(current, type_mirror, false); }
 
-  // When allocation fails, these stubs return NULL and have no pending exception. Compiled code
+  // When allocation fails, these stubs return null and have no pending exception. Compiled code
   // can use these stubs if a failed allocation will be retried (e.g., by deoptimizing and
   // re-executing in the interpreter).
   static void new_instance_or_null(JavaThread* thread, Klass* klass) { new_instance_common(thread, klass, true); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 
-int BarrierSetNMethod::disarmed_value() const {
-  return *disarmed_value_address();
+int BarrierSetNMethod::disarmed_guard_value() const {
+  return *disarmed_guard_value_address();
 }
 
 bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
@@ -67,6 +67,14 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
   }
 
   return true;
+}
+
+void BarrierSetNMethod::disarm(nmethod* nm) {
+  set_guard_value(nm, disarmed_guard_value());
+}
+
+bool BarrierSetNMethod::is_armed(nmethod* nm) {
+  return guard_value(nm) != disarmed_guard_value();
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -102,24 +110,24 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   return true;
 }
 
-int* BarrierSetNMethod::disarmed_value_address() const {
+int* BarrierSetNMethod::disarmed_guard_value_address() const {
   return (int*) &_current_phase;
 }
 
-ByteSize BarrierSetNMethod::thread_disarmed_offset() const {
-  return Thread::nmethod_disarmed_offset();
+ByteSize BarrierSetNMethod::thread_disarmed_guard_value_offset() const {
+  return Thread::nmethod_disarmed_guard_value_offset();
 }
 
 class BarrierSetNMethodArmClosure : public ThreadClosure {
 private:
-  int _disarm_value;
+  int _disarmed_guard_value;
 
 public:
-  BarrierSetNMethodArmClosure(int disarm_value) :
-      _disarm_value(disarm_value) {}
+  BarrierSetNMethodArmClosure(int disarmed_guard_value) :
+      _disarmed_guard_value(disarmed_guard_value) {}
 
   virtual void do_thread(Thread* thread) {
-    thread->set_nmethod_disarm_value(_disarm_value);
+    thread->set_nmethod_disarmed_guard_value(_disarmed_guard_value);
   }
 };
 
@@ -154,7 +162,7 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
   CodeBlob* cb = CodeCache::find_blob(return_address);
-  assert(cb != NULL, "invariant");
+  assert(cb != nullptr, "invariant");
 
   nmethod* nm = cb->as_nmethod();
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -195,5 +203,6 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
 
   assert(nm->is_osr_method(), "Should not reach here");
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
+  OrderAccess::cross_modify_fence();
   return nmethod_entry_barrier(nm);
 }

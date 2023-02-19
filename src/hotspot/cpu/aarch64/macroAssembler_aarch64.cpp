@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,10 +26,11 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "compiler/compileTask.hpp"
+#include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -39,8 +40,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/disassembler.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -926,8 +926,7 @@ address MacroAssembler::trampoline_call(Address entry) {
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
   // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(NativeInstruction::instruction_size
-                   + NativeCallTrampolineStub::instruction_size);
+  address stub = start_a_stub(max_trampoline_stub_size());
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
@@ -959,6 +958,11 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
+int MacroAssembler::max_trampoline_stub_size() {
+  // Max stub size: alignment nop, TrampolineStub.
+  return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
+}
+
 void MacroAssembler::emit_static_call_stub() {
   // CompiledDirectStaticCall::set_to_interpreted knows the
   // exact layout of this stub.
@@ -969,6 +973,11 @@ void MacroAssembler::emit_static_call_stub() {
   // Jump to the entry point of the c2i stub.
   movptr(rscratch1, 0);
   br(rscratch1);
+}
+
+int MacroAssembler::static_call_stub_size() {
+  // isb; movk; movz; movz; movk; movz; movz; br
+  return 8 * NativeInstruction::instruction_size;
 }
 
 void MacroAssembler::c2bool(Register x) {
@@ -1101,6 +1110,7 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
   nop();
   movk(zr, 0);
   movk(zr, 0);
@@ -1890,24 +1900,6 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
   return Address(Rd);
 }
 
-void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
-  if (UseLSE) {
-    mov(tmp, 1);
-    ldadd(Assembler::word, tmp, zr, counter_addr);
-    return;
-  }
-  Label retry_load;
-  prfm(Address(counter_addr), PSTL1STRM);
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  ldxrw(tmp, counter_addr);
-  addw(tmp, tmp, 1);
-  // if we store+flush with no intervening write tmp will be zero
-  stxrw(tmp2, tmp, counter_addr);
-  cbnzw(tmp2, retry_load);
-}
-
-
 int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
                                     bool want_remainder, Register scratch)
 {
@@ -2076,7 +2068,7 @@ int MacroAssembler::load_signed_byte32(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
   case  8:  ldr(dst, src); break;
   case  4:  ldrw(dst, src); break;
@@ -2086,7 +2078,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
   case  8:  str(src, dst); break;
   case  4:  strw(src, dst); break;
@@ -2394,9 +2386,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegister::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2431,9 +2423,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegister::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2475,22 +2467,56 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 #endif
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
-  Label done, not_weak;
+  assert_different_registers(value, tmp1, tmp2);
+  Label done, tagged, weak_tagged;
+
   cbz(value, done);           // Use NULL as-is.
+  tst(value, JNIHandles::tag_mask); // Test for tag.
+  br(Assembler::NE, tagged);
 
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(value, 0, not_weak);    // Test for jweak tag.
-
-  // Resolve jweak.
-  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
   b(done);
 
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp1, tmp2);
+  bind(tagged);
+  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  tbnz(value, 0, weak_tagged);    // Test for weak tag.
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
   verify_oop(value);
+  b(done);
+
+  bind(weak_tagged);
+  // Resolve jweak.
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
+                 value, Address(value, -JNIHandles::TypeTag::weak_global), tmp1, tmp2);
+  verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    Label valid_global_tag;
+    tbnz(value, 1, valid_global_tag); // Test for global tag
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -2937,7 +2963,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
   }
   if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
     sub(sp, sp, total_predicate_in_bytes);
-    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_registers; i++) {
       sve_str(as_PRegister(i), Address(sp, i));
     }
   }
@@ -2946,7 +2972,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
-    for (int i = PRegister::number_of_saved_registers - 1; i >= 0; i--) {
+    for (int i = PRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_PRegister(i), Address(sp, i));
     }
     add(sp, sp, total_predicate_in_bytes);
@@ -3577,6 +3603,65 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp,
   eor(crc, crc, tmp);
 }
 
+void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
+    Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+
+    subs(tmp0, len, 384);
+    mvnw(crc, crc);
+    br(Assembler::GE, CRC_by128_pre);
+  BIND(CRC_less128);
+    subs(len, len, 32);
+    br(Assembler::GE, CRC_by32_loop);
+  BIND(CRC_less32);
+    adds(len, len, 32 - 4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by32_loop);
+    ldp(tmp0, tmp1, Address(buf));
+    crc32x(crc, crc, tmp0);
+    ldp(tmp2, tmp3, Address(buf, 16));
+    crc32x(crc, crc, tmp1);
+    add(buf, buf, 32);
+    crc32x(crc, crc, tmp2);
+    subs(len, len, 32);
+    crc32x(crc, crc, tmp3);
+    br(Assembler::GE, CRC_by32_loop);
+    cmn(len, (u1)32);
+    br(Assembler::NE, CRC_less32);
+    b(L_exit);
+
+  BIND(CRC_by4_loop);
+    ldrw(tmp0, Address(post(buf, 4)));
+    subs(len, len, 4);
+    crc32w(crc, crc, tmp0);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::LE, L_exit);
+  BIND(CRC_by1_loop);
+    ldrb(tmp0, Address(post(buf, 1)));
+    subs(len, len, 1);
+    crc32b(crc, crc, tmp0);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by128_pre);
+    kernel_crc32_common_fold_using_crypto_pmull(crc, buf, len, tmp0, tmp1, tmp2,
+      4*256*sizeof(juint) + 8*sizeof(juint));
+    mov(crc, 0);
+    crc32x(crc, crc, tmp0);
+    crc32x(crc, crc, tmp1);
+
+    cbnz(len, CRC_less128);
+
+  BIND(L_exit);
+    mvnw(crc, crc);
+}
+
 void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3) {
@@ -3687,6 +3772,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+
+  if (UseCryptoPmullForCRC32) {
+      kernel_crc32_using_crypto_pmull(crc, buf, len, table0, table1, table2, table3);
+      return;
+  }
 
   if (UseCRC32) {
       kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);
@@ -3987,6 +4077,123 @@ void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
   kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
 }
 
+void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2, size_t table_offset) {
+    Label CRC_by128_loop;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+
+    sub(len, len, 256);
+    Register table = tmp0;
+    {
+      uint64_t offset;
+      adrp(table, ExternalAddress(StubRoutines::crc_table_addr()), offset);
+      add(table, table, offset);
+    }
+    add(table, table, table_offset);
+
+    sub(buf, buf, 0x10);
+    ldrq(v1, Address(buf, 0x10));
+    ldrq(v2, Address(buf, 0x20));
+    ldrq(v3, Address(buf, 0x30));
+    ldrq(v4, Address(buf, 0x40));
+    ldrq(v5, Address(buf, 0x50));
+    ldrq(v6, Address(buf, 0x60));
+    ldrq(v7, Address(buf, 0x70));
+    ldrq(v8, Address(pre(buf, 0x80)));
+
+    movi(v25, T4S, 0);
+    mov(v25, S, 0, crc);
+    eor(v1, T16B, v1, v25);
+
+    ldrq(v0, Address(table));
+    b(CRC_by128_loop);
+
+    align(OptoLoopAlignment);
+  BIND(CRC_by128_loop);
+    pmull (v9,  T1Q, v1, v0, T1D);
+    pmull2(v10, T1Q, v1, v0, T2D);
+    ldrq(v1, Address(buf, 0x10));
+    eor3(v1, T16B, v9,  v10, v1);
+
+    pmull (v11, T1Q, v2, v0, T1D);
+    pmull2(v12, T1Q, v2, v0, T2D);
+    ldrq(v2, Address(buf, 0x20));
+    eor3(v2, T16B, v11, v12, v2);
+
+    pmull (v13, T1Q, v3, v0, T1D);
+    pmull2(v14, T1Q, v3, v0, T2D);
+    ldrq(v3, Address(buf, 0x30));
+    eor3(v3, T16B, v13, v14, v3);
+
+    pmull (v15, T1Q, v4, v0, T1D);
+    pmull2(v16, T1Q, v4, v0, T2D);
+    ldrq(v4, Address(buf, 0x40));
+    eor3(v4, T16B, v15, v16, v4);
+
+    pmull (v17, T1Q, v5, v0, T1D);
+    pmull2(v18, T1Q, v5, v0, T2D);
+    ldrq(v5, Address(buf, 0x50));
+    eor3(v5, T16B, v17, v18, v5);
+
+    pmull (v19, T1Q, v6, v0, T1D);
+    pmull2(v20, T1Q, v6, v0, T2D);
+    ldrq(v6, Address(buf, 0x60));
+    eor3(v6, T16B, v19, v20, v6);
+
+    pmull (v21, T1Q, v7, v0, T1D);
+    pmull2(v22, T1Q, v7, v0, T2D);
+    ldrq(v7, Address(buf, 0x70));
+    eor3(v7, T16B, v21, v22, v7);
+
+    pmull (v23, T1Q, v8, v0, T1D);
+    pmull2(v24, T1Q, v8, v0, T2D);
+    ldrq(v8, Address(pre(buf, 0x80)));
+    eor3(v8, T16B, v23, v24, v8);
+
+    subs(len, len, 0x80);
+    br(Assembler::GE, CRC_by128_loop);
+
+    // fold into 512 bits
+    ldrq(v0, Address(table, 0x10));
+
+    pmull (v10,  T1Q, v1, v0, T1D);
+    pmull2(v11, T1Q, v1, v0, T2D);
+    eor3(v1, T16B, v10, v11, v5);
+
+    pmull (v12, T1Q, v2, v0, T1D);
+    pmull2(v13, T1Q, v2, v0, T2D);
+    eor3(v2, T16B, v12, v13, v6);
+
+    pmull (v14, T1Q, v3, v0, T1D);
+    pmull2(v15, T1Q, v3, v0, T2D);
+    eor3(v3, T16B, v14, v15, v7);
+
+    pmull (v16, T1Q, v4, v0, T1D);
+    pmull2(v17, T1Q, v4, v0, T2D);
+    eor3(v4, T16B, v16, v17, v8);
+
+    // fold into 128 bits
+    ldrq(v5, Address(table, 0x20));
+    pmull (v10, T1Q, v1, v5, T1D);
+    pmull2(v11, T1Q, v1, v5, T2D);
+    eor3(v4, T16B, v4, v10, v11);
+
+    ldrq(v6, Address(table, 0x30));
+    pmull (v12, T1Q, v2, v6, T1D);
+    pmull2(v13, T1Q, v2, v6, T2D);
+    eor3(v4, T16B, v4, v12, v13);
+
+    ldrq(v7, Address(table, 0x40));
+    pmull (v14, T1Q, v3, v7, T1D);
+    pmull2(v15, T1Q, v3, v7, T2D);
+    eor3(v1, T16B, v4, v14, v15);
+
+    add(len, len, 0x80);
+    add(buf, buf, 0x10);
+
+    mov(tmp0, v1, D, 0);
+    mov(tmp1, v1, D, 1);
+}
 
 SkipIfEqual::SkipIfEqual(
     MacroAssembler* masm, const bool* flag_addr, bool value) {
@@ -3994,7 +4201,11 @@ SkipIfEqual::SkipIfEqual(
   uint64_t offset;
   _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
   _masm->ldrb(rscratch1, Address(rscratch1, offset));
-  _masm->cbzw(rscratch1, _label);
+  if (value) {
+    _masm->cbnzw(rscratch1, _label);
+  } else {
+    _masm->cbzw(rscratch1, _label);
+  }
 }
 
 SkipIfEqual::~SkipIfEqual() {
@@ -4401,7 +4612,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Register dst, Address src,
                                     Register tmp1, Register tmp2) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2);
@@ -4411,15 +4622,15 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
+                                     Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -4433,9 +4644,9 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
   access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, tmp2);
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
@@ -4547,9 +4758,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // Bang one page at a time because large size can bang beyond yellow and
   // red zones.
   Label loop;
-  mov(rscratch1, os::vm_page_size());
+  mov(rscratch1, (int)os::vm_page_size());
   bind(loop);
-  lea(tmp, Address(tmp, -os::vm_page_size()));
+  lea(tmp, Address(tmp, -(int)os::vm_page_size()));
   subsw(size, size, rscratch1);
   str(size, Address(tmp));
   br(Assembler::GT, loop);
@@ -4560,10 +4771,10 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / (int)os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    lea(tmp, Address(tmp, -os::vm_page_size()));
+    lea(tmp, Address(tmp, -(int)os::vm_page_size()));
     str(size, Address(tmp));
   }
 }

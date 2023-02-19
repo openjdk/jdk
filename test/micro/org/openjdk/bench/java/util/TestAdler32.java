@@ -27,20 +27,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.Adler32;
 import org.openjdk.jmh.annotations.*;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 2)
-@Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 60, timeUnit = TimeUnit.SECONDS)
-
 public class TestAdler32 {
 
     private Adler32 adler32;
     private Random random;
     private byte[] bytes;
 
-    @Param({"64", "128", "256", "512", /* "1024", */ "2048", /* "4096", "8192", */ "16384", /* "32768", */ "65536"})
+    @Param({"64", "128", "256", "512", "1024", "2048", "5012", "8192", "16384", "32768", "65536"})
     private int count;
 
     public TestAdler32() {

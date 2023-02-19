@@ -530,12 +530,12 @@ GlyphBlitVector* setupLCDBlitVector(JNIEnv *env, jobject glyphlist,
      * integral subpixel position for that case, hence 0.5/3 = 0.166667
      * Presently subPixPos means FM, and FM disables embedded bitmaps
      * Therefore if subPixPos is true we should never get embedded bitmaps
-     * and the glyphlist will be homogenous. This test and the position
+     * and the glyphlist will be homogeneous. This test and the position
      * adjustments will need to be per glyph once this case becomes
-     * heterogenous.
+     * heterogeneous.
      * Also set subPixPos=false if detect a B&W bitmap as we only
      * need to test that on a per glyph basis once the list becomes
-     * heterogenous
+     * heterogeneous
      */
     if (subPixPos && len > 0) {
         ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[fromGlyph]);

@@ -32,16 +32,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="alt">দাক্ষিণাত্য আল্টাই</language>
 			<language type="am">আমহাৰিক</language>
 			<language type="an">আৰ্গোনিজ</language>
+			<language type="ann">অ’ব’ল’</language>
 			<language type="anp">আঙ্গিকা</language>
 			<language type="ar">আৰবী</language>
 			<language type="ar_001">আধুনিক মানক আৰবী</language>
 			<language type="arn">মাপুচে</language>
 			<language type="arp">আৰাপাহো</language>
+			<language type="ars">নাজডি আৰবী</language>
 			<language type="as">অসমীয়া</language>
 			<language type="asa">আছু</language>
 			<language type="ast">এষ্টুৰীয়</language>
+			<language type="atj">আতিকামেক</language>
 			<language type="av">আভেৰিক</language>
-			<language type="awa">আৱাধি</language>
+			<language type="awa">অৱধী</language>
 			<language type="ay">আয়মাৰা</language>
 			<language type="az">আজেৰবাইজানী</language>
 			<language type="az" alt="short">আজেৰি</language>
@@ -65,6 +68,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">বগিনীজ</language>
 			<language type="byn">ব্লিন</language>
 			<language type="ca">কাতালান</language>
+			<language type="cay">কায়ুগা</language>
 			<language type="ccp">চাক্‌মা</language>
 			<language type="ce">চেচেন</language>
 			<language type="ceb">চিবুৱানো</language>
@@ -73,12 +77,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">চুকিজ</language>
 			<language type="chm">মাৰি</language>
 			<language type="cho">চোক্টাউ</language>
+			<language type="chp">চিপেউয়ান</language>
 			<language type="chr">চেৰোকি</language>
 			<language type="chy">চাইয়েন</language>
 			<language type="ckb">চেণ্ট্ৰেল কুৰ্ডিচ</language>
+			<language type="clc">চিলক’টিন</language>
 			<language type="co">কোৰ্ছিকান</language>
+			<language type="crg">মিচিফ</language>
+			<language type="crj">দাক্ষিণাত্য ইষ্ট ক্ৰী</language>
+			<language type="crk">প্লেইনছ ক্ৰী</language>
+			<language type="crl">নৰ্দাৰ্ন ইষ্ট ক্ৰী</language>
+			<language type="crm">মুজ ক্ৰী</language>
+			<language type="crr">কেৰ’লিনা আলগংকিয়ান</language>
 			<language type="crs">ছেছেলৱা ক্ৰিওল ফ্ৰেন্স</language>
 			<language type="cs">চেক</language>
+			<language type="csw">স্বাম্পী ক্ৰী</language>
 			<language type="cu">চাৰ্চ শ্লেভিক</language>
 			<language type="cv">চুভাচ</language>
 			<language type="cy">ৱেলচ</language>
@@ -129,6 +142,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">ফ্ৰেন্স</language>
 			<language type="fr_CA">কানাডিয়ান ফ্ৰেন্স</language>
 			<language type="fr_CH">ছুইচ ফ্ৰেন্স</language>
+			<language type="frc">কেজ’ন ফৰাছী</language>
+			<language type="frr">নৰ্দাৰ্ন ফ্ৰিছিয়ান</language>
 			<language type="fur">ফ্ৰিউলিয়ান</language>
 			<language type="fy">ৱেষ্টাৰ্ণ ফ্ৰিছিয়ান</language>
 			<language type="ga">আইৰিচ</language>
@@ -145,9 +160,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">মেংক্স</language>
 			<language type="gwi">জিউইচিন</language>
 			<language type="ha">হাউছা</language>
+			<language type="hai">হেইডা</language>
 			<language type="haw">হাৱাই</language>
+			<language type="hax">দাক্ষিণাত্যৰ হাইডা</language>
 			<language type="he">হিব্ৰু</language>
 			<language type="hi">হিন্দী</language>
+			<language type="hi_Latn" alt="variant">হিংলিছ</language>
 			<language type="hil">হিলিগায়নোন</language>
 			<language type="hmn">হমং</language>
 			<language type="hr">ক্ৰোৱেচিয়ান</language>
@@ -155,6 +173,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">হেইটিয়ান ক্ৰিয়ল</language>
 			<language type="hu">হাঙ্গেৰিয়ান</language>
 			<language type="hup">হুপা</language>
+			<language type="hur">হেলকোমেলেম</language>
 			<language type="hy">আৰ্মেনীয়</language>
 			<language type="hz">হেৰেৰো</language>
 			<language type="ia">ইণ্টাৰলিংগুৱা</language>
@@ -164,6 +183,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ie" draft="unconfirmed">উপস্থাপন ভাষা</language>
 			<language type="ig">ইগ্বো</language>
 			<language type="ii">ছিচুৱান ই</language>
+			<language type="ikt">ৱেষ্টাৰ্ণ কানাডিয়ান ইনক্টিটুট</language>
 			<language type="ilo">ইলোকো</language>
 			<language type="inh">ইংগুচ</language>
 			<language type="io">ইডো</language>
@@ -185,6 +205,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kde">মাকোণ্ড</language>
 			<language type="kea">কাবুভেৰ্ডিয়ানু</language>
 			<language type="kfo">কোৰো</language>
+			<language type="kgp">কেইংগাং</language>
 			<language type="kha">খাচি</language>
 			<language type="khq">কোয়াৰ চিনি</language>
 			<language type="ki">কিকুয়ু</language>
@@ -211,6 +232,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">কুমিক</language>
 			<language type="kv">কোমি</language>
 			<language type="kw">কোৰ্নিচ</language>
+			<language type="kwk">ক্বাকৱালা</language>
 			<language type="ky">কিৰ্গিজ</language>
 			<language type="la">লেটিন</language>
 			<language type="lad">লাডিনো</language>
@@ -219,11 +241,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">লেজঘিয়ান</language>
 			<language type="lg">গান্দা</language>
 			<language type="li">লিম্বুৰ্গিচ</language>
+			<language type="lil">লিল্লোৱেট</language>
 			<language type="lkt">লাকোটা</language>
 			<language type="ln">লিংগালা</language>
 			<language type="lo">লাও</language>
+			<language type="lou">লুইজিয়ানা কেৰ’ল</language>
 			<language type="loz">লোজি</language>
 			<language type="lrc">উদীচ্য লুৰি</language>
+			<language type="lsm">চামিয়া</language>
 			<language type="lt">লিথুৱানিয়ান</language>
 			<language type="lu">লুবা-কাটাংগা</language>
 			<language type="lua">লুবা-লুলুৱা</language>
@@ -252,6 +277,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">মালায়ালম</language>
 			<language type="mn">মংগোলীয়</language>
 			<language type="mni">মণিপুৰী</language>
+			<language type="moe">ইন্নু-আইমুন</language>
 			<language type="moh">মোহোক</language>
 			<language type="mos">মোছি</language>
 			<language type="mr">মাৰাঠী</language>
@@ -290,6 +316,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">ন্যাঞ্জা</language>
 			<language type="nyn">ন্যানকোল</language>
 			<language type="oc">অ’চিটান</language>
+			<language type="ojb">নৰ্থ-ৱেষ্টাৰ্ণ অজিবৱা</language>
+			<language type="ojc">চেন্ট্ৰেক অজিবৱা</language>
+			<language type="ojs">অ’জি-ক্ৰী</language>
+			<language type="ojw">ৱেষ্টাৰ্ণ অজিবৱা</language>
+			<language type="oka">অ’কানাগান</language>
 			<language type="om">ওৰোমো</language>
 			<language type="or">ওড়িয়া</language>
 			<language type="os">ওছেটিক</language>
@@ -299,7 +330,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">পাপিয়ামেণ্টো</language>
 			<language type="pau">পালাউৱান</language>
 			<language type="pcm">নাইজেৰিয়ান পিজিন</language>
+			<language type="pis">পিজিন</language>
 			<language type="pl">প’লিচ</language>
+			<language type="pqm">মালিছীট-পাছামাকু’ডী</language>
 			<language type="prg">প্ৰুছিয়ান</language>
 			<language type="ps">পুস্ত</language>
 			<language type="pt">পৰ্তুগীজ</language>
@@ -339,6 +372,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">সিংহলা</language>
 			<language type="sk">শ্লোভাক</language>
 			<language type="sl">শ্লোভেনিয়ান</language>
+			<language type="slh">দাক্ষিণাত্যৰ লুছুটচীড</language>
 			<language type="sm">ছামোন</language>
 			<language type="sma">দাক্ষিণাত্য ছামি</language>
 			<language type="smj">লুলে ছামি</language>
@@ -353,6 +387,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">স্বাতি</language>
 			<language type="ssy">ছাহো</language>
 			<language type="st">দাক্ষিণাত্য ছোথো</language>
+			<language type="str">ষ্ট্ৰেইটছ ছেলিশ্ব</language>
 			<language type="su">ছুণ্ডানীজ</language>
 			<language type="suk">ছুকুমা</language>
 			<language type="sv">ছুইডিচ</language>
@@ -361,23 +396,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">কোমোৰিয়ান</language>
 			<language type="syr">চিৰিয়াক</language>
 			<language type="ta">তামিল</language>
+			<language type="tce">দাক্ষিণাত্যৰ টুটচ’ন</language>
 			<language type="te">তেলুগু</language>
 			<language type="tem">টিম্নে</language>
 			<language type="teo">তেছো</language>
 			<language type="tet">তেতুম</language>
 			<language type="tg">তাজিক</language>
+			<language type="tgx">টেগিশ্ব</language>
 			<language type="th">থাই</language>
+			<language type="tht">টাহলটান</language>
 			<language type="ti">টিগৰিনিয়া</language>
 			<language type="tig">তাইগ্ৰে</language>
 			<language type="tk">তুৰ্কমেন</language>
 			<language type="tlh">ক্লিংগন</language>
+			<language type="tli">লিংগিট</language>
 			<language type="tn">ছোৱানা</language>
 			<language type="to">টোঙ্গান</language>
+			<language type="tok">ট’কি প’না</language>
 			<language type="tpi">টোক পিছিন</language>
 			<language type="tr">তুৰ্কী</language>
 			<language type="trv">তাৰোকো</language>
 			<language type="ts">ছোঙ্গা</language>
 			<language type="tt">তাতাৰ</language>
+			<language type="ttm">নৰ্দাৰ্ন টুটচ’ন</language>
 			<language type="tum">তুম্বুকা</language>
 			<language type="tvl">টুভালু</language>
 			<language type="twq">টাছাৱাক</language>
@@ -401,6 +442,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wal">ওলেইটা</language>
 			<language type="war">ৱাৰে</language>
 			<language type="wo">ৱোলাফ</language>
+			<language type="wuu">ৱু চাইনিজ</language>
 			<language type="xal">কাল্মিক</language>
 			<language type="xh">হোছা</language>
 			<language type="xog">ছোগা</language>
@@ -408,6 +450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">য়েম্বা</language>
 			<language type="yi">ইদ্দিছ</language>
 			<language type="yo">ইউৰুবা</language>
+			<language type="yrl">হিংগাটো</language>
 			<language type="yue">কেণ্টোনীজ</language>
 			<language type="yue" alt="menu">চাইনিজ, কেণ্টোনীজ</language>
 			<language type="zgh">ষ্টেণ্ডাৰ্ড মোৰোক্কান তামাজাইট</language>
@@ -423,11 +466,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">ঝাঝা</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">এডলাম</script>
 			<script type="Arab">আৰবী</script>
+			<script type="Aran">নাষ্টালিক</script>
 			<script type="Armn">আৰ্মেনীয়</script>
 			<script type="Beng">বাংলা</script>
 			<script type="Bopo">বোপোমোফো</script>
 			<script type="Brai">ব্ৰেইল</script>
+			<script type="Cakm">চাকমা</script>
+			<script type="Cans">ইউনিফাইড কানাডিয়ান এব’ৰিজিনেল ছিলেবিকছ</script>
+			<script type="Cher">চেৰ’কী</script>
 			<script type="Cyrl">চিৰিলিক</script>
 			<script type="Deva">দেৱনাগৰী</script>
 			<script type="Ethi">ইথিঅ’পিক</script>
@@ -455,14 +503,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Latn">লেটিন</script>
 			<script type="Mlym">মালায়ালম</script>
 			<script type="Mong">মঙ্গোলিয়</script>
+			<script type="Mtei">মেইতেই মায়েক</script>
 			<script type="Mymr">ম্যানমাৰ</script>
+			<script type="Nkoo">এন্‍ক’</script>
+			<script type="Olck">অ’ল চিকি</script>
 			<script type="Orya">ওড়িয়া</script>
+			<script type="Rohg">হানিফি</script>
 			<script type="Sinh">সিংহলী</script>
+			<script type="Sund">ছাণ্ডানিজ</script>
+			<script type="Syrc">ছিৰিয়াক</script>
 			<script type="Taml">তামিল</script>
 			<script type="Telu">তেলুগু</script>
+			<script type="Tfng">টিফিনাঘ</script>
 			<script type="Thaa">থানা</script>
 			<script type="Thai">থাই</script>
 			<script type="Tibt">তিব্বতী</script>
+			<script type="Vaii">ভাই</script>
+			<script type="Yiii">য়ি</script>
 			<script type="Zmth">গাণিতিক চিহ্ন</script>
 			<script type="Zsye">ইম’জি</script>
 			<script type="Zsym">প্ৰতীক</script>
@@ -688,6 +745,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">নাউৰু</territory>
 			<territory type="NU">নিউ</territory>
 			<territory type="NZ">নিউজিলেণ্ড</territory>
+			<territory type="NZ" alt="variant">অ’টিআৰাৱা নিউজিলেণ্ড</territory>
 			<territory type="OM">ওমান</territory>
 			<territory type="PA">পানামা</territory>
 			<territory type="PE">পেৰু</territory>
@@ -791,13 +849,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">বৌদ্ধ কেলেণ্ডাৰ</type>
 			<type key="calendar" type="chinese">চীনা কেলেণ্ডাৰ</type>
+			<type key="calendar" type="coptic">ক’প্টিক কেলেণ্ডাৰ</type>
 			<type key="calendar" type="dangi">দাংগি কেলেণ্ডাৰ</type>
 			<type key="calendar" type="ethiopic">ইথিঅ’পিক কেলেণ্ডাৰ</type>
+			<type key="calendar" type="ethiopic-amete-alem">ইথিঅ’পিক এমিটি এলেম কেলেণ্ডাৰ</type>
 			<type key="calendar" type="gregorian">গ্ৰেগোৰিয়ান কেলেণ্ডাৰ</type>
 			<type key="calendar" type="hebrew">হিব্ৰু কেলেণ্ডাৰ</type>
-			<type key="calendar" type="indian" draft="contributed">ভাৰতীয় ৰাষ্ট্ৰীয় পঞ্জিকা</type>
+			<type key="calendar" type="indian">ভাৰতীয় ৰাষ্ট্ৰীয় পঞ্জিকা</type>
 			<type key="calendar" type="islamic">ইছলামী কেলেণ্ডাৰ</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">ইচলামী-নাগৰিকৰ পঞ্জিকা</type>
+			<type key="calendar" type="islamic-civil">ইচলামী-নাগৰিকৰ পঞ্জিকা</type>
+			<type key="calendar" type="islamic-umalqura">ইচলামী কেলেণ্ডাৰ (উম অল-কুৰা)</type>
 			<type key="calendar" type="iso8601">আই. এছ. অ’.-৮৬০১ কেলেণ্ডাৰ</type>
 			<type key="calendar" type="japanese">জাপানী কেলেণ্ডাৰ</type>
 			<type key="calendar" type="persian">ফাৰ্চী কেলেণ্ডাৰ</type>
@@ -828,6 +889,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">আৰ্মেনীয় সংখ্যা</type>
 			<type key="numbers" type="armnlow">আৰ্মেনীয় সৰুফলা সংখ্যা</type>
 			<type key="numbers" type="beng">বাংলা অংক</type>
+			<type key="numbers" type="cakm">চাকমা অংক</type>
 			<type key="numbers" type="deva">দেৱনাগৰী অংক</type>
 			<type key="numbers" type="ethi">ইথিঅ’পিক সংখ্যা</type>
 			<type key="numbers" type="fullwide">পূৰ্ণ-প্ৰস্থৰ অংক</type>
@@ -842,6 +904,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">পৰম্পৰাগত চীনা সংখ্যা</type>
 			<type key="numbers" type="hantfin">পৰম্পৰাগত চীনা বিত্তীয় সংখ্যা</type>
 			<type key="numbers" type="hebr">হিব্ৰু সংখ্যা</type>
+			<type key="numbers" type="java">জাভানীজ অংক</type>
 			<type key="numbers" type="jpan">জাপানী সংখ্যা</type>
 			<type key="numbers" type="jpanfin">জাপানী বিত্তীয় সংখ্যা</type>
 			<type key="numbers" type="khmr">খমেৰ অংক</type>
@@ -849,7 +912,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="laoo">লাও অংক</type>
 			<type key="numbers" type="latn">পশ্চিমীয়া অংক</type>
 			<type key="numbers" type="mlym">মালায়ালম অংক</type>
+			<type key="numbers" type="mtei">মেইতেই মায়েক সংখ্যা</type>
 			<type key="numbers" type="mymr">ম্যানমাৰ অংক</type>
+			<type key="numbers" type="olck">অ’ল চিকি সংখ্যা</type>
 			<type key="numbers" type="orya">ওড়িয়া অংক</type>
 			<type key="numbers" type="roman">ৰোমান সংখ্যা</type>
 			<type key="numbers" type="romanlow">ৰোমান সৰুফলা সংখ্যা</type>
@@ -858,6 +923,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="telu">তেলুগু অংক</type>
 			<type key="numbers" type="thai">থাই অংক</type>
 			<type key="numbers" type="tibt">তিব্বতী অংক</type>
+			<type key="numbers" type="vaii">ভেই সংখ্যা</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">মেট্ৰিক</measurementSystemName>
@@ -873,9 +939,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[\u09BC অ আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ ং \u0981 ঃ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড {ড\u09BC} ঢ {ঢ\u09BC} ণ ত থ দ ধ ন প ফ ব ভ ম য {য\u09BC} ৰ ল ৱ শ ষ স হ {ক\u09CDষ} া ি ী \u09C1 \u09C2 \u09C3 ে ৈ ো ৌ \u09CD]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ৲ ৎ র]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[\u09BC অ আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ ং ঃ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড ঢ ণ ৎ ত থ দ ধ ন প ফ ব ভ ম য ৰ ল ৱ শ ষ স হ \u09CD]</exemplarCharacters>
+		<exemplarCharacters type="index">[\u09BC অ আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ ং ঃ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড ঢ ণ ৎ ত থ দ ধ ন প ফ ব ভ ম য ৰ ল ৱ শ ষ স হ \u09CD]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0০ 1১ 2২ 3৩ 4৪ 5৫ 6৬ 7৭ 8৮ 9৯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … । ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … । ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -890,20 +956,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
 			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
 			<parseLenient sample="%">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
+			<parseLenient sample="‰">[؉‰]</parseLenient>
 			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
 			<parseLenient sample="¥">[¥￥]</parseLenient>
-			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₩">[₩￦]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
 			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
 			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
 			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
@@ -947,20 +1013,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0} বজাত</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0} বজাত</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -971,25 +1049,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E, a h:mm</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E, a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
-						<dateFormatItem id="h">a h</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
-						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
@@ -1002,7 +1075,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMEd">E, dd-MM-y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
@@ -1021,6 +1094,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
 							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
@@ -1029,7 +1106,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="GyMd">
 							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
 							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
@@ -1365,7 +1442,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraNames>
 					<eraAbbr>
 						<era type="0">খ্ৰীঃ পূঃ</era>
-						<era type="0" alt="variant">খ্ৰীষ্টপূৰ্ব</era>
 						<era type="1">খ্ৰীঃ</era>
 						<era type="1" alt="variant">চি. ই.</era>
 					</eraAbbr>
@@ -1427,20 +1503,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1517,7 +1605,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
+							<greatestDifference id="M">G M/y – M/y</greatestDifference>
 							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
@@ -1640,6 +1728,61 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">চৈত্ৰ</month>
+							<month type="2">বৈশাখ</month>
+							<month type="3">জ্যেষ্ঠ</month>
+							<month type="4">আষাঢ়</month>
+							<month type="5">শ্ৰাৱণ</month>
+							<month type="6">ভাদ্ৰ</month>
+							<month type="7">অশ্বিন</month>
+							<month type="8">কাৰ্তিক</month>
+							<month type="9">অগ্ৰহায়ণ</month>
+							<month type="10">পৌষ</month>
+							<month type="11">মাঘ</month>
+							<month type="12">ফাল্গুন</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">চৈত্ৰ</month>
+							<month type="2">বৈশাখ</month>
+							<month type="3">জ্যেষ্ঠ</month>
+							<month type="4">আষাঢ়</month>
+							<month type="5">শ্ৰাৱণ</month>
+							<month type="6">ভাদ্ৰ</month>
+							<month type="7">অশ্বিন</month>
+							<month type="8">কাৰ্তিক</month>
+							<month type="9">অগ্ৰহায়ণ</month>
+							<month type="10">পৌষ</month>
+							<month type="11">মাঘ</month>
+							<month type="12">ফাল্গুন</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">চৈত্ৰ</month>
+							<month type="2">বৈশাখ</month>
+							<month type="3">জ্যেষ্ঠ</month>
+							<month type="4">আষাঢ়</month>
+							<month type="5">শ্ৰাৱণ</month>
+							<month type="6">ভাদ্ৰ</month>
+							<month type="7">অশ্বিন</month>
+							<month type="8">কাৰ্তিক</month>
+							<month type="9">অগ্ৰহায়ণ</month>
+							<month type="10">পৌষ</month>
+							<month type="11">মাঘ</month>
+							<month type="12">ফাল্গুন</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0">শক</era>
+					</eraAbbr>
+				</eras>
 			</calendar>
 		</calendars>
 		<fields>
@@ -2902,6 +3045,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>এণ্ডৰবাৰী</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>কেণ্টন</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>কিৰিটিমাটি</exemplarCity>
@@ -4582,6 +4728,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4589,9 +4736,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤ #,##,##0.00</pattern>
+					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4622,6 +4771,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">¤ 000 শত পৰাৰ্দ্ধ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
@@ -5662,7 +5812,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XXX">
 				<displayName>অজ্ঞাত মুদ্ৰা</displayName>
-				<displayName count="one">(মুদ্ৰাৰ একক অজ্ঞাত)</displayName>
+				<displayName count="one">(মুদ্ৰাৰ অজ্ঞাত একক)</displayName>
 				<displayName count="other">(অজ্ঞাত মুদ্ৰা)</displayName>
 			</currency>
 			<currency type="YER">
@@ -5693,8 +5843,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">আপোনালৈ {0} টা বাৰ্তা আহিছে;আপুনিসেইটোপঢ়িব বিচাৰেনে?</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">{0} দিন</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">আপুনি তাত {0} দিন আছিল, আপোনাৰ দিনটো কেনে আছিল?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">আপুনি তাত {0} দিন আছিল, আপোনাৰ দিনবোৰ কেনে আছিল?</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">সোঁফালে {0}ৰ্থ পাক লওক৷</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -6023,6 +6173,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} বছৰ</unitPattern>
 				<perUnitPattern>{0} প্ৰতি বছৰ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>কোৱাৰ্টাৰ্ছ</displayName>
+				<unitPattern count="one">{0} কোৱাৰ্টাৰ</unitPattern>
+				<unitPattern count="other">{0} কোৱাৰ্টাৰ</unitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>মাহ</displayName>
 				<unitPattern count="one">{0} মাহ</unitPattern>
@@ -6309,7 +6464,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ছ’লাৰ লুমিন’ছিটী</unitPattern>
 				<unitPattern count="other">{0} ছ’লাৰ লুমিন’ছিটী</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>মেট্রিক টন</displayName>
 				<unitPattern count="one">{0} মেট্রিক টন</unitPattern>
 				<unitPattern count="other">{0} মেট্ৰিক টন</unitPattern>
@@ -6499,7 +6654,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} কেলভিন</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>পাউণ্ড-ফুট</displayName>
+				<displayName>পাউণ্ড-বল-ফুট</displayName>
 				<unitPattern count="one">{0} পাউণ্ড-ফুট</unitPattern>
 				<unitPattern count="other">{0} পাউণ্ড-ফুট</unitPattern>
 			</unit>
@@ -7002,6 +7157,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} বছৰ</unitPattern>
 				<perUnitPattern>{0}/বছৰ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>কোৱাৰ্টাৰ</displayName>
+				<unitPattern count="one">{0} qtr</unitPattern>
+				<unitPattern count="other">{0} qtrs</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>মাহ</displayName>
 				<unitPattern count="one">{0} মাহ</unitPattern>
@@ -7273,7 +7434,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ট</displayName>
 				<unitPattern count="one">{0} ট</unitPattern>
 				<unitPattern count="other">{0} ট</unitPattern>
@@ -7751,6 +7912,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} বছৰ</unitPattern>
 				<unitPattern count="other">{0} বছৰ</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<unitPattern count="one">{0}q</unitPattern>
+				<unitPattern count="other">{0}q</unitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>মাহ</displayName>
 				<unitPattern count="one">{0} মাহ</unitPattern>
@@ -8063,4 +8228,156 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">সৰণিবদ্ধ সংখ্যা</featureName>
 		<featureName type="zero">শূন্য ঘটোৱা</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und as</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">চিন্দবাদ</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">আইৰিণ</nameField>
+			<nameField type="surname">এডলাৰ</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">জ’ন</nameField>
+			<nameField type="given2">হামিশ্ব</nameField>
+			<nameField type="surname">ৱাটছন</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">প্ৰফ. ডা০</nameField>
+			<nameField type="given">আডা কৰ্ণেলিয়া</nameField>
+			<nameField type="given-informal">নীলে</nameField>
+			<nameField type="given2">ইভা চ’ফিয়া</nameField>
+			<nameField type="surname-prefix">ভেন ডেন</nameField>
+			<nameField type="surname-core">কুকুৰনেচীয়া</nameField>
+			<nameField type="surname2">বেকাৰ স্মিট</nameField>
+			<nameField type="suffix">এম.ডি. পি.এইচ.ডি</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

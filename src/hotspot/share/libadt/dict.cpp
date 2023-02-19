@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ void Dict::doubhash() {
 //------------------------------Insert----------------------------------------
 // Insert or replace a key/value pair in the given dictionary.  If the
 // dictionary is too full, it's size is doubled.  The prior value being
-// replaced is returned (NULL if this is a 1st insertion of that key).  If
+// replaced is returned (null if this is a 1st insertion of that key).  If
 // an old value is found, it's swapped with the prior key-value pair on the
 // list.  This moves a commonly searched-for value towards the list head.
 void*Dict::Insert(void* key, void* val, bool replace) {
@@ -177,7 +177,7 @@ void*Dict::Insert(void* key, void* val, bool replace) {
   b->_keyvals[b->_cnt + b->_cnt    ] = key;
   b->_keyvals[b->_cnt + b->_cnt + 1] = val;
   b->_cnt++;
-  return NULL;                  // Nothing found prior
+  return nullptr;              // Nothing found prior
 }
 
 //------------------------------Delete---------------------------------------
@@ -195,11 +195,11 @@ void* Dict::Delete(void* key) {
       return prior;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------FindDict-------------------------------------
-// Find a key-value pair in the given dictionary.  If not found, return NULL.
+// Find a key-value pair in the given dictionary.  If not found, return null.
 // If found, move key-value pair towards head of list.
 void* Dict::operator [](const void* key) const {
   uint i = _hash(key) & (_size - 1); // Get hash key, corrected for size
@@ -209,7 +209,7 @@ void* Dict::operator [](const void* key) const {
       return b->_keyvals[j + j + 1];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------print------------------------------------------
@@ -235,7 +235,8 @@ void Dict::print() {
 // limited to MAXID characters in length.  Experimental evidence on 150K of
 // C text shows excellent spreading of values for any size hash table.
 int hashstr(const void* t) {
-  char c, k = 0;
+  char c;
+  int k = 0;
   int32_t sum = 0;
   const char* s = (const char*)t;
 
@@ -286,7 +287,7 @@ void DictI::reset(const Dict* dict) {
 }
 
 //------------------------------next-------------------------------------------
-// Find the next key-value pair in the dictionary, or return a NULL key and
+// Find the next key-value pair in the dictionary, or return a null key and
 // value.
 void DictI::operator ++(void) {
   if (_j--) {                   // Still working in current bin?
@@ -305,5 +306,5 @@ void DictI::operator ++(void) {
     _value = _d->_bin[_i]._keyvals[_j+_j+1];
     return;
   }
-  _key = _value = NULL;
+  _key = _value = nullptr;
 }

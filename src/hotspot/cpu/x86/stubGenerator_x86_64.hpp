@@ -387,6 +387,36 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
+  // ChaCha20 stubs and helper functions
+  void generate_chacha_stubs();
+  address generate_chacha20Block_avx();
+  address generate_chacha20Block_avx512();
+  void cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
+    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch,
+    XMMRegister lrot8, XMMRegister lrot16, int vector_len);
+  void cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
+    XMMRegister dVec, int vector_len, bool colToDiag);
+  void cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister bVec,
+    XMMRegister cVec, XMMRegister dVec, Register baseAddr, int baseOffset);
+
+  // Poly1305 multiblock using IFMA instructions
+  address generate_poly1305_processBlocks();
+  void poly1305_process_blocks_avx512(const Register input, const Register length,
+                                      const Register A0, const Register A1, const Register A2,
+                                      const Register R0, const Register R1, const Register C1);
+  void poly1305_multiply_scalar(const Register a0, const Register a1, const Register a2,
+                                const Register r0, const Register r1, const Register c1, bool only128,
+                                const Register t0, const Register t1, const Register t2,
+                                const Register mulql, const Register mulqh);
+  void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                                 const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P,
+                                 const XMMRegister P0L, const XMMRegister P0H, const XMMRegister P1L, const XMMRegister P1H, const XMMRegister P2L, const XMMRegister P2H,
+                                 const XMMRegister TMP, const Register rscratch);
+  void poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, const Register t0, const Register t1);
+  void poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs, const Register t0, const Register t1);
+  void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
+                             const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
+                             const XMMRegister TMP, const Register rscratch);
 
   // BASE64 stubs
 
@@ -411,6 +441,8 @@ class StubGenerator: public StubCodeGenerator {
   address base64_vbmi_join_1_2_addr();
   address base64_vbmi_join_2_3_addr();
   address base64_decoding_table_addr();
+  address base64_AVX2_decode_tables_addr();
+  address base64_AVX2_decode_LUT_tables_addr();
 
   // Code for generating Base64 decoding.
   //

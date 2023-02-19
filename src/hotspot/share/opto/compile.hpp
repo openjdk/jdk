@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
-class Int_Array;
 class Matcher;
 class MachConstantNode;
 class MachConstantBaseNode;
@@ -77,12 +76,10 @@ class PhaseCCP;
 class PhaseOutput;
 class RootNode;
 class relocInfo;
-class Scope;
 class StartNode;
 class SafePointNode;
 class JVMState;
 class Type;
-class TypeData;
 class TypeInt;
 class TypeInteger;
 class TypeKlassPtr;
@@ -95,6 +92,7 @@ class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
+class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -164,7 +162,6 @@ class CloneMap {
   void set_clone_idx(int x)                      { _clone_idx = x; }
   bool is_debug()                 const          { return _debug; }
   void set_debug(bool debug)                     { _debug = debug; }
-  static const char* debug_option_name;
 
   bool same_idx(node_idx_t k1, node_idx_t k2)  const { return idx(k1) == idx(k2); }
   bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
@@ -327,7 +324,7 @@ class Compile : public Phase {
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
-  int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
+  bool                  _do_aliasing;           // True if we intend to do aliasing
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
@@ -616,7 +613,7 @@ class Compile : public Phase {
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }
   void          set_use_cmove(bool z)           { _use_cmove = z; }
-  int               AliasLevel() const           { return _AliasLevel; }
+  bool              do_aliasing() const          { return _do_aliasing; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
   bool              print_inlining() const       { return _print_inlining; }
@@ -939,7 +936,8 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
   Unique_Node_List* for_igvn()                  { return _for_igvn; }
-  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List.
+  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
+  inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
   void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
@@ -1058,6 +1056,10 @@ class Compile : public Phase {
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
+  ~Compile() {
+    delete _print_inlining_stream;
+  };
+
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
 
@@ -1099,9 +1101,7 @@ class Compile : public Phase {
 
  private:
   // Phase control:
-  void Init(int aliaslevel);                     // Prepare for a single compilation
-  int  Inline_Warm();                            // Find more inlining work.
-  void Finish_Warm();                            // Give up on further inlines.
+  void Init(bool aliasing);                      // Prepare for a single compilation
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
 
@@ -1162,6 +1162,9 @@ class Compile : public Phase {
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
 
+  // Verify bi-directional correspondence of edges
+  void verify_bidirectional_edges(Unique_Node_List &visited);
+
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
 
@@ -1173,7 +1176,7 @@ class Compile : public Phase {
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
-  SubTypeCheckResult static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk);
+  SubTypeCheckResult static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip = StressReflectiveCode);
 
   static Node* conv_I2X_index(PhaseGVN* phase, Node* offset, const TypeInt* sizetype,
                               // Optional control dependency (for example, on range check)
@@ -1210,7 +1213,7 @@ class Compile : public Phase {
   bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
 #endif // IA32
 #ifdef ASSERT
-  bool _type_verify_symmetry;
+  VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

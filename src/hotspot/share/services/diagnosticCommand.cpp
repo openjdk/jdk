@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -35,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "jvm.h"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -187,27 +187,27 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
       factory = factory->next();
     }
   } else if (_cmd.has_value()) {
-    DCmd* cmd = NULL;
+    DCmd* cmd = nullptr;
     DCmdFactory* factory = DCmdFactory::factory(source, _cmd.value(),
                                                 strlen(_cmd.value()));
-    if (factory != NULL) {
+    if (factory != nullptr) {
       output()->print_cr("%s%s", factory->name(),
                          factory->is_enabled() ? "" : " [disabled]");
       output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
       JavaPermission p = factory->permission();
-      if(p._class != NULL) {
-        if(p._action != NULL) {
+      if(p._class != nullptr) {
+        if(p._action != nullptr) {
           output()->print_cr("\nPermission: %s(%s, %s)",
-                  p._class, p._name == NULL ? "null" : p._name, p._action);
+                  p._class, p._name == nullptr ? "null" : p._name, p._action);
         } else {
           output()->print_cr("\nPermission: %s(%s)",
-                  p._class, p._name == NULL ? "null" : p._name);
+                  p._class, p._name == nullptr ? "null" : p._name);
         }
       }
       output()->cr();
       cmd = factory->create_resource_instance(output());
-      if (cmd != NULL) {
+      if (cmd != nullptr) {
         DCmdMark mark(cmd);
         cmd->print_help(factory->name());
       }
@@ -267,8 +267,8 @@ SetVMFlagDCmd::SetVMFlagDCmd(outputStream* output, bool heap) :
 }
 
 void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
-  const char* val = NULL;
-  if (_value.value() != NULL) {
+  const char* val = nullptr;
+  if (_value.value() != nullptr) {
     val = _value.value();
   }
 
@@ -299,16 +299,16 @@ JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
 
 void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
-  if (_libpath.value() == NULL) {
+  if (_libpath.value() == nullptr) {
     output()->print_cr("JVMTI.agent_load dcmd needs library path.");
     return;
   }
 
   char *suffix = strrchr(_libpath.value(), '.');
-  bool is_java_agent = (suffix != NULL) && (strncmp(".jar", suffix, 4) == 0);
+  bool is_java_agent = (suffix != nullptr) && (strncmp(".jar", suffix, 4) == 0);
 
   if (is_java_agent) {
-    if (_option.value() == NULL) {
+    if (_option.value() == nullptr) {
       JvmtiExport::load_agent_library("instrument", "false",
                                       _libpath.value(), output());
     } else {
@@ -319,7 +319,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       char *opt = (char *)os::malloc(opt_len, mtInternal);
-      if (opt == NULL) {
+      if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
                            "Could not allocate " SIZE_FORMAT " bytes for argument.",
                            opt_len);
@@ -457,7 +457,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   Klass* name_res = ik->find_field(
     vmSymbols::finalizer_histogram_entry_name_field(), vmSymbols::string_signature(), &name_fd);
 
-  assert(count_res != NULL && name_res != NULL, "Unexpected layout of FinalizerHistogramEntry");
+  assert(count_res != nullptr && name_res != nullptr, "Unexpected layout of FinalizerHistogramEntry");
 
   output()->print_cr("Unreachable instances waiting for finalization");
   output()->print_cr("#instances  class name");
@@ -802,7 +802,7 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
 
   jvalue* jv = (jvalue*) result.get_value_addr();
   oop str = cast_to_oop(jv->l);
-  if (str != NULL) {
+  if (str != nullptr) {
       char* out = java_lang_String::as_utf8_string(str);
       if (out) {
           output()->print_cr("%s", out);
@@ -864,8 +864,8 @@ void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
 
 EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, NULL),
-  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, NULL)
+  _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, nullptr),
+  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, nullptr)
 {
   _dcmdparser.add_dcmd_option(&_log);
   _dcmdparser.add_dcmd_option(&_max);
@@ -874,8 +874,8 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   const char* max_value = _max.value();
   long max = -1;
-  if (max_value != NULL) {
-    char* endptr = NULL;
+  if (max_value != nullptr) {
+    char* endptr = nullptr;
     max = ::strtol(max_value, &endptr, 10);
     if (max == 0 && max_value == endptr) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
@@ -883,7 +883,7 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
   const char* log_name = _log.value();
-  if (log_name != NULL) {
+  if (log_name != nullptr) {
     Events::print_one(output(), log_name, max);
   } else {
     Events::print_all(output(), max);
@@ -1004,7 +1004,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 
   // call CDS.dumpSharedArchive
   Handle fileh;
-  if (file != NULL) {
+  if (file != nullptr) {
     fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
@@ -1030,11 +1030,11 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_JVMTI
 extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,
                                                                                 char const** address, jboolean* first_start);
-static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = NULL;
+static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = nullptr;
 
 void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
-  char const* transport = NULL;
-  char const* addr = NULL;
+  char const* transport = nullptr;
+  char const* addr = nullptr;
   jboolean is_first_start = JNI_FALSE;
   JavaThread* thread = THREAD;
   jthread jt = JNIHandles::make_local(thread->threadObj());
@@ -1042,8 +1042,8 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   const char *error = "Could not find jdwp agent.";
 
   if (!dvc_start_ptr) {
-    for (AgentLibrary* agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
-      if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == NULL)) {
+    for (AgentLibrary* agent = Arguments::agents(); agent != nullptr; agent = agent->next()) {
+      if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == nullptr)) {
         char const* func = "debugInit_startDebuggingViaCommand";
         dvc_start_ptr = (debugInit_startDebuggingViaCommandPtr) os::find_agent_function(agent, false, &func, 1);
       }
@@ -1054,7 +1054,7 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
     error = dvc_start_ptr(thread->jni_environment(), jt, &transport, &addr, &is_first_start);
   }
 
-  if (error != NULL) {
+  if (error != nullptr) {
     output()->print_cr("Debugging has not been started: %s", error);
   } else {
     output()->print_cr(is_first_start ? "Debugging has been started." : "Debugging is already active.");
@@ -1076,8 +1076,8 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
 
 int ThreadDumpToFileDCmd::num_arguments() {
   ResourceMark rm;
-  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(NULL, false);
-  if (dcmd != NULL) {
+  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(nullptr, false);
+  if (dcmd != nullptr) {
     DCmdMark mark(dcmd);
     return dcmd->_dcmdparser.num_arguments();
   } else {
@@ -1086,7 +1086,7 @@ int ThreadDumpToFileDCmd::num_arguments() {
 }
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
-  bool json = (_format.value() != NULL) && (strcmp(_format.value(), "json") == 0);
+  bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
   char* path = _filepath.value();
   bool overwrite = _overwrite.value();
   Symbol* name = (json) ? vmSymbols::dumpThreadsToJson_name() : vmSymbols::dumpThreads_name();

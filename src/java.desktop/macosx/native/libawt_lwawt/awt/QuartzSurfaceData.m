@@ -92,8 +92,8 @@ void setCachedColor(QuartzSDOps *qsdo, UInt32 color)
     CGColorRef cgColor = NULL;
 
     // The colors passed have low randomness. That means we need to scramble the bits of the color
-    // to produce a good hash key. After some analysis, it looks like Thomas's Wang integer hasing algorithm
-    // seems a nice trade off between performance and effectivness.
+    // to produce a good hash key. After some analysis, it looks like Thomas's Wang integer hashing algorithm
+    // seems a nice trade-off between performance and effectiveness.
     UInt32 index = color;
     index += ~(index << 15);
     index ^=  (index >> 10);
@@ -684,7 +684,7 @@ PRINT(" SetUpCGContext")
             {
                 qsdo->graphicsStateInfo.ctm = ctm;
                 // In CG affine xforms y' = bx+dy+ty
-                // We need to flip both y coefficeints to flip the offset point into the java coordinate system.
+                // We need to flip both y coefficients to flip the offset point into the java coordinate system.
                 ctm.b = -ctm.b; ctm.d = -ctm.d; ctm.tx = 0.0f; ctm.ty = 0.0f;
                 CGPoint offsets = {kOffset, kOffset};
                 CGAffineTransform inverse = CGAffineTransformInvert(ctm);

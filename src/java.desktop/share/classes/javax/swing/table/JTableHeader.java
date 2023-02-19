@@ -935,7 +935,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private JTable table;
 
             /**
-             *  Constructs an AccessiblJTableHeaaderEntry
+             * Constructs an AccessibleJTableHeaderEntry
              * @since 1.4
              *
              * @param c  the column index

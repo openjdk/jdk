@@ -570,7 +570,7 @@ public class BasicMenuItemUI extends MenuItemUI
         result.width = lh.getLeadingGap();
         MenuItemLayoutHelper.addMaxWidth(lh.getCheckSize(),
                 lh.getAfterCheckIconGap(), result);
-        // Take into account mimimal text offset.
+        // Take into account minimal text offset.
         if ((!lh.isTopLevelMenu())
                 && (lh.getMinTextOffset() > 0)
                 && (result.width < lh.getMinTextOffset())) {
@@ -1161,6 +1161,9 @@ public class BasicMenuItemUI extends MenuItemUI
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.
                 JMenuItem lbl = ((JMenuItem) e.getSource());
+                if (SwingUtilities2.isScaleChanged(e)) {
+                    MenuItemLayoutHelper.clearUsedParentClientProperties(lbl);
+                }
                 String text = lbl.getText();
                 BasicHTML.updateRenderer(lbl, text);
             } else if (name  == "iconTextGap") {

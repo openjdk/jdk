@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@ class ElfFile: public CHeapObj<mtInternal> {
   bool decode(address addr, char* buf, int buflen, int* offset);
 
   bool same_elf_file(const char* filepath) const {
-    assert(filepath != NULL, "null file path");
-    return (_filepath != NULL && !strcmp(filepath, _filepath));
+    assert(filepath != nullptr, "null file path");
+    return (_filepath != nullptr && !strcmp(filepath, _filepath));
   }
 
   NullDecoder::decoder_status get_status() const {
@@ -421,8 +421,7 @@ class DwarfFile : public ElfFile {
     // Must be called to restore the old position before this file reader changed it with update_to_stored_position().
     bool reset_to_previous_position();
     bool move_position(long offset);
-    bool read_sbyte(int8_t* result);
-    bool read_byte(uint8_t* result);
+    bool read_byte(void* result);
     bool read_word(uint16_t* result);
     bool read_dword(uint32_t* result);
     bool read_qword(uint64_t* result);
@@ -432,6 +431,7 @@ class DwarfFile : public ElfFile {
     // Reads 4 bytes for 32-bit and 8 bytes for 64-bit builds.
     bool read_address_sized(uintptr_t* result);
     bool read_string(char* result = nullptr, size_t result_len = 0);
+    bool read_non_null_char(char* result);
   };
 
   // (2) Processing the .debug_aranges section to find the compilation unit which covers offset_in_library.
@@ -485,15 +485,20 @@ class DwarfFile : public ElfFile {
     MarkedDwarfFileReader _reader;
     uint32_t _section_start_address;
 
+    // a calculated end position
+    long _entry_end;
+
     bool read_section_header();
     bool read_set_header(DebugArangesSetHeader& header);
     bool read_address_descriptors(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                                   uint32_t offset_in_library, bool& found_matching_set);
     bool read_address_descriptor(AddressDescriptor& descriptor);
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
-    static bool is_terminating_entry(const AddressDescriptor& descriptor);
+    bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                              const AddressDescriptor& descriptor);
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _section_start_address(0) {}
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
+                                          _section_start_address(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
 
   };
@@ -713,6 +718,9 @@ class DwarfFile : public ElfFile {
     static constexpr uint8_t DW_LNE_define_file = 3;
     static constexpr uint8_t DW_LNE_set_discriminator = 4; // Introduced with DWARF 4
 
+    static constexpr const char* overflow_filename = "<OVERFLOW>";
+    static constexpr const char minimal_overflow_filename = 'L';
+
     // The header is defined in section 6.2.4 of the DWARF 4 spec.
     struct LineNumberProgramHeader {
       // The size in bytes of the line number information for this compilation unit, not including the unit_length
@@ -789,7 +797,7 @@ class DwarfFile : public ElfFile {
       uint32_t _line;
 
       // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
-      // that a statement begins at the “left edge” of the line.
+      // that a statement begins at the "left edge" of the line.
       uint32_t _column;
 
       // Indicates that the current instruction is a recommended breakpoint location.
@@ -857,10 +865,12 @@ class DwarfFile : public ElfFile {
     bool apply_opcode();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
-    void apply_special_opcode(const uint8_t opcode);
+    void apply_special_opcode(uint8_t opcode);
     bool does_offset_match_entry(uintptr_t previous_address, uint32_t previous_file, uint32_t previous_line);
     void print_and_store_prev_entry(uint32_t previous_file, uint32_t previous_line);
     bool get_filename_from_header(uint32_t file_index, char* filename, size_t filename_len);
+    bool read_filename(char* filename, size_t filename_len);
+    static void write_filename_for_overflow(char* filename, size_t filename_len) ;
 
    public:
     LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_pc_after_call)

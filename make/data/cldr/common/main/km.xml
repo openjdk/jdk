@@ -33,14 +33,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="alt">អាល់តៃខាងត្បូង</language>
 			<language type="am">អាំហារិក</language>
 			<language type="an">អារ៉ាហ្គោន</language>
+			<language type="ann">អូបូឡូ</language>
 			<language type="anp">អាហ្គីកា</language>
 			<language type="ar">អារ៉ាប់</language>
 			<language type="ar_001">អារ៉ាប់ (ស្តង់ដារ)</language>
 			<language type="arn">ម៉ាពូឈី</language>
 			<language type="arp">អារ៉ាប៉ាហូ</language>
+			<language type="ars">អារ៉ាប់ណាឌី</language>
 			<language type="as">អាសាមីស</language>
 			<language type="asa">អាស៊ូ</language>
 			<language type="ast">អាស្ទូរី</language>
+			<language type="atj">អាទិកាម៉េក</language>
 			<language type="av">អាវ៉ារីក</language>
 			<language type="awa">អាវ៉ាឌី</language>
 			<language type="ay">អីម៉ារ៉ា</language>
@@ -67,6 +70,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">ប៊ុកហ្គី</language>
 			<language type="byn">ប្ល៊ីន</language>
 			<language type="ca">កាតាឡាន</language>
+			<language type="cay">ខាយូហ្កា</language>
 			<language type="ccp">ចាក់ម៉ា</language>
 			<language type="ce">ឈីឆេន</language>
 			<language type="ceb">ស៊ីប៊ូអាណូ</language>
@@ -75,12 +79,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">ឈូគី</language>
 			<language type="chm">ម៉ារី</language>
 			<language type="cho">ឆុកតាវ</language>
+			<language type="chp">ឈីប៉េវ៉ាយអិន</language>
 			<language type="chr">ឆេរូគី</language>
 			<language type="chy">ឈីយីនី</language>
 			<language type="ckb">ឃើដភាគកណ្តាល</language>
+			<language type="clc">ឈីលកូទីន</language>
 			<language type="co">កូស៊ីខាន</language>
+			<language type="crg">មីឈីហ្វ</language>
+			<language type="crj">គ្រីខាងកើត​ប៉ែកខាងត្បូង</language>
+			<language type="crk">គ្រីតំបន់វាលរាប</language>
+			<language type="crl">គ្រីខាងកើត​ប៉ែកខាងជើង</language>
+			<language type="crm">មូសគ្រី</language>
+			<language type="crr">អាល់ហ្គនខ្វៀន ខារ៉ូលីណា</language>
 			<language type="crs">សេសេលវ៉ាគ្រីអូល (បារាំង)</language>
 			<language type="cs">ឆែក</language>
+			<language type="csw">គ្រីតំបន់ភក់ល្បាប់</language>
 			<language type="cu">ឈើជស្លាវិក</language>
 			<language type="cv">ឈូវ៉ាស</language>
 			<language type="cy">វេល</language>
@@ -120,6 +133,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">ហ្វារូស</language>
 			<language type="fon">ហ្វ៊ុន</language>
 			<language type="fr">បារាំង</language>
+			<language type="frc">បារាំងកាហ្សង់</language>
+			<language type="frr">ហ្វ្រ៊ីសៀន​ខាងជើង</language>
 			<language type="fur">ហ៊្វ្រូលាន</language>
 			<language type="fy">ហ្វ្រីស៊ានខាងលិច</language>
 			<language type="ga">អៀរឡង់</language>
@@ -137,9 +152,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">មេន</language>
 			<language type="gwi">ហ្គីចឈីន</language>
 			<language type="ha">ហូសា</language>
+			<language type="hai">ហៃដា</language>
 			<language type="haw">ហាវ៉ៃ</language>
+			<language type="hax">ហៃដាខាងត្បូង</language>
 			<language type="he">ហេប្រឺ</language>
 			<language type="hi">ហិណ្ឌី</language>
+			<language type="hi_Latn" alt="variant">ហ៊ីងលីង</language>
 			<language type="hil">ហ៊ីលីហ្គេណុន</language>
 			<language type="hmn">ម៉ុង</language>
 			<language type="hr">ក្រូអាត</language>
@@ -147,6 +165,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">ហៃទី</language>
 			<language type="hu">ហុងគ្រី</language>
 			<language type="hup">ហ៊ូប៉ា</language>
+			<language type="hur">ហាល់កូម៉េឡេម</language>
 			<language type="hy">អាមេនី</language>
 			<language type="hz">ហឺរីរ៉ូ</language>
 			<language type="ia">អ៊ីនធើលីង</language>
@@ -155,6 +174,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="id">ឥណ្ឌូណេស៊ី</language>
 			<language type="ig">អ៊ីកបូ</language>
 			<language type="ii">ស៊ីឈាន់យី</language>
+			<language type="ikt">អ៊ីនុកទីទុត​កាណាដា​ប៉ែកខាងលិច</language>
 			<language type="ilo">អ៊ីឡូកូ</language>
 			<language type="inh">អ៊ិនហ្គូស</language>
 			<language type="io">អ៊ីដូ</language>
@@ -176,6 +196,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kde">ម៉ាកូនដេ</language>
 			<language type="kea">កាប៊ូវឺឌៀនូ</language>
 			<language type="kfo">គូរូ</language>
+			<language type="kgp">ខាងហ្កេង</language>
 			<language type="kha">កាស៊ី</language>
 			<language type="khq">គុយរ៉ាឈីនី</language>
 			<language type="ki">គីគូយូ</language>
@@ -203,6 +224,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">គូមីគ</language>
 			<language type="kv">កូមី</language>
 			<language type="kw">កូនីស</language>
+			<language type="kwk">ក្វាក់វ៉ាឡា</language>
 			<language type="ky">​កៀហ្ស៊ីស</language>
 			<language type="la">ឡាតំាង</language>
 			<language type="lad">ឡាឌីណូ</language>
@@ -211,11 +233,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ឡេសហ្គី</language>
 			<language type="lg">ហ្កាន់ដា</language>
 			<language type="li">លីមប៊ូស</language>
+			<language type="lij">លីគូរី</language>
+			<language type="lil">លីលលូអេត</language>
 			<language type="lkt">ឡាកូតា</language>
 			<language type="ln">លីនកាឡា</language>
 			<language type="lo">ឡាវ</language>
+			<language type="lou">ក្រេអូល លូអ៊ីស៊ីអាណា</language>
 			<language type="loz">ឡូហ្ស៊ី</language>
 			<language type="lrc">លូរីខាងជើង</language>
+			<language type="lsm">សាមៀ</language>
 			<language type="lt">លីទុយអានី</language>
 			<language type="lu">លូបាកាតានហ្គា</language>
 			<language type="lua">លូបាលូឡា</language>
@@ -244,6 +270,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">ម៉ាឡាយ៉ាឡាម</language>
 			<language type="mn">ម៉ុងហ្គោលី</language>
 			<language type="mni">ម៉ានីពូរី</language>
+			<language type="moe">អ៊ីននូអៃមុន</language>
 			<language type="moh">ម៊ូហាគ</language>
 			<language type="mos">មូស៊ី</language>
 			<language type="mr">ម៉ារ៉ាធី</language>
@@ -283,6 +310,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">ណានចា</language>
 			<language type="nyn">ណានកូលេ</language>
 			<language type="oc">អូសីតាន់</language>
+			<language type="ojb">អូជីបវ៉ា​ប៉ែកពាយ័ព្យ</language>
+			<language type="ojc">អូជីពវ៉ាកណ្ដាល</language>
+			<language type="ojs">អូជីគ្រី</language>
+			<language type="ojw">អូជីបវ៉ា​ខាងលិច</language>
+			<language type="oka">អូកាណាហ្កាន</language>
 			<language type="om">អូរ៉ូម៉ូ</language>
 			<language type="or">អូឌៀ</language>
 			<language type="os">អូស៊ីទិក</language>
@@ -292,7 +324,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">ប៉ាប៉ៃមេនតូ</language>
 			<language type="pau">ប៉ាលូអាន</language>
 			<language type="pcm">ភាសាទំនាក់ទំនងនីហ្សេរីយ៉ា</language>
+			<language type="pis">ពីជីន</language>
 			<language type="pl">ប៉ូឡូញ</language>
+			<language type="pqm">ម៉ាលីស៊ីត ប៉ាសាម៉ាខ្វូឌី</language>
 			<language type="prg">ព្រូស៊ាន</language>
 			<language type="ps">បាស្តូ</language>
 			<language type="pt">ព័រទុយហ្គាល់</language>
@@ -334,6 +368,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">ស្រីលង្កា</language>
 			<language type="sk">ស្លូវ៉ាគី</language>
 			<language type="sl">ស្លូវ៉ានី</language>
+			<language type="slh">ឡាស៊ូតស៊ីតខាងត្បូង</language>
 			<language type="sm">សាម័រ</language>
 			<language type="sma">សាមីខាងត្បូង</language>
 			<language type="smj">លូលីសាមី</language>
@@ -348,6 +383,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">ស្វាទី</language>
 			<language type="ssy">សាហូ</language>
 			<language type="st">សូថូខាងត្បូង</language>
+			<language type="str">សាលីសស្ត្រេតស៍</language>
 			<language type="su">ស៊ូដង់</language>
 			<language type="suk">ស៊ូគូម៉ា</language>
 			<language type="sv">ស៊ុយអែត</language>
@@ -356,23 +392,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">កូម៉ូរី</language>
 			<language type="syr">ស៊ីរី</language>
 			<language type="ta">តាមីល</language>
+			<language type="tce">ថុចឆុនខាងត្បូង</language>
 			<language type="te">តេលុគុ</language>
 			<language type="tem">ធីមនី</language>
 			<language type="teo">តេសូ</language>
 			<language type="tet">ទីទុំ</language>
 			<language type="tg">តាហ្ស៊ីគ</language>
+			<language type="tgx">តាហ្គីស</language>
 			<language type="th">ថៃ</language>
+			<language type="tht">តាល់តាន</language>
 			<language type="ti">ទីហ្គ្រីញ៉ា</language>
 			<language type="tig">ធីហ្គ្រា</language>
 			<language type="tk">តួកម៉េន</language>
 			<language type="tlh">ឃ្លីនហ្គុន</language>
+			<language type="tli">ថ្លីងហ្គីត</language>
 			<language type="tn">ស្វាណា</language>
 			<language type="to">តុងហ្គា</language>
+			<language type="tok">តូគីប៉ូណា</language>
 			<language type="tpi">ថុកពីស៊ីន</language>
 			<language type="tr">ទួរគី</language>
 			<language type="trv">តារ៉ូកូ</language>
 			<language type="ts">សុងហ្គា</language>
 			<language type="tt">តាតា</language>
+			<language type="ttm">ថុចឆុនខាងជើង</language>
 			<language type="tum">ទុមប៊ូកា</language>
 			<language type="tvl">ទូវ៉ាលូ</language>
 			<language type="tw">ទ្វី</language>
@@ -389,6 +431,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">អ៊ូសបេគ</language>
 			<language type="vai">វៃ</language>
 			<language type="ve">វេនដា</language>
+			<language type="vec">វេណេតូ</language>
 			<language type="vi">វៀតណាម</language>
 			<language type="vo">វូឡាពូក</language>
 			<language type="vun">វុនចូ</language>
@@ -398,6 +441,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">វ៉ារេយ</language>
 			<language type="wbp">វ៉ារីប៉ារី</language>
 			<language type="wo">វូឡុហ្វ</language>
+			<language type="wuu">អ៊ូចិន</language>
 			<language type="xal">កាលមីគ</language>
 			<language type="xh">ឃសា</language>
 			<language type="xog">សូហ្គា</language>
@@ -405,6 +449,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">យេមបា</language>
 			<language type="yi">យ៉ីឌីស</language>
 			<language type="yo">យរូបា</language>
+			<language type="yrl">ញីនហ្កាទូ</language>
 			<language type="yue">កន្តាំង</language>
 			<language type="yue" alt="menu">ចិនកាតាំង</language>
 			<language type="za">ហ្សួង</language>
@@ -421,15 +466,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">ហ្សាហ្សា</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">អាតឡាម</script>
+			<script type="Aghb">អាល់បានីកៅកាស៊ី</script>
+			<script type="Ahom">អាហូម</script>
 			<script type="Arab">អារ៉ាប់</script>
+			<script type="Aran">អារ៉ាន</script>
+			<script type="Armi">អារ៉ាម៉ាអ៊ីមភើរៀល</script>
 			<script type="Armn">អាមេនី</script>
+			<script type="Avst">អាវេស្ថាន</script>
+			<script type="Bali">បាលី</script>
+			<script type="Bamu">បាមុន</script>
+			<script type="Bass">បាសាវ៉ះ</script>
+			<script type="Batk">បាតាក</script>
 			<script type="Beng">បង់ក្លាដែស</script>
+			<script type="Bhks">ប៉ៃស៊ូគី</script>
 			<script type="Bopo">បូផូម៉ូហ្វូ</script>
+			<script type="Brah">ប្រាមិ</script>
 			<script type="Brai">អក្សរ​សម្រាប់មនុស្ស​ពិការ​ភ្នែក</script>
+			<script type="Bugi">ប៊ូគីនេ</script>
+			<script type="Buhd">ប៊ូហ៊ីដ</script>
+			<script type="Cakm">ចាក់ម៉ា</script>
+			<script type="Cans">ព្យាង្គអាបូរីជីន​កាណាដារួម</script>
+			<script type="Cari">ខារី</script>
+			<script type="Cham">ចាម</script>
+			<script type="Cher">ឆេរ៉ូគី</script>
+			<script type="Chrs">ខូរ៉ាស្មី</script>
+			<script type="Copt">ខូប្ទ</script>
+			<script type="Cpmn">ស៊ីប្រូមីណូ</script>
+			<script type="Cprt">ស៊ីប</script>
 			<script type="Cyrl">ស៊ីរីលីក</script>
 			<script type="Deva">ដាវ៉ាន់ណាការិ</script>
 			<script type="Ethi">អេត្យូពី</script>
 			<script type="Geor">ហ្សកហ្ស៊ី</script>
+			<script type="Gong">គុនចាឡាកុនឌិ</script>
 			<script type="Grek">ក្រិច</script>
 			<script type="Gujr">គូចារ៉ាទី</script>
 			<script type="Guru">កុមុយឃី</script>
@@ -442,25 +511,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hant" alt="stand-alone">អក្សរ​ហាន​ពេញ</script>
 			<script type="Hebr">អ៊ីស្រាអែល</script>
 			<script type="Hira">ហ៊ីរ៉ាកាណា</script>
+			<script type="Hmnp">នីយ៉ាកេងពួជឺម៉ុង</script>
 			<script type="Hrkt">សញ្ញាសំឡេងភាសាជប៉ុន</script>
 			<script type="Jamo">ចាម៉ូ</script>
+			<script type="Java">ជ្វា</script>
 			<script type="Jpan">ជប៉ុន</script>
+			<script type="Kali">កាយ៉ាលី</script>
 			<script type="Kana">កាតាកាណា</script>
 			<script type="Khmr">ខ្មែរ</script>
 			<script type="Knda">ខាណាដា</script>
 			<script type="Kore">កូរ៉េ</script>
+			<script type="Lana">ឡាណា</script>
 			<script type="Laoo">ឡាវ</script>
 			<script type="Latn">ឡាតាំង</script>
+			<script type="Lepc">ឡេបចា</script>
+			<script type="Limb">លីបប៊ូ</script>
+			<script type="Lisu">ហ្វ្រាសឺ</script>
+			<script type="Mand">ម៉ានដា</script>
 			<script type="Mlym">ម៉ាឡាយ៉ាឡាម</script>
 			<script type="Mong">ម៉ុងហ្គោលី</script>
+			<script type="Mtei">ម៉ីតីម៉ាយ៉ែក</script>
 			<script type="Mymr">ភូមា</script>
+			<script type="Newa">ណេវ៉ា</script>
+			<script type="Nkoo">នកូ</script>
+			<script type="Olck">អូលឈិគិ</script>
 			<script type="Orya">អូឌៀ</script>
+			<script type="Osge">អូស្គ</script>
+			<script type="Plrd">ផូឡាដ</script>
+			<script type="Rohg">ហានីហ្វ៊ី</script>
+			<script type="Saur">សៅរ៉ាសត្រា</script>
 			<script type="Sinh">ស៊ីនហាឡា</script>
+			<script type="Sund">ស៊ូដង់</script>
+			<script type="Sylo">ស៊ីឡូ</script>
+			<script type="Syrc">ស៊ីរីអែក</script>
+			<script type="Tale">តៃឡេ</script>
+			<script type="Talu">តៃឡឺថ្មី</script>
 			<script type="Taml">តាមីល</script>
+			<script type="Tavt">តៃវៀត</script>
 			<script type="Telu">តេលុគុ</script>
+			<script type="Tfng">ទីហ្វ៊ីណាហ្វ</script>
 			<script type="Thaa">ថាណា</script>
 			<script type="Thai">ថៃ</script>
 			<script type="Tibt">ទីបេ</script>
+			<script type="Vaii">វ៉ៃ</script>
+			<script type="Wcho">វ៉ាន់ឆូ</script>
+			<script type="Yiii">យី</script>
+			<script type="Zinh">ស្នងកេរ្តិ៍</script>
 			<script type="Zmth">និមិត្តសញ្ញាគណិតវិទ្យា</script>
 			<script type="Zsye">សញ្ញាអារម្មណ៍</script>
 			<script type="Zsym">និមិត្តសញ្ញា</script>
@@ -744,6 +840,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">ទុយនីស៊ី</territory>
 			<territory type="TO">តុងហ្គា</territory>
 			<territory type="TR">តួកគី</territory>
+			<territory type="TR" alt="variant">តួកគីយេ</territory>
 			<territory type="TT">ទ្រីនីដាត និង​តូបាហ្គោ</territory>
 			<territory type="TV">ទូវ៉ាលូ</territory>
 			<territory type="TW">តៃវ៉ាន់</territory>
@@ -789,11 +886,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">ប្រតិទិនពុទ្ធសាសនា</type>
 			<type key="calendar" type="chinese">ប្រតិទិន​ចិន</type>
+			<type key="calendar" type="coptic">ប្រតិទិនកបទិច</type>
 			<type key="calendar" type="dangi">ប្រតិទិនកូរ៉េ</type>
 			<type key="calendar" type="ethiopic">ប្រតិទិន​អេត្យូពី</type>
+			<type key="calendar" type="ethiopic-amete-alem">ប្រតិទិនអេត្យូពីអាម៉េតេ​អាលែម</type>
 			<type key="calendar" type="gregorian">ប្រតិទិន​ហ្សកហ្ស៊ី</type>
 			<type key="calendar" type="hebrew">ប្រតិទិនហេប្រឺ</type>
 			<type key="calendar" type="islamic">ប្រតិទិនអ៊ីស្លាម</type>
+			<type key="calendar" type="islamic-civil">ប្រតិទិនអ៊ិស្លាម (តារាង, សម័យស៊ីវិល)</type>
+			<type key="calendar" type="islamic-umalqura">ប្រតិទិនអ៊ិស្លាម (អ៊ុំអាល់គូរ៉ា)</type>
 			<type key="calendar" type="iso8601">ប្រតិទិន ISO-8601</type>
 			<type key="calendar" type="japanese">ប្រតិទិន​ជប៉ុន</type>
 			<type key="calendar" type="persian">ប្រតិទិនពែក្ស</type>
@@ -818,6 +919,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">លេខ​អាមេនី</type>
 			<type key="numbers" type="armnlow">លេខ​តូច​អាមេនី</type>
 			<type key="numbers" type="beng">លេខ​បង់ក្លាដែស</type>
+			<type key="numbers" type="cakm">លេខចាក់ម៉ា</type>
 			<type key="numbers" type="deva">លេខ​ឌីវ៉ាណាការី</type>
 			<type key="numbers" type="ethi">លេខ​អេត្យូពី</type>
 			<type key="numbers" type="fullwide">លេខ​ទទឹង​ពេញ</type>
@@ -832,6 +934,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">លេខ​ចិន​អក្សរ​ពេញ</type>
 			<type key="numbers" type="hantfin">លេខ​ហិរញ្ញវត្ថុ​ចិន​អក្សរ​ពេញ</type>
 			<type key="numbers" type="hebr">លេខហេប្រឺ</type>
+			<type key="numbers" type="java">លេខជ្វា</type>
 			<type key="numbers" type="jpan">លេខ​ជប៉ុន</type>
 			<type key="numbers" type="jpanfin">លេខ​ហិរញ្ញវត្ថុ​ជប៉ុន</type>
 			<type key="numbers" type="khmr">លេខ​ខ្មែរ</type>
@@ -839,7 +942,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="laoo">លេខ​ឡាវ</type>
 			<type key="numbers" type="latn">លេខ​បច្ចឹម​ប្រទេស</type>
 			<type key="numbers" type="mlym">លេខ​មលយាល័ម</type>
+			<type key="numbers" type="mtei">លេខមីតីម៉ាយ៉ែក</type>
 			<type key="numbers" type="mymr">លេខ​ភូមា</type>
+			<type key="numbers" type="olck">លេខអូលឈិគិ</type>
 			<type key="numbers" type="orya">លេខអូឌៀ</type>
 			<type key="numbers" type="roman">លេខ​រ៉ូមាំង</type>
 			<type key="numbers" type="romanlow">លេខ​តូច​រ៉ូមាំង</type>
@@ -848,6 +953,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="telu">លេខ​តេលុគុ</type>
 			<type key="numbers" type="thai">លេខ​ថៃ</type>
 			<type key="numbers" type="tibt">លេខទីបេ</type>
+			<type key="numbers" type="vaii">លេខវ៉ៃ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">រង្វាស់​ប្រវែង</measurementSystemName>
@@ -919,11 +1025,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1468,11 +1580,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2894,6 +3012,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>អ៊ីនដឺប៊ូរី</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>កាន់តុន</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>គិរីទីម៉ាទិ</exemplarCity>
@@ -4517,25 +4638,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0 ពាន់</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 ពាន់</pattern>
 					<pattern type="10000" count="other">¤00 ពាន់</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 ពាន់</pattern>
 					<pattern type="100000" count="other">¤000 ពាន់</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 ពាន់</pattern>
 					<pattern type="1000000" count="other">¤0 លាន</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 លាន</pattern>
 					<pattern type="10000000" count="other">¤00 លាន</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 លាន</pattern>
 					<pattern type="100000000" count="other">¤000 លាន</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 លាន</pattern>
 					<pattern type="1000000000" count="other">¤0 ប៊ីលាន</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 ប៊ីលាន</pattern>
 					<pattern type="10000000000" count="other">¤00 ប៊ីលាន</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 ប៊ីលាន</pattern>
 					<pattern type="100000000000" count="other">¤000 ប៊ីលាន</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 ប៊ីលាន</pattern>
 					<pattern type="1000000000000" count="other">¤0 ទ្រីលាន</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 ទ្រីលាន</pattern>
 					<pattern type="10000000000000" count="other">¤00 ទ្រីលាន</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 ទ្រីលាន</pattern>
 					<pattern type="100000000000000" count="other">¤000 ទ្រីលាន</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 ទ្រីលាន</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
@@ -5701,6 +5838,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
 				<perUnitPattern>{0} ក្នុងមួយឆ្នាំ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រីមាស</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
 				<unitPattern count="other">{0} ខែ</unitPattern>
@@ -5944,7 +6086,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>លូមែន</displayName>
 				<unitPattern count="other">{0} លូមែន</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>តោនម៉ែត្រ</displayName>
 				<unitPattern count="other">{0} តោនម៉ែត្រ</unitPattern>
 			</unit>
@@ -6465,6 +6607,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
 				<perUnitPattern>{0}/ឆ្នាំ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រីមាស</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
 				<unitPattern count="other">{0} ខែ</unitPattern>
@@ -6658,7 +6805,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -7046,6 +7193,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឆ្នាំ</displayName>
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រី</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
 				<unitPattern count="other">{0} ខែ</unitPattern>
@@ -7408,4 +7560,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">លេខតារាង</featureName>
 		<featureName type="zero">លេខសូន្យវះពោះ</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">km ko vi yue zh</nameOrderLocales>
+		<sampleName item="givenOnly">
+			<nameField type="given">សុខា</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">សុជាតិ</nameField>
+			<nameField type="surname">សុង</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">រិទ្ធី</nameField>
+			<nameField type="given2">មករា</nameField>
+			<nameField type="surname">វ៉េង</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">សាស្ត្រាចារ្យបណ្ឌិត</nameField>
+			<nameField type="given">សិរីសោភណ្ឌ</nameField>
+			<nameField type="given-informal">មីនា</nameField>
+			<nameField type="given2">ចន្ទសុបញ្ញា</nameField>
+			<nameField type="surname-prefix">វណ្ណដេត</nameField>
+			<nameField type="surname-core">វណ្ណ</nameField>
+			<nameField type="surname2">ផល ចិត្រា</nameField>
+			<nameField type="suffix">បណ្ឌិតវេជ្ជសាស្ត្រ</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

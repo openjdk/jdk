@@ -117,17 +117,9 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // can't do because of races
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
-  assert(is_object_aligned(obj), "oop must be aligned");
-  assert(g1h->is_in_reserved(obj), "oop must be in reserved");
-
-  HeapRegion* from = g1h->heap_region_containing(p);
-
-  assert(from->is_in_reserved(p) ||
-         (from->is_humongous() &&
-          g1h->heap_region_containing(p)->is_humongous() &&
-          from->humongous_start_region() == g1h->heap_region_containing(p)->humongous_start_region()),
-         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
-         p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
+  assert(is_object_aligned(obj), "obj must be aligned");
+  assert(g1h->is_in(obj), "invariant");
+  assert(g1h->is_in(p), "invariant");
 #endif // ASSERT
 }
 

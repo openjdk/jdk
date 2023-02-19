@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @param oid the identifier for the algorithm.
      * @param algparams the associated algorithm parameters, can be null.
+     * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
@@ -108,9 +110,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
             try {
                 encodedParams = algParams.getEncoded();
             } catch (IOException ioe) {
-                // Ignore this at the moment. This exception can occur
-                // if AlgorithmParameters was not initialized yet. Will
-                // try to re-getEncoded() again later.
+                throw new IllegalStateException(
+                        "AlgorithmParameters not initialized or cannot be decoded",
+                        ioe);
             }
         }
     }
@@ -148,33 +150,16 @@ public class AlgorithmId implements Serializable, DerEncoder {
     }
 
     /**
-     * Marshal a DER-encoded "AlgorithmID" sequence on the DER stream.
-     */
-    public final void encode(DerOutputStream out) throws IOException {
-        derEncode(out);
-    }
-
-    /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
     @Override
-    public void derEncode (OutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream bytes = new DerOutputStream();
-        DerOutputStream tmp = new DerOutputStream();
 
         bytes.putOID(algid);
-
-        // Re-getEncoded() from algParams if it was not initialized
-        if (algParams != null && encodedParams == null) {
-            encodedParams = algParams.getEncoded();
-            // If still not initialized. Let the IOE be thrown.
-        }
 
         if (encodedParams == null) {
             // Changes backed out for compatibility with Solaris
@@ -232,19 +217,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 bytes.putNull();
             }
         } else {
-            bytes.write(encodedParams);
+            bytes.writeBytes(encodedParams);
         }
-        tmp.write(DerValue.tag_Sequence, bytes);
-        out.write(tmp.toByteArray());
+        out.write(DerValue.tag_Sequence, bytes);
     }
 
 
     /**
      * Returns the DER-encoded X.509 AlgorithmId as a byte array.
      */
-    public final byte[] encode() throws IOException {
+    public final byte[] encode() {
         DerOutputStream out = new DerOutputStream();
-        derEncode(out);
+        encode(out);
         return out.toByteArray();
     }
 
@@ -497,6 +481,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @param algparams the associated algorithm parameters.
      * @exception NoSuchAlgorithmException on error.
+     * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public static AlgorithmId get(AlgorithmParameters algparams)
             throws NoSuchAlgorithmException {
@@ -611,16 +597,16 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     String ostr = alias.substring(index);
                     String stdAlgName = provider.getProperty(alias);
                     if (stdAlgName != null) {
-                        stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                    }
-                    // add the name->oid and oid->name mappings if none exists
-                    if (KnownOIDs.findMatch(stdAlgName) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(stdAlgName, ostr);
-                    }
-                    if (KnownOIDs.findMatch(ostr) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(ostr, stdAlgName);
+                        String upperStdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
+                        // add the name->oid and oid->name mappings if none exists
+                        if (KnownOIDs.findMatch(upperStdAlgName) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(upperStdAlgName, ostr);
+                        }
+                        if (KnownOIDs.findMatch(ostr) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(ostr, stdAlgName);
+                        }
                     }
                 }
             }

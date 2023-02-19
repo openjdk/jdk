@@ -36,7 +36,7 @@ import sun.java2d.SunGraphics2D;
 /**
  *   GraphicsComponentMgr provides services to
  *   1. register primitives for later use
- *   2. locate an instance of a primitve based on characteristics
+ *   2. locate an instance of a primitive based on characteristics
  */
 public final class GraphicsPrimitiveMgr {
 
@@ -93,7 +93,7 @@ public final class GraphicsPrimitiveMgr {
     };
 
     /**
-     * Ensure that noone can instantiate this class.
+     * Ensure that no one can instantiate this class.
      */
     private GraphicsPrimitiveMgr() {
     }

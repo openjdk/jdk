@@ -112,7 +112,7 @@ public class Type1Font extends FileFont {
         /* These abbreviation rules are taken from Appendix 1 of Adobe Technical Note #5088 */
         /* NB: this list is not complete - we did not include abbreviations which contain
                several capital letters because current expansion algorithm do not support this.
-               (namely we have omited MM aka "Multiple Master", OsF aka "Oldstyle figures",
+               (namely we have omitted MM aka "Multiple Master", OsF aka "Oldstyle figures",
                            OS aka "Oldstyle", SC aka "Small caps" and  DS aka "Display" */
         String[] nm = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
                        "Meduium", "Nord", "Poster", "Regular", "Super", "Thin",

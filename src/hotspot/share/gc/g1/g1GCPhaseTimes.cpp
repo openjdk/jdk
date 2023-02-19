@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/oopStorage.hpp"
@@ -83,13 +82,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   }
 
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>("MergeLB", "Log Buffers (ms):", max_gc_threads);
-  if (G1HotCardCache::use_cache()) {
-    _gc_par_phases[MergeHCC] = new WorkerDataArray<double>("MergeHCC", "Hot Card Cache (ms):", max_gc_threads);
-    _gc_par_phases[MergeHCC]->create_thread_work_items("Dirty Cards:", MergeHCCDirtyCards);
-    _gc_par_phases[MergeHCC]->create_thread_work_items("Skipped Cards:", MergeHCCSkippedCards);
-  } else {
-    _gc_par_phases[MergeHCC] = NULL;
-  }
   _gc_par_phases[ScanHR] = new WorkerDataArray<double>("ScanHR", "Scan Heap Roots (ms):", max_gc_threads);
   _gc_par_phases[OptScanHR] = new WorkerDataArray<double>("OptScanHR", "Optional Scan Heap Roots (ms):", max_gc_threads);
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>("CodeRoots", "Code Root Scan (ms):", max_gc_threads);
@@ -106,8 +98,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RemoveSelfForwards] = new WorkerDataArray<double>("RemoveSelfForwards", "Remove Self Forwards (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
-  _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
-  _gc_par_phases[PurgeCodeRoots] = new WorkerDataArray<double>("PurgeCodeRoots", "Purge Code Roots (ms):", max_gc_threads);
 #if COMPILER2_OR_JVMCI
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
@@ -154,12 +144,13 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
+  _gc_par_phases[ResizeThreadLABs] = new WorkerDataArray<double>("ResizeTLABs", "Resize TLABs (ms):", max_gc_threads);
+
   _gc_par_phases[FreeCollectionSet] = new WorkerDataArray<double>("FreeCSet", "Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("YoungFreeCSet", "Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("NonYoungFreeCSet", "Non-Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[RebuildFreeList] = new WorkerDataArray<double>("RebuildFreeList", "Parallel Rebuild Free List (ms):", max_gc_threads);
 
-  _gc_par_phases[CLDClearClaimedMarks] = new WorkerDataArray<double>("CLDClearClaimedMarks", "Clear Claimed Marks (ms):", max_gc_threads);
   _gc_par_phases[ResetMarkingState] = new WorkerDataArray<double>("ResetMarkingState", "Reset Marking State (ms):", max_gc_threads);
   _gc_par_phases[NoteStartOfMark] = new WorkerDataArray<double>("NoteStartOfMark", "Note Start Of Mark (ms):", max_gc_threads);
 
@@ -175,7 +166,6 @@ void G1GCPhaseTimes::reset() {
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
-  _cur_resize_tlab_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
@@ -186,8 +176,7 @@ void G1GCPhaseTimes::reset() {
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_preserve_cm_referents_time_ms = 0.0;
-  _recorded_start_new_cset_time_ms = 0.0;
+  _recorded_prepare_for_mutator_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _recorded_total_rebuild_freelist_time_ms = 0.0;
   _recorded_serial_rebuild_freelist_time_ms = 0.0;
@@ -250,7 +239,6 @@ void G1GCPhaseTimes::record_gc_pause_end() {
       ASSERT_PHASE_UNINITIALIZED(MergeER);
       ASSERT_PHASE_UNINITIALIZED(MergeRS);
       ASSERT_PHASE_UNINITIALIZED(OptMergeRS);
-      ASSERT_PHASE_UNINITIALIZED(MergeHCC);
       ASSERT_PHASE_UNINITIALIZED(MergeLB);
       ASSERT_PHASE_UNINITIALIZED(ScanHR);
       ASSERT_PHASE_UNINITIALIZED(CodeRoots);
@@ -320,11 +308,7 @@ void G1GCPhaseTimes::details(T* phase, uint indent_level) const {
   }
 }
 
-void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const {
-  out->sp(indent_level * 2);
-  phase->print_summary_on(out, print_sum);
-  details(phase, indent_level);
-
+void G1GCPhaseTimes::print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const {
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
     if (work_items != NULL) {
@@ -333,6 +317,37 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
       details(work_items, indent_level + 1);
     }
   }
+}
+
+void G1GCPhaseTimes::debug_phase_merge_remset() const {
+  LogTarget(Debug, gc, phases) lt;
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  ResourceMark rm;
+  LogStream ls(lt);
+
+  WorkerDataArray<double>* phase = _gc_par_phases[MergeRS];
+  WorkerDataArray<double>* sub_phase = _gc_par_phases[MergeER];
+
+  uint indent_level = 2;
+
+  ls.sp(indent_level * 2);
+  phase->print_summary_on(&ls, true);
+  details(phase, indent_level);
+
+  log_phase(sub_phase, (indent_level + 1), &ls, true);
+
+  print_thread_work_items(phase, indent_level, &ls);
+}
+
+void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const {
+  out->sp(indent_level * 2);
+  phase->print_summary_on(out, print_sum);
+  details(phase, indent_level);
+
+  print_thread_work_items(phase, indent_level, out);
 }
 
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
@@ -384,12 +399,10 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double pre_concurrent_start_ms = average_time_ms(CLDClearClaimedMarks) +
-                                         average_time_ms(ResetMarkingState) +
+  const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _root_region_scan_wait_time_ms +
-                        _cur_prepare_tlab_time_ms +
+  const double sum_ms = _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -399,9 +412,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (_root_region_scan_wait_time_ms > 0.0) {
-    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
-  }
   debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
@@ -410,7 +420,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   debug_time("Prepare Heap Roots", _recorded_prepare_heap_roots_time_ms);
 
   if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[CLDClearClaimedMarks]);
     debug_phase(_gc_par_phases[ResetMarkingState]);
     debug_phase(_gc_par_phases[NoteStartOfMark]);
   }
@@ -439,11 +448,8 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   info_time("Merge Heap Roots", _cur_merge_heap_roots_time_ms);
 
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
-  debug_phase(_gc_par_phases[MergeER]);
-  debug_phase(_gc_par_phases[MergeRS]);
-  if (G1HotCardCache::use_cache()) {
-    debug_phase(_gc_par_phases[MergeHCC]);
-  }
+  debug_phase_merge_remset();
+
   debug_phase(_gc_par_phases[MergeLB]);
 
   info_time("Evacuate Collection Set", _cur_collection_initial_evac_time_ms);
@@ -466,13 +472,12 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
-                        _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
                         _cur_post_evacuate_cleanup_1_time_ms +
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
-                        _recorded_start_new_cset_time_ms +
+                        _recorded_prepare_for_mutator_time_ms +
                         _cur_expand_heap_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
@@ -500,8 +505,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
     debug_phase(_gc_par_phases[ClearRetainedRegionBitmaps], 1);
   }
-  debug_phase(_gc_par_phases[ResetHotCardCache], 1);
-  debug_phase(_gc_par_phases[PurgeCodeRoots], 1);
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
@@ -511,6 +514,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }
   debug_phase(_gc_par_phases[RedirtyCards], 1);
+  if (UseTLAB && ResizeTLAB) {
+    debug_phase(_gc_par_phases[ResizeThreadLABs], 1);
+  }
   debug_phase(_gc_par_phases[FreeCollectionSet], 1);
   trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
   trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
@@ -521,10 +527,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   trace_time("Serial Rebuild Free List ", _recorded_serial_rebuild_freelist_time_ms);
   trace_phase(_gc_par_phases[RebuildFreeList]);
 
-  debug_time("Start New Collection Set", _recorded_start_new_cset_time_ms);
-  if (UseTLAB && ResizeTLAB) {
-    debug_time("Resize TLABs", _cur_resize_tlab_time_ms);
-  }
+  debug_time("Prepare For Mutator", _recorded_prepare_for_mutator_time_ms);
   debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
 
   return sum_ms;
@@ -535,6 +538,10 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print(bool evacuation_failed) {
+  if (_root_region_scan_wait_time_ms > 0.0) {
+    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  }
+
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -543,10 +550,17 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
   }
 
   double accounted_ms = 0.0;
+
+  accounted_ms += _root_region_scan_wait_time_ms;
+  accounted_ms += _cur_verify_before_time_ms;
+
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
+
+  accounted_ms += _cur_verify_after_time_ms;
+
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ class       PCTableNode;
 class         JumpNode;
 class         CatchNode;
 class       NeverBranchNode;
+class     BlackholeNode;
 class   ProjNode;
 class     CProjNode;
 class       IfTrueNode;
@@ -64,8 +65,21 @@ class PhaseIdealLoop;
 // correspond 1-to-1 with RegionNode inputs.  The zero input of a PhiNode is
 // the RegionNode, and the zero input of the RegionNode is itself.
 class RegionNode : public Node {
+public:
+  enum LoopStatus {
+    // No guarantee: the region may be an irreducible loop entry, thus we have to
+    // be careful when removing entry control to it.
+    MaybeIrreducibleEntry,
+    // Limited guarantee: this region may be (nested) inside an irreducible loop,
+    // but it will never be an irreducible loop entry.
+    NeverIrreducibleEntry,
+    // Strong guarantee: this region is not (nested) inside an irreducible loop.
+    Reducible,
+  };
+
 private:
   bool _is_unreachable_region;
+  LoopStatus _loop_status;
 
   bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
@@ -75,7 +89,11 @@ public:
          Control                // Control arcs are [1..len)
   };
 
-  RegionNode(uint required) : Node(required), _is_unreachable_region(false) {
+  RegionNode(uint required)
+    : Node(required),
+      _is_unreachable_region(false),
+      _loop_status(LoopStatus::NeverIrreducibleEntry)
+  {
     init_class_id(Class_Region);
     init_req(0, this);
   }
@@ -90,6 +108,14 @@ public:
   PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
+#ifdef ASSERT
+  bool is_in_infinite_subgraph();
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
+#endif //ASSERT
+  LoopStatus loop_status() const { return _loop_status; };
+  void set_loop_status(LoopStatus status);
+  DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
+
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }
@@ -100,9 +126,11 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------JProjNode--------------------------------------
@@ -145,6 +173,8 @@ class PhiNode : public TypeNode {
 
   static Node* clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
+
+  bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
 public:
   // Node layout (parallels RegionNode):
@@ -590,7 +620,10 @@ public:
 // empty.
 class NeverBranchNode : public MultiBranchNode {
 public:
-  NeverBranchNode( Node *ctrl ) : MultiBranchNode(1) { init_req(0,ctrl); }
+  NeverBranchNode(Node* ctrl) : MultiBranchNode(1) {
+    init_req(0, ctrl);
+    init_class_id(Class_NeverBranch);
+  }
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -603,5 +636,29 @@ public:
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
 #endif
 };
+
+//------------------------------BlackholeNode----------------------------
+// Blackhole all arguments. This node would survive through the compiler
+// the effects on its arguments, and would be finally matched to nothing.
+class BlackholeNode : public MultiNode {
+public:
+  BlackholeNode(Node* ctrl) : MultiNode(1) {
+    init_req(TypeFunc::Control, ctrl);
+  }
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  virtual const Type* bottom_type() const { return TypeTuple::MEMBAR; }
+
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
+    return RegMask::All;
+  }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
+};
+
 
 #endif // SHARE_OPTO_CFGNODE_HPP

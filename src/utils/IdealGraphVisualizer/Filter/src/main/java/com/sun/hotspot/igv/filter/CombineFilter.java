@@ -74,7 +74,7 @@ public class CombineFilter extends AbstractFilter {
                             }
                         }
 
-                        slot.getSource().addSourceNodes(f.getSource());
+                        slot.getSource().addSourceNode(f.getInputNode());
                         if (r.getShortProperty() != null) {
                             String s = f.getProperties().get(r.getShortProperty());
                             if (s != null && s.length() > 0) {
@@ -130,7 +130,7 @@ public class CombineFilter extends AbstractFilter {
                                     pos = Integer.parseInt(succ.getProperties().get("con"));
                                 }
                                 OutputSlot slot = f.createOutputSlot(pos);
-                                slot.getSource().addSourceNodes(succ.getSource());
+                                slot.getSource().addSourceNode(succ.getInputNode());
                                 if (r.getShortProperty() != null) {
                                     String s = succ.getProperties().get(r.getShortProperty());
                                     if (s != null && s.length() > 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,11 +180,10 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
       if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
-        _phase->has_range_checks(lpt_next);
         // Main loop SLP works well for manually unrolled loops. But post loop
         // vectorization doesn't work for these. To bail out the optimization
         // earlier, we have range check and loop stride conditions below.
-        if (cl_next->is_post_loop() && !cl_next->range_checks_present() &&
+        if (cl_next->is_post_loop() && !lpt_next->range_checks_present() &&
             cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
           if (!cl_next->is_vectorized_loop()) {
             // Propagate some main loop attributes to its corresponding scalar
@@ -535,7 +534,7 @@ bool SuperWord::SLP_extract() {
 
     construct_my_pack_map();
     if (UseVectorCmov) {
-      merge_packs_to_cmovd();
+      merge_packs_to_cmove();
     }
 
     filter_packs();
@@ -1113,10 +1112,11 @@ void SuperWord::dependence_graph() {
         int cmp = p1.cmp(p2);
         if (SuperWordRTDepCheck &&
             p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Create a runtime check to disambiguate
+          // Trace disjoint pointers
           OrderedPair pp(p1.base(), p2.base());
           _disjoint_ptrs.append_if_missing(pp);
-        } else if (!SWPointer::not_equal(cmp)) {
+        }
+        if (!SWPointer::not_equal(cmp)) {
           // Possibly same address
           _dg.make_edge(s1, s2);
           sink_dependent = false;
@@ -1410,7 +1410,7 @@ int SuperWord::data_size(Node* s) {
     if (use != NULL) {
       return data_size(use);
     }
-    use = _cmovev_kit.is_CmpD_candidate(s);
+    use = _cmovev_kit.is_Cmp_candidate(s);
     if (use != NULL) {
       return data_size(use);
     }
@@ -1844,11 +1844,11 @@ void SuperWord::filter_packs() {
 #endif
 }
 
-//------------------------------merge_packs_to_cmovd---------------------------
-// Merge CMoveD into new vector-nodes
-// We want to catch this pattern and subsume CmpD and Bool into CMoveD
+//------------------------------merge_packs_to_cmove---------------------------
+// Merge qualified CMove into new vector-nodes
+// We want to catch this pattern and subsume Cmp and Bool into CMove
 //
-//                   SubD             ConD
+//                   Sub              Con
 //                  /  |               /
 //                 /   |           /   /
 //                /    |       /      /
@@ -1856,7 +1856,7 @@ void SuperWord::filter_packs() {
 //              /      /            /
 //             /    /  |           /
 //            v /      |          /
-//         CmpD        |         /
+//         Cmp         |         /
 //          |          |        /
 //          v          |       /
 //         Bool        |      /
@@ -1865,16 +1865,20 @@ void SuperWord::filter_packs() {
 //               \     |   /
 //                 \   |  /
 //                   \ v /
-//                   CMoveD
+//                   CMove
 //
 
-void SuperWord::merge_packs_to_cmovd() {
+void SuperWord::merge_packs_to_cmove() {
   for (int i = _packset.length() - 1; i >= 0; i--) {
-    _cmovev_kit.make_cmovevd_pack(_packset.at(i));
+    Node_List* pk = _packset.at(i);
+    if (_cmovev_kit.can_merge_cmove_pack(pk)) {
+      _cmovev_kit.make_cmove_pack(pk);
+    }
   }
+
   #ifndef PRODUCT
     if (TraceSuperWord) {
-      tty->print_cr("\nSuperWord::merge_packs_to_cmovd(): After merge");
+      tty->print_cr("\nSuperWord::merge_packs_to_cmove(): After merge");
       print_packset();
       tty->cr();
     }
@@ -1895,7 +1899,7 @@ Node* CMoveKit::is_Bool_candidate(Node* def) const {
   return use;
 }
 
-Node* CMoveKit::is_CmpD_candidate(Node* def) const {
+Node* CMoveKit::is_Cmp_candidate(Node* def) const {
   Node* use = NULL;
   if (!def->is_Cmp() || def->in(0) != NULL || def->outcnt() != 1) {
     return NULL;
@@ -1909,131 +1913,141 @@ Node* CMoveKit::is_CmpD_candidate(Node* def) const {
   return use;
 }
 
-Node_List* CMoveKit::make_cmovevd_pack(Node_List* cmovd_pk) {
-  Node *cmovd = cmovd_pk->at(0);
-  if (!cmovd->is_CMove()) {
-    return NULL;
-  }
-  if (cmovd->Opcode() != Op_CMoveF && cmovd->Opcode() != Op_CMoveD) {
-    return NULL;
-  }
-  if (pack(cmovd) != NULL) { // already in the cmov pack
-    return NULL;
-  }
-  if (cmovd->in(0) != NULL) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmovevd_pack: CMoveD %d has control flow, escaping...", cmovd->_idx); cmovd->dump();})
-    return NULL;
+// Determine if the current pack is an ideal cmove pack, and if its related packs,
+// i.e. bool node pack and cmp node pack, can be successfully merged for vectorization.
+bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
+  Node* cmove = cmove_pk->at(0);
+
+  if (!SuperWord::is_cmove_fp_opcode(cmove->Opcode()) ||
+      pack(cmove) != NULL /* already in the cmove pack */) {
+    return false;
   }
 
-  Node* bol = cmovd->as_CMove()->in(CMoveNode::Condition);
-  if (!bol->is_Bool()
-      || bol->outcnt() != 1
-      || !_sw->same_generation(bol, cmovd)
-      || bol->in(0) != NULL  // BoolNode has control flow!!
-      || _sw->my_pack(bol) == NULL) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmovevd_pack: Bool %d does not fit CMoveD %d for building vector, escaping...", bol->_idx, cmovd->_idx); bol->dump();})
-      return NULL;
+  if (cmove->in(0) != NULL) {
+    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: CMove %d has control flow, escaping...", cmove->_idx); cmove->dump();})
+    return false;
+  }
+
+  Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
+  if (!bol->is_Bool() ||
+      bol->outcnt() != 1 ||
+      !_sw->same_generation(bol, cmove) ||
+      bol->in(0) != NULL || // Bool node has control flow!!
+      _sw->my_pack(bol) == NULL) {
+      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
+    return false;
   }
   Node_List* bool_pk = _sw->my_pack(bol);
-  if (bool_pk->size() != cmovd_pk->size() ) {
-    return NULL;
+  if (bool_pk->size() != cmove_pk->size() ) {
+    return false;
   }
 
-  Node* cmpd = bol->in(1);
-  if (!cmpd->is_Cmp()
-      || cmpd->outcnt() != 1
-      || !_sw->same_generation(cmpd, cmovd)
-      || cmpd->in(0) != NULL  // CmpDNode has control flow!!
-      || _sw->my_pack(cmpd) == NULL) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmovevd_pack: CmpD %d does not fit CMoveD %d for building vector, escaping...", cmpd->_idx, cmovd->_idx); cmpd->dump();})
-      return NULL;
+  Node* cmp = bol->in(1);
+  if (!cmp->is_Cmp() ||
+      cmp->outcnt() != 1 ||
+      !_sw->same_generation(cmp, cmove) ||
+      cmp->in(0) != NULL || // Cmp node has control flow!!
+      _sw->my_pack(cmp) == NULL) {
+      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
+    return false;
   }
-  Node_List* cmpd_pk = _sw->my_pack(cmpd);
-  if (cmpd_pk->size() != cmovd_pk->size() ) {
-    return NULL;
-  }
-
-  if (!test_cmpd_pack(cmpd_pk, cmovd_pk)) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmovevd_pack: cmpd pack for CmpD %d failed vectorization test", cmpd->_idx); cmpd->dump();})
-    return NULL;
+  Node_List* cmp_pk = _sw->my_pack(cmp);
+  if (cmp_pk->size() != cmove_pk->size() ) {
+    return false;
   }
 
-  Node_List* new_cmpd_pk = new Node_List();
-  uint sz = cmovd_pk->size() - 1;
-  for (uint i = 0; i <= sz; ++i) {
-    Node* cmov = cmovd_pk->at(i);
-    Node* bol  = bool_pk->at(i);
-    Node* cmp  = cmpd_pk->at(i);
-
-    new_cmpd_pk->insert(i, cmov);
-
-    map(cmov, new_cmpd_pk);
-    map(bol, new_cmpd_pk);
-    map(cmp, new_cmpd_pk);
-
-    _sw->set_my_pack(cmov, new_cmpd_pk); // and keep old packs for cmp and bool
+  if (!test_cmp_pack(cmp_pk, cmove_pk)) {
+    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: cmp pack for Cmp %d failed vectorization test", cmp->_idx); cmp->dump();})
+    return false;
   }
-  _sw->_packset.remove(cmovd_pk);
-  _sw->_packset.remove(bool_pk);
-  _sw->_packset.remove(cmpd_pk);
-  _sw->_packset.append(new_cmpd_pk);
-  NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print_cr("CMoveKit::make_cmovevd_pack: added syntactic CMoveD pack"); _sw->print_pack(new_cmpd_pk);})
-  return new_cmpd_pk;
+
+  return true;
 }
 
-bool CMoveKit::test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk) {
-  Node* cmpd0 = cmpd_pk->at(0);
-  assert(cmpd0->is_Cmp(), "CMoveKit::test_cmpd_pack: should be CmpDNode");
-  assert(cmovd_pk->at(0)->is_CMove(), "CMoveKit::test_cmpd_pack: should be CMoveD");
-  assert(cmpd_pk->size() == cmovd_pk->size(), "CMoveKit::test_cmpd_pack: should be same size");
-  Node* in1 = cmpd0->in(1);
-  Node* in2 = cmpd0->in(2);
+// Create a new cmove pack to substitute the old one, map all info to the
+// new pack and delete the old cmove pack and related packs from the packset.
+void CMoveKit::make_cmove_pack(Node_List* cmove_pk) {
+  Node* cmove = cmove_pk->at(0);
+  Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
+  Node_List* bool_pk = _sw->my_pack(bol);
+  Node* cmp = bol->in(1);
+  Node_List* cmp_pk = _sw->my_pack(cmp);
+
+  Node_List* new_cmove_pk = new Node_List();
+  uint sz = cmove_pk->size() - 1;
+  for (uint i = 0; i <= sz; ++i) {
+    Node* cmov = cmove_pk->at(i);
+    Node* bol  = bool_pk->at(i);
+    Node* cmp  = cmp_pk->at(i);
+
+    new_cmove_pk->insert(i, cmov);
+
+    map(cmov, new_cmove_pk);
+    map(bol, new_cmove_pk);
+    map(cmp, new_cmove_pk);
+
+    _sw->set_my_pack(cmov, new_cmove_pk); // and keep old packs for cmp and bool
+  }
+  _sw->_packset.remove(cmove_pk);
+  _sw->_packset.remove(bool_pk);
+  _sw->_packset.remove(cmp_pk);
+  _sw->_packset.append(new_cmove_pk);
+  NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print_cr("CMoveKit::make_cmove_pack: added syntactic CMove pack"); _sw->print_pack(new_cmove_pk);})
+}
+
+bool CMoveKit::test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk) {
+  Node* cmp0 = cmp_pk->at(0);
+  assert(cmp0->is_Cmp(), "CMoveKit::test_cmp_pack: should be Cmp Node");
+  assert(cmove_pk->at(0)->is_CMove(), "CMoveKit::test_cmp_pack: should be CMove");
+  assert(cmp_pk->size() == cmove_pk->size(), "CMoveKit::test_cmp_pack: should be same size");
+  Node* in1 = cmp0->in(1);
+  Node* in2 = cmp0->in(2);
   Node_List* in1_pk = _sw->my_pack(in1);
   Node_List* in2_pk = _sw->my_pack(in2);
 
-  if (  (in1_pk != NULL && in1_pk->size() != cmpd_pk->size())
-     || (in2_pk != NULL && in2_pk->size() != cmpd_pk->size()) ) {
+  if (  (in1_pk != NULL && in1_pk->size() != cmp_pk->size())
+     || (in2_pk != NULL && in2_pk->size() != cmp_pk->size()) ) {
     return false;
   }
 
   // test if "all" in1 are in the same pack or the same node
   if (in1_pk == NULL) {
-    for (uint j = 1; j < cmpd_pk->size(); j++) {
-      if (cmpd_pk->at(j)->in(1) != in1) {
+    for (uint j = 1; j < cmp_pk->size(); j++) {
+      if (cmp_pk->at(j)->in(1) != in1) {
         return false;
       }
-    }//for: in1_pk is not pack but all CmpD nodes in the pack have the same in(1)
+    }//for: in1_pk is not pack but all Cmp nodes in the pack have the same in(1)
   }
   // test if "all" in2 are in the same pack or the same node
   if (in2_pk == NULL) {
-    for (uint j = 1; j < cmpd_pk->size(); j++) {
-      if (cmpd_pk->at(j)->in(2) != in2) {
+    for (uint j = 1; j < cmp_pk->size(); j++) {
+      if (cmp_pk->at(j)->in(2) != in2) {
         return false;
       }
-    }//for: in2_pk is not pack but all CmpD nodes in the pack have the same in(2)
+    }//for: in2_pk is not pack but all Cmp nodes in the pack have the same in(2)
   }
-  //now check if cmpd_pk may be subsumed in vector built for cmovd_pk
-  int cmovd_ind1, cmovd_ind2;
-  if (cmpd_pk->at(0)->in(1) == cmovd_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
-   && cmpd_pk->at(0)->in(2) == cmovd_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
-      cmovd_ind1 = CMoveNode::IfFalse;
-      cmovd_ind2 = CMoveNode::IfTrue;
-  } else if (cmpd_pk->at(0)->in(2) == cmovd_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
-          && cmpd_pk->at(0)->in(1) == cmovd_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
-      cmovd_ind2 = CMoveNode::IfFalse;
-      cmovd_ind1 = CMoveNode::IfTrue;
+  //now check if cmp_pk may be subsumed in vector built for cmove_pk
+  int cmove_ind1, cmove_ind2;
+  if (cmp_pk->at(0)->in(1) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
+   && cmp_pk->at(0)->in(2) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
+      cmove_ind1 = CMoveNode::IfFalse;
+      cmove_ind2 = CMoveNode::IfTrue;
+  } else if (cmp_pk->at(0)->in(2) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
+          && cmp_pk->at(0)->in(1) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
+      cmove_ind2 = CMoveNode::IfFalse;
+      cmove_ind1 = CMoveNode::IfTrue;
   }
   else {
     return false;
   }
 
-  for (uint j = 1; j < cmpd_pk->size(); j++) {
-    if (cmpd_pk->at(j)->in(1) != cmovd_pk->at(j)->as_CMove()->in(cmovd_ind1)
-        || cmpd_pk->at(j)->in(2) != cmovd_pk->at(j)->as_CMove()->in(cmovd_ind2)) {
+  for (uint j = 1; j < cmp_pk->size(); j++) {
+    if (cmp_pk->at(j)->in(1) != cmove_pk->at(j)->as_CMove()->in(cmove_ind1)
+        || cmp_pk->at(j)->in(2) != cmove_pk->at(j)->as_CMove()->in(cmove_ind2)) {
         return false;
     }//if
   }
-  NOT_PRODUCT(if(_sw->is_trace_cmov()) { tty->print("CMoveKit::test_cmpd_pack: cmpd pack for 1st CmpD %d is OK for vectorization: ", cmpd0->_idx); cmpd0->dump(); })
+  NOT_PRODUCT(if(_sw->is_trace_cmov()) { tty->print("CMoveKit::test_cmp_pack: cmp pack for 1st Cmp %d is OK for vectorization: ", cmp0->_idx); cmp0->dump(); })
   return true;
 }
 
@@ -2055,6 +2069,23 @@ bool SuperWord::implemented(Node_List* p) {
       }
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
+    } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
+      // Java API for Math.min/max operations supports only int, long, float
+      // and double types. Thus, avoid generating vector min/max nodes for
+      // integer subword types with superword vectorization.
+      // See JDK-8294816 for miscompilation issues with shorts.
+      return false;
+    } else if (is_cmove_fp_opcode(opc)) {
+      retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
+      NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
+    } else if (requires_long_to_int_conversion(opc)) {
+      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+      // returns int type, but Vector API for them returns long type. To unify
+      // the implementation in backend, superword splits the vector implementation
+      // for Java API into an execution node with long type plus another node
+      // converting long to int.
+      retValue = VectorNode::implemented(opc, size, T_LONG) &&
+                 VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
       // Vector unsigned right shift for signed subword types behaves differently
       // from Java Spec. But when the shift amount is a constant not greater than
@@ -2064,7 +2095,6 @@ bool SuperWord::implemented(Node_List* p) {
         opc = Op_RShiftI;
       }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
-      NOT_PRODUCT(if(retValue && is_trace_cmov() && is_cmov_pack(p)) {tty->print_cr("SWPointer::implemented: found cmpd pack"); print_pack(p);})
     }
   }
   return retValue;
@@ -2073,6 +2103,18 @@ bool SuperWord::implemented(Node_List* p) {
 bool SuperWord::is_cmov_pack(Node_List* p) {
   return _cmovev_kit.pack(p->at(0)) != NULL;
 }
+
+bool SuperWord::requires_long_to_int_conversion(int opc) {
+  switch(opc) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
+  }
+}
+
 //------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
 bool SuperWord::same_inputs(Node_List* p, int idx) {
@@ -2453,11 +2495,6 @@ bool SuperWord::output() {
     return false;
   }
 
-  // Check that the loop to be vectorized does not have inconsistent reduction
-  // information, which would likely lead to a miscompilation.
-  assert(!lpt()->has_reduction_nodes() || cl->is_reduction_loop(),
-         "non-reduction loop contains reduction nodes");
-
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print("SuperWord::output    ");
@@ -2648,21 +2685,33 @@ bool SuperWord::output() {
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
                  opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_PopCountI || opc == Op_PopCountL ||
                  opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
                  opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
                  opc == Op_ReverseI || opc == Op_ReverseL ||
-                 opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
-                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
+                 opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
+                 opc == Op_CountTrailingZerosI) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (requires_long_to_int_conversion(opc)) {
+        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+        // returns int type, but Vector API for them returns long type. To unify
+        // the implementation in backend, superword splits the vector implementation
+        // for Java API into an execution node with long type plus another node
+        // converting long to int.
+        assert(n->req() == 2, "only one input expected");
+        Node* in = vector_opd(p, 1);
+        Node* longval = VectorNode::make(opc, in, NULL, vlen, T_LONG);
+        _igvn.register_new_node_with_optimizer(longval);
+        _phase->set_ctrl(longval, _phase->get_ctrl(p->at(0)));
+        vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
         assert(n->req() == 2, "only one input expected");
         BasicType bt = velt_basic_type(n);
         Node* in = vector_opd(p, 1);
-        int vopc = VectorCastNode::opcode(in->bottom_type()->is_vect()->element_basic_type());
+        int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
@@ -2989,6 +3038,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
           cnt = ConNode::make(TypeInt::make(shift & mask));
+          _igvn.register_new_node_with_optimizer(cnt);
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
@@ -3121,7 +3171,8 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn.hash_delete(def);
     int def_pos = alignment(def) / data_size(def);
 
-    Node* ex = ExtractNode::make(def, def_pos, velt_basic_type(def));
+    ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
+    Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
     _igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);
@@ -3180,27 +3231,11 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-  if (VectorNode::is_type_transition_long_to_int(use)) {
-    // PopCountL/CountLeadingZerosL/CountTrailingZerosL takes long and produces
-    // int - hence the special checks on alignment and size.
-    if (u_pk->size() != d_pk->size()) {
-      return false;
-    }
-    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (alignment(ui) * 2 != alignment(di)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   if (u_pk->size() != d_pk->size())
     return false;
 
   if (longer_type_for_conversion(use) != T_ILLEGAL) {
-    // type conversion takes a type of a kind of size and produces a type of
+    // These opcodes take a type of a kind of size and produce a type of
     // another size - hence the special checks on alignment and size.
     for (uint i = 0; i < u_pk->size(); i++) {
       Node* ui = u_pk->at(i);
@@ -3449,7 +3484,8 @@ void SuperWord::compute_max_depth() {
 }
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
-  if (!VectorNode::is_convert_opcode(n->Opcode()) ||
+  if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
+        requires_long_to_int_conversion(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }

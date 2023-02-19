@@ -28,47 +28,44 @@ import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class represents a constant pool reference to a method.
- *
  */
 public final class ConstantMethodref extends ConstantCP {
 
     /**
      * Initialize from another object.
+     *
+     * @param c Source to copy.
      */
     public ConstantMethodref(final ConstantMethodref c) {
         super(Const.CONSTANT_Methodref, c.getClassIndex(), c.getNameAndTypeIndex());
     }
 
-
     /**
      * Initialize instance from input data.
      *
      * @param input input stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     ConstantMethodref(final DataInput input) throws IOException {
         super(Const.CONSTANT_Methodref, input);
     }
 
-
     /**
-     * @param class_index Reference to the class containing the method
-     * @param name_and_type_index and the method signature
+     * @param classIndex Reference to the class containing the method
+     * @param nameAndTypeIndex and the method signature
      */
-    public ConstantMethodref(final int class_index, final int name_and_type_index) {
-        super(Const.CONSTANT_Methodref, class_index, name_and_type_index);
+    public ConstantMethodref(final int classIndex, final int nameAndTypeIndex) {
+        super(Const.CONSTANT_Methodref, classIndex, nameAndTypeIndex);
     }
 
-
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitConstantMethodref(this);
     }
 }

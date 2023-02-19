@@ -52,9 +52,9 @@ class Register {
 
    public:
     // accessors
-    int raw_encoding() const { return this - first(); }
-    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // derived registers, offsets, and addresses
     inline Register successor() const;
@@ -71,7 +71,7 @@ class Register {
   int operator==(const Register r) const { return _encoding == r._encoding; }
   int operator!=(const Register r) const { return _encoding != r._encoding; }
 
-  const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
+  constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
 
 extern Register::RegisterImpl all_RegisterImpls[Register::number_of_declared_registers + 1] INTERNAL_VISIBILITY;
@@ -175,9 +175,9 @@ class FloatRegister {
 
    public:
     // accessors
-    int raw_encoding() const { return this - first(); }
-    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // derived registers, offsets, and addresses
     inline FloatRegister successor() const;
@@ -192,7 +192,7 @@ class FloatRegister {
   int operator==(const FloatRegister r) const { return _encoding == r._encoding; }
   int operator!=(const FloatRegister r) const { return _encoding != r._encoding; }
 
-  const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
+  constexpr const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
 };
 
 extern FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
@@ -296,11 +296,6 @@ public:
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
-    // p0-p7 are governing predicates for load/store and arithmetic, but p7 is
-    // preserved as an all-true predicate in OpenJDK. And since we don't support
-    // non-governing predicate registers allocation for non-temp register, the
-    // predicate registers to be saved are p0-p6.
-    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 

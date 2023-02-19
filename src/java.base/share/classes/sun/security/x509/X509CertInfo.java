@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.security.cert.*;
 import java.util.*;
@@ -59,15 +58,11 @@ import sun.security.util.HexDumpEncoder;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  * @see X509CertImpl
  */
-public class X509CertInfo implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info";
+public class X509CertInfo {
+
     // Certificate attribute names
     public static final String NAME = "info";
     public static final String DN_NAME = "dname";
@@ -98,35 +93,8 @@ public class X509CertInfo implements CertAttrSet<String> {
     // X509.v3 extensions
     protected CertificateExtensions     extensions = null;
 
-    // Attribute numbers for internal manipulation
-    private static final int ATTR_VERSION = 1;
-    private static final int ATTR_SERIAL = 2;
-    private static final int ATTR_ALGORITHM = 3;
-    private static final int ATTR_ISSUER = 4;
-    private static final int ATTR_VALIDITY = 5;
-    private static final int ATTR_SUBJECT = 6;
-    private static final int ATTR_KEY = 7;
-    private static final int ATTR_ISSUER_ID = 8;
-    private static final int ATTR_SUBJECT_ID = 9;
-    private static final int ATTR_EXTENSIONS = 10;
-
     // DER encoded CertificateInfo data
     private byte[]      rawCertInfo = null;
-
-    // The certificate attribute name to integer mapping stored here
-    private static final Map<String,Integer> map = new HashMap<>();
-    static {
-        map.put(VERSION, Integer.valueOf(ATTR_VERSION));
-        map.put(SERIAL_NUMBER, Integer.valueOf(ATTR_SERIAL));
-        map.put(ALGORITHM_ID, Integer.valueOf(ATTR_ALGORITHM));
-        map.put(ISSUER, Integer.valueOf(ATTR_ISSUER));
-        map.put(VALIDITY, Integer.valueOf(ATTR_VALIDITY));
-        map.put(SUBJECT, Integer.valueOf(ATTR_SUBJECT));
-        map.put(KEY, Integer.valueOf(ATTR_KEY));
-        map.put(ISSUER_ID, Integer.valueOf(ATTR_ISSUER_ID));
-        map.put(SUBJECT_ID, Integer.valueOf(ATTR_SUBJECT_ID));
-        map.put(EXTENSIONS, Integer.valueOf(ATTR_EXTENSIONS));
-    }
 
     /**
      * Construct an uninitialized X509CertInfo on which <a href="#decode">
@@ -177,43 +145,15 @@ public class X509CertInfo implements CertAttrSet<String> {
      *
      * @param out an output stream to which the certificate is appended.
      * @exception CertificateException on encoding errors.
-     * @exception IOException on other errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    public void encode(DerOutputStream out)
+            throws CertificateException {
         if (rawCertInfo == null) {
-            DerOutputStream tmp = new DerOutputStream();
-            emit(tmp);
-            rawCertInfo = tmp.toByteArray();
+            emit(out);
+            rawCertInfo = out.toByteArray();
+        } else {
+            out.writeBytes(rawCertInfo.clone());
         }
-        out.write(rawCertInfo.clone());
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(VERSION);
-        elements.addElement(SERIAL_NUMBER);
-        elements.addElement(ALGORITHM_ID);
-        elements.addElement(ISSUER);
-        elements.addElement(VALIDITY);
-        elements.addElement(SUBJECT);
-        elements.addElement(KEY);
-        elements.addElement(ISSUER_ID);
-        elements.addElement(SUBJECT_ID);
-        elements.addElement(EXTENSIONS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
     }
 
     /**
@@ -229,7 +169,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 rawCertInfo = tmp.toByteArray();
             }
             return rawCertInfo.clone();
-        } catch (IOException | CertificateException e) {
+        } catch (CertificateException e) {
             throw new CertificateEncodingException(e.toString());
         }
     }
@@ -259,18 +199,18 @@ public class X509CertInfo implements CertAttrSet<String> {
      */
     public boolean equals(X509CertInfo other) {
         if (this == other) {
-            return(true);
+            return true;
         } else if (rawCertInfo == null || other.rawCertInfo == null) {
-            return(false);
+            return false;
         } else if (rawCertInfo.length != other.rawCertInfo.length) {
-            return(false);
+            return false;
         }
         for (int i = 0; i < rawCertInfo.length; i++) {
             if (rawCertInfo[i] != other.rawCertInfo[i]) {
-                return(false);
+                return false;
             }
         }
-        return(true);
+        return true;
     }
 
     /**
@@ -283,7 +223,7 @@ public class X509CertInfo implements CertAttrSet<String> {
         for (int i = 1; i < rawCertInfo.length; i++) {
             retval += rawCertInfo[i] * i;
         }
-        return(retval);
+        return retval;
     }
 
     /**
@@ -358,253 +298,24 @@ public class X509CertInfo implements CertAttrSet<String> {
         return sb.toString();
     }
 
-    /**
-     * Set the certificate attribute.
-     *
-     * @param name the name of the Certificate attribute.
-     * @param val the value of the Certificate attribute.
-     * @exception CertificateException on invalid attributes.
-     * @exception IOException on other errors.
-     */
-    public void set(String name, Object val)
-    throws CertificateException, IOException {
-        X509AttributeName attrName = new X509AttributeName(name);
-
-        int attr = attributeMap(attrName.getPrefix());
-        if (attr == 0) {
-            throw new CertificateException("Attribute name not recognized: "
-                                           + name);
-        }
-        // set rawCertInfo to null, so that we are forced to re-encode
-        rawCertInfo = null;
-        String suffix = attrName.getSuffix();
-
-        switch (attr) {
-        case ATTR_VERSION:
-            if (suffix == null) {
-                setVersion(val);
-            } else {
-                version.set(suffix, val);
-            }
-            break;
-
-        case ATTR_SERIAL:
-            if (suffix == null) {
-                setSerialNumber(val);
-            } else {
-                serialNum.set(suffix, val);
-            }
-            break;
-
-        case ATTR_ALGORITHM:
-            if (suffix == null) {
-                setAlgorithmId(val);
-            } else {
-                algId.set(suffix, val);
-            }
-            break;
-
-        case ATTR_ISSUER:
-            setIssuer(val);
-            break;
-
-        case ATTR_VALIDITY:
-            if (suffix == null) {
-                setValidity(val);
-            } else {
-                interval.set(suffix, val);
-            }
-            break;
-
-        case ATTR_SUBJECT:
-            setSubject(val);
-            break;
-
-        case ATTR_KEY:
-            if (suffix == null) {
-                setKey(val);
-            } else {
-                pubKey.set(suffix, val);
-            }
-            break;
-
-        case ATTR_ISSUER_ID:
-            setIssuerUniqueId(val);
-            break;
-
-        case ATTR_SUBJECT_ID:
-            setSubjectUniqueId(val);
-            break;
-
-        case ATTR_EXTENSIONS:
-            if (suffix == null) {
-                setExtensions(val);
-            } else {
-                if (extensions == null)
-                    extensions = new CertificateExtensions();
-                extensions.set(suffix, val);
-            }
-            break;
-        }
+    public CertificateExtensions getExtensions() {
+        return extensions;
     }
 
-    /**
-     * Delete the certificate attribute.
-     *
-     * @param name the name of the Certificate attribute.
-     * @exception CertificateException on invalid attributes.
-     * @exception IOException on other errors.
-     */
-    public void delete(String name)
-    throws CertificateException, IOException {
-        X509AttributeName attrName = new X509AttributeName(name);
-
-        int attr = attributeMap(attrName.getPrefix());
-        if (attr == 0) {
-            throw new CertificateException("Attribute name not recognized: "
-                                           + name);
-        }
-        // set rawCertInfo to null, so that we are forced to re-encode
-        rawCertInfo = null;
-        String suffix = attrName.getSuffix();
-
-        switch (attr) {
-        case ATTR_VERSION:
-            if (suffix == null) {
-                version = null;
-            } else {
-                version.delete(suffix);
-            }
-            break;
-        case (ATTR_SERIAL):
-            if (suffix == null) {
-                serialNum = null;
-            } else {
-                serialNum.delete(suffix);
-            }
-            break;
-        case (ATTR_ALGORITHM):
-            if (suffix == null) {
-                algId = null;
-            } else {
-                algId.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER):
-            issuer = null;
-            break;
-        case (ATTR_VALIDITY):
-            if (suffix == null) {
-                interval = null;
-            } else {
-                interval.delete(suffix);
-            }
-            break;
-        case (ATTR_SUBJECT):
-            subject = null;
-            break;
-        case (ATTR_KEY):
-            if (suffix == null) {
-                pubKey = null;
-            } else {
-                pubKey.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER_ID):
-            issuerUniqueId = null;
-            break;
-        case (ATTR_SUBJECT_ID):
-            subjectUniqueId = null;
-            break;
-        case (ATTR_EXTENSIONS):
-            if (suffix == null) {
-                extensions = null;
-            } else {
-                if (extensions != null)
-                   extensions.delete(suffix);
-            }
-            break;
-        }
+    public UniqueIdentity getIssuerUniqueId() {
+        return issuerUniqueId;
     }
 
-    /**
-     * Get the certificate attribute.
-     *
-     * @param name the name of the Certificate attribute.
-     *
-     * @exception CertificateException on invalid attributes.
-     * @exception IOException on other errors.
-     */
-    public Object get(String name)
-    throws CertificateException, IOException {
-        X509AttributeName attrName = new X509AttributeName(name);
+    public UniqueIdentity getSubjectUniqueId() {
+        return subjectUniqueId;
+    }
 
-        int attr = attributeMap(attrName.getPrefix());
-        if (attr == 0) {
-            throw new CertificateParsingException(
-                          "Attribute name not recognized: " + name);
-        }
-        String suffix = attrName.getSuffix();
+    public X500Name getIssuer() {
+        return issuer;
+    }
 
-        switch (attr) { // frequently used attributes first
-        case (ATTR_EXTENSIONS):
-            if (suffix == null) {
-                return(extensions);
-            } else {
-                if (extensions == null) {
-                    return null;
-                } else {
-                    return(extensions.get(suffix));
-                }
-            }
-        case (ATTR_SUBJECT):
-            if (suffix == null) {
-                return(subject);
-            } else {
-                return(getX500Name(suffix, false));
-            }
-        case (ATTR_ISSUER):
-            if (suffix == null) {
-                return(issuer);
-            } else {
-                return(getX500Name(suffix, true));
-            }
-        case (ATTR_KEY):
-            if (suffix == null) {
-                return(pubKey);
-            } else {
-                return(pubKey.get(suffix));
-            }
-        case (ATTR_ALGORITHM):
-            if (suffix == null) {
-                return(algId);
-            } else {
-                return(algId.get(suffix));
-            }
-        case (ATTR_VALIDITY):
-            if (suffix == null) {
-                return(interval);
-            } else {
-                return(interval.get(suffix));
-            }
-        case (ATTR_VERSION):
-            if (suffix == null) {
-                return(version);
-            } else {
-                return(version.get(suffix));
-            }
-        case (ATTR_SERIAL):
-            if (suffix == null) {
-                return(serialNum);
-            } else {
-                return(serialNum.get(suffix));
-            }
-        case (ATTR_ISSUER_ID):
-            return(issuerUniqueId);
-        case (ATTR_SUBJECT_ID):
-            return(subjectUniqueId);
-        }
-        return null;
+    public X500Name getSubject() {
+        return subject;
     }
 
     /*
@@ -726,18 +437,15 @@ public class X509CertInfo implements CertAttrSet<String> {
                         "incomplete: subject field is empty, and certificate " +
                         "has no extensions");
             }
-            SubjectAlternativeNameExtension subjectAltNameExt;
-            GeneralNames names;
-            try {
-                subjectAltNameExt = (SubjectAlternativeNameExtension)
-                        extensions.get(SubjectAlternativeNameExtension.NAME);
-                names = subjectAltNameExt.get(
-                        SubjectAlternativeNameExtension.SUBJECT_NAME);
-            } catch (IOException e) {
+            SubjectAlternativeNameExtension subjectAltNameExt =
+                    (SubjectAlternativeNameExtension)
+                    extensions.getExtension(SubjectAlternativeNameExtension.NAME);
+            if (subjectAltNameExt == null) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and " +
                         "SubjectAlternativeName extension is absent");
             }
+            GeneralNames names = subjectAltNameExt.getNames();
 
             // SubjectAlternativeName extension is empty or not marked critical
             if (names == null || names.isEmpty()) {
@@ -755,8 +463,7 @@ public class X509CertInfo implements CertAttrSet<String> {
     /*
      * Marshal the contents of a "raw" certificate into a DER sequence.
      */
-    private void emit(DerOutputStream out)
-    throws CertificateException, IOException {
+    private void emit(DerOutputStream out) throws CertificateException {
         DerOutputStream tmp = new DerOutputStream();
 
         // version number, iff not V1
@@ -803,27 +510,19 @@ public class X509CertInfo implements CertAttrSet<String> {
     }
 
     /**
-     * Returns the integer attribute number for the passed attribute name.
-     */
-    private int attributeMap(String name) {
-        Integer num = map.get(name);
-        if (num == null) {
-            return 0;
-        }
-        return num.intValue();
-    }
-
-    /**
      * Set the version number of the certificate.
      *
      * @param val the Object class value for the Extensions
      * @exception CertificateException on invalid data.
      */
-    private void setVersion(Object val) throws CertificateException {
-        if (!(val instanceof CertificateVersion)) {
-            throw new CertificateException("Version class type invalid.");
-        }
-        version = (CertificateVersion)val;
+    public void setVersion(CertificateVersion val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        version = val;
+    }
+
+    public CertificateVersion getVersion() {
+        return version;
     }
 
     /**
@@ -832,11 +531,14 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the CertificateSerialNumber
      * @exception CertificateException on invalid data.
      */
-    private void setSerialNumber(Object val) throws CertificateException {
-        if (!(val instanceof CertificateSerialNumber)) {
-            throw new CertificateException("SerialNumber class type invalid.");
-        }
-        serialNum = (CertificateSerialNumber)val;
+    public void setSerialNumber(CertificateSerialNumber val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        serialNum = val;
+    }
+
+    public CertificateSerialNumber getSerialNumber() {
+        return serialNum;
     }
 
     /**
@@ -845,12 +547,14 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the AlgorithmId
      * @exception CertificateException on invalid data.
      */
-    private void setAlgorithmId(Object val) throws CertificateException {
-        if (!(val instanceof CertificateAlgorithmId)) {
-            throw new CertificateException(
-                             "AlgorithmId class type invalid.");
-        }
-        algId = (CertificateAlgorithmId)val;
+    public void setAlgorithmId(CertificateAlgorithmId val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        algId = val;
+    }
+
+    public CertificateAlgorithmId getAlgorithmId() {
+        return algId;
     }
 
     /**
@@ -859,12 +563,10 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the issuer
      * @exception CertificateException on invalid data.
      */
-    private void setIssuer(Object val) throws CertificateException {
-        if (!(val instanceof X500Name)) {
-            throw new CertificateException(
-                             "Issuer class type invalid.");
-        }
-        issuer = (X500Name)val;
+    public void setIssuer(X500Name val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        issuer = val;
     }
 
     /**
@@ -873,12 +575,14 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the CertificateValidity
      * @exception CertificateException on invalid data.
      */
-    private void setValidity(Object val) throws CertificateException {
-        if (!(val instanceof CertificateValidity)) {
-            throw new CertificateException(
-                             "CertificateValidity class type invalid.");
-        }
-        interval = (CertificateValidity)val;
+    public void setValidity(CertificateValidity val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        interval = val;
+    }
+
+    public CertificateValidity getValidity() {
+        return interval;
     }
 
     /**
@@ -887,12 +591,10 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the Subject
      * @exception CertificateException on invalid data.
      */
-    private void setSubject(Object val) throws CertificateException {
-        if (!(val instanceof X500Name)) {
-            throw new CertificateException(
-                             "Subject class type invalid.");
-        }
-        subject = (X500Name)val;
+    public void setSubject(X500Name val) throws CertificateException {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        subject = val;
     }
 
     /**
@@ -901,12 +603,14 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the PublicKey
      * @exception CertificateException on invalid data.
      */
-    private void setKey(Object val) throws CertificateException {
-        if (!(val instanceof CertificateX509Key)) {
-            throw new CertificateException(
-                             "Key class type invalid.");
-        }
-        pubKey = (CertificateX509Key)val;
+    public void setKey(CertificateX509Key val) {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
+        pubKey = val;
+    }
+
+    public CertificateX509Key getKey() {
+        return pubKey;
     }
 
     /**
@@ -915,15 +619,13 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the IssuerUniqueId
      * @exception CertificateException
      */
-    private void setIssuerUniqueId(Object val) throws CertificateException {
+    public void setIssuerUniqueId(UniqueIdentity val) throws CertificateException {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
         if (version.compare(CertificateVersion.V2) < 0) {
             throw new CertificateException("Invalid version");
         }
-        if (!(val instanceof UniqueIdentity)) {
-            throw new CertificateException(
-                             "IssuerUniqueId class type invalid.");
-        }
-        issuerUniqueId = (UniqueIdentity)val;
+        issuerUniqueId = val;
     }
 
     /**
@@ -932,15 +634,13 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the SubjectUniqueId
      * @exception CertificateException
      */
-    private void setSubjectUniqueId(Object val) throws CertificateException {
+    public void setSubjectUniqueId(UniqueIdentity val) throws CertificateException {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
         if (version.compare(CertificateVersion.V2) < 0) {
             throw new CertificateException("Invalid version");
         }
-        if (!(val instanceof UniqueIdentity)) {
-            throw new CertificateException(
-                             "SubjectUniqueId class type invalid.");
-        }
-        subjectUniqueId = (UniqueIdentity)val;
+        subjectUniqueId = val;
     }
 
     /**
@@ -949,14 +649,12 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @param val the Object class value for the Extensions
      * @exception CertificateException
      */
-    private void setExtensions(Object val) throws CertificateException {
+    public void setExtensions(CertificateExtensions val) throws CertificateException {
+        // set rawCertInfo to null, so that we are forced to re-encode
+        rawCertInfo = null;
         if (version.compare(CertificateVersion.V3) < 0) {
             throw new CertificateException("Invalid version");
         }
-        if (!(val instanceof CertificateExtensions)) {
-          throw new CertificateException(
-                             "Extensions class type invalid.");
-        }
-        extensions = (CertificateExtensions)val;
+        extensions = val;
     }
 }

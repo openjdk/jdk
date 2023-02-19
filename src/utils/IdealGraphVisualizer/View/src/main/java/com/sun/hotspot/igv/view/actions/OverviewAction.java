@@ -23,12 +23,10 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.*;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
-
-import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**

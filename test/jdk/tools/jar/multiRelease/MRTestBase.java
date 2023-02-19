@@ -102,6 +102,10 @@ public class MRTestBase {
     }
 
     void javac(Path dest, Path... sourceFiles) throws Throwable {
+        javac(dest, List.of(), sourceFiles);
+    }
+
+    void javac(Path dest, List<String> extraParameters, Path... sourceFiles) throws Throwable {
 
         List<String> commands = new ArrayList<>();
         String opts = System.getProperty("test.compiler.opts");
@@ -113,6 +117,7 @@ public class MRTestBase {
         Stream.of(sourceFiles)
                 .map(Object::toString)
                 .forEach(x -> commands.add(x));
+        commands.addAll(extraParameters);
 
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
@@ -121,7 +126,6 @@ public class MRTestBase {
                 throw new RuntimeException(sw.toString());
             }
         }
-
     }
 
     OutputAnalyzer jarWithStdin(File stdinSource,

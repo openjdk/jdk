@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * IEEE 754 floating-point values include finite nonzero values,
  * signed zeros ({@code +0.0} and {@code -0.0}), signed infinities
- * {@linkplain Double#POSITIVE_INFINITY positive infinity} and
+ * ({@linkplain Double#POSITIVE_INFINITY positive infinity} and
  * {@linkplain Double#NEGATIVE_INFINITY negative infinity}), and
  * {@linkplain Double#NaN NaN} (not-a-number).
  *
@@ -116,12 +116,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <p>To provide the appropriate semantics for {@code equals} and
  * {@code compareTo} methods, those methods cannot simply be wrappers
  * around {@code ==} or ordered comparison operations. Instead, {@link
- * Double#equals equals} defines NaN arguments to be equal to each
- * other and defines {@code +0.0} to <em>not</em> be equal to {@code
- * -0.0}, restoring reflexivity. For comparisons, {@link
- * Double#compareTo compareTo} defines a total order where {@code
- * -0.0} is less than {@code +0.0} and where a NaN is equal to itself
- * and considered greater than positive infinity.
+ * Double#equals equals} uses <a href=#repEquivalence> representation
+ * equivalence</a>, defining NaN arguments to be equal to each other,
+ * restoring reflexivity, and defining {@code +0.0} to <em>not</em> be
+ * equal to {@code -0.0}. For comparisons, {@link Double#compareTo
+ * compareTo} defines a total order where {@code -0.0} is less than
+ * {@code +0.0} and where a NaN is equal to itself and considered
+ * greater than positive infinity.
  *
  * <p>The operational semantics of {@code equals} and {@code
  * compareTo} are expressed in terms of {@linkplain #doubleToLongBits
@@ -142,6 +143,62 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * -0.0}, and NaN, allows instances of wrapper classes to be used as
  * elements of a {@link java.util.SortedSet SortedSet} or as keys of a
  * {@link java.util.SortedMap SortedMap}.
+ *
+ * <p>Comparing numerical equality to various useful equivalence
+ * relations that can be defined over floating-point values:
+ *
+ * <dl>
+ * <dt><a id=fpNumericalEq><i>numerical equality</i></a> ({@code ==}
+ * operator): (<em>Not</em> an equivalence relation)</dt>
+ * <dd>Two floating-point values represent the same extended real
+ * number. The extended real numbers are the real numbers augmented
+ * with positive infinity and negative infinity. Under numerical
+ * equality, {@code +0.0} and {@code -0.0} are equal since they both
+ * map to the same real value, 0. A NaN does not map to any real
+ * number and is not equal to any value, including itself.
+ * </dd>
+ *
+ * <dt><i>bit-wise equivalence</i>:</dt>
+ * <dd>The bits of the two floating-point values are the same. This
+ * equivalence relation for {@code double} values {@code a} and {@code
+ * b} is implemented by the expression
+ * <br>{@code Double.doubleTo}<code><b>Raw</b></code>{@code LongBits(a) == Double.doubleTo}<code><b>Raw</b></code>{@code LongBits(b)}<br>
+ * Under this relation, {@code +0.0} and {@code -0.0} are
+ * distinguished from each other and every bit pattern encoding a NaN
+ * is distinguished from every other bit pattern encoding a NaN.
+ * </dd>
+ *
+ * <dt><i><a id=repEquivalence>representation equivalence</a></i>:</dt>
+ * <dd>The two floating-point values represent the same IEEE 754
+ * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
+ * finite} values, the sign, {@linkplain Math#getExponent(double)
+ * exponent}, and significand components of the floating-point values
+ * are the same. Under this relation:
+ * <ul>
+ * <li> {@code +0.0} and {@code -0.0} are distinguished from each other.
+ * <li> every bit pattern encoding a NaN is considered equivalent to each other
+ * <li> positive infinity is equivalent to positive infinity; negative
+ *      infinity is equivalent to negative infinity.
+ * </ul>
+ * Expressions implementing this equivalence relation include:
+ * <ul>
+ * <li>{@code Double.doubleToLongBits(a) == Double.doubleToLongBits(b)}
+ * <li>{@code Double.valueOf(a).equals(Double.valueOf(b))}
+ * <li>{@code Double.compare(a, b) == 0}
+ * </ul>
+ * Note that representation equivalence is often an appropriate notion
+ * of equivalence to test the behavior of {@linkplain StrictMath math
+ * libraries}.
+ * </dd>
+ * </dl>
+ *
+ * For two binary floating-point values {@code a} and {@code b}, if
+ * neither of {@code a} and {@code b} is zero or NaN, then the three
+ * relations numerical equality, bit-wise equivalence, and
+ * representation equivalence of {@code a} and {@code b} have the same
+ * {@code true}/{@code false} value. In other words, for binary
+ * floating-point values, the three relations only differ if at least
+ * one argument is zero or NaN.
  *
  * @jls 4.2.3 Floating-Point Types, Formats, and Values
  * @jls 4.2.4. Floating-Point Operations
@@ -1203,7 +1260,7 @@ public final class Double extends Number
      * of the integer value returned is the same as that of the
      * integer that would be returned by the call:
      * <pre>
-     *    new Double(d1).compareTo(new Double(d2))
+     *    Double.valueOf(d1).compareTo(Double.valueOf(d2))
      * </pre>
      *
      * @param   d1        the first {@code double} to compare

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
@@ -59,6 +59,7 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -231,6 +232,12 @@ public class MethodHandles {
      * {@code PRIVATE} access but no {@code MODULE} access.
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
+     *
+     * @apiNote The {@code Lookup} object returned by this method is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code targetClass}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code targetClass}'s module.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
@@ -850,7 +857,7 @@ public class MethodHandles {
      * <p>
      * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
      * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
-     * and create a new {@code Lookup} with <a href="#privacc">private access</a>
+     * and produce a new {@code Lookup} with <a href="#privacc">private access</a>
      * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
      * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
      * to call {@code privateLookupIn}.
@@ -868,6 +875,12 @@ public class MethodHandles {
      * it cannot be used to obtain another private {@code Lookup} by calling
      * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
      * because it has no {@code MODULE} access.
+     * <p>
+     * The {@code Lookup} object returned by {@code privateLookupIn} is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code T}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code M2}.
      *
      * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
      *
@@ -6744,25 +6757,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
-        final List<Class<?>> empty = List.of();
-        final List<Class<?>> longest = mhs.filter(Objects::nonNull).
+        return mhs.filter(Objects::nonNull)
                 // take only those that can contribute to a common suffix because they are longer than the prefix
-                        map(MethodHandle::type).
-                        filter(t -> t.parameterCount() > skipSize).
-                        map(MethodType::parameterList).
-                        reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-        return longest.isEmpty() ? empty : longest.subList(skipSize, longest.size());
-    }
-
-    private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
-        final List<Class<?>> empty = List.of();
-        return lists.stream().reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+                .map(MethodHandle::type)
+                .filter(t -> t.parameterCount() > skipSize)
+                .max(Comparator.comparingInt(MethodType::parameterCount))
+                .map(methodType -> List.of(Arrays.copyOfRange(methodType.ptypes(), skipSize, methodType.parameterCount())))
+                .orElse(List.of());
     }
 
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
         final List<Class<?>> longest1 = longestParameterList(Stream.of(step, pred, fini).flatMap(List::stream), cpSize);
         final List<Class<?>> longest2 = longestParameterList(init.stream(), 0);
-        return longestParameterList(List.of(longest1, longest2));
+        return longest1.size() >= longest2.size() ? longest1 : longest2;
     }
 
     private static void loopChecks1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
@@ -7910,29 +7917,32 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *     access modes {@code get} and {@code set} for {@code long} and
      *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
-     *     {@code float}, {@code double} or {@link MemoryAddress}.
+     *     {@code float}, {@code double} or {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
-     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
-     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>
      *
-     * If {@code T} is {@code float}, {@code double} or {@link MemoryAddress} then atomic
+     * If {@code T} is {@code float}, {@code double} or {@link MemorySegment} then atomic
      * update access modes compare values using their bitwise representation
      * (see {@link Float#floatToRawIntBits},
-     * {@link Double#doubleToRawLongBits} and {@link MemoryAddress#toRawLongValue()}, respectively).
+     * {@link Double#doubleToRawLongBits} and {@link MemorySegment#address()}, respectively).
      * <p>
      * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
      * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
      * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
      * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
      * <p>
-     * Finally, in all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
+     * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
      * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+     * <p>
+     * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
+     * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.

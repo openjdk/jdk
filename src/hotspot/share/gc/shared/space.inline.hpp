@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ inline HeapWord* Space::block_start(const void* p) {
 }
 
 #if INCLUDE_SERIALGC
-inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
+inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
@@ -55,7 +55,7 @@ inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
 // Because of the requirement of keeping "_offsets" up to date with the
 // allocations, we sequentialize these with a lock.  Therefore, best if
 // this is used for larger LAB allocations only.
-inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
+inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   MutexLocker x(&_par_alloc_lock);
   // This ought to be just "allocate", because of the lock above, but that
   // ContiguousSpace::allocate asserts that either the allocating thread
@@ -66,14 +66,14 @@ inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
   // above.  Perhaps in the future some lock-free manner of keeping the
   // coordination.
   HeapWord* res = ContiguousSpace::par_allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
 }
 
 inline HeapWord*
-OffsetTableContigSpace::block_start_const(const void* p) const {
+TenuredSpace::block_start_const(const void* p) const {
   return _offsets.block_start(p);
 }
 
@@ -137,7 +137,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
      // we have a chunk of the space which hasn't moved and we've reinitialized
      // the mark word during the previous pass, so we can't use is_gc_marked for
      // the traversal.
-     HeapWord* prev_obj = NULL;
+     HeapWord* prev_obj = nullptr;
 
      while (cur_obj < space->_first_dead) {
        size_t size = cast_to_oop(cur_obj)->size();
@@ -156,7 +156,7 @@ inline void CompactibleSpace::clear_empty_region(SpaceType* space) {
   // Reset space after compaction is complete
   space->reset_after_compaction();
   // We do this clear, below, since it has overloaded meanings for some
-  // space subtypes.  For example, OffsetTableContigSpace's that were
+  // space subtypes.  For example, TenuredSpace's that were
   // compacted into will have had their offset table thresholds updated
   // continuously, but those that weren't need to have their thresholds
   // re-initialized.  Also mangles unused area for debugging.
@@ -172,7 +172,7 @@ template <typename OopClosureType>
 void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
   HeapWord* t;
   HeapWord* p = saved_mark_word();
-  assert(p != NULL, "expected saved mark");
+  assert(p != nullptr, "expected saved mark");
 
   const intx interval = PrefetchScanIntervalInBytes;
   do {

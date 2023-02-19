@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,12 +184,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // allocated and if the PerfDataManager has not freed the PerfData
   // objects which can happen at normal VM shutdown.
   //
-  #define OM_PERFDATA_OP(f, op_str)              \
-    do {                                         \
-      if (ObjectMonitor::_sync_ ## f != NULL &&  \
-          PerfDataManager::has_PerfData()) {     \
-        ObjectMonitor::_sync_ ## f->op_str;      \
-      }                                          \
+  #define OM_PERFDATA_OP(f, op_str)                 \
+    do {                                            \
+      if (ObjectMonitor::_sync_ ## f != nullptr &&  \
+          PerfDataManager::has_PerfData()) {        \
+        ObjectMonitor::_sync_ ## f->op_str;         \
+      }                                             \
     } while (0)
 
   static PerfCounter * _sync_ContendedLockAttempts;
@@ -204,8 +204,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.
-  static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
-  static int object_offset_in_bytes()      { return offset_of(ObjectMonitor, _object); }
   static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
   static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
   static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
@@ -246,7 +244,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   intptr_t  is_entered(JavaThread* current) const;
 
-  void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
+  // Returns true if this OM has an owner, false otherwise.
+  bool      has_owner() const;
+  void*     owner() const;  // Returns null if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
@@ -265,16 +265,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
-  // Get _next_om field with acquire semantics.
-  ObjectMonitor* next_om_acquire() const;
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
-  // Set _next_om field to new_value with release semantics.
-  void release_set_next_om(ObjectMonitor* new_value);
-  // Try to set _next_om field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
-  // _next_om field. Returns the prior value of the _next_om field.
-  ObjectMonitor* try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value);
 
   int       waiters() const;
 

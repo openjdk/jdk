@@ -47,7 +47,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register end, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp2);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -71,6 +71,8 @@ public:
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 
   virtual bool supports_instruction_patching() {
     NMethodPatchingType patching_type = nmethod_patching_type();

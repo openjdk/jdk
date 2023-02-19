@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,8 +326,9 @@ class MacroAssembler: public Assembler {
   void reset_last_Java_frame(bool clear_fp);
 
   // jobjects
-  void clear_jweak_tag(Register possibly_jweak);
+  void clear_jobject_tag(Register possibly_non_local);
   void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_global_jobject(Register value, Register thread, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -352,14 +353,14 @@ class MacroAssembler: public Assembler {
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register thread_tmp);
-  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
                               Register thread_tmp = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
+  void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   // Used for storing NULL. All other oop constants should be
@@ -729,6 +730,11 @@ public:
 
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { LP64_ONLY(andq(src1, src2)) NOT_LP64(andl(src1, src2)) ; }
+
+#ifdef _LP64
+  using Assembler::andq;
+  void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
+#endif
 
   void cmp8(AddressLiteral src1, int imm, Register rscratch = noreg);
 
@@ -1754,8 +1760,14 @@ public:
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
 
-  void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
-  void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);
+  using Assembler::evpandq;
+  void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::evporq;
+  void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpternlogq;
+  void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
   void cmov32( Condition cc, Register dst, Address  src);
   void cmov32( Condition cc, Register dst, Register src);
@@ -1976,10 +1988,6 @@ public:
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
 #endif // COMPILER2_OR_JVMCI
-
-  OopMap* continuation_enter_setup(int& stack_slots);
-  void fill_continuation_entry(Register reg_cont_obj, Register reg_flags);
-  void continuation_enter_cleanup();
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);
