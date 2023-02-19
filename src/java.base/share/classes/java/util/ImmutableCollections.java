@@ -1104,7 +1104,7 @@ class ImmutableCollections {
 
     @jdk.internal.ValueBased
     abstract static sealed class AbstractImmutableEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
-            implements Serializable {
+            implements Serializable permits ImmutableRegularEnumSet, ImmutableJumboEnumSet {
         static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         @Stable
