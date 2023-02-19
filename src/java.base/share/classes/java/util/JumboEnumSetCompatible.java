@@ -35,5 +35,9 @@ sealed interface JumboEnumSetCompatible<E extends Enum<E>>
                 Collections.SynchronizedJumboEnumSet,
                 ImmutableCollections.ImmutableJumboEnumSet {
     Class<E> elementType();
+
+    // Note that this method may return a mutable array, so
+    // defensive copies should be made if immutable or thread-safe
+    // set is needed.
     long[] elements();
 }
