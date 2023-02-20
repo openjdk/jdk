@@ -713,12 +713,12 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        Set<String> as = this.aliasSet;
-        if (as == null) {
-            as = Set.of(aliases);
-            this.aliasSet = as;
+        Set<String> set = this.aliasSet;
+        if (set == null) {
+            set = Set.of(aliases);
+            this.aliasSet = set;
         }
-        return as;
+        return set;
     }
 
     /**
