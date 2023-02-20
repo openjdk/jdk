@@ -585,9 +585,6 @@ public:
   void print_on(outputStream* st) const;
 
   void verify(VerifyOption vo, bool* failures) const;
-
-  void verify_rem_set(VerifyOption vo, bool* failures) const;
-  void verify_rem_set() const;
 };
 
 // HeapRegionClosure is used for iterating over regions.

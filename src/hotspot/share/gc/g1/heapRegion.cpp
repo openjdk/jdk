@@ -629,45 +629,6 @@ void HeapRegion::verify(VerifyOption vo,
   verify_code_roots(vo, failures);
 }
 
-void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  *failures = false;
-  HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
-  VerifyRemSetClosure vr_cl(g1h, vo);
-  while (p < top()) {
-    oop obj = cast_to_oop(p);
-    size_t obj_size = block_size(p);
-
-    if (!g1h->is_obj_dead_cond(obj, this, vo)) {
-      if (oopDesc::is_oop(obj)) {
-        vr_cl.set_containing_obj(obj);
-        obj->oop_iterate(&vr_cl);
-
-        if (vr_cl.has_failures()) {
-          *failures = true;
-        }
-        if (vr_cl.num_failures() >= G1MaxVerifyFailures) {
-          return;
-        }
-      } else {
-        log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
-        *failures = true;
-        return;
-      }
-    }
-
-    prev_p = p;
-    p += obj_size;
-  }
-}
-
-void HeapRegion::verify_rem_set() const {
-  bool failures = false;
-  verify_rem_set(VerifyOption::G1UseConcMarking, &failures);
-  guarantee(!failures, "HeapRegion RemSet verification failed");
-}
-
 void HeapRegion::clear(bool mangle_space) {
   set_top(bottom());
 
