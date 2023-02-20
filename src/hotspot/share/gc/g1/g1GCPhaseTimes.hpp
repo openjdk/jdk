@@ -58,7 +58,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeRS,
     OptMergeRS,
     MergeLB,
-    MergeHCC,
     ScanHR,
     OptScanHR,
     CodeRoots,
@@ -74,6 +73,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
+    ResizeThreadLABs,
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
@@ -81,7 +81,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
-    ResetHotCardCache,
 #if COMPILER2_OR_JVMCI
     UpdateDerivedPointers,
 #endif
@@ -126,11 +125,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRFoundRoots,
     ScanHRScannedOptRefs,
     ScanHRUsedMemory
-  };
-
-  enum GCMergeHCCWorkItems {
-    MergeHCCDirtyCards,
-    MergeHCCSkippedCards
   };
 
   enum GCMergeLBWorkItems {
@@ -179,7 +173,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_optional_prepare_merge_heap_roots_time_ms;
 
   double _cur_prepare_tlab_time_ms;
-  double _cur_resize_tlab_time_ms;
 
   double _cur_concatenate_dirty_card_logs_time_ms;
 
@@ -199,7 +192,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
-  double _recorded_start_new_cset_time_ms;
+  double _recorded_prepare_for_mutator_time_ms;
 
   double _recorded_serial_free_cset_time_ms;
 
@@ -274,10 +267,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_prepare_tlab_time_ms(double ms) {
     _cur_prepare_tlab_time_ms = ms;
-  }
-
-  void record_resize_tlab_time_ms(double ms) {
-    _cur_resize_tlab_time_ms = ms;
   }
 
   void record_concatenate_dirty_card_logs_time_ms(double ms) {
@@ -356,8 +345,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_cset_choice_time_ms = time_ms;
   }
 
-  void record_start_new_cset_time_ms(double time_ms) {
-    _recorded_start_new_cset_time_ms = time_ms;
+  void record_prepare_for_mutator_time_ms(double time_ms) {
+    _recorded_prepare_for_mutator_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {
