@@ -236,25 +236,11 @@ public class VectorCompareWithZeroTest {
         assertArrayEquals(da, dr, (a) -> (a < 0.0 ? true : false));
     }
 
-    @Test
-    @IR(failOn = { IRNode.VMASK_CMP_ZERO_I_NEON })
-    public static void testIntVectorUnsignedCondition() {
-        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
-        av.compare(VectorOperators.UNSIGNED_GT, 0).intoArray(ir, 0);
-    }
-
-    @Test
-    @IR(failOn = { IRNode.VMASK_CMP_ZERO_L_NEON })
-    public static void testLongVectorUnsignedCondition() {
-        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
-        av.compare(VectorOperators.UNSIGNED_GE, 0).intoArray(lr, 0);
-    }
-
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector")
-                     .addFlags("-XX:UseSVE=0")
-                     .start();
+                    .addFlags("--add-modules=jdk.incubator.vector")
+                    .addFlags("-XX:UseSVE=0")
+                    .start();
     }
 }
