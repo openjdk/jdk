@@ -309,11 +309,11 @@ class CodeCache : AllStatic {
   static void mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee);
   static void make_marked_nmethods_deoptimized();
 
-  // Flushing and deoptimization
-  static void flush_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee);
+  // Marks dependents during classloading
+  static void mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee);
 
   // RedefineClasses support
-  // Flushing and deoptimization in case of evolution
+  // Marks in case of evolution
   static void mark_dependents_for_evol_deoptimization(DeoptimizationScope* deopt_scope);
   static void mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope);
   static void old_nmethods_do(MetadataClosure* f) NOT_JVMTI_RETURN;

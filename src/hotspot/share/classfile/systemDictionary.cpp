@@ -1639,7 +1639,7 @@ void SystemDictionary::add_to_hierarchy(DeoptimizationScope* deopt_scope, Instan
   // Now flush all code that depended on old class hierarchy.
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
   if (Universe::is_fully_initialized()) {
-    CodeCache::flush_dependents_on(deopt_scope, k);
+    CodeCache::mark_dependents_on(deopt_scope, k);
   }
 }
 

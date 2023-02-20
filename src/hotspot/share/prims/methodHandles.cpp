@@ -956,7 +956,7 @@ void MethodHandles::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Ha
   CallSiteDepChange changes(call_site, target);
   {
     NoSafepointVerifier nsv;
-    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site());
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
@@ -1219,7 +1219,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
     MutexLocker mu(thread, Compile_lock);
     MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
-    // This assumed to be an 'atomic' operation by verification.
+    // This is assumed to be an 'atomic' operation by verification.
     // So keep it under lock for now.
     deopt_scope.deoptimize_marked();
   }
@@ -1235,7 +1235,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
     MutexLocker mu(thread, Compile_lock);
     MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
-    // This assumed to be an 'atomic' operation by verification.
+    // This is assumed to be an 'atomic' operation by verification.
     // So keep it under lock for now.
     deopt_scope.deoptimize_marked();
   }
@@ -1333,7 +1333,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
     MutexLocker ml(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
     deps.remove_and_mark_for_deoptimization_all_dependents(&deopt_scope);
-    // This assumed to be an 'atomic' operation by verification.
+    // This is assumed to be an 'atomic' operation by verification.
     // So keep it under lock for now.
     deopt_scope.deoptimize_marked();
   }

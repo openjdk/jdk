@@ -106,7 +106,7 @@ DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
   DEBUG_ONLY(_deopted = false;)
 
   MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-  // If there is nothing to deopt _gen is the same as comitted.
+  // If there is nothing to deopt _required_gen is the same as comitted.
   _required_gen = DeoptimizationScope::_committed_deopt_gen;
 }
 
@@ -139,8 +139,8 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 void DeoptimizationScope::dependent(CompiledMethod* cm) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
-  // A method marked by someone else may have a _gen lower than what we marked with.
-  // Therefore only store it if it's higher than _gen.
+  // A method marked by someone else may have a _required_gen lower than what we marked with.
+  // Therefore only store it if it's higher than _required_gen.
   if (_required_gen < cm->_deoptimization_generation) {
     _required_gen = cm->_deoptimization_generation;
   }

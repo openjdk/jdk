@@ -1394,8 +1394,8 @@ void CodeCache::make_marked_nmethods_deoptimized() {
   }
 }
 
-// Flushes compiled methods dependent on dependee.
-void CodeCache::flush_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee) {
+// Marks compiled methods dependent on dependee.
+void CodeCache::mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (!has_nmethods_with_dependencies()) {
@@ -1413,7 +1413,7 @@ void CodeCache::flush_dependents_on(DeoptimizationScope* deopt_scope, InstanceKl
   }
 }
 
-// Flushes compiled methods dependent on dependee
+// Marks compiled methods dependent on dependee
 void CodeCache::mark_dependents_on_method_for_breakpoint(const methodHandle& m_h) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 

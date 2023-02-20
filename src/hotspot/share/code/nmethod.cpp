@@ -1169,6 +1169,12 @@ void nmethod::make_deoptimized() {
 
   CompiledICLocker ml(this);
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
+
+  // If post call nops have been already patched, we can just bail-out.
+  if (has_been_deoptimized()) {
+    return;
+  }
+
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
 
