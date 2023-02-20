@@ -291,15 +291,15 @@ public final class JDKEvents {
     }
 
     public static void remove() {
-        PeriodicEvents.removeTask(emitExceptionStatistics);
-        PeriodicEvents.removeTask(emitDirectBufferStatistics);
-        PeriodicEvents.removeTask(emitInitialSecurityProperties);
+        PeriodicEvents.removeEvent(emitExceptionStatistics);
+        PeriodicEvents.removeEvent(emitDirectBufferStatistics);
+        PeriodicEvents.removeEvent(emitInitialSecurityProperties);
 
-        PeriodicEvents.removeTask(emitContainerConfiguration);
-        PeriodicEvents.removeTask(emitContainerCPUUsage);
-        PeriodicEvents.removeTask(emitContainerCPUThrottling);
-        PeriodicEvents.removeTask(emitContainerMemoryUsage);
-        PeriodicEvents.removeTask(emitContainerIOUsage);
+        PeriodicEvents.removeEvent(emitContainerConfiguration);
+        PeriodicEvents.removeEvent(emitContainerCPUUsage);
+        PeriodicEvents.removeEvent(emitContainerCPUThrottling);
+        PeriodicEvents.removeEvent(emitContainerMemoryUsage);
+        PeriodicEvents.removeEvent(emitContainerIOUsage);
     }
 
     private static void emitDirectBufferStatistics() {

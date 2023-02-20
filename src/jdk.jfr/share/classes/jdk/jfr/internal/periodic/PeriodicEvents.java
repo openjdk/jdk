@@ -67,7 +67,7 @@ public final class PeriodicEvents {
         taskRepository.add(new UserEventTask(acc, eventClass, runnable));
     }
 
-    public static boolean removeTask(Runnable runnable) {
+    public static boolean removeEvent(Runnable runnable) {
         return taskRepository.removeTask(runnable);
     }
 

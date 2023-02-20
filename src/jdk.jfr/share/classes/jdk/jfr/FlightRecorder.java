@@ -242,7 +242,7 @@ public final class FlightRecorder {
         if (JVMSupport.isNotAvailable()) {
             return false;
         }
-        return PeriodicEvents.removeTask(hook);
+        return PeriodicEvents.removeEvent(hook);
     }
 
     /**
