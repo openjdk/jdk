@@ -25,10 +25,11 @@ package nsk.monitoring.share.thread;
 
 import nsk.share.log.Log;
 import nsk.share.TestFailure;
+
+import java.io.PrintStream;
 import java.lang.management.LockInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
-import java.io.PrintStream;
 
 public final class ThreadUtils {
         private ThreadUtils() {
