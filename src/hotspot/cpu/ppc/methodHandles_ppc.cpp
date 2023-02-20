@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -135,12 +135,10 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-    __ verify_thread();
     __ lwz(temp, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     __ cmplwi(CCR0, temp, 0);
     __ beq(CCR0, run_compiled_code);
-    // Null method test is replicated below in compiled case,
-    // it might be able to address across the verify_thread()
+    // Null method test is replicated below in compiled case.
     __ cmplwi(CCR0, R19_method, 0);
     __ beq(CCR0, L_no_such_method);
     __ ld(target, in_bytes(Method::interpreter_entry_offset()), R19_method);

@@ -37,12 +37,9 @@ import javax.imageio.stream.MemoryCacheImageInputStream;
 
 public class ReadFullyTest {
 
-    static final ByteOrder bigEndian = ByteOrder.BIG_ENDIAN;
-    static final ByteOrder littleEndian = ByteOrder.LITTLE_ENDIAN;
-
-    private static void expect(long e, long g) {
-        if (e != g) {
-            throw new RuntimeException("Expected " + e + ", got " + g);
+    private static void assertEquals(long actual, long expected) {
+        if (actual != expected) {
+            throw new AssertionError("Expected 0x" + Long.toHexString(expected) + ", got 0x" + Long.toHexString(actual));
         }
     }
 
@@ -65,82 +62,82 @@ public class ReadFullyTest {
             double[] d = new double[b.length/8];
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(s, 0, s.length);
-            expect(s[0] & 0xffff, 0x1122);
-            expect(s[1] & 0xffff, 0x4499);
-            expect(s[2] & 0xffff, 0xAA33);
-            expect(s[3] & 0xffff, 0xBBCC);
+            assertEquals(s[0] & 0xffff, 0x1122);
+            assertEquals(s[1] & 0xffff, 0x4499);
+            assertEquals(s[2] & 0xffff, 0xAA33);
+            assertEquals(s[3] & 0xffff, 0xBBCC);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(s, 0, s.length);
-            expect(s[0] & 0xffff, 0x2211);
-            expect(s[1] & 0xffff, 0x9944);
-            expect(s[2] & 0xffff, 0x33AA);
-            expect(s[3] & 0xffff, 0xCCBB);
+            assertEquals(s[0] & 0xffff, 0x2211);
+            assertEquals(s[1] & 0xffff, 0x9944);
+            assertEquals(s[2] & 0xffff, 0x33AA);
+            assertEquals(s[3] & 0xffff, 0xCCBB);
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(c, 0, c.length);
-            expect(c[0], 0x1122);
-            expect(c[1], 0x4499);
-            expect(c[2], 0xAA33);
-            expect(c[3], 0xBBCC);
+            assertEquals(c[0], 0x1122);
+            assertEquals(c[1], 0x4499);
+            assertEquals(c[2], 0xAA33);
+            assertEquals(c[3], 0xBBCC);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(c, 0, c.length);
-            expect(c[0], 0x2211);
-            expect(c[1], 0x9944);
-            expect(c[2], 0x33AA);
-            expect(c[3], 0xCCBB);
+            assertEquals(c[0], 0x2211);
+            assertEquals(c[1], 0x9944);
+            assertEquals(c[2], 0x33AA);
+            assertEquals(c[3], 0xCCBB);
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(i, 0, i.length);
-            expect(i[0] & 0xffffffff, 0x11224499);
-            expect(i[1] & 0xffffffff, 0xAA33BBCC);
+            assertEquals(i[0] & 0xffffffff, 0x11224499);
+            assertEquals(i[1] & 0xffffffff, 0xAA33BBCC);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(i, 0, i.length);
-            expect(i[0] & 0xffffffff, 0x99442211);
-            expect(i[1] & 0xffffffff, 0xCCBB33AA);
+            assertEquals(i[0] & 0xffffffff, 0x99442211);
+            assertEquals(i[1] & 0xffffffff, 0xCCBB33AA);
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(f, 0, f.length);
-            expect(Float.floatToIntBits(f[0]) & 0xffffffff, 0x11224499);
-            expect(Float.floatToIntBits(f[1]) & 0xffffffff, 0xAA33BBCC);
+            assertEquals(Float.floatToIntBits(f[0]) & 0xffffffff, 0x11224499);
+            assertEquals(Float.floatToIntBits(f[1]) & 0xffffffff, 0xAA33BBCC);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(f, 0, f.length);
-            expect(Float.floatToIntBits(f[0]) & 0xffffffff, 0x99442211);
-            expect(Float.floatToIntBits(f[1]) & 0xffffffff, 0xCCBB33AA);
+            assertEquals(Float.floatToIntBits(f[0]) & 0xffffffff, 0x99442211);
+            assertEquals(Float.floatToIntBits(f[1]) & 0xffffffff, 0xCCBB33AA);
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(l, 0, l.length);
-            expect(l[0], 0x11224499AA33BBCCL);
+            assertEquals(l[0], 0x11224499AA33BBCCL);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(l, 0, l.length);
-            expect(l[0], 0xCCBB33AA99442211L);
+            assertEquals(l[0], 0xCCBB33AA99442211L);
 
             iin.seek(0L);
-            iin.setByteOrder(bigEndian);
+            iin.setByteOrder(ByteOrder.BIG_ENDIAN);
             iin.readFully(d, 0, d.length);
-            expect(Double.doubleToLongBits(d[0]), 0x11224499AA33BBCCL);
+            assertEquals(Double.doubleToLongBits(d[0]), 0x11224499AA33BBCCL);
 
             iin.seek(0L);
-            iin.setByteOrder(littleEndian);
+            iin.setByteOrder(ByteOrder.LITTLE_ENDIAN);
             iin.readFully(d, 0, d.length);
-            expect(Double.doubleToLongBits(d[0]), 0xCCBB33AA99442211L);
-        } catch (Exception ex) {
-            throw new RuntimeException("Got exception " + ex);
+            assertEquals(Double.doubleToLongBits(d[0]), 0xCCBB33AA99442211L);
+        } catch (Throwable ex) {
+            throw new RuntimeException("Got exception", ex);
         }
     }
 }

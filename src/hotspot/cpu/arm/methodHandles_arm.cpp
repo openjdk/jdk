@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all require an extra argument.
     __ should_not_reach_here();           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // Rmethod: Method*
@@ -485,8 +485,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* saved_bp,
                               oop mh) {
   // called as a leaf from native code: do not block the JVM!
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // static linkers don't have MH
   intptr_t* entry_sp = (intptr_t*) &saved_regs[trace_mh_nregs]; // just after the saved regs
   intptr_t* saved_sp = (intptr_t*)  saved_regs[Rsender_sp->encoding()]; // save of Rsender_sp
   intptr_t* last_sp  = (intptr_t*)  saved_bp[frame::interpreter_frame_last_sp_offset];
@@ -501,7 +501,7 @@ void trace_method_handle_stub(const char* adaptername,
                           adaptername, mh_reg_name, mh_reg,
                           (intptr_t)entry_sp, (intptr_t)saved_sp - (intptr_t)entry_sp, (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
 
-  if (last_sp != saved_sp && last_sp != NULL) {
+  if (last_sp != saved_sp && last_sp != nullptr) {
     log_info(methodhandles)("*** last_sp=" INTPTR_FORMAT, p2i(last_sp));
   }
   LogTarget(Trace, methodhandles) lt;

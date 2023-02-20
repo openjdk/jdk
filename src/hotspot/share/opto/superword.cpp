@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3038,6 +3038,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
           cnt = ConNode::make(TypeInt::make(shift & mask));
+          _igvn.register_new_node_with_optimizer(cnt);
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
@@ -3170,7 +3171,8 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn.hash_delete(def);
     int def_pos = alignment(def) / data_size(def);
 
-    Node* ex = ExtractNode::make(def, def_pos, velt_basic_type(def));
+    ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
+    Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
     _igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);
