@@ -76,10 +76,19 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private final ExplorerManager manager;
     private final ScriptEngine engine;
     private final JComboBox<FilterChain> comboBox;
-    private final FilterChain sequence;
-    private final FilterChain defaultFilterChain = new FilterChain("Default");
+    private final FilterChain allFilterChains = new FilterChain();
+
+    private static final FilterChain defaultFilterChain = new FilterChain("DEFAULT");
+
+    private FilterChain customFilterChain;
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
+
+    public static FilterChain createNewDefaultFilterChain() {
+        FilterChain newCustomFilterChain = new FilterChain("CUSTOM");
+        newCustomFilterChain.addFilters(defaultFilterChain.getFilters());
+        return newCustomFilterChain;
+    }
 
     private FilterTopComponent() {
         filterSettingsChangedEvent = new ChangedEvent<>(this);
@@ -96,12 +105,12 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         }
         engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("IO", System.out);
 
-        comboBox = new JComboBox<>();
-        comboBox.addItem(defaultFilterChain);
-        comboBox.setSelectedItem(defaultFilterChain);
-        filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
-        sequence = new FilterChain();
         initFilters();
+        customFilterChain = createNewDefaultFilterChain();
+        comboBox = new JComboBox<>();
+        comboBox.addItem(customFilterChain);
+        comboBox.setSelectedItem(customFilterChain);
+        filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
 
         manager = new ExplorerManager();
         manager.setRootContext(new AbstractNode(new FilterChildren()));
@@ -137,15 +146,15 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         filterChainSelectionChangedEvent.addListener(listener);
     }
 
-    public FilterChain getSequence() {
-        return sequence;
+    public FilterChain getAllFilterChains() {
+        return allFilterChains;
     }
 
     public void updateSelection() {
         Node[] nodes = this.getExplorerManager().getSelectedNodes();
         int[] arr = new int[nodes.length];
         for (int i = 0; i < nodes.length; i++) {
-            int index = sequence.getFilters().indexOf(((FilterNode) nodes[i]).getFilter());
+            int index = allFilterChains.getFilters().indexOf(((FilterNode) nodes[i]).getFilter());
             arr[i] = index;
         }
         view.showSelection(arr);
@@ -160,7 +169,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         filterSettingsChangedEvent.fire();
         filterChainSelectionChangedEvent.fire();
         currentChain.getChangedEvent().fire();
-        SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != defaultFilterChain);
+        SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != customFilterChain);
         SystemAction.get(SaveFilterSettingsAction.class).setEnabled(true);
     }
 
@@ -170,6 +179,10 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
 
     public void setFilterChain(FilterChain filterChain) {
         comboBox.setSelectedItem(filterChain);
+    }
+
+    public void setCustomFilterChain(FilterChain filterChain) {
+        customFilterChain = filterChain;
     }
 
     public void addFilterSetting() {
@@ -201,7 +214,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     public void removeFilterSetting() {
-        if (getCurrentChain() != defaultFilterChain) {
+        if (getCurrentChain() != customFilterChain) {
             FilterChain filter = getCurrentChain();
             NotifyDescriptor.Confirmation l = new NotifyDescriptor.Confirmation("Do you really want to remove filter profile \"" + filter + "\"?", "Filter Profile");
             if (DialogDisplayer.getDefault().notify(l) == NotifyDescriptor.YES_OPTION) {
@@ -227,13 +240,13 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         }
 
         public FilterChildren() {
-            sequence.getChangedEvent().addListener(source -> addNotify());
+            allFilterChains.getChangedEvent().addListener(source -> addNotify());
             setBefore(false);
         }
 
         @Override
         protected void addNotify() {
-            setKeys(sequence.getFilters());
+            setKeys(allFilterChains.getFilters());
             updateSelection();
         }
 
@@ -289,7 +302,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public void newFilter() {
         CustomFilter cf = new CustomFilter("My custom filter", "", engine);
         if (cf.openInEditor()) {
-            sequence.addFilter(cf);
+            allFilterChains.addFilter(cf);
             FileObject fo = getFileObject(cf);
             FilterChangedListener listener = new FilterChangedListener(fo, cf);
             listener.changed(cf);
@@ -300,7 +313,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public void removeFilter(Filter f) {
         CustomFilter cf = (CustomFilter) f;
 
-        sequence.removeFilter(cf);
+        allFilterChains.removeFilter(cf);
         try {
             getFileObject(cf).delete();
         } catch (IOException ex) {
@@ -420,9 +433,9 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         }
 
         for (CustomFilter cf : customFilters) {
-            sequence.addFilter(cf);
+            allFilterChains.addFilter(cf);
             if (enabledSet.contains(cf)) {
-                getCurrentChain().addFilter(cf);
+                defaultFilterChain.addFilter(cf);
             }
         }
     }

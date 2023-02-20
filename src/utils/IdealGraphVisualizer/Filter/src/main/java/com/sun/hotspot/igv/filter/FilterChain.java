@@ -124,6 +124,12 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         changedEvent.fire();
     }
 
+    public void addFilters(List<Filter> filtersToAdd) {
+        for (Filter filter : filtersToAdd) {
+            addFilter(filter);
+        }
+    }
+
     public List<Filter> getFilters() {
         return Collections.unmodifiableList(filters);
     }

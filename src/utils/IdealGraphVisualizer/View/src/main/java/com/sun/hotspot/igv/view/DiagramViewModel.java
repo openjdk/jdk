@@ -52,6 +52,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
+    private FilterChain customFilterChain;
+
     private FilterChain filterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
@@ -149,10 +151,13 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public DiagramViewModel(InputGraph graph) {
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider == null) {
-            filterChain = new FilterChain();
+        if (provider != null) {
+            customFilterChain = provider.createNewDefaultFilterChain();
+            provider.setCustomFilterChain(customFilterChain);
+            filterChain = customFilterChain;
+            provider.setFilterChain(filterChain);
         } else {
-            filterChain = provider.getFilterChain();
+            customFilterChain = new FilterChain("DEFAULT");
         }
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
@@ -290,8 +295,22 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent.fire();
     }
 
-    public FilterChain getSequenceFilterChain() {
-        return filterChain;
+    void activateModel() {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        if (provider != null) {
+            provider.setFilterChainSelectionChangedListener(l -> {
+                filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+                filterChain = provider.getFilterChain();
+                filterChain.getChangedEvent().addListener(filterChainChangedListener);
+            });
+            provider.setCustomFilterChain(customFilterChain);
+            provider.setFilterChain(filterChain);
+        }
+    }
+
+    void close() {
+        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+        getChangedEvent().fire();
     }
 
     private void filterChanged() {
@@ -316,7 +335,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-        getFilterChain().apply(diagram, getSequenceFilterChain());
+        getFilterChain().apply(diagram, filterChain);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
             f.addRule(stateColorRule("same",    Color.white));
@@ -433,23 +452,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     void addTitleCallback(Consumer<InputGraph> titleCallback) {
         titleChangedListener = titleCallback::accept;
-    }
-
-    void activateModel() {
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider != null) {
-            provider.setFilterChainSelectionChangedListener(l -> {
-                filterChain.getChangedEvent().removeListener(filterChainChangedListener);
-                filterChain = provider.getFilterChain();
-                filterChain.getChangedEvent().addListener(filterChainChangedListener);
-            });
-            provider.setFilterChain(filterChain);
-        }
-    }
-
-    void close() {
-        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        getChangedEvent().fire();
     }
 
     Iterable<InputGraph> getGraphsForward() {
