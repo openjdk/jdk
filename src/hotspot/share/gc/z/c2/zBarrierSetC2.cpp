@@ -606,10 +606,24 @@ static bool is_concrete(intptr_t offset) {
 static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
   const TypePtr* adr_type = NULL;
   offset = 0;
-  const Node* const base = mach->get_base_and_disp(offset, adr_type);
+  const Node* base = mach->get_base_and_disp(offset, adr_type);
 
-  if (base == NULL || base == NodeSentinel ||
-      is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
+  if (base == NULL || base == NodeSentinel) {
+    return NULL;
+  }
+
+  if (offset == 0 && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
+    // The memory address is computed by 'base' and fed to 'mach' via an
+    // indirect memory operand (indicated by offset == 0). The ultimate base and
+    // offset can be fetched directly from the inputs and Ideal type of 'base'.
+    offset = base->bottom_type()->isa_oopptr()->offset();
+    // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
+    // guarantees that the base address is still available at the same slot.
+    base = base->in(AddPNode::Base);
+    assert(base != NULL, "");
+  }
+
+  if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
     return NULL;
   }
 

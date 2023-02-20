@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *          volatile memory accesses and blackholes to prevent C2 from simply
  *          optimizing them away.
  * @library /test/lib /
- * @requires vm.gc.Z & os.simpleArch == "x64"
+ * @requires vm.gc.Z & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
  * @run driver compiler.gcbarriers.TestZGCBarrierElision
  */
 
@@ -303,7 +303,7 @@ public class TestZGCBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_STORE_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    // The atomic access barrier should be elided, but is not.
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testStoreThenAtomic(Outer o, Inner i) {
         o.field1 = i;
         field1VarHandle.getAndSet​(o, i);
@@ -311,7 +311,7 @@ public class TestZGCBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    // The load barrier should be elided, but is not.
+    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenLoad(Outer o, Inner i) {
         field1VarHandle.getAndSet​(o, i);
         blackhole(o.field1);
@@ -319,14 +319,15 @@ public class TestZGCBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    // The store barrier should be elided, but is not.
+    @IR(counts = { IRNode.Z_STORE_P_WITH_BARRIER_FLAG, ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenStore(Outer o, Inner i) {
         field1VarHandle.getAndSet​(o, i);
         o.field1 = i;
     }
 
     @Test
-    // The second atomic access barrier should be elided, but is not.
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenAtomic(Outer o, Inner i) {
         field1VarHandle.getAndSet​(o, i);
         field1VarHandle.getAndSet​(o, i);
@@ -339,21 +340,59 @@ public class TestZGCBarrierElision {
         field2VarHandle.getAndSet​(o, i);
     }
 
+    @Test
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    static void testAllocateArrayThenAtomicAtKnownIndex(Outer o) {
+        Outer[] a = new Outer[42];
+        blackhole(a);
+        outerArrayVarHandle.getAndSet(a, 2, o);
+    }
+
+    @Test
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    static void testAllocateArrayThenAtomicAtUnknownIndex(Outer o, int index) {
+        Outer[] a = new Outer[42];
+        blackhole(a);
+        outerArrayVarHandle.getAndSet(a, index, o);
+    }
+
+    @Test
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    static void testArrayAtomicThenAtomic(Outer[] a, Outer o) {
+        outerArrayVarHandle.getAndSet(a, 0, o);
+        outerArrayVarHandle.getAndSet(a, 0, o);
+    }
+
+    @Test
+    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, REMAINING, "2" }, phase = CompilePhase.FINAL_CODE)
+    static void testArrayAtomicThenAtomicAtUnknownIndices(Outer[] a, Outer o, int index1, int index2) {
+        outerArrayVarHandle.getAndSet(a, index1, o);
+        outerArrayVarHandle.getAndSet(a, index2, o);
+    }
+
     @Run(test = {"testAllocateThenAtomic",
                  "testLoadThenAtomic",
                  "testStoreThenAtomic",
                  "testAtomicThenLoad",
                  "testAtomicThenStore",
                  "testAtomicThenAtomic",
-                 "testAtomicThenAtomicAnotherField"})
+                 "testAtomicThenAtomicAnotherField",
+                 "testAllocateArrayThenAtomicAtKnownIndex",
+                 "testAllocateArrayThenAtomicAtUnknownIndex",
+                 "testArrayAtomicThenAtomic",
+                 "testArrayAtomicThenAtomicAtUnknownIndices"})
     void runAtomicOperationTests() {
-            testAllocateThenAtomic(inner);
-            testLoadThenAtomic(outer, inner);
-            testStoreThenAtomic(outer, inner);
-            testAtomicThenLoad(outer, inner);
-            testAtomicThenStore(outer, inner);
-            testAtomicThenAtomic(outer, inner);
-            testAtomicThenAtomicAnotherField(outer, inner);
+        testAllocateThenAtomic(inner);
+        testLoadThenAtomic(outer, inner);
+        testStoreThenAtomic(outer, inner);
+        testAtomicThenLoad(outer, inner);
+        testAtomicThenStore(outer, inner);
+        testAtomicThenAtomic(outer, inner);
+        testAtomicThenAtomicAnotherField(outer, inner);
+        testAllocateArrayThenAtomicAtKnownIndex(outer);
+        testAllocateArrayThenAtomicAtUnknownIndex(outer, 10);
+        testArrayAtomicThenAtomic(outerArray, outer);
+        testArrayAtomicThenAtomicAtUnknownIndices(outerArray, outer, 10, 20);
     }
-
 }
