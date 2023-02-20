@@ -44,7 +44,7 @@ import java.awt.event.MouseEvent;
  * @test
  * @key headful
  * @bug 8302525
- * @summary Test performs various mouse and key operations to checks events are getting triggered properly.
+ * @summary Test performs various mouse and key operations to check events are getting triggered properly.
  * @run main MouseAndKeyEventStressTest
  */
 public class MouseAndKeyEventStressTest {
