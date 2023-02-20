@@ -282,8 +282,9 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         for (Map.Entry<String, String> entry : ops.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-            if (key == null) {
-                throw new IllegalArgumentException("Option key must not be null.");
+            // Keys and values may be sent over the network
+            if (!(key instanceof String)) {
+                throw new IllegalArgumentException("Option key must not be null, or other type than " + String.class);
             }
             if (!OPTIONS.contains(key)) {
                 throw new IllegalArgumentException("Unknown recording option: " + key + ". Valid options are " + OPTIONS + ".");
