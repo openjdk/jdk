@@ -58,7 +58,6 @@ address generate_poly1305_processBlocks2() {
                        {*++regs, *++regs},
                        {*++regs, *++regs},};
 
-  // Compute (R2 << 26) * 5.
   Register RR2 = *++regs;
   __ lsl(RR2, R[2], 26);
   __ add(RR2, RR2, RR2, __ LSL, 2);
@@ -69,11 +68,15 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_reduce(u0);
     Register u0_lo[] = {u0[0]._lo, u0[1]._lo, u0[2]._lo};
     __ copy_3_regs(R, u0_lo);
+
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
   }
 
   __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
   // u0 contains the initial state. Clear the others.
   for (int i = 0; i < 3; i++) {
+    __ mov(u0[i]._lo, 0);
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
   }
 
@@ -86,15 +89,12 @@ address generate_poly1305_processBlocks2() {
   __ br(~ Assembler::GT, DONE); {
     __ bind(LOOP);
 
-    __ poly1305_step(S0, u0, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_step(S0, u0, input_start);              __ poly1305_step(S1, u1, input_start);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);         __ poly1305_multiply(u1, S1, R, RR2, regs);
+    __ poly1305_reduce(u0);                             __ poly1305_reduce(u1);
 
-    __ poly1305_step(S1, u1, input_start);
-    __ poly1305_multiply(u1, S1, R, RR2, regs);
-    __ poly1305_reduce(u1);
-
-    __ subsw(length, length, BLOCK_LENGTH * 2);
+    __ subw(length, length, BLOCK_LENGTH * 2);
+    __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
     __ br(Assembler::GT, LOOP);
   }
   __ bind(DONE);
@@ -106,6 +106,7 @@ address generate_poly1305_processBlocks2() {
 
     __ poly1305_step(S1, u1, input_start);
     __ poly1305_multiply(u1, S1, R, RR2, regs);
+    __ poly1305_reduce(u1);
 
   __ bind(one);
     __ pack_26(R[0], R[1], R[2], r_start);
@@ -114,10 +115,13 @@ address generate_poly1305_processBlocks2() {
 
     __ poly1305_step(S0, u0, input_start);
     __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
   }
-  __ add_3_reg_pairs(u0, u1);
+  // __ add_3_reg_pairs(u0, u1);
 
-  __ poly1305_reduce(u0);
+  __ add(u0[0]._lo, u0[0]._lo, u1[0]._lo);
+  __ add(u0[1]._lo, u0[1]._lo, u1[1]._lo);
+  __ add(u0[2]._lo, u0[2]._lo, u1[2]._lo);
   __ poly1305_fully_reduce(S0, u0);
 
   // And store it all back
