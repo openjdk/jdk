@@ -276,6 +276,9 @@ public class KeepAliveCache
                     removeVector(key);
                 }
             } finally {
+                if (isEmpty()) {
+                    keepAliveTimer = null;
+                }
                 cacheLock.unlock();
                 // close connections outside cacheLock
                 if (closeList != null) {
@@ -284,7 +287,7 @@ public class KeepAliveCache
                     }
                 }
             }
-        } while (!isEmpty());
+        } while (keepAliveTimer == Thread.currentThread());
     }
 
     /*
