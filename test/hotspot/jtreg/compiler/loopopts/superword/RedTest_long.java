@@ -41,16 +41,19 @@ public class RedTest_long {
         TestFramework framework = new TestFramework();
         framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
                            "-XX:LoopUnrollLimit=250",
-                           "-XX:CompileThresholdScaling=0.1",
-                           "-XX:-TieredCompilation");
+                           "-XX:CompileThresholdScaling=0.1");
         int i = 0;
         Scenario[] scenarios = new Scenario[8];
-        for (String reductionSign : new String[] {"+", "-"}) {
-            for (int maxUnroll : new int[] {2, 4, 8, 16}) {
-                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
-                                               "-XX:LoopMaxUnroll=" + maxUnroll);
-                i++;
-            }
+        for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+          scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
+                                         "-XX:LoopMaxUnroll=" + maxUnroll,
+                                         "-XX:-TieredCompilation");
+          i++;
+        }
+        for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+          scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
+                                         "-XX:LoopMaxUnroll=" + maxUnroll);
+          i++;
         }
         framework.addScenarios(scenarios);
         framework.start();

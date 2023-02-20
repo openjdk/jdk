@@ -39,8 +39,7 @@ public class SumRed_Double {
         TestFramework framework = new TestFramework();
         framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
                            "-XX:LoopUnrollLimit=250",
-                           "-XX:CompileThresholdScaling=0.1",
-                           "-XX:-TieredCompilation");
+                           "-XX:CompileThresholdScaling=0.1");
         int i = 0;
         Scenario[] scenarios = new Scenario[8];
         for (String reductionSign : new String[] {"+", "-"}) {
