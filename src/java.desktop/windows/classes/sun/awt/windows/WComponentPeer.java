@@ -73,6 +73,8 @@ import sun.java2d.opengl.OGLSurfaceData;
 import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
 
+import javax.swing.plaf.FontUIResource;
+
 public abstract class WComponentPeer extends WObjectPeer
     implements ComponentPeer, DropTargetPeer
 {
@@ -591,7 +593,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     // fallback default font object
-    static final Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
+    static final Font defaultFont = new FontUIResource(Font.DIALOG, Font.PLAIN, 12);
 
     @Override
     public Graphics getGraphics() {
