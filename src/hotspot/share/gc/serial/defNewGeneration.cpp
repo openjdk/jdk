@@ -212,7 +212,7 @@ class CLDScanClosure: public CLDClosure {
       _scanned_cld(nullptr) {}
 
     void set_scanned_cld(ClassLoaderData* cld) {
-      assert(cld == NULL || _scanned_cld == NULL, "Must be");
+      assert(cld == nullptr || _scanned_cld == nullptr, "Must be");
       _scanned_cld = cld;
     }
 
