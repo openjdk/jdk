@@ -239,6 +239,29 @@ public class IREncodingPrinter {
             return false;
         }
 
+        List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
+            // Intel SSE
+            "sse2",
+            "ssse3",
+            "sse4.1",
+            // Intel AVX
+            "avx",
+            "avx2",
+            "avx512",
+            "avx512dq",
+            "avx512vl",
+            "avx512f",
+            // arm
+            "asimd",
+            "sve", // TODO: ok?
+            "sve1" // TODO: ok?
+        ));
+
+        if (!verifiedCPUFeatures.contains(feature)) {
+            TestFormat.failNoThrow("Provided CPU feature is not in verified list: " + feature + failAt());
+            return false;
+        }
+
         boolean trueValue = value.contains("true");
         boolean falseValue = value.contains("false");
 
