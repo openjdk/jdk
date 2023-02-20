@@ -1191,6 +1191,10 @@ public:
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
+
+  // Convert BootTest condition to Assembler condition.
+  // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+  Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2519,6 +2523,40 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
     }
   }
   return true;
+}
+
+// Convert BootTest condition to Assembler condition.
+// Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond) {
+  switch(cond) {
+    case BoolTest::eq:
+      return Assembler::EQ;
+    case BoolTest::ne:
+      return Assembler::NE;
+    case BoolTest::le:
+      return Assembler::LE;
+    case BoolTest::ge:
+      return Assembler::GE;
+    case BoolTest::lt:
+      return Assembler::LT;
+    case BoolTest::gt:
+      return Assembler::GT;
+    case BoolTest::ule:
+      return Assembler::LS;
+    case BoolTest::uge:
+      return Assembler::HS;
+    case BoolTest::ult:
+      return Assembler::LO;
+    case BoolTest::ugt:
+      return Assembler::HI;
+    case BoolTest::overflow:
+      return Assembler::VS;
+    case BoolTest::no_overflow:
+      return Assembler::VC;
+    default:
+      ShouldNotReachHere();
+      return Assembler::Condition(-1);
+  }
 }
 
 // Binary src (Replicate con)
@@ -4250,6 +4288,28 @@ operand immI_65535()
 operand immI_positive()
 %{
   predicate(n->get_int() > 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for signed compare
+operand immI_cmp_cond()
+%{
+  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for unsigned compare
+operand immI_cmpU_cond()
+%{
+  predicate(n->get_int() > (int)(BoolTest::unsigned_compare));
   match(ConI);
 
   op_cost(0);
@@ -14056,31 +14116,6 @@ instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
   %}
 %}
 
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct bits_reverse_I(iRegINoSp dst, iRegIorL2I src)
-%{
-  match(Set dst (ReverseI src));
-  ins_cost(INSN_COST);
-  format %{ "rbitw  $dst, $src" %}
-  ins_encode %{
-    __ rbitw($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
-%{
-  match(Set dst (ReverseL src));
-  ins_cost(INSN_COST);
-  format %{ "rbit  $dst, $src" %}
-  ins_encode %{
-    __ rbit($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg);
-%}
 
 
 // END This section of the file is automatically generated. Do not edit --------------

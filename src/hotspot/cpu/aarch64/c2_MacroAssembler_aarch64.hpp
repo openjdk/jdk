@@ -35,6 +35,9 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
+  static int entry_barrier_stub_size();
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
@@ -80,7 +83,7 @@
                     FloatRegister src2, int cond, bool isQ);
 
   void neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
-                         int cond, bool isQ);
+                         Condition cond, bool isQ);
 
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, int cond);

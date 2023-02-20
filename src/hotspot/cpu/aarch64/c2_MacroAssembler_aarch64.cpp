@@ -960,36 +960,27 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
 }
 
 void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
-                                          int cond, bool isQ) {
+                                          Condition cond, bool isQ) {
   SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: fcm(Assembler::EQ, dst, size, src); break;
-      case BoolTest::ne: {
-        fcm(Assembler::EQ, dst, size, src);
-        notr(dst, isQ ? T16B : T8B, dst);
-        break;
-      }
-      case BoolTest::ge: fcm(Assembler::GE, dst, size, src); break;
-      case BoolTest::gt: fcm(Assembler::GT, dst, size, src); break;
-      case BoolTest::le: fcm(Assembler::LE, dst, size, src); break;
-      case BoolTest::lt: fcm(Assembler::LT, dst, size, src); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      fcm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      fcm(cond, dst, size, src);
     }
   } else {
     switch (cond) {
-      case BoolTest::eq: cmeq(dst, size, src); break;
-      case BoolTest::ne: {
+      case Assembler::EQ: cmeq(dst, size, src); break;
+      case Assembler::NE: {
         cmeq(dst, size, src);
         notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
-      case BoolTest::ge: cmge(dst, size, src); break;
-      case BoolTest::gt: cmgt(dst, size, src); break;
-      case BoolTest::le: cmle(dst, size, src); break;
-      case BoolTest::lt: cmlt(dst, size, src); break;
+      case Assembler::GE: cmge(dst, size, src); break;
+      case Assembler::GT: cmgt(dst, size, src); break;
+      case Assembler::LE: cmle(dst, size, src); break;
+      case Assembler::LT: cmlt(dst, size, src); break;
       default:
         assert(false, "unsupported");
         ShouldNotReachHere();
