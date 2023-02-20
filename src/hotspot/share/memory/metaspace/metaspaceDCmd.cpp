@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,8 +60,8 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
 
 int MetaspaceDCmd::num_arguments() {
   ResourceMark rm;
-  MetaspaceDCmd* dcmd = new MetaspaceDCmd(NULL, false);
-  if (dcmd != NULL) {
+  MetaspaceDCmd* dcmd = new MetaspaceDCmd(nullptr, false);
+  if (dcmd != nullptr) {
     DCmdMark mark(dcmd);
     return dcmd->_dcmdparser.num_arguments();
   } else {
@@ -73,7 +73,7 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
   // Parse scale value.
   const char* scale_value = _scale.value();
   size_t scale = 0;
-  if (scale_value != NULL) {
+  if (scale_value != nullptr) {
     if (strcasecmp("dynamic", scale_value) == 0) {
       scale = 0;
     } else {

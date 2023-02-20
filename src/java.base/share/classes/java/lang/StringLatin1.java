@@ -109,12 +109,8 @@ final class StringLatin1 {
 
     public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
-            if (value[k] != other[k]) {
-                return getChar(value, k) - getChar(other, k);
-            }
-        }
-        return len1 - len2;
+        int k = ArraysSupport.mismatch(value, other, lim);
+        return (k < 0) ? len1 - len2 : getChar(value, k) - getChar(other, k);
     }
 
     @IntrinsicCandidate

@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -62,7 +63,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1VerifyOopClosure    _verify_closure;
+  G1VerifyLiveClosure   _verify_closure;
   G1FollowStackClosure  _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;
