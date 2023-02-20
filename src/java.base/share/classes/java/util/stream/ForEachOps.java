@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,6 @@ final class ForEachOps {
             }
         }
 
-
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,
                                      Sink<T> action) {
@@ -511,8 +510,7 @@ final class ForEachOps {
             // "happens-before" completion of the associated left-most leaf task
             // of right subtree (if any, which can be this task's right sibling)
             //
-            @SuppressWarnings("unchecked")
-            var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, null);
+            var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, (ForEachOrderedTask<S, T>)null);
             if (leftDescendant != null)
                 leftDescendant.tryComplete();
         }
