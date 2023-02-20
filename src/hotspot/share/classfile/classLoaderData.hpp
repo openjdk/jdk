@@ -290,6 +290,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void print_value_on(outputStream* out) const;
   void verify();
 
+  bool handles_contain(oop obj);
   OopHandle add_handle(Handle h);
   void remove_handle(OopHandle h);
   void init_handle_locked(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field

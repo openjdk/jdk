@@ -1442,6 +1442,70 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   return true;
 }
 
+// Check if the holder of the target method is reachable from the caller nmethod if
+// the call is statically bound.
+// Without that path the target method could get unloaded even if the caller
+// nmethod is not unloading and a dangling Method* could be left int the static
+// stub for the call.
+// (See also ClassLoaderData::record_dependency())
+static void check_path_to_callee(bool is_virtual,
+                                 bool is_optimized,
+                                 CompiledMethod* from_cm,
+                                 methodHandle to_method,
+                                 Bytecodes::Code invoke_code,
+                                 JavaThread* thread) {
+  nmethod* from_nm = from_cm->as_nmethod_or_null();
+  InstanceKlass* to_klass = to_method->method_holder();
+  oop to_holder = to_klass->klass_holder();
+  ClassLoaderData * const to_cld = to_klass->class_loader_data();
+  if (from_nm != nullptr && !to_cld->is_permanent_class_loader_data()) {
+    RegisterMap regmap(thread,
+                       RegisterMap::UpdateMap::skip,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
+    Method* from_method = thread->last_java_vframe(&regmap)->method();
+    ClassLoaderData* const from_cld = from_method->method_holder()->class_loader_data();
+
+    if (to_cld->has_class_mirror_holder()) {
+      if (from_cld == to_cld) {
+        return;
+      }
+    } else {
+      oop to = to_cld->class_loader();
+      oop from = from_cld->class_loader();
+
+      if (from == to ||
+          (!from_cld->is_boot_class_loader_data() &&
+           java_lang_ClassLoader::isAncestor(from, to))) {
+        return; // `to` is reachable by iterating parents of `from`
+      }
+    }
+
+    oop* const begin = from_nm->oops_begin();
+    oop* const end = from_nm->oops_end();
+    for (oop* p = begin; p < end; p++) {
+      oop obj = NMethodAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
+      if (obj == to_holder) {
+        return;
+      }
+    }
+
+    // The callers loader will keep the callee alive if a dependency has been recorded with
+    // ClassLoaderData::record_dependency()
+    if (from_cld->handles_contain(to_holder)) {
+      return;
+    }
+
+    {
+      stringStream ss;
+      to_method->print_short_name(&ss);
+      guarantee(false, "Missing dependency resolving %s%s (%s) call to %s",
+                (is_optimized) ? "optimized " : "", (is_virtual) ? "virtual" : "static",
+                Bytecodes::name(invoke_code), ss.freeze());
+    }
+  }
+}
+
 // Resolves a call.  The compilers generate code for calls that go here
 // and are patched with the real destination of the call.
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
@@ -1490,6 +1554,11 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
                   p2i(caller_frame.pc()), p2i(callee_method->code()));
   }
 #endif
+
+  if (!is_virtual || is_optimized) {
+    // The holder of the callee_method must be reachable from caller_nm
+    check_path_to_callee(is_virtual, is_optimized, caller_nm, callee_method, invoke_code, current /* thread */);
+  }
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||

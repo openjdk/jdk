@@ -630,17 +630,14 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
     }
 
     case relocInfo::metadata_type: {
-      // Only the metadata relocations contained in static/opt virtual call stubs
-      // contains the Method* passed to c2i adapters. It is the only metadata
-      // relocation that needs to be walked, as it is the one metadata relocation
-      // that violates the invariant that all metadata relocations have an oop
-      // in the compiled method (due to deferred resolution and code patching).
-
-      // This causes dead metadata to remain in compiled methods that are not
-      // unloading. Unless these slippery metadata relocations of the static
-      // stubs are at least cleared, subsequent class redefinition operations
-      // will access potentially free memory, and JavaThread execution
-      // concurrent to class unloading may call c2i adapters with dead methods.
+      // Only the metadata relocations contained in static/opt virtual call
+      // stubs contains the Method* passed to c2i adapters. It is the only
+      // metadata relocation that violates the invariant that all metadata
+      // relocations have an oop in the compiled method (due to deferred
+      // resolution and code patching). It is assumed though that the holder oop
+      // of the Method* is still reachable starting from the nmethod oops. This
+      // is checked when statically bound calls are resolved.
+      // (see SharedRuntime::resolve_sub_helper())
       if (!is_in_static_stub) {
         // The first metadata relocation after a static stub relocation is the
         // metadata relocation of the static stub used to pass the Method* to
@@ -657,13 +654,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       Metadata* md = r->metadata_value();
       if (md != nullptr && md->is_method()) {
         Method* method = static_cast<Method*>(md);
-        if (!method->method_holder()->is_loader_alive()) {
-          Atomic::store(r->metadata_addr(), (Method*)nullptr);
-
-          if (!r->metadata_is_immediate()) {
-            r->fix_metadata_relocation();
-          }
-        }
+        guarantee(method->method_holder()->is_loader_alive(), "dangling pointer");
       }
       break;
     }

@@ -787,6 +787,10 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
   return metaspace;
 }
 
+bool ClassLoaderData::handles_contain(oop obj) {
+  return _handles.contains(obj);
+}
+
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   record_modified_oops();
