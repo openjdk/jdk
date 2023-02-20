@@ -461,7 +461,7 @@ public class Check {
     public Name localClassName(ClassSymbol c) {
         Name enclFlatname = c.owner.enclClass().flatname;
         String enclFlatnameStr = enclFlatname.toString();
-        Pair<Name, Name> key = new Pair<>(enclFlatname, c.name);
+        Pair<Name, Name> key = localClassNameKey(c);
         Integer index = localClassNameIndexes.get(key);
         for (int i = (index == null) ? 1 : index; ; i++) {
             Name flatname = names.fromString(enclFlatnameStr
@@ -473,10 +473,32 @@ public class Check {
         }
     }
 
+    /** Generate a key for the local class name index map.
+     *
+     *  To help avoid clashes on case-insensitive filesystems,
+     *  we use case-insensitive local class names in our map.
+     *  While this means clearLocalClassNameIndexes() could clear
+     *  keys for more than one symbol, its only invoked after
+     *  all related local classes have been processed for a class.
+     *  We only lowercase A-Z to avoid any locale issues.
+     */
+    private Pair<Name, Name> localClassNameKey(ClassSymbol c) {
+        Name name1 = c.owner.enclClass().flatname;
+        byte[] bytes2 = c.name.toUtf();
+        for (int i = 0; i < bytes2.length; i++) {
+            char ch = (char)(bytes2[i] & 0xff);
+            if (ch >= 'A' && ch <= 'Z') {
+                ch = (char)(ch - 'A' + 'a');
+                bytes2[i] = (byte)ch;
+            }
+        }
+        Name name2 = names.fromUtf(bytes2);
+        return new Pair<>(name1, name2);
+    }
+
     public void clearLocalClassNameIndexes(ClassSymbol c) {
         if (c.owner != null && c.owner.kind != NIL) {
-            localClassNameIndexes.remove(new Pair<>(
-                    c.owner.enclClass().flatname, c.name));
+            localClassNameIndexes.remove(localClassNameKey(c));
         }
     }
 
