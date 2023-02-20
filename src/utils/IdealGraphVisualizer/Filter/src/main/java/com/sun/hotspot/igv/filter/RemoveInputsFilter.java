@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class RemoveInputsFilter extends AbstractFilter {
 
                     first.setText(sb.toString());
 
-                    for (int i = 1; i < last.size(); i++) {
+                    for (int i = 0; i < last.size(); i++) {
                         f.removeSlot(last.get(i));
                     }
                 }
