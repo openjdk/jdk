@@ -1692,7 +1692,7 @@ public:
 
   // Convenience common pre-built types.
   static const TypeInstKlassPtr* OBJECT; // Not-null object klass or below
-  static const TypeInstKlassPtr* OBJECT_OR_nullptr; // Maybe-null version of same
+  static const TypeInstKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
 private:
   virtual bool is_meet_subtype_of_helper(const TypeKlassPtr* other, bool this_xk, bool other_xk) const;
 };

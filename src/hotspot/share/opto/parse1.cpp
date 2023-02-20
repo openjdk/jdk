@@ -1691,7 +1691,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       gvn().set_type(r, Type::CONTROL);
       record_for_igvn(r);
       // zap all inputs to null for debugging (done in Node(uint) constructor)
-      // for (int j = 1; j < edges+1; j++) { r->init_req(j, null); }
+      // for (int j = 1; j < edges+1; j++) { r->init_req(j, nullptr); }
       r->init_req(pnum, control());
       set_control(r);
       target->copy_irreducible_status_to(r, jvms());

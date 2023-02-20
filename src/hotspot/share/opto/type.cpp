@@ -610,7 +610,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeAryPtr::_array_body_type[T_DOUBLE]  = TypeAryPtr::DOUBLES;
 
   TypeInstKlassPtr::OBJECT = TypeInstKlassPtr::make(TypePtr::NotNull, current->env()->Object_klass(), 0);
-  TypeInstKlassPtr::OBJECT_OR_nullptr = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), 0);
+  TypeInstKlassPtr::OBJECT_OR_NULL = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), 0);
 
   const Type **fi2c = TypeTuple::fields(2);
   fi2c[TypeFunc::Parms+0] = TypeInstPtr::BOTTOM; // Method*
@@ -5718,7 +5718,7 @@ void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
 
 // Not-null object klass or below
 const TypeInstKlassPtr *TypeInstKlassPtr::OBJECT;
-const TypeInstKlassPtr *TypeInstKlassPtr::OBJECT_OR_nullptr;
+const TypeInstKlassPtr *TypeInstKlassPtr::OBJECT_OR_NULL;
 
 bool TypeInstKlassPtr::eq(const Type *t) const {
   const TypeKlassPtr *p = t->is_klassptr();

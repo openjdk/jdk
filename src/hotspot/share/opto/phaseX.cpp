@@ -107,7 +107,7 @@ Node *NodeHash::hash_find( const Node *n ) {
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
     NOT_PRODUCT( _lookup_misses++ );
-    return nullptr;                // Miss!
+    return nullptr;             // Miss!
   }
 
   int op = n->Opcode();
@@ -129,7 +129,7 @@ Node *NodeHash::hash_find( const Node *n ) {
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
       NOT_PRODUCT( _lookup_misses++ );
-      return nullptr;              // Miss!
+      return nullptr;           // Miss!
     }
   }
   ShouldNotReachHere();
@@ -156,7 +156,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
     _table[key] = n;            // Insert into table!
     debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
     check_grow();               // Grow table if insert hit limit
-    return nullptr;                // Miss!
+    return nullptr;             // Miss!
   }
   else if( k == _sentinel ) {
     first_sentinel = key;      // Can insert here
@@ -185,7 +185,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
       _table[key] = n;          // Insert into table!
       debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
       check_grow();             // Grow table if insert hit limit
-      return nullptr;              // Miss!
+      return nullptr;           // Miss!
     }
     else if( first_sentinel == 0 && k == _sentinel ) {
       first_sentinel = key;    // Can insert here
@@ -1514,7 +1514,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
               }
             }
-          } // if (in != null && in != C->top())
+          } // if (in != nullptr && in != C->top())
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;

@@ -450,7 +450,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
 
   // Currently 'sub' is either Allocate, Initialize or Start nodes.
   // Or Region for the check in LoadNode::Ideal();
-  // 'sub' should have sub->in(0) != null.
+  // 'sub' should have sub->in(0) != nullptr.
   assert(sub->is_Allocate() || sub->is_Initialize() || sub->is_Start() ||
          sub->is_Region() || sub->is_Call(), "expecting only these nodes");
 
@@ -1116,8 +1116,8 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
         Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
-        if (ld_base == nullptr)                                   return nullptr;
-        if (st_base == nullptr)                                   return nullptr;
+        if (ld_base == nullptr)                                return nullptr;
+        if (st_base == nullptr)                                return nullptr;
         if (!ld_base->eqv_uncast(st_base, /*keep_deps=*/true)) return nullptr;
         if (ld_off != st_off)                                  return nullptr;
         if (ld_off == Type::OffsetBot)                         return nullptr;
@@ -4629,7 +4629,7 @@ Node* MergeMemNode::make_empty_memory() {
 MergeMemNode::MergeMemNode(Node *new_base) : Node(1+Compile::AliasIdxRaw) {
   init_class_id(Class_MergeMem);
   // all inputs are nullified in Node::Node(int)
-  // set_input(0, null);  // no control input
+  // set_input(0, nullptr);  // no control input
 
   // Initialize the edges uniformly to top, for starters.
   Node* empty_mem = make_empty_memory();

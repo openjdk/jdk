@@ -254,7 +254,7 @@ public:
 
   // Create a new Node with given input edges.
   // This version requires use of the "edge-count" new.
-  // E.g.  new (C,3) FooNode( C, null, left, right );
+  // E.g.  new (C,3) FooNode( C, nullptr, left, right );
   Node( Node *n0 );
   Node( Node *n0, Node *n1 );
   Node( Node *n0, Node *n1, Node *n2 );
@@ -837,11 +837,11 @@ public:
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
   type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class: %s", Name()); \
+    assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \
-    return (is_##type()) ? as_##type() : nullptr;               \
+    return (is_##type()) ? as_##type() : nullptr;            \
   }
 
   DEFINE_CLASS_QUERY(AbstractLock)
@@ -1198,7 +1198,7 @@ public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
   void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
-  void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, null, null)
+  void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:
     // overridden to implement coloring of node idx
@@ -1258,7 +1258,7 @@ public:
 };
 
 inline bool not_a_node(const Node* n) {
-  if (n == nullptr)                   return true;
+  if (n == nullptr)                return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;

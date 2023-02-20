@@ -1660,7 +1660,7 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = false_path; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = true_path;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = false_path; break;
-    default:           return nullptr;                              break;
+    default:           return nullptr;                           break;
     }
   } else if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpL) {
     switch (bol->_test._test) {
@@ -1668,7 +1668,7 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = false_path; break;
     case BoolTest::gt:
     case BoolTest::ge: cmp_zero_idx = 2; phi_x_idx = true_path;  break;
-    default:           return nullptr;                              break;
+    default:           return nullptr;                           break;
     }
   }
 

@@ -1233,7 +1233,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
             assert(remove.at(k)->is_Proj() && (remove.at(k)->in(0)->is_MachBranch()), "");
           }
         }
-        // If anything has been inserted (n2 != null), continue after last node inserted.
+        // If anything has been inserted (n2 != nullptr), continue after last node inserted.
         // This does not always work. Some postalloc expands don't insert any nodes, if they
         // do optimizations (e.g., max(x,x)). In this case we decrement j accordingly.
         j = n2 ? b->find_node(n2) : j;

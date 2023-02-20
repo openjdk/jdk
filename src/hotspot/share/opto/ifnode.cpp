@@ -167,9 +167,9 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       // Disabled following code because I cannot tell if exactly one
       // path dominates without a real dominator check. CNC 9/9/1999
       //uint vop = v->Opcode();
-      //if( vop == Op_Phi ) {     // Phi from another merge point might be OK
-      //  Node *r = v->in(0);     // Get controlling point
-      //  if( !r ) return null;   // Degraded to a copy
+      //if( vop == Op_Phi ) {        // Phi from another merge point might be OK
+      //  Node *r = v->in(0);        // Get controlling point
+      //  if( !r ) return nullptr;   // Degraded to a copy
       //  // Find exactly one path in (either True or False doms, but not IFF)
       //  int cnt = 0;
       //  for( uint i = 1; i < r->req(); i++ )

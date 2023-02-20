@@ -175,12 +175,12 @@ class Block_Stack {
       t->_block = b;                // Save actual block
       t->_semi = pre_order;         // Block to DFS map
       t->_label = t;                // DFS to vertex map
-      t->_ancestor = nullptr;          // Fast LINK & EVAL setup
+      t->_ancestor = nullptr;       // Fast LINK & EVAL setup
       t->_child = &_tarjan[0];      // Sentenial
       t->_size = 1;
       t->_bucket = nullptr;
       if (pre_order == 1)
-        t->_parent = nullptr;          // first block doesn't have parent
+        t->_parent = nullptr;       // first block doesn't have parent
       else {
         // Save parent (current top block on stack) in DFS
         t->_parent = &_tarjan[_stack_top->block->_pre_order];
@@ -525,7 +525,7 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
       dfsorder[b->_idx] = dfsnum;      // Save DFS order info
       w->_semi = dfsnum;               // Node to DFS map
       w->_label = w;                   // DFS to vertex map
-      w->_ancestor = nullptr;             // Fast LINK & EVAL setup
+      w->_ancestor = nullptr;          // Fast LINK & EVAL setup
       w->_child = &ntarjan[0];         // Sentinel
       w->_size = 1;
       w->_bucket = nullptr;

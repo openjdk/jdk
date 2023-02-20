@@ -505,7 +505,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
               assert(!def->bottom_type()->isa_oop_ptr(), "expecting non-oop mem input");
             } else if (base != fp || offset == Type::OffsetBot) {
               // Do nothing: the fp operand is either not from a memory use
-              // (base == null) OR the fp is used in a non-memory context
+              // (base == nullptr) OR the fp is used in a non-memory context
               // (base is some other register) OR the offset is not constant,
               // so it is not a stack slot.
             } else {

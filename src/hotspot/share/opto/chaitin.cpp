@@ -2456,7 +2456,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
                     assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
-                    // Base either ConP(null) or loadConP
+                    // Base either ConP(nullptr) or loadConP
                     if (check->is_Mach()) {
                       assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
                     } else {

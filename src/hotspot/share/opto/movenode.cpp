@@ -266,7 +266,7 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = IfFalse; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = IfTrue;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = IfFalse; break;
-    default:           return nullptr;                           break;
+    default:           return nullptr;                        break;
   }
 
   // Find zero input of CmpF; the other input is being abs'd
@@ -322,7 +322,7 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = IfFalse; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = IfTrue;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = IfFalse; break;
-    default:           return nullptr;                           break;
+    default:           return nullptr;                        break;
   }
 
   // Find zero input of CmpD; the other input is being abs'd

@@ -1041,7 +1041,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
   countx = transform_later(new SubXNode(countx, MakeConX(dest_off)));
   countx = transform_later(new URShiftXNode(countx, intcon(LogBytesPerLong)));
 
-  bool disjoint_bases = true;   // since alloc != null
+  bool disjoint_bases = true;   // since alloc isn't null
   generate_unchecked_arraycopy(ctrl, mem,
                                adr_type, T_LONG, disjoint_bases,
                                sptr, nullptr, dptr, nullptr, countx, dest_uninitialized);

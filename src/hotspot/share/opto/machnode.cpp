@@ -300,7 +300,7 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     // Lookup the TypePtr used by indOffset32X, a compile-time constant oop,
     // Add the offset determined by the "base", or use Type::OffsetBot.
     if( adr_type == TYPE_PTR_SENTINAL ) {
-      const TypePtr *t_disp = oper->disp_as_type();  // only !null for indOffset32X
+      const TypePtr *t_disp = oper->disp_as_type();  // only not null for indOffset32X
       if (t_disp != nullptr) {
         offset = Type::OffsetBot;
         const Type* t_base = base->bottom_type();

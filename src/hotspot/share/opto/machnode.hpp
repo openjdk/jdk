@@ -955,7 +955,7 @@ public:
       assert(_method->constant_encoding()->is_method(), "should point to a Method");
       return cbuf.oop_recorder()->find_index(_method->constant_encoding());
     }
-    return 0; // Use symbolic info from bytecode (resolved_method == null).
+    return 0; // Use symbolic info from bytecode (resolved_method is null).
   }
 
 #ifndef PRODUCT

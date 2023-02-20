@@ -284,7 +284,7 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
   int    deepb_dom_depth = 0;
   for (uint k = 0; k < n->len(); k++) { // For all inputs
     Node* inn = n->in(k);               // Get input
-    if (inn == nullptr)  continue;         // Ignore null, missing inputs
+    if (inn == nullptr)  continue;      // Ignore null, missing inputs
     Block* inb = cfg->get_block_for_node(inn);
     assert(inb != nullptr, "must already have scheduled this input");
     if (deepb_dom_depth < (int) inb->_dom_depth) {
@@ -1209,7 +1209,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     if (LCA == nullptr) {
       // Bailout without retry
       assert(false, "graph should be schedulable");
-      C->record_method_not_compilable("late schedule failed: LCA == null");
+      C->record_method_not_compilable("late schedule failed: LCA is null");
       return least;
     }
 

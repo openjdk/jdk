@@ -127,7 +127,7 @@ class StringConcat : public ResourceObj {
   static Node* skip_string_null_check(Node* value) {
     // Look for a diamond shaped Null check of toString() result
     // (could be code from String.valueOf()):
-    // (Proj == null) ? "null":"CastPP(Proj)#Notnull
+    // (Proj == nullptr) ? "null":"CastPP(Proj)#Notnull
     if (value->is_Phi()) {
       int true_path = value->as_Phi()->is_diamond_phi();
       if (true_path != 0) {

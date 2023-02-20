@@ -2123,7 +2123,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   // "inlining_incrementally() == false" is used to signal that no inlining is allowed
   // (see LateInlineVirtualCallGenerator::do_late_inline_check() for details).
-  // Tracking and verification of modified nodes is disabled by setting "_modified_nodes == null"
+  // Tracking and verification of modified nodes is disabled by setting "_modified_nodes == nullptr"
   // as if "inlining_incrementally() == true" were set.
   assert(inlining_incrementally() == false, "not allowed");
   assert(_modified_nodes == nullptr, "not allowed");
@@ -3440,18 +3440,18 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           //
           //    LoadN memory, narrow_oop_reg
           //    decode narrow_oop_reg, base_reg
-          //    CmpP base_reg, null
+          //    CmpP base_reg, nullptr
           //    CastPP base_reg // NotNull
           //    Load [base_reg + offset], val_reg
           //
           // after these transformations will be
           //
           //    LoadN memory, narrow_oop_reg
-          //    CmpN narrow_oop_reg, null
+          //    CmpN narrow_oop_reg, nullptr
           //    decode_not_null narrow_oop_reg, base_reg
           //    Load [base_reg + offset], val_reg
           //
-          // and the uncommon path (== null) will use narrow_oop_reg directly
+          // and the uncommon path (== nullptr) will use narrow_oop_reg directly
           // since narrow oops can be used in debug info now (see the code in
           // final_graph_reshaping_walk()).
           //

@@ -1178,7 +1178,7 @@ CallGenerator* CallGenerator::for_predicated_intrinsic(CallGenerator* intrinsic,
 
 JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
   // The code we want to generate here is:
-  //    if (receiver == null)
+  //    if (receiver == nullptr)
   //        uncommon_Trap
   //    if (predicate(0))
   //        do_intrinsic(0)

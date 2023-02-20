@@ -780,10 +780,10 @@ void Node::add_req( Node *n ) {
     grow( _max+1 );
 
   // Find a precedence edge to move
-  if( in(_cnt) != nullptr ) {       // Next precedence edge is busy?
+  if( in(_cnt) != nullptr ) {   // Next precedence edge is busy?
     uint i;
     for( i=_cnt; i<_max; i++ )
-      if( in(i) == nullptr )       // Find the null at end of prec edge list
+      if( in(i) == nullptr )    // Find the null at end of prec edge list
         break;                  // There must be one, since we grew the array
     _in[i] = in(_cnt);          // Move prec over, making space for req edge
   }
@@ -808,10 +808,10 @@ void Node::add_req_batch( Node *n, uint m ) {
     grow( _max+m );
 
   // Find a precedence edge to move
-  if( _in[_cnt] != nullptr ) {     // Next precedence edge is busy?
+  if( _in[_cnt] != nullptr ) {  // Next precedence edge is busy?
     uint i;
     for( i=_cnt; i<_max; i++ )
-      if( _in[i] == nullptr )      // Find the null at end of prec edge list
+      if( _in[i] == nullptr )   // Find the null at end of prec edge list
         break;                  // There must be one, since we grew the array
     // Slide all the precs over by m positions (assume #prec << m).
     Copy::conjoint_words_to_higher((HeapWord*)&_in[_cnt], (HeapWord*)&_in[_cnt+m], ((i-_cnt)*sizeof(Node*)));

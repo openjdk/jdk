@@ -50,37 +50,37 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _phase(phase),
   _arena(phase->C->comp_arena()),
   _igvn(phase->_igvn),
-  _packset(arena(), 8,  0, nullptr),         // packs for the current block
+  _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
-  _block(arena(), 8,  0, nullptr),           // nodes in current block
-  _post_block(arena(), 8, 0, nullptr),       // nodes common to current block which are marked as post loop vectorizable
-  _data_entry(arena(), 8,  0, nullptr),      // nodes with all inputs from outside
-  _mem_slice_head(arena(), 8,  0, nullptr),  // memory slice heads
-  _mem_slice_tail(arena(), 8,  0, nullptr),  // memory slice tails
-  _node_info(arena(), 8,  0, SWNodeInfo::initial), // info needed per node
-  _clone_map(phase->C->clone_map()),      // map of nodes created in cloning
-  _cmovev_kit(_arena, this),              // map to facilitate CMoveV creation
-  _align_to_ref(nullptr),                    // memory reference to align vectors to
-  _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial), // runtime disambiguated pointer pairs
-  _dg(_arena),                            // dependence graph
-  _visited(arena()),                      // visited node set
-  _post_visited(arena()),                 // post visited node set
-  _n_idx_list(arena(), 8),                // scratch list of (node,index) pairs
-  _nlist(arena(), 8, 0, nullptr),            // scratch list of nodes
-  _stk(arena(), 8, 0, nullptr),              // scratch stack of nodes
-  _lpt(nullptr),                             // loop tree node
-  _lp(nullptr),                              // CountedLoopNode
-  _pre_loop_end(nullptr),                    // Pre loop CountedLoopEndNode
-  _bb(nullptr),                              // basic block
-  _iv(nullptr),                              // induction var
-  _race_possible(false),                  // cases where SDMU is true
-  _early_return(true),                    // analysis evaluations routine
-  _do_vector_loop(phase->C->do_vector_loop()),  // whether to do vectorization/simd style
+  _block(arena(), 8,  0, nullptr),                          // nodes in current block
+  _post_block(arena(), 8, 0, nullptr),                      // nodes common to current block which are marked as post loop vectorizable
+  _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
+  _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
+  _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
+  _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
+  _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
+  _cmovev_kit(_arena, this),                                // map to facilitate CMoveV creation
+  _align_to_ref(nullptr),                                   // memory reference to align vectors to
+  _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
+  _dg(_arena),                                              // dependence graph
+  _visited(arena()),                                        // visited node set
+  _post_visited(arena()),                                   // post visited node set
+  _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
+  _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
+  _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
+  _lpt(nullptr),                                            // loop tree node
+  _lp(nullptr),                                             // CountedLoopNode
+  _pre_loop_end(nullptr),                                   // Pre loop CountedLoopEndNode
+  _bb(nullptr),                                             // basic block
+  _iv(nullptr),                                             // induction var
+  _race_possible(false),                                    // cases where SDMU is true
+  _early_return(true),                                      // analysis evaluations routine
+  _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
   _do_reserve_copy(DoReserveCopyInSuperWord),
-  _num_work_vecs(0),                      // amount of vector work we have
-  _num_reductions(0),                     // amount of reduction work we have
-  _ii_first(-1),                          // first loop generation index - only if do_vector_loop()
-  _ii_last(-1),                           // last loop generation index - only if do_vector_loop()
+  _num_work_vecs(0),                                        // amount of vector work we have
+  _num_reductions(0),                                       // amount of reduction work we have
+  _ii_first(-1),                                            // first loop generation index - only if do_vector_loop()
+  _ii_last(-1),                                             // last loop generation index - only if do_vector_loop()
   _ii_order(arena(), 8, 0, 0)
 {
 #ifndef PRODUCT
@@ -739,7 +739,7 @@ void SuperWord::find_adjacent_refs() {
         best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
         if (best_align_to_mem_ref == nullptr) {
           if (TraceSuperWord) {
-            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == null");
+            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == nullptr");
           }
           // best_align_to_mem_ref will be used for adjusting the pre-loop limit in
           // SuperWord::align_initial_loop_index. Find one with the biggest vector size,
@@ -4649,7 +4649,7 @@ void SWPointer::Tracer::offset_plus_k_4(Node* n) {
 void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
   if(_slp->is_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
-    print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: _invar != null: ", _invar->_idx); _invar->dump();
+    print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: _invar != nullptr: ", _invar->_idx); _invar->dump();
   }
 }
 

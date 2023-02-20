@@ -1785,7 +1785,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    // For example, replacing "X-1 <u Y" with "X <=u Y" fails to throw an
   //    // exception in case X is 0 (because 0-1 turns into 4billion unsigned but
   //    // "0 <=u Y" is always true).
-  //    if( cmp->Opcode() == Op_CmpU ) return null;
+  //    if( cmp->Opcode() == Op_CmpU ) return nullptr;
   //    int cmp2_op = cmp2->Opcode();
   //    if( _test._test == BoolTest::le ) {
   //      if( cmp1_op == Op_AddI &&

@@ -39,7 +39,7 @@ class CMoveNode : public TypeNode {
   {
     init_class_id(Class_CMove);
     // all inputs are nullified in Node::Node(int)
-    // init_req(Control,null);
+    // init_req(Control,nullptr);
     init_req(Condition,bol);
     init_req(IfFalse,left);
     init_req(IfTrue,right);

@@ -1004,7 +1004,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // == new IR nodes (just before final peel) =>
   //
   // entry_control: {...}
-  // long adjusted_limit = limit + stride;  //because phi_incr != null
+  // long adjusted_limit = limit + stride;  //because phi_incr != nullptr
   // assert(!limit_check_required || (extralong)limit + stride == adjusted_limit);  // else deopt
   // ulong inner_iters_limit = max_jint - ABS(stride) - 1;  //near 0x7FFFFFF0
   // outer_head:
@@ -3406,7 +3406,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
         while( *cp ) cp = &(*cp)->_next;   // Find end of child list
         *cp = ilt->_next;       // Hang next list at end of child list
         *pilt = ilt->_child;    // Move child up to replace ilt
-        ilt->_head = nullptr;      // Flag as a loop UNIONED into parent
+        ilt->_head = nullptr;   // Flag as a loop UNIONED into parent
         ilt = ilt->_child;      // Repeat using new ilt
         continue;               // do not advance over ilt->_child
       }
@@ -3599,8 +3599,8 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   if (_next)  _next ->check_safepts(visited, stack);
 
   if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr && !_irreducible) {
-    bool  has_call         = false; // call on dom-path
-    bool  has_local_ncsfpt = false; // ncsfpt on dom-path at this loop depth
+    bool  has_call         = false;    // call on dom-path
+    bool  has_local_ncsfpt = false;    // ncsfpt on dom-path at this loop depth
     Node* nonlocal_ncsfpt  = nullptr;  // ncsfpt on dom-path at a deeper depth
     // Scan the dom-path nodes from tail to head
     for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
@@ -5298,7 +5298,7 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
     l = l->_parent;
   } while (l != nullptr);
   assert(region->is_in_infinite_subgraph(), "must be in infinite subgraph");
-  // We have "l->_parent == null", which happens only for infinite loops,
+  // We have "l->_parent == nullptr", which happens only for infinite loops,
   // where no parent is attached to the loop. We did not find any irreducible
   // loop from this block out to lp. Thus lp only has one entry, and no exit
   // (it is infinite and reducible). We can always rewrite an infinite loop

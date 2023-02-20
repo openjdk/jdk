@@ -96,7 +96,7 @@ void GraphKit::gen_stub(address C_function,
 
   // Drop in the last_Java_sp.  last_Java_fp is not touched.
   // Always do this after the other "last_Java_frame" fields are set since
-  // as soon as last_Java_sp != null the has_last_Java_frame is true and
+  // as soon as last_Java_sp != nullptr the has_last_Java_frame is true and
   // users will look at the other fields.
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));

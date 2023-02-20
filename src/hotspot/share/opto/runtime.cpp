@@ -1547,7 +1547,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
 #endif
-  assert (exception != nullptr, "should have thrown a nullPointerException");
+  assert (exception != nullptr, "should have thrown a NullPointerException");
 #ifdef ASSERT
   if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
