@@ -288,8 +288,8 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             if (!OPTIONS.contains(key)) {
                 throw new IllegalArgumentException("Unknown recording option: " + key + ". Valid options are " + OPTIONS + ".");
             }
-            if (value == null) {
-                throw new IllegalArgumentException("Incorrect value for option " + key + ". Values must not be null.");
+            if (value != null && !(value instanceof String)) {
+                throw new IllegalArgumentException("Incorrect value for option " + key + ". Values must be of type " + String.class + " .");
             }
         }
 
