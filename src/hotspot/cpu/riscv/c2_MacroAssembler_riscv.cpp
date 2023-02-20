@@ -1706,6 +1706,8 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
   vmv_x_s(dst, tmp);
 }
 
+// Set vl and vtype for full and partial vector operations.
+// (vlmul = m1, vma = mu, vta = tu, vill = false)
 void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (length_in_bytes == MaxVectorSize) {
