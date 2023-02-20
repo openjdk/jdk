@@ -44,8 +44,8 @@ void ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry(narrowOop* src, narro
 // Shenandoah pre write barrier slowpath
 JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread *thread))
   assert(thread == JavaThread::current(), "pre-condition");
-  assert(orig != NULL, "should be optimized out");
-  shenandoah_assert_correct(NULL, orig);
+  assert(orig != nullptr, "should be optimized out");
+  shenandoah_assert_correct(nullptr, orig);
   // store the original value that was in the field reference
   assert(ShenandoahThreadLocalData::satb_mark_queue(thread).is_active(), "Shouldn't be here otherwise");
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
@@ -64,7 +64,7 @@ JRT_END
 // in cloned objects.
 JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* src))
   oop s = oop(src);
-  shenandoah_assert_correct(NULL, s);
+  shenandoah_assert_correct(nullptr, s);
   ShenandoahBarrierSet::barrier_set()->clone_barrier(s);
 JRT_END
 

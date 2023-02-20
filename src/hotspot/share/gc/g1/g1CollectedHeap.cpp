@@ -50,7 +50,6 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1InitLogger.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
@@ -488,40 +487,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
   ShouldNotReachHere();
   return NULL;
-}
-
-void G1CollectedHeap::begin_archive_alloc_range(bool open) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator == nullptr, "should not be initialized");
-  _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
-}
-
-bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
-  // Allocations in archive regions cannot be of a size that would be considered
-  // humongous even for a minimum-sized region, because G1 region sizes/boundaries
-  // may be different at archive-restore time.
-  return word_size >= humongous_threshold_for(HeapRegion::min_region_size_in_words());
-}
-
-HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
-  if (is_archive_alloc_too_large(word_size)) {
-    return nullptr;
-  }
-  return _archive_allocator->archive_mem_allocate(word_size);
-}
-
-void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
-                                              size_t end_alignment_in_bytes) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
-
-  // Call complete_archive to do the real work, filling in the MemRegion
-  // array with the archive regions.
-  _archive_allocator->complete_archive(ranges, end_alignment_in_bytes);
-  delete _archive_allocator;
-  _archive_allocator = nullptr;
 }
 
 bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
@@ -1033,10 +998,6 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (G1HotCardCache::use_cache()) {
-    _hot_card_cache->reset_hot_cache();
-  }
-
   // Discard all remembered set updates and reset refinement statistics.
   G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
@@ -1421,7 +1382,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _verifier(NULL),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
-  _archive_allocator(nullptr),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _monitoring_support(nullptr),
@@ -1438,7 +1398,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(NULL),
   _collection_set(this, _policy),
-  _hot_card_cache(NULL),
   _rem_set(NULL),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
@@ -1576,9 +1535,6 @@ jint G1CollectedHeap::initialize() {
     satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
   }
 
-  // Create the hot card cache.
-  _hot_card_cache = new G1HotCardCache(this);
-
   // Create space mappers.
   size_t page_size = heap_rs.page_size();
   G1RegionToSpaceMapper* heap_storage =
@@ -1601,7 +1557,7 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmap.
+  // Create storage for the BOT, card table and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block Offset Table",
                              G1BlockOffsetTable::compute_size(heap_rs.size() / HeapWordSize),
@@ -1612,20 +1568,12 @@ jint G1CollectedHeap::initialize() {
                              G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardTable::heap_map_factor());
 
-  G1RegionToSpaceMapper* card_counts_storage =
-    create_aux_memory_mapper("Card Counts Table",
-                             G1CardCounts::compute_size(heap_rs.size() / HeapWordSize),
-                             G1CardCounts::heap_map_factor());
-
   size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
   G1RegionToSpaceMapper* bitmap_storage =
     create_aux_memory_mapper("Mark Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
+  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage);
   _card_table->initialize(cardtable_storage);
-
-  // Do later initialization work for concurrent refinement.
-  _hot_card_cache->initialize(card_counts_storage);
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -1637,7 +1585,7 @@ jint G1CollectedHeap::initialize() {
   guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
   G1FromCardCache::initialize(max_reserved_regions());
   // Also create a G1 rem set.
-  _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
+  _rem_set = new G1RemSet(this, _card_table);
   _rem_set->initialize(max_reserved_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -1817,14 +1765,9 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
   return _hrm.total_free_bytes();
 }
 
-void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id) {
-  _hot_card_cache->drain(cl, worker_id);
-}
-
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
   size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   return result;
 }
 
@@ -2846,13 +2789,6 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   assert(!hr->is_empty(), "the region should not be empty");
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
 
-  // Clear the card counts for this region.
-  // Note: we only need to do this if the region is not young
-  // (since we don't refine cards in young regions).
-  if (!hr->is_young()) {
-    _hot_card_cache->reset_card_counts(hr);
-  }
-
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
   _policy->remset_tracker()->update_at_free(hr);
@@ -3073,7 +3009,6 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 
   if (!free_list_only) {
     set_used(cl.total_used());
-    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   }
   assert_used_and_recalculate_used_equal(this);
 }
@@ -3272,17 +3207,11 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
     evac_failure_injector()->reset();
 
     set_used(recalculate_used());
-
-    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
     // The "used" of the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.
     increase_used(_bytes_used_during_gc);
   }
-}
-
-void G1CollectedHeap::reset_hot_card_cache() {
-  _hot_card_cache->reset_hot_cache();
 }
 
 class RebuildCodeRootClosure: public CodeBlobClosure {
