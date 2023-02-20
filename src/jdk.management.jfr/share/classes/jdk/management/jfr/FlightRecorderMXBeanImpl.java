@@ -302,7 +302,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         validateOption(ops, OPTION_DURATION, MBeanUtils::duration);
         validateOption(ops, OPTION_DESTINATION, x -> MBeanUtils.destination(r, x));
 
-        // All OK, now set them.atomically
+        // All OK, now set them
         setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, r::setDumpOnExit);
         setOption(ops, OPTION_DISK, "true", MBeanUtils::booleanValue, r::setToDisk);
         setOption(ops, OPTION_NAME, String.valueOf(r.getId()), Function.identity(), r::setName);
