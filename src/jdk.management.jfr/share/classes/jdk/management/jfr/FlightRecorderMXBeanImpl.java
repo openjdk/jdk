@@ -111,7 +111,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     private static final String OPTION_DUMP_ON_EXIT = "dumpOnExit";
     private static final String OPTION_DURATION = "duration";
     private static final String OPTION_DESTINATION = "destination";
-    private static final List<String> OPTIONS = Arrays.asList(new String[] { OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, OPTION_DESTINATION, });
+    private static final List<String> OPTIONS = Arrays.asList(OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, OPTION_DESTINATION);
     private final StreamManager streamHandler = new StreamManager();
     private final Map<Long, Object> changes = new ConcurrentHashMap<>();
     private final AtomicLong sequenceNumber = new AtomicLong();
@@ -282,14 +282,14 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         for (Map.Entry<String, String> entry : ops.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-            if (!(key instanceof String)) {
-                throw new IllegalArgumentException("Option key must not be null, or other type than " + String.class);
+            if (key == null) {
+                throw new IllegalArgumentException("Option key must not be null.");
             }
             if (!OPTIONS.contains(key)) {
                 throw new IllegalArgumentException("Unknown recording option: " + key + ". Valid options are " + OPTIONS + ".");
             }
-            if (value != null && !(value instanceof String)) {
-                throw new IllegalArgumentException("Incorrect value for option " + key + ". Values must be of type " + String.class + " .");
+            if (value == null) {
+                throw new IllegalArgumentException("Incorrect value for option " + key + ". Values must not be null.");
             }
         }
 
@@ -303,12 +303,12 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         validateOption(ops, OPTION_DESTINATION, x -> MBeanUtils.destination(r, x));
 
         // All OK, now set them.atomically
-        setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, x -> r.setDumpOnExit(x));
-        setOption(ops, OPTION_DISK, "true", MBeanUtils::booleanValue, x -> r.setToDisk(x));
-        setOption(ops, OPTION_NAME, String.valueOf(r.getId()), Function.identity(), x -> r.setName(x));
-        setOption(ops, OPTION_MAX_AGE, null, MBeanUtils::duration, x -> r.setMaxAge(x));
-        setOption(ops, OPTION_MAX_SIZE, "0", MBeanUtils::size, x -> r.setMaxSize(x));
-        setOption(ops, OPTION_DURATION, null, MBeanUtils::duration, x -> r.setDuration(x));
+        setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, r::setDumpOnExit);
+        setOption(ops, OPTION_DISK, "true", MBeanUtils::booleanValue, r::setToDisk);
+        setOption(ops, OPTION_NAME, String.valueOf(r.getId()), Function.identity(), r::setName);
+        setOption(ops, OPTION_MAX_AGE, null, MBeanUtils::duration, r::setMaxAge);
+        setOption(ops, OPTION_MAX_SIZE, "0", MBeanUtils::size, r::setMaxSize);
+        setOption(ops, OPTION_DURATION, null, MBeanUtils::duration, r::setDuration);
         setOption(ops, OPTION_DESTINATION, null, x -> MBeanUtils.destination(r, x), x -> setOptionDestination(r, x));
     }
 
