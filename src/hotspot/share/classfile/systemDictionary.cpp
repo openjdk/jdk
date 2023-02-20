@@ -899,15 +899,9 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
     k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
   }
 
-  DeoptimizationScope deopt_scope;
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(&deopt_scope, k);
-    // But, do not add to dictionary.
-  }
-  // Perform the deopt handshake outside Compile_lock.
-  deopt_scope.deoptimize_marked();
+  // Add to class hierarchy, and do possible deoptimizations.
+  // But, do not add to dictionary.
+  add_to_hierarchy(k, THREAD);
 
   k->link_class(CHECK_NULL);
 
@@ -1493,19 +1487,15 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   }
 
   // Add the new class. We need recompile lock during update of CHA.
-  DeoptimizationScope deopt_scope;
+  // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(k, THREAD);
+
   {
     MutexLocker mu_r(THREAD, Compile_lock);
-
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(&deopt_scope, k);
-
     // Add to systemDictionary - so other classes can see it.
     // Grabs and releases SystemDictionary_lock
     update_dictionary(THREAD, k, loader_data);
   }
-  // Perform the deopt handshake outside Compile_lock.
-  deopt_scope.deoptimize_marked();
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1621,26 +1611,32 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 // is held, to ensure that the compiler is not using the class hierarchy, and that deoptimization will kick in
 // before a new class is used.
 
-void SystemDictionary::add_to_hierarchy(DeoptimizationScope* deopt_scope, InstanceKlass* k) {
-  assert(k != nullptr, "just checking");
-  if (Universe::is_fully_initialized()) {
-    assert_locked_or_safepoint(Compile_lock);
+void SystemDictionary::add_to_hierarchy(InstanceKlass* k, JavaThread* current) {
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker ml(current, Compile_lock);
+    assert(k != nullptr, "just checking");
+    if (Universe::is_fully_initialized()) {
+      assert_locked_or_safepoint(Compile_lock);
+    }
+
+    k->set_init_state(InstanceKlass::loaded);
+    // make sure init_state store is already done.
+    // The compiler reads the hierarchy outside of the Compile_lock.
+    // Access ordering is used to add to hierarchy.
+
+    // Link into hierarchy.
+    k->append_to_sibling_list();                    // add to superklass/sibling list
+    k->process_interfaces();                        // handle all "implements" declarations
+
+    // Now flush all code that depended on old class hierarchy.
+    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
+    if (Universe::is_fully_initialized()) {
+      CodeCache::mark_dependents_on(&deopt_scope, k);
+    }
   }
-
-  k->set_init_state(InstanceKlass::loaded);
-  // make sure init_state store is already done.
-  // The compiler reads the hierarchy outside of the Compile_lock.
-  // Access ordering is used to add to hierarchy.
-
-  // Link into hierarchy.
-  k->append_to_sibling_list();                    // add to superklass/sibling list
-  k->process_interfaces();                        // handle all "implements" declarations
-
-  // Now flush all code that depended on old class hierarchy.
-  // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-  if (Universe::is_fully_initialized()) {
-    CodeCache::mark_dependents_on(deopt_scope, k);
-  }
+  // Perform the deopt handshake outside Compile_lock.
+  deopt_scope.deoptimize_marked();
 }
 
 // ----------------------------------------------------------------------------
