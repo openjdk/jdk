@@ -70,7 +70,7 @@ public class SetFactories {
         return new Object[] { act, exp };
     }
 
-    @SafeVerargs
+    @SafeVarargs
     static <E> Set<E> hashSetOf(E... args) {
         return new HashSet<>(Arrays.asList(args));
     }
