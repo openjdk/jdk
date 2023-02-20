@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,62 +25,43 @@
  * @test
  * @bug 8240248
  * @summary Add C2 x86 Superword support for scalar logical reduction optimizations : int test
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.RedTest_int
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.RedTest_int
  */
 
 package compiler.loopopts.superword;
+
+import compiler.lib.ir_framework.*;
 
 public class RedTest_int {
     static final int NUM = 1024;
     static final int ITER = 8000;
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1",
+                           "-XX:-TieredCompilation");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[8];
+        for (String reductionSign : new String[] {"+", "-"}) {
+            for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
+                                               "-XX:LoopMaxUnroll=" + maxUnroll);
+                i++;
+            }
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionImplement",
+                 "orReductionImplement",
+                 "andReductionImplement",
+                 "xorReductionImplement",
+                 "mulReductionImplement"},
+        mode = RunMode.STANDALONE)
+    public void runTests() throws Exception {
         int[] a = new int[NUM];
         int[] b = new int[NUM];
         int[] c = new int[NUM];
@@ -157,6 +138,12 @@ public class RedTest_int {
     }
 
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VI})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     public static int sumReductionImplement(
             int[] a,
             int[] b,
@@ -170,6 +157,12 @@ public class RedTest_int {
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.OR_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+            counts = {IRNode.OR_REDUCTION_V, ">= 1"})
     public static int orReductionImplement(
             int[] a,
             int[] b,
@@ -183,6 +176,12 @@ public class RedTest_int {
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.AND_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+            counts = {IRNode.AND_REDUCTION_V, ">= 1"})
     public static int andReductionImplement(
             int[] a,
             int[] b,
@@ -196,6 +195,12 @@ public class RedTest_int {
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.XOR_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+            counts = {IRNode.XOR_REDUCTION_V, ">= 1"})
     public static int xorReductionImplement(
             int[] a,
             int[] b,
@@ -209,6 +214,12 @@ public class RedTest_int {
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.MUL_REDUCTION_VI})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+            counts = {IRNode.MUL_REDUCTION_VI, ">= 1"})
     public static int mulReductionImplement(
             int[] a,
             int[] b,

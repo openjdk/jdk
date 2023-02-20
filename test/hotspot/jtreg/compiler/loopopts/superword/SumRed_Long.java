@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,38 @@
  * @test
  * @bug 8076276
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : long test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Long
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Long
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Long
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Long
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.SumRed_Long
  */
 
 package compiler.loopopts.superword;
 
+import compiler.lib.ir_framework.*;
+
 public class SumRed_Long {
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1",
+                           "-XX:-TieredCompilation");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[4];
+        for (String reductionSign : new String[] {"+", "-"}) {
+            for (int maxUnroll : new int[] {4, 8}) {
+                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
+                                               "-XX:LoopMaxUnroll=" + maxUnroll);
+                i++;
+            }
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionImplement"},
+        mode = RunMode.STANDALONE)
+    public static void runTests() throws Exception {
         long[] a = new long[256 * 1024];
         long[] b = new long[256 * 1024];
         long[] c = new long[256 * 1024];
@@ -87,6 +90,12 @@ public class SumRed_Long {
         }
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VL})
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VL, ">= 1"})
     public static long sumReductionImplement(
             long[] a,
             long[] b,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,56 +26,37 @@
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : int test
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRed_Int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRed_Int
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.SumRed_Int
  */
 
 package compiler.loopopts.superword;
 
+import compiler.lib.ir_framework.*;
+
 public class SumRed_Int {
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1",
+                           "-XX:-TieredCompilation");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[8];
+        for (String reductionSign : new String[] {"+", "-"}) {
+            for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
+                                               "-XX:LoopMaxUnroll=" + maxUnroll);
+                i++;
+            }
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionImplement"},
+        mode = RunMode.STANDALONE)
+    public static void runTests() throws Exception {
         int[] a = new int[256 * 1024];
         int[] b = new int[256 * 1024];
         int[] c = new int[256 * 1024];
@@ -108,6 +89,12 @@ public class SumRed_Int {
         }
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VI})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     public static int sumReductionImplement(
             int[] a,
             int[] b,
