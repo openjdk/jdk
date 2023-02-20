@@ -72,7 +72,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // Note: sp can be greater than unextended_sp in the case of
   // interpreted -> interpreted calls that go through a method handle linker,
   // since those pop the last argument (the appendix) from the stack.
-  if (!thread->is_in_full_stack_checked(unextended_sp)) {
+  if (!thread->is_in_stack_range_incl(unextended_sp + Interpreter::stackElementSize, sp)) {
     return false;
   }
 
