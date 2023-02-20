@@ -27,9 +27,7 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -57,7 +55,6 @@ public class CombineFilter extends AbstractFilter {
         for (CombineRule r : rules) {
 
             List<Figure> list = selector.selectMultiple(r.getFirstMatcher());
-            Set<Figure> figuresToRemove = new HashSet<>();
             for (Figure f : list) {
 
                 List<Figure> successors = new ArrayList<>(f.getSuccessors());
@@ -103,8 +100,6 @@ public class CombineFilter extends AbstractFilter {
                                 newConn.setStyle(c.getStyle());
                             }
                         }
-
-                        figuresToRemove.add(f);
                     }
                 } else {
 
@@ -167,8 +162,7 @@ public class CombineFilter extends AbstractFilter {
                                     }
                                 }
 
-
-                                figuresToRemove.add(succ);
+                                diagram.removeFigure(succ);
 
                                 if (oldSlot.getConnections().size() == 0) {
                                     f.removeSlot(oldSlot);
@@ -178,8 +172,6 @@ public class CombineFilter extends AbstractFilter {
                     }
                 }
             }
-
-            diagram.removeAllFigures(figuresToRemove);
         }
     }
 
