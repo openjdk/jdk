@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package javax.swing;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.ListIterator;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -63,7 +63,7 @@ final class LayoutComparator implements Comparator<Component>, java.io.Serializa
         // each Component and then search from the Window down until the
         // hierarchy branches.
         if (a.getParent() != b.getParent()) {
-            LinkedList<Component> aAncestory = new LinkedList<Component>();
+            ArrayList<Component> aAncestory = new ArrayList<>();
 
             for(; a != null; a = a.getParent()) {
                 aAncestory.add(a);
@@ -76,7 +76,7 @@ final class LayoutComparator implements Comparator<Component>, java.io.Serializa
                 throw new ClassCastException();
             }
 
-            LinkedList<Component> bAncestory = new LinkedList<Component>();
+            ArrayList<Component> bAncestory = new ArrayList<>();
 
             for(; b != null; b = b.getParent()) {
                 bAncestory.add(b);
