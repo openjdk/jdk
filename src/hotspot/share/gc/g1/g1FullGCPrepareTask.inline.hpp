@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,10 +110,12 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
 }
 
 inline size_t G1SerialRePrepareClosure::apply(oop obj) {
-  // We only re-prepare objects forwarded within the current region, so
-  // skip objects that are already forwarded to another region.
-  if (obj->is_forwarded() && !_current->is_in(obj->forwardee())) {
-    return obj->size();
+  if (obj->is_forwarded()) {
+    // We skip objects compiled into the first region or
+    // into regions not part of the serial compaction point.
+    if (cast_from_oop<HeapWord*>(obj->forwardee()) < _dense_prefix_top) {
+      return obj->size();
+    }
   }
 
   // Get size and forward.

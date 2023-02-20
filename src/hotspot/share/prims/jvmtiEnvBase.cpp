@@ -680,7 +680,7 @@ JvmtiEnvBase::check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf) {
     // nothing to skip
     return jvf;
   }
-  jvf = check_and_skip_hidden_frames(state->is_in_VTMS_transition(), jvf);
+  jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
   return jvf;
 }
 
@@ -1912,7 +1912,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = nullptr;

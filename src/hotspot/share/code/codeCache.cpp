@@ -168,7 +168,7 @@ class CodeBlob_sizes {
 
 address CodeCache::_low_bound = 0;
 address CodeCache::_high_bound = 0;
-int CodeCache::_number_of_nmethods_with_dependencies = 0;
+volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
 // Initialize arrays of CodeHeap subsets
@@ -587,7 +587,7 @@ void CodeCache::free(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() - 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      _number_of_nmethods_with_dependencies--;
+      Atomic::dec(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -622,7 +622,7 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() + 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      _number_of_nmethods_with_dependencies++;
+      Atomic::inc(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -1194,7 +1194,7 @@ void CodeCache::initialize() {
     initialize_heaps();
   } else {
     // Use a single code heap
-    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
@@ -1219,8 +1219,8 @@ void codeCache_init() {
 
 //------------------------------------------------------------------------------------------------
 
-int CodeCache::number_of_nmethods_with_dependencies() {
-  return _number_of_nmethods_with_dependencies;
+bool CodeCache::has_nmethods_with_dependencies() {
+  return Atomic::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
 }
 
 void CodeCache::clear_inline_caches() {
@@ -1431,7 +1431,9 @@ void CodeCache::make_nmethod_deoptimized(CompiledMethod* nm) {
 void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
-  if (number_of_nmethods_with_dependencies() == 0) return;
+  if (!has_nmethods_with_dependencies()) {
+    return;
+  }
 
   int marked = 0;
   if (dependee->is_linked()) {
