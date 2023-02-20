@@ -563,7 +563,7 @@ public class ResponseSubscribers {
                             assert buffers.remainingCapacity() > 1 || failed != null
                                     : "buffers capacity: " + buffers.remainingCapacity()
                                     + ", closed: " + closed + ", terminated: "
-                                    + buffers.contains(LAST_BUFFER)
+                                    + buffers.contains(LAST_LIST)
                                     + ", failed: " + failed;
                         }
                     }
