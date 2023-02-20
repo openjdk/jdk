@@ -172,8 +172,8 @@ void NMTPreInit::create_table() {
 }
 
 // Allocate with os::malloc (hidden to prevent having to include os.hpp)
-void* NMTPreInit::do_os_malloc(size_t size) {
-  return os::malloc(size, mtNMT);
+void* NMTPreInit::do_os_malloc(size_t size, MEMFLAGS memflags) {
+  return os::malloc(size, memflags);
 }
 
 // Switches from NMT pre-init state to NMT post-init state;

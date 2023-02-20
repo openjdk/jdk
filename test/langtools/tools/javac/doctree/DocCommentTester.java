@@ -462,6 +462,11 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitEscape(EscapeTree node, Void p) {
+                header(node, node.getBody());
+                return null;
+            }
+
             public Void visitHidden(HiddenTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -933,7 +938,7 @@ public class DocCommentTester {
          * @return the normalized content
          */
         String normalize(String s, boolean normalizeTags) {
-            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@");
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);
@@ -952,7 +957,7 @@ public class DocCommentTester {
         }
 
         String normalizeFragment(String s) {
-            return s.replaceAll("\n[ \t]+@", "\n@");
+            return s.replaceAll("\n[ \t]+@(?![@*])", "\n@");
         }
 
         int copyLiteral(String s, int start, StringBuilder sb) {

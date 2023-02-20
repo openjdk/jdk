@@ -76,7 +76,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
  */
 jlong CgroupV1MemoryController::uses_mem_hierarchy() {
   GET_CONTAINER_INFO(jlong, this, "/memory.use_hierarchy",
-                    "Use Hierarchy is: " JLONG_FORMAT, JLONG_FORMAT, use_hierarchy);
+                    "Use Hierarchy is: ", JLONG_FORMAT, JLONG_FORMAT, use_hierarchy);
   return use_hierarchy;
 }
 
@@ -90,7 +90,7 @@ void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
 
 jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.limit_in_bytes",
-                     "Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, memlimit);
+                     "Memory Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memlimit);
 
   if (memlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
@@ -114,7 +114,7 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
 jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
   julong host_total_memsw;
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.limit_in_bytes",
-                     "Memory and Swap Limit is: " JULONG_FORMAT, JULONG_FORMAT, memswlimit);
+                     "Memory and Swap Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memswlimit);
   host_total_memsw = os::Linux::host_swap() + os::Linux::physical_memory();
   if (memswlimit >= host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
@@ -151,13 +151,13 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
 
 jlong CgroupV1Subsystem::read_mem_swappiness() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
-                     "Swappiness is: " JULONG_FORMAT, JULONG_FORMAT, swappiness);
+                     "Swappiness is: ", JULONG_FORMAT, JULONG_FORMAT, swappiness);
   return swappiness;
 }
 
 jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.soft_limit_in_bytes",
-                     "Memory Soft Limit is: " JULONG_FORMAT, JULONG_FORMAT, memsoftlimit);
+                     "Memory Soft Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memsoftlimit);
   if (memsoftlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
     return (jlong)-1;
@@ -177,7 +177,7 @@ jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
  */
 jlong CgroupV1Subsystem::memory_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.usage_in_bytes",
-                     "Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, memusage);
+                     "Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memusage);
   return memusage;
 }
 
@@ -191,20 +191,20 @@ jlong CgroupV1Subsystem::memory_usage_in_bytes() {
  */
 jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.max_usage_in_bytes",
-                     "Maximum Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, memmaxusage);
+                     "Maximum Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memmaxusage);
   return memmaxusage;
 }
 
 
 jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",
-                     "Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_usage);
+                     "Kernel Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, kmem_usage);
   return kmem_usage;
 }
 
 jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.kmem.limit_in_bytes",
-                     "Kernel Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, kmem_limit);
+                     "Kernel Memory Limit is: ", JULONG_FORMAT, JULONG_FORMAT, kmem_limit);
   if (kmem_limit >= os::Linux::physical_memory()) {
     return (jlong)-1;
   }
@@ -213,7 +213,7 @@ jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
 
 jlong CgroupV1Subsystem::kernel_memory_max_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.max_usage_in_bytes",
-                     "Maximum Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_max_usage);
+                     "Maximum Kernel Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, kmem_max_usage);
   return kmem_max_usage;
 }
 
@@ -251,13 +251,13 @@ char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  */
 int CgroupV1Subsystem::cpu_quota() {
   GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.cfs_quota_us",
-                     "CPU Quota is: %d", "%d", quota);
+                     "CPU Quota is: ", "%d", "%d", quota);
   return quota;
 }
 
 int CgroupV1Subsystem::cpu_period() {
   GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.cfs_period_us",
-                     "CPU Period is: %d", "%d", period);
+                     "CPU Period is: ", "%d", "%d", period);
   return period;
 }
 
@@ -273,7 +273,7 @@ int CgroupV1Subsystem::cpu_period() {
  */
 int CgroupV1Subsystem::cpu_shares() {
   GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.shares",
-                     "CPU Shares is: %d", "%d", shares);
+                     "CPU Shares is: ", "%d", "%d", shares);
   // Convert 1024 to no shares setup
   if (shares == 1024) return -1;
 
@@ -313,6 +313,6 @@ jlong CgroupV1Subsystem::pids_max() {
 jlong CgroupV1Subsystem::pids_current() {
   if (_pids == nullptr) return OSCONTAINER_ERROR;
   GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
-                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+                     "Current number of tasks is: ", JLONG_FORMAT, JLONG_FORMAT, pids_current);
   return pids_current;
 }
