@@ -48,7 +48,7 @@ import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8048330 8203818
+ * @bug 8048330 8302818
  * @summary Test convenience static factory methods on Set.
  * @run testng SetFactories
  */
