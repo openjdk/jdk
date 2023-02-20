@@ -179,12 +179,7 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
             Iterator<E> i = c.iterator();
             E first = i.next();
             EnumSet<E> result = EnumSet.of(first);
-            if (c instanceof RegularEnumSetCompatible || c instanceof JumboEnumSetCompatible) {
-                result.addAll(c);   // optimized for compatible sets
-            } else {
-                while (i.hasNext())
-                    result.add(i.next());
-            }
+            result.addAll(c);   // optimized for compatible sets
             return result;
         }
     }
