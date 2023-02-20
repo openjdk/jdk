@@ -795,7 +795,6 @@ static uint initial_young_workers(ZDirectorStats& stats) {
   const ZDriverRequest hard_request = rule_hard_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
   nworkers = MAX2(nworkers, soft_request.young_nworkers());
   nworkers = MAX2(nworkers, hard_request.young_nworkers());
-  return nworkers;
 
   if (!ZDriver::major()->is_busy()) {
     return nworkers;
