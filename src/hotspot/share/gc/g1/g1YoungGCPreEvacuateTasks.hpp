@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,28 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1FullCollector.hpp"
-#include "gc/g1/g1FullGCMarker.inline.hpp"
-#include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "logging/logStream.hpp"
-#include "memory/iterator.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "oops/oop.inline.hpp"
+#ifndef SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+#define SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
 
-G1IsAliveClosure::G1IsAliveClosure(G1FullCollector* collector) :
-  G1IsAliveClosure(collector, collector->mark_bitmap()) { }
+#include "gc/g1/g1BatchedTask.hpp"
 
-void G1FollowStackClosure::do_void() { _marker->follow_marking_stacks(); }
+// Set of pre evacuate collection set tasks containing ("s" means serial):
+// - Retire TLAB and Flush Logs (Java threads)
+// - Flush Logs (s) (Non-Java threads)
+class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
+  class JavaThreadRetireTLABAndFlushLogs;
+  class NonJavaThreadFlushLogs;
 
-void G1FullKeepAliveClosure::do_oop(oop* p) { do_oop_work(p); }
-void G1FullKeepAliveClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+  size_t _old_pending_cards;
+
+  // References to the tasks to retain access to statistics.
+  JavaThreadRetireTLABAndFlushLogs* _java_retire_task;
+  NonJavaThreadFlushLogs* _non_java_retire_task;
+
+public:
+  G1PreEvacuateCollectionSetBatchTask();
+  ~G1PreEvacuateCollectionSetBatchTask();
+};
+
+#endif // SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+

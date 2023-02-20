@@ -67,7 +67,6 @@ class MutableNUMASpace : public MutableSpace {
   class LGRPSpace : public CHeapObj<mtGC> {
     int _lgrp_id;
     MutableSpace* _space;
-    MemRegion _invalid_region;
     AdaptiveWeightedAverage *_alloc_rate;
     bool _allocation_failed;
 
@@ -118,8 +117,6 @@ class MutableNUMASpace : public MutableSpace {
       alloc_rate()->sample(alloc_rate_sample);
     }
 
-    MemRegion invalid_region() const                { return _invalid_region;      }
-    void set_invalid_region(MemRegion r)            { _invalid_region = r;         }
     int lgrp_id() const                             { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
