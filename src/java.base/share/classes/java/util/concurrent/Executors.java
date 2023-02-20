@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.ref.CleanerFactory;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -173,10 +174,7 @@ public class Executors {
      * @return the newly created single-threaded Executor
      */
     public static ExecutorService newSingleThreadExecutor() {
-        return new FinalizableDelegatedExecutorService
-            (new ThreadPoolExecutor(1, 1,
-                                    0L, TimeUnit.MILLISECONDS,
-                                    new LinkedBlockingQueue<Runnable>()));
+        return newSingleThreadExecutor(defaultThreadFactory());
     }
 
     /**
@@ -191,12 +189,20 @@ public class Executors {
      * @return the newly created single-threaded Executor
      * @throws NullPointerException if threadFactory is null
      */
+
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
-        return new FinalizableDelegatedExecutorService
-            (new ThreadPoolExecutor(1, 1,
-                                    0L, TimeUnit.MILLISECONDS,
-                                    new LinkedBlockingQueue<Runnable>(),
-                                    threadFactory));
+        var executor = new ThreadPoolExecutor(1, 1,
+                                              0L, TimeUnit.MILLISECONDS,
+                                              new LinkedBlockingQueue<Runnable>(),
+                                              threadFactory);
+        var wrapper = new DelegatedExecutorService(executor);
+        // register cleaner to shut down executor when wrapper is phantom reachable
+        CleanerFactory.cleaner().register(wrapper, () -> {
+            PrivilegedAction<Void> pa = () -> { executor.shutdown(); return null; };
+            @SuppressWarnings("removal")
+            var ignore = AccessController.doPrivileged(pa);
+        });
+        return wrapper;
     }
 
     /**
@@ -821,17 +827,6 @@ public class Executors {
             try {
                 return e.invokeAny(tasks, timeout, unit);
             } finally { reachabilityFence(this); }
-        }
-    }
-
-    private static class FinalizableDelegatedExecutorService
-            extends DelegatedExecutorService {
-        FinalizableDelegatedExecutorService(ExecutorService executor) {
-            super(executor);
-        }
-        @SuppressWarnings("removal")
-        protected void finalize() {
-            super.shutdown();
         }
     }
 
