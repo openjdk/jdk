@@ -44,8 +44,8 @@ import jdk.jfr.internal.Options;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.RequestEngine;
 import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.periodic.PeriodicEvents;
 
 /**
  * Class for accessing, controlling, and managing Flight Recorder.
@@ -225,7 +225,7 @@ public final class FlightRecorder {
         Utils.checkRegisterPermission();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
-        RequestEngine.addHook(acc, EventType.getEventType(eventClass).getPlatformEventType(), hook);
+        PeriodicEvents.addUserEvent(acc, eventClass, hook);
     }
 
     /**
@@ -242,7 +242,7 @@ public final class FlightRecorder {
         if (JVMSupport.isNotAvailable()) {
             return false;
         }
-        return RequestEngine.removeHook(hook);
+        return PeriodicEvents.removeTask(hook);
     }
 
     /**
