@@ -25,7 +25,7 @@
  * @test
  * @bug 8302491
  * @requires vm.compMode != "Xint"
- * @summary Test that StackOverflowError is correctly reporting in stack trace
+ * @summary Test that StackOverflowError is correctly reported in stack trace
  *          as underlying cause of NoClassDefFoundError
  * @run main/othervm -Xcomp -Xss256k TestNoClassDefFoundCause
  */

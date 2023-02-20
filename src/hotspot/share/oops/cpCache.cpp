@@ -474,8 +474,8 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
   // Try to discover the cause
   oop cause = java_lang_Throwable::cause(PENDING_EXCEPTION);
-  Symbol* cause_sym = NULL;
-  Symbol* cause_msg = NULL;
+  Symbol* cause_sym = nullptr;
+  Symbol* cause_msg = nullptr;
 
   if (cause != NULL ) {
     cause_sym = cause->klass()->name();

@@ -2796,7 +2796,7 @@ Handle java_lang_Throwable::get_cause_simple(JavaThread* current, Handle throwab
     st.print("%s [in thread \"%s\"]", message->as_C_string(), current->name());
   }
 
-  Symbol* exception_name =  throwable()->klass()->name();
+  Symbol* exception_name = throwable()->klass()->name();
   return Exceptions::new_exception(current, exception_name, st.as_string());
 }
 
