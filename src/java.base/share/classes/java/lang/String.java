@@ -874,7 +874,7 @@ public final class String
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
                     !StringCoding.hasNegatives(val, 0, val.length)) {
-                return Arrays.copyOf(val, val.length);
+                return val.clone();
             }
             byte[] ba = new byte[en];
             if (len == 0) {
@@ -973,14 +973,10 @@ public final class String
 
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
-            byte[] dst = Arrays.copyOf(val, val.length);
-            int positives = StringCoding.countPositives(dst, 0, dst.length);
+            int positives = StringCoding.countPositives(val, 0, val.length);
+            byte[] dst = val.clone();
             if (positives < dst.length) {
-                for (int i = positives; i < dst.length; i++) {
-                    if (dst[i] < 0) {
-                        dst[i] = '?';
-                    }
-                }
+                replaceNegatives(dst, positives);
             }
             return dst;
         }
@@ -1005,13 +1001,21 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    private static void replaceNegatives(byte[] val, int fromIndex) {
+        for (int i = fromIndex; i < val.length; i++) {
+            if (val[i] < 0) {
+                val[i] = '?';
+            }
+        }
+    }
+
     private static byte[] encode8859_1(byte coder, byte[] val) {
         return encode8859_1(coder, val, true);
     }
 
     private static byte[] encode8859_1(byte coder, byte[] val, boolean doReplace) {
         if (coder == LATIN1) {
-            return Arrays.copyOf(val, val.length);
+            return val.clone();
         }
         int len = val.length >> 1;
         byte[] dst = new byte[len];
@@ -1265,8 +1269,7 @@ public final class String
     }
 
     private static void throwMalformed(byte[] val) {
-        int dp = 0;
-        while (dp < val.length && val[dp] >=0) { dp++; }
+        int dp = StringCoding.countPositives(val, 0, val.length);
         throwMalformed(dp, 1);
     }
 
@@ -1281,11 +1284,13 @@ public final class String
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
-        if (coder == UTF16)
+        if (coder == UTF16) {
             return encodeUTF8_UTF16(val, doReplace);
+        }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length))
-            return Arrays.copyOf(val, val.length);
+        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+            return val.clone();
+        }
 
         int dp = 0;
         byte[] dst = new byte[val.length << 1];
@@ -1297,8 +1302,9 @@ public final class String
                 dst[dp++] = c;
             }
         }
-        if (dp == dst.length)
+        if (dp == dst.length) {
             return dst;
+        }
         return Arrays.copyOf(dst, dp);
     }
 
