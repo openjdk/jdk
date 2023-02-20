@@ -3553,17 +3553,18 @@ instruct vmaskcmp_neon(vReg dst, vReg src1, vReg src2, immI cond) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI cond) %{
+instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
   match(Set dst (VectorMaskCmp (Binary src (ReplicateB zero)) cond));
   match(Set dst (VectorMaskCmp (Binary src (ReplicateS zero)) cond));
   match(Set dst (VectorMaskCmp (Binary src (ReplicateI zero)) cond));
-  format %{ "vmaskcmp_zeroI_neon $dst, $src, #0" %}
+  format %{ "vmaskcmp_zeroI_neon $dst, $src, #0, $cond" %}
   ins_encode %{
+    Assembler::Condition condition = booltest_cond_to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ neon_compare_zero($dst$$FloatRegister, bt, $src$$FloatRegister,
-                         (int)($cond$$constant), /* isQ */ length_in_bytes == 16);
+                         condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3571,14 +3572,15 @@ dnl
 dnl VMASKCMP_ZERO_NEON($1,   $2        )
 dnl VMASKCMP_ZERO_NEON(type, basic_type)
 define(`VMASKCMP_ZERO_NEON', `
-instruct vmaskcmp_zero$1_neon(vReg dst, vReg src, imm`$1'0 zero, immI cond) %{
+instruct vmaskcmp_zero$1_neon(vReg dst, vReg src, imm`$1'0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
   match(Set dst (VectorMaskCmp (Binary src (Replicate$1 zero)) cond));
-  format %{ "vmaskcmp_zero$1_neon $dst, $src, #0" %}
+  format %{ "vmaskcmp_zero$1_neon $dst, $src, #0, $cond" %}
   ins_encode %{
+    Assembler::Condition condition = booltest_cond_to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ neon_compare_zero($dst$$FloatRegister, $2, $src$$FloatRegister,
-                         (int)($cond$$constant), /* isQ */ length_in_bytes == 16);
+                         condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
 %}')dnl

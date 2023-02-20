@@ -1191,6 +1191,10 @@ public:
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
+
+  // Convert BootTest condition to Assembler condition.
+  // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+  Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2525,6 +2529,40 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
     }
   }
   return true;
+}
+
+// Convert BootTest condition to Assembler condition.
+// Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond) {
+  switch(cond) {
+    case BoolTest::eq:
+      return Assembler::EQ;
+    case BoolTest::ne:
+      return Assembler::NE;
+    case BoolTest::le:
+      return Assembler::LE;
+    case BoolTest::ge:
+      return Assembler::GE;
+    case BoolTest::lt:
+      return Assembler::LT;
+    case BoolTest::gt:
+      return Assembler::GT;
+    case BoolTest::ule:
+      return Assembler::LS;
+    case BoolTest::uge:
+      return Assembler::HS;
+    case BoolTest::ult:
+      return Assembler::LO;
+    case BoolTest::ugt:
+      return Assembler::HI;
+    case BoolTest::overflow:
+      return Assembler::VS;
+    case BoolTest::no_overflow:
+      return Assembler::VC;
+    default:
+      ShouldNotReachHere();
+      return Assembler::Condition(-1);
+  }
 }
 
 // Binary src (Replicate con)
@@ -4258,6 +4296,26 @@ operand immI_positive()
   predicate(n->get_int() > 0);
   match(ConI);
 
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for signed compare
+operand immI_cmp_cond()
+%{
+  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for unsigned compare
+operand immI_cmpU_cond()
+%{
+  predicate(n->get_int() > (int)(BoolTest::unsigned_compare));
+  match(ConI);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);

@@ -80,7 +80,7 @@
                     FloatRegister src2, int cond, bool isQ);
 
   void neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
-                         int cond, bool isQ);
+                         Condition cond, bool isQ);
 
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, int cond);
