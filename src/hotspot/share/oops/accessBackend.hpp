@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/integralConstant.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
@@ -61,7 +60,7 @@ namespace AccessInternal {
   };
 
   template <DecoratorSet decorators, typename T>
-  struct MustConvertCompressedOop: public IntegralConstant<bool,
+  struct MustConvertCompressedOop: public std::integral_constant<bool,
     HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
     std::is_same<typename HeapOopType<decorators>::type, narrowOop>::value &&
     std::is_same<T, oop>::value> {};
@@ -86,9 +85,9 @@ namespace AccessInternal {
   // locking to support wide atomics or not.
   template <typename T>
 #ifdef SUPPORTS_NATIVE_CX8
-  struct PossiblyLockedAccess: public IntegralConstant<bool, false> {};
+  struct PossiblyLockedAccess: public std::false_type {};
 #else
-  struct PossiblyLockedAccess: public IntegralConstant<bool, (sizeof(T) > 4)> {};
+  struct PossiblyLockedAccess: public std::integral_constant<bool, (sizeof(T) > 4)> {};
 #endif
 
   template <DecoratorSet decorators, typename T>
@@ -626,7 +625,7 @@ namespace AccessInternal {
   // not possible.
   struct PreRuntimeDispatch: AllStatic {
     template<DecoratorSet decorators>
-    struct CanHardwireRaw: public IntegralConstant<
+    struct CanHardwireRaw: public std::integral_constant<
       bool,
       !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // primitive access
       !HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value || // don't care about compressed oops (oop* address)
@@ -1231,7 +1230,7 @@ namespace AccessInternal {
   private:
     P *const _addr;
   public:
-    OopLoadProxy(P* addr) : _addr(addr) {}
+    explicit OopLoadProxy(P* addr) : _addr(addr) {}
 
     inline operator oop() {
       return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr);

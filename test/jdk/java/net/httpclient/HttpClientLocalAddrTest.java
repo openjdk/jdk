@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,30 +47,29 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 /*
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
  * @bug 8209137
- * @modules jdk.httpserver
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
- * @library /test/lib http2/server
- *
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport HttpServerAdapters
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
+ *      -Dsun.net.httpserver.idleInterval=50000
  *      HttpClientLocalAddrTest
  *
  * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
+ *      -Dsun.net.httpserver.idleInterval=50000
  *      HttpClientLocalAddrTest
  *
  */

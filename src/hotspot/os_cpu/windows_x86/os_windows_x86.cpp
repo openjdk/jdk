@@ -227,7 +227,7 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
                                             char *buf, int buf_size)
 {
   CONTEXT ctx;
-  if (context != NULL) {
+  if (context != nullptr) {
     memcpy(&ctx, context, sizeof(ctx));
   } else {
     RtlCaptureContext(&ctx);
@@ -251,7 +251,7 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
 
-    if (pc != NULL) {
+    if (pc != nullptr) {
       if (count == 2 && lastpc == pc) {
         // Skip it -- StackWalk64() may return the same PC
         // (but different SP) on the first try.
@@ -303,14 +303,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address  epc;
   CONTEXT* uc = (CONTEXT*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = (address)uc->REG_PC;
     if (ret_sp) *ret_sp = (intptr_t*)uc->REG_SP;
     if (ret_fp) *ret_fp = (intptr_t*)uc->REG_FP;
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -369,7 +369,7 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
     // more complex code with compiled code
     assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+    if (cb == nullptr || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
       // Not sure where the pc points to, fallback to default
       // stack overflow handling
       return false;
@@ -404,7 +404,7 @@ frame os::current_frame() {
 }
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -451,7 +451,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -470,7 +470,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
   int n = continuation;
-  if (context == NULL || n < 0 || n >= register_count) {
+  if (context == nullptr || n < 0 || n >= register_count) {
     return;
   }
 
@@ -535,7 +535,7 @@ juint os::cpu_microcode_revision() {
                "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
   if (status == ERROR_SUCCESS) {
     DWORD size = sizeof(data);
-    status = RegQueryValueEx(key, "Update Revision", NULL, NULL, data, &size);
+    status = RegQueryValueEx(key, "Update Revision", nullptr, nullptr, data, &size);
     if (status == ERROR_SUCCESS) {
       if (size == 4) result = *((juint*)data);
       if (size == 8) result = *((juint*)data + 1); // upper 32-bits
@@ -557,7 +557,7 @@ void os::verify_stack_alignment() {
 #ifdef AMD64
   // The current_stack_pointer() calls generated get_previous_sp stub routine.
   // Only enable the assert after the routine becomes available.
-  if (StubRoutines::code1() != NULL) {
+  if (StubRoutines::code1() != nullptr) {
     assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
   }
 #endif

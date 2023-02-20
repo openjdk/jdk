@@ -96,7 +96,6 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/vthread/RedefineClass.java 8297286 generic-all
 runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
-runtime/StackGuardPages/TestStackGuardPages.java 8293452 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
 

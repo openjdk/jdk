@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,11 @@
  * Concrete tests that extend this abstract class will need to include
  * the following jtreg tags:
  *
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker AbstractThrowingPushPromises
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        <concrete-class-name>
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
  */
 
@@ -90,6 +87,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.lang.System.err;
@@ -729,7 +728,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(5000);
         try {
             http2TestServer.stop();
             https2TestServer.stop();

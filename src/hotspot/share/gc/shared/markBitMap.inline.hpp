@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 inline HeapWord* MarkBitMap::get_next_marked_addr(const HeapWord* const addr,
                                                   HeapWord* const limit) const {
-  assert(limit != NULL, "limit must not be NULL");
+  assert(limit != nullptr, "limit must not be null");
   // Round addr up to a possible object boundary to be safe.
   size_t const addr_offset = addr_to_offset(align_up(addr, HeapWordSize << _shifter));
   size_t const limit_offset = addr_to_offset(limit);

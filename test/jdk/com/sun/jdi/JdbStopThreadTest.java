@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class JdbStopThreadTestTarg {
         print(thread); // @1 breakpoint
         String str = "test";
         print(str); // @2 breakpoint
+        print("all done"); // @3 breakpoint
     }
 
     public static void print(Object obj) {
@@ -83,8 +84,13 @@ public class JdbStopThreadTest extends JdbTest {
         jdb.command(JdbCommand.thread(1));
         int bpLine2 = parseBreakpoints(getTestSourcePath("JdbStopThreadTest.java"), 2).get(0);
         jdb.command(JdbCommand.stopGoAt(DEBUGGEE_CLASS, bpLine2));
+        // We need a subsequent breakpoint with SUSPEND_EVENT_THREAD so we don't exit
+        int bpLine3 = parseBreakpoints(getTestSourcePath("JdbStopThreadTest.java"), 3).get(0);
+        jdb.command(JdbCommand.stopThreadAt(DEBUGGEE_CLASS, bpLine3));
         String pattern2 = PATTERN2_TEMPLATE.replaceAll("%LINE_NUMBER", String.valueOf(bpLine2));
-        jdb.command(JdbCommand.cont().allowExit());
+        jdb.command(JdbCommand.cont().waitForPrompt(pattern2, true));
         new OutputAnalyzer(jdb.getJdbOutput()).shouldMatch(pattern2);
+
+        jdb.quit();
     }
 }
