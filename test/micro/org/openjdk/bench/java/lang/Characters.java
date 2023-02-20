@@ -91,13 +91,13 @@ public class Characters {
     @Fork(3)
     public static class Latin1CaseConversions {
         @Param({
-                "low",   // 0x09 pre A
-                "A",  // 0x41 uppercase A
-                "a",  // 0x61 lowercase a
+                "low",     // 0x09 pre A
+                "A",       // 0x41 uppercase A
+                "a",       // 0x61 lowercase a
                 "A-grave", // 0xC0 uppercase A-grave
                 "a-grave", // 0xE0 lowercase a-grave
-                "micro", // 0xB5 lowercase 'Micro Sign'
-                "yD" // 0xFF lowercase 'y with Diaeresis'
+                "micro",   // 0xB5 lowercase 'Micro Sign'
+                "yD"       // 0xFF lowercase 'y with Diaeresis'
         })
         private String codePoint;
         private int cp;
@@ -105,13 +105,13 @@ public class Characters {
         @Setup(Level.Trial)
         public void setup() {
             cp = switch (codePoint) {
-                case "low" -> 0x09;
-                case "A" -> 0x41;
-                case "a" -> 0x61;
+                case "low"     -> 0x09;
+                case "A"       -> 0x41;
+                case "a"       -> 0x61;
                 case "A-grave" -> 0xC0;
                 case "a-grave" -> 0xE0;
-                case "yD" -> 0xE0;
-                case "micro" -> 0xFF;
+                case "yD"      -> 0xE0;
+                case "micro"   -> 0xFF;
                 default -> throw new IllegalArgumentException("Unknown character: " + codePoint);
             };
         }
