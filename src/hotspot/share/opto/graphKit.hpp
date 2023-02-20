@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ class GraphKit : public Phase {
   void*         barrier_set_state() const { return C->barrier_set_state(); }
 
   void record_for_igvn(Node* n) const { C->record_for_igvn(n); }  // delegate to Compile
+  void remove_for_igvn(Node* n) const { C->remove_for_igvn(n); }
 
   // Handy well-known nodes:
   Node*         null()          const { return zerocon(T_OBJECT); }
@@ -169,6 +170,11 @@ class GraphKit : public Phase {
 
   // Clone the existing map state.  (Implements PreserveJVMState.)
   SafePointNode* clone_map();
+
+  // Reverses the work done by clone_map(). Should only be used when the node returned by
+  // clone_map() is ultimately not used. Calling Node::destruct directly in the previously
+  // mentioned circumstance instead of this method may result in use-after-free.
+  void destruct_map_clone(SafePointNode* sfp);
 
   // Set the map to a clone of the given one.
   void set_map_clone(SafePointNode* m);
@@ -568,13 +574,15 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false) {
+                        bool unsafe = false,
+                        int barrier_data = 0) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other store_to_memory factory");
     return store_to_memory(ctl, adr, val, bt,
                            C->get_alias_index(adr_type),
                            mo, require_atomic_access,
-                           unaligned, mismatched, unsafe);
+                           unaligned, mismatched, unsafe,
+                           barrier_data);
   }
   // This is the base version which is given alias index
   // Return the new StoreXNode
@@ -584,7 +592,8 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false);
+                        bool unsafe = false,
+                        int barrier_data = 0);
 
   // Perform decorated accesses
 

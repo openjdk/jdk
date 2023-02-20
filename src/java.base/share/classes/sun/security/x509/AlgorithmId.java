@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,16 +597,16 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     String ostr = alias.substring(index);
                     String stdAlgName = provider.getProperty(alias);
                     if (stdAlgName != null) {
-                        stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                    }
-                    // add the name->oid and oid->name mappings if none exists
-                    if (KnownOIDs.findMatch(stdAlgName) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(stdAlgName, ostr);
-                    }
-                    if (KnownOIDs.findMatch(ostr) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(ostr, stdAlgName);
+                        String upperStdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
+                        // add the name->oid and oid->name mappings if none exists
+                        if (KnownOIDs.findMatch(upperStdAlgName) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(upperStdAlgName, ostr);
+                        }
+                        if (KnownOIDs.findMatch(ostr) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(ostr, stdAlgName);
+                        }
                     }
                 }
             }

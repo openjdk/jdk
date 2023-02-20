@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -448,7 +448,8 @@ public class RISCV64Frame extends Frame {
   public Address getSenderSP()     { return addressOfStackSlot(SENDER_SP_OFFSET); }
 
   public Address addressOfInterpreterFrameLocals() {
-    return addressOfStackSlot(INTERPRETER_FRAME_LOCALS_OFFSET);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_LOCALS_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    return getFP().addOffsetTo(n * VM.getVM().getAddressSize());
   }
 
   private Address addressOfInterpreterFrameBCX() {

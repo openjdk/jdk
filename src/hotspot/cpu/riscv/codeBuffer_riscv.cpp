@@ -1,6 +1,7 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
+ * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences.
+ * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
-    _shared_trampoline_requests = new SharedTrampolineRequests(init_size, max_size);
+    _shared_trampoline_requests = new (mtCompiler)SharedTrampolineRequests(init_size, max_size);
   }
 
   bool created;
@@ -43,6 +44,8 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   _finalize_stubs = true;
 }
 
+#define __ masm.
+
 static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
   if (requests == nullptr) {
     return true;
@@ -50,38 +53,34 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   MacroAssembler masm(cb);
 
-  bool p_succeeded = true;
   auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
-    masm.set_code_section(cb->stubs());
-    if (!is_aligned(masm.offset() + NativeCallTrampolineStub::data_offset, wordSize)) {
-      if (cb->stubs()->maybe_expand_to_ensure_remaining(NativeInstruction::instruction_size) && cb->blob() == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        p_succeeded = false;
-        return p_succeeded;
-      }
-      masm.align(wordSize, NativeCallTrampolineStub::data_offset);
-    }
-
+    assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
     LinkedListIterator<int> it(offsets.head());
     int offset = *it.next();
-    for (; !it.is_empty(); offset = *it.next()) {
-      masm.relocate(trampoline_stub_Relocation::spec(cb->insts()->start() + offset));
-    }
-    masm.set_code_section(cb->insts());
+    address stub = __ emit_trampoline_stub(offset, dest);
+    assert(stub, "pre-allocated trampolines");
 
-    address stub = masm.emit_trampoline_stub(offset, dest);
-    if (stub == nullptr) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      p_succeeded = false;
+    address reloc_pc = cb->stubs()->end() - NativeCallTrampolineStub::instruction_size;
+    while (!it.is_empty()) {
+      offset = *it.next();
+      address caller_pc = cb->insts()->start() + offset;
+      cb->stubs()->relocate(reloc_pc, trampoline_stub_Relocation::spec(caller_pc));
     }
-
-    return p_succeeded;
+    return true;
   };
 
-  requests->iterate(emit);
+  assert(requests->number_of_entries() >= 1, "at least one");
+  const int total_requested_size = MacroAssembler::max_trampoline_stub_size() * requests->number_of_entries();
+  if (cb->stubs()->maybe_expand_to_ensure_remaining(total_requested_size) && cb->blob() == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return false;
+  }
 
-  return p_succeeded;
+  requests->iterate(emit);
+  return true;
 }
+
+#undef __
 
 bool CodeBuffer::pd_finalize_stubs() {
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)

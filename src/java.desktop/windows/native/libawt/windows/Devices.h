@@ -74,4 +74,4 @@ static CriticalSection          arrayLock;
 
 BOOL WINAPI MonitorBounds (HMONITOR, RECT*);
 
-#endif _DEVICES_H_
+#endif // _DEVICES_H_

@@ -2887,23 +2887,22 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         /**
          * Possibly blocks awaiting root lock.
          */
+
         private void contendedLock() {
-            boolean waiting = false;
+            Thread current = Thread.currentThread(), w;
             for (int s;;) {
                 if (((s = lockState) & ~WAITER) == 0) {
                     if (U.compareAndSetInt(this, LOCKSTATE, s, WRITER)) {
-                        if (waiting)
-                            waiter = null;
+                        if (waiter == current)
+                            U.compareAndSetReference(this, WAITERTHREAD, current, null);
                         return;
                     }
                 }
-                else if ((s & WAITER) == 0) {
-                    if (U.compareAndSetInt(this, LOCKSTATE, s, s | WAITER)) {
-                        waiting = true;
-                        waiter = Thread.currentThread();
-                    }
-                }
-                else if (waiting)
+                else if ((s & WAITER) == 0)
+                    U.compareAndSetInt(this, LOCKSTATE, s, s | WAITER);
+                else if ((w = waiter) == null)
+                    U.compareAndSetReference(this, WAITERTHREAD, null, current);
+                else if (w == current)
                     LockSupport.park(this);
             }
         }
@@ -3317,6 +3316,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         private static final long LOCKSTATE
             = U.objectFieldOffset(TreeBin.class, "lockState");
+        private static final long WAITERTHREAD
+            = U.objectFieldOffset(TreeBin.class, "waiter");
     }
 
     /* ----------------Table Traversal -------------- */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,7 +418,7 @@ public class Utils {
     }
 
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
-        return amirror.getAnnotationType().equals(getFunctionalInterface()) &&
+        return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
@@ -1093,22 +1093,8 @@ public class Utils {
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
-        return getFirstVisibleSuperClass(asTypeElement(type));
-    }
-
-
-    /**
-     * Given a class, return the closest visible superclass.
-     *
-     * @param te the TypeElement to be interrogated
-     * @return the closest visible superclass.  Return null if it cannot
-     *         be found.
-     */
-    public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
-        TypeMirror superType = te.getSuperclass();
-        if (isNoType(superType)) {
-            superType = getObjectType();
-        }
+        List<? extends TypeMirror> superTypes = typeUtils.directSupertypes(type);
+        TypeMirror superType = superTypes.isEmpty() ? getObjectType() : superTypes.get(0);
         TypeElement superClass = asTypeElement(superType);
         // skip "hidden" classes
         while ((superClass != null && hasHiddenTag(superClass))
@@ -1122,10 +1108,22 @@ public class Utils {
             superType = supersuperType;
             superClass = supersuperClass;
         }
-        if (typeUtils.isSameType(te.asType(), superType)) {
+        if (typeUtils.isSameType(type, superType)) {
             return null;
         }
         return superType;
+    }
+
+
+    /**
+     * Given a class, return the closest visible superclass.
+     *
+     * @param te the TypeElement to be interrogated
+     * @return the closest visible superclass.  Return null if it cannot
+     *         be found.
+     */
+    public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
+        return getFirstVisibleSuperClass(te.asType());
     }
 
     /**

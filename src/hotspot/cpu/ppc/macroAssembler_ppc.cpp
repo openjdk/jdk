@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1185,6 +1185,7 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  InlineSkippedInstructionsCounter skipCounter(this);
   nop();
 }
 
@@ -2891,6 +2892,12 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   bs->resolve_jobject(this, value, tmp1, tmp2, preservation_level);
 }
 
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2,
+                                     MacroAssembler::PreservationLevel preservation_level) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_global_jobject(this, value, tmp1, tmp2, preservation_level);
+}
+
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
 // in frame_ppc.hpp.
 void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Java_pc) {
@@ -2950,8 +2957,6 @@ void MacroAssembler::get_vm_result(Register oop_result) {
   // Updated:
   //   oop_result
   //   R16_thread->in_bytes(JavaThread::vm_result_offset())
-
-  verify_thread();
 
   ld(oop_result, in_bytes(JavaThread::vm_result_offset()), R16_thread);
   li(R0, 0);
@@ -4221,12 +4226,6 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_of
   }
   asm_assert(check_equal, msg);
 #endif // ASSERT
-}
-
-void MacroAssembler::verify_thread() {
-  if (VerifyThread) {
-    unimplemented("'VerifyThread' currently not implemented on PPC");
-  }
 }
 
 void MacroAssembler::verify_coop(Register coop, const char* msg) {

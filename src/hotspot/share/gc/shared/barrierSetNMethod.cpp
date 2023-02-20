@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
+  // Also, with concurrent GC, it is possible that frames in continuation stack
+  // chunks are not visited if they are allocated after concurrent GC started.
   OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 
@@ -162,7 +164,7 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
   CodeBlob* cb = CodeCache::find_blob(return_address);
-  assert(cb != NULL, "invariant");
+  assert(cb != nullptr, "invariant");
 
   nmethod* nm = cb->as_nmethod();
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
