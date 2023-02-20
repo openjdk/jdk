@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,59 +24,37 @@
 
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "services/memJfrReporter.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-// Helper class to avoid refreshing the NMTUsage to often and allow
-// the two JFR events to use the same data.
-class MemJFRCurrentUsage : public AllStatic {
-private:
-  // The age threshold in milliseconds. If older than this refresh the usage.
-  static const uint64_t AgeThreshold = 50;
+static NMTUsage* get_usage(const Ticks& timestamp) {
+  static Ticks last_timestamp;
+  static NMTUsage* usage = nullptr;
 
-  static Ticks _timestamp;
-  static NMTUsage* _usage;
-
-public:
-  static NMTUsage* get_usage();
-  static Ticks get_timestamp();
-};
-
-Ticks MemJFRCurrentUsage::_timestamp;
-NMTUsage* MemJFRCurrentUsage::_usage = nullptr;
-
-NMTUsage* MemJFRCurrentUsage::get_usage() {
-  Tickspan since_baselined = Ticks::now() - _timestamp;
-
-  if (_usage == nullptr) {
+  if (usage == nullptr) {
     // First time, create a new NMTUsage.
-    _usage = new NMTUsage(NMTUsage::OptionsNoTS);
-  } else if (since_baselined.milliseconds() < AgeThreshold) {
-    // There is recent enough usage information, return it.
-    return _usage;
+    usage = new NMTUsage(NMTUsage::OptionsNoTS);
+    usage->refresh();
+    last_timestamp = timestamp;
   }
 
-  // Refresh the usage information.
-  _usage->refresh();
-  _timestamp.stamp();
-
-  return _usage;
+  if (timestamp != last_timestamp) {
+    // Refresh usage if new timestamp.
+    usage->refresh();
+    last_timestamp = timestamp;
+  }
+  return usage;
 }
 
-Ticks MemJFRCurrentUsage::get_timestamp() {
-  return _timestamp;
-}
-
-void MemJFRReporter::send_total_event() {
+void JfrNativeMemoryEvent::send_total_event(const Ticks& timestamp) {
   if (!MemTracker::enabled()) {
     return;
   }
 
-  NMTUsage* usage = MemJFRCurrentUsage::get_usage();
-  Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
+  NMTUsage* usage = get_usage(timestamp);
 
   EventNativeMemoryUsageTotal event(UNTIMED);
   event.set_starttime(timestamp);
@@ -85,22 +63,21 @@ void MemJFRReporter::send_total_event() {
   event.commit();
 }
 
-void MemJFRReporter::send_type_event(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
+void JfrNativeMemoryEvent::send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed) {
   EventNativeMemoryUsage event(UNTIMED);
   event.set_starttime(starttime);
-  event.set_type(type);
+  event.set_type(NMTUtil::flag_to_index(flag));
   event.set_reserved(reserved);
   event.set_committed(committed);
   event.commit();
 }
 
-void MemJFRReporter::send_type_events() {
+void JfrNativeMemoryEvent::send_type_events(const Ticks& timestamp) {
   if (!MemTracker::enabled()) {
     return;
   }
 
-  NMTUsage* usage = MemJFRCurrentUsage::get_usage();
-  Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
+  NMTUsage* usage = get_usage(timestamp);
 
   for (int index = 0; index < mt_number_of_types; index ++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
@@ -108,6 +85,6 @@ void MemJFRReporter::send_type_events() {
       // Skip mtNone since it is not really used.
       continue;
     }
-    send_type_event(timestamp, NMTUtil::flag_to_name(flag), usage->reserved(flag), usage->committed(flag));
+    send_type_event(timestamp, flag, usage->reserved(flag), usage->committed(flag));
   }
 }

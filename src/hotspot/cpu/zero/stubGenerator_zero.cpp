@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -145,8 +145,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy       = ShouldNotCallThisStub();
     StubRoutines::_generic_arraycopy         = ShouldNotCallThisStub();
 
-    // Shared code tests for "NULL" to discover the stub is not generated.
-    StubRoutines::_unsafe_arraycopy          = NULL;
+    // Shared code tests for "null" to discover the stub is not generated.
+    StubRoutines::_unsafe_arraycopy          = nullptr;
 
     // We don't generate specialized code for HeapWord-aligned source
     // arrays, so just use the code we've already generated

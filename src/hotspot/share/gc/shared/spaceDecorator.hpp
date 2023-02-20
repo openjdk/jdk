@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,12 @@ class SpaceMangler: public CHeapObj<mtGC> {
 
  public:
 
-  // Setting _top_for_allocations to NULL at initialization
+  // Setting _top_for_allocations to null at initialization
   // makes it always below top so that mangling done as part
   // of the initialize() call of a space does nothing (as it
   // should since the mangling is done as part of the constructor
   // for the space.
-  SpaceMangler() : _top_for_allocations(NULL) {}
+  SpaceMangler() : _top_for_allocations(nullptr) {}
 
   // Methods for top and end that delegate to the specific
   // space type.

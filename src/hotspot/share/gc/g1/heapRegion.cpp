@@ -496,7 +496,7 @@ class VerifyRemSetClosure : public G1VerificationClosure {
         Log(gc, verify) log;
         LogStream ls(log.error());
 
-        MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
 
         if (!has_failures()) {
           log.error("----------");
