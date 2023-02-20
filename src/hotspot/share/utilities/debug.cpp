@@ -76,8 +76,19 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+bool DebuggingContext::_enabled = false;
+
+DebuggingContext::DebuggingContext() {
+  // Not an assert, since asserts are disabled by DebuggingContext.
+  if (is_enabled()) {
+    fatal("Multiple Debugging contexts");
+  }
+  _enabled = true;
+}
+
+DebuggingContext::~DebuggingContext() {
+  _enabled = false;
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -275,13 +286,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -289,7 +298,6 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
