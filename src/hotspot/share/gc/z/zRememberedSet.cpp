@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"

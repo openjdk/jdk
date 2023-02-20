@@ -35,6 +35,7 @@
 #include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -553,6 +554,17 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
 
     // Retry
     old_top = prev_top;
+  }
+}
+
+inline void ZPage::log_msg(const char* msg_format, ...) const {
+  LogTarget(Trace, gc, page) target;
+  if (target.is_enabled()) {
+    va_list argp;
+    va_start(argp, msg_format);
+    LogStream stream(target);
+    print_on_msg(&stream, err_msg(FormatBufferDummy(), msg_format, argp));
+    va_end(argp);
   }
 }
 

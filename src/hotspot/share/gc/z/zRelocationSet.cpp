@@ -27,6 +27,7 @@
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"

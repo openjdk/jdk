@@ -29,7 +29,6 @@
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "logging/logStream.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -284,17 +283,6 @@ void ZPage::swap_remset_bitmaps() {
 
 void* ZPage::remset_current() {
   return _remembered_set.current();
-}
-
-void ZPage::log_msg(const char* msg_format, ...) const {
-  LogTarget(Trace, gc, page) target;
-  if (target.is_enabled()) {
-    va_list argp;
-    va_start(argp, msg_format);
-    LogStream stream(target);
-    print_on_msg(&stream, err_msg(FormatBufferDummy(), msg_format, argp));
-    va_end(argp);
-  }
 }
 
 void ZPage::print_on_msg(outputStream* out, const char* msg) const {
