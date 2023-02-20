@@ -253,8 +253,7 @@ public class IREncodingPrinter {
             "avx512f",
             // arm
             "asimd",
-            "sve", // TODO: ok?
-            "sve1" // TODO: ok?
+            "sve"
         ));
 
         if (!verifiedCPUFeatures.contains(feature)) {
