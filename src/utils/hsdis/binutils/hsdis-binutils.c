@@ -298,8 +298,31 @@ static void
 hsdis_memory_error_func (int status, bfd_vma addr, disassemble_info *dinfo)
 {
   DECL_APP_DATA(dinfo);
+  DECL_EVENT_CALLBACK(app_data);
   DECL_PRINTF_CALLBACK(app_data);
-  (*printf_callback)(printf_stream, ".4byte\t0x%08x\n", *(uint32_t*)addr);
+
+  uintptr_t p = (uintptr_t)addr;
+  uintptr_t end = app_data->end_va;
+
+  for (int i = 0; p < end; i++) {
+    if (i > 0) {
+      // Skip the first "insn": it has been emitted in decode() when a memory error is happening
+      (*event_callback)(event_stream, "insn", (void*) p);
+    }
+
+    if (end - p >= 4) {
+      (*printf_callback)(printf_stream, ".4byte\t0x%08x\n", *(uint32_t*)p);
+      p += 4;
+    } else if (end - p >= 2) {
+      (*printf_callback)(printf_stream, ".2byte\t0x%04x\n", *(uint16_t*)p);
+      p += 2;
+    } else {
+      (*printf_callback)(printf_stream, ".1byte\t0x%02x\n", *(uint8_t*)p);
+      p += 1;
+    }
+
+    (*event_callback)(event_stream, "/insn", (void*) p);
+  }
 }
 
 
@@ -363,9 +386,7 @@ static void setup_app_data(struct hsdis_app_data* app_data,
                                native_bfd);
   app_data->dinfo.print_address_func = hsdis_print_address_func;
   app_data->dinfo.read_memory_func = hsdis_read_memory_func;
-#ifdef LIBARCH_riscv64
   app_data->dinfo.memory_error_func = hsdis_memory_error_func;
-#endif
 
   if (app_data->dfn == NULL) {
     const char* bad = app_data->arch_name;
