@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8277969
+ * @bug 8277969 8299338
  * @summary Test for edge case where the executor is not accepting
  *          new tasks while the client is still running
  * @library /test/lib /test/jdk/java/net/httpclient/lib

@@ -559,10 +559,12 @@ public class ResponseSubscribers {
                         closed = this.closed;
                         if (!closed) {
                             this.subscription = s;
-                            // should contain at least 2
-                            assert buffers.remainingCapacity() > 1
+                            // should contain at least 2, unless closed or failed.
+                            assert buffers.remainingCapacity() > 1 || failed != null
                                     : "buffers capacity: " + buffers.remainingCapacity()
-                                    + " closed: " + closed + " failed: " + failed;
+                                    + ", closed: " + closed + ", terminated: "
+                                    + buffers.contains(LAST_BUFFER)
+                                    + ", failed: " + failed;
                         }
                     }
                     if (closed) {
