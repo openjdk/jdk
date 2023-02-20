@@ -729,22 +729,13 @@ public interface Set<E> extends Collection<E> {
         if (coll instanceof ImmutableCollections.AbstractImmutableSet) {
             return (Set<E>)coll;
         }
-        var it = coll.iterator();   // Implicit nullcheck of coll
-        if (!it.hasNext()) {
+        if (coll.isEmpty()) {
             return Set.of();
         }
-        E e0 = it.next();
-        if (!it.hasNext()) {
-            return Set.of(e0);
-        }
-        E e1 = it.next();
-        if (!it.hasNext()) {
-            return Set.of(e0, e1);
-        }
-        if (coll instanceof RegularEnumSetCompatible<?> res) {
+        if (coll instanceof RegularEnumSetCompatible<?> res && res.size() > 2) {
             return (Set<E>)new ImmutableCollections.ImmutableRegularEnumSet<>(res.elements(), res.elementType());
         }
-        if (coll instanceof JumboEnumSetCompatible<?> jes) {
+        if (coll instanceof JumboEnumSetCompatible<?> jes && jes.size() > 2) {
             return (Set<E>)new ImmutableCollections.ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
         }
         return (Set<E>)Set.of(new HashSet<>(coll).toArray());
