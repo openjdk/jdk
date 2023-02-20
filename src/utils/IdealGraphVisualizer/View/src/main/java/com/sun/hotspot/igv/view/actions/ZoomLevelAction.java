@@ -40,6 +40,8 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
 
     private final DiagramViewer diagramScene;
 
+    boolean updateZoomInScene = true;
+
     @Override
     public void actionPerformed(ActionEvent e) {
         EditorTopComponent editor = EditorTopComponent.getActive();
@@ -58,6 +60,9 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
             level = Math.max(level, minLevel);
             level = Math.min(level, maxLevel);
             setZoomLevel(level);
+            if (updateZoomInScene) {
+                diagramScene.setZoomPercentage(level);
+            }
         } catch(NumberFormatException exception) {
             changed(diagramScene);
         }
@@ -84,11 +89,12 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
 
     private void setZoomLevel(int zoomLevel) {
         setSelectedItem(zoomLevel + "%");
-        diagramScene.setZoomPercentage(zoomLevel);
     }
 
     @Override
     public void changed(DiagramViewer diagramViewer) {
-        setSelectedItem(diagramViewer.getZoomPercentage() + "%");
+        updateZoomInScene = false;
+        setZoomLevel(diagramViewer.getZoomPercentage());
+        updateZoomInScene = true;
     }
 }
