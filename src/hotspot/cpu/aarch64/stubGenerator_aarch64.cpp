@@ -568,29 +568,8 @@ class StubGenerator: public StubCodeGenerator {
     // make sure object is 'reasonable'
     __ cbz(r0, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-    if (UseZGC) {
-      // Check if mask is good.
-      // verifies that ZAddressBadMask & r0 == 0
-      __ ldr(c_rarg3, Address(rthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(c_rarg2, r0, c_rarg3);
-      __ cbnz(c_rarg2, error);
-    }
-#endif
-
-    // Check if the oop is in the right area of memory
-    __ mov(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-    __ andr(c_rarg2, r0, c_rarg3);
-    __ mov(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-
-    // Compare c_rarg2 and c_rarg3.  We don't use a compare
-    // instruction here because the flags register is live.
-    __ eor(c_rarg2, c_rarg2, c_rarg3);
-    __ cbnz(c_rarg2, error);
-
-    // make sure klass is 'reasonable', which is not zero.
-    __ load_klass(r0, r0);  // get klass
-    __ cbz(r0, error);      // if klass is NULL it is broken
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->check_oop(_masm, r0, c_rarg2, c_rarg3, error);
 
     // return if everything seems ok
     __ bind(exit);
@@ -6923,12 +6902,7 @@ class StubGenerator: public StubCodeGenerator {
   // The handle is dereferenced through a load barrier.
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    Label null_jobject;
-    __ cbz(r0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, r0, Address(r0, 0), rscratch1, rscratch2);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(r0, rscratch1, rscratch2);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -6943,7 +6917,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();

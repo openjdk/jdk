@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ char* ReallocateHeap(char *old,
                      MEMFLAGS flag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-// handles NULL pointers
+// handles null pointers
 void FreeHeap(void* p);
 
 class CHeapObjBase {
@@ -321,7 +321,7 @@ class MetaspaceObj {
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if something is in the
   // shared metaspace.
-  // When CDS is not enabled, both pointers are set to NULL.
+  // When CDS is not enabled, both pointers are set to null.
   static void* _shared_metaspace_base;  // (inclusive) low address
   static void* _shared_metaspace_top;   // (exclusive) high address
 
@@ -335,7 +335,7 @@ class MetaspaceObj {
 #if INCLUDE_CDS
   static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
-    // both be NULL and all values of p will be rejected quickly.
+    // both be null and all values of p will be rejected quickly.
     return (((void*)p) < _shared_metaspace_top &&
             ((void*)p) >= _shared_metaspace_base);
   }
@@ -386,7 +386,7 @@ class MetaspaceObj {
     METASPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_NAME_CASE)
     default:
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -511,7 +511,7 @@ protected:
   }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-    DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
+    DEBUG_ONLY(if (res != nullptr) set_allocation_type(res, RESOURCE_AREA);)
     return res;
   }
 

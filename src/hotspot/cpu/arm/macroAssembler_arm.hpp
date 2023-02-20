@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class AddressLiteral {
   // creation
   AddressLiteral()
     : _is_lval(false),
-      _target(NULL)
+      _target(nullptr)
   {}
 
   public:
@@ -285,7 +285,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // No registers are killed, except temp_regs.
   void check_klass_subtype_fast_path(Register sub_klass,
                                      Register super_klass,
@@ -356,6 +356,7 @@ public:
   }
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   void nop() {
     mov(R0, R0);

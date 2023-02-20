@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -306,6 +307,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
+
+  case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
@@ -722,6 +725,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_compress_expand();
   case vmIntrinsics::_IndexVector:
     return inline_index_vector();
+  case vmIntrinsics::_IndexPartiallyInUpperRange:
+    return inline_index_partially_in_upper_range();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -1066,6 +1071,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
+
 //------------------------------inline_countPositives------------------------------
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
@@ -1293,7 +1299,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   }
   assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");
   Node* src         = argument(0); // byte[]
-  Node* tgt         = argument(1); // tgt is int ch
+  Node* int_ch      = argument(1);
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
@@ -1305,6 +1311,15 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 
   // Range checks
   generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
+
+  // Check for int_ch >= 0
+  Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
+  Node* int_ch_bol = _gvn.transform(new BoolNode(int_ch_cmp, BoolTest::ge));
+  {
+    BuildCutout unless(this, int_ch_bol, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
+  }
   if (stopped()) {
     return true;
   }
@@ -1312,7 +1327,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, ae);
+  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, int_ch, ae);
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   _gvn.transform(result);
 
@@ -1361,10 +1376,13 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || dst_type == nullptr) {
+    return false;
+  }
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
@@ -1637,7 +1655,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     set_sp(old_sp);
     return false;
   }
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2352,7 +2370,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2603,7 +2621,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     return false;
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
@@ -3121,7 +3139,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
   const TypeOopPtr* const xtype = aklass->as_instance_type();
-  Node* event_writer = access_load(jobj, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
+  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
+  Node* event_writer = access_load(jobj_untagged, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
 
   // Load the current thread id from the event writer object.
   Node* const event_writer_tid = load_field_from_object(event_writer, "threadID", "J");
@@ -3350,9 +3369,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
     = make_load(NULL, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
   thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
-  // Stores of oops to native memory not supported yet by BarrierSetC2::store_at_resolved
-  // access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
-  store_to_memory(control(), thread_obj_handle, arr, T_OBJECT, adr_type, MemNode::unordered);
+  access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
 }
@@ -4911,24 +4928,7 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
       }
 
       if (no_interfering_store) {
-        JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
-        uint size = alloc->req();
-        SafePointNode* sfpt = new SafePointNode(size, old_jvms);
-        old_jvms->set_map(sfpt);
-        for (uint i = 0; i < size; i++) {
-          sfpt->init_req(i, alloc->in(i));
-        }
-        // re-push array length for deoptimization
-        sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
-        old_jvms->set_sp(old_jvms->sp()+1);
-        old_jvms->set_monoff(old_jvms->monoff()+1);
-        old_jvms->set_scloff(old_jvms->scloff()+1);
-        old_jvms->set_endoff(old_jvms->endoff()+1);
-        old_jvms->set_should_reexecute(true);
-
-        sfpt->set_i_o(map()->i_o());
-        sfpt->set_memory(map()->memory());
-        sfpt->set_control(map()->control());
+        SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
 
         JVMState* saved_jvms = jvms();
         saved_reexecute_sp = _reexecute_sp;
@@ -4943,6 +4943,30 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
   return NULL;
 }
 
+// Clone the JVMState of the array allocation and create a new safepoint with it. Re-push the array length to the stack
+// such that uncommon traps can be emitted to re-execute the array allocation in the interpreter.
+SafePointNode* LibraryCallKit::create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const {
+  JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
+  uint size = alloc->req();
+  SafePointNode* sfpt = new SafePointNode(size, old_jvms);
+  old_jvms->set_map(sfpt);
+  for (uint i = 0; i < size; i++) {
+    sfpt->init_req(i, alloc->in(i));
+  }
+  // re-push array length for deoptimization
+  sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
+  old_jvms->set_sp(old_jvms->sp()+1);
+  old_jvms->set_monoff(old_jvms->monoff()+1);
+  old_jvms->set_scloff(old_jvms->scloff()+1);
+  old_jvms->set_endoff(old_jvms->endoff()+1);
+  old_jvms->set_should_reexecute(true);
+
+  sfpt->set_i_o(map()->i_o());
+  sfpt->set_memory(map()->memory());
+  sfpt->set_control(map()->control());
+  return sfpt;
+}
+
 // In case of a deoptimization, we restart execution at the
 // allocation, allocating a new array. We would leave an uninitialized
 // array in the heap that GCs wouldn't expect. Move the allocation
@@ -4950,18 +4974,20 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // deoptimize. This is possible because tightly_coupled_allocation()
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
-void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms,
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards,
                                                     int saved_reexecute_sp, uint new_idx) {
-  if (saved_jvms != NULL && !stopped()) {
+  if (saved_jvms_before_guards != NULL && !stopped()) {
+    replace_unrelated_uncommon_traps_with_alloc_state(alloc, saved_jvms_before_guards);
+
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
-    saved_jvms->map()->set_control(map()->control());
-    assert(saved_jvms->map()->memory() == map()->memory(), "memory state changed?");
-    assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
+    saved_jvms_before_guards->map()->set_control(map()->control());
+    assert(saved_jvms_before_guards->map()->memory() == map()->memory(), "memory state changed?");
+    assert(saved_jvms_before_guards->map()->i_o() == map()->i_o(), "IO state changed?");
     // If we've improved the types of some nodes (null check) while
     // emitting the guards, propagate them to the current state
-    map()->replaced_nodes().apply(saved_jvms->map(), new_idx);
-    set_jvms(saved_jvms);
+    map()->replaced_nodes().apply(saved_jvms_before_guards->map(), new_idx);
+    set_jvms(saved_jvms_before_guards);
     _reexecute_sp = saved_reexecute_sp;
 
     // Remove the allocation from above the guards
@@ -5037,6 +5063,58 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
   }
 }
 
+// Unrelated UCTs between the array allocation and the array copy, which are considered safe by tightly_coupled_allocation(),
+// need to be replaced by an UCT with a state before the array allocation (including the array length). This is necessary
+// because we could hit one of these UCTs (which are executed before the emitted array copy guards and the actual array
+// allocation which is moved down in arraycopy_move_allocation_here()). When later resuming execution in the interpreter,
+// we would have wrongly skipped the array allocation. To prevent this, we resume execution at the array allocation in
+// the interpreter similar to what we are doing for the newly emitted guards for the array copy.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc,
+                                                                       JVMState* saved_jvms_before_guards) {
+  if (saved_jvms_before_guards->map()->control()->is_IfProj()) {
+    // There is at least one unrelated uncommon trap which needs to be replaced.
+    SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
+
+    JVMState* saved_jvms = jvms();
+    const int saved_reexecute_sp = _reexecute_sp;
+    set_jvms(sfpt->jvms());
+    _reexecute_sp = jvms()->sp();
+
+    replace_unrelated_uncommon_traps_with_alloc_state(saved_jvms_before_guards);
+
+    // Restore state
+    set_jvms(saved_jvms);
+    _reexecute_sp = saved_reexecute_sp;
+  }
+}
+
+// Replace the unrelated uncommon traps with new uncommon trap nodes by reusing the action and reason. The new uncommon
+// traps will have the state of the array allocation. Let the old uncommon trap nodes die.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards) {
+  Node* if_proj = saved_jvms_before_guards->map()->control(); // Start the search right before the newly emitted guards
+  while (if_proj->is_IfProj()) {
+    CallStaticJavaNode* uncommon_trap = get_uncommon_trap_from_success_proj(if_proj);
+    if (uncommon_trap != nullptr) {
+      create_new_uncommon_trap(uncommon_trap);
+    }
+    assert(if_proj->in(0)->is_If(), "must be If");
+    if_proj = if_proj->in(0)->in(0);
+  }
+  assert(if_proj->is_Proj() && if_proj->in(0)->is_Initialize(),
+         "must have reached control projection of init node");
+}
+
+void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call) {
+  const int trap_request = uncommon_trap_call->uncommon_trap_request();
+  assert(trap_request != 0, "no valid UCT trap request");
+  PreserveJVMState pjvms(this);
+  set_control(uncommon_trap_call->in(0));
+  uncommon_trap(Deoptimization::trap_request_reason(trap_request),
+                Deoptimization::trap_request_action(trap_request));
+  assert(stopped(), "Should be stopped");
+  _gvn.hash_delete(uncommon_trap_call);
+  uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
+}
 
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
@@ -5057,12 +5135,12 @@ bool LibraryCallKit::inline_arraycopy() {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest);
 
   int saved_reexecute_sp = -1;
-  JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
+  JVMState* saved_jvms_before_guards = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
   // See arraycopy_restore_alloc_state() comment
   // if alloc == NULL we don't have to worry about a tightly coupled allocation so we can emit all needed guards
-  // if saved_jvms != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
-  // if saved_jvms == NULL and alloc != NULL, we can't emit any guards
-  bool can_emit_guards = (alloc == NULL || saved_jvms != NULL);
+  // if saved_jvms_before_guards != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
+  // if saved_jvms_before_guards == NULL and alloc != NULL, we can't emit any guards
+  bool can_emit_guards = (alloc == NULL || saved_jvms_before_guards != NULL);
 
   // The following tests must be performed
   // (1) src and dest are arrays.
@@ -5078,12 +5156,12 @@ bool LibraryCallKit::inline_arraycopy() {
   // (3) src and dest must not be null.
   // always do this here because we need the JVM state for uncommon traps
   Node* null_ctl = top();
-  src  = saved_jvms != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src,  T_ARRAY);
+  src  = saved_jvms_before_guards != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src, T_ARRAY);
   assert(null_ctl->is_top(), "no null control here");
   dest = null_check(dest, T_ARRAY);
 
   if (!can_emit_guards) {
-    // if saved_jvms == NULL and alloc != NULL, we don't emit any
+    // if saved_jvms_before_guards == NULL and alloc != NULL, we don't emit any
     // guards but the arraycopy node could still take advantage of a
     // tightly allocated allocation. tightly_coupled_allocation() is
     // called again to make sure it takes the null check above into
@@ -5197,7 +5275,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   ciMethod* trap_method = method();
   int trap_bci = bci();
-  if (saved_jvms != NULL) {
+  if (saved_jvms_before_guards != NULL) {
     trap_method = alloc->jvms()->method();
     trap_bci = alloc->jvms()->bci();
   }
@@ -5269,9 +5347,8 @@ bool LibraryCallKit::inline_arraycopy() {
     const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
     const Type *toop = dest_klass_t->cast_to_exactness(false)->as_instance_type();
     src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
+    arraycopy_move_allocation_here(alloc, dest, saved_jvms_before_guards, saved_reexecute_sp, new_idx);
   }
-
-  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);
 
   if (stopped()) {
     return true;
@@ -5337,28 +5414,15 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
     // There may be guards which feed into the slow_region.
     // Any other control flow means that we might not get a chance
     // to finish initializing the allocated object.
-    if ((ctl->is_IfFalse() || ctl->is_IfTrue()) && ctl->in(0)->is_If()) {
-      IfNode* iff = ctl->in(0)->as_If();
-      Node* not_ctl = iff->proj_out_or_null(1 - ctl->as_Proj()->_con);
-      assert(not_ctl != NULL && not_ctl != ctl, "found alternate");
-      // One more try:  Various low-level checks bottom out in
-      // uncommon traps.  If the debug-info of the trap omits
-      // any reference to the allocation, as we've already
-      // observed, then there can be no objection to the trap.
-      bool found_trap = false;
-      for (DUIterator_Fast jmax, j = not_ctl->fast_outs(jmax); j < jmax; j++) {
-        Node* obs = not_ctl->fast_out(j);
-        if (obs->in(0) == not_ctl && obs->is_Call() &&
-            (obs->as_Call()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
-          found_trap = true; break;
-        }
-      }
-      if (found_trap) {
-        ctl = iff->in(0);       // This test feeds a harmless uncommon trap.
-        continue;
-      }
+    // Various low-level checks bottom out in uncommon traps. These
+    // are considered safe since we've already checked above that
+    // there is no unexpected observer of this allocation.
+    if (get_uncommon_trap_from_success_proj(ctl) != nullptr) {
+      assert(ctl->in(0)->is_If(), "must be If");
+      ctl = ctl->in(0)->in(0);
+    } else {
+      return nullptr;
     }
-    return NULL;
   }
 
   // If we get this far, we have an allocation which immediately
@@ -5367,6 +5431,20 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   // a new control state to which we will anchor the destination pointer.
 
   return alloc;
+}
+
+CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* node) {
+  if (node->is_IfProj()) {
+    Node* other_proj = node->as_IfProj()->other_if_proj();
+    for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
+      Node* obs = other_proj->fast_out(j);
+      if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&
+          (obs->as_CallStaticJava()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
+        return obs->as_CallStaticJava();
+      }
+    }
+  }
+  return nullptr;
 }
 
 //-------------inline_encodeISOArray-----------------------------------
@@ -5383,19 +5461,17 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   src = must_be_not_null(src, true);
   dst = must_be_not_null(dst, true);
 
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dst_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM ||
-      top_dest == NULL || top_dest->elem() == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM ||
+      dst_type == nullptr || dst_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
@@ -5438,18 +5514,16 @@ bool LibraryCallKit::inline_multiplyToLen() {
   x = must_be_not_null(x, true);
   y = must_be_not_null(y, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* y_type = y->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_y = y_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_y == NULL || top_y->elem() == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* y_type = y->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      y_type == nullptr || y_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType y_elem = y_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType y_elem = y_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || y_elem != T_INT) {
     return false;
   }
@@ -5546,18 +5620,16 @@ bool LibraryCallKit::inline_squareToLen() {
   x = must_be_not_null(x, true);
   z = must_be_not_null(z, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* z_type = z->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_z = z_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_z  == NULL || top_z->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* z_type = z->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      z_type == nullptr || z_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType z_elem = z_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType z_elem = z_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
@@ -5593,20 +5665,19 @@ bool LibraryCallKit::inline_mulAdd() {
   Node* len      = argument(3);
   Node* k        = argument(4);
 
+  in = must_be_not_null(in, true);
   out = must_be_not_null(out, true);
 
-  const Type* out_type = out->Value(&_gvn);
-  const Type* in_type = in->Value(&_gvn);
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  if (top_out  == NULL || top_out->elem()  == Type::BOTTOM ||
-      top_in == NULL || top_in->elem() == Type::BOTTOM) {
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  if (out_type == nullptr || out_type->elem() == Type::BOTTOM ||
+       in_type == nullptr ||  in_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType out_elem = out_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType in_elem = in_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType out_elem = out_type->elem()->array_element_basic_type();
+  BasicType in_elem = in_type->elem()->array_element_basic_type();
   if (out_elem != T_INT || in_elem != T_INT) {
     return false;
   }
@@ -5644,26 +5715,22 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
   Node* inv  = argument(4);
   Node* m    = argument(6);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* b_type = b->Value(&_gvn);
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_b == NULL || top_b->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* b_type = b->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      b_type == nullptr || b_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType b_elem = b_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType b_elem = b_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || b_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5703,22 +5770,19 @@ bool LibraryCallKit::inline_montgomerySquare() {
   Node* inv  = argument(3);
   Node* m    = argument(5);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5759,17 +5823,15 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   Node* shiftCount = argument(3);
   Node* numIter = argument(4);
 
-  const Type* newArr_type = newArr->Value(&_gvn);
-  const TypeAryPtr* top_newArr = newArr_type->isa_aryptr();
-  const Type* oldArr_type = oldArr->Value(&_gvn);
-  const TypeAryPtr* top_oldArr = oldArr_type->isa_aryptr();
-  if (top_newArr == NULL || top_newArr->elem() == Type::BOTTOM || top_oldArr == NULL
-      || top_oldArr->elem() == Type::BOTTOM) {
+  const TypeAryPtr* newArr_type = newArr->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* oldArr_type = oldArr->Value(&_gvn)->isa_aryptr();
+  if (newArr_type == nullptr || newArr_type->elem() == Type::BOTTOM ||
+      oldArr_type == nullptr || oldArr_type->elem() == Type::BOTTOM) {
     return false;
   }
 
-  BasicType newArr_elem = newArr_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType oldArr_elem = oldArr_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType newArr_elem = newArr_type->elem()->array_element_basic_type();
+  BasicType oldArr_elem = oldArr_type->elem()->array_element_basic_type();
   if (newArr_elem != T_INT || oldArr_elem != T_INT) {
     return false;
   }
@@ -5926,6 +5988,40 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   return true;
 }
 
+//------------------------------inline_vectorizedHashcode----------------------------
+bool LibraryCallKit::inline_vectorizedHashCode() {
+  assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
+
+  assert(callee()->signature()->size() == 5, "vectorizedHashCode has 5 parameters");
+  Node* array          = argument(0);
+  Node* offset         = argument(1);
+  Node* length         = argument(2);
+  Node* initialValue   = argument(3);
+  Node* basic_type     = argument(4);
+
+  if (basic_type == top()) {
+    return false; // failed input validation
+  }
+
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
+    return false; // Only intrinsify if mode argument is constant
+  }
+
+  array = must_be_not_null(array, true);
+
+  BasicType bt = (BasicType)basic_type_t->get_con();
+
+  // Resolve address of first element
+  Node* array_start = array_element_address(array, offset, bt);
+
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+    array_start, length, initialValue, basic_type)));
+  clear_upper_avx();
+
+  return true;
+}
+
 /**
  * Calculate CRC32 for byte.
  * int java.util.zip.CRC32.update(int crc, int b)
@@ -5974,15 +6070,14 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6063,15 +6158,14 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
 
   Node* length = _gvn.transform(new SubINode(end, offset));
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6156,15 +6250,14 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6398,11 +6491,10 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, true);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // for the quick and dirty code we will skip all the checks.
   // we are just trying to get the call to be generated.
@@ -6459,12 +6551,10 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, false);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM
-          &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start  = src;
@@ -6547,12 +6637,10 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset               = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM
-         &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6621,12 +6709,10 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM &&
-         top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -7060,14 +7146,13 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   Node* src            = argument(1); // type oop
   Node* ofs            = argument(2); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7152,14 +7237,13 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   Node* ofs            = argument(2); // type int
   Node* limit          = argument(3); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7290,15 +7374,12 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* ghash_object = argument(8);
 
   // (1) in, ct and out are arrays.
-  const Type* in_type = in->Value(&_gvn);
-  const Type* ct_type = ct->Value(&_gvn);
-  const Type* out_type = out->Value(&_gvn);
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  const TypeAryPtr* top_ct = ct_type->isa_aryptr();
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  assert(top_in != NULL && top_in->elem() != Type::BOTTOM &&
-         top_ct != NULL && top_ct->elem() != Type::BOTTOM &&
-         top_out != NULL && top_out->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* ct_type = ct->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  assert( in_type != nullptr &&  in_type->elem() != Type::BOTTOM &&
+          ct_type != nullptr &&  ct_type->elem() != Type::BOTTOM &&
+         out_type != nullptr && out_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* in_start = in;

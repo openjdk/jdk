@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ public class SignatureFileVerifier {
     /** ConstraintsParameters for checking disabled algorithms */
     private JarConstraintsParameters params;
 
+    private static final String META_INF = "META-INF/";
+
     /**
      * Create the named SignatureFileVerifier.
      *
@@ -143,6 +145,18 @@ public class SignatureFileVerifier {
 
     /**
      * Utility method used by JarVerifier and JarSigner
+     * to determine if a path is located directly in the
+     * META-INF/ directory
+     *
+     * @param name the path name to check
+     * @return true if the path resides in META-INF directly, ignoring case
+     */
+    public static boolean isInMetaInf(String name) {
+        return name.regionMatches(true, 0, META_INF, 0, META_INF.length())
+                && name.lastIndexOf('/') < META_INF.length();
+    }
+    /**
+     * Utility method used by JarVerifier and JarSigner
      * to determine the signature file names and PKCS7 block
      * files names that are supported
      *
@@ -153,7 +167,7 @@ public class SignatureFileVerifier {
      */
     public static boolean isBlockOrSF(String s) {
         // Note: keep this in sync with j.u.z.ZipFile.Source#isSignatureRelated
-        // we currently only support DSA and RSA PKCS7 blocks
+        // we currently only support DSA, RSA or EC PKCS7 blocks
         return s.endsWith(".SF")
             || s.endsWith(".DSA")
             || s.endsWith(".RSA")
@@ -191,19 +205,15 @@ public class SignatureFileVerifier {
      * @return true if the input file name is signature related
      */
     public static boolean isSigningRelated(String name) {
+        if (!isInMetaInf(name)) {
+            return false;
+        }
         name = name.toUpperCase(Locale.ENGLISH);
-        if (!name.startsWith("META-INF/")) {
-            return false;
-        }
-        name = name.substring(9);
-        if (name.indexOf('/') != -1) {
-            return false;
-        }
-        if (isBlockOrSF(name) || name.equals("MANIFEST.MF")) {
+        if (isBlockOrSF(name) || name.equals("META-INF/MANIFEST.MF")) {
             return true;
-        } else if (name.startsWith("SIG-")) {
+        } else if (name.startsWith("SIG-", META_INF.length())) {
             // check filename extension
-            // see http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#Digital_Signatures
+            // see https://docs.oracle.com/en/java/javase/19/docs/specs/jar/jar.html#digital-signatures
             // for what filename extensions are legal
             int extIndex = name.lastIndexOf('.');
             if (extIndex != -1) {

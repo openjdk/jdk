@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,7 +480,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size =
     -(frame::interpreter_frame_initial_sp_offset * wordSize) + entry_size;
 
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   Label after_frame_check;
 
@@ -644,7 +644,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
   __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
   __ push(rdx); // set constant pool cache
-  __ push(rlocals); // set locals pointer
+
+  __ movptr(rax, rlocals);
+  __ subptr(rax, rbp);
+  __ shrptr(rax, Interpreter::logStackElementSize);  // rax = rlocals - fp();
+  __ push(rax); // set relativized rlocals, see frame::interpreter_frame_locals()
+
   if (native_call) {
     __ push(0); // no bcp
   } else {
@@ -727,7 +732,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // method receiver, so do the banging after locking the receiver.)
 
   const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
   const Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);

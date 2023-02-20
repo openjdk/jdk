@@ -92,6 +92,7 @@ class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
+class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -935,7 +936,8 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
   Unique_Node_List* for_igvn()                  { return _for_igvn; }
-  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List.
+  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
+  inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
   void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
@@ -1211,7 +1213,7 @@ class Compile : public Phase {
   bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
 #endif // IA32
 #ifdef ASSERT
-  bool _type_verify_symmetry;
+  VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

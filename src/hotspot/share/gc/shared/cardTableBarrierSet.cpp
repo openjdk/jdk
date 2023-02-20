@@ -172,7 +172,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
       assert(deferred.word_size() == old_obj->size(),
              "Mismatch: multiple objects?");
     }
-    write_region(deferred);
+    write_region(thread, deferred);
     // "Clear" the deferred_card_mark field
     thread->set_deferred_card_mark(MemRegion());
   }

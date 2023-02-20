@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,12 @@
 
 # This script copies parts of a Visual Studio installation into a devkit
 # suitable for building OpenJDK and OracleJDK. Needs to run in Cygwin or WSL.
+#
+# To include the debugger tools for the jtreg failure_handler, those need to
+# be explicitly added to the Windows SDK installation first. That is done
+# through Windows Settings - Apps, find the Windows Software Development Kit
+# installation, click modify, and add the debugger tools.
+#
 # erik.joelsson@oracle.com
 
 usage_and_exit() {
@@ -197,6 +203,17 @@ mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Redist
 cp -r "$SDK_INSTALL_DIR/Redist/$UCRT_VERSION/ucrt" $DEVKIT_ROOT/$SDK_VERSION/Redist/
 mkdir -p $DEVKIT_ROOT/$SDK_VERSION/include
 cp -r "$SDK_INSTALL_DIR/include/$SDK_FULL_VERSION/"* $DEVKIT_ROOT/$SDK_VERSION/include/
+if [ -d "$SDK_INSTALL_DIR/Debuggers" ]; then
+    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib
+    cp -r "$SDK_INSTALL_DIR/Debuggers/arm64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/x64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/x86" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/arm64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/x64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/x86" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+else
+    echo "No SDK debuggers found, skipping"
+fi
 
 ################################################################################
 # Generate devkit.info
@@ -211,14 +228,14 @@ echo-info "# This file describes to configure how to interpret the contents of t
 echo-info "DEVKIT_NAME=\"Microsoft Visual Studio $VS_VERSION $VS_VERSION_SP (devkit)\""
 echo-info "DEVKIT_VS_VERSION=\"$VS_VERSION\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_x86=\"\$DEVKIT_ROOT/VC/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_x86=\"\$DEVKIT_ROOT/VC/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/x86\""
 echo-info "DEVKIT_VS_INCLUDE_x86=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_x86=\"\$DEVKIT_ROOT/VC/lib/x86;\$DEVKIT_ROOT/VC/atlmfc/lib/x86;\$DEVKIT_ROOT/$SDK_VERSION/lib/x86\""
 echo-info "DEVKIT_MSVCR_DLL_x86=\"\$DEVKIT_ROOT/VC/redist/x86/$MSVCR_DLL\""
 echo-info "DEVKIT_MSVCP_DLL_x86=\"\$DEVKIT_ROOT/VC/redist/x86/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x86\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_x86_64=\"\$DEVKIT_ROOT/VC/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_x86_64=\"\$DEVKIT_ROOT/VC/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/x64\""
 echo-info "DEVKIT_VS_INCLUDE_x86_64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_x86_64=\"\$DEVKIT_ROOT/VC/lib/x64;\$DEVKIT_ROOT/VC/atlmfc/lib/x64;\$DEVKIT_ROOT/$SDK_VERSION/lib/x64\""
 echo-info "DEVKIT_MSVCR_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL\""
@@ -226,7 +243,7 @@ echo-info "DEVKIT_VCRUNTIME_1_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$VCRUNTIM
 echo-info "DEVKIT_MSVCP_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86_64=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x64\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_aarch64=\"\$DEVKIT_ROOT/VC/bin/arm64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_aarch64=\"\$DEVKIT_ROOT/VC/bin/arm64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/arm64\""
 echo-info "DEVKIT_VS_INCLUDE_aarch64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_aarch64=\"\$DEVKIT_ROOT/VC/lib/arm64;\$DEVKIT_ROOT/VC/atlmfc/lib/arm64;\$DEVKIT_ROOT/$SDK_VERSION/lib/arm64\""
 echo-info "DEVKIT_MSVCR_DLL_aarch64=\"\$DEVKIT_ROOT/VC/redist/arm64/$MSVCR_DLL\""

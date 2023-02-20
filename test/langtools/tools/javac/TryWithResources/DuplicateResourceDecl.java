@@ -8,7 +8,7 @@
 
 class DuplicateResourceDecl {
 
-    public static void main(String[] args) {
+    public static void meth() {
         try(MyResource c = new MyResource();MyResource c = new MyResource()) {
         //do something
         } catch (Exception e) { }
