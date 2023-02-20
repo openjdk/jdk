@@ -424,7 +424,7 @@ public:
     G1PrepareRegionsClosure cl(_g1h, this);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_claimer, worker_id);
 
-    MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
     _all_card_set_stats.add(cl.card_set_stats());
   }
 
