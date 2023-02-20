@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
+#include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -462,48 +463,15 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
-void G1YoungCollector::retire_tlabs() {
-  Ticks start = Ticks::now();
-  _g1h->retire_tlabs();
-  double retire_time = (Ticks::now() - start).seconds() * MILLIUNITS;
-  phase_times()->record_prepare_tlab_time_ms(retire_time);
-}
-
-void G1YoungCollector::concatenate_dirty_card_logs_and_stats() {
-  Ticks start = Ticks::now();
-  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
-  size_t old_cards = qset.num_cards();
-  qset.concatenate_logs_and_stats();
-  size_t pending_cards = qset.num_cards();
-  size_t thread_buffer_cards = pending_cards - old_cards;
-  policy()->record_concurrent_refinement_stats(pending_cards, thread_buffer_cards);
-  double concat_time = (Ticks::now() - start).seconds() * MILLIUNITS;
-  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time);
-}
-
-#ifdef ASSERT
-void G1YoungCollector::verify_empty_dirty_card_logs() const {
-  struct Verifier : public ThreadClosure {
-    size_t _buffer_size;
-    Verifier() : _buffer_size(G1BarrierSet::dirty_card_queue_set().buffer_size()) {}
-    void do_thread(Thread* t) override {
-      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
-      assert((queue.buffer() == nullptr) || (queue.index() == _buffer_size),
-             "non-empty dirty card queue for thread");
-    }
-  } verifier;
-  Threads::threads_do(&verifier);
-}
-#endif // ASSERT
-
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
-  // Flush early, so later phases don't need to account for per-thread stuff.
-  // Flushes deferred card marks, so must precede concatenating logs.
-  retire_tlabs();
+  {
+    Ticks start = Ticks::now();
+    G1PreEvacuateCollectionSetBatchTask cl;
+    G1CollectedHeap::heap()->run_batch_task(&cl);
+    phase_times()->record_pre_evacuate_prepare_time_ms((Ticks::now() - start).seconds() * 1000.0);
+  }
 
-  // Flush early, so later phases don't need to account for per-thread stuff.
-  concatenate_dirty_card_logs_and_stats();
-
+  // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
   // Please see comment in g1CollectedHeap.hpp and
@@ -535,7 +503,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   }
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
-  verify_empty_dirty_card_logs();
 
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
