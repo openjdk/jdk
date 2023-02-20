@@ -59,7 +59,6 @@ do {                                                                           \
   if (!(p)) {                                                                  \
     TOUCH_ASSERT_POISON;                                                       \
     report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
-    BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
 #endif
@@ -86,7 +85,6 @@ do {                                                                           \
     TOUCH_ASSERT_POISON;                                                       \
     report_vm_status_error(__FILE__, __LINE__, "assert(" #p ") failed",        \
                            status, msg);                                       \
-    BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
 #endif
@@ -102,7 +100,6 @@ do {                                                                            
   if (!(p)) {                                                                     \
     TOUCH_ASSERT_POISON;                                                          \
     report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", __VA_ARGS__); \
-    BREAKPOINT;                                                                   \
   }                                                                               \
 } while (0)
 
@@ -110,35 +107,30 @@ do {                                                                            
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_fatal(INTERNAL_ERROR, __FILE__, __LINE__, __VA_ARGS__);                  \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 // out of memory
 #define vm_exit_out_of_memory(size, vm_err_type, ...)                             \
 do {                                                                              \
   report_vm_out_of_memory(__FILE__, __LINE__, size, vm_err_type, __VA_ARGS__);    \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define ShouldNotCallThis()                                                       \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_should_not_call(__FILE__, __LINE__);                                     \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define ShouldNotReachHere()                                                      \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_should_not_reach_here(__FILE__, __LINE__);                               \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define Unimplemented()                                                           \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_unimplemented(__FILE__, __LINE__);                                       \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define Untested(msg)                                                             \
@@ -162,20 +154,38 @@ enum VMErrorType {
 extern bool Debugging;
 
 // error reporting helper functions
+[[noreturn]]
 void report_vm_error(const char* file, int line, const char* error_msg);
+
+[[noreturn]]
+ATTRIBUTE_PRINTF(4, 5)
 void report_vm_error(const char* file, int line, const char* error_msg,
-                     const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+                     const char* detail_fmt, ...);
+
+[[noreturn]]
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
-void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+
+[[noreturn]]
+ATTRIBUTE_PRINTF(4, 5)
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
+
+[[noreturn]]
+ATTRIBUTE_PRINTF(5, 6)
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
-                             const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
-void report_should_not_call(const char* file, int line);
-void report_should_not_reach_here(const char* file, int line);
-void report_unimplemented(const char* file, int line);
+                             const char* detail_fmt, ...);
+
+[[noreturn]] void report_should_not_call(const char* file, int line);
+
+[[noreturn]] void report_should_not_reach_here(const char* file, int line);
+
+[[noreturn]] void report_unimplemented(const char* file, int line);
+
+// NOT [[noreturn]]
 void report_untested(const char* file, int line, const char* message);
 
-void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+ATTRIBUTE_PRINTF(1, 2)
+void warning(const char* format, ...);
 
 #define STATIC_ASSERT(Cond) static_assert((Cond), #Cond)
 

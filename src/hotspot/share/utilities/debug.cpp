@@ -166,7 +166,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -188,7 +187,6 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -208,7 +206,6 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
