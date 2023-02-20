@@ -112,7 +112,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         JPanel container = new JPanel(new BorderLayout());
         add(container, BorderLayout.NORTH);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(graph);
         RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
         if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
