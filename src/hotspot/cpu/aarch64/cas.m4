@@ -33,7 +33,7 @@ dnl
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_ad_cas.m4
+// This section is generated from cas.m4
 
 
 define(`CAS_INSN',
