@@ -666,7 +666,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set<String> aliasSet = null;
+    private Set<String> aliasSet;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -713,9 +713,12 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        if (aliasSet == null)
-            aliasSet = Set.of(aliases);
-        return aliasSet;
+        Set<String> as = this.aliasSet;
+        if (as == null) {
+            as = Set.of(aliases);
+            this.aliasSet = as;
+        }
+        return as;
     }
 
     /**
