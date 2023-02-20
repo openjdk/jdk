@@ -2887,7 +2887,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         /**
          * Possibly blocks awaiting root lock.
          */
-
         private void contendedLock() {
             Thread current = Thread.currentThread(), w;
             for (int s;;) {
