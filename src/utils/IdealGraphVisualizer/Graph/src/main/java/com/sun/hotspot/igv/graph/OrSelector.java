@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,27 +32,22 @@ import java.util.List;
  */
 public class OrSelector implements Selector {
 
-    private Selector selector1;
-    private Selector selector2;
+    private Selector[] selectors;
 
-    /** Creates a new instance of OrSelector */
-    public OrSelector(Selector s1, Selector s2) {
-        this.selector1 = s1;
-        this.selector2 = s2;
+    public OrSelector(Selector... selectors) {
+        this.selectors = selectors;
     }
 
     @Override
     public List<Figure> selected(Diagram d) {
-
-        List<Figure> l1 = selector1.selected(d);
-        List<Figure> l2 = selector2.selected(d);
-
-        for (Figure f : l2) {
-            if (!l1.contains(f)) {
-                l1.add(f);
+        List<Figure> result = new ArrayList<>();
+        for (Selector s : selectors) {
+            for (Figure f : s.selected(d)) {
+                if (!result.contains(f)) {
+                    result.add(f);
+                }
             }
         }
-
-        return l1;
+        return result;
     }
 }

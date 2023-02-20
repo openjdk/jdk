@@ -7,6 +7,12 @@ removeInputs("name", "Unlock|Lock", 7);
 removeInputs("name", "Allocate", 7);
 removeInputs("name", "AllocateArray", 9);
 
+// Inline Parm and start MachProj nodes, except control ones.
+new SplitFilter("", new AndSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Parm|MachProj")),
+                                    new InvertSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("category", "control"))),
+                                    new SuccessorSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Start")))),
+                "[short_name]").apply(graph);
+
 // Combine single-input nodes.
 var anyNode = new Properties.RegexpPropertyMatcher("name", ".*");
 var f = new CombineFilter("Combine Filter");

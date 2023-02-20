@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,23 +32,24 @@ import java.util.List;
  */
 public class AndSelector implements Selector {
 
-    private Selector selector1;
-    private Selector selector2;
+    private Selector[] selectors;
 
-    public AndSelector(Selector s1, Selector s2) {
-        this.selector1 = s1;
-        this.selector2 = s2;
+    public AndSelector(Selector... selectors) {
+        this.selectors = selectors;
     }
 
     @Override
     public List<Figure> selected(Diagram d) {
-        List<Figure> l1 = selector1.selected(d);
-        List<Figure> l2 = selector2.selected(d);
-        List<Figure> result = new ArrayList<>();
-        for (Figure f : l2) {
-            if (l1.contains(f)) {
-                result.add(f);
+        List<Figure> result = d.getFigures();
+        for (Selector s : selectors) {
+            List<Figure> selected = s.selected(d);
+            List<Figure> newResult = new ArrayList<>();
+            for (Figure f : result) {
+                if (selected.contains(f)) {
+                    newResult.add(f);
+                }
             }
+            result = newResult;
         }
         return result;
     }
