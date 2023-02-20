@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/memTracker.hpp"
+#include "services/memTracker.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -308,6 +309,10 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
+
+  if (MemTracker::check_exceeds_limit(x, _flags)) {
+    return nullptr;
+  }
 
   Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (alloc_failmode, len) Chunk(len);

@@ -950,8 +950,9 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Exp {
-        private static final double one     = 1.0;
+    static final class Exp {
+        private Exp() {throw new UnsupportedOperationException();}
+
         private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
@@ -968,10 +969,6 @@ class FdLibm {
         private static final double P3   =  0x1.1566aaf25de2cp-14; //  6.61375632143793436117e-05
         private static final double P4   = -0x1.bbd41c5d26bf1p-20; // -1.65339022054652515390e-06
         private static final double P5   =  0x1.6376972bea4d0p-25; //  4.13813679705723846039e-08
-
-        private Exp() {
-            throw new UnsupportedOperationException();
-        }
 
         public static double compute(double x) {
             double y;
@@ -1015,8 +1012,8 @@ class FdLibm {
                 }
                 x  = hi - lo;
             } else if (hx < 0x3e300000)  {     /* when |x|<2**-28 */
-                if (huge + x > one)
-                    return one + x; /* trigger inexact */
+                if (huge + x > 1.0)
+                    return 1.0 + x; /* trigger inexact */
             } else {
                 k = 0;
             }
@@ -1025,9 +1022,9 @@ class FdLibm {
             t  = x * x;
             c  = x - t*(P1 + t*(P2 + t*(P3 + t*(P4 + t*P5))));
             if (k == 0)
-                return one - ((x*c)/(c - 2.0) - x);
+                return 1.0 - ((x*c)/(c - 2.0) - x);
             else
-                y = one - ((lo - (x*c)/(2.0 - c)) - hi);
+                y = 1.0 - ((lo - (x*c)/(2.0 - c)) - hi);
 
             if(k >= -1021) {
                 y = __HI(y, __HI(y) + (k << 20)); /* add k to y's exponent */
@@ -1624,6 +1621,217 @@ class FdLibm {
                 }
             }
             return y;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically sinh(x) if defined to be (exp(x)-exp(-x))/2
+     *      1. Replace x by |x| (sinh(-x) = -sinh(x)).
+     *      2.
+     *                                                  E + E/(E+1)
+     *          0        <= x <= 22     :  sinh(x) := --------------, E=expm1(x)
+     *                                                      2
+     *
+     *          22       <= x <= lnovft :  sinh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  sinh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  sinh(x) := x*shuge (overflow)
+     *
+     * Special cases:
+     *      sinh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only sinh(0)=0 is exact for finite x.
+     */
+    static final class Sinh {
+        private Sinh() {throw new UnsupportedOperationException();}
+
+        private static final double shuge = 1.0e307;
+
+        static double compute(double x) {
+            double t, w, h;
+            int ix, jx;
+            /* unsigned */ int lx;
+
+            // High word of |x|
+            jx = __HI(x);
+            ix = jx & 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                return x + x;
+            }
+
+            h = 0.5;
+            if (jx < 0) {
+                h = -h;
+            }
+            // |x| in [0,22], return sign(x)*0.5*(E+E/(E+1)))
+            if (ix < 0x4036_0000) {          // |x| < 22
+                if (ix < 0x3e30_0000)        // |x| < 2**-28
+                    if (shuge + x > 1.0) {   // sinh(tiny) = tiny with inexact
+                        return x;
+                    }
+                t = StrictMath.expm1(Math.abs(x));
+                if (ix < 0x3ff0_0000) {
+                    return h*(2.0 * t - t*t/(t + 1.0));
+                }
+                return h*(t + t/(t + 1.0));
+            }
+
+            // |x| in [22, log(maxdouble)] return 0.5*exp(|x|)
+            if (ix < 0x4086_2E42) {
+                return h*StrictMath.exp(Math.abs(x));
+            }
+
+            // |x| in [log(maxdouble), overflowthresold]
+            lx = __LO(x);
+            if (ix < 0x4086_33CE ||
+                ((ix == 0x4086_33ce) &&
+                 (Long.compareUnsigned(lx, 0x8fb9_f87d) <= 0 ))) {
+                w = StrictMath.exp(0.5 * Math.abs(x));
+                t = h * w;
+                return t * w;
+            }
+
+            // |x| > overflowthresold, sinh(x) overflow
+            return x * shuge;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically cosh(x) if defined to be (exp(x)+exp(-x))/2
+     *      1. Replace x by |x| (cosh(x) = cosh(-x)).
+     *      2.
+     *                                                      [ exp(x) - 1 ]^2
+     *          0        <= x <= ln2/2  :  cosh(x) := 1 + -------------------
+     *                                                         2*exp(x)
+     *
+     *                                                exp(x) +  1/exp(x)
+     *          ln2/2    <= x <= 22     :  cosh(x) := -------------------
+     *                                                        2
+     *          22       <= x <= lnovft :  cosh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  cosh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  cosh(x) := huge*huge (overflow)
+     *
+     * Special cases:
+     *      cosh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only cosh(0)=1 is exact for finite x.
+     */
+    static final class Cosh {
+        private Cosh() {throw new UnsupportedOperationException();}
+
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t, w;
+            int ix;
+            /*unsigned*/ int lx;
+
+            // High word of |x|
+            ix = __HI(x);
+            ix &= 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                return x*x;
+            }
+
+            // |x| in [0,0.5*ln2], return 1+expm1(|x|)^2/(2*exp(|x|))
+            if (ix < 0x3fd6_2e43) {
+                t = StrictMath.expm1(Math.abs(x));
+                w = 1.0 + t;
+                if (ix < 0x3c80_0000) { // cosh(tiny) = 1
+                    return w;
+                }
+                return 1.0 + (t * t)/(w + w);
+            }
+
+            // |x| in [0.5*ln2, 22], return (exp(|x|) + 1/exp(|x|)/2
+            if (ix < 0x4036_0000) {
+                t = StrictMath.exp(Math.abs(x));
+                return 0.5*t + 0.5/t;
+            }
+
+            // |x| in [22, log(maxdouble)] return 0.5*exp(|x|)
+            if (ix < 0x4086_2E42) {
+                return 0.5*StrictMath.exp(Math.abs(x));
+            }
+
+            // |x| in [log(maxdouble), overflowthresold]
+            lx = __LO(x);
+            if (ix<0x4086_33CE ||
+                ((ix == 0x4086_33ce) &&
+                 (Integer.compareUnsigned(lx, 0x8fb9_f87d) <= 0))) {
+                w = StrictMath.exp(0.5*Math.abs(x));
+                t = 0.5*w;
+                return t*w;
+            }
+
+            // |x| > overflowthresold, cosh(x) overflow
+            return huge*huge;
+        }
+    }
+
+    /**
+     * Return the Hyperbolic Tangent of x
+     *
+     * Method :
+     *                                     x    -x
+     *                                    e  - e
+     *      0. tanh(x) is defined to be -----------
+     *                                     x    -x
+     *                                    e  + e
+     *      1. reduce x to non-negative by tanh(-x) = -tanh(x).
+     *      2.  0      <= x <= 2**-55 : tanh(x) := x*(one+x)
+     *                                              -t
+     *          2**-55 <  x <=  1     : tanh(x) := -----; t = expm1(-2x)
+     *                                             t + 2
+     *                                                   2
+     *          1      <= x <=  22.0  : tanh(x) := 1-  ----- ; t=expm1(2x)
+     *                                                 t + 2
+     *          22.0   <  x <= INF    : tanh(x) := 1.
+     *
+     * Special cases:
+     *      tanh(NaN) is NaN;
+     *      only tanh(0)=0 is exact for finite argument.
+     */
+    static final class Tanh {
+        private Tanh() {throw new UnsupportedOperationException();}
+
+        private static final double tiny = 1.0e-300;
+
+        static double compute(double x) {
+            double t, z;
+            int jx, ix;
+
+            // High word of |x|.
+            jx = __HI(x);
+            ix = jx & 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                if (jx >= 0) {  // tanh(+-inf)=+-1
+                    return 1.0/x + 1.0;
+                } else {        // tanh(NaN) = NaN
+                    return 1.0/x - 1.0;
+                }
+            }
+
+            // |x| < 22
+            if (ix < 0x4036_0000) {          // |x| < 22
+                if (ix<0x3c80_0000)          // |x| < 2**-55
+                    return x*(1.0 + x);      // tanh(small) = small
+                if (ix>=0x3ff0_0000) {       // |x| >= 1
+                    t = StrictMath.expm1(2.0*Math.abs(x));
+                    z = 1.0 - 2.0/(t + 2.0);
+                } else {
+                    t = StrictMath.expm1(-2.0*Math.abs(x));
+                    z= -t/(t + 2.0);
+                }
+            } else { // |x| > 22, return +-1
+                z = 1.0 - tiny;             // raised inexact flag
+            }
+            return (jx >= 0)? z: -z;
         }
     }
 }
