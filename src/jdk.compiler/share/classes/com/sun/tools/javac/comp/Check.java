@@ -478,7 +478,7 @@ public class Check {
      *  To help avoid clashes on case-insensitive filesystems,
      *  we use case-insensitive local class names in our map.
      *  While this means clearLocalClassNameIndexes() could clear
-     *  keys for more than one symbol, its only invoked after
+     *  keys for more than one symbol, it's only invoked after
      *  all related local classes have been processed for a class.
      *  We only lowercase A-Z to avoid any locale issues.
      */
