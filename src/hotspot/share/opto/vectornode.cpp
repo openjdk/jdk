@@ -555,6 +555,13 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
     *start = 1;
     *end   = 2; // 1 vector operand
     break;
+  case Op_RotateLeft:
+  case Op_RotateRight:
+    // Rotate shift could have 1 or 2 vector operand(s), depending on
+    // whether shift distance is a supported constant or not.
+    *start = 1;
+    *end   = (n->is_Con() && Matcher::supports_vector_constant_rotates(n->get_int())) ? 2 : 3;
+    break;
   case Op_AddI: case Op_AddL: case Op_AddF: case Op_AddD:
   case Op_SubI: case Op_SubL: case Op_SubF: case Op_SubD:
   case Op_MulI: case Op_MulL: case Op_MulF: case Op_MulD:
