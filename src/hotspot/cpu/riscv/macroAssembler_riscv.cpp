@@ -1059,7 +1059,7 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
     csrr(Rd, CSR);                            \
   }
 
-  INSN(rdinstret,  CSR_INSTERT);
+  INSN(rdinstret,  CSR_INSTRET);
   INSN(rdcycle,    CSR_CYCLE);
   INSN(rdtime,     CSR_TIME);
   INSN(frcsr,      CSR_FCSR);
