@@ -34,7 +34,6 @@ class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
 class G1ConcurrentMark;
-class DirtyCardToOopClosure;
 class G1CMBitMap;
 class G1ParScanThreadState;
 class G1ScanEvacuatedObjClosure;
@@ -233,6 +232,38 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
+};
+
+class G1VerificationClosure : public BasicOopIterateClosure {
+protected:
+  G1CollectedHeap* _g1h;
+  oop _containing_obj;
+  size_t _num_failures;
+  VerifyOption _vo;
+
+public:
+  G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo);
+
+  void set_containing_obj(oop obj) {
+    _containing_obj = obj;
+  }
+
+  bool has_failures() { return _num_failures != 0; }
+  size_t num_failures() { return _num_failures; }
+
+  void print_object(outputStream* out, oop obj);
+};
+
+class G1VerifyLiveClosure : public G1VerificationClosure {
+
+  template <class T>
+  inline void do_oop_work(T* p);
+
+public:
+  G1VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) { do_oop_work(p); }
 };
 
 #endif // SHARE_GC_G1_G1OOPCLOSURES_HPP

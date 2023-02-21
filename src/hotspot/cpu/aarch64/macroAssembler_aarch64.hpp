@@ -581,6 +581,14 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b001, reg);
   }
 
+  inline void get_nzcv(Register reg) {
+    mrs(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
+  inline void set_nzcv(Register reg) {
+    msr(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -630,7 +638,9 @@ public:
     return false;
   }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  static int max_trampoline_stub_size();
   void emit_static_call_stub();
+  static int static_call_stub_size();
 
   // The following 4 methods return the offset of the appropriate move instruction
 
@@ -833,6 +843,7 @@ public:
 
   // oop manipulations
   void load_klass(Register dst, Register src);
+  void load_klass_check_null(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
@@ -1412,12 +1423,18 @@ public:
                                Register yz_idx1, Register yz_idx2,
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp7, Register product_hi);
+  void kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3);
   void kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+  void kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        size_t table_offset);
 
   void ghash_modmul (FloatRegister result,
                      FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,

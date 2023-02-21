@@ -461,7 +461,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
     INPUT_RECORD *buffer = new INPUT_RECORD[in_nLength];
     DWORD numberOfEventsRead;
     if (!ReadConsoleInputW(h, buffer, in_nLength, &numberOfEventsRead)) {
-        delete buffer;
+        delete[] buffer;
         DWORD error = GetLastError();
         jobject exc = env->NewObject(lastErrorExceptionClass,
                                      lastErrorExceptionConstructor,
@@ -565,7 +565,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
         env->SetObjectArrayElement(out_lpBuffer, i, record);
     }
     env->SetIntField(out_lpNumberOfEventsRead, intByReferenceValue, numberOfEventsRead);
-    delete buffer;
+    delete[] buffer;
 }
 
 /*
@@ -657,7 +657,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
     env->GetCharArrayRegion(in_lpBuffer, 0, in_nNumberOfCharsToWrite, chars);
     DWORD written;
     if (!WriteConsoleW(h, chars, in_nNumberOfCharsToWrite, &written, NULL)) {
-        delete chars;
+        delete[] chars;
         DWORD error = GetLastError();
         jobject exc = env->NewObject(lastErrorExceptionClass,
                                      lastErrorExceptionConstructor,
@@ -667,7 +667,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
     }
 
     env->SetIntField(out_lpNumberOfCharsWritten, intByReferenceValue, written);
-    delete chars;
+    delete[] chars;
 }
 
 /*
