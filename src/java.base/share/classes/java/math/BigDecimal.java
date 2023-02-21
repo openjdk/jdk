@@ -2124,7 +2124,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
              *
              * x = y * 10 ^ exp
              * sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even
-             * sqrt(x) = sqrt(y/10) * 10 ^((exp+1)/2) if exp is odd
+             * sqrt(x) = sqrt(y/10) * 10 ^((exp+1)/2) is exp is odd
              *
              * Then use Newton's iteration on the reduced value to compute
              * the numerical digits of the desired result.
@@ -2246,29 +2246,30 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // and rounding the input value too soon.
             BigDecimal approx = guess;
             int workingPrecision = working.precision();
-            int loopPrec = Math.max(Math.max(guessPrecision, targetPrecision + 2), working.precision());
-            MathContext loopMC = new MathContext(loopPrec, RoundingMode.HALF_EVEN);
             do {
+                int tmpPrecision = Math.max(Math.max(guessPrecision, targetPrecision + 2),
+                                           workingPrecision);
+                MathContext mcTmp = new MathContext(tmpPrecision, RoundingMode.HALF_EVEN);
                 // approx = 0.5 * (approx + fraction / approx)
-                approx = ONE_HALF.multiply(approx.add(working.divide(approx, loopMC), loopMC));
-                guessPrecision <<= 1;
-            } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
+                approx = ONE_HALF.multiply(approx.add(working.divide(approx, mcTmp), mcTmp));
+                guessPrecision *= 2;
+            } while (guessPrecision < targetPrecision + 2);
 
-            BigDecimal result = approx.scaleByPowerOfTen(-scaleAdjust/2);
+            BigDecimal result;
             RoundingMode targetRm = mc.getRoundingMode();
             if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
                 RoundingMode tmpRm =
                     (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
                 MathContext mcTmp = new MathContext(targetPrecision, tmpRm);
-                result = result.round(mcTmp);
+                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mcTmp);
 
                 // If result*result != this numerically, the square
                 // root isn't exact
-                if (result.square().compareTo(this) != 0) {
+                if (this.subtract(result.square()).compareTo(ZERO) != 0) {
                     throw new ArithmeticException("Computed square root not exact.");
                 }
             } else {
-                result = result.round(mc);
+                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mc);
 
                 switch (targetRm) {
                 case DOWN:
@@ -2316,7 +2317,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // Test numerical properties at full precision before any
             // scale adjustments.
             assert squareRootResultAssertions(result, mc);
-            return result.setPreferredScale(mc.precision, preferredScale, zeroWithFinalPreferredScale);
+            if (result.scale() != preferredScale) {
+                // The preferred scale of an add is
+                // max(addend.scale(), augend.scale()). Therefore, if
+                // the scale of the result is first minimized using
+                // stripTrailingZeros(), adding a zero of the
+                // preferred scale rounding to the correct precision
+                // will perform the proper scale vs precision
+                // tradeoffs.
+                result = result.stripTrailingZeros().
+                    add(zeroWithFinalPreferredScale,
+                        new MathContext(originalPrecision, RoundingMode.UNNECESSARY));
+            }
+            return result;
         } else {
             BigDecimal result = null;
             switch (signum) {
@@ -2332,6 +2345,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 throw new AssertionError("Bad value from signum");
             }
         }
+    }
+
+    BigDecimal square() {
+        return this.multiply(this);
+    }
+
+    boolean isPowerOfTen() {
+        return BigInteger.ONE.equals(this.unscaledValue());
     }
 
     /**
@@ -2350,474 +2371,84 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * </ul>
      */
     private boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
-        return rootResultAssertions(2, result, mc);
-    }
-    
-    BigDecimal square() {
-        return this.multiply(this);
-    }
-
-    boolean isPowerOfTen() {
-        return BigInteger.ONE.equals(this.unscaledValue());
-    }
-    
-    /**
-     * Returns an approximation to the {@code n}th root of {@code this} with
-     * rounding according to the context settings.
-     *
-     * <p>The preferred scale of the returned result is equal to
-     * {@code this.scale()/n}. The value of the returned result is
-     * always within one ulp of the exact decimal value for the
-     * precision in question.  If the rounding mode is {@link
-     * RoundingMode#HALF_UP HALF_UP}, {@link RoundingMode#HALF_DOWN
-     * HALF_DOWN}, or {@link RoundingMode#HALF_EVEN HALF_EVEN}, the
-     * result is within one half an ulp of the exact decimal value.
-     *
-     * <p>Special case:
-     * <ul>
-     * <li> The {@code n}th root of a number numerically equal to {@code
-     * ZERO} is numerically equal to {@code ZERO} with a preferred
-     * scale according to the general rule above. In particular, for
-     * {@code ZERO}, {@code ZERO.root(n, mc).equals(ZERO)} is true with
-     * any degree and {@code MathContext} as arguments.
-     * </ul>
-     *
-     * @param n  the root degree
-     * @param mc the context to use.
-     * @return the {@code n}th root of {@code this}.
-     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
-     *                             defined.)
-     * @throws ArithmeticException if {@code n} is negative. (This would cause the
-     *                             operation to compute non-exact reciprocals.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative. (This would cause the operation to
-     *                             yield non-real roots.)
-     * @throws ArithmeticException if an exact result is requested
-     *                             ({@code mc.getPrecision() == 0}) and there is no
-     *                             finite decimal expansion of the exact result.
-     * @throws ArithmeticException if
-     *                             {@code (mc.getRoundingMode( ) == RoundingMode.UNNECESSARY})
-     *                             and the exact result cannot fit in
-     *                             {@code mc.getPrecision()} digits.
-     * @see BigInteger#sqrt()
-     * @see BigInteger#root(int)
-     * @see Rational#root(int, MathContext)
-     * @see #sqrt(MathContext)
-     * @since 21
-     */
-    public BigDecimal root(final int n, MathContext mc) {
-        if (n == 2)
-            return sqrt(mc);
-        
-        if (n <= 0)
-            throw new ArithmeticException("Non-positive root degree");
-
-        // even-degree root of negative radicand
-        if ((n & 1) == 0 && this.signum() == -1)
-            throw new ArithmeticException("Attempted " + n + "th root of negative BigDecimal");
-
-        int preferredScale = this.scale / n;
-        BigDecimal zeroWithFinalPreferredScale = valueOf(0L, preferredScale);
-        BigDecimal result;
-        
-        // handle easy cases
-        if (this.signum() == 0 || this.compareTo(ONE) == 0) {
-            result = this; // 0**n == 0, 1**n == 1
-        } else if (n == 1) {
-            result = this.round(mc); // x**1 == x, rounded according to mc
-        } else {
-            /*
-             * The following code draws on the algorithm presented in
-             * "Properly Rounded Variable Precision Square Root," Hull and Abrham, ACM
-             * Transactions on Mathematical Software, Vol 11, No. 3, September 1985, Pages
-             * 229-237.
-             *
-             * The Rational computational model differs from the one presented in the paper
-             * in several ways: first Rational numbers aren't normalized, second many more
-             * rounding modes are supported, including UNNECESSARY, and exact results can be
-             * requested.
-             *
-             * The main steps of the algorithm below are as follows, first argument reduce
-             * the value to the numerical range [1, 10) using the following relations:
-             *
-             * x = y * 10 ^ exp
-             * 
-             * root(x, n) = root(y, n) * 10^(exp/n), if mod(exp, n) = 0
-             * 
-             * if mod(exp, n) > 0:
-             *
-             * root(x, n) = root(y * 10^-(n - mod(exp, n)), n) * 10^(exp + (n -
-             * mod(exp, n))/n), if exp >= 0
-             *
-             * root(x, n) = root(y * 10^-mod(exp, n), n) * 10^((exp + mod(exp,
-             * n))/n), if exp <= 0
-             *
-             * Then use Newton's iteration on the reduced value to compute the numerical
-             * digits of the desired result.
-             *
-             * Finally, scale back to the desired exponent range and perform any adjustment
-             * to get the preferred scale in the representation.
-             */
-
-            // The code below favors relative simplicity over checking
-            // for special cases that could run faster.
-
-            // First phase of numerical normalization, strip trailing
-            // zeros and check for powers of 10 whose exponent is a multiple of n.
-            BigDecimal stripped = this.stripTrailingZeros();
-            int strippedScale = stripped.scale;
-
-            // Numerically root(10^(exp * n), n) == 10^exp
-            if (stripped.isPowerOfTen() &&
-                strippedScale % n == 0) {
-                result = valueOf(1L, strippedScale / n);
-                if (result.scale != preferredScale) {
-                    // Adjust to requested precision and preferred
-                    // scale as appropriate.
-                    result = result.add(zeroWithFinalPreferredScale, mc);
-                }
-                return result;
-            }
-            
-            // After stripTrailingZeros, the representation is normalized as
-            //
-            // unscaledValue * 10^(-scale)
-            //
-            // where unscaledValue is an integer with the minimum
-            // precision for the cohort of the numerical value. To
-            // allow binary floating-point hardware to be used to get
-            // approximately a 15 digit approximation to the root,
-            // it is helpful to instead normalize this so that
-            // the significand portion is to right of the decimal point
-            // and the value is positive.
-
-            // Now the precision / scale adjustment
-            long scale = stripped.scale - stripped.precision(); // 0.1 <= abs(this) * 10^scale < 1
-            // adjust scale to the largest multiple of n not larger than scale
-            final long mod = Math.abs(scale % n);
-            if (mod != 0)
-                scale -= (scale >= 0 ? mod : n - mod);
-            
-            final int scaleAdjust = (int) scale;
-            if (scaleAdjust != scale)
-                new ArithmeticException("Underflow");
-
-            final BigDecimal working = stripped.abs().scaleByPowerOfTen(scaleAdjust);
-            // Verify 10^-n <= working < 10
-            assert valueOf(1L, n).compareTo(working) <= 0 && working.compareTo(TEN) < 0;
-            
-            // Use good ole' Math.pow to get the initial guess for
-            // the Newton iteration, good to at least 15 decimal
-            // digits. This approach does incur the cost of a
-            //
-            // BigDecimal -> double -> BigDecimal
-            //
-            // conversion cycle, but it avoids the need for several
-            // Newton iterations in BigDecimal arithmetic to get the
-            // working answer to 15 digits of precision. If many fewer
-            // than 15 digits were needed, it might be faster to do
-            // the loop entirely in BigDecimal arithmetic.
-            //
-            // (A double value might have as many as 17 decimal
-            // digits of precision; it depends on the relative density
-            // of binary and decimal numbers at different regions of
-            // the number line.)
-            //
-            // (It would be possible to check for certain special
-            // cases to avoid doing any Newton iterations. For
-            // example, if the BigDecimal -> double conversion was
-            // known to be exact and the rounding mode had a
-            // low-enough precision, the post-Newton rounding logic
-            // could be applied directly.)
-            
-            int targetPrec;
-            // If an exact value is requested, it must only need about
-            // 1/n of the input digits to represent since raising
-            // an D digit number to n yield from (D-1)*n+1 digit to D*n
-            // digit result.
-            if (mc.precision == 0) {
-                targetPrec = stripped.precision() / n + 1;
-            } else {
-                targetPrec = mc.precision;
-                /*
-                 * To avoid the need for post-Newton fix-up logic, in
-                 * the case of half-way rounding modes, double the
-                 * target precision so that the "2p + 2" property can
-                 * be relied on to accomplish the final rounding.
-                 */
-                switch (mc.roundingMode) {
-                case HALF_UP:
-                case HALF_DOWN:
-                case HALF_EVEN:
-                    targetPrec <<= 1;
-                    if (targetPrec < 0) // Overflow
-                        targetPrec = Integer.MAX_VALUE - 2;
-                }
-            }
-
-            double guess = Math.pow(working.doubleValue(), 1.0 / n);
-            int guessPrec = 15;
-            // Avoid division by zero in Newton's iteration
-            if (guess == 0.0) // Underflow
-                guess = Double.MIN_VALUE;
-            
-            final BigDecimal N = BigDecimal.valueOf(n);
-            // When setting the precision to use inside the Newton
-            // iteration loop, take care to avoid the case where the
-            // precision of the input exceeds the requested precision
-            // and rounding the input value too soon.
-            final int loopPrec = Collections.max(List.of
-                    (guessPrec, targetPrec + 2, working.precision(), N.precision()));
-            final MathContext loopMC = new MathContext(loopPrec, RoundingMode.HALF_EVEN);
-            
-            BigDecimal approx = new BigDecimal(guess);
-            BigDecimal delta = ZERO, prevApprox = approx;
-            // cache for power calculations
-            final BigDecimal[] acc = new BigDecimal[Integer.SIZE - Integer.numberOfLeadingZeros(n - 1)];
-            final BigDecimal[] sqAcc = new BigDecimal[acc.length];
-            do {
-                // approx == prevApprox + delta
-                // pow = approx**(n - 1)
-                BigDecimal pow = prevApprox.addAndPow(delta, n - 1, acc, sqAcc);
-                // update
-                prevApprox = approx;
-                // approx = (working / pow - approx) / n + approx
-                approx = working.divide(pow, loopMC).subtract(approx).divide(N, loopMC).add(approx, loopMC);
-                delta = approx.subtract(prevApprox);
-                guessPrec <<= 1;
-            } while (guessPrec < targetPrec + 2 && guessPrec > 0); // avoid overflow
-            
-            // Scale the result back into the original range
-            result = approx.scaleByPowerOfTen(-scaleAdjust / n);
-
-            // adjust the sign
-            if (this.signum() == -1)
-                result = result.negate();
-            
-            if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) {
-                RoundingMode tmpRm =
-                    (mc.roundingMode == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : mc.roundingMode;
-                MathContext mcTmp = new MathContext(targetPrec, tmpRm);
-                result = result.round(mcTmp);
-
-                // If result**n != this numerically, the root isn't exact
-                if (result.pow(n).compareTo(this) != 0)
-                    throw new ArithmeticException("Computed " + n + "th root not exact.");
-            } else {
-                result = result.round(mc);
-                
-                if (roundFloor(mc.roundingMode, result.signum())) {
-                    // Check if too big
-                    if (result.pow(n).compareTo(this) > 0) {
-                        BigDecimal ulp = result.ulp();
-                        // Adjust increment down in case of 1.0 = 10^0
-                        // since the next smaller number is only 1/10
-                        // as far way as the next larger at exponent
-                        // boundaries. Test approx and *not* result to
-                        // avoid having to detect an arbitrary power
-                        // of ten.
-                        if (approx.compareTo(ONE) == 0)
-                            ulp = ulp.multiply(ONE_TENTH);
-                        
-                        result = result.subtract(ulp);
-                    }
-                } else if (roundCeiling(mc.roundingMode, result.signum())) {
-                    // Check if too small
-                    if (result.pow(n).compareTo(this) < 0)
-                        result = result.add(result.ulp());
-                }
-                // No additional work, rely on "2p + 2" property
-                // for correct rounding. Alternatively, could
-                // instead run the Newton iteration to around p
-                // digits and then do tests and fix-ups on the
-                // rounded value. One possible set of tests and
-                // fix-ups is given in the Hull and Abrham paper;
-                // however, additional half-way cases can occur
-                // for BigDecimal given the more varied
-                // combinations of input and output precisions
-                // supported.
-            }
-        }
-        // Test numerical properties at full precision before any
-        // scale adjustments.
-        assert rootResultAssertions(n, result, mc);
-        return result.setPreferredScale(mc.precision, preferredScale, zeroWithFinalPreferredScale);
-    }
-    
-    /**
-     * Returns (this + delta)^n.
-     *
-     * <p>Let be {@code (highestBit == Integer.SIZE - 1 - Integer.numberOfLeadingZeros(n))}.
-     * Assumes:
-     * <ul>
-     * <li>{@code n > 0};
-     * <li>for each {@code i s.t. 0 <= i <= highestBit}:
-     * <ul>
-     * <li>
-     * {@code accCache[i] == null || accCache[i] == this^(n >> (highestBit - i))};
-     * <li>{@code sqAccCache[i] == null || sqAccCache[i] == accCache[i]^2}.
-     * </ul>
-     * </ul>
-     * After calling this method, for each {@code i s.t. 0 <= i <= highestBit}, the
-     * following will hold:
-     * <ul>
-     * <li>{@code accCache[i] == (this + delta)^(n >> (highestBit - i))};
-     * <li>{@code sqAccCache[i] == accCache[i]^2}.
-     * </ul>
-     */
-    private BigDecimal addAndPow(BigDecimal delta, int n, BigDecimal[] accCache, BigDecimal[] sqAccCache) {
-        BigDecimal acc = ONE;
-        BigDecimal carry = ZERO;
-        boolean seenbit = false; // set once we've seen a 1-bit
-        
-        int k = 0;
-        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [top bit ignored]
-            if (seenbit) {
-                // (acc+carry)^2 == acc^2+2*acc*carry+carry^2
-                carry = TWO.multiply(acc).multiply(carry).add(carry.square());
-                acc = sqAccCache[k - 1] != null ? sqAccCache[k - 1] : acc.square();
-                sqAccCache[k - 1] = acc.add(carry);
-            } // if (!seenbit) no point in squaring (acc+carry) == 1
-            
-            n <<= 1; // shift left 1 bit
-            if (n < 0) { // top bit is set
-                seenbit = true; // OK, we're off
-                // (acc+carry)*(x+delta) == x*acc+x*carry+delta*(acc+carry)
-                carry = this.multiply(carry).add(delta.multiply(acc.add(carry)));
-                acc = accCache[k] != null ? accCache[k] : this.multiply(acc);
-            }
-            
-            if (seenbit) {
-                accCache[k] = acc.add(carry);
-                k++;
-            } // if (!seenbit) no point in adding carry == 0
-        }
-        
-        return accCache[k - 1];
-    }
-    
-    private BigDecimal setPreferredScale(int precision, int preferredScale, BigDecimal zeroWithFinalPreferredScale) {
-        if (this.scale != preferredScale) {
-            // The preferred scale of an add is
-            // max(addend.scale(), augend.scale()). Therefore, if
-            // the scale of this is first minimized using
-            // stripTrailingZeros(), adding a zero of the
-            // preferred scale rounding to the correct precision
-            // will perform the proper scale vs precision
-            // tradeoffs.
-            return this.stripTrailingZeros().
-                add(zeroWithFinalPreferredScale,
-                    new MathContext(precision, RoundingMode.UNNECESSARY));
-        }
-        return this;
-    }
-    
-    /**
-     * Check numerical correctness properties of the computed {@code n}th root for
-     * the chosen rounding mode {@code rm} and error {@code delta}.
-     *
-     * For the directed rounding modes:
-     * 
-     * <ul>
-     * <li>If {@code this >= 0}:
-     *
-     * <ul>
-     *
-     * <li>For DOWN and FLOOR, {@code result^n} must be {@code <=} the input and
-     * {@code (result+delta)^n} must be {@code >} the input.
-     *
-     * <li>Conversely, for UP and CEIL, {@code result^n} must be {@code >=} the
-     * input and {@code (result+delta)^n} must be {@code <} the input.
-     * </ul>
-     * 
-     * <li>If {@code this < 0 && n % 2 == 1}:
-     * <ul>
-     *
-     * <li>For UP and FLOOR, {@code result^n} must be {@code <=} the input and
-     * {@code (result+delta)^n} must be {@code >} the input.
-     *
-     * <li>Conversely, for DOWN and CEIL, {@code result^n} must be {@code >=} the
-     * input and {@code (result+delta)^n} must be {@code <} the input.
-     * </ul>
-     * </ul>
-     */
-    private boolean rootResultAssertions(int n, BigDecimal result, MathContext mc) {
         if (result.signum() == 0) {
-            return signum() == 0;
+            return squareRootZeroResultAssertions(result, mc);
         } else {
             RoundingMode rm = mc.getRoundingMode();
             BigDecimal ulp = result.ulp();
-            BigDecimal neighborCeil = result.add(ulp);
+            BigDecimal neighborUp   = result.add(ulp);
             // Make neighbor down accurate even for powers of ten
-            if (result.isPowerOfTen())
+            if (result.isPowerOfTen()) {
                 ulp = ulp.divide(TEN);
+            }
+            BigDecimal neighborDown = result.subtract(ulp);
 
-            BigDecimal neighborFloor = result.subtract(ulp);
-            
-            // If the input is negative, the degree should be odd
-            assert !(this.signum() == -1 && (n & 1) == 0) : "Bad signum of this for " + n + "th root.";
+            // Both the starting value and result should be nonzero and positive.
+            assert (result.signum() == 1 &&
+                    this.signum() == 1) :
+                "Bad signum of this and/or its sqrt.";
 
-            // The starting value and result should be concordant.
-            assert (result.signum() == this.signum()) : "Bad signum of this and/or its " + n + "th root.";
+            switch (rm) {
+            case DOWN:
+            case FLOOR:
+                assert
+                    result.square().compareTo(this)     <= 0 &&
+                    neighborUp.square().compareTo(this) > 0:
+                "Square of result out for bounds rounding " + rm;
+                return true;
 
-            if (roundFloor(rm, result.signum())) {
-                assert result.pow(n).compareTo(this) <= 0 && neighborCeil.pow(n).compareTo(this) > 0
-                        : "Power of result out for bounds rounding " + rm;
+            case UP:
+            case CEILING:
+                assert
+                    result.square().compareTo(this)       >= 0 &&
+                    neighborDown.square().compareTo(this) < 0:
+                "Square of result out for bounds rounding " + rm;
+                return true;
+
+
+            case HALF_DOWN:
+            case HALF_EVEN:
+            case HALF_UP:
+                BigDecimal err = result.square().subtract(this).abs();
+                BigDecimal errUp = neighborUp.square().subtract(this);
+                BigDecimal errDown =  this.subtract(neighborDown.square());
+                // All error values should be positive so don't need to
+                // compare absolute values.
+
+                int err_comp_errUp = err.compareTo(errUp);
+                int err_comp_errDown = err.compareTo(errDown);
+
+                assert
+                    errUp.signum()   == 1 &&
+                    errDown.signum() == 1 :
+                "Errors of neighbors squared don't have correct signs";
+
+                // For breaking a half-way tie, the return value may
+                // have a larger error than one of the neighbors. For
+                // example, the square root of 2.25 to a precision of
+                // 1 digit is either 1 or 2 depending on how the exact
+                // value of 1.5 is rounded. If 2 is returned, it will
+                // have a larger rounding error than its neighbor 1.
+                assert
+                    err_comp_errUp   <= 0 ||
+                    err_comp_errDown <= 0 :
+                "Computed square root has larger error than neighbors for " + rm;
+
+                assert
+                    ((err_comp_errUp   == 0 ) ? err_comp_errDown < 0 : true) &&
+                    ((err_comp_errDown == 0 ) ? err_comp_errUp   < 0 : true) :
+                        "Incorrect error relationships";
+                // && could check for digit conditions for ties too
+                return true;
+
+            default: // Definition of UNNECESSARY already verified.
                 return true;
             }
-            
-            if (roundCeiling(rm, result.signum())) {
-                assert result.pow(n).compareTo(this) >= 0 && neighborFloor.pow(n).compareTo(this) < 0
-                        : "Power of result out for bounds rounding " + rm;
-                return true;
-            }
-
-            // half-way rounding mode
-            BigDecimal err = result.pow(n).subtract(this).abs();
-            BigDecimal errCeil = neighborCeil.pow(n).subtract(this);
-            BigDecimal errFloor = this.subtract(neighborFloor.pow(n));
-            // All error values should be non-negative so don't need to
-            // compare absolute values.
-
-            int err_comp_errCeil = err.compareTo(errCeil);
-            int err_comp_errFloor = err.compareTo(errFloor);
-
-            assert errCeil.signum() == 1 && errFloor.signum() == 1
-                    : "Errors of neighbors raised don't have correct signs";
-
-            // For breaking a half-way tie, the return value may
-            // have a larger error than one of the neighbors. For
-            // example, the square root of 2.25 to a precision of
-            // 1 digit is either 1 or 2 depending on how the exact
-            // value of 1.5 is rounded. If 2 is returned, it will
-            // have a larger rounding error than its neighbor 1.
-            assert err_comp_errCeil <= 0 || err_comp_errFloor <= 0
-                    : "Computed " + n + "th root has larger error than neighbors for " + rm;
-
-            assert !(err_comp_errCeil == 0 && err_comp_errFloor >= 0) && !(err_comp_errFloor == 0 && err_comp_errCeil >= 0)
-                    : "Incorrect error relationships";
-            // && could check for digit conditions for ties too
-            // Definition of UNNECESSARY already verified.
-            return true;
         }
     }
-    
-    static boolean roundCeiling(RoundingMode rm, int signum) {
-        return switch (rm) {
-        case CEILING -> true;
-        case UP -> signum != -1;
-        case DOWN-> signum != 1;
-        default -> false;
-        };
-    }
 
-    static boolean roundFloor(RoundingMode rm, int signum) {
-        return switch (rm) {
-        case FLOOR -> true;
-        case DOWN -> signum != -1;
-        case UP-> signum != 1;
-        default -> false;
-        };
+    private boolean squareRootZeroResultAssertions(BigDecimal result, MathContext mc) {
+        return this.compareTo(ZERO) == 0;
     }
 
     /**

@@ -2191,7 +2191,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return <code>this<sup>2</sup></code>
      */
-    BigInteger square() {
+    private BigInteger square() {
         return square(false, false, 0);
     }
 
@@ -2596,7 +2596,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (partToSquare.mag.length == 1 && scaleFactor <= 62) {
             // Small number algorithm.  Everything fits into a long.
             int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
-            long result = pow(partToSquare.mag[0] & LONG_MASK, exponent);
+            long result = 1;
+            long baseToPow2 = partToSquare.mag[0] & LONG_MASK;
+
+            int workingExponent = exponent;
+
+            // Perform exponentiation using repeated squaring trick
+            while (workingExponent != 0) {
+                if ((workingExponent & 1) == 1) {
+                    result = result * baseToPow2;
+                }
+
+                if ((workingExponent >>>= 1) != 0) {
+                    baseToPow2 = baseToPow2 * baseToPow2;
+                }
+            }
 
             // Multiply back the powers of two (quickly, by shifting left)
             if (powersOfTwo > 0) {
@@ -2641,21 +2655,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return answer;
             }
         }
-    }
-    
-    static long pow(long base, int exp) {
-        // Perform exponentiation using repeated squaring trick
-        long result = 1;
-        
-        while (exp != 0) {
-            if ((exp & 1) == 1)
-                result *= base;
-
-            if ((exp >>>= 1) != 0)
-                base *= base;
-        }
-        
-        return result;
     }
 
     /**
@@ -2727,33 +2726,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *                             yield non-real roots.)
      * @see #sqrt()
      * @see Rational#root(int, MathContext)
-     * @see BigDecimal#root(int, MathContext)
      * @since 21
      */
     public BigInteger root(int n) {
-        if (n == 2)
-            return this.sqrt();
-        
-        if (n <= 0)
-            throw new ArithmeticException("Non-positive root degree");
-        
-        if ((n & 1) == 0 && this.signum < 0)
-            throw new ArithmeticException("Negative radicand with even root degree");
-        
-        // Handle easy cases.
-        if (n == 1 || this.signum == 0)
-            return this; // x**1 == x, 0**n == 0
-        // At this point, this != 0
-
-        // if (1 <= abs(x) < 2^n), result is signed unity
-        if (this.compareMagnitude(ONE.shiftLeft(n)) < 0)
-            return this.signum == 1 ? ONE : NEGATIVE_ONE;
-
-        final BigDecimal x = new BigDecimal(this);
-        final int xDigits = x.precision();
-        final int rootDigits = xDigits / n + (xDigits % n == 0 ? 0 : 1);
-        // Somewhat inefficient, but guaranteed to work.
-        return x.root(n, new MathContext(rootDigits, RoundingMode.DOWN)).toBigIntegerExact();
+        return rootAndRemainder(n)[0];
     }
     
     /**
@@ -2772,14 +2748,224 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *                             negative. (This would cause the operation to
      *                             yield {@code n} complex roots.)
      * @see #sqrt()
+     * @see #sqrtAndRemainder()
      * @see #root(int)
      * @since 21
      */
     public BigInteger[] rootAndRemainder(int n) {
-        BigInteger root = root(n);
-        BigInteger rem = this.subtract(root.pow(n));
-        assert rem.signum == 0 || rem.signum == this.signum; // abs(root**n) <= abs(this)
+        if (n <= 0)
+            throw new ArithmeticException("Non-positive root degree");
+        
+        if ((n & 1) == 0 && this.signum == -1)
+            throw new ArithmeticException("Negative radicand with even root degree");
+        
+        return rootAndRemainderImpl(n);
+    }
+    
+    /**
+     * Skip checks of public version.
+     */
+    BigInteger[] rootAndRemainderImpl(int n) {
+        if (n == 2)
+            return sqrtAndRemainder();
+        
+        // Handle easy cases.
+        if (n == 1 || this.signum == 0 || this.equals(ONE))
+            return new BigInteger[] {this, ZERO}; // x**1 == x, 0**n == 0, 1**n == 1
+        // At this point, this != 0
+        
+        // if 1 <= this.abs() < 2^n, the result is signed unity
+        if (this.compareMagnitude(ONE.shiftLeft(n)) < 0) {
+            BigInteger root = this.signum == 1 ? ONE : NEGATIVE_ONE;
+            // if this.signum == -1, n is assumed to be odd, so root^n == -1
+            return new BigInteger[] {root, this.subtract(root)};
+        }
+        
+        /* 
+         * Use classic "grade-school" shifting algorithm.
+         * Compared to Newton's method, it's more efficient
+         * for large numbers, and its correctness is guaranteed.
+         */
+        // if this condition holds, the remainder shifting would overflow
+        if (n > Integer.MAX_VALUE >> 5 && mag.length > n)
+            reportOverflow();
+        
+        // cache for power calculations
+        BigInteger lastRaised = ZERO;
+        final BigInteger[] acc = new BigInteger[bitLengthForInt(n)];
+        final BigInteger[] sqAcc = new BigInteger[acc.length - 1];
+        
+        BigInteger root = ZERO, rootToN = ZERO, rem = ZERO;
+        final int headLen = mag.length % n;
+        for (int i = headLen != 0 ? headLen : n; i <= mag.length; i += n) {
+            int[] ints = trustedStripLeadingZeroInts(Arrays.copyOfRange(mag, i == headLen ? 0 : i - n, i));
+            BigInteger block = new BigInteger(ints, mag.length == 0 ? 0 : 1);
+            if (rem.signum != 0)
+                block = rem.shiftLeft(n << 5).add(block);
+            // block == rem * (2^32)^n + new BigInteger(ints, mag.length == 0 ? 0 : 1);
+            
+            final BigInteger shiftedRoot, shiftedRootToN;
+            if (root.signum != 0) {
+                shiftedRoot = root.shiftLeft(Integer.SIZE); // 2^32 * root
+                shiftedRootToN = rootToN.shiftLeft(n << 5); // (2^32 * root)^n == (2^32)^n * root^n
+            } else {
+                shiftedRoot = root;
+                shiftedRootToN = rootToN;
+            }
+            
+            // find the next correct word of the root
+            BigInteger gap = ZERO, updatedRoot = shiftedRoot, updatedRootToN = shiftedRootToN;
+            if (block.signum != 0) {
+                long word = 0L;
+                boolean stop = false;
+                for (int bitIndex = Integer.SIZE - 1; !stop && bitIndex >= 0; bitIndex--) {
+                    final long newWordVal = word | (1L << bitIndex);
+                    final BigInteger newRootVal = shiftedRoot.add(newWordVal);
+                    // compute newRootVal^n
+                    final BigInteger pow = lastRaised.addAndPow(newRootVal.subtract(lastRaised), n, acc, sqAcc);
+                    lastRaised = newRootVal;
+                    
+                    final BigInteger newGapVal = pow.subtract(shiftedRootToN);
+                    // newGapVal == (2^32 * root + candidate)^n - (2^32 * root)^n
+                    int newGapVal_cmp_block = newGapVal.compareMagnitude(block);
+                    if (newGapVal_cmp_block <= 0) {
+                        word = newWordVal;
+                        gap = newGapVal;
+                        updatedRoot = newRootVal;
+                        updatedRootToN = pow;
+                        
+                        if (newGapVal_cmp_block == 0)
+                            stop = true;
+                    }
+                }
+            }
+            
+            // update variables
+            root = updatedRoot;
+            rootToN = updatedRootToN;
+            rem = block.subtract(gap);
+        }
+        
+        // Adjust the sign
+        if (this.signum == -1) {
+            root = root.negate();
+            rem = rem.negate();
+        }
+        
+        // abs(root**n) <= abs(this)
+        assert rem.signum == 0 || rem.signum == this.signum;
         return new BigInteger[] {root, rem};
+    }
+    
+    /**
+     * Returns (this + delta)^n.
+     *
+     * <p>Let be {@code (highestBit == BigInteger.bitLengthForInt(n) - 1)}.
+     * Assumes:
+     * <ul>
+     *  <li>{@code n > 0};
+     *  <li>for each {@code i s.t. 0 <= i <= highestBit}:
+     *  <p>{@code (accCache[i] == null || accCache[i] == this^(n >> (highestBit - i)))};
+     *  <li>for each {@code i s.t. 0 <= i <= highestBit - 1}:
+     *  <p>{@code (sqAccCache[i] == null || sqAccCache[i] == accCache[i]^2)}.
+     * </ul>
+     * After calling this method, the following will hold:
+     * <ul>
+     *  <li>for each {@code i s.t. 0 <= i <= highestBit}:
+     *  <p>{@code accCache[i] == (this + delta)^(n >> (highestBit - i))};
+     *  <li>for each {@code i s.t. 0 <= i <= highestBit - 1}:
+     *  <p>{@code sqAccCache[i] == accCache[i]^2}.
+     * </ul>
+     */
+    private BigInteger addAndPow(BigInteger delta, int n, BigInteger[] accCache, BigInteger[] sqAccCache) {
+        BigInteger acc = ONE;
+        BigInteger carry = ZERO;
+        boolean seenbit = false; // set once we've seen a 1-bit
+        
+        int k = 0;
+        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [top bit ignored]
+            if (seenbit) {
+                // (acc+carry)^2 == acc^2+(2*acc+carry)*carry
+                carry = acc.shiftLeft(1).add(carry).multiply(carry);
+                acc = sqAccCache[k - 1] != null ? sqAccCache[k - 1] : acc.simpleSquare();
+                sqAccCache[k - 1] = acc.add(carry);
+            } // if (!seenbit) no point in squaring (acc+carry) == 1
+            
+            n <<= 1; // shift left 1 bit
+            if (n < 0) { // top bit is set
+                seenbit = true; // OK, we're off
+                // (acc+carry)*(x+delta) == x*acc+x*carry+delta*(acc+carry)
+                carry = this.multiply(carry).add(delta.multiply(acc.add(carry)));
+                acc = accCache[k] != null ? accCache[k] : this.multiply(acc);
+            }
+            
+            if (seenbit) {
+                accCache[k] = acc.add(carry);
+                k++;
+            } // if (!seenbit) no point in adding carry == 0
+        }
+        
+        return accCache[k - 1];
+    }
+    
+    BigInteger simpleSquare() {
+        return this.multiply(this);
+    }
+    
+    /**
+     * Returns a BigInteger composed by the bits of this BigInteger magnitude,
+     * starting at {@code from} (inclusive) and ending at {@code to} (exclusive).
+     * The result is non-negative.
+     * 
+     * <p>
+     * Assumes:
+     * <ul>
+     * <li>{@code bitLen == this.abs().bitLength()};
+     * <li>{@code 0 <= from <= to}.
+     * </ul>
+     * The end index {@code to} may be larger than {@code bitLen}.
+     */
+    BigInteger getMagBits(int from, int to, int bitLen) {
+        // If no set bits in range return ZERO
+        if (bitLen <= from || from == to)
+            return ZERO;
+        
+        // Avoid IndexOutOfBoundsException
+        if (to >= bitLen) {
+            if (from == 0) // An optimization
+                return this;
+            
+            to = bitLen;
+        }
+        
+        int[] ints;
+        int targetInts = ((to - from - 1) >>> 5) + 1;
+        int sourceIndex = mag.length - 1 - (from >>> 5);
+        final int BIT_INDEX_MASK = Integer.SIZE - 1;
+        final int firstIntMask = -1 >>> -to;
+        
+        if ((from & BIT_INDEX_MASK) == 0) { // ints are aligned
+            final int endIntIndex = sourceIndex + 1;
+            ints = Arrays.copyOfRange(mag, endIntIndex - targetInts, endIntIndex);
+            ints[0] &= firstIntMask;
+        } else {
+            ints = new int[targetInts];
+            // Process all ints but the most significant
+            for (int i = ints.length - 1; i > 0; i--, sourceIndex--)
+                ints[i] = (mag[sourceIndex] >>> from) | (mag[sourceIndex - 1] << -from);
+            
+            // Process the most significant int
+            ints[0] =
+                ((to - 1) & BIT_INDEX_MASK) < (from & BIT_INDEX_MASK)
+                ? /* straddles source ints */
+                ((mag[sourceIndex] >>> from) |
+                 (mag[sourceIndex - 1] & firstIntMask) << -from)
+                :
+                ((mag[sourceIndex] & firstIntMask) >>> from);
+        }
+        
+        ints = trustedStripLeadingZeroInts(ints);
+        return new BigInteger(ints, ints.length == 0 ? 0 : 1);
     }
 
     /**
