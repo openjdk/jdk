@@ -139,7 +139,7 @@ class CharacterDataLatin1 extends CharacterData {
             return ch;
         }
         int l = ch | 0x20; // Lowercase using 'oldest ASCII trick in the book'
-        if ( l <= 'z' // In range a-z
+        if (l <= 'z' // In range a-z
                 || (l >= 0xE0 && l <= 0xFE && l != 0xF7)) { // ..or agrave-thorn, excluding division
             return l;
         }
