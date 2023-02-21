@@ -176,7 +176,7 @@ class CharacterDataLatin1 extends CharacterData {
          if (U < 'A') {
              return false;  // Low ASCII
          }
-         return ( U <= 'Z' // In range A-Z
+         return (U <= 'Z' // In range A-Z
                  || (U >= 0xC0 && U <= 0XDE && U != 0xD7)) // ..or A-grave-Thorn, excl. multiplication
                  && U == (b2 & 0xDF); // b2 has same uppercase
     }
