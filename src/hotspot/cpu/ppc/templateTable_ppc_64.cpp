@@ -3439,8 +3439,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ load_dispatch_table(Rtable_addr, Interpreter::invoke_return_entry_table());
   __ sldi(Rret_type, Rret_type, LogBytesPerWord);
   __ ldx(Rret_addr, Rret_type, Rtable_addr);
-  __ null_check_throw(Rrecv, oopDesc::klass_offset_in_bytes(), R11_scratch1);
-  __ load_klass(Rrecv_klass, Rrecv);
+  __ load_klass_check_null_throw(Rrecv_klass, Rrecv, R11_scratch1);
   __ verify_klass_ptr(Rrecv_klass);
   __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2, false);
 
@@ -3577,8 +3576,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // then regular interface method.
 
   // Get receiver klass - this is also a null check
-  __ null_check_throw(Rreceiver, oopDesc::klass_offset_in_bytes(), Rscratch2);
-  __ load_klass(Rrecv_klass, Rreceiver);
+  __ load_klass_check_null_throw(Rrecv_klass, Rreceiver, Rscratch2);
 
   // Check corner case object method.
   // Special case of invokeinterface called for virtual method of
