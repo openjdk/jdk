@@ -243,7 +243,7 @@ public class KeepAliveCache
             cacheLock.lock();
             try {
                 if (isEmpty()) {
-                    // nothing was in the cache in the last LIFETIME - exit
+                    // cache not used in the last LIFETIME - exit
                     keepAliveTimer = null;
                     break;
                 }
