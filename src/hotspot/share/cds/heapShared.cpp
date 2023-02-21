@@ -423,7 +423,10 @@ void HeapShared::archive_java_mirrors() {
 void HeapShared::archive_strings() {
   oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _default_subgraph_info, shared_strings_array, /*is_closed_archive=*/ false);
-  guarantee(success, "shared strings array must point to only archivable objects");
+  // We must succeed because:
+  // - _dumped_interned_strings do not contain any large strings.
+  // - StringTable::init_shared_table() doesn't create any large arrays.
+  assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
@@ -561,14 +564,13 @@ void HeapShared::copy_interned_strings() {
 
   auto copier = [&] (oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    if (!ArchiveHeapWriter::is_string_too_large_to_archive(s)) {
-      bool success = archive_reachable_objects_from(1, _default_subgraph_info,
-                                                    s, /*is_closed_archive=*/true);
-      assert(success, "must be");
-      // Prevent string deduplication from changing the value field to
-      // something not in the archive.
-      java_lang_String::set_deduplication_forbidden(s);
-    }
+    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "large strings must have been filtered");
+    bool success = archive_reachable_objects_from(1, _default_subgraph_info,
+                                                  s, /*is_closed_archive=*/true);
+    assert(success, "string must be short enough to be archived");
+    // Prevent string deduplication from changing the value field to
+    // something not in the archive.
+    java_lang_String::set_deduplication_forbidden(s);
   };
   _dumped_interned_strings->iterate_all(copier);
 

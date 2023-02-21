@@ -793,7 +793,11 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
     size_t secondary_array_size = objArrayOopDesc::object_size(_secondary_array_max_length);
 
     if (ArchiveHeapWriter::is_too_large_to_archive(secondary_array_size)) {
-      fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+      // This can only happen if you have an extremely large number of classes that
+      // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
+      // but bail out for safety.
+      log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+      os::_exit(1);
     }
 
     objArrayOop primary = oopFactory::new_objArray(vmClasses::Object_klass(), primary_array_length, CHECK);
@@ -814,12 +818,34 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       primaryHandle()->obj_at_put(i, secondary);
 
       log_info(cds)("string table array (secondary)[%d] length = %d", i, len);
+      assert(!ArchiveHeapWriter::is_too_large_to_archive(secondary), "sanity");
     }
 
     assert(total == 0, "must be");
     _is_two_dimensional_shared_strings_array = true;
   }
 }
+
+#ifdef ASSERT
+void StringTable::verify_secondary_array_index_bits() {
+  int max;
+  for (max = 1; ; max++) {
+    size_t next_size = objArrayOopDesc::object_size(1 << (max + 1));
+    if (ArchiveHeapWriter::is_too_large_to_archive(next_size)) {
+      break;
+    }
+  }
+  // Currently max is 17 for +UseCompressedOops, 16 for -UseCompressedOops.
+  // When we add support for Shenandoah (which has a smaller mininum region size than G1),
+  // max will become 15/14.
+  //
+  // We use _secondary_array_index_bits==14 as that will be the eventual value, and will
+  // make testing easier.
+  assert(_secondary_array_index_bits <= max,
+         "_secondary_array_index_bits (%d) must be smaller than max possible value (%d)",
+         _secondary_array_index_bits, max);
+}
+#endif
 
 // This is called AFTER we enter the CDS safepoint.
 //
@@ -829,6 +855,8 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
 oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::can_write(), "must be");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
+
+  verify_secondary_array_index_bits();
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());

@@ -131,6 +131,9 @@ private:
   const static int _secondary_array_index_bits = 14;
   const static int _secondary_array_max_length = 1 << _secondary_array_index_bits;
   const static int _secondary_array_index_mask = _secondary_array_max_length - 1;
+
+  // make sure _secondary_array_index_bits is not too big
+  static void verify_secondary_array_index_bits() PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  private:
