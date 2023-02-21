@@ -38,10 +38,10 @@ import static java.lang.Double.longBitsToDouble;
 public class Tests {
     private Tests(){}; // do not instantiate
 
+    // Used to create a NaN value at runtime; mark as volatile to foil
+    // compile-time constant folding.
     static volatile double zero = 0.0;
 
-    // Create NaN value at runtime; use volatile to foil compile-time
-    // constant folding.
     private static final double PLATFORM_NAN = zero / zero;
 
     public static final double[] NaNs = {
