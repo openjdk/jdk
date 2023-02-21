@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Vector Sets
 
@@ -110,6 +111,8 @@ public:
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }
+
+  NONCOPYABLE(VectorSet);
 };
 
 #endif // SHARE_LIBADT_VECTSET_HPP

@@ -29,6 +29,7 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1581,6 +1582,8 @@ public:
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
+
+  NONCOPYABLE(Node_List);
 };
 
 //------------------------------Unique_Node_List-------------------------------
@@ -1635,6 +1638,8 @@ public:
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }
 #endif
+
+  NONCOPYABLE(Unique_Node_List);
 };
 
 // Unique_Mixed_Node_List
@@ -1665,6 +1670,8 @@ public:
 private:
   Dict _visited_set;
   Node_List _worklist;
+
+  NONCOPYABLE(Unique_Mixed_Node_List);
 };
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
@@ -1745,6 +1752,8 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  NONCOPYABLE(Node_Stack);
 };
 
 

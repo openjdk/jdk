@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class Dict;
 
@@ -75,6 +76,8 @@ class Dict : public AnyObj { // Dictionary structure
 
   // Print out the dictionary contents as key-value pairs
   void print();
+
+  NONCOPYABLE(Dict);
 };
 
 // Hashing functions

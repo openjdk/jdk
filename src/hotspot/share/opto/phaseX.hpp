@@ -32,6 +32,7 @@
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
 #include "opto/type.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class BarrierSetC2;
 class Compile;
@@ -112,6 +113,8 @@ public:
   uint   _total_inserts;        // For debugging, total inserts into hash table
   uint   _total_insert_probes;  // For debugging, total probes while inserting
 #endif
+
+  NONCOPYABLE(NodeHash);
 };
 
 
@@ -139,6 +142,8 @@ public:
 #ifndef PRODUCT
   void dump() const;
 #endif
+
+  NONCOPYABLE(Type_Array);
 };
 
 
