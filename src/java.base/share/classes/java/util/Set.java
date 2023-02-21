@@ -736,7 +736,7 @@ public interface Set<E> extends Collection<E> {
             return (Set<E>)new ImmutableCollections.ImmutableRegularEnumSet<>(res.elements(), res.elementType());
         }
         if (coll instanceof JumboEnumSetCompatible<?> jes && jes.size() > 2) {
-            return (Set<E>)new ImmutableCollections.ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
+            return (Set<E>)new ImmutableCollections.ImmutableJumboEnumSet<>(jes.elements().clone(), jes.elementType(), jes.size());
         }
         return (Set<E>)Set.of(new HashSet<>(coll).toArray());
     }
