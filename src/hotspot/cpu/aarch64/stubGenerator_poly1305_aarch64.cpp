@@ -42,6 +42,8 @@ address generate_poly1305_processBlocks2() {
   // Arguments
   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
+  __ incrementw(Address(&trips), 1);
+
   // Rn is the randomly-generated key, packed into three registers
   Register R[] = { *++regs, *++regs, *++regs,};
   __ pack_26(R[0], R[1], R[2], r_start);
@@ -76,26 +78,30 @@ address generate_poly1305_processBlocks2() {
   __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
   // u0 contains the initial state. Clear the others.
   for (int i = 0; i < 3; i++) {
-    __ mov(u0[i]._lo, 0);
+    __ mov(u0[i]._hi, 0);
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
   }
 
   static constexpr int BLOCK_LENGTH = 16;
   Label DONE, LOOP;
 
-  poo = __ pc();
-
   __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
   __ br(~ Assembler::GT, DONE); {
     __ bind(LOOP);
 
-    __ poly1305_step(S0, u0, input_start);              __ poly1305_step(S1, u1, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);         __ poly1305_multiply(u1, S1, R, RR2, regs);
-    __ poly1305_reduce(u0);                             __ poly1305_reduce(u1);
+    __ poly1305_step(S1, u1, input_start);
+    __ poly1305_multiply(u1, S1, R, RR2, regs);
+    __ poly1305_reduce(u1);
+
+    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
 
     __ subw(length, length, BLOCK_LENGTH * 2);
     __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
     __ br(Assembler::GT, LOOP);
+
+    poo = __ pc();
   }
   __ bind(DONE);
 
@@ -145,4 +151,3 @@ address generate_poly1305_processBlocks2() {
 }
 
 #endif // INCLUDE_GEN2
-

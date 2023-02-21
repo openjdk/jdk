@@ -60,8 +60,10 @@
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
 #endif
-int flippy;
+
 static address poo;
+int trips;
+
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -7186,6 +7188,8 @@ typedef uint32_t u32;
     RegSet callee_saved = RegSet::range(r19, r28);
     __ push(callee_saved, sp);
 
+    __ incrementw(Address(&trips), 1);
+
     RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
 
     // Arguments
@@ -7224,6 +7228,8 @@ typedef uint32_t u32;
       __ subsw(length, length, BLOCK_LENGTH);
       __ br(Assembler::GE, LOOP);
     }
+
+    poo = __ pc();
 
     // Fully reduce modulo 2^130 - 5
     __ adds(u[0]._lo, u[0]._lo, u[1]._lo, __ LSL, 52);

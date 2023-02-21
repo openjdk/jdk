@@ -408,6 +408,9 @@ class Address {
     }
   }
 
+  template<typename T>
+  inline RelocationHolder address_relocation(T *target, relocInfo::relocType rtype);
+
  public:
   // no_mode initializes _nonliteral for ease of copying.
   Address() :
@@ -443,12 +446,14 @@ class Address {
     _nonliteral(p.reg(), p.idx_reg(), p.offset())
   {}
 
-  Address(address target, const RelocationHolder& rspec) :
+  template <typename T>
+  Address(T *target, const RelocationHolder& rspec) :
     _mode(literal),
-    _literal(target, rspec)
+    _literal((address)target, rspec)
   {}
 
-  Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
+  template <typename T>
+  Address(T *target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
   Address(Register base, RegisterOrConstant index, extend ext = lsl()) {
     if (index.is_register()) {
@@ -505,7 +510,7 @@ class Address {
   }
 
   bool uses(Register reg) const {
-    return base() == reg || index() == reg;
+    return _mode != literal && (base() == reg || index() == reg);
   }
 
   address target() const {
