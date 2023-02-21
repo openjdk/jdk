@@ -89,7 +89,7 @@ public class Characters {
     @Warmup(iterations = 5, time = 1)
     @Measurement(iterations = 5, time = 1)
     @Fork(3)
-    public static class Latin1CaseConversions {
+    public static class CaseConversions {
         @Param({
                 "low",     // 0x09 pre A
                 "A",       // 0x41 uppercase A
