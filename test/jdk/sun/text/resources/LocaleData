@@ -2230,7 +2230,7 @@ FormatData/ar_YE/NumberElements/8=\u2030
 FormatData/ar_YE/NumberElements/9=\u221e
 FormatData/ar_YE/NumberElements/10=\ufffd
 
-# bug #4113654 (this is obviously not an exhaustive test; I'm trying it here for a single
+# bug #4113654 (this is obviously not an exchaustive test; I'm trying it here for a single
 # inheritance chain only.  This bug fix also gets tested fairly well by the tests for all
 # the other bugs as given above)
 FormatData//NumberPatterns/0=#,##0.###;-#,##0.###
