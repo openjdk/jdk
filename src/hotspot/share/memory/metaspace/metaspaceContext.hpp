@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -100,7 +100,7 @@ public:
   static MetaspaceContext* context_nonclass()     { return _nonclass_space_context; }
 
   // Returns pointer to the global class space context, if compressed class space is active,
-  // NULL otherwise.
+  // null otherwise.
   static MetaspaceContext* context_class()        { return _class_space_context; }
 
 };

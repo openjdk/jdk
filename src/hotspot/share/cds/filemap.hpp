@@ -178,6 +178,7 @@ public:
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
+  bool check_region_crc() const;
   void print(outputStream* st, int region_index);
 };
 
@@ -473,7 +474,6 @@ public:
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
-  bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();
@@ -491,9 +491,6 @@ public:
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
-
-  // Stop CDS sharing and unmap CDS regions.
-  static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
@@ -528,8 +525,6 @@ public:
   }
 
   static int get_module_shared_path_index(Symbol* location) NOT_CDS_RETURN_(-1);
-
-  char* region_addr(int idx);
 
   // The offset of the first core region in the archive, relative to SharedBaseAddress
   size_t mapping_base_offset() const { return first_core_region()->mapping_offset();    }
@@ -578,7 +573,6 @@ public:
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_regions(int first, int max, bool is_open_archive,
                          MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   bool  can_use_heap_regions();
   bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);

@@ -803,7 +803,7 @@ private:
 
 public:
   void dump_frame() const;
-  char *dump_register(const Node* n, char* buf) const;
+  char *dump_register(const Node* n, char* buf, size_t buf_size) const;
 private:
   static void print_chaitin_statistics();
 #endif // not PRODUCT

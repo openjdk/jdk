@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,7 @@ hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
+  compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
@@ -418,7 +419,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
- -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \

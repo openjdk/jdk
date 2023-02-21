@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,6 +421,9 @@ public abstract class Reader implements Readable, Closeable {
      * interrupted during the transfer, is highly reader and writer
      * specific, and therefore not specified.
      * <p>
+     * If the total number of characters transferred is greater than {@linkplain
+     * Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     * <p>
      * If an I/O error occurs reading from the reader or writing to the
      * writer, then it may do so after some characters have been read or
      * written. Consequently the reader may not be at end of the stream and
@@ -441,7 +444,13 @@ public abstract class Reader implements Readable, Closeable {
         int nRead;
         while ((nRead = read(buffer, 0, TRANSFER_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, nRead);
-            transferred += nRead;
+            if (transferred < Long.MAX_VALUE) {
+                try {
+                    transferred = Math.addExact(transferred, nRead);
+                } catch (ArithmeticException ignore) {
+                    transferred = Long.MAX_VALUE;
+                }
+            }
         }
         return transferred;
     }
