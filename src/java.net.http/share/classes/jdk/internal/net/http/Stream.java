@@ -182,9 +182,9 @@ class Stream<T> extends ExchangeImpl<T> {
             }
             while (!inputQ.isEmpty()) {
                 Http2Frame frame = inputQ.peek();
-                if (frame instanceof ResetFrame) {
+                if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    handleReset((ResetFrame)frame, subscriber);
+                    handleReset(rf, subscriber);
                     return;
                 }
                 DataFrame df = (DataFrame)frame;
@@ -463,24 +463,23 @@ class Stream<T> extends ExchangeImpl<T> {
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
-        if ((frame instanceof HeaderFrame)) {
-            HeaderFrame hframe = (HeaderFrame) frame;
-            if (hframe.endHeaders()) {
+        if ((frame instanceof HeaderFrame hf)) {
+            if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
             }
-            if (hframe.getFlag(HeaderFrame.END_STREAM)) {
+            if (hf.getFlag(HeaderFrame.END_STREAM)) {
                 if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
                 receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
-        } else if (frame instanceof DataFrame) {
+        } else if (frame instanceof DataFrame df) {
             if (cancelled) {
                 if (debug.on()) {
                     debug.log("request cancelled or stream closed: dropping data frame");
                 }
-                connection.dropDataFrame((DataFrame) frame);
+                connection.dropDataFrame(df);
             } else {
-                receiveDataFrame((DataFrame) frame);
+                receiveDataFrame(df);
             }
         } else {
             if (!cancelled) otherFrame(frame);
@@ -554,6 +553,10 @@ class Stream<T> extends ExchangeImpl<T> {
         } else {
             Flow.Subscriber<?> subscriber =
                     responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+            if (frame.getErrorCode() == ResetFrame.NO_ERROR) {
+                // stop sending body because server instructed client to with RST_STREAM with NO_ERROR
+                requestBodyCF.complete(null);
+            }
             if (response == null && subscriber == null) {
                 // we haven't received the headers yet, and won't receive any!
                 // handle reset now.

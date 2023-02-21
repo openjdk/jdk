@@ -963,7 +963,7 @@ public class Http2TestServerConnection {
                         SettingsFrame.INITIAL_WINDOW_SIZE), this) {
 
             @Override
-            protected void sendEndStream() throws IOException {
+            public void sendEndStream() throws IOException {
                 if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
                     conn.outputQ.put(getTrailingHeadersFrame(promisedStreamid, List.of()));
                 } else {

@@ -27,6 +27,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.ResetFrame;
 
 /**
  * OutputStream. Incoming window updates handled by the main connection
@@ -39,6 +40,7 @@ public class BodyOutputStream extends OutputStream {
     final int streamid;
     int window;
     volatile boolean closed;
+    volatile boolean sendResetNoError;
     boolean goodToGo = false; // not allowed to send until headers sent
     final Http2TestServerConnection conn;
     final Queue outputQ;
@@ -131,13 +133,29 @@ public class BodyOutputStream extends OutputStream {
         }
         try {
             sendEndStream();
+            if (sendResetNoError) {
+                sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
+            }
         } catch (IOException ex) {
             System.err.println("TestServer: OutputStream.close exception: " + ex);
             ex.printStackTrace();
         }
     }
 
-    protected void sendEndStream() throws IOException {
+    public void sendEndStream() throws IOException {
         send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
+    }
+
+    public void sendReset(byte[] buf, int offset, int len, int flags) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(len);
+        buffer.put(buf, offset, len);
+        buffer.flip();
+        assert streamid != 0;
+        ResetFrame rf = new ResetFrame(streamid, flags);
+        outputQ.put(rf);
+    }
+
+    public void setSendResetNoError(boolean val) {
+        this.sendResetNoError = val;
     }
 }

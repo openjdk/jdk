@@ -45,7 +45,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     protected final HttpHeadersBuilder rspheadersBuilder;
     final URI uri;
     final String method;
-    final InputStream is;
+    protected final InputStream is;
     protected final BodyOutputStream os;
     final SSLSession sslSession;
     protected final int streamid;
