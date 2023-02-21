@@ -240,8 +240,13 @@ public class IREncodingPrinter {
         }
 
         List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
+            // General
+            "sha3",
+            "fma",
             // Intel SSE
+            "sse",
             "sse2",
+            "sse3",
             "ssse3",
             "sse4.1",
             // Intel AVX
@@ -251,7 +256,7 @@ public class IREncodingPrinter {
             "avx512dq",
             "avx512vl",
             "avx512f",
-            // arm
+            // Arm
             "asimd",
             "sve"
         ));
