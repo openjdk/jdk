@@ -27,7 +27,7 @@ package gc;
  * @bug 8072725
  * @summary Test VerifySubSet option
  *
- * @comment ZGC doesn't support Universe::verify will not print the output below
+ * @comment ZGC doesn't use Universe::verify and will not log the output below
  * @requires !vm.gc.Z
  *
  * @library /test/lib
