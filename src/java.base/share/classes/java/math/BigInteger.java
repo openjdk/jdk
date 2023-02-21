@@ -4823,7 +4823,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the input array stripped of any leading zero bytes.
      * Since the source is trusted the copying may be skipped.
      */
-    static int[] trustedStripLeadingZeroInts(int[] val) {
+    private static int[] trustedStripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
