@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.misc.InnocuousThread;
@@ -243,6 +242,11 @@ public class KeepAliveCache
             // Remove all outdated HttpClients.
             cacheLock.lock();
             try {
+                if (isEmpty()) {
+                    // nothing was in the cache in the last LIFETIME - exit
+                    keepAliveTimer = null;
+                    break;
+                }
                 long currentTime = System.currentTimeMillis();
                 List<KeepAliveKey> keysToRemove = new ArrayList<>();
 
@@ -276,9 +280,6 @@ public class KeepAliveCache
                     removeVector(key);
                 }
             } finally {
-                if (isEmpty()) {
-                    keepAliveTimer = null;
-                }
                 cacheLock.unlock();
                 // close connections outside cacheLock
                 if (closeList != null) {
