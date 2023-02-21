@@ -239,6 +239,8 @@ public class IREncodingPrinter {
             return false;
         }
 
+        // Please verify new CPU features before adding them. If we allow non-existent features
+        // on this list, we will ignore tests and never execute them.
         List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
             // General
             "sha3",
