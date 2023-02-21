@@ -257,12 +257,12 @@ public class DatagramSocketMulticasting {
      */
     static void testTimeToLive(DatagramSocket s) throws IOException {
         // should be 1 by default
-        assertEquals(s.getOption(IP_MULTICAST_TTL), 1);
+        assertEquals(1, s.getOption(IP_MULTICAST_TTL));
 
         // setOption(IP_MULTICAST_TTL)
         for (int ttl = 0; ttl <= 2; ttl++) {
             s.setOption(IP_MULTICAST_TTL, ttl);
-            assertEquals(s.getOption(IP_MULTICAST_TTL), ttl);
+            assertEquals(ttl, s.getOption(IP_MULTICAST_TTL));
         }
 
         // bad values for IP_MULTICAST_TTL
@@ -333,7 +333,7 @@ public class DatagramSocketMulticasting {
                 break;
             }
 
-            assertNotEquals(i, MAX_TRIES, "testSendReceive: too many retries");
+            assertNotEquals(MAX_TRIES, i, "testSendReceive: too many retries");
         }
     }
 
