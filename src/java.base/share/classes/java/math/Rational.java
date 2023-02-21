@@ -1332,11 +1332,11 @@ public class Rational extends Number implements Comparable<Rational> {
             // simplify the radicand to improve the algorithm performance
             BigInteger[] radicand = simplify(x.wholeNumerator(), x.denominator);
 
-            BigInteger[] rootRemNum = radicand[0].rootAndRemainder(n);
+            BigInteger[] rootRemNum = radicand[0].rootAndRemainderImpl(n);
             if (rootRemNum[1].signum != 0)
                 throw new ArithmeticException("Computed " + n + "th root not exact.");
 
-            BigInteger[] rootRemDen = radicand[1].rootAndRemainder(n);
+            BigInteger[] rootRemDen = radicand[1].rootAndRemainderImpl(n);
             if (rootRemDen[1].signum != 0)
                 throw new ArithmeticException("Computed " + n + "th root not exact.");
 
