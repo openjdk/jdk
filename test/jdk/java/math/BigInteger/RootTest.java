@@ -21,7 +21,7 @@ public class RootTest {
     static final int SIZE = 100; // numbers per batch
 
     private static Random random;
-    
+
     static {
         long seed = new Random().nextLong();
         System.out.println("Random seed: " + seed);
@@ -34,11 +34,9 @@ public class RootTest {
         System.err.println(msg);
     }
 
-    private static int checkResult(BigInteger expected, BigInteger actual,
-        String failureMessage) {
+    private static int checkResult(BigInteger expected, BigInteger actual, String failureMessage) {
         if (expected.compareTo(actual) != 0) {
-            printErr(failureMessage + " - expected: " + expected
-                + ", actual: " + actual);
+            printErr(failureMessage + " - expected: " + expected + ", actual: " + actual);
             return 1;
         }
         return 0;
@@ -59,7 +57,7 @@ public class RootTest {
                 // expected
             }
         }
-        
+
         // A negative value with odd degree should return a negative value.
         for (int n = 1; n <= 100; n += 2) {
             for (int i = -10; i < 0; i++) {
@@ -70,7 +68,7 @@ public class RootTest {
                 }
             }
         }
-        
+
         // A negative or zero degree should cause an exception.
         for (int n = -100; n <= 0; n++) {
             try {
@@ -85,15 +83,14 @@ public class RootTest {
 
         // A zero value should return BigInteger.ZERO.
         for (int n = 1; n <= 100; n++)
-            failCount += checkResult(BigInteger.ZERO, BigInteger.ZERO.root(n),
-                    "root(0, n) != BigInteger.ZERO");
+            failCount += checkResult(BigInteger.ZERO, BigInteger.ZERO.root(n), "root(0, n) != BigInteger.ZERO");
 
         // 1 <= value < 2^n should return BigInteger.ONE.
         for (int n = 1; n <= 20; n++) {
             int last = (1 << n) - 1;
             for (int i = 1; i <= last; i++) {
-                failCount += checkResult(BigInteger.ONE,
-                    BigInteger.valueOf(i).root(n), "root("+i+", "+n+") != 1");
+                failCount += checkResult(BigInteger.ONE, BigInteger.valueOf(i).root(n),
+                        "root(" + i + ", " + n + ") != 1");
             }
         }
 
@@ -116,8 +113,7 @@ public class RootTest {
             failCount += checkResult(x, xToNup.root(n), "root(n) x^" + n + " + 1 -> x");
 
             // nth root of (x + 1)^n - 1 -> x
-            BigInteger up =
-                x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
+            BigInteger up = x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
             failCount += checkResult(x, up.root(n), "root(n) (x + 1)^" + n + " - 1 -> x");
 
             // root(x, n)^n <= x
@@ -146,33 +142,29 @@ public class RootTest {
                 sb.add(new SimpleEntry<>(p2.add(BigInteger.ONE), n));
             }
         }
-        
+
         for (int n = 2; n <= 30; n++) {
             sb.add(new SimpleEntry<>(new BigDecimal(Double.MAX_VALUE).toBigInteger(), n));
             sb.add(new SimpleEntry<>(new BigDecimal(Double.MAX_VALUE).toBigInteger().add(BigInteger.ONE), n));
         }
-        
-        report("roots for 2^N and 2^N - 1, 1 <= N <= Double.MAX_EXPONENT",
-            sb.build().collect(Collectors.summingInt(f)));
 
-        
-        
+        report("roots for 2^N and 2^N - 1, 1 <= N <= Double.MAX_EXPONENT",
+                sb.build().collect(Collectors.summingInt(f)));
+
         for (int n = 2; n <= 30; n++) {
             IntStream ints = random.ints(SIZE, 4, Integer.MAX_VALUE);
-            LongStream longs = random.longs(SIZE, (long)Integer.MAX_VALUE + 1L,
-                    Long.MAX_VALUE);
-            DoubleStream doubles = random.doubles(SIZE,
-                    (double) Long.MAX_VALUE + 1.0, Math.sqrt(Double.MAX_VALUE));
+            LongStream longs = random.longs(SIZE, Integer.MAX_VALUE + 1L, Long.MAX_VALUE);
+            DoubleStream doubles = random.doubles(SIZE, Long.MAX_VALUE + 1.0, Math.sqrt(Double.MAX_VALUE));
             final int deg = n;
-            report("roots for int", ints.mapToObj(x ->
-                new SimpleEntry<>(BigInteger.valueOf(x), deg)).collect(Collectors.summingInt(f)));
-            
-            report("roots for long", longs.mapToObj(x ->
-                new SimpleEntry<>(BigInteger.valueOf(x), deg)).collect(Collectors.summingInt(f)));
+            report("roots for int", ints.mapToObj(x -> new SimpleEntry<>(BigInteger.valueOf(x), deg))
+                    .collect(Collectors.summingInt(f)));
 
-        
-            report("roots for double", doubles.mapToObj(x ->
-            new SimpleEntry<>(BigDecimal.valueOf(x).toBigInteger(), deg)).collect(Collectors.summingInt(f)));
+            report("roots for long", longs.mapToObj(x -> new SimpleEntry<>(BigInteger.valueOf(x), deg))
+                    .collect(Collectors.summingInt(f)));
+
+            report("roots for double",
+                    doubles.mapToObj(x -> new SimpleEntry<>(BigDecimal.valueOf(x).toBigInteger(), deg))
+                            .collect(Collectors.summingInt(f)));
         }
     }
 
@@ -181,25 +173,22 @@ public class RootTest {
             int failCount = 0;
             BigInteger x = pair.getKey();
             int n = pair.getValue();
-            
+
             BigInteger xToN = x.pow(n);
 
             // root of x^n -> x
             BigInteger[] actual = xToN.rootAndRemainder(n);
             failCount += checkResult(x, actual[0], "rootAndRemainder()[0], n = " + n);
-            failCount += checkResult(BigInteger.ZERO, actual[1],
-                "rootAndRemainder()[1], n = " + n);
+            failCount += checkResult(BigInteger.ZERO, actual[1], "rootAndRemainder()[1], n = " + n);
 
             // root of x^n + 1 -> x
             BigInteger xToNup = xToN.add(BigInteger.ONE);
             actual = xToNup.rootAndRemainder(n);
-            failCount += checkResult(x, actual[0], "rootAndRemainder()[0], n = " + n );
-            failCount += checkResult(BigInteger.ONE, actual[1],
-                "rootAndRemainder()[1], n = " + n);
+            failCount += checkResult(x, actual[0], "rootAndRemainder()[0], n = " + n);
+            failCount += checkResult(BigInteger.ONE, actual[1], "rootAndRemainder()[1], n = " + n);
 
             // square root of (x + 1)^n - 1 -> x
-            BigInteger up =
-                x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
+            BigInteger up = x.add(BigInteger.ONE).pow(n).subtract(BigInteger.ONE);
             actual = up.rootAndRemainder(n);
             failCount += checkResult(x, actual[0], "rootAndRemainder()[0], n = " + n);
             BigInteger r = up.subtract(xToN);
@@ -207,14 +196,14 @@ public class RootTest {
 
             return failCount;
         };
-        
-        for(int n = 2; n <= 100; n++) {
+
+        for (int n = 2; n <= 100; n++) {
             IntStream bits = random.ints(SIZE, 3, Short.MAX_VALUE);
             final int deg = n;
-            report("sqrtAndRemainder", bits.mapToObj(x ->
-                new SimpleEntry<>(BigInteger.valueOf(x), deg)).collect(Collectors.summingInt(g)));
+            report("sqrtAndRemainder", bits.mapToObj(x -> new SimpleEntry<>(BigInteger.valueOf(x), deg))
+                    .collect(Collectors.summingInt(g)));
         }
-        
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -227,8 +216,7 @@ public class RootTest {
     }
 
     static void report(String testName, int failCount) {
-        System.err.println(testName+": " +
-                           (failCount==0 ? "Passed":"Failed("+failCount+")"));
+        System.err.println(testName + ": " + (failCount == 0 ? "Passed" : "Failed(" + failCount + ")"));
         if (failCount > 0)
             failure = true;
     }

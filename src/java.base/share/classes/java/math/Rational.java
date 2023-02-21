@@ -1844,7 +1844,7 @@ public class Rational extends Number implements Comparable<Rational> {
         BigDecimal res = signum == -1 ? absVal.negate() : absVal;
         return workMC == null ? res : res.round(workMC);
     }
-    
+
     private static RoundingMode workRoundingMode(RoundingMode rm) {
         // ensure rounding up if last significand digit is 5
         return switch (rm) {
@@ -2220,7 +2220,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns the decimal String representation of this Rational:
      * <i>numerator</i>/<i>denominator</i>.
-     * 
+     *
      * The digit-to-character mapping provided by {@code Character.forDigit} is
      * used, and a minus sign is prepended if appropriate. (This representation is
      * compatible with the {@link #Rational(String) (String)} constructor, and

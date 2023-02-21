@@ -14,30 +14,25 @@ public class SerializationTests {
         checkRationalSubSerialRoundTrip();
     }
 
-    private static void checkSerialForm(Rational r) throws Exception  {
+    private static void checkSerialForm(Rational r) throws Exception {
         checkSerialForm0(r);
         checkSerialForm0(r.negate());
     }
 
-    private static void checkSerialForm0(Rational r) throws Exception  {
+    private static void checkSerialForm0(Rational r) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try(ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject(r);
             oos.flush();
         }
 
-        ObjectInputStream ois = new
-            ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
         Rational tmp = (Rational) ois.readObject();
 
-        if (!r.equals(tmp) ||
-                r.hashCode() != tmp.hashCode() ||
-                r.getClass() != tmp.getClass() ||
-                // Directly test equality of components
-                r.signum() != tmp.signum() ||
-                !r.absFloor().equals(tmp.absFloor()) ||
-                !r.numerator().equals(tmp.numerator()) ||
-                !r.denominator().equals(tmp.denominator())) {
+        if (!r.equals(tmp) || r.hashCode() != tmp.hashCode() || r.getClass() != tmp.getClass() ||
+        // Directly test equality of components
+                r.signum() != tmp.signum() || !r.absFloor().equals(tmp.absFloor())
+                || !r.numerator().equals(tmp.numerator()) || !r.denominator().equals(tmp.denominator())) {
             System.err.print("  original : " + r);
             System.err.println(" (hash: 0x" + Integer.toHexString(r.hashCode()) + ")");
             System.err.print("serialized : " + tmp);
@@ -49,9 +44,8 @@ public class SerializationTests {
         // verify the implementation constraint on the fields
         // having BigInteger class
         if (tmp.getClass() == Rational.class) {
-            if (tmp.absFloor().getClass() != BigInteger.class ||
-                    tmp.numerator().getClass() != BigInteger.class ||
-                    tmp.denominator().getClass() != BigInteger.class) {
+            if (tmp.absFloor().getClass() != BigInteger.class || tmp.numerator().getClass() != BigInteger.class
+                    || tmp.denominator().getClass() != BigInteger.class) {
                 throw new RuntimeException("Not using genuine BigInteger as type field");
             }
         }
@@ -69,30 +63,22 @@ public class SerializationTests {
             return java.util.Arrays.toString(toByteArray());
         }
     }
-    
-    private static void checkRationalSerialRoundTrip() throws Exception {
-        var values =
-            List.of(Rational.ZERO,
-                    Rational.ONE,
-                    Rational.TEN,
-                    new Rational(0),
-                    new Rational(1),
-                    new Rational(10),
-                    new Rational(Integer.MAX_VALUE),
-                    new Rational(Long.MAX_VALUE - 1),
-                    new Rational("0.1"),
-                    new Rational("100e-50"),
-                    new Rational(new BigDecimal(new BigIntegerSub(BigInteger.ONE), 2)));
 
-        for(Rational value : values) {
+    private static void checkRationalSerialRoundTrip() throws Exception {
+        var values = List.of(Rational.ZERO, Rational.ONE, Rational.TEN, new Rational(0), new Rational(1),
+                new Rational(10), new Rational(Integer.MAX_VALUE), new Rational(Long.MAX_VALUE - 1),
+                new Rational("0.1"), new Rational("100e-50"),
+                new Rational(new BigDecimal(new BigIntegerSub(BigInteger.ONE), 2)));
+
+        for (Rational value : values) {
             checkSerialForm(value);
         }
     }
 
     private static class RationalSub extends Rational {
-        
+
         private Rational val;
-        
+
         public RationalSub(Rational r) {
             super(0);
             val = r;
@@ -108,14 +94,14 @@ public class SerializationTests {
     private static class RationalSubSVUID extends Rational {
         @java.io.Serial
         private static final long serialVersionUID = 0x0123_4567_89ab_cdefL;
-        
+
         private Rational val;
 
         public RationalSubSVUID(Rational r) {
             super(0);
             val = r;
         }
-        
+
         @Override
         public String toString() {
             return val.toString();
@@ -123,13 +109,9 @@ public class SerializationTests {
     }
 
     private static void checkRationalSubSerialRoundTrip() throws Exception {
-        var values =
-            List.of(Rational.ZERO,
-                    Rational.ONE,
-                    Rational.TEN,
-                    new Rational("10e-1234"));
+        var values = List.of(Rational.ZERO, Rational.ONE, Rational.TEN, new Rational("10e-1234"));
 
-        for(var value : values) {
+        for (var value : values) {
             checkSerialForm(new RationalSub(value));
             checkSerialForm(new RationalSubSVUID(value));
         }

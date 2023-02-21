@@ -7,7 +7,7 @@
 import java.math.*;
 
 public class DivideTests {
-    
+
     static final MathContext HALF_UP_1 = new MathContext(1);
     static final MathContext HALF_UP_3 = new MathContext(3);
     static final MathContext UP_4 = new MathContext(4, RoundingMode.UP);
@@ -187,34 +187,31 @@ public class DivideTests {
 
         return failures;
     }
-    
-    public static int properPrecisionTests(){
+
+    public static int properPrecisionTests() {
         int failures = 0;
 
-        Number[][] testCases = {
-            {new Rational("1"),       new Rational("5"),            new BigDecimal("2e-1")},
-            {new Rational("1"),       new Rational("50e-1"),        new BigDecimal("2e-1")},
-            {new Rational("10e-1"),   new Rational("5"),            new BigDecimal("2e-1")},
-            {new Rational("1"),       new Rational("500e-2"),       new BigDecimal("2e-1")},
-            {new Rational("100e-2"),  new Rational("5"),            new BigDecimal("2e-1")},
-            {new Rational("1"),       new Rational("32"),           new BigDecimal("3125e-5")},
-            {new Rational("1"),       new Rational("64"),           new BigDecimal("15625e-6")},
-            {new Rational("1.0000000"),       new Rational("64"),   new BigDecimal("15625e-6")},
-        };
+        Number[][] testCases = { { new Rational("1"), new Rational("5"), new BigDecimal("2e-1") },
+                { new Rational("1"), new Rational("50e-1"), new BigDecimal("2e-1") },
+                { new Rational("10e-1"), new Rational("5"), new BigDecimal("2e-1") },
+                { new Rational("1"), new Rational("500e-2"), new BigDecimal("2e-1") },
+                { new Rational("100e-2"), new Rational("5"), new BigDecimal("2e-1") },
+                { new Rational("1"), new Rational("32"), new BigDecimal("3125e-5") },
+                { new Rational("1"), new Rational("64"), new BigDecimal("15625e-6") },
+                { new Rational("1.0000000"), new Rational("64"), new BigDecimal("15625e-6") }, };
 
-
-        for(Number[] tc : testCases) {
+        for (Number[] tc : testCases) {
             BigDecimal quotient = ((Rational) tc[0]).divide((Rational) tc[1]).toBigDecimalExact();
-            if (!quotient.equals(tc[2]) ) {
+            if (!quotient.equals(tc[2])) {
                 failures++;
-                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
-                                   "; expected " + tc[2] + " got " + quotient);
+                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] + "; expected " + tc[2] + " got "
+                        + quotient);
             }
         }
 
         return failures;
     }
-    
+
     public static int trailingZeroTests() {
         int failures = 0;
 
@@ -237,88 +234,77 @@ public class DivideTests {
     public static int roundedDivideTests() {
         int failures = 0;
         // Tests of divide under different rounding modes.
-    
+
         // {dividend, dividisor, rounding, quotient}
         Rational a = new Rational("31415");
         Rational a_minus = a.negate();
         Rational b = new Rational("10000");
-    
+
         Rational c = new Rational("31425");
         Rational c_minus = c.negate();
-    
-         // Ad hoc tests
+
+        // Ad hoc tests
         Rational d = new Rational("-3736167111923811891189.3939591735");
         Rational e = new Rational("74723342238476237.823787879183470");
-    
-        Object[][] testCases = {
-            {a,         b,      UP_4,        new BigDecimal("3.142")},
-            {a_minus,   b,      UP_4,        new BigDecimal("-3.142")},
-    
-            {a,         b,      DOWN_4,      new BigDecimal("3.141")},
-            {a_minus,   b,      DOWN_4,      new BigDecimal("-3.141")},
-    
-            {a,         b,      CEIL_4,   new BigDecimal("3.142")},
-            {a_minus,   b,      CEIL_4,   new BigDecimal("-3.141")},
-    
-            {a,         b,      FLOOR_4,     new BigDecimal("3.141")},
-            {a_minus,   b,      FLOOR_4,     new BigDecimal("-3.142")},
-    
-            {a,         b,      HALF_UP_4,   new BigDecimal("3.142")},
-            {a_minus,   b,      HALF_UP_4,   new BigDecimal("-3.142")},
-    
-            {a,         b,      HALF_DOWN_4,      new BigDecimal("3.141")},
-            {a_minus,   b,      HALF_DOWN_4,      new BigDecimal("-3.141")},
-    
-            {a,         b,      HALF_EVEN_4, new BigDecimal("3.142")},
-            {a_minus,   b,      HALF_EVEN_4, new BigDecimal("-3.142")},
-    
-            {c,         b,      HALF_EVEN_4, new BigDecimal("3.142")},
-            {c_minus,   b,      HALF_EVEN_4, new BigDecimal("-3.142")},
-    
-            {d,         e,      new MathContext(1, RoundingMode.HALF_UP),   BigDecimal.valueOf(-5, -4)},
-            {d,         e,      new MathContext(1, RoundingMode.HALF_DOWN), BigDecimal.valueOf(-5, -4)},
-            {d,         e,      new MathContext(1, RoundingMode.HALF_EVEN), BigDecimal.valueOf(-5, -4)},
-        };
-    
-        for(Object[] tc : testCases) {
+
+        Object[][] testCases = { { a, b, UP_4, new BigDecimal("3.142") },
+                { a_minus, b, UP_4, new BigDecimal("-3.142") },
+
+                { a, b, DOWN_4, new BigDecimal("3.141") }, { a_minus, b, DOWN_4, new BigDecimal("-3.141") },
+
+                { a, b, CEIL_4, new BigDecimal("3.142") }, { a_minus, b, CEIL_4, new BigDecimal("-3.141") },
+
+                { a, b, FLOOR_4, new BigDecimal("3.141") }, { a_minus, b, FLOOR_4, new BigDecimal("-3.142") },
+
+                { a, b, HALF_UP_4, new BigDecimal("3.142") }, { a_minus, b, HALF_UP_4, new BigDecimal("-3.142") },
+
+                { a, b, HALF_DOWN_4, new BigDecimal("3.141") }, { a_minus, b, HALF_DOWN_4, new BigDecimal("-3.141") },
+
+                { a, b, HALF_EVEN_4, new BigDecimal("3.142") }, { a_minus, b, HALF_EVEN_4, new BigDecimal("-3.142") },
+
+                { c, b, HALF_EVEN_4, new BigDecimal("3.142") }, { c_minus, b, HALF_EVEN_4, new BigDecimal("-3.142") },
+
+                { d, e, new MathContext(1, RoundingMode.HALF_UP), BigDecimal.valueOf(-5, -4) },
+                { d, e, new MathContext(1, RoundingMode.HALF_DOWN), BigDecimal.valueOf(-5, -4) },
+                { d, e, new MathContext(1, RoundingMode.HALF_EVEN), BigDecimal.valueOf(-5, -4) }, };
+
+        for (Object[] tc : testCases) {
             MathContext mc = (MathContext) tc[2];
-    
+
             BigDecimal quotient = ((Rational) tc[0]).divide((Rational) tc[1]).toBigDecimal(mc);
             if (!quotient.equals(tc[3])) {
                 failures++;
-                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
-                                   " precision " + mc.getPrecision() + " rounding mode " + mc.getRoundingMode() +
-                                   "; expected " + tc[3] + " got " + quotient);
+                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] + " precision "
+                        + mc.getPrecision() + " rounding mode " + mc.getRoundingMode() + "; expected " + tc[3] + " got "
+                        + quotient);
             }
         }
-        
+
         Object[][] testCases2 = {
-             // {dividend, dividisor, rounding, quotient}
-            { new Rational(3090), new Rational(7), HALF_UP_3, new BigDecimal(441) },
-            { new Rational("309000000000000000000000"), new Rational("700000000000000000000"), HALF_UP_3,
-              new BigDecimal(441) },
-            { new Rational("962.430000000000"), new Rational("8346463.460000000000"), new MathContext(9),
-              new BigDecimal("0.000115309916") },
-            { new Rational("18446744073709551631"), new Rational("4611686018427387909"), HALF_UP_1,
-              new BigDecimal(4) },
-            { new Rational("18446744073709551630"), new Rational("4611686018427387909"), HALF_UP_1,
-              new BigDecimal(4) },
-            { new Rational("23058430092136939523"), new Rational("4611686018427387905"), HALF_UP_1,
-              new BigDecimal(5) },
-            { new Rational("-18446744073709551661"), new Rational("-4611686018427387919"), HALF_UP_1,
-              new BigDecimal(4) },
-            { new Rational("-18446744073709551660"), new Rational("-4611686018427387919"), HALF_UP_1,
-              new BigDecimal(4) },
-        };
-    
+                // {dividend, dividisor, rounding, quotient}
+                { new Rational(3090), new Rational(7), HALF_UP_3, new BigDecimal(441) },
+                { new Rational("309000000000000000000000"), new Rational("700000000000000000000"), HALF_UP_3,
+                        new BigDecimal(441) },
+                { new Rational("962.430000000000"), new Rational("8346463.460000000000"), new MathContext(9),
+                        new BigDecimal("0.000115309916") },
+                { new Rational("18446744073709551631"), new Rational("4611686018427387909"), HALF_UP_1,
+                        new BigDecimal(4) },
+                { new Rational("18446744073709551630"), new Rational("4611686018427387909"), HALF_UP_1,
+                        new BigDecimal(4) },
+                { new Rational("23058430092136939523"), new Rational("4611686018427387905"), HALF_UP_1,
+                        new BigDecimal(5) },
+                { new Rational("-18446744073709551661"), new Rational("-4611686018427387919"), HALF_UP_1,
+                        new BigDecimal(4) },
+                { new Rational("-18446744073709551660"), new Rational("-4611686018427387919"), HALF_UP_1,
+                        new BigDecimal(4) }, };
+
         for (Object[] test : testCases2) {
             MathContext mc = (MathContext) test[2];
             BigDecimal quo = ((Rational) test[0]).divide((Rational) test[1]).toBigDecimal(mc);
             if (!quo.equals(test[3])) {
                 failures++;
-                System.err.println("Unexpected quotient from " + test[0] + " / " + test[1] +
-                                   " rounding mode HALF_UP" +
-                                   "; expected " + test[3] + " got " + quo);
+                System.err.println("Unexpected quotient from " + test[0] + " / " + test[1] + " rounding mode HALF_UP"
+                        + "; expected " + test[3] + " got " + quo);
             }
         }
         return failures;

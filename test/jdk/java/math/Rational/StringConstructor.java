@@ -32,31 +32,27 @@ public class StringConstructor {
         constructWithError("11.e+-1");
 
         // Range checks
-        constructWithError("1e"+Integer.MIN_VALUE);
-        constructWithError("10e"+Integer.MIN_VALUE);
-        constructWithError("0.01e"+Integer.MIN_VALUE);
-        constructWithError("1e"+((long)Integer.MIN_VALUE-1));
+        constructWithError("1e" + Integer.MIN_VALUE);
+        constructWithError("10e" + Integer.MIN_VALUE);
+        constructWithError("0.01e" + Integer.MIN_VALUE);
+        constructWithError("1e" + ((long) Integer.MIN_VALUE - 1));
 
         leadingExponentZeroTest();
         nonAsciiZeroTest();
     }
 
     /*
-     * Verify value is set properly if the significand has
-     * non-ASCII leading zeros.
+     * Verify value is set properly if the significand has non-ASCII leading zeros.
      */
     private static void nonAsciiZeroTest() {
-        String values[] = {
-            "00004e5",
-            "\u0660\u0660\u0660\u06604e5",
-        };
+        String values[] = { "00004e5", "\u0660\u0660\u0660\u06604e5", };
 
         Rational expected = new Rational("4e5");
 
-        for(String s : values) {
+        for (String s : values) {
             Rational tmp = new Rational(s);
             // System.err.println("Testing " + s);
-            if (! expected.equals(tmp)) {
+            if (!expected.equals(tmp)) {
                 System.err.println("Bad conversion of " + s + "got " + tmp);
                 throw new RuntimeException("String constructor failure.");
             }
@@ -74,8 +70,8 @@ public class StringConstructor {
 
         // Test with more excess zeros than the largest number of
         // decimal digits needed to represent a long
-        int limit  = ((int)Math.log10(Long.MAX_VALUE)) + 6;
-        for(int i = 0; i < limit; i++, middle += "0") {
+        int limit = ((int) Math.log10(Long.MAX_VALUE)) + 6;
+        for (int i = 0; i < limit; i++, middle += "0") {
             String t1 = start + middle;
             String t2 = t1 + end;
 
@@ -103,7 +99,7 @@ public class StringConstructor {
         try {
             new Rational(badString);
             throw new RuntimeException(badString + " accepted");
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
         }
     }
 }

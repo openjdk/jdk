@@ -38,11 +38,11 @@ public class AntiInjectionFactoryTests {
             if (!den.equals(BigInteger.ONE))
                 throw new RuntimeException("Bad value for denominator");
         }
-        
+
         TestBigDecimal tbd = new TestBigDecimal(BigDecimal.ONE);
         // Create Rational's using each of the factory methods
         // with guards on the class of the arguments
-        values = new Rational[]{ new Rational(tbd), Rational.valueOf(tbd, tbd) };
+        values = new Rational[] { new Rational(tbd), Rational.valueOf(tbd, tbd) };
 
         for (var r : values) {
             BigInteger floor = r.absFloor();
@@ -70,7 +70,7 @@ public class AntiInjectionFactoryTests {
                 throw new RuntimeException("Bad value for denominator");
         }
     }
-    
+
     private static class TestBigDecimal extends BigDecimal {
         private static final long serialVersionUID = -6639002206221495763L;
 
@@ -82,17 +82,17 @@ public class AntiInjectionFactoryTests {
         public BigDecimal abs() {
             return new TestBigDecimal(super.abs());
         }
-        
+
         @Override
         public BigDecimal subtract(BigDecimal subtrahend) {
             return new TestBigDecimal(super.subtract(subtrahend));
         }
-        
+
         @Override
         public BigInteger unscaledValue() {
             return new TestBigInteger(super.unscaledValue());
         }
-        
+
         @Override
         public BigInteger toBigInteger() {
             return new TestBigInteger(super.toBigInteger());
@@ -121,7 +121,7 @@ public class AntiInjectionFactoryTests {
         public BigInteger gcd(BigInteger val) {
             return new TestBigInteger(super.gcd(val));
         }
-        
+
         @Override
         public BigInteger shiftRight(int n) {
             return new TestBigInteger(super.shiftRight(n));

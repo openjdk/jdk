@@ -15,20 +15,13 @@ public class ScaleByPowerOfTenTests {
             Rational expected;
 
             if (!r.equals(expected = TEN.pow(i))) {
-                throw new RuntimeException("Unexpected result " +
-                                           r.toString() +
-                                           "; expected " +
-                                           expected.toString());
+                throw new RuntimeException("Unexpected result " + r.toString() + "; expected " + expected.toString());
             }
 
             r = ONE.negate().scaleByPowerOfTen(i);
             if (!r.equals(expected = TEN.pow(i).negate())) {
-                throw new RuntimeException("Unexpected result " +
-                                           r.toString() +
-                                           "; expected " +
-                                           expected.toString());
+                throw new RuntimeException("Unexpected result " + r.toString() + "; expected " + expected.toString());
             }
-
 
         }
     }

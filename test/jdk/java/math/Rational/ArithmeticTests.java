@@ -56,9 +56,9 @@ public class ArithmeticTests {
     }
 
     /*
-     * Get a random or boundary-case number. This is designed to provide
-     * a lot of numbers that will find failure points, such as max sized
-     * numbers, empty BigIntegers, etc.
+     * Get a random or boundary-case number. This is designed to provide a lot of
+     * numbers that will find failure points, such as max sized numbers, empty
+     * BigIntegers, etc.
      *
      * If order is less than 2, order is changed to 2.
      */
@@ -66,7 +66,8 @@ public class ArithmeticTests {
         boolean negative = random.nextBoolean();
         int numType = random.nextInt(7);
         BigInteger result = null;
-        if (order < 2) order = 2;
+        if (order < 2)
+            order = 2;
 
         switch (numType) {
         case 0: // Empty
@@ -78,12 +79,12 @@ public class ArithmeticTests {
             break;
 
         case 2: // All bits set in number
-            int numBytes = (order+7)/8;
+            int numBytes = (order + 7) / 8;
             byte[] fullBits = new byte[numBytes];
-            for(int i=0; i<numBytes; i++)
-                fullBits[i] = (byte)0xff;
-            int excessBits = 8*numBytes - order;
-            fullBits[0] &= (1 << (8-excessBits)) - 1;
+            for (int i = 0; i < numBytes; i++)
+                fullBits[i] = (byte) 0xff;
+            int excessBits = 8 * numBytes - order;
+            fullBits[0] &= (1 << (8 - excessBits)) - 1;
             result = new BigInteger(1, fullBits);
             break;
 
@@ -92,11 +93,11 @@ public class ArithmeticTests {
             break;
 
         case 4: // Random bit density
-            byte[] val = new byte[(order+7)/8];
+            byte[] val = new byte[(order + 7) / 8];
             int iterations = random.nextInt(order);
-            for (int i=0; i<iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 int bitIdx = random.nextInt(order);
-                val[bitIdx/8] |= 1 << (bitIdx%8);
+                val[bitIdx / 8] |= 1 << (bitIdx % 8);
             }
             result = new BigInteger(1, val);
             break;
@@ -137,13 +138,13 @@ public class ArithmeticTests {
     public static int arithmetic(int order) {
         int failCount = 0;
 
-        for (int i=0; i<SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             Rational x = fetchNumber(order);
-            while(x.signum() != 1)
+            while (x.signum() != 1)
                 x = fetchNumber(order);
             Rational y = fetchNumber(order / 2);
-            while(x.compareTo(y) < 0)
-                y = fetchNumber(order/2);
+            while (x.compareTo(y) < 0)
+                y = fetchNumber(order / 2);
             if (y.signum() == 0)
                 y = y.add(ONE);
 
@@ -159,13 +160,13 @@ public class ArithmeticTests {
         report("Arithmetic I for " + order + " bits", failCount);
 
         failCount = 0;
-        for (int i=0; i<100; i++) {
+        for (int i = 0; i < 100; i++) {
             Rational x = fetchNumber(order);
-            while(x.signum() != 1)
+            while (x.signum() != 1)
                 x = fetchNumber(order);
-            Rational y = fetchNumber(order/2);
-            while(x.compareTo(y) < 0)
-                y = fetchNumber(order/2);
+            Rational y = fetchNumber(order / 2);
+            while (x.compareTo(y) < 0)
+                y = fetchNumber(order / 2);
             if (y.signum() == 0)
                 y = y.add(ONE);
 
@@ -184,8 +185,7 @@ public class ArithmeticTests {
     }
 
     static void report(String testName, int failCount) {
-        System.err.println(testName+": " +
-                (failCount==0 ? "Passed":"Failed("+failCount+")"));
+        System.err.println(testName + ": " + (failCount == 0 ? "Passed" : "Failed(" + failCount + ")"));
     }
 
     public static void main(String argv[]) {
@@ -200,10 +200,10 @@ public class ArithmeticTests {
         failures += simpleTests();
         failures += arithmeticExceptionTest();
 
-        failures += arithmetic(order1);   // medium numbers
-        failures += arithmetic(order2);   // small numbers
-        failures += arithmetic(order3);   // Karatsuba range
-        failures += arithmetic(order4);   // Toom-Cook / Burnikel-Ziegler range
+        failures += arithmetic(order1); // medium numbers
+        failures += arithmetic(order2); // small numbers
+        failures += arithmetic(order3); // Karatsuba range
+        failures += arithmetic(order4); // Toom-Cook / Burnikel-Ziegler range
 
         if (failures > 0)
             throw new RuntimeException("Incurred " + failures + " failures while testing arithmetic operations.");

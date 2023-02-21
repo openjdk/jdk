@@ -1,3 +1,4 @@
+
 /**
  * @test
  * @summary Tests of Rational.intValueExact
@@ -15,8 +16,7 @@ public class IntValueExactTests {
         failures += intValueExactExceptional();
 
         if (failures > 0) {
-            throw new RuntimeException("Incurred " + failures +
-                                       " failures while testing intValueExact.");
+            throw new RuntimeException("Incurred " + failures + " failures while testing intValueExact.");
         }
     }
 
@@ -29,34 +29,27 @@ public class IntValueExactTests {
 
         // Strings used to create Rational instances on which invoking
         // intValueExact() will succeed.
-        Map<String, Integer> successCases =
-            Map.ofEntries(entry("2147483647",    Integer.MAX_VALUE), // 2^31 -1
-                          entry("2147483647.0",  Integer.MAX_VALUE),
-                          entry("2147483647.00", Integer.MAX_VALUE),
+        Map<String, Integer> successCases = Map.ofEntries(entry("2147483647", Integer.MAX_VALUE), // 2^31 -1
+                entry("2147483647.0", Integer.MAX_VALUE), entry("2147483647.00", Integer.MAX_VALUE),
 
-                          entry("-2147483648",   Integer.MIN_VALUE), // -2^31
-                          entry("-2147483648.0", Integer.MIN_VALUE),
-                          entry("-2147483648.00",Integer.MIN_VALUE),
+                entry("-2147483648", Integer.MIN_VALUE), // -2^31
+                entry("-2147483648.0", Integer.MIN_VALUE), entry("-2147483648.00", Integer.MIN_VALUE),
 
-                          entry("1e0",    1),
-                          entry("1e9",   1_000_000_000),
+                entry("1e0", 1), entry("1e9", 1_000_000_000),
 
-                          entry("0e13",   0), // Fast path zero
-                          entry("0e32",   0),
-                          entry("0e512", 0),
+                entry("0e13", 0), // Fast path zero
+                entry("0e32", 0), entry("0e512", 0),
 
-                          entry("10.000000000000000000000000000000000", 10));
+                entry("10.000000000000000000000000000000000", 10));
 
         for (var testCase : successCases.entrySet()) {
             Rational r = new Rational(testCase.getKey());
             int expected = testCase.getValue();
             try {
                 int intValueExact = r.intValueExact();
-                if (expected != intValueExact ||
-                    intValueExact != simpleIntValueExact(r)) {
+                if (expected != intValueExact || intValueExact != simpleIntValueExact(r)) {
                     failures++;
-                    System.err.println("Unexpected intValueExact result " + intValueExact +
-                                       " on " + r);
+                    System.err.println("Unexpected intValueExact result " + intValueExact + " on " + r);
                 }
             } catch (Exception e) {
                 failures++;
@@ -68,19 +61,14 @@ public class IntValueExactTests {
 
     private static int intValueExactExceptional() {
         int failures = 0;
-        List<Rational> exceptionalCases =
-            List.of(new Rational("2147483648"), // Integer.MAX_VALUE + 1
-                    new Rational("2147483648.0"),
-                    new Rational("2147483648.00"),
-                    new Rational("-2147483649"), // Integer.MIN_VALUE - 1
-                    new Rational("-2147483649.1"),
-                    new Rational("-2147483649.01"),
+        List<Rational> exceptionalCases = List.of(new Rational("2147483648"), // Integer.MAX_VALUE + 1
+                new Rational("2147483648.0"), new Rational("2147483648.00"), new Rational("-2147483649"), // Integer.MIN_VALUE
+                                                                                                          // - 1
+                new Rational("-2147483649.1"), new Rational("-2147483649.01"),
 
-                    new Rational("9999999999999999999999999999999"),
-                    new Rational("10000000000000000000000000000000"),
+                new Rational("9999999999999999999999999999999"), new Rational("10000000000000000000000000000000"),
 
-                    new Rational("0.99"),
-                    new Rational("0.999999999999999999999"));
+                new Rational("0.99"), new Rational("0.999999999999999999999"));
 
         for (Rational r : exceptionalCases) {
             try {
