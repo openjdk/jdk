@@ -71,6 +71,7 @@ public final class PlatformRecorder {
     private long recordingCounter = 0;
     private RepositoryChunk currentChunk;
     private boolean inShutdown;
+    private boolean runPeriodicTask;
 
     public PlatformRecorder() throws Exception {
         repository = Repository.getRepository();
@@ -251,6 +252,7 @@ public final class PlatformRecorder {
             updateSettings(false);
             recording.setStartTime(startTime);
             writeMetaEvents();
+            setRunPeriodicTask(true);
         } else {
             RepositoryChunk newChunk = null;
             if (toDisk) {
@@ -328,6 +330,7 @@ public final class PlatformRecorder {
             jvm.endRecording();
             recording.setStopTime(stopTime);
             disableEvents();
+            setRunPeriodicTask(false);
         } else {
             RepositoryChunk newChunk = null;
             RequestEngine.doChunkEnd();
@@ -517,9 +520,21 @@ public final class PlatformRecorder {
         return false;
     }
 
+    private void setRunPeriodicTask(boolean runPeriodicTask) {
+        synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+            this.runPeriodicTask = runPeriodicTask;
+            if (runPeriodicTask) {
+                JVM.CHUNK_ROTATION_MONITOR.notifyAll();
+            }
+        }
+    }
+
     private void takeNap(long duration) {
         try {
             synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+                if (!runPeriodicTask) {
+                    duration = Long.MAX_VALUE;
+                }
                 JVM.CHUNK_ROTATION_MONITOR.wait(duration < 10 ? 10 : duration);
             }
         } catch (InterruptedException e) {
