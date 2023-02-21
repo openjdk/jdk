@@ -189,9 +189,10 @@ static GenIsScavengable _is_scavengable;
 
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
-  ref_processing_init();
 
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
+
+  def_new_gen->ref_processor_init();
 
   initialize_size_policy(def_new_gen->eden()->capacity(),
                          _old_gen->capacity(),
@@ -200,11 +201,6 @@ void GenCollectedHeap::post_initialize() {
   MarkSweep::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
-}
-
-void GenCollectedHeap::ref_processing_init() {
-  _young_gen->ref_processor_init();
-  _old_gen->ref_processor_init();
 }
 
 PreGenGCValues GenCollectedHeap::get_pre_gc_values() const {
@@ -455,29 +451,9 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
 
   // Do collection work
   {
-    // Note on ref discovery: For what appear to be historical reasons,
-    // GCH enables and disabled (by enqueuing) refs discovery.
-    // In the future this should be moved into the generation's
-    // collect method so that ref discovery and enqueueing concerns
-    // are local to a generation. The collect method could return
-    // an appropriate indication in the case that notification on
-    // the ref lock was needed. This will make the treatment of
-    // weak refs more uniform (and indeed remove such concerns
-    // from GCH). XXX
-
     save_marks();   // save marks for all gens
-    // We want to discover references, but not process them yet.
-    // This mode is disabled in process_discovered_references if the
-    // generation does some collection work, or in
-    // enqueue_discovered_references if the generation returns
-    // without doing any work.
-    ReferenceProcessor* rp = gen->ref_processor();
-    rp->start_discovery(clear_soft_refs);
 
     gen->collect(full, clear_soft_refs, size, is_tlab);
-
-    rp->disable_discovery();
-    rp->verify_no_references_recorded();
   }
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());

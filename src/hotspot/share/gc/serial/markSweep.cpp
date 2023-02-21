@@ -33,15 +33,10 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/instanceRefKlass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 
 uint                    MarkSweep::_total_invocations = 0;
@@ -168,11 +163,6 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   }
 }
 
-void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
-  _ref_processor = rp;
-  mark_and_push_closure.set_ref_discoverer(_ref_processor);
-}
-
 void MarkSweep::mark_object(oop obj) {
   if (StringDedup::is_enabled() &&
       java_lang_String::is_instance(obj) &&
@@ -252,4 +242,10 @@ void MarkSweep::initialize() {
   MarkSweep::_gc_timer = new STWGCTimer();
   MarkSweep::_gc_tracer = new SerialOldTracer();
   MarkSweep::_string_dedup_requests = new StringDedup::Requests();
+
+  static AlwaysTrueClosure always_true;
+
+  // Full heap; always subject-to-discovery
+  MarkSweep::_ref_processor = new ReferenceProcessor(&always_true);
+  mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }
