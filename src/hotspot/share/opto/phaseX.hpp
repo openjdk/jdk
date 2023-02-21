@@ -134,7 +134,9 @@ class Type_Array : public StackObj {
   friend class PhaseTransform;
 public:
   Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
-  Type_Array(Type_Array *ta) : _a(ta->_a), _max(ta->_max), _types(ta->_types) { }
+  Type_Array(Type_Array *ta) {
+    replace_with(ta);
+  }
   const Type *fast_lookup(uint i) const{assert(i<_max,"oob");return _types[i];}
   // Extend the mapping: index i maps to Type *n.
   void map( uint i, const Type *n ) { if( i>=_max ) grow(i); _types[i] = n; }
@@ -142,6 +144,16 @@ public:
 #ifndef PRODUCT
   void dump() const;
 #endif
+
+  void replace_with(Type_Array *ta) {
+    if (this != ta) {
+      _a = ta->_a;
+      _max = ta->_max;
+      _types = ta->_types;
+      ta->_max = 0;
+      ta->_types = nullptr;
+    }
+  }
 
   NONCOPYABLE(Type_Array);
 };
@@ -213,8 +225,8 @@ public:
 
   Arena*      arena()   { return _arena; }
   Type_Array& types()   { return _types; }
-  void replace_types(Type_Array new_types) {
-    _types = new_types;
+  void replace_types(Type_Array *new_types) {
+    _types.replace_with(new_types);
   }
   // _nodes is used in varying ways by subclasses, which define local accessors
   uint nodes_size() {
@@ -435,7 +447,7 @@ public:
 
   void replace_with(PhaseGVN* gvn) {
     _table.replace_with(&gvn->_table);
-    _types = gvn->_types;
+    _types.replace_with(&gvn->_types);
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }

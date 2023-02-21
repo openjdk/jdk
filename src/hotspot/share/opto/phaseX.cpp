@@ -507,7 +507,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   }
 
   // Replace the compiler's type information with the updated type information.
-  gvn->replace_types(_new_type_array);
+  gvn->replace_types(&_new_type_array);
 
   // Update the unique node count of the compilation to the number of currently live nodes.
   C->set_unique(_live_node_count);
