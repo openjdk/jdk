@@ -1117,6 +1117,10 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
     case BoolTest::ge: condition = Assembler::GE; break;
     case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
     case BoolTest::gt: condition = Assembler::GT; break;
+    case BoolTest::ugt: condition = Assembler::HI; break;
+    case BoolTest::uge: condition = Assembler::HS; break;
+    case BoolTest::ult: z1 = zm; z2 = zn; condition = Assembler::HI; break;
+    case BoolTest::ule: z1 = zm; z2 = zn; condition = Assembler::HS; break;
     default:
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
