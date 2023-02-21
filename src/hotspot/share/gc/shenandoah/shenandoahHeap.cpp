@@ -781,11 +781,7 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
   } else {
     // ...and zap just allocated object.
 #ifdef ASSERT
-    // Skip mangling the space corresponding to the object header to
-    // ensure that the returned space is not considered parsable by
-    // any concurrent GC thread.
-    size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(gclab_buf + hdr_size, actual_size - hdr_size, badHeapWordVal);
+    Copy::fill_to_words(gclab_buf, actual_size, badHeapWordVal);
 #endif // ASSERT
   }
   gclab->set_buf(gclab_buf, actual_size);

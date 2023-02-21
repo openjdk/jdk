@@ -1994,13 +1994,12 @@ run:
               //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
               //     this area, and we still need to initialize it
               if (DEBUG_ONLY(true ||) !ZeroTLAB) {
-                size_t hdr_size = oopDesc::header_size();
-                Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
+                size_t hdr_size = instanceOopDesc::base_offset_in_bytes();
+                Copy::fill_to_bytes((char*)result + hdr_size, obj_size * HeapWordSize- hdr_size, 0);
               }
 
               // Initialize header, mirrors MemAllocator.
               oopDesc::set_mark(result, markWord::prototype());
-              oopDesc::set_klass_gap(result, 0);
               oopDesc::release_set_klass(result, ik);
 
               oop obj = cast_to_oop(result);

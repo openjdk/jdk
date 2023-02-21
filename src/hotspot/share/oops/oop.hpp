@@ -92,11 +92,12 @@ class oopDesc {
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
-  // For klass field compression
-  static inline void set_klass_gap(HeapWord* mem, int z);
+  static int base_offset_in_bytes() {
+    return (UseCompressedClassPointers) ?
+            klass_gap_offset_in_bytes() :
+            sizeof(oopDesc);
 
-  // size of object header, aligned to platform wordSize
-  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;

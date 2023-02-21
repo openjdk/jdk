@@ -1284,8 +1284,8 @@ class StackChunkAllocator : public MemAllocator {
     assert(_word_size > _stack_size, "");
 
     // zero out fields (but not the stack)
-    const size_t hs = oopDesc::header_size();
-    Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
+    const size_t hs = oopDesc::base_offset_in_bytes();
+    Copy::fill_to_bytes((char*)mem + hs, vmClasses::StackChunk_klass()->size_helper() * HeapWordSize - hs);
 
     jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
     jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);

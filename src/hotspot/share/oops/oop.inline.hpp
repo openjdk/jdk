@@ -135,12 +135,6 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   }
 }
 
-void oopDesc::set_klass_gap(HeapWord* mem, int v) {
-  if (UseCompressedClassPointers) {
-    *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
-  }
-}
-
 bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }

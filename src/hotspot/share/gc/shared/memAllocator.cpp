@@ -337,13 +337,9 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
     // ..and clear it.
     Copy::zero_to_words(mem, allocation._allocated_tlab_size);
   } else {
-    // ...and zap just allocated object.
+    // ...and zap just allocated tlab.
 #ifdef ASSERT
-    // Skip mangling the space corresponding to the object header to
-    // ensure that the returned space is not considered parsable by
-    // any concurrent GC thread.
-    size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(mem + hdr_size, allocation._allocated_tlab_size - hdr_size, badHeapWordVal);
+    Copy::fill_to_words(mem, allocation._allocated_tlab_size, badHeapWordVal);
 #endif // ASSERT
   }
 
@@ -395,12 +391,10 @@ oop MemAllocator::allocate() const {
   return obj;
 }
 
-void MemAllocator::mem_clear(HeapWord* mem) const {
+void MemAllocator::mem_clear(HeapWord* mem, size_t hdr_size_bytes) const {
   assert(mem != nullptr, "cannot initialize null object");
-  const size_t hs = oopDesc::header_size();
-  assert(_word_size >= hs, "unexpected object size");
-  oopDesc::set_klass_gap(mem, 0);
-  Copy::fill_to_aligned_words(mem + hs, _word_size - hs);
+  assert(_word_size * HeapWordSize >= hdr_size_bytes, "unexpected object size");
+  Copy::fill_to_bytes((char*)mem + hdr_size_bytes, _word_size * HeapWordSize - hdr_size_bytes);
 }
 
 oop MemAllocator::finish(HeapWord* mem) const {
@@ -415,17 +409,8 @@ oop MemAllocator::finish(HeapWord* mem) const {
 }
 
 oop ObjAllocator::initialize(HeapWord* mem) const {
-  mem_clear(mem);
+  mem_clear(mem, instanceOopDesc::base_offset_in_bytes());
   return finish(mem);
-}
-
-MemRegion ObjArrayAllocator::obj_memory_range(oop obj) const {
-  if (_do_zero) {
-    return MemAllocator::obj_memory_range(obj);
-  }
-  ArrayKlass* array_klass = ArrayKlass::cast(_klass);
-  const size_t hs = heap_word_size(arrayOopDesc::base_offset_in_bytes(array_klass->element_type()));
-  return MemRegion(cast_from_oop<HeapWord*>(obj) + hs, _word_size - hs);
 }
 
 oop ObjArrayAllocator::initialize(HeapWord* mem) const {
@@ -434,7 +419,9 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   // concurrent GC.
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
-    mem_clear(mem);
+    ArrayKlass* array_klass = ArrayKlass::cast(_klass);
+    const size_t hs = arrayOopDesc::base_offset_in_bytes(array_klass->element_type());
+    mem_clear(mem, hs);
   }
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
@@ -445,7 +432,7 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   // non-null _klass field indicates that the object is parsable by
   // concurrent GC.
   assert(_word_size > 0, "oop_size must be positive.");
-  mem_clear(mem);
+  mem_clear(mem, instanceOopDesc::base_offset_in_bytes());
   java_lang_Class::set_oop_size(mem, _word_size);
   return finish(mem);
 }

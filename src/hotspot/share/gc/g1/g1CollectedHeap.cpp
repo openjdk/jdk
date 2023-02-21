@@ -236,7 +236,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
   // type and, for a very short period of time, the klass and length
   // fields will be inconsistent. This could cause a refinement
   // thread to calculate the object size incorrectly.
-  Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
+  Copy::fill_to_bytes(new_obj, oopDesc::base_offset_in_bytes(), 0);
 
   // Next, pad out the unused tail of the last region with filler
   // objects, for improved usage accounting.
