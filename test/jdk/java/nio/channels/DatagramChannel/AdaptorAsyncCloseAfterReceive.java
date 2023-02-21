@@ -35,6 +35,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -75,6 +76,7 @@ class AdaptorAsyncCloseAfterReceive {
     void testReceive(int maxLength, int timeout) throws Exception {
         try (DatagramChannel dc = DatagramChannel.open()) {
             dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            SocketAddress localAddress = dc.getLocalAddress();
 
             populateSocketAddressCaches(dc);
 
@@ -84,9 +86,19 @@ class AdaptorAsyncCloseAfterReceive {
             // schedule socket to be closed while main thread blocked in receive
             Future<?> future = scheduler.schedule(() -> s.close(), 1, TimeUnit.SECONDS);
             try {
-                byte[] ba = new byte[maxLength];
-                DatagramPacket p = new DatagramPacket(ba, maxLength);
-                assertThrows(SocketException.class, () -> s.receive(p));
+                while (true) {
+                    byte[] ba = new byte[maxLength];
+                    DatagramPacket p = new DatagramPacket(ba, maxLength);
+                    s.receive(p);
+                    SocketAddress sender = p.getSocketAddress();
+                    if (sender.equals(localAddress)) {
+                        fail("Received datagram from " + sender);
+                    } else {
+                        System.err.format("Datagram from %s ignored%n", sender);
+                    }
+                }
+            } catch (SocketException e) {
+                // expected
             } finally {
                 future.cancel(true);
             }
