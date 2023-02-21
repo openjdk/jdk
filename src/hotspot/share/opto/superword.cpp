@@ -708,7 +708,7 @@ void SuperWord::find_adjacent_refs() {
         }
       }
     } else { // Don't create unaligned pack
-      // First, remove remaining memory ops of the same type from the list.
+      // First, remove remaining memory ops of the same memory slice from the list.
       for (int i = memops.size() - 1; i >= 0; i--) {
         MemNode* s = memops.at(i)->as_Mem();
         if (same_memory_slice(s, mem_ref)) {
@@ -716,7 +716,7 @@ void SuperWord::find_adjacent_refs() {
         }
       }
 
-      // Second, remove already constructed packs of the same type.
+      // Second, remove already constructed packs of the same memory slice.
       for (int i = _packset.length() - 1; i >= 0; i--) {
         Node_List* p = _packset.at(i);
         MemNode* s = p->at(0)->as_Mem();
