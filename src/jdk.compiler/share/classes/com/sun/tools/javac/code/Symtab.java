@@ -722,10 +722,7 @@ public class Symtab {
         if ((pack != null && pack.exists()) || onlyExisting)
             return pack;
 
-        boolean dependsOnUnnamed = msym.requires != null &&
-                                   msym.requires.stream()
-                                                .map(rd -> rd.module)
-                                                .anyMatch(mod -> mod == unnamedModule);
+        boolean dependsOnUnnamed = dependsOnUnnamed(msym);
 
         if (dependsOnUnnamed) {
             //msyms depends on the unnamed module, for which we generally don't know
@@ -754,6 +751,19 @@ public class Symtab {
         }
 
         return enterPackage(msym, flatName);
+    }
+
+    private boolean dependsOnUnnamed(ModuleSymbol msym) {
+        if (msym.requires == null) {
+            return false;
+        }
+        for (Directive.RequiresDirective rd : msym.requires) {
+            ModuleSymbol mod = rd.module;
+            if (mod == unnamedModule) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final Map<ModuleSymbol, ClassSymbol> EMPTY = new HashMap<>();
