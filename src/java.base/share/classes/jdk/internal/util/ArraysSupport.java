@@ -333,6 +333,10 @@ public class ArraysSupport {
         // assert length <= a.length
         // assert length <= b.length
 
+        if (a == b) {
+            return -1;
+        }
+
         int i = 0;
         if (length > 7) {
             if (a[0] != b[0])
