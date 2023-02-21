@@ -58,14 +58,3 @@ void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
   }
   _count++;
 }
-
-G1VerificationClosure::G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-  _g1h(g1h), _containing_obj(nullptr), _num_failures(0), _vo(vo) { }
-
-void G1VerificationClosure::print_object(outputStream* out, oop obj) {
-#ifdef PRODUCT
-  obj->print_name_on(out);
-#else // PRODUCT
-  obj->print_on(out);
-#endif // PRODUCT
-}
