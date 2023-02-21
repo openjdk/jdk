@@ -48,7 +48,7 @@ public class StraceBase {
         return true;
     }
     /**
-     *   Method verifies that StackTraceElement is sane and might be expected it the current stack.
+     *   Method verifies that StackTraceElement is sane and might be expected in the current stack.
      */
     final static boolean checkElement(StackTraceElement element) {
         String className = element.getClassName();
