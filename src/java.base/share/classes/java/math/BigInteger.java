@@ -2703,7 +2703,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         assert r.compareTo(BigInteger.ZERO) >= 0;
         return new BigInteger[] {s, r};
     }
-    
+
     /**
      * Returns the integer {@code n}th root of this BigInteger. The integer
      * {@code n}th root of the corresponding mathematical integer {@code x} has the
@@ -2731,7 +2731,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public BigInteger root(int n) {
         return rootAndRemainder(n)[0];
     }
-    
+
     /**
      * Returns an array of two BigIntegers containing the integer {@code n}th root
      * {@code r} of {@code this} and its remainder {@code this - r**n},
@@ -2755,33 +2755,33 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public BigInteger[] rootAndRemainder(int n) {
         if (n <= 0)
             throw new ArithmeticException("Non-positive root degree");
-        
+
         if ((n & 1) == 0 && this.signum == -1)
             throw new ArithmeticException("Negative radicand with even root degree");
-        
+
         return rootAndRemainderImpl(n);
     }
-    
+
     /**
      * Skip checks of public version.
      */
     BigInteger[] rootAndRemainderImpl(int n) {
         if (n == 2)
             return sqrtAndRemainder();
-        
+
         // Handle easy cases.
         if (n == 1 || this.signum == 0 || this.equals(ONE))
             return new BigInteger[] {this, ZERO}; // x**1 == x, 0**n == 0, 1**n == 1
         // At this point, this != 0
-        
+
         // if 1 <= this.abs() < 2^n, the result is signed unity
         if (this.compareMagnitude(ONE.shiftLeft(n)) < 0) {
             BigInteger root = this.signum == 1 ? ONE : NEGATIVE_ONE;
             // if this.signum == -1, n is assumed to be odd, so root^n == -1
             return new BigInteger[] {root, this.subtract(root)};
         }
-        
-        /* 
+
+        /*
          * Use classic "grade-school" shifting algorithm.
          * Compared to Newton's method, it's more efficient
          * for large numbers, and its correctness is guaranteed.
@@ -2789,12 +2789,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // if this condition holds, the remainder shifting would overflow
         if (n > Integer.MAX_VALUE >> 5 && mag.length > n)
             reportOverflow();
-        
+
         // cache for power calculations
         BigInteger lastRaised = ZERO;
         final BigInteger[] acc = new BigInteger[bitLengthForInt(n)];
         final BigInteger[] sqAcc = new BigInteger[acc.length - 1];
-        
+
         BigInteger root = ZERO, rootToN = ZERO, rem = ZERO;
         final int headLen = mag.length % n;
         for (int i = headLen != 0 ? headLen : n; i <= mag.length; i += n) {
@@ -2803,7 +2803,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             if (rem.signum != 0)
                 block = rem.shiftLeft(n << 5).add(block);
             // block == rem * (2^32)^n + new BigInteger(ints, mag.length == 0 ? 0 : 1);
-            
+
             final BigInteger shiftedRoot, shiftedRootToN;
             if (root.signum != 0) {
                 shiftedRoot = root.shiftLeft(Integer.SIZE); // 2^32 * root
@@ -2812,7 +2812,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 shiftedRoot = root;
                 shiftedRootToN = rootToN;
             }
-            
+
             // find the next correct word of the root
             BigInteger gap = ZERO, updatedRoot = shiftedRoot, updatedRootToN = shiftedRootToN;
             if (block.signum != 0) {
@@ -2824,7 +2824,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     // compute newRootVal^n
                     final BigInteger pow = lastRaised.addAndPow(newRootVal.subtract(lastRaised), n, acc, sqAcc);
                     lastRaised = newRootVal;
-                    
+
                     final BigInteger newGapVal = pow.subtract(shiftedRootToN);
                     // newGapVal == (2^32 * root + candidate)^n - (2^32 * root)^n
                     int newGapVal_cmp_block = newGapVal.compareMagnitude(block);
@@ -2833,30 +2833,30 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                         gap = newGapVal;
                         updatedRoot = newRootVal;
                         updatedRootToN = pow;
-                        
+
                         if (newGapVal_cmp_block == 0)
                             stop = true;
                     }
                 }
             }
-            
+
             // update variables
             root = updatedRoot;
             rootToN = updatedRootToN;
             rem = block.subtract(gap);
         }
-        
+
         // Adjust the sign
         if (this.signum == -1) {
             root = root.negate();
             rem = rem.negate();
         }
-        
+
         // abs(root**n) <= abs(this)
         assert rem.signum == 0 || rem.signum == this.signum;
         return new BigInteger[] {root, rem};
     }
-    
+
     /**
      * Returns (this + delta)^n.
      *
@@ -2881,7 +2881,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger acc = ONE;
         BigInteger carry = ZERO;
         boolean seenbit = false; // set once we've seen a 1-bit
-        
+
         int k = 0;
         for (int i = 1; i < Integer.SIZE; i++) { // for each bit [top bit ignored]
             if (seenbit) {
@@ -2890,7 +2890,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 acc = sqAccCache[k - 1] != null ? sqAccCache[k - 1] : acc.simpleSquare();
                 sqAccCache[k - 1] = acc.add(carry);
             } // if (!seenbit) no point in squaring (acc+carry) == 1
-            
+
             n <<= 1; // shift left 1 bit
             if (n < 0) { // top bit is set
                 seenbit = true; // OK, we're off
@@ -2898,25 +2898,25 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 carry = this.multiply(carry).add(delta.multiply(acc.add(carry)));
                 acc = accCache[k] != null ? accCache[k] : this.multiply(acc);
             }
-            
+
             if (seenbit) {
                 accCache[k] = acc.add(carry);
                 k++;
             } // if (!seenbit) no point in adding carry == 0
         }
-        
+
         return accCache[k - 1];
     }
-    
+
     BigInteger simpleSquare() {
         return this.multiply(this);
     }
-    
+
     /**
      * Returns a BigInteger composed by the bits of this BigInteger magnitude,
      * starting at {@code from} (inclusive) and ending at {@code to} (exclusive).
      * The result is non-negative.
-     * 
+     *
      * <p>
      * Assumes:
      * <ul>
@@ -2929,21 +2929,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // If no set bits in range return ZERO
         if (bitLen <= from || from == to)
             return ZERO;
-        
+
         // Avoid IndexOutOfBoundsException
         if (to >= bitLen) {
             if (from == 0) // An optimization
                 return this;
-            
+
             to = bitLen;
         }
-        
+
         int[] ints;
         int targetInts = ((to - from - 1) >>> 5) + 1;
         int sourceIndex = mag.length - 1 - (from >>> 5);
         final int BIT_INDEX_MASK = Integer.SIZE - 1;
         final int firstIntMask = -1 >>> -to;
-        
+
         if ((from & BIT_INDEX_MASK) == 0) { // ints are aligned
             final int endIntIndex = sourceIndex + 1;
             ints = Arrays.copyOfRange(mag, endIntIndex - targetInts, endIntIndex);
@@ -2953,7 +2953,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // Process all ints but the most significant
             for (int i = ints.length - 1; i > 0; i--, sourceIndex--)
                 ints[i] = (mag[sourceIndex] >>> from) | (mag[sourceIndex - 1] << -from);
-            
+
             // Process the most significant int
             ints[0] =
                 ((to - 1) & BIT_INDEX_MASK) < (from & BIT_INDEX_MASK)
@@ -2963,7 +2963,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 :
                 ((mag[sourceIndex] & firstIntMask) >>> from);
         }
-        
+
         ints = trustedStripLeadingZeroInts(ints);
         return new BigInteger(ints, ints.length == 0 ? 0 : 1);
     }

@@ -188,7 +188,7 @@ class MutableBigInteger {
     BigInteger toBigInteger(int sign) {
         if (intLen == 0 || sign == 0)
             return BigInteger.ZERO;
-        
+
         // call here and not in toBigInteger() to ensure stripping of leading zeros
         normalize();
         return new BigInteger(getMagnitudeArray(), sign);

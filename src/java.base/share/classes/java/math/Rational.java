@@ -88,7 +88,7 @@ import jdk.internal.math.FloatConsts;
  * -2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) to
  * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) and may support values
  * outside of that range.
- * 
+ *
  * The spacing between two neighbor supported values must be less than
  * 2<sup>-{@code Integer.MAX_VALUE}</sup>.
  *
@@ -155,7 +155,7 @@ import jdk.internal.math.FloatConsts;
  *          The rounding policies implemented by {@code Rational} operations
  *          indicated by {@linkplain RoundingMode rounding modes} are a proper
  *          superset of the IEEE 754 rounding-direction attributes.
- * 
+ *
  *          <p>
  *          {@code Rational} arithmetic will most resemble IEEE 754 decimal
  *          arithmetic if a {@code MathContext} corresponding to an IEEE 754
@@ -349,7 +349,7 @@ public class Rational extends Number implements Comparable<Rational> {
         numerator = BigInteger.ZERO;
         denominator = BigInteger.ONE;
     }
-    
+
     /**
      * Accept no subclasses.
      */
@@ -394,52 +394,52 @@ public class Rational extends Number implements Comparable<Rational> {
                     final int shift = Math.min(twoExp, num.getLowestSetBit());
                     num = num.shiftRight(shift);
                     twoExp -= shift;
-                    
+
                     numerator = removePowersOfFive(num, fiveExp); // simplify by five
                     denominator = bigFiveToThe((int) fiveExp.get()).shiftLeft(twoExp);
                 }
             }
         }
     }
-    
+
     /**
      * {@code FIVE_SQUARES.get(n) == 5^(1L << n)}
      */
     private static final ArrayList<BigInteger> FIVE_SQUARES = new ArrayList<>(Integer.SIZE);
-    
+
     static {
         FIVE_SQUARES.add(BigInteger.valueOf(5));
     }
-    
+
     /**
      * Returns {@code 5^n}. {@code n} is considered unsigned.
      */
     private static BigInteger bigFiveToThe(int n) {
         BigInteger acc = BigInteger.ONE;
         final int nBits = BigInteger.bitLengthForInt(n);
-        
+
         final int end = Math.min(nBits, FIVE_SQUARES.size());
         for (int i = 0; i < end; i++) {
             if ((n & 1) == 1)
                 acc = acc.multiply(FIVE_SQUARES.get(i));
-            
+
             n >>>= 1;
         }
-        
+
         BigInteger pow = FIVE_SQUARES.get(FIVE_SQUARES.size() - 1);
         while (FIVE_SQUARES.size() < nBits) {
             pow = pow.simpleSquare();
             FIVE_SQUARES.add(pow);
-            
+
             if ((n & 1) == 1)
                 acc = acc.multiply(pow);
-            
+
             n >>>= 1;
         }
-        
+
         return acc;
     }
-    
+
     /**
      * If before calling this method {@code remaining.get() == r}, the method
      * returns the least integer {@code n > 0} such that
@@ -449,24 +449,24 @@ public class Rational extends Number implements Comparable<Rational> {
     private static BigInteger removePowersOfFive(BigInteger val, AtomicLong remaining) {
         BigInteger divisor = FIVE_SQUARES.get(0);
         int i = 0;
-        
+
         // divide val and square the divisor as much as possible
         boolean stop = false;
         do {
             BigInteger[] divRem = val.divideAndRemainder(divisor);
-            
+
             if (divRem[1].signum != 0) {
                 stop = true;
             } else { // no remainder
                 val = divRem[0];
                 remaining.addAndGet(-(1L << i));
-                
+
                 if (remaining.get() < 1L << i || divisor.compareTo(val) > 0) {
                     stop = true;
                 } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
                     final BigInteger square;
                     final int last = FIVE_SQUARES.size() - 1;
-                    
+
                     // compute divisor^2
                     if (i < last) {
                         square = FIVE_SQUARES.get(i + 1);
@@ -474,7 +474,7 @@ public class Rational extends Number implements Comparable<Rational> {
                         square = FIVE_SQUARES.get(last).simpleSquare();
                         FIVE_SQUARES.add(square);
                     }
-                    
+
                     if (square.compareTo(val) <= 0) {
                         // square the divisor
                         divisor = square;
@@ -484,7 +484,7 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         } while (!stop);
         i--; // by conditions for stop, val can no longer be divided by the divisor
-        
+
         while (i >= 0 && remaining.get() > 0) {
             // find, if exists, the greatest non-negative n <= i
             // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
@@ -497,25 +497,25 @@ public class Rational extends Number implements Comparable<Rational> {
                 i = pos >= 0 ? pos : -(pos + 1) - 1;
             }
             // now i == n
-            
+
             // divide val as much as possible
             if (i >= 0) {
                 divisor = FIVE_SQUARES.get(i);
                 do {
                     BigInteger[] divRem = val.divideAndRemainder(divisor);
-                    
+
                     if (divRem[1].signum == 0) {
                         val = divRem[0];
                         remaining.addAndGet(-(1L << i));
                     }
-                    
+
                     i--; // by definition of n, val can no longer be divided by 5^(1 << i)
                     if (i >= 0)
                         divisor = FIVE_SQUARES.get(i);
                 } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
             }
         }
-        
+
         return val;
     }
 
