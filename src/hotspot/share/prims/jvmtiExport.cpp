@@ -1274,22 +1274,6 @@ bool              JvmtiExport::_should_post_vthread_unmount               = fals
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void JvmtiExport::check_vthread_and_suspend_at_safepoint(JavaThread *thread) {
-  oop vt = thread->jvmti_vthread();
-
-  if (vt != nullptr && java_lang_VirtualThread::is_instance(vt)) {
-    int64_t id = java_lang_Thread::thread_id(vt);
-
-    ThreadBlockInVM tbivm(thread);
-    MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
-
-    // block while vthread is externally suspended
-    while (JvmtiVTSuspender::is_vthread_suspended(id)) {
-      ml.wait();
-    }
-  }
-}
-
 //
 // JVMTI single step management
 //
