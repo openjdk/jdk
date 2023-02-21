@@ -114,7 +114,6 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         run(topArchiveName,
             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
             "-cp", destJar.toString(),
-            "-Xshare:auto",
             "--module-path", moduleDir.toString(),
             "-m", TEST_MODULE1)
             .assertNormalExit(output -> {

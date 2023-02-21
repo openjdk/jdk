@@ -907,11 +907,10 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 
   FileMapInfo* static_mapinfo = open_static_archive();
   FileMapInfo* dynamic_mapinfo = nullptr;
-  bool has_failed = false;
 
   if (static_mapinfo != nullptr) {
     log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
-    dynamic_mapinfo = open_dynamic_archive(has_failed);
+    dynamic_mapinfo = open_dynamic_archive();
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);
     if (result == MAP_ARCHIVE_MMAP_FAILURE) {
@@ -956,6 +955,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   }
 
   // If mapping failed and -XShare:on, the vm should exit
+  bool has_failed = false;
   if (static_mapinfo != nullptr && !static_mapinfo->is_mapped()) {
     has_failed = true;
     delete static_mapinfo;
@@ -980,7 +980,7 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
   return mapinfo;
 }
 
-FileMapInfo* MetaspaceShared::open_dynamic_archive(bool &has_failed) {
+FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (DynamicDumpSharedSpaces) {
     return nullptr;
   }
@@ -992,7 +992,9 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive(bool &has_failed) {
   FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
-    has_failed = true;
+    if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Failed to initialize dynamic archive");
+    }
     return nullptr;
   }
   return mapinfo;

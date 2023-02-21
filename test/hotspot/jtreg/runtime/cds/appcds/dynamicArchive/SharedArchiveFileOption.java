@@ -189,7 +189,6 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
         run2(baseArchiveName, null,
              "-XX:+RecordDynamicDumpInfo",
              "-Xlog:cds+dynamic=debug",
-             "-Xshare:auto",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     output.shouldNotMatch("\\[cds,dynamic");
@@ -254,7 +253,6 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
                  "-XX:+RecordDynamicDumpInfo",
                  "--patch-module",
                  "foo.bar=xxx",
-                 "-Xshare:auto",
                  "-Xlog:cds",
                  "-cp", appJar, mainClass)
                 .assertAbnormalExit("CDS is disabled when the --patch-module option is specified",
