@@ -62,8 +62,7 @@ import java.util.Map;
  * java recursion.
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace006Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>expectedMethod</code> array.</p>
+ * correct stack frames.</p>
  * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
  */
 public class strace006 extends StraceBase {
