@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,13 @@ public class Atan2Tests {
              * second argument is negative infinity, then the result
              * is the double value closest to 3*pi/4.
              */
+            // Note: in terms of computation, the result of the double
+            // expression
+            //   3*PI/4.0
+            // is the same as a high-precision decimal value of pi
+            // scaled accordingly and rounded to double:
+            //   BigDecimal bdPi = new BigDecimal("3.14159265358979323846264338327950288419716939937510");
+            //   bdPi.multiply(BigDecimal.valueOf(3)).divide(BigDecimal.valueOf(4)).doubleValue();
             {InfinityD,  -InfinityD,     3*PI/4.0},
 
             /*

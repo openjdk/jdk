@@ -451,11 +451,12 @@ class FdLibm {
 
             // when y = 0
             if ((iy | ly) == 0) {
-                return switch(m) {
-                case 0, 1 ->  y;              // atan(+/-0, +anything)  = +/-0
-                case 2    ->  Math.PI + tiny; // atan(+0,   -anything)  =  pi
-                default   -> -Math.PI - tiny; // atan(-0,   -anything)  = -pi
-                };
+                switch(m) {
+                case 0:
+                case 1: return y;               // atan(+/-0, +anything)  = +/-0
+                case 2: return  Math.PI + tiny; // atan(+0,   -anything)  =  pi
+                case 3: return -Math.PI - tiny; // atan(-0,   -anything)  = -pi
+                }
             }
             // when x = 0
             if ((ix | lx) == 0) {
@@ -465,19 +466,19 @@ class FdLibm {
             // when x is INF
             if (ix == 0x7ff0_0000) {
                 if (iy == 0x7ff0_0000) {
-                    return switch(m) {
-                    case 0  ->  pi_o_4 + tiny;      // atan(+INF, +INF)
-                    case 1  -> -pi_o_4 - tiny;      // atan(-INF, +INF)
-                    case 2  ->  3.0*pi_o_4 + tiny;  // atan(+INF, -INF)
-                    default -> -3.0*pi_o_4 - tiny;  // atan(-INF, -INF)
-                    };
+                    switch(m) {
+                    case 0: return  pi_o_4 + tiny;      // atan(+INF, +INF)
+                    case 1: return -pi_o_4 - tiny;      // atan(-INF, +INF)
+                    case 2: return  3.0*pi_o_4 + tiny;  // atan(+INF, -INF)
+                    case 3: return -3.0*pi_o_4 - tiny;  // atan(-INF, -INF)
+                    }
                 } else {
-                    return switch(m) {
-                    case 0  ->  0.0;                // atan(+..., +INF)
-                    case 1  -> -0.0;                // atan(-..., +INF)
-                    case 2  ->  Math.PI + tiny;     // atan(+..., -INF)
-                    default -> -Math.PI - tiny;     // atan(-..., -INF)
-                    };
+                    switch(m) {
+                    case 0: return  0.0;                // atan(+..., +INF)
+                    case 1: return -0.0;                // atan(-..., +INF)
+                    case 2: return  Math.PI + tiny;     // atan(+..., -INF)
+                    case 3: return -Math.PI - tiny;     // atan(-..., -INF)
+                    }
                 }
             }
             // when y is INF
@@ -494,12 +495,12 @@ class FdLibm {
             } else { // safe to do y/x
                 z = StrictMath.atan(Math.abs(y/x));
             }
-            return switch (m) {
-            case 0  ->  z;                    // atan(+, +)
-            case 1  -> -z;                    // atan(-, +)
-            case 2  -> Math.PI - (z - pi_lo); // atan(+, -)
-            default -> (z - pi_lo) - Math.PI; // atan(-, -), case 3
-            };
+            switch (m) {
+            case 0:  return  z;                     // atan(+, +)
+            case 1:  return -z;                     // atan(-, +)
+            case 2:  return  Math.PI - (z - pi_lo); // atan(+, -)
+            default: return (z - pi_lo) - Math.PI;  // atan(-, -), case 3
+            }
         }
     }
 
