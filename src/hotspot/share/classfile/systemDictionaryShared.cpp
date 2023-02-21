@@ -108,36 +108,38 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
                                                           Handle protection_domain,
                                                           const ClassFileStream* cfs,
                                                           TRAPS) {
-  if (!UseSharedSpaces) {
-    return nullptr;
-  }
-  if (class_name == nullptr) {  // don't do this for hidden classes
-    return nullptr;
-  }
-  if (class_loader.is_null() ||
-      SystemDictionary::is_system_class_loader(class_loader()) ||
-      SystemDictionary::is_platform_class_loader(class_loader())) {
-    // Do nothing for the BUILTIN loaders.
-    return nullptr;
-  }
+#if INCLUDE_CDS
+  if (UseSharedSpaces) {
+    if (class_name == nullptr) {  // don't do this for hidden classes
+      return nullptr;
+    }
+    if (class_loader.is_null() ||
+        SystemDictionary::is_system_class_loader(class_loader()) ||
+        SystemDictionary::is_platform_class_loader(class_loader())) {
+      // Do nothing for the BUILTIN loaders.
+      return nullptr;
+    }
 
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
-                                               &_dynamic_archive._unregistered_dictionary,
-                                               class_name);
-  if (record == nullptr) {
-    return nullptr;
+    const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+                                                 &_dynamic_archive._unregistered_dictionary,
+                                                 class_name);
+    if (record == nullptr) {
+      return nullptr;
+    }
+
+    int clsfile_size  = cfs->length();
+    int clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+
+    if (!record->matches(clsfile_size, clsfile_crc32)) {
+      return nullptr;
+    }
+
+    return acquire_class_for_current_thread(record->_klass, class_loader,
+                                            protection_domain, cfs,
+                                            THREAD);
   }
-
-  int clsfile_size  = cfs->length();
-  int clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
-
-  if (!record->matches(clsfile_size, clsfile_crc32)) {
-    return nullptr;
-  }
-
-  return acquire_class_for_current_thread(record->_klass, class_loader,
-                                          protection_domain, cfs,
-                                          THREAD);
+#endif
+  return nullptr;
 }
 
 InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
@@ -390,6 +392,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
                  Symbol* name, Handle class_loader, TRAPS) {
   InstanceKlass* k = nullptr;
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     if (!has_platform_or_app_classes()) {
       return nullptr;
@@ -422,6 +425,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       }
     }
   }
+#endif
   return k;
 }
 
@@ -1276,9 +1280,9 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
     // The names of all shared classes must also be a shared Symbol.
     return nullptr;
   }
-
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   const RunTimeClassInfo* record = nullptr;
+#if INCLUDE_CDS
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   if (DynamicArchive::is_mapped()) {
     // Use the regenerated holder classes in the dynamic archive as they
     // have more methods than those in the base archive.
@@ -1302,7 +1306,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
   if (record == nullptr && DynamicArchive::is_mapped()) {
     record = dynamic_dict->lookup(name, hash, 0);
   }
-
+#endif
   return record;
 }
 
@@ -1405,6 +1409,7 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
 }
 
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     if (is_static) {
       _static_archive.print_on("", st);
@@ -1414,6 +1419,7 @@ void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_stat
       }
     }
   }
+#endif
 }
 
 void SystemDictionaryShared::print_on(outputStream* st) {
@@ -1422,12 +1428,14 @@ void SystemDictionaryShared::print_on(outputStream* st) {
 }
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     _static_archive.print_table_statistics("Static ", st);
     if (DynamicArchive::is_mapped()) {
       _dynamic_archive.print_table_statistics("Dynamic ", st);
     }
   }
+#endif
 }
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {

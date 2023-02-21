@@ -5224,6 +5224,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
 
 // Compute field offsets of all the classes in this file
 void JavaClasses::compute_offsets() {
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
                                                          JvmtiExport::has_early_class_hook_env()),
@@ -5234,6 +5235,7 @@ void JavaClasses::compute_offsets() {
     // by JavaClasses::serialize_offsets, without computing the offsets again.
     return;
   }
+#endif
 
   // We have already called the compute_offsets() of the
   // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String, java_lang_Class and

@@ -201,6 +201,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   int shift;
   size_t range;
 
+#if INCLUDE_CDS
   if (UseSharedSpaces || DumpSharedSpaces) {
 
     // Special requirements if CDS is active:
@@ -235,8 +236,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     assert(len <= 4 * G, "Encoding range cannot be larger than 4G");
     range = 4 * G;
 
-  } else {
-
+  } else
+#endif
+  {
     // Otherwise we attempt to use a zero base if the range fits in lower 32G.
     if (end <= (address)KlassEncodingMetaspaceMax) {
       base = 0;
@@ -254,7 +256,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     } else {
       shift = LogKlassAlignmentInBytes;
     }
-
   }
 
   set_base(base);

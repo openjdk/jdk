@@ -167,6 +167,7 @@ void vmClasses::resolve_all(TRAPS) {
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     // These should already have been initialized during CDS dump.
     assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
@@ -174,7 +175,9 @@ void vmClasses::resolve_all(TRAPS) {
     assert(vmClasses::WeakReference_klass()->reference_type() == REF_WEAK, "sanity");
     assert(vmClasses::FinalReference_klass()->reference_type() == REF_FINAL, "sanity");
     assert(vmClasses::PhantomReference_klass()->reference_type() == REF_PHANTOM, "sanity");
-  } else {
+  } else
+#endif
+  {
     // If CDS is not enabled, the references classes must be initialized in
     // this order before the rest of the vmClasses can be resolved.
     resolve_through(VM_CLASS_ID(Reference_klass), scan, CHECK);
@@ -208,6 +211,7 @@ void vmClasses::resolve_all(TRAPS) {
   //_box_klasses[T_ARRAY]   = vmClasses::object_klass();
 
 #ifdef ASSERT
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
                       "All well known classes must be resolved in JVMTI early phase"));
@@ -216,6 +220,7 @@ void vmClasses::resolve_all(TRAPS) {
       assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
     }
   }
+#endif
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();

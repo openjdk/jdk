@@ -57,10 +57,12 @@ bool ClassLoaderExt::_has_platform_classes = false;
 bool ClassLoaderExt::_has_non_jar_in_classpath = false;
 
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
   }
+#endif
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
 
