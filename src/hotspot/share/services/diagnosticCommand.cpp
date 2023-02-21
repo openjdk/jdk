@@ -63,6 +63,7 @@
 #include "utilities/macros.hpp"
 #ifdef LINUX
 #include "trimCHeapDCmd.hpp"
+#include "mallocInfoDcmd.hpp"
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -126,6 +127,7 @@ void DCmdRegistrant::register_dcmds(){
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
