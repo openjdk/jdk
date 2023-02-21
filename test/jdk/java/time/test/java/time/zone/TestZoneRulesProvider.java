@@ -34,11 +34,14 @@ import java.util.Set;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * @summary Tests for ZoneRulesProvider class.
  * @bug 8299571
+ * @bug 8302983
  */
 @Test
 public class TestZoneRulesProvider {
@@ -90,5 +93,49 @@ public class TestZoneRulesProvider {
                 assertFalse(isCET, "Not possible to obtain a ZoneId for \"CET\".");
             }
         });
+    }
+
+    /**
+     * Tests whether registering a provider twice will still leave it registered.
+     */
+    @Test
+    public void test_registerTwice() {
+        String zone = "MyID";
+        var provider = new ZoneRulesProvider() {
+            @Override
+            protected Set<String> provideZoneIds() {
+                return Set.of(zone);
+            }
+
+            @Override
+            protected ZoneRules provideRules(String zoneId, boolean forCaching) {
+                return null;
+            }
+
+            @Override
+            protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
+                return null;
+            }
+        }
+        assertFalse(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected availability for " + zone);
+        ZoneRulesProvider.registerProvider(provider);
+        assertTrue(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected non-availability for " + zone);
+        assertNotNull(ZoneId.of(zone), "ZoneId instance for " + zone + " should be obtainable");
+
+        try {
+            ZoneRulesProvider.registerProvider(provider);
+            throw new RuntimeException("Registering an already registered provider should throw an exception");
+        } catch (ZoneRulesException e) {
+            // Ignore. Failure on duplicate registration is expected.
+        }
+
+        // availability check
+        assertTrue(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected non-availability for " + id);
+        // instantiation check
+        try {
+            assertNotNull(ZoneId.of(zone), "ZoneId instance for " + zone + " should still be obtainable");
+        } catch (ZoneRulesException e) {
+            fail("ZoneId instance for " + zone + " should still be obtainable", e);
+        }
     }
 }
