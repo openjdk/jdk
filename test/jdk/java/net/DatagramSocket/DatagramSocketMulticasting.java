@@ -322,10 +322,14 @@ public class DatagramSocketMulticasting {
             s.receive(p);
             String messageReceived = new String(p.getData(), 0, p.getLength());
 
-            System.out.println(String.format("TestSendReceive iteration [%s], Received DatagramPacket [%s] from [%s]", i, messageReceived, s.getLocalSocketAddress()));
+            System.out.format(
+                    "TestSendReceive iteration [%s], Received DatagramPacket [%s] from [%s]%n",
+                    i, messageReceived, s.getLocalSocketAddress());
+
             if (s.getLocalPort() == p.getPort()) {
                 assertEquals(message, messageReceived,
-                        String.format("expected message %s, instead received %s%n", message, messageReceived));
+                        String.format("expected message %s, instead received %s%n",
+                                message, messageReceived));
                 break;
             }
 
@@ -364,7 +368,8 @@ public class DatagramSocketMulticasting {
                     throw new RuntimeException("message shouldn't have been received");
                 } else {
                     String messageReceived = new String(p.getData(), 0, p.getLength());
-                    System.out.format("Received unexpected message %s from %s%n", messageReceived,p.getSocketAddress());
+                    System.out.format("Received unexpected message %s from %s%n",
+                            messageReceived, p.getSocketAddress());
                 }
             } catch (SocketTimeoutException expected) {
                 break;
