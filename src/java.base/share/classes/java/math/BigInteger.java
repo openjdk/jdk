@@ -2746,7 +2746,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *                             operation to yield a non-integer value.)
      * @throws ArithmeticException if {@code n} is even and {@code this} is
      *                             negative. (This would cause the operation to
-     *                             yield {@code n} complex roots.)
+     *                             yield non-real roots.)
      * @see #sqrt()
      * @see #sqrtAndRemainder()
      * @see #root(int)
