@@ -2920,6 +2920,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
+  // Disable cds for exploded image
+  if (!has_jimage()) {
+    UseSharedSpaces = false;
+    RequireSharedSpaces = false;
+  }
+
   fix_appclasspath();
 
   return JNI_OK;
