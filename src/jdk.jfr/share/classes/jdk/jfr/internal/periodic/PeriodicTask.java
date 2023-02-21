@@ -53,7 +53,7 @@ abstract class PeriodicTask {
     // State only to be modified by the periodic task thread
     private long counter;
     private long period;
-    private long increment;
+    private Batch batch;
 
     public PeriodicTask(LookupKey lookupKey, String name) {
         this.lookupKey = lookupKey;
@@ -75,7 +75,18 @@ abstract class PeriodicTask {
     }
 
     // Only to be called from periodic task thread
+    public void setBatch(Batch batch) {
+        this.batch = batch;
+    }
+
+    // Only to be called from periodic task thread
+    public Batch getBatch() {
+        return batch;
+    }
+
+    // Only to be called from periodic task thread
     public final void tick() {
+        long increment = batch.getPeriod();
         if (period != 0) {
             counter = (counter + increment) % period;
         }
@@ -87,18 +98,13 @@ abstract class PeriodicTask {
     }
 
     // Only to be called from periodic task thread
-    public final void setIncrement(long increment) {
-        this.increment = increment;
-        this.counter = 0;
-    }
-
-    // Only to be called from periodic task thread
     public final void updatePeriod() {
         long p = fetchPeriod();
         // Reset counter if new period
         if (p != period) {
             counter = 0;
             period = p;
+            batch = null;
         }
     }
 

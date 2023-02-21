@@ -62,7 +62,7 @@ final class Batch {
     }
 
     public void add(PeriodicTask task) {
-        task.setIncrement(period);
+        task.setBatch(this);
         tasks.add(task);
     }
 

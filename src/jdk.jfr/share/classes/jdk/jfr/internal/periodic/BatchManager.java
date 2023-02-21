@@ -61,9 +61,12 @@ final class BatchManager {
             batch.clear();
         }
         for (PeriodicTask task : activeSortedTasks(tasks)) {
-            long period = task.getPeriod();
             if (task.isSchedulable()) {
-                Batch batch = findBatch(period);
+                Batch batch = task.getBatch();
+                // If new task, or period has changed, find new batch
+                if (batch == null) {
+                    batch = findBatch(task.getPeriod());
+                }
                 batch.add(task);
             }
         }
