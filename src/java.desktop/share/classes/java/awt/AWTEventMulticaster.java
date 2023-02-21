@@ -103,7 +103,6 @@ import java.util.EventListener;
  * @since       1.1
  */
 
-@SuppressWarnings("overloads")
 public class AWTEventMulticaster implements
     ComponentListener, ContainerListener, FocusListener, KeyListener,
     MouseListener, MouseMotionListener, WindowListener, WindowFocusListener,

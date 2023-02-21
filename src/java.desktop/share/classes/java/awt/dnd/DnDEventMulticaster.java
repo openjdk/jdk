@@ -39,7 +39,6 @@ import java.util.EventListener;
  * @see AWTEventMulticaster
  */
 
-@SuppressWarnings("overloads")
 class DnDEventMulticaster extends AWTEventMulticaster
     implements DragSourceListener, DragSourceMotionListener {
 
