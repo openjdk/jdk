@@ -206,11 +206,11 @@ public final class ThreadUtils {
         }
 
         public static void printStackTrace(PrintStream out, Thread t) {
-            StackTraceElement[] stacktrace = t.getStackTrace();
-            for (int i = 0; i < stacktrace.length; i++) {
-                StackTraceElement ste = stacktrace[i];
-                out.println(INDENT + "at " + ste.toString());
-            }
+                StackTraceElement[] stacktrace = t.getStackTrace();
+                for (int i = 0; i < stacktrace.length; i++) {
+                        StackTraceElement ste = stacktrace[i];
+                        out.println(INDENT + "at " + ste.toString());
+                }
         }
 
         /**
@@ -229,32 +229,32 @@ public final class ThreadUtils {
         }
 
         // Most uses of waitThreadState usually succeed without retries.
-        // Sleep time increased to help avoid spurious failures.
+        // These values should avoid spurious failures.
         public final static int waitThreadStateRetries = 10;
         public final static long waitThreadStateSleepTime = 1000;
 
         public static void waitThreadState(Thread thread, Thread.State state) {
                 int retries = 0;
-                long ctime = System.currentTimeMillis();
-                long ctime2 = 0;
+                long startTime = System.currentTimeMillis();
+                long elapsedTime = 0;
                 while (thread.getState() != state) {
                         if (retries++ > waitThreadStateRetries) {
-                            // Failed to see desired state, give info to help diagnose the isuse.
-                            // Show the thread, and fail with Exception showing retries and time taken.
-                            ctime2 = System.currentTimeMillis() - ctime;
-                            System.err.println("waitThreadState: problem thread: " + thread);
-                            printStackTrace(System.err, thread);
-                            throw new TestFailure("Thread " + thread + " with current state " + thread.getState() + " did not reach state "
-                                                  + state + " with number of retries: " + retries + ", time: " + ctime2);
+                                // Failed to see desired state, give info to help diagnose the isuse.
+                                // Show the thread, and fail with Exception showing retries and time taken.
+                                elapsedTime = System.currentTimeMillis() - startTime;
+                                System.err.println("waitThreadState: problem thread: " + thread);
+                                printStackTrace(System.err, thread);
+                                throw new TestFailure("Thread " + thread + " with current state " + thread.getState() + " did not reach state "
+                                                      + state + " with number of retries: " + retries + ", time: " + elapsedTime);
                         }
                         try {
-                            Thread.sleep(waitThreadStateSleepTime);
+                                Thread.sleep(waitThreadStateSleepTime);
                         } catch (InterruptedException e) {
                         }
                 }
                 // Show retries and time, so we know what "normal" looks like:
-                ctime2 = System.currentTimeMillis() - ctime;
-                System.out.println("waitThreadState: OK. retries: " + retries + " time: " + ctime2);
+                elapsedTime = System.currentTimeMillis() - startTime;
+                System.out.println("waitThreadState: OK. retries: " + retries + " time: " + elapsedTime);
         }
 
         /**
