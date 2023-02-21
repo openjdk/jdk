@@ -166,6 +166,7 @@ class CharacterDataLatin1 extends CharacterData {
         }
         return ch;
     }
+
     /**
      * Compares two latin1 code points, ignoring case considerations
      *
