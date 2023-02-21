@@ -196,12 +196,8 @@ public class Executors {
                                               new LinkedBlockingQueue<Runnable>(),
                                               threadFactory);
         var wrapper = new DelegatedExecutorService(executor);
-        // register cleaner to shut down executor when wrapper is phantom reachable
-        CleanerFactory.cleaner().register(wrapper, () -> {
-            PrivilegedAction<Void> pa = () -> { executor.shutdown(); return null; };
-            @SuppressWarnings("removal")
-            var ignore = AccessController.doPrivileged(pa);
-        });
+        // Register action to shut down executor when wrapper becomes phantom reachable
+        CleanerFactory.cleaner().register(wrapper, new ShutdownAction(executor));
         return wrapper;
     }
 
@@ -853,6 +849,22 @@ public class Executors {
         }
         public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
             return e.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        }
+    }
+
+    /**
+     * An action that shuts down an ExecutorService.
+     */
+    private static class ShutdownAction implements Runnable {
+        private final ExecutorService e;
+        ShutdownAction(ExecutorService executor) {
+            e = executor;
+        }
+        @Override
+        public void run() {
+            PrivilegedAction<Void> pa = () -> { e.shutdown(); return null; };
+            @SuppressWarnings("removal")
+            var ignore = AccessController.doPrivileged(pa);
         }
     }
 
