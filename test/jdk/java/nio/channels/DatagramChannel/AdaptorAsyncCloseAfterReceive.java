@@ -78,13 +78,14 @@ class AdaptorAsyncCloseAfterReceive {
 
             populateSocketAddressCaches(dc);
 
-            // schedule socket to be closed while main thead blocked in receive
             DatagramSocket s = dc.socket();
+            s.setSoTimeout(timeout);
+
+            // schedule socket to be closed while main thread blocked in receive
             Future<?> future = scheduler.schedule(() -> s.close(), 1, TimeUnit.SECONDS);
             try {
                 byte[] ba = new byte[maxLength];
                 DatagramPacket p = new DatagramPacket(ba, maxLength);
-                s.setSoTimeout(timeout);
                 assertThrows(SocketException.class, () -> s.receive(p));
             } finally {
                 future.cancel(true);
