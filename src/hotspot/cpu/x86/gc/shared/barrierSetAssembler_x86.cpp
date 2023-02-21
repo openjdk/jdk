@@ -216,9 +216,11 @@ void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
     fatal("No support for 8 bytes copy");
 #endif
   }
+#ifdef _LP64
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
     __ decode_heap_oop(dst);
   }
+#endif
 }
 
 void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
@@ -228,9 +230,11 @@ void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
                                         Address dst,
                                         Register src,
                                         Register tmp) {
+#ifdef _LP64
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
     __ encode_heap_oop(src);
   }
+#endif
   assert(bytes <= 8, "can only deal with non-vector registers");
   if (bytes == 1) {
     __ movb(dst, src);
