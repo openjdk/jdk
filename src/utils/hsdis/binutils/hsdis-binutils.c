@@ -295,8 +295,7 @@ hsdis_print_address_func(bfd_vma vma, struct disassemble_info* dinfo) {
 }
 
 static void
-hsdis_memory_error_func (int status, bfd_vma addr, disassemble_info *dinfo)
-{
+hsdis_memory_error_func(int status, bfd_vma addr, disassemble_info *dinfo) {
   DECL_APP_DATA(dinfo);
   DECL_EVENT_CALLBACK(app_data);
   DECL_PRINTF_CALLBACK(app_data);
@@ -306,7 +305,7 @@ hsdis_memory_error_func (int status, bfd_vma addr, disassemble_info *dinfo)
 
   for (int i = 0; p < end; i++) {
     if (i > 0) {
-      // Skip the first "insn": it has been emitted in decode() when a memory error is happening
+      /* Skip the first "insn": it has been emitted in decode() when a memory error is happening */
       (*event_callback)(event_stream, "insn", (void*) p);
     }
 
