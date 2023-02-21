@@ -45,7 +45,7 @@ public class StreamAvailableLocales {
     @Test
     public void testStreamEqualsArray() {
         Locale[] arrayLocales = Locale.getAvailableLocales();
-        Stream<Locale> streamedLocales = Locale.streamAvailableLocales();
+        Stream<Locale> streamedLocales = Locale.availableLocales();
         Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
         if (Arrays.equals(arrayLocales, convertedLocales)) {
             System.out.println("$$$ Passed: The underlying elements" +
@@ -64,7 +64,7 @@ public class StreamAvailableLocales {
     @ParameterizedTest
     @MethodSource("requiredLocaleProvider")
     public void testStreamRequirements(Locale requiredLocale, String localeName) {
-        if (Locale.streamAvailableLocales().anyMatch(loc -> (loc.equals(requiredLocale)))) {
+        if (Locale.availableLocales().anyMatch(loc -> (loc.equals(requiredLocale)))) {
             System.out.printf("$$$ Passed: Stream has %s!%n", localeName);
         } else {
             throw new RuntimeException(String.format("$$$ Error:" +
