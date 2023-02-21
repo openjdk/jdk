@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,8 @@ public class CompressorPluginTest {
         // compress level zip-0 == no compression
         Properties optionsZip0 = new Properties();
         DefaultCompressPlugin compressPluginZip0 = new DefaultCompressPlugin();
-        options0.setProperty(compressPluginZip0.getName(), "zip-0");
-        checkCompress(classes, compressPlugin,
+        optionsZip0.setProperty(compressPluginZip0.getName(), "zip-0");
+        checkCompress(classes, compressPluginZip0,
                 optionsZip0,
                 new ResourceDecompressorFactory[]{
                 });
@@ -200,6 +200,8 @@ public class CompressorPluginTest {
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("Invalid compression level")) {
                 return;
+            } else {
+                throw e;
             }
         }
 
