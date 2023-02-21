@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ public interface WebSocket {
          * typically used to make a request for more invocations.
          *
          * @implSpec The default implementation is equivalent to:
-         * {@snippet : webSocket.request(1);}
+         * {@snippet : webSocket.request(1); }
          *
          * @param webSocket
          *         the WebSocket that has been connected
@@ -740,7 +740,6 @@ public interface WebSocket {
      *            webSocket.request(1);
      *            return null;
      *        }
-     *    //...
      *    }; }
      *
      * @param n

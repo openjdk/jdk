@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,9 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
- *
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
- *   System.out.println(response.body());}
+ *   System.out.println(response.body());  }
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
@@ -106,10 +105,9 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .header("Content-Type", "application/json")
  *        .POST(BodyPublishers.ofFile(Paths.get("file.json")))
  *        .build();
- *
  *   client.sendAsync(request, BodyHandlers.ofString())
  *        .thenApply(HttpResponse::body)
- *        .thenAccept(System.out::println);}
+ *        .thenAccept(System.out::println);  }
  *
  * <p> <a id="securitychecks"><b>Security checks</b></a>
  *
@@ -695,7 +693,7 @@ public abstract class HttpClient {
      * {@snippet :
      *   HttpClient client = HttpClient.newHttpClient();
      *   CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-     *      .buildAsync(URI.create("ws://websocket.example.com"), listener);}
+     *      .buildAsync(URI.create("ws://websocket.example.com"), listener);  }
      *
      * <p> Finer control over the WebSocket Opening Handshake can be achieved
      * by using a custom {@code HttpClient}.
@@ -708,7 +706,7 @@ public abstract class HttpClient {
      *           .build();
      *
      *   CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-     *           .buildAsync(URI.create("ws://websocket.example.com"), listener);}
+     *           .buildAsync(URI.create("ws://websocket.example.com"), listener);  }
      *
      * @implSpec The default implementation of this method throws
      * {@code UnsupportedOperationException}. Clients obtained through
