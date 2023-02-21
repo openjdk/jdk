@@ -2185,7 +2185,7 @@ FormatData/ar_YE/arab.NumberElements/8=\u0609
 FormatData/ar_YE/arab.NumberElements/9=\u221e
 FormatData/ar_YE/arab.NumberElements/10=\u0644\u064a\u0633\u00a0\u0631\u0642\u0645
 
-# bug #4113654 (this is obviously not an exchaustive test; I'm trying it here for a single
+# bug #4113654 (this is obviously not an exhaustive test; I'm trying it here for a single
 # inheritance chain only.  This bug fix also gets tested fairly well by the tests for all
 # the other bugs as given above)
 FormatData//latn.NumberPatterns/0=#,##0.###

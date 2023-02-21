@@ -1059,7 +1059,7 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
     csrr(Rd, CSR);                            \
   }
 
-  INSN(rdinstret,  CSR_INSTERT);
+  INSN(rdinstret,  CSR_INSTRET);
   INSN(rdcycle,    CSR_CYCLE);
   INSN(rdtime,     CSR_TIME);
   INSN(frcsr,      CSR_FCSR);
@@ -2077,6 +2077,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   } else {
     ld(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
+}
+
+void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {

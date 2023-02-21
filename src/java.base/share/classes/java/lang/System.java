@@ -1902,6 +1902,9 @@ public final class System {
      * Runtime.getRuntime().exit(n)
      * </pre></blockquote>
      *
+     * @implNote
+     * The initiation of the shutdown sequence is logged by {@link Runtime#exit(int)}.
+     *
      * @param  status exit status.
      * @throws SecurityException
      *         if a security manager exists and its {@code checkExit} method
