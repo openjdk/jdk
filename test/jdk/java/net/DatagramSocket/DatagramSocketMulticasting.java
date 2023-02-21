@@ -48,9 +48,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
@@ -63,7 +61,6 @@ import static jdk.test.lib.NetworkConfiguration.isSameInterface;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DatagramSocketMulticasting {
     static final ProtocolFamily UNSPEC = () -> "UNSPEC";
     static final int MAX_TRIES = 3;
@@ -310,10 +307,11 @@ public class DatagramSocketMulticasting {
         assertNotNull(s.getOption(IP_MULTICAST_IF));
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
-        byte[] message = "testSendReceive".getBytes("UTF-8");
+        String message = "testSendReceive";
+        byte[] messageBytes = message.getBytes("UTF-8");
 
         // send message to multicast group
-        DatagramPacket p = new DatagramPacket(message, message.length);
+        DatagramPacket p = new DatagramPacket(messageBytes, messageBytes.length);
         p.setSocketAddress(target);
         s.send(p);
 
@@ -322,9 +320,12 @@ public class DatagramSocketMulticasting {
         for (int i = 1; i <= MAX_TRIES; i++) {
             p = new DatagramPacket(new byte[1024], 100);
             s.receive(p);
-            if(s.getLocalPort()==p.getPort()){
-                assertEquals(p.getLength(), message.length,
-                        String.format("expected message %s, instead received %s%n", message, p));
+            String messageReceived = new String(p.getData(), 0, p.getLength());
+
+            System.out.println(String.format("TestSendReceive iteration [%s], Received DatagramPacket [%s] from [%s]", i, messageReceived, s.getLocalSocketAddress()));
+            if (s.getLocalPort() == p.getPort()) {
+                assertEquals(message, messageReceived,
+                        String.format("expected message %s, instead received %s%n", message, messageReceived));
                 break;
             }
 
@@ -362,7 +363,8 @@ public class DatagramSocketMulticasting {
                 if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
                     throw new RuntimeException("message shouldn't have been received");
                 } else {
-                    System.out.format("Received unexpected message from %s%n", p.getSocketAddress());
+                    String messageReceived = new String(p.getData(), 0, p.getLength());
+                    System.out.format("Received unexpected message %s from %s%n", messageReceived,p.getSocketAddress());
                 }
             } catch (SocketTimeoutException expected) {
                 break;
