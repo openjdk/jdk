@@ -2735,20 +2735,7 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
   }
 }
 
-Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) {
-  // Call to JVM to fill in the stack trace and clear declaringClassObject to
-  // not keep classes alive in the stack trace.
-  // call this:  public StackTraceElement[] getStackTrace()
-  assert(throwable.not_null(), "shouldn't be");
-
-  JavaValue result(T_ARRAY);
-  JavaCalls::call_virtual(&result, throwable,
-                          vmClasses::Throwable_klass(),
-                          vmSymbols::getStackTrace_name(),
-                          vmSymbols::getStackTrace_signature(),
-                          CHECK_NH);
-  Handle stack_trace(THREAD, result.get_oop());
-  assert(stack_trace->is_objArray(), "Should be an array");
+Handle java_lang_Throwable::get_cause(Handle throwable, bool with_stack_trace, TRAPS) {
 
   // Throw ExceptionInInitializerError as the cause with this exception in
   // the message and stack trace.
@@ -2768,36 +2755,33 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
   Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
 
-  // If new_exception returns a different exception while creating the exception, return null.
-  if (h_cause->klass()->name() != exception_name) {
-    log_info(class, init)("Exception thrown while saving initialization exception %s",
+  if (with_stack_trace) {
+    // If new_exception returns a different exception while creating the exception, return null.
+    if (h_cause->klass()->name() != exception_name) {
+      log_info(class, init)("Exception thrown while saving initialization exception %s",
                           h_cause->klass()->external_name());
-    return Handle();
+      return Handle();
   }
-  java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
-  // Clear backtrace because the stacktrace should be used instead.
-  set_backtrace(h_cause(), nullptr);
+    // Call to java to fill in the stack trace and clear declaringClassObject to
+    // not keep classes alive in the stack trace.
+    // call this:  public StackTraceElement[] getStackTrace()
+    assert(throwable.not_null(), "shouldn't be");
+
+    JavaValue result(T_ARRAY);
+    JavaCalls::call_virtual(&result, throwable,
+                            vmClasses::Throwable_klass(),
+                            vmSymbols::getStackTrace_name(),
+                            vmSymbols::getStackTrace_signature(),
+                            CHECK_NH);
+    Handle stack_trace(THREAD, result.get_oop());
+    assert(stack_trace->is_objArray(), "Should be an array");
+
+    java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
+    // Clear backtrace because the stacktrace should be used instead.
+    set_backtrace(h_cause(), nullptr);
+  }
+
   return h_cause;
-}
-
-Handle java_lang_Throwable::get_cause_simple(JavaThread* current, Handle throwable) {
-  // Same as get_cause_with_stack_trace, but without calling a JVM.
-  assert(throwable.not_null(), "shouldn't be");
-
-  // Now create the message with the original exception and thread name.
-  Symbol* message = java_lang_Throwable::detail_message(throwable());
-  ResourceMark rm(current);
-  stringStream st;
-  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
-             message == nullptr ? "" : ":");
-  if (message == NULL) {
-    st.print("[in thread \"%s\"]", current->name());
-  } else {
-    st.print("%s [in thread \"%s\"]", message->as_C_string(), current->name());
-  }
-
-  Symbol* exception_name = throwable()->klass()->name();
-  return Exceptions::new_exception(current, exception_name, st.as_string());
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {

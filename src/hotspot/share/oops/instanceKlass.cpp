@@ -980,11 +980,11 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   // If the initialization error is OOM, this might not work, but if GC kicks in
   // this would be still be helpful.
   JavaThread* THREAD = current;
-  Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
+  Handle cause = java_lang_Throwable::get_cause(exception, true, THREAD);
   if (HAS_PENDING_EXCEPTION || cause.is_null()) {
     // Retry with the simple method
     CLEAR_PENDING_EXCEPTION;
-    cause = java_lang_Throwable::get_cause_simple(THREAD, exception);
+    cause = java_lang_Throwable::get_cause(exception, false, THREAD);
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
