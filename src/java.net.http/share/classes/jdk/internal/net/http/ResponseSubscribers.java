@@ -545,7 +545,7 @@ public class ResponseSubscribers {
         @Override
         public void onSubscribe(Flow.Subscription s) {
             Objects.requireNonNull(s);
-            if (debug.on()) debug.log("onSubscribed called");
+            if (debug.on()) debug.log("onSubscribe called");
             try {
                 if (!subscribed.compareAndSet(false, true)) {
                     if (debug.on()) debug.log("Already subscribed: canceling");
@@ -580,7 +580,7 @@ public class ResponseSubscribers {
             } catch (Throwable t) {
                 failed = t;
                 if (debug.on())
-                    debug.log("onSubscribed failed", t);
+                    debug.log("onSubscribe failed", t);
                 try {
                     close();
                 } catch (IOException x) {
