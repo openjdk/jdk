@@ -73,7 +73,7 @@ const size_t REHASH_LEN = 100;
 const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
-bool StringTable::_two_dimensional_shared_strings_array = false;
+bool StringTable::_is_two_dimensional_shared_strings_array = false;
 OopHandle StringTable::_shared_strings_array;
 int StringTable::_shared_strings_array_root_index;
 
@@ -82,7 +82,7 @@ inline oop StringTable::read_string_from_compact_hashtable(address base_address,
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
   oop s;
 
-  if (!_two_dimensional_shared_strings_array) {
+  if (!_is_two_dimensional_shared_strings_array) {
     s = array->obj_at((int)index);
   } else {
     int primary_index = index >> _secondary_array_index_bits;
@@ -785,7 +785,6 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
     // The entire table can fit in a single array
     objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), total, CHECK);
     _shared_strings_array = OopHandle(Universe::vm_global(), array);
-    _two_dimensional_shared_strings_array = false;
     log_info(cds)("string table array (single level) length = %d", total);
   } else {
     // Split the table in two levels of arrays.
@@ -818,7 +817,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
     }
 
     assert(total == 0, "must be");
-    _two_dimensional_shared_strings_array = true;
+    _is_two_dimensional_shared_strings_array = true;
   }
 }
 
@@ -839,7 +838,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
     unsigned int hash = java_lang_String::hash_code(string);
     writer.add(hash, index);
 
-    if (!_two_dimensional_shared_strings_array) {
+    if (!_is_two_dimensional_shared_strings_array) {
       assert(index < array->length(), "no strings should have been added");
       array->obj_at_put(index, string);
     } else {
@@ -877,7 +876,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
     _shared_table.reset();
   }
 
-  soc->do_bool(&_two_dimensional_shared_strings_array);
+  soc->do_bool(&_is_two_dimensional_shared_strings_array);
   soc->do_u4((u4*)(&_shared_strings_array_root_index));
 }
 #endif //INCLUDE_CDS_JAVA_HEAP

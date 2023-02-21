@@ -109,7 +109,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static inline oop read_string_from_compact_hashtable(address base_address, u4 index);
 
 private:
-  static bool _two_dimensional_shared_strings_array;
+  static bool _is_two_dimensional_shared_strings_array;
   static OopHandle _shared_strings_array;
   static int _shared_strings_array_root_index;
 
@@ -117,16 +117,17 @@ private:
   // Each shared string is stored as a 32-bit index in ::_shared_table. The index
   // is interpreted in two ways:
   //
-  // [1] _two_dimensional_shared_strings_array = false: _shared_strings_array is an Object[].
+  // [1] _is_two_dimensional_shared_strings_array = false: _shared_strings_array is an Object[].
   //     Each shared string is stored as _shared_strings_array[index]
   //
-  // [2] _two_dimensional_shared_strings_array = true: _shared_strings_array is an Object[][]
+  // [2] _is_two_dimensional_shared_strings_array = true: _shared_strings_array is an Object[][]
   //     This happens when there are too many elements in the shared table. We store them
   //     using two levels of objArrays, such that none of the arrays are too big for
   //     ArchiveHeapWriter::is_too_large_to_archive(). In this case, the index is splited into two
-  //     parts using the follow bit-opts. Each the shared string is stored as
-  //     _shared_strings_array[upper][lower]
+  //     parts. Each shared string is stored as _shared_strings_array[primary_index][secondary_index]:
   //
+  //           [bits 31 .. 14][ bits 13 .. 0  ]
+  //            primary_index  secondary_index
   const static int _secondary_array_index_bits = 14;
   const static int _secondary_array_max_length = 1 << _secondary_array_index_bits;
   const static int _secondary_array_index_mask = _secondary_array_max_length - 1;

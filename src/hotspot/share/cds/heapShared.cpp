@@ -586,16 +586,18 @@ void HeapShared::copy_closed_objects() {
                            false /* is_full_module_graph */);
 }
 
+void HeapShared::copy_special_open_objects() {
+  // Archive special objects that do not belong to any subgraphs
+  init_seen_objects_table();
+  archive_java_mirrors();
+  archive_strings();
+  delete_seen_objects_table();
+}
+
 void HeapShared::copy_open_objects() {
   assert(HeapShared::can_write(), "must be");
 
-  {
-    // Archive special objects that do not belong to any subgraphs
-    init_seen_objects_table();
-    archive_java_mirrors();
-    archive_strings();
-    delete_seen_objects_table();
-  }
+  copy_special_open_objects();
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,

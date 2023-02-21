@@ -365,6 +365,7 @@ private:
                               GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
   static void copy_closed_objects();
   static void copy_open_objects();
+  static void copy_special_open_objects();
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
