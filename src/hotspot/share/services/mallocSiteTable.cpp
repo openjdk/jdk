@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry**  MallocSiteTable::_table = NULL;
-const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
-const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
+MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
+const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = nullptr;
+const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = nullptr;
 
 /*
  * Initialize malloc site table.
@@ -71,8 +71,8 @@ bool MallocSiteTable::initialize() {
   static const NativeCallStack stack(pc, MIN2(((int)(sizeof(pc) / sizeof(address))), ((int)NMT_TrackingStackDepth)));
   static const MallocSiteHashtableEntry entry(stack, mtNMT);
 
-  assert(_hash_entry_allocation_stack == NULL &&
-         _hash_entry_allocation_site == NULL,
+  assert(_hash_entry_allocation_stack == nullptr &&
+         _hash_entry_allocation_site == nullptr,
          "Already initialized");
 
   _hash_entry_allocation_stack = &stack;
@@ -91,7 +91,7 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
   MallocSiteHashtableEntry* head;
   for (int index = 0; index < table_size; index ++) {
     head = _table[index];
-    while (head != NULL) {
+    while (head != nullptr) {
       if (!walker->do_malloc_site(head->peek())) {
         return false;
       }
@@ -106,8 +106,8 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *  and each linked list node is inserted via compare-and-swap,
  *  so each linked list is stable, the contention only happens
  *  at the end of linked list.
- *  This method should not return NULL under normal circumstance.
- *  If NULL is returned, it indicates:
+ *  This method should not return nullptr under normal circumstance.
+ *  If nullptr is returned, it indicates:
  *    1. Out of memory, it cannot allocate new hash entry.
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
@@ -119,10 +119,10 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   *marker = 0;
 
   // First entry for this hash bucket
-  if (_table[index] == NULL) {
+  if (_table[index] == nullptr) {
     MallocSiteHashtableEntry* entry = new_entry(key, flags);
     // OOM check
-    if (entry == NULL) return NULL;
+    if (entry == nullptr) return nullptr;
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
@@ -135,7 +135,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
   unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != NULL && pos_idx < MAX_BUCKET_LENGTH) {
+  while (head != nullptr && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
@@ -144,10 +144,10 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       }
     }
 
-    if (head->next() == NULL && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
+    if (head->next() == nullptr && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
-      if (entry == NULL) return NULL;
+      if (entry == nullptr) return nullptr;
       if (head->atomic_insert(entry)) {
         pos_idx ++;
         *marker = build_marker(index, pos_idx);
@@ -159,7 +159,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
     head = (MallocSiteHashtableEntry*)head->next();
     pos_idx ++;
   }
-  return NULL;
+  return nullptr;
 }
 
 // Access malloc site
@@ -169,9 +169,9 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
-       index < pos_idx && head != NULL;
+       index < pos_idx && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
-  assert(head != NULL, "Invalid position index");
+  assert(head != nullptr, "Invalid position index");
   return head->data();
 }
 
@@ -185,7 +185,7 @@ MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key,
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
-  assert(walker != NULL, "NuLL walker");
+  assert(walker != nullptr, "NuLL walker");
   return walk(walker);
 }
 
@@ -208,10 +208,10 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   for (int i = 0; i < table_size; i ++) {
     int this_chain_length = 0;
     const MallocSiteHashtableEntry* head = _table[i];
-    if (head == NULL) {
+    if (head == nullptr) {
       unused_buckets ++;
     }
-    while (head != NULL) {
+    while (head != nullptr) {
       total_entries ++;
       this_chain_length ++;
       if (head->size() == 0) {

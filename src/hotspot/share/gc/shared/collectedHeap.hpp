@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   template<typename T>
   static T* named_heap(Name kind) {
     CollectedHeap* heap = Universe::heap();
-    assert(heap != NULL, "Uninitialized heap");
+    assert(heap != nullptr, "Uninitialized heap");
     assert(kind == heap->kind(), "Heap kind %u should be %u",
            static_cast<uint>(heap->kind()), static_cast<uint>(kind));
     return static_cast<T*>(heap);
@@ -277,7 +277,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // code.
   virtual bool is_in(const void* p) const = 0;
 
-  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
+  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
@@ -413,7 +413,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
  protected:
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
-    return NULL;
+    return nullptr;
   }
 
  public:
@@ -489,7 +489,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual bool supports_concurrent_gc_breakpoints() const;
 
   // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
-  // method returns NULL, cleanup tasks are done serially in the VMThread. See
+  // method returns null, cleanup tasks are done serially in the VMThread. See
   // `SafepointSynchronize::do_cleanup_tasks` for details.
   // GCs using a GC worker thread pool inside GC safepoints may opt to share
   // that pool with non-GC safepoints, avoiding creating extraneous threads.
@@ -497,14 +497,14 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
   // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
   // same thread-pool.
-  virtual WorkerThreads* safepoint_workers() { return NULL; }
+  virtual WorkerThreads* safepoint_workers() { return nullptr; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
-  // and Release*Critical() family of functions. If supported, the GC
-  // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
-  virtual void unpin_object(JavaThread* thread, oop obj);
+  // and Release*Critical() family of functions. The GC must guarantee
+  // that pinned objects never move and don't get reclaimed as garbage.
+  // These functions are potentially safepointing.
+  virtual void pin_object(JavaThread* thread, oop obj) = 0;
+  virtual void unpin_object(JavaThread* thread, oop obj) = 0;
 
   // Is the given object inside a CDS archive area?
   virtual bool is_archived_object(oop object) const;
@@ -512,7 +512,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).
   virtual bool can_load_archived_objects() const { return false; }
-  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
+  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
 
   virtual bool is_oop(oop object) const;

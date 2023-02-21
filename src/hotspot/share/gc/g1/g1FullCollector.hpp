@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,8 @@ public:
 
   inline void set_compaction_top(HeapRegion* r, HeapWord* value);
   inline HeapWord* compaction_top(HeapRegion* r) const;
+
+  uint truncate_parallel_cps();
 
 private:
   void phase1_mark_live_objects();

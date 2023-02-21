@@ -723,7 +723,7 @@
 
   <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
     description="Native memory usage for a given memory type in the JVM" period="everyChunk">
-    <Field type="string" name="type" label="Memory Type" description="Type used for the native memory allocation" />
+    <Field type="NMTType" name="type" label="Memory Type" description="Type used for the native memory allocation" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
   </Event>
@@ -789,7 +789,9 @@
     <Field type="string" name="commandLine" label="Command Line" />
   </Event>
 
-  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information" period="endChunk">
+  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on"
+         period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
     <Field type="uint" name="sockets" label="Sockets" />
@@ -797,14 +799,18 @@
     <Field type="uint" name="hwThreads" label="Hardware Threads" />
   </Event>
 
-  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter" period="endChunk">
+  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter"
+         description="Information about the CPU time stamp mechanism / (RD)TSC"
+         period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
     <Field type="long" contentType="hertz" name="osFrequency" label="OS Frequency" />
     <Field type="long" contentType="hertz" name="fastTimeFrequency" label="Fast Time Frequency" />
   </Event>
 
-  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load" description="OS CPU Load" period="everyChunk">
+  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
+         description="Information about the recent CPU usage of the JVM process"
+         period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
     <Field type="float" contentType="percentage" name="machineTotal" label="Machine Total" />
@@ -1370,6 +1376,10 @@
 
   <Type name="ChunkHeader" label="Chunk Header">
     <Field type="byte" array="true" name="payload" label="Payload" />
+  </Type>
+
+  <Type name="NMTType" label="Native Memory Tracking Type">
+    <Field type="string" name="name" label="Name" />
   </Type>
 
   <Relation name="JavaMonitorAddress"/>

@@ -53,7 +53,18 @@ MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), 
     }
 #endif // LINUX
 
-  update_layout(true);
+  size_t lgrp_limit = os::numa_get_groups_num();
+  int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtGC);
+  int lgrp_num = (int)os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+  assert(lgrp_num > 0, "There should be at least one locality group");
+
+  lgrp_spaces()->reserve(lgrp_num);
+  // Add new spaces for the new nodes
+  for (int i = 0; i < lgrp_num; i++) {
+    lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment));
+  }
+
+  FREE_C_HEAP_ARRAY(int, lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {
@@ -105,46 +116,12 @@ void MutableNUMASpace::ensure_parsability() {
                  "Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
                  words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
           CollectedHeap::fill_with_object(cur_top, words_to_fill);
-          if (!os::numa_has_static_binding()) {
-            size_t touched_words = words_to_fill;
-#ifndef ASSERT
-            if (!ZapUnusedHeapArea) {
-              touched_words = MIN2(CollectedHeap::filler_array_min_size(), touched_words);
-            }
-#endif
-            MemRegion invalid;
-            HeapWord *crossing_start = align_up(cur_top, os::vm_page_size());
-            HeapWord *crossing_end = align_down(cur_top + touched_words, os::vm_page_size());
-            if (crossing_start != crossing_end) {
-              // If object header crossed a small page boundary we mark the area
-              // as invalid rounding it to a page_size().
-              HeapWord *start = MAX2(align_down(cur_top, page_size()), s->bottom());
-              HeapWord *end = MIN2(align_up(cur_top + touched_words, page_size()), s->end());
-              invalid = MemRegion(start, end);
-            }
-
-            ls->add_invalid_region(invalid);
-          }
           cur_top += words_to_fill;
           words_left_to_fill -= words_to_fill;
         }
       }
     } else {
-      if (!os::numa_has_static_binding()) {
-#ifdef ASSERT
-        MemRegion invalid(s->top(), s->end());
-        ls->add_invalid_region(invalid);
-#else
-        if (ZapUnusedHeapArea) {
-          MemRegion invalid(s->top(), s->end());
-          ls->add_invalid_region(invalid);
-        } else {
-          return;
-        }
-#endif
-      } else {
-          return;
-      }
+      return;
     }
   }
 }
@@ -167,7 +144,7 @@ size_t MutableNUMASpace::free_in_words() const {
 
 
 size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     // This case can occur after the topology of the system has
@@ -192,7 +169,7 @@ size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
 
 size_t MutableNUMASpace::tlab_used(Thread *thr) const {
   // Please see the comments for tlab_capacity().
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     if (lgrp_spaces()->length() > 0) {
@@ -212,7 +189,7 @@ size_t MutableNUMASpace::tlab_used(Thread *thr) const {
 
 size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   // Please see the comments for tlab_capacity().
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     if (lgrp_spaces()->length() > 0) {
@@ -227,79 +204,6 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
     return 0;
   }
   return lgrp_spaces()->at(i)->space()->free_in_bytes();
-}
-
-
-size_t MutableNUMASpace::capacity_in_words(Thread* thr) const {
-  guarantee(thr != NULL, "No thread");
-  int lgrp_id = thr->lgrp_id();
-  if (lgrp_id == -1) {
-    if (lgrp_spaces()->length() > 0) {
-      return capacity_in_words() / lgrp_spaces()->length();
-    } else {
-      assert(false, "There should be at least one locality group");
-      return 0;
-    }
-  }
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
-  if (i == -1) {
-    return 0;
-  }
-  return lgrp_spaces()->at(i)->space()->capacity_in_words();
-}
-
-// Check if the NUMA topology has changed. Add and remove spaces if needed.
-// The update can be forced by setting the force parameter equal to true.
-bool MutableNUMASpace::update_layout(bool force) {
-  // Check if the topology had changed.
-  bool changed = os::numa_topology_changed();
-  if (force || changed) {
-    // Compute lgrp intersection. Add/remove spaces.
-    int lgrp_limit = (int)os::numa_get_groups_num();
-    int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtGC);
-    int lgrp_num = (int)os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
-    assert(lgrp_num > 0, "There should be at least one locality group");
-    // Add new spaces for the new nodes
-    for (int i = 0; i < lgrp_num; i++) {
-      bool found = false;
-      for (int j = 0; j < lgrp_spaces()->length(); j++) {
-        if (lgrp_spaces()->at(j)->lgrp_id() == lgrp_ids[i]) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment()));
-      }
-    }
-
-    // Remove spaces for the removed nodes.
-    for (int i = 0; i < lgrp_spaces()->length();) {
-      bool found = false;
-      for (int j = 0; j < lgrp_num; j++) {
-        if (lgrp_spaces()->at(i)->lgrp_id() == lgrp_ids[j]) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        delete lgrp_spaces()->at(i);
-        lgrp_spaces()->remove_at(i);
-      } else {
-        i++;
-      }
-    }
-
-    FREE_C_HEAP_ARRAY(int, lgrp_ids);
-
-    if (changed) {
-      for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-        thread->set_lgrp_id(-1);
-      }
-    }
-    return true;
-  }
-  return false;
 }
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
@@ -324,55 +228,13 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
   }
 }
 
-// Free all pages in the region.
-void MutableNUMASpace::free_region(MemRegion mr) {
-  HeapWord *start = align_up(mr.start(), page_size());
-  HeapWord *end = align_down(mr.end(), page_size());
-  if (end > start) {
-    MemRegion aligned_region(start, end);
-    assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
-           (intptr_t)aligned_region.byte_size() % page_size() == 0, "Bad alignment");
-    assert(region().contains(aligned_region), "Sanity");
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
-  }
-}
-
 // Update space layout. Perform adaptation.
 void MutableNUMASpace::update() {
-  if (update_layout(false)) {
-    // If the topology has changed, make all chunks zero-sized.
-    // And clear the alloc-rate statistics.
-    // In future we may want to handle this more gracefully in order
-    // to avoid the reallocation of the pages as much as possible.
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      LGRPSpace *ls = lgrp_spaces()->at(i);
-      MutableSpace *s = ls->space();
-      s->set_end(s->bottom());
-      s->set_top(s->bottom());
-      ls->clear_alloc_rate();
-    }
+  if (UseAdaptiveNUMAChunkSizing && adaptation_cycles() < samples_count()) {
     // A NUMA space is never mangled
     initialize(region(),
                SpaceDecorator::Clear,
                SpaceDecorator::DontMangle);
-  } else {
-    bool should_initialize = false;
-    if (!os::numa_has_static_binding()) {
-      for (int i = 0; i < lgrp_spaces()->length(); i++) {
-        if (!lgrp_spaces()->at(i)->invalid_region().is_empty()) {
-          should_initialize = true;
-          break;
-        }
-      }
-    }
-
-    if (should_initialize ||
-        (UseAdaptiveNUMAChunkSizing && adaptation_cycles() < samples_count())) {
-      // A NUMA space is never mangled
-      initialize(region(),
-                 SpaceDecorator::Clear,
-                 SpaceDecorator::DontMangle);
-    }
   }
 
   scan_pages(NUMAPageScanRate);
@@ -518,51 +380,6 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   }
 }
 
-// Try to merge the invalid region with the bottom or top region by decreasing
-// the intersection area. Return the invalid_region aligned to the page_size()
-// boundary if it's inside the intersection. Return non-empty invalid_region
-// if it lies inside the intersection (also page-aligned).
-// |------------------new_region---------------------------------|
-// |----------------|-------invalid---|--------------------------|
-// |----bottom_region--|---intersection---|------top_region------|
-void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersection,
-                                     MemRegion *invalid_region) {
-  if (intersection->start() >= invalid_region->start() && intersection->contains(invalid_region->end())) {
-    *intersection = MemRegion(invalid_region->end(), intersection->end());
-    *invalid_region = MemRegion();
-  } else
-    if (intersection->end() <= invalid_region->end() && intersection->contains(invalid_region->start())) {
-      *intersection = MemRegion(intersection->start(), invalid_region->start());
-      *invalid_region = MemRegion();
-    } else
-      if (intersection->equals(*invalid_region) || invalid_region->contains(*intersection)) {
-        *intersection = MemRegion(new_region.start(), new_region.start());
-        *invalid_region = MemRegion();
-      } else
-        if (intersection->contains(invalid_region)) {
-            // That's the only case we have to make an additional bias_region() call.
-            HeapWord* start = invalid_region->start();
-            HeapWord* end = invalid_region->end();
-            if (UseLargePages && page_size() >= alignment()) {
-              HeapWord *p = align_down(start, alignment());
-              if (new_region.contains(p)) {
-                start = p;
-              }
-              p = align_up(end, alignment());
-              if (new_region.contains(end)) {
-                end = p;
-              }
-            }
-            if (intersection->start() > start) {
-              *intersection = MemRegion(start, intersection->end());
-            }
-            if (intersection->end() < end) {
-              *intersection = MemRegion(intersection->start(), end);
-            }
-            *invalid_region = MemRegion(start, end);
-        }
-}
-
 void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space,
@@ -586,7 +403,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Try small pages if the chunk size is too small
   if (base_space_size_pages / lgrp_spaces()->length() == 0
-      && page_size() > (size_t)os::vm_page_size()) {
+      && page_size() > os::vm_page_size()) {
     // Changing the page size below can lead to freeing of memory. So we fail initialization.
     if (_must_use_large_pages) {
       vm_exit_during_initialization("Failed initializing NUMA with large pages. Too small heap size");
@@ -604,8 +421,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
   if (!old_region.equals(region())) {
     new_region = MemRegion(rounded_bottom, rounded_end);
     MemRegion intersection = new_region.intersection(old_region);
-    if (intersection.start() == NULL ||
-        intersection.end() == NULL   ||
+    if (intersection.start() == nullptr ||
+        intersection.end() == nullptr   ||
         prev_page_size > page_size()) { // If the page size got smaller we have to change
                                         // the page size preference for the whole space.
       intersection = MemRegion(new_region.start(), new_region.start());
@@ -680,35 +497,16 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
     MemRegion intersection = old_region.intersection(new_region);
 
-    if (intersection.start() == NULL || intersection.end() == NULL) {
+    if (intersection.start() == nullptr || intersection.end() == nullptr) {
       intersection = MemRegion(new_region.start(), new_region.start());
-    }
-
-    if (!os::numa_has_static_binding()) {
-      MemRegion invalid_region = ls->invalid_region().intersection(new_region);
-      // Invalid region is a range of memory that could've possibly
-      // been allocated on the other node. That's relevant only on Solaris where
-      // there is no static memory binding.
-      if (!invalid_region.is_empty()) {
-        merge_regions(new_region, &intersection, &invalid_region);
-        free_region(invalid_region);
-        ls->set_invalid_region(MemRegion());
-      }
     }
 
     select_tails(new_region, intersection, &bottom_region, &top_region);
 
-    if (!os::numa_has_static_binding()) {
-      // If that's a system with the first-touch policy then it's enough
-      // to free the pages.
-      free_region(bottom_region);
-      free_region(top_region);
-    } else {
-      // In a system with static binding we have to change the bias whenever
-      // we reshape the heap.
-      bias_region(bottom_region, ls->lgrp_id());
-      bias_region(top_region, ls->lgrp_id());
-    }
+    // In a system with static binding we have to change the bias whenever
+    // we reshape the heap.
+    bias_region(bottom_region, ls->lgrp_id());
+    bias_region(top_region, ls->lgrp_id());
 
     // Clear space (set top = bottom) but never mangle.
     s->initialize(new_region, SpaceDecorator::Clear, SpaceDecorator::DontMangle, MutableSpace::DontSetupPages);
@@ -743,18 +541,12 @@ void MutableNUMASpace::set_top(HeapWord* value) {
         }
       }
 
-      if (!os::numa_has_static_binding() && top < value && top < s->end()) {
-        ls->add_invalid_region(MemRegion(top, value));
-      }
       s->set_top(value);
       found_top = true;
     } else {
         if (found_top) {
-            s->set_top(s->bottom());
+          s->set_top(s->bottom());
         } else {
-          if (!os::numa_has_static_binding() && top < s->end()) {
-            ls->add_invalid_region(MemRegion(top, s->end()));
-          }
           s->set_top(s->end());
         }
     }
@@ -800,19 +592,19 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   LGRPSpace *ls = lgrp_spaces()->at(i);
   MutableSpace *s = ls->space();
   HeapWord *p = s->cas_allocate(size);
-  if (p != NULL) {
+  if (p != nullptr) {
     size_t remainder = pointer_delta(s->end(), p + size);
     if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
       if (s->cas_deallocate(p, size)) {
         // We were the last to allocate and created a fragment less than
         // a minimal object.
-        p = NULL;
+        p = nullptr;
       } else {
         guarantee(false, "Deallocation should always succeed");
       }
     }
   }
-  if (p != NULL) {
+  if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
       if (Atomic::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
@@ -821,13 +613,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
     }
   }
 
-  // Make the page allocation happen here if there is no static binding.
-  if (p != NULL && !os::numa_has_static_binding() ) {
-    for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
-      *(int*)i = 0;
-    }
-  }
-  if (p == NULL) {
+  if (p == nullptr) {
     ls->set_allocation_failed();
   }
   return p;
@@ -928,7 +714,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
   char *s = scan_start;
   while (s < scan_end) {
     char *e = os::scan_pages(s, (char*)scan_end, &page_expected, &page_found);
-    if (e == NULL) {
+    if (e == nullptr) {
       break;
     }
     if (e != scan_end) {
