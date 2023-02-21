@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@ import java.util.List;
  */
 public class InputSlot extends Slot {
 
-    protected InputSlot(Figure figure, int wantedIndex) {
+    private final int originalIndex;
+
+    protected InputSlot(Figure figure, int wantedIndex, int originalIndex) {
         super(figure, wantedIndex);
+        this.originalIndex = originalIndex;
     }
 
     @Override
@@ -47,6 +50,11 @@ public class InputSlot extends Slot {
         InputSlot s = inputSlots.remove(position);
         inputSlots.add(position, s);
     }
+
+    public int getOriginalIndex() {
+        return originalIndex;
+    }
+
     @Override
     public Point getRelativePosition() {
         int gap = getFigure().getWidth() - Figure.getSlotsWidth(getFigure().getInputSlots());
@@ -54,6 +62,11 @@ public class InputSlot extends Slot {
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
         return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getInputSlots(), this)) + getWidth()/2, -Figure.SLOT_START);
         //return new Point((getFigure().getWidth() / (getFigure().getInputSlots().size() * 2)) * (getPosition() * 2 + 1), -Figure.SLOT_START);
+    }
+
+    @Override
+    public String getToolTipText() {
+        return super.getToolTipText() + " [" + originalIndex + "]";
     }
 
     @Override

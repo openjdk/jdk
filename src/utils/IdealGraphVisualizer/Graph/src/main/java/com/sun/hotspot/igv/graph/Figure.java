@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,8 +227,8 @@ public class Figure extends Properties.Entity implements Vertex {
         return inputNode;
     }
 
-    public InputSlot createInputSlot() {
-        InputSlot slot = new InputSlot(this, -1);
+    public InputSlot createInputSlot(int originalIndex) {
+        InputSlot slot = new InputSlot(this, -1, originalIndex);
         inputSlots.add(slot);
         return slot;
     }
