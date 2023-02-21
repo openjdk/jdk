@@ -74,7 +74,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     /*non-public*/
     final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
         try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(I_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(I_TYPE).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -83,7 +83,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     /*non-public*/
     final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
         try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(J_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(J_TYPE).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -92,7 +92,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     /*non-public*/
     final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
         try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(F_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(F_TYPE).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -101,7 +101,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     /*non-public*/
     final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
         try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(D_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(D_TYPE).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }

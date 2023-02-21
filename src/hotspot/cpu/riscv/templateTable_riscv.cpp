@@ -3150,8 +3150,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x10, recv);
+  __ load_klass_check_null(x10, recv);
 
   // profile this call
   __ profile_virtual_call(x10, xlocals, x13);
@@ -3236,8 +3235,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ beqz(t0, notVFinal);
 
   // Check receiver klass into x13 - also a null check
-  __ null_check(x12, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x13, x12);
+  __ load_klass_check_null(x13, x12);
 
   Label subtype;
   __ check_klass_subtype(x13, x10, x14, subtype);
@@ -3253,8 +3251,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into x13 - also a null check
   __ restore_locals();
-  __ null_check(x12, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x13, x12);
+  __ load_klass_check_null(x13, x12);
 
   Label no_such_method;
 

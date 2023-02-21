@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcHeapSummary.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/universe.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JVMCI
@@ -123,6 +125,14 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
+#ifdef LEAK_SANITIZER
+  {
+    // Register the Java heap with LSan.
+    VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+    LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
+  }
+#endif // LEAK_SANITIZER
+
   AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
   continuations_init(); // must precede continuation stub generation
@@ -183,6 +193,13 @@ void exit_globals() {
       StringTable::dump(tty);
     }
     ostream_exit();
+#ifdef LEAK_SANITIZER
+    {
+      // Unregister the Java heap with LSan.
+      VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+      LSAN_UNREGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
+    }
+#endif // LEAK_SANITIZER
   }
 }
 

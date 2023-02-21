@@ -63,9 +63,7 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
       assert(ary->is_objArray(), "");
       objArrayOop objary = (objArrayOop) ary;
       oop elem = objary->obj_at(index);
-      ciEnv* env = CURRENT_ENV;
-      ciObject* box = env->get_object(elem);
-      return ciConstant(T_OBJECT, box);
+      return ciConstant(elembt, CURRENT_ENV->get_object(elem));
     }
   default:
     break;
@@ -94,9 +92,15 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
 // Returns T_ILLEGAL if there is no element at the given index.
 ciConstant ciArray::element_value(int index) {
   BasicType elembt = element_basic_type();
+  ciConstant value = check_constant_value_cache(index, elembt);
+  if (value.is_valid()) {
+    return value;
+  }
   GUARDED_VM_ENTRY(
-    return element_value_impl(elembt, get_arrayOop(), index);
+    value = element_value_impl(elembt, get_arrayOop(), index);
   )
+  add_to_constant_value_cache(index, value);
+  return value;
 }
 
 // ------------------------------------------------------------------
