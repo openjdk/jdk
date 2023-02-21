@@ -26,6 +26,10 @@ package gc;
 /* @test TestVerifySubSet.java
  * @bug 8072725
  * @summary Test VerifySubSet option
+ *
+ * @comment ZGC doesn't support Universe::verify will not print the output below
+ * @requires !vm.gc.Z
+ *
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main gc.TestVerifySubSet
