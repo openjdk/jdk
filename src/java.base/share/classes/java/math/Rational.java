@@ -630,7 +630,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * &times; 10<sup>&nbsp;<i>exponent</i></sup>. For each string on the left, the
      * resulting representation [{@code denominator}/{@code numerator}] is shown on
      * the right.
-     * 
+     *
      * <pre>
      * "0"            [0/1]
      * "0.00"         [0/1]
@@ -686,7 +686,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns a Rational whose value is represented by the fraction with the
      * specified numerator and denominator.
-     * 
+     *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
      * @return a Rational whose value is represented by the fraction with the
@@ -706,7 +706,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns a Rational whose value is represented by the fraction with the
      * specified numerator and denominator.
-     * 
+     *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
      * @return a Rational whose value is represented by the fraction with the
@@ -727,7 +727,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns a Rational whose value is represented by the fraction with the
      * specified numerator and denominator.
-     * 
+     *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
      * @return a Rational whose value is represented by the fraction with the
@@ -797,17 +797,17 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Returns the integer part of the absolute value of this {@code Rational}.
-     * 
+     *
      * @return {@code floor(abs(this))}.
      */
     public BigInteger absFloor() {
         return floor;
     }
-    
+
     /**
      * Returns the difference between the absolute value of this {@code Rational}
      * and {@code absFloor(this)}.
-     * 
+     *
      * @return {@code abs(this) - absFloor(this)}
      */
     public Rational absFraction() {
@@ -817,7 +817,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns the least non-negative numerator necessary to represent the
      * fractional part of this {@code Rational}.
-     * 
+     *
      * @return {@code min n == d * absFraction()} that is a
      *         non-negative integer, for some positive integer {@code d}.
      * @see #absFloor()
@@ -830,7 +830,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns the least positive denominator necessary to represent the fractional
      * part of this {@code Rational}.
-     * 
+     *
      * @return {@code min d == n / absFraction()} that is a positive
      *         integer, for some non-negative integer {@code n}.
      * @see #absFloor()
@@ -945,7 +945,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * Computes the numerators of this {@code Rational} and the specified
      * {@code Rational}, relative to the least common denominator of
      * {@code denominator} and {@code val.denominator}
-     * 
+     *
      * @param val a {@code Rational}
      * @param gcd the greatest common divisor of {@code denominator} and
      *            {@code val.denominator}
@@ -953,12 +953,12 @@ public class Rational extends Number implements Comparable<Rational> {
     private BigInteger[] lcdNumerators(Rational val, BigInteger gcd) {
         return  lcdNumerators(numerator, denominator, val.numerator, val.denominator, gcd);
     }
-    
+
     /**
      * Computes the numerators of the specified fractions {@code (num1/den1)} and
      * {@code (num2/den2)}, relative to the least common denominator of {@code den1}
      * and {@code den2}
-     * 
+     *
      * @param num1 the numerator of the first fraction
      * @param den1 the denominator of the first fraction
      * @param num2 the numerator of the second fraction
@@ -1026,7 +1026,7 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational multiply(Rational multiplicand) {
         if (signum == 0 || multiplicand.signum == 0)
             return ZERO;
-        
+
         if (this == multiplicand)
             return square();
 
@@ -1183,29 +1183,29 @@ public class Rational extends Number implements Comparable<Rational> {
         // check for division by zero
         if (n < 0 && this.signum == 0)
             throw new ArithmeticException("Attempted to raise zero to a negative exponent");
-        
+
         int mag = Math.absExact(n); // magnitude of n
-        
+
         // handle easy cases
         if (n == 0)
             return ONE; // x**0 == 1
-        
+
         if (n == 1 || this.signum == 0 || this.equals(ONE))
             return this; // x**1 == x, 0**n == 0, 1**n == 1
         // At this point, this != 0
-        
+
         if (n == -1)
             return invert();
-        
+
         if (n == 2)
             return square();
-        
+
         if (numerator.signum == 0) { // integer base
             final int sign = (n & 1) == 1 ? signum : 1;
             final BigInteger floorPow = floor.pow(mag); // faster way
             return n > 0 ? new Rational(sign, floorPow) : new Rational(sign, BigInteger.ZERO, BigInteger.ONE, floorPow);
         }
-        
+
         if (floor.signum == 0 && numerator.equals(BigInteger.ONE)) { // unitary fraction
             final int sign = (n & 1) == 1 ? signum : 1;
             final BigInteger denPow = denominator.pow(mag); // faster way
@@ -1220,14 +1220,14 @@ public class Rational extends Number implements Comparable<Rational> {
             if (seenbit)
                 acc = acc.square(); // acc=acc*acc [square]
             // if (!seenbit) no point in squaring ONE
-            
+
             mag <<= 1; // shift left 1 bit
             if (mag < 0) { // top bit is set
                 seenbit = true; // OK, we're off
                 acc = acc.multiply(this); // acc=acc*x
             }
         }
-        
+
         // if negative n, calculate the reciprocal
         return n >= 0 ? acc : acc.invert();
     }
@@ -1296,11 +1296,11 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public Rational root(int n, MathContext mc) {
         Rational x = this; // the radicand
-        
+
         // even-degree root with negative radicand
         if ((n & 1) == 0 && x.signum == -1)
             throw new ArithmeticException("Attempted " + n + "th root of negative Rational");
-        
+
         // check the sign of n
         if (n <= 0) {
             if (n == 0)
@@ -1308,10 +1308,10 @@ public class Rational extends Number implements Comparable<Rational> {
             // n < 0
             if (x.signum == 0) // radicand is zero
                 throw new ArithmeticException("Attempted negative degree root of zero");
-            
+
             if (n == Integer.MIN_VALUE)
                 throw new ArithmeticException("Root degree overflow");
-            
+
             // negate the degree and invert the radicand
             n = -n;
             x = x.invert();
@@ -1321,7 +1321,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (x.signum == 0 || x.equals(ONE))
             return x; // 0**n == 0, 1**n == 1
         // now x != 0
-        
+
         if (n == 1)
             return x.round(mc); // x**1 == x
 
@@ -1366,7 +1366,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
         // Calculate the number of digits of the radicand
         // necessary to compute the root with the desired precision.
-        
+
         final boolean halfWay = halfWay(mc.roundingMode);
         final int targetPrec = mc.precision + (halfWay ? 1 : 0);
         // To obtain a root with p digits,
@@ -1398,7 +1398,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // then minWorkingPrec <= extracted.precision() <= minWorkingPrec + (n - 1).
         // That is: n * (targetPrec - 1) + 1 <= extracted.precision() <= n * targetPrec
         // so, the unscaled root computed from "extracted" will have exactly targetPrec digits.
-        
+
         final int scaleAdjust = (int) scale;
         if (scaleAdjust != scale)
             new ArithmeticException("Overflow");
@@ -1409,13 +1409,13 @@ public class Rational extends Number implements Comparable<Rational> {
         BigInteger root = rootRem[0]; // root > 0
         int rootScale = scaleAdjust / n;
         final boolean error = rootRem[1].signum != 0 || xScaled.numerator.signum != 0;
-        
+
         // Round the result with the specified settings
         if (halfWay) {
             // remove the one-tenth digit
             BigInteger[] divRem10 = root.divideAndRemainder(BigInteger.TEN);
             rootScale--;
-            
+
             final BigInteger down = divRem10[0];
             int digit = divRem10[1].intValue();
             if (digit > 5 || digit == 5 && (error || mc.roundingMode == RoundingMode.HALF_UP
@@ -1433,7 +1433,7 @@ public class Rational extends Number implements Comparable<Rational> {
             root = root.add(BigInteger.ONE);
         } // else round down, since mc.roundingMode != UNNECESSARY, or no error,
         // so don't change the value
-        
+
         // Adjust the sign
         if (x.signum == -1)
             root = root.negate();
@@ -1442,7 +1442,7 @@ public class Rational extends Number implements Comparable<Rational> {
        // if rounding mode is half-way, the least digit was discarded
        return new Rational(new BigDecimal(root, rootScale));
     }
-    
+
     private static boolean halfWay(RoundingMode rm) {
         return switch (rm) {
         case HALF_DOWN, HALF_UP, HALF_EVEN -> true;
@@ -1478,7 +1478,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // because shiftRightImpl considers its argument unsigned
         return n > 0 ? shiftLeftImpl(n) : shiftRightImpl(-n);
     }
-    
+
     /**
      * Returns a Rational whose value is {@code (this << n)}. The shift
      * distance, {@code n}, is considered unsigned.
@@ -1490,16 +1490,16 @@ public class Rational extends Number implements Comparable<Rational> {
     private Rational shiftLeftImpl(int n) {
         BigInteger resFloor = unsignedShiftLeft(floor, n);
         BigInteger resNum, resDen;
-        
+
         if (numerator.signum == 1) { // non-zero fractional part
             final int shiftDen = (int) Math.min(n & BigInteger.LONG_MASK, denominator.getLowestSetBit());
             resNum = unsignedShiftLeft(numerator, n - shiftDen);
             resDen = denominator.shiftRight(shiftDen); // shiftDen is non-negative
-            
+
             if (resNum.compareTo(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
                 resFloor = resFloor.add(divRem[0]);
-                
+
                 BigInteger[] frac = simplify(divRem[1], resDen);
                 resNum = frac[0];
                 resDen = frac[1];
@@ -1508,14 +1508,14 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
-        
+
         return new Rational(signum, resFloor, resNum, resDen);
     }
-    
+
     private static BigInteger unsignedShiftLeft(BigInteger val, int n) {
         return n >= 0 ? val.shiftLeft(n) : val.shiftRight(n); // avoid right shift if (-n) overflows
     }
-    
+
     /**
      * Returns a Rational whose value is {@code (this >> n)}.
      * The shift distance, {@code n}, may be negative, in which case
@@ -1533,7 +1533,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // because shiftLeftImpl considers its argument unsigned
         return n > 0 ? shiftRightImpl(n) : shiftLeftImpl(-n);
     }
-    
+
     /**
      * Returns a Rational whose value is {@code (this >> n)}. The shift
      * distance, {@code n}, is considered unsigned.
@@ -1547,23 +1547,23 @@ public class Rational extends Number implements Comparable<Rational> {
         final int nBits = (int) Math.min(n & BigInteger.LONG_MASK, floor.bitLength());
         final BigInteger rem = floor.getMagBits(0, nBits, floor.bitLength());
         BigInteger resNum, resDen;
-        
+
         if (numerator.signum == 1) { // non-zero fractional part
             final int shiftNum = (int) Math.min(n & BigInteger.LONG_MASK, numerator.getLowestSetBit());
             resNum = numerator.shiftRight(shiftNum); // shiftNum is non-negative
             final int addedZeros = n - shiftNum;
             resDen = unsignedShiftLeft(denominator, addedZeros);
-            
+
             if (rem.signum == 1) {
                 final int denZeros = denominator.getLowestSetBit();
                 final int remZeros = rem.getLowestSetBit();
                 // trailingZeros(resDen) == denZeros + addedZeros
                 // rem == floor - ((floor >> n) << n)
-                
+
                 // gcd(2^(n - remZeros), resDen)
                 // == 1 << min(n - remZeros, trailingZeros(resDen))
                 // == 1 << min(n - remZeros, denZeros + addedZeros)
-                
+
                 // this / 2^n
                 // == (floor >> n) + resNum / resDen + rem / 2^n
                 // == (floor >> n) + resNum / resDen + (rem >> remZeros) / 2^(n - remZeros)
@@ -1583,7 +1583,7 @@ public class Rational extends Number implements Comparable<Rational> {
                     resNum = resNum.shiftLeft(shift).add(rem.shiftRight(remZeros).multiply(denominator.shiftRight(denZeros)));
                     resDen = resDen.shiftLeft(shift); // shift is non-negative
                 }
-                
+
                 BigInteger[] frac = simplify(resNum, resDen);
                 resNum = frac[0];
                 resDen = frac[1];
@@ -1596,16 +1596,16 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
-        
+
         return new Rational(signum, resFloor, resNum, resDen);
     }
-    
+
     private static BigInteger unsignedShiftRight(BigInteger val, int n) {
         return n >= 0 ? val.shiftRight(n) : val.shiftLeft(n); // avoid left shift if (-n) overflows
     }
 
     // Scaling/Rounding Operations
-    
+
     /**
      * Returns a Rational whose value is equal to
      * ({@code this} * 10<sup>n</sup>).
@@ -1621,7 +1621,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // because rightScaleByPowerOfTen considers its argument unsigned
         return n > 0 ? leftScaleByPowerOfTen(n) : rightScaleByPowerOfTen(-n);
     }
-    
+
     /**
      * Returns a Rational whose value is equal to ({@code this} * 10<sup>n</sup>).
      * Assumes {@code n > 0}.
@@ -1631,7 +1631,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     private Rational leftScaleByPowerOfTen(final int n) {
         BigInteger resFloor, resNum, resDen;
-        
+
         if (numerator.signum == 1) { // non-zero fractional part
             // multiply fraction by 2^n
             final int shiftDen = Math.min(n, denominator.getLowestSetBit());
@@ -1642,14 +1642,14 @@ public class Rational extends Number implements Comparable<Rational> {
             resDen = removePowersOfFive(resDen, fiveExp);
             final BigInteger fivePow = bigFiveToThe((int) fiveExp.get());
             resNum = resNum.multiply(fivePow);
-            
+
             // floor * 10^n == floor * 2^n * 5^n == (floor << n) * (5^fiveExp * 5^(n - fiveExp))
             resFloor = floor.shiftLeft(n).multiply(fivePow).multiply(bigFiveToThe(n - (int) fiveExp.get()));
-            
+
             if (resNum.compareTo(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
                 resFloor = resFloor.add(divRem[0]);
-                
+
                 BigInteger[] frac = simplify(divRem[1], resDen);
                 resNum = frac[0];
                 resDen = frac[1];
@@ -1659,10 +1659,10 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
-        
+
         return new Rational(signum, resFloor, resNum, resDen);
     }
-    
+
     /**
      * Returns a Rational whose value is equal to ({@code this} * 10<sup>-n</sup>).
      * {@code n} is considered unsigned and non-zero.
@@ -1676,7 +1676,7 @@ public class Rational extends Number implements Comparable<Rational> {
         final BigInteger FIVE_TO_N = bigFiveToThe(n);
         final BigInteger[] divRem = shifted.floor.divideAndRemainder(FIVE_TO_N);
         final BigInteger rem = divRem[1];
-        
+
         final BigInteger resFloor = divRem[0];
         BigInteger resNum, resDen;
         if (shifted.numerator.signum == 1) {  // non-zero fraction of shifted
@@ -1702,7 +1702,7 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
-        
+
         return new Rational(signum, resFloor, resNum, resDen);
     }
 
@@ -1721,7 +1721,7 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational round(MathContext mc) {
         return new Rational(toBigDecimal(mc));
     }
-    
+
     // Format Converters
 
     /**
