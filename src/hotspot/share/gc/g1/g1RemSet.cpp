@@ -35,7 +35,6 @@
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -64,7 +63,7 @@
 // Collects information about the overall heap root scan progress during an evacuation.
 //
 // Scanning the remembered sets works by first merging all sources of cards to be
-// scanned (log buffers, hcc, remembered sets) into a single data structure to remove
+// scanned (log buffers, remembered sets) into a single data structure to remove
 // duplicates and simplify work distribution.
 //
 // During the following card scanning we not only scan this combined set of cards, but
@@ -467,14 +466,12 @@ public:
 };
 
 G1RemSet::G1RemSet(G1CollectedHeap* g1h,
-                   G1CardTable* ct,
-                   G1HotCardCache* hot_card_cache) :
+                   G1CardTable* ct) :
   _scan_state(new G1RemSetScanState()),
   _prev_period_summary(false),
   _g1h(g1h),
   _ct(ct),
-  _g1p(_g1h->policy()),
-  _hot_card_cache(hot_card_cache) {
+  _g1p(_g1h->policy()) {
 }
 
 G1RemSet::~G1RemSet() {
@@ -1370,17 +1367,6 @@ public:
       }
     }
 
-    // Apply closure to log entries in the HCC.
-    if (_initial_evacuation && G1HotCardCache::use_cache()) {
-      assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
-      G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
-      G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
-      g1h->iterate_hcc_closure(&cl, worker_id);
-
-      p->record_thread_work_item(G1GCPhaseTimes::MergeHCC, worker_id, cl.cards_dirty(), G1GCPhaseTimes::MergeHCCDirtyCards);
-      p->record_thread_work_item(G1GCPhaseTimes::MergeHCC, worker_id, cl.cards_skipped(), G1GCPhaseTimes::MergeHCCSkippedCards);
-    }
-
     // Now apply the closure to all remaining log entries.
     if (_initial_evacuation) {
       assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
@@ -1526,37 +1512,6 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   // we see the up-to-date region type here.
   if (!r->is_old_or_humongous_or_archive()) {
     return false;
-  }
-
-  // The result from the hot card cache insert call is either:
-  //   * pointer to the current card
-  //     (implying that the current card is not 'hot'),
-  //   * null
-  //     (meaning we had inserted the card ptr into the "hot" card cache,
-  //     which had some headroom),
-  //   * a pointer to a "hot" card that was evicted from the "hot" cache.
-  //
-
-  if (G1HotCardCache::use_cache()) {
-    const CardValue* orig_card_ptr = card_ptr;
-    card_ptr = _hot_card_cache->insert(card_ptr);
-    if (card_ptr == NULL) {
-      // There was no eviction. Nothing to do.
-      return false;
-    } else if (card_ptr != orig_card_ptr) {
-      // Original card was inserted and an old card was evicted.
-      start = _ct->addr_for(card_ptr);
-      r = _g1h->heap_region_containing_or_null(start);
-
-      // Check whether the region formerly in the cache should be
-      // ignored, as discussed earlier for the original card.  The
-      // region could have been freed (or even uncommitted) while
-      // in the cache.
-      if (r == nullptr || !r->is_old_or_humongous_or_archive()) {
-        return false;
-      }
-      *card_ptr_addr = card_ptr;
-    } // Else we still have the original card.
   }
 
   // Trim the region designated by the card to what's been allocated

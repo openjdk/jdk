@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 
@@ -43,7 +45,7 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
 
 /*
  * @test
- * @bug 8012229
+ * @bug 8012229 8300725
  * @summary one more test to check the alpha channel
  */
 public final class ColCvtAlphaDifferentSrcDst {
@@ -56,6 +58,34 @@ public final class ColCvtAlphaDifferentSrcDst {
         differentToTransparentDst(TYPE_INT_ARGB);
         differentToTransparentDst(TYPE_4BYTE_ABGR);
         differentToTransparentDst(TYPE_INT_ARGB_PRE);
+        differentToNullDst();
+    }
+
+    /**
+     * Various types of source images transform to the null destination.
+     */
+    private static void differentToNullDst() {
+        nullDst(TYPE_INT_RGB);
+        nullDst(TYPE_INT_ARGB);
+// TODO DirectColorModel and ComponentColorModel have different precision for pre
+//        nullDst(TYPE_INT_ARGB_PRE);
+
+        nullDst(TYPE_INT_BGR);
+        nullDst(TYPE_3BYTE_BGR);
+        nullDst(TYPE_4BYTE_ABGR);
+
+// TODO DirectColorModel and ComponentColorModel have different precision for pre
+//        nullDst(TYPE_4BYTE_ABGR_PRE);
+
+// Default destination for null is always 8 bit per component
+//        nullDst(TYPE_USHORT_565_RGB);
+//        nullDst(TYPE_USHORT_555_RGB);
+        nullDst(TYPE_BYTE_GRAY);
+// Default destination for null is always 8 bit per component
+//        nullDst(TYPE_USHORT_GRAY);
+        nullDst(TYPE_BYTE_BINARY);
+// Default destination for null is always 8 bit per component
+//        nullDst(TYPE_BYTE_INDEXED);
     }
 
     /**
@@ -90,6 +120,29 @@ public final class ColCvtAlphaDifferentSrcDst {
         transparentDst(TYPE_USHORT_GRAY, typeDst);
         transparentDst(TYPE_BYTE_BINARY, typeDst);
         transparentDst(TYPE_BYTE_INDEXED, typeDst);
+    }
+
+    /**
+     * Compares the rendering to the default destination created by the
+     * ColorConvertOp and the destination format equal to the source.
+     */
+    private static void nullDst(int typeSrc) {
+        BufferedImage src = createSrc(typeSrc);
+        BufferedImage gold = createDst(typeSrc);
+        // just a round trip from src to src color space
+        ICC_Profile[] profs = {
+                ((ICC_ColorSpace) (src.getColorModel().getColorSpace())).getProfile(),
+                ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB),
+                ICC_Profile.getInstance(ColorSpace.CS_GRAY),
+                ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB),
+                ((ICC_ColorSpace) (src.getColorModel().getColorSpace())).getProfile(),
+        };
+        ColorConvertOp op = new ColorConvertOp(profs, null);
+
+        op.filter(src, gold);
+        BufferedImage dst = op.filter(src, null);
+
+        validate(gold, dst, false);
     }
 
     private static void opaqueDst(int transparent, int opaque) {
@@ -134,8 +187,8 @@ public final class ColCvtAlphaDifferentSrcDst {
                     rgb2 |= 0x00FFFFFF;
                 }
                 if (rgb1 != rgb2) {
-                    System.out.println("rgb1 = " + Integer.toHexString(rgb1));
-                    System.out.println("rgb2 = " + Integer.toHexString(rgb2));
+                    System.err.println("rgb1 = " + Integer.toHexString(rgb1));
+                    System.err.println("rgb2 = " + Integer.toHexString(rgb2));
                     throw new RuntimeException();
                 }
             }

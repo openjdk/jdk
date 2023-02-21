@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/memTracker.hpp"
+#include "services/memTracker.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -56,9 +57,9 @@ class ChunkPool {
   static ChunkPool _pools[_num_pools];
 
  public:
-  ChunkPool(size_t size) : _first(NULL), _num_chunks(0), _size(size) {}
+  ChunkPool(size_t size) : _first(nullptr), _num_chunks(0), _size(size) {}
 
-  // Allocate a chunk from the pool; returns NULL if pool is empty.
+  // Allocate a chunk from the pool; returns null if pool is empty.
   Chunk* allocate() {
     ThreadCritical tc;
     Chunk* c = _first;
@@ -81,7 +82,7 @@ class ChunkPool {
   // Prune the pool
   void prune() {
     static const int blocksToKeep = 5;
-    Chunk* cur = NULL;
+    Chunk* cur = nullptr;
     Chunk* next;
     // if we have more than n chunks, free all of them
     ThreadCritical tc;
@@ -89,18 +90,18 @@ class ChunkPool {
       // free chunks at end of queue, for better locality
       cur = _first;
       for (size_t i = 0; i < (blocksToKeep - 1); i++) {
-        assert(cur != NULL, "counter out of sync?");
+        assert(cur != nullptr, "counter out of sync?");
         cur = cur->next();
       }
-      assert(cur != NULL, "counter out of sync?");
+      assert(cur != nullptr, "counter out of sync?");
 
       next = cur->next();
-      cur->set_next(NULL);
+      cur->set_next(nullptr);
       cur = next;
 
       // Free all remaining chunks while in ThreadCritical lock
       // so NMT adjustment is stable.
-      while(cur != NULL) {
+      while(cur != nullptr) {
         next = cur->next();
         os::free(cur);
         _num_chunks--;
@@ -115,14 +116,14 @@ class ChunkPool {
     }
   }
 
-  // Given a (inner payload) size, return the pool responsible for it, or NULL if the size is non-standard
+  // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
   static ChunkPool* get_pool_for_size(size_t size) {
     for (int i = 0; i < _num_pools; i++) {
       if (_pools[i]._size == size) {
         return _pools + i;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
 };
@@ -170,9 +171,9 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
          SIZE_FORMAT ".", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
-  if (pool != NULL) {
+  if (pool != nullptr) {
     Chunk* c = pool->allocate();
-    if (c != NULL) {
+    if (c != nullptr) {
       assert(c->length() == length, "wrong length?");
       return c;
     }
@@ -180,7 +181,7 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
   size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
   void* p = os::malloc(bytes, mtChunk, CALLER_PC);
-  if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+  if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
   }
   // We rely on arena alignment <= malloc alignment.
@@ -192,7 +193,7 @@ void Chunk::operator delete(void* p) {
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   Chunk* c = (Chunk*)p;
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
-  if (pool != NULL) {
+  if (pool != nullptr) {
     pool->free(c);
   } else {
     ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
@@ -201,7 +202,7 @@ void Chunk::operator delete(void* p) {
 }
 
 Chunk::Chunk(size_t length) : _len(length) {
-  _next = NULL;         // Chain on the linked list
+  _next = nullptr;         // Chain on the linked list
 }
 
 void Chunk::chop() {
@@ -217,7 +218,7 @@ void Chunk::chop() {
 
 void Chunk::next_chop() {
   _next->chop();
-  _next = NULL;
+  _next = nullptr;
 }
 
 void Chunk::start_chunk_pool_cleaner_task() {
@@ -276,7 +277,7 @@ void Arena::destruct_contents() {
   // reset size before chop to avoid a rare racing condition
   // that can have total arena memory exceed total chunk memory
   set_size_in_bytes(0);
-  if (_first != NULL) {
+  if (_first != nullptr) {
     _first->chop();
   }
   reset();
@@ -309,12 +310,16 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
+  if (MemTracker::check_exceeds_limit(x, _flags)) {
+    return nullptr;
+  }
+
   Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (alloc_failmode, len) Chunk(len);
 
-  if (_chunk == NULL) {
+  if (_chunk == nullptr) {
     _chunk = k;                 // restore the previous value of _chunk
-    return NULL;
+    return nullptr;
   }
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
   else _first = _chunk;
@@ -332,11 +337,11 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   if (new_size == 0) {
     Afree(old_ptr, old_size); // like realloc(3)
-    return NULL;
+    return nullptr;
   }
-  if (old_ptr == NULL) {
+  if (old_ptr == nullptr) {
     assert(old_size == 0, "sanity");
-    return Amalloc(new_size, alloc_failmode); // as with realloc(3), a NULL old ptr is equivalent to malloc(3)
+    return Amalloc(new_size, alloc_failmode); // as with realloc(3), a null old ptr is equivalent to malloc(3)
   }
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
@@ -358,8 +363,8 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
 
   // Oops, got to relocate guts
   void *new_ptr = Amalloc(new_size, alloc_failmode);
-  if (new_ptr == NULL) {
-    return NULL;
+  if (new_ptr == nullptr) {
+    return nullptr;
   }
   memcpy( new_ptr, c_old, old_size );
   Afree(c_old,old_size);        // Mostly done to keep stats accurate
@@ -369,7 +374,7 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
 
 // Determine if pointer belongs to this Arena or not.
 bool Arena::contains( const void *ptr ) const {
-  if (_chunk == NULL) return false;
+  if (_chunk == nullptr) return false;
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
   for (Chunk *c = _first; c; c = c->next()) {

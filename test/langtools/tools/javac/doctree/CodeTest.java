@@ -128,7 +128,7 @@ DocComment[DOC_COMMENT, pos:1
       name:pre
       attributes: empty
     ]
-    Literal[CODE, pos:6, |_____@Override|..._____void_m()_{_}|_]
+    Literal[CODE, pos:6, |_____@Override|_____void_m()_{_}|_]
   body: 1
     EndElement[END_ELEMENT, pos:48, pre]
   block tags: empty
@@ -158,7 +158,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Erroneous[ERRONEOUS, pos:1, prefPos:34
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@code_if_(a_<_b...)_{_}|_@author_jjg
+      body: {@code_if_(a_<_b)_{_}|_@author_jjg
     ]
   body: empty
   block tags: empty

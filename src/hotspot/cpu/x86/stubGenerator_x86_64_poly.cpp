@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022, 2023, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,19 +37,19 @@
 // Explanation for the 'well known' modular arithmetic optimization, reduction by pseudo-Mersene prime 2^130-5:
 //
 // Reduction by 2^130-5 can be expressed as follows:
-//    ( a×2^130 + b ) mod 2^130-5     //i.e. number split along the 130-bit boundary
-//                                 = ( a×2^130 - 5×a + 5×a + b ) mod 2^130-5
-//                                 = ( a×(2^130 - 5) + 5×a + b ) mod 2^130-5 // i.e. adding multiples of modulus is a noop
-//                                 = ( 5×a + b ) mod 2^130-5
+//    ( ax2^130 + b ) mod 2^130-5     //i.e. number split along the 130-bit boundary
+//                                 = ( ax2^130 - 5xa + 5xa + b ) mod 2^130-5
+//                                 = ( ax(2^130 - 5) + 5xa + b ) mod 2^130-5 // i.e. adding multiples of modulus is a noop
+//                                 = ( 5xa + b ) mod 2^130-5
 // QED: shows mathematically the well known algorithm of 'split the number down the middle, multiply upper and add'
 // This is particularly useful to understand when combining with 'odd-sized' limbs that might cause misallignment
 //
 
 // Pseudocode for this file (in general):
 //    * used for poly1305_multiply_scalar
-//    × used for poly1305_multiply8_avx512
-//    lower-case variables are scalar numbers in 3×44-bit limbs (in gprs)
-//    upper-case variables are 8-element vector numbers in 3×44-bit limbs (in zmm registers)
+//    x used for poly1305_multiply8_avx512
+//    lower-case variables are scalar numbers in 3x44-bit limbs (in gprs)
+//    upper-case variables are 8-element vector numbers in 3x44-bit limbs (in zmm registers)
 //    [ ] used to denote vector numbers (with their elements)
 
 // Constant Pool:
@@ -84,16 +84,16 @@ static address poly1305_mask44() {
 }
 
 // Compute product for 8 16-byte message blocks,
-// i.e. For each block, compute [a2 a1 a0] = [a2 a1 a0] × [r2 r1 r0]
+// i.e. For each block, compute [a2 a1 a0] = [a2 a1 a0] x [r2 r1 r0]
 //
 // Each block/number is represented by 3 44-bit limb digits, start with multiplication
 //
 //      a2       a1       a0
-// ×    r2       r1       r0
+// x    r2       r1       r0
 // ----------------------------------
-//     a2×r0    a1×r0    a0×r0
-// +   a1×r1    a0×r1  5×a2×r1'     (r1' = r1<<2)
-// +   a0×r2  5×a2×r2' 5×a1×r2'     (r2' = r2<<2)
+//     a2xr0    a1xr0    a0xr0
+// +   a1xr1    a0xr1  5xa2xr1'     (r1' = r1<<2)
+// +   a0xr2  5xa2xr2' 5xa1xr2'     (r2' = r2<<2)
 // ----------------------------------
 //        p2       p1       p0
 //
@@ -101,24 +101,24 @@ static address poly1305_mask44() {
 // Then, modular reduction from upper limb wrapped to lower limbs
 //
 // Math Note 1: 'carry propagation' from p2 to p0 involves multiplication by 5 (i.e. slightly modified modular reduction from above):
-//    ( p2×2^88 ) mod 2^130-5
-//                             = ( p2'×2^88 + p2''×2^130) mod 2^130-5 // Split on 130-bit boudary
-//                             = ( p2'×2^88 + p2''×2^130 - 5×p2'' + 5×p2'') mod 2^130-5
-//                             = ( p2'×2^88 + p2''×(2^130 - 5) + 5×p2'') mod 2^130-5 // i.e. adding multiples of modulus is a noop
-//                             = ( p2'×2^88 + 5×p2'') mod 2^130-5
+//    ( p2x2^88 ) mod 2^130-5
+//                             = ( p2'x2^88 + p2''x2^130) mod 2^130-5 // Split on 130-bit boudary
+//                             = ( p2'x2^88 + p2''x2^130 - 5xp2'' + 5xp2'') mod 2^130-5
+//                             = ( p2'x2^88 + p2''x(2^130 - 5) + 5xp2'') mod 2^130-5 // i.e. adding multiples of modulus is a noop
+//                             = ( p2'x2^88 + 5xp2'') mod 2^130-5
 //
 // Math Note 2: R1P = 4*5*R1 and R2P = 4*5*R2; This precomputation allows simultaneous reduction and multiplication.
 // This is not the standard 'multiply-upper-by-5', here is why the factor is 4*5 instead of 5.
-// For example, partial product (a2×r2):
-//    (a2×2^88)×(r2×2^88) mod 2^130-5
-//                                    = (a2×r2 × 2^176) mod 2^130-5
-//                                    = (a2×r2 × 2^46×2^130) mod 2^130-5
-//                                    = (a2×r2×2^46 × 2^130- 5×a2×r2×2^46 + 5×a2×r2×2^46) mod 2^130-5
-//                                    = (a2×r2×2^46 × (2^130- 5) + 5×a2×r2×2^46) mod 2^130-5 // i.e. adding multiples of modulus is a noop
-//                                    = (5×a2×r2×2^46) mod 2^130-5
-//                                    = (a2×5×r2×2^2 × 2^44) mod 2^130-5 // Align to limb boudary
-//                                    = (a2×[5×r2×4] × 2^44) mod 2^130-5
-//                                    = (a2×R2P × 2^44) mod 2^130-5 // i.e. R2P = 4*5*R2
+// For example, partial product (a2xr2):
+//    (a2x2^88)x(r2x2^88) mod 2^130-5
+//                                    = (a2xr2 x 2^176) mod 2^130-5
+//                                    = (a2xr2 x 2^46x2^130) mod 2^130-5
+//                                    = (a2xr2x2^46 x 2^130- 5xa2xr2x2^46 + 5xa2xr2x2^46) mod 2^130-5
+//                                    = (a2xr2x2^46 x (2^130- 5) + 5xa2xr2x2^46) mod 2^130-5 // i.e. adding multiples of modulus is a noop
+//                                    = (5xa2xr2x2^46) mod 2^130-5
+//                                    = (a2x5xr2x2^2 x 2^44) mod 2^130-5 // Align to limb boudary
+//                                    = (a2x[5xr2x4] x 2^44) mod 2^130-5
+//                                    = (a2xR2P x 2^44) mod 2^130-5 // i.e. R2P = 4*5*R2
 //
 void StubGenerator::poly1305_multiply8_avx512(
   const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
@@ -136,9 +136,9 @@ void StubGenerator::poly1305_multiply8_avx512(
   __ evpxorq(P2H, P2H, P2H, Assembler::AVX_512bit);
 
   // Calculate partial products
-  // p0 = a2×r1'
-  // p1 = a2×r2'
-  // p2 = a2×r0
+  // p0 = a2xr1'
+  // p1 = a2xr2'
+  // p2 = a2xr0
   __ evpmadd52luq(P0L, A2, R1P, Assembler::AVX_512bit);
   __ evpmadd52huq(P0H, A2, R1P, Assembler::AVX_512bit);
   __ evpmadd52luq(P1L, A2, R2P, Assembler::AVX_512bit);
@@ -146,9 +146,9 @@ void StubGenerator::poly1305_multiply8_avx512(
   __ evpmadd52luq(P2L, A2, R0, Assembler::AVX_512bit);
   __ evpmadd52huq(P2H, A2, R0, Assembler::AVX_512bit);
 
-  // p0 += a0×r0
-  // p1 += a0×r1
-  // p2 += a0×r2
+  // p0 += a0xr0
+  // p1 += a0xr1
+  // p2 += a0xr2
   __ evpmadd52luq(P1L, A0, R1, Assembler::AVX_512bit);
   __ evpmadd52huq(P1H, A0, R1, Assembler::AVX_512bit);
   __ evpmadd52luq(P2L, A0, R2, Assembler::AVX_512bit);
@@ -156,9 +156,9 @@ void StubGenerator::poly1305_multiply8_avx512(
   __ evpmadd52luq(P0L, A0, R0, Assembler::AVX_512bit);
   __ evpmadd52huq(P0H, A0, R0, Assembler::AVX_512bit);
 
-  // p0 += a1×r2'
-  // p1 += a1×r0
-  // p2 += a1×r1
+  // p0 += a1xr2'
+  // p1 += a1xr0
+  // p2 += a1xr1
   __ evpmadd52luq(P0L, A1, R2P, Assembler::AVX_512bit);
   __ evpmadd52huq(P0H, A1, R2P, Assembler::AVX_512bit);
   __ evpmadd52luq(P1L, A1, R0, Assembler::AVX_512bit);
@@ -168,10 +168,10 @@ void StubGenerator::poly1305_multiply8_avx512(
 
   // Carry propagation:
   // (Not quite aligned)                         | More mathematically correct:
-  //         P2L   P1L   P0L                     |                 P2L×2^88 + P1L×2^44 + P0L×2^0
-  // + P2H   P1H   P0H                           |   + P2H×2^140 + P1H×2^96 + P0H×2^52
+  //         P2L   P1L   P0L                     |                 P2Lx2^88 + P1Lx2^44 + P0Lx2^0
+  // + P2H   P1H   P0H                           |   + P2Hx2^140 + P1Hx2^96 + P0Hx2^52
   // ---------------------------                 |   -----------------------------------------------
-  // = P2H    A2    A1    A0                     |   = P2H×2^130 + A2×2^88 +   A1×2^44 +  A0×2^0
+  // = P2H    A2    A1    A0                     |   = P2Hx2^130 + A2x2^88 +   A1x2^44 +  A0x2^0
   //
   __ vpsrlq(TMP, P0L, 44, Assembler::AVX_512bit);
   __ evpandq(A0, P0L, ExternalAddress(poly1305_mask44()), Assembler::AVX_512bit, rscratch); // Clear top 20 bits
@@ -214,8 +214,8 @@ void StubGenerator::poly1305_multiply8_avx512(
 //          a2        a1        a0
 //        x           r1        r0
 //   -----------------------------
-//       a2×r0     a1×r0     a0×r0
-//   +             a0×r1
+//       a2xr0     a1xr0     a0xr0
+//   +             a0xr1
 //   +           5xa2xr1   5xa1xr1
 //   -----------------------------
 //     [0|L2L] [L1H|L1L] [L0H|L0L]
@@ -347,7 +347,7 @@ void StubGenerator::poly1305_limbs_avx512(
 }
 
 /**
- * Copy 5×26-bit (unreduced) limbs stored at Register limbs into  a2:a1:a0 (3×64-bit limbs)
+ * Copy 5x26-bit (unreduced) limbs stored at Register limbs into  a2:a1:a0 (3x64-bit limbs)
  *
  * a2 is optional. When only128 is set, limbs are expected to fit into 128-bits (i.e. a1:a0 such as clamped R)
  */
@@ -393,7 +393,7 @@ void StubGenerator::poly1305_limbs(
 }
 
 /**
- * Break 3×64-bit a2:a1:a0 limbs into 5×26-bit limbs and store out into 5 quadwords at address `limbs`
+ * Break 3x64-bit a2:a1:a0 limbs into 5x26-bit limbs and store out into 5 quadwords at address `limbs`
  */
 void StubGenerator::poly1305_limbs_out(
     const Register a0, const Register a1, const Register a2,
@@ -474,9 +474,9 @@ void StubGenerator::poly1305_limbs_out(
 //
 // Pseudocode:
 //  * used for poly1305_multiply_scalar
-//  × used for poly1305_multiply8_avx512
-//  lower-case variables are scalar numbers in 3×44-bit limbs (in gprs)
-//  upper-case variables are 8&16-element vector numbers in 3×44-bit limbs (in zmm registers)
+//  x used for poly1305_multiply8_avx512
+//  lower-case variables are scalar numbers in 3x44-bit limbs (in gprs)
+//  upper-case variables are 8&16-element vector numbers in 3x44-bit limbs (in zmm registers)
 //
 //    CL = a       // [0 0 0 0 0 0 0 a]
 //    AL = poly1305_limbs_avx512(input)
@@ -496,24 +496,24 @@ void StubGenerator::poly1305_limbs_out(
 //    B  = limbs(T)           // [r^4  0  r^3  0  r^2  0  r^1  0 ]
 //    CL = B >> 1             // [ 0  r^4  0  r^3  0  r^2  0  r^1]
 //    R  = r^4 || r^4 || ..   // [r^4 r^4 r^4 r^4 r^4 r^4 r^4 r^4]
-//    B  = B×R                // [r^8  0  r^7  0  r^6  0  r^5  0 ]
+//    B  = BxR                // [r^8  0  r^7  0  r^6  0  r^5  0 ]
 //    B  = B | CL             // [r^8 r^4 r^7 r^3 r^6 r^2 r^5 r^1]
 //    CL = B
 //    R  = r^8 || r^8 || ..   // [r^8 r^8 r^8 r^8 r^8 r^8 r^8 r^8]
-//    B  = B × R              // [r^16 r^12 r^15 r^11 r^14 r^10 r^13 r^9]
+//    B  = B x R              // [r^16 r^12 r^15 r^11 r^14 r^10 r^13 r^9]
 //    CH = B
 //    R = r^16 || r^16 || ..  // [r^16 r^16 r^16 r^16 r^16 r^16 r^16 r^16]
 //
 // for (;length>=16; input+=16, length-=16)
 //     BL = poly1305_limbs_avx512(input)
 //     BH = poly1305_limbs_avx512(input+8)
-//     AL = AL × R
-//     AH = AH × R
+//     AL = AL x R
+//     AH = AH x R
 //     AL = AL + BL
 //     AH = AH + BH
 //
-//  AL = AL × CL
-//  AH = AH × CH
+//  AL = AL x CL
+//  AH = AH x CH
 //  A = AL + AH // 16->8 blocks
 //  T = A >> 4  // 8 ->4 blocks
 //  A = A + T

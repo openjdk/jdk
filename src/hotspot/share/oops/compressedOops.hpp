@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class ReservedHeapSpace;
 
 struct NarrowPtrStruct {
   // Base address for oop-within-java-object materialization.
-  // NULL if using wide oops or zero based narrow oops.
+  // null if using wide oops or zero based narrow oops.
   address _base;
   // Number of shift bits for encoding/decoding narrow ptrs.
   // 0 if using wide ptrs or zero based unscaled narrow ptrs,
@@ -116,7 +116,7 @@ public:
 
   static void     print_mode(outputStream* st);
 
-  static bool is_null(oop v)       { return v == NULL; }
+  static bool is_null(oop v)       { return v == nullptr; }
   static bool is_null(narrowOop v) { return v == narrowOop::null; }
 
   static inline oop decode_raw_not_null(narrowOop v);
@@ -127,6 +127,7 @@ public:
   static inline narrowOop encode(oop v);
 
   // No conversions needed for these overloads
+  static inline oop decode_raw_not_null(oop v);
   static inline oop decode_not_null(oop v);
   static inline oop decode(oop v);
   static inline narrowOop encode_not_null(narrowOop v);
@@ -178,7 +179,7 @@ public:
   static size_t   range()              { return  _range; }
   static int      shift()              { return  _narrow_klass._shift; }
 
-  static bool is_null(Klass* v)      { return v == NULL; }
+  static bool is_null(Klass* v)      { return v == nullptr; }
   static bool is_null(narrowKlass v) { return v == 0; }
 
   static inline Klass* decode_raw(narrowKlass v, address base);
