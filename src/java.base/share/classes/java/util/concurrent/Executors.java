@@ -189,7 +189,6 @@ public class Executors {
      * @return the newly created single-threaded Executor
      * @throws NullPointerException if threadFactory is null
      */
-
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
         var executor = new ThreadPoolExecutor(1, 1,
                                               0L, TimeUnit.MILLISECONDS,

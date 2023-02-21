@@ -112,7 +112,7 @@ class AutoShutdown {
     }
 
     /**
-     * Returns the delegates for the given ExecutorService. The given ExectorService
+     * Returns the delegate for the given ExecutorService. The given ExectorService
      * must be a Executors$DelegatedExecutorService.
      */
     private ExecutorService getDelegate(ExecutorService executor) throws Exception {
