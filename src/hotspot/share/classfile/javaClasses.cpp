@@ -883,6 +883,111 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
 }
 
+void java_lang_Class::initialize_autonomous_static_field(Klass* klass,
+                                                         fieldDescriptor* fd,
+                                                         TRAPS) {
+  assert(klass == fd->field_holder(), "must be");
+  assert(fd->is_static(), "must be");
+  assert(fd->is_autonomous(), "must be");
+
+  // Initializing a autonomous field may only happen after its declaring
+  // class has been initialized.  It is harmless to make this request
+  // redundantly.
+  klass->initialize(CHECK);
+
+  int initval = fd->autonomous_value_index();
+  assert(initval != 0, "must be");
+  // It is OK that the next line can execute repeatedly and concurrently.
+  // The constant pool arbitrates repeated and concurrent execution requests.
+  oop value_oop = fd->constants()->resolve_possibly_cached_constant_at(initval, CHECK);
+  Handle value(THREAD, value_oop);
+  Handle mirror(THREAD, klass->java_mirror());
+  int fo = fd->offset();
+  BasicType ft = fd->field_type();
+  // It is OK that the next line can execute repeatedly and concurrently.
+  // The field will only be set once (or not at all, if the value is zero/null).
+  // We detect the "already set" state by observing a non-default value.
+  // This is safe, since the constant pool query returns a constant value.
+  if (ft == T_OBJECT) {
+    if (mirror->obj_field(fo) != NULL || value.is_null()) {
+      return;  // already set, or nothing to set
+    }
+    Symbol* fsig = fd->signature();
+    if (fsig != vmSymbols::java_lang_Object()) {
+      Klass* fk = SystemDictionary::resolve_or_fail(fsig, true, CHECK);
+      if (!fk->is_interface() && !value->klass()->is_subclass_of(fk)) {
+        // this failure should be impossible, but be safe
+        THROW(vmSymbols::java_lang_ClassCastException());
+      }
+    }
+    mirror->obj_field_put(fo, value());
+  } else {
+    // for technical reasons the primitive value has been boxed (we hope)
+    if (value.is_null()) {
+      THROW(vmSymbols::java_lang_NullPointerException());
+    }
+    jvalue pvalue;
+    BasicType vt = java_lang_boxing_object::get_value(value(), &pvalue);
+    if (vt != ft) {
+      // Limited mismatches allowed under rules similar to ConstantValue.
+      if (vt == T_INT) {
+        BasicType vt0 = vt;
+        vt = ft;
+        switch (ft) {
+        case T_BOOLEAN:  pvalue.z = (jboolean)(pvalue.i&1); break;
+        case T_BYTE:     pvalue.b = (jbyte)    pvalue.i;    break;
+        case T_CHAR:     pvalue.s = (jchar)    pvalue.i;    break;
+        case T_SHORT:    pvalue.s = (jshort)   pvalue.i;    break;
+        case T_INT:      break;
+        default:         vt = vt0;  break;  // can fail
+        }
+      }
+    }
+    if (vt != ft) {
+      // this failure should be impossible, but be safe
+      THROW(vmSymbols::java_lang_ClassCastException());
+    }
+    switch (ft) {
+    case T_BYTE:
+      if (mirror->byte_field(fo) != 0 || pvalue.b == 0)  return;
+      mirror->byte_field_put(fo, pvalue.b);
+      break;
+    case T_BOOLEAN:
+      if (mirror->bool_field(fo) != 0 || pvalue.z == 0)  return;
+      mirror()->bool_field_put(fo, pvalue.z);
+      break;
+    case T_CHAR:
+      if (mirror->char_field(fo) != 0 || pvalue.c == 0)  return;
+      mirror->char_field_put(fo, pvalue.c);
+      break;
+    case T_SHORT:
+      if (mirror->short_field(fo) != 0 || pvalue.s == 0)  return;
+      mirror->short_field_put(fo, pvalue.s);
+      break;
+    case T_INT:
+      if (mirror->int_field(fo) != 0 || pvalue.i == 0)  return;
+      mirror->int_field_put(fo, pvalue.i);
+      break;
+    case T_FLOAT:
+      // use int field format to test for zero because of -0.0f
+      if (mirror->int_field(fo) != 0 || pvalue.i == 0)  return;
+      mirror->float_field_put(fo, pvalue.f);
+      break;
+    case T_DOUBLE:
+      // use long field format to test for zero because of -0.0d
+      if (mirror->long_field(fo) != 0 || pvalue.j == 0)  return;
+      mirror->double_field_put(fo, pvalue.d);
+      break;
+    case T_LONG:
+      if (mirror->long_field(fo) != 0 || pvalue.j == 0)  return;
+      mirror->long_field_put(fo, pvalue.j);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  }
+}
+
 void java_lang_Class::initialize_mirror_fields(Klass* k,
                                                Handle mirror,
                                                Handle protection_domain,

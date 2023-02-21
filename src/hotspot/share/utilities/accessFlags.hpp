@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ enum {
   // field flags
   // Note: these flags must be defined in the low order 16 bits because
   // InstanceKlass only stores a ushort worth of information from the
-  // AccessFlags value.
+  // AccessFlags value.  Actually we steal more bits in an ad hoc way.
   // These bits must not conflict with any other field-related access flags
   // (e.g., ACC_ENUM).
   // Note that the class-related ACC_ANNOTATION bit conflicts with these flags.
@@ -88,11 +88,16 @@ enum {
   JVM_ACC_FIELD_STABLE                    = 0x00000020, // @Stable field, same as JVM_ACC_SYNCHRONIZED and JVM_ACC_SUPER
   JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE  = 0x00000100, // (static) final field updated outside (class) initializer, same as JVM_ACC_NATIVE
   JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE     = 0x00000800, // field has generic signature
+  JVM_ACC_FIELD_AUTONOMOUS                = 0x00010000, // has a AutonomousValue attribute
+  JVM_ACC_FIELD_SPARE_20000               = 0x00020000, // spare bit position for reorg
+  // FIXME: These definitions are a mess.  They should be consistently sorted.
+  // The mutable ones should be cleanly separated.
 
   JVM_ACC_FIELD_INTERNAL_FLAGS       = JVM_ACC_FIELD_ACCESS_WATCHED |
                                        JVM_ACC_FIELD_MODIFICATION_WATCHED |
                                        JVM_ACC_FIELD_INTERNAL |
                                        JVM_ACC_FIELD_STABLE |
+                                       JVM_ACC_FIELD_AUTONOMOUS |
                                        JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE,
 
                                                     // flags accepted by set_field_flags()
@@ -175,6 +180,7 @@ class AccessFlags {
   bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
   bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
   bool is_stable() const                { return (_flags & JVM_ACC_FIELD_STABLE) != 0; }
+  bool is_autonomous() const            { return (_flags & JVM_ACC_FIELD_AUTONOMOUS) != 0; }
   bool field_has_generic_signature() const
                                         { return (_flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE) != 0; }
 
@@ -264,6 +270,10 @@ class AccessFlags {
   void set_field_has_generic_signature()
                                        {
                                          atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
+                                       }
+
+  void set_is_autonomous() {
+                                         atomic_set_bits(JVM_ACC_FIELD_AUTONOMOUS);
                                        }
 
   void set_on_stack(const bool value)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,11 @@ public class Flags {
     public static final long NAME_FILLED = 1L<<52; //ParamSymbols only
 
     /**
+     * Flag to mark a autonomous field (which must also be static & final)
+     */
+    public static final long AUTONOMOUS_FIELD = 1L<<49; // VarSymbols only (shared with LAMBDA_METHOD)
+
+    /**
      * Flag to indicate the given ModuleSymbol is a system module.
      */
     public static final long SYSTEM_MODULE = 1L<<53; //ModuleSymbols only
@@ -420,7 +425,7 @@ public class Flags {
         RecordMethodFlags                 = AccessFlags | ABSTRACT | STATIC |
                                             SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
-        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
+        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED | AUTONOMOUS_FIELD,
         ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
         ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
         ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED,
@@ -519,6 +524,12 @@ public class Flags {
         SIGNATURE_POLYMORPHIC(Flags.SIGNATURE_POLYMORPHIC),
         THROWS(Flags.THROWS),
         LAMBDA_METHOD(Flags.LAMBDA_METHOD),
+        AUTONOMOUS_FIELD(Flags.AUTONOMOUS_FIELD) {
+            @Override
+            public String toString() {
+                return "autonomous field";
+            }
+        },
         TYPE_TRANSLATED(Flags.TYPE_TRANSLATED),
         MODULE(Flags.MODULE),
         AUTOMATIC_MODULE(Flags.AUTOMATIC_MODULE),

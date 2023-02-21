@@ -105,7 +105,10 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     write_u2(attr_count);
 
     if (initial_value_index != 0) {
-      write_attribute_name_index("ConstantValue");
+      if (fs.is_autonomous())
+        write_attribute_name_index("AutonomousValue");
+      else
+        write_attribute_name_index("ConstantValue");
       write_u4(2); //length always 2
       write_u2(initial_value_index);
     }

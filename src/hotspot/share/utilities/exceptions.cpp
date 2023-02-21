@@ -305,6 +305,33 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_loader, Handle h_protection_domain) {
   Handle h_exception = new_exception(thread, name, signature, args, h_loader, h_protection_domain);
 
+  // If new_exception returns a different exception while creating the
+  // exception, drop the cause.
+  if (h_cause.not_null() &&
+      (h_exception->klass()->name() != name ||
+       java_lang_Throwable::cause(h_exception()) != h_exception())) {
+    // There are corner cases where new_exception can unexpectedly
+    // fail to produce a fresh exception, and instead throw some other
+    // old exception, such as a constant pool state.  If that old
+    // exception already has a cause installed, there is no way to add
+    // the requested cause.
+    LogTarget(Warning, exceptions) lt;
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print_cr("Old exception thrown while creating new exception with cause: " INTPTR_FORMAT, p2i((void*) h_exception()));
+    h_exception->print_on(&ls);
+    ls.print_cr("Requested cause is dropped: " INTPTR_FORMAT, p2i((void*) h_cause()));
+    h_cause->print_on(&ls);
+    oop old_cause = java_lang_Throwable::cause(h_exception());
+    if (old_cause != NULL && old_cause != h_exception()) {
+      ls.print_cr("Pre-existing cause of old exception: " INTPTR_FORMAT, p2i((void*) old_cause));
+      old_cause->print_on(&ls);
+    }
+    h_cause = Handle();
+  }
+
+  // The problem with calling Throwable::initCause is you don't really
+  // know which exception you are asking to take on the cause; see above.
   // Future: object initializer should take a cause argument
   if (h_cause.not_null()) {
     assert(h_cause->is_a(vmClasses::Throwable_klass()),
@@ -430,21 +457,18 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 
     // See the "Linking Exceptions" section for the invokedynamic instruction
     // in JVMS 6.5.
-    if (exception->is_a(vmClasses::Error_klass())) {
+    bool already_wrapped = exception->is_a(vmClasses::Error_klass());
+    if (ls != NULL) {
+      ResourceMark rm(THREAD);
+      ls->print_cr("%s error %swrapped in BSME: " INTPTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", already_wrapped ? "not " : "", p2i((void *)exception));
+      exception->print_on(ls);
+    }
+    if (already_wrapped) {
       // Pass through an Error, including BootstrapMethodError, any other form
       // of linkage error, or say OutOfMemoryError
-      if (ls != nullptr) {
-        ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
-        exception->print_on(ls);
-      }
       return;
     }
 
-    // Otherwise wrap the exception in a BootstrapMethodError
-    if (ls != nullptr) {
-      ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i(exception));
-      exception->print_on(ls);
-    }
     Handle nested_exception(THREAD, exception);
     THREAD->clear_pending_exception();
     THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)

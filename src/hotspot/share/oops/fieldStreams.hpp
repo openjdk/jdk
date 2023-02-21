@@ -203,6 +203,9 @@ class JavaFieldStream : public FieldStreamBase {
     assert(!field()->is_internal(), "regular only");
     return field()->set_initval_index(index);
   }
+  bool is_autonomous() const {
+    return field()->is_autonomous();
+  }
 };
 
 

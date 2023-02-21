@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,6 +479,12 @@ public class ClassWriter {
             out.writeShort(info.outer_class_info_index);
             out.writeShort(info.inner_name_index);
             writeAccessFlags(info.inner_class_access_flags, out);
+        }
+
+        @Override
+        public Void visitAutonomousValue(AutonomousValue_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.autonomousvalue_index);
+            return null;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ class fieldDescriptor {
   jdouble double_initial_value()  const;
   oop string_initial_value(TRAPS) const;
 
+  // Autonomous field "condy" value
+  inline int autonomous_value_index()   const;
+
   // Field signature type
   inline BasicType field_type() const;
 
@@ -90,6 +93,7 @@ class fieldDescriptor {
   bool is_stable()                const    { return access_flags().is_stable(); }
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
+  bool is_autonomous()            const    { return access_flags().is_autonomous(); }
 
   bool is_field_access_watched()  const    { return access_flags().is_field_access_watched(); }
   bool is_field_modification_watched() const

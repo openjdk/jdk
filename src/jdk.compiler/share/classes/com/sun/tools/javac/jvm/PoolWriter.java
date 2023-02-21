@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,10 @@ public class PoolWriter {
         if (index == null) {
             index = bootstrapMethods.size();
             bootstrapMethods.put(bsmKey, index);
+            // be sure the BSM and args are in the pool as well:
+            putConstant(dynamic.bootstrapMethod());
+            for (var arg : dynamic.staticArgs())
+                putConstant(arg);
         }
 
         return index;

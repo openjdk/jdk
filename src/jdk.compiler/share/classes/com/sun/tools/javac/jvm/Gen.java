@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package com.sun.tools.javac.jvm;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.tree.TreeInfo.PosKind;
@@ -81,6 +83,7 @@ public class Gen extends JCTree.Visitor {
 
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
+    private final boolean desugarAutonomousFields;
 
     /** A type that serves as the expected type for all method expressions.
      */
@@ -130,6 +133,7 @@ public class Gen extends JCTree.Visitor {
 
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
+        desugarAutonomousFields = options.isSet("desugarAutonomousFields");
         annotate = Annotate.instance(context);
         qualifiedSymbolCache = new HashMap<>();
     }
@@ -417,7 +421,7 @@ public class Gen extends JCTree.Visitor {
  *************************************************************************/
 
     /** Distribute member initializer code into constructors and {@code <clinit>}
-     *  method.
+     *  method and synthetic {@code $autoinit$} method.
      *  @param defs         The list of class member declarations.
      *  @param c            The enclosing class.
      */
@@ -426,10 +430,13 @@ public class Gen extends JCTree.Visitor {
         ListBuffer<Attribute.TypeCompound> initTAs = new ListBuffer<>();
         ListBuffer<JCStatement> clinitCode = new ListBuffer<>();
         ListBuffer<Attribute.TypeCompound> clinitTAs = new ListBuffer<>();
+        Map<String, JCVariableDecl> autoinitMap = new LinkedHashMap<>();
+        ListBuffer<Attribute.TypeCompound> autoinitTAs = new ListBuffer<>();
         ListBuffer<JCTree> methodDefs = new ListBuffer<>();
-        // Sort definitions into three listbuffers:
+        // Sort definitions into four listbuffers:
         //  - initCode for instance initializers
         //  - clinitCode for class initializers
+        //  - autoinitMap for autonomous static field initializers
         //  - methodDefs for method definitions
         for (List<JCTree> l = defs; l.nonEmpty(); l = l.tail) {
             JCTree def = l.head;
@@ -456,7 +463,20 @@ public class Gen extends JCTree.Visitor {
                         initCode.append(init);
                         endPosTable.replaceTree(vdef, init);
                         initTAs.addAll(getAndRemoveNonFieldTAs(sym));
-                    } else if (sym.getConstValue() == null) {
+                    } else if (sym.getConstValue() != null) {
+                        checkStringConstant(vdef.init.pos(), sym.getConstValue());
+                        /* if the init contains a reference to an external class, add it to the
+                         * constant's pool
+                         */
+                        vdef.init.accept(classReferenceVisitor);
+                    } else if ((sym.flags() & AUTONOMOUS_FIELD) != 0) {
+                        Assert.check((sym.flags() & STATIC) != 0);
+                        // this will eventually add code to a switch
+                        var nameStr = sym.name.toString();
+                        var prev = autoinitMap.put(nameStr, vdef);
+                        Assert.check(prev == null);  //names are unique
+                        autoinitTAs.addAll(getAndRemoveNonFieldTAs(sym));
+                    } else {
                         // Initialize class (static) variables only if
                         // they are not compile-time constants.
                         JCStatement init = make.at(vdef.pos).
@@ -464,12 +484,6 @@ public class Gen extends JCTree.Visitor {
                         clinitCode.append(init);
                         endPosTable.replaceTree(vdef, init);
                         clinitTAs.addAll(getAndRemoveNonFieldTAs(sym));
-                    } else {
-                        checkStringConstant(vdef.init.pos(), sym.getConstValue());
-                        /* if the init contains a reference to an external class, add it to the
-                         * constant's pool
-                         */
-                        vdef.init.accept(classReferenceVisitor);
                     }
                 }
                 break;
@@ -485,6 +499,12 @@ public class Gen extends JCTree.Visitor {
             for (JCTree t : methodDefs) {
                 normalizeMethod((JCMethodDecl)t, inits, initTAlist);
             }
+        }
+        // If there are autonomous static field initializers, create an
+        // $autoinit$ method that contains a switch that can execute
+        // each one of them as needed.
+        if (!autoinitMap.isEmpty()) {
+            methodDefs.append(makeAutoinits(c, autoinitMap, autoinitTAs));
         }
         // If there are class initializers, create a <clinit> method
         // that contains them as its body.
@@ -509,6 +529,125 @@ public class Gen extends JCTree.Visitor {
         }
         // Return all method definitions.
         return methodDefs.toList();
+    }
+
+    private JCMethodDecl makeAutoinits(ClassSymbol c,
+                                       Map<String, JCVariableDecl> autoinitMap,
+                                       ListBuffer<Attribute.TypeCompound> autoinitTAs) {
+        var autoinitDef = genAutoinit(c, autoinitMap);
+        MethodSymbol autoinit = autoinitDef.sym;
+        if (!autoinitTAs.isEmpty())
+            autoinit.appendUniqueTypeAttributes(autoinitTAs.toList());
+        // Build a single condy constant to sequence static inits.
+        // It is shaped like AutoStaticManager.make(L,*,*,autoinit).
+        var pos = autoinitDef.pos();
+        var mgrClass = syms.autoStaticManager;
+        var makeBSMName = names.make;
+        List<Type> makeBSMArgs = List.of(syms.methodHandleLookupType,
+                                         syms.stringType,
+                                         syms.classType,
+                                         syms.methodHandleType);
+        MethodSymbol makeBSM = rs.resolveInternalMethod(pos, attrEnv,
+                mgrClass, makeBSMName, makeBSMArgs, List.nil());
+        var mgr = new DynamicVarSymbol(makeBSMName, c, makeBSM.asHandle(),
+                syms.objectType, new LoadableConstant[] { autoinit.asHandle() });
+        // Each individual condy is shaped like AutoStaticManager.initialize(...mgr)
+        var initBSMName = names.initialize;
+        List<Type> initBSMArgs = List.of(syms.methodHandleLookupType,
+                                         syms.stringType,
+                                         syms.classType,
+                                         mgrClass);
+        MethodSymbol initBSM = rs.resolveInternalMethod(pos, attrEnv,
+                mgrClass, initBSMName, initBSMArgs, List.nil());
+        autoinitMap.values().stream().forEach(def -> {
+                // Build a condy constant for each auto static.
+                // It is shaped like ConstantBootstraps.autoInitialize(L,N,T,mgr).
+                var sym = def.sym;
+                var init = new DynamicVarSymbol(sym.name, c, initBSM.asHandle(),
+                        sym.type, new LoadableConstant[] { mgr });
+                sym.setAutonomousValue(init);
+                // sets up getAutonomousValue, called in ClassWriter
+            });
+        return autoinitDef;
+    }
+
+    private JCMethodDecl genAutoinit(ClassSymbol c,
+                                     Map<String, JCVariableDecl> autoinitMap) {
+        OperatorSymbol OP_EQ_REF =
+            new OperatorSymbol(names.fromString("=="),
+                               new MethodType(List.of(syms.objectType,
+                                                      syms.objectType),
+                                              syms.booleanType,
+                                              List.nil(), syms.methodClass),
+                               if_acmpeq, syms.noSymbol);
+
+        Name autoinitName = names.autoinit;
+        while (c.members().findFirst(autoinitName) != null) {
+            autoinitName = autoinitName.append(
+                target.syntheticNameChar(),
+                names.empty);
+        }
+        MethodSymbol autoinit = new MethodSymbol(
+            STATIC | SYNTHETIC | (c.flags() & STRICTFP),
+            autoinitName,
+            new MethodType(
+                List.of(syms.stringType, syms.objectType), syms.objectType,
+                List.nil(), syms.methodClass),
+            c);
+        c.members().enter(autoinit);
+        var params = autoinit.params();
+        VarSymbol autoname = params.head;
+        VarSymbol sentinel = params.tail.head;
+        Assert.check(autoname != null);
+        Assert.check(sentinel != null);
+        var caseToNamesMap = autoinitMap.keySet().stream().
+            //collect(Collectors.groupingBy(String::hashCode);
+            collect(Collectors.groupingBy((String n) -> n.hashCode()));
+        var cases = caseToNamesMap.keySet().stream().sorted().
+            map(hc -> {
+                    JCExpression result = make.Ident(sentinel);
+                    for (var name : caseToNamesMap.get(hc)) {
+                        var vdef = autoinitMap.get(name);
+                        Assert.check(vdef != null);
+                        // We use name == param, not name.equals(param)
+                        // because this internal method is specified to
+                        // work only on interned strings.
+                        var init = maybeBox(vdef.init, vdef.sym.type);
+                        var hit = make.Binary(EQ, make.Literal(name),
+                                              make.Ident(autoname));
+                        hit.operator = OP_EQ_REF;
+                        hit.setType(syms.booleanType);
+                        result = make.Conditional(hit, init, result);
+                        result.setType(syms.objectType);
+                    }
+                    return make.Case(JCCase.STATEMENT,
+                                     List.of(make.Literal(hc)),
+                                     List.of(make.Return(result)), null);
+                }).collect(List.collector());
+        Symbol hashCode = syms.stringType.tsym.members().
+            findFirst(names.hashCode, s ->
+                      s.kind == MTH && s.type.getParameterTypes().isEmpty());
+        JCExpression hash = make.App(make.Select(make.Ident(autoname), hashCode),
+                                     List.nil()).setType(syms.intType);
+        var doSwitch = make.Switch(hash, cases);
+        var retFail = make.Return(make.Ident(sentinel));
+        JCBlock block = make.Block(0, List.of(doSwitch, retFail));
+        var def = make.MethodDef(autoinit, block);
+        return def;
+    }
+
+    private JCExpression maybeBox(JCExpression expr, Type fromType) {
+        if (!fromType.isPrimitive())
+            return expr;
+        // return something like lower.boxPrimitive(expr)
+        TypeTag fromTag = fromType.getTag();
+        ClassSymbol box = types.boxedClass(fromType);
+        Symbol valueOf = box.members().
+            findFirst(names.valueOf, s ->
+                      s.type.getParameterTypes().length() == 1 &&
+                      s.type.getParameterTypes().head.getTag() == fromTag);
+        Assert.check(valueOf != null); // missing box method?
+        return make.App(make.QualIdent(valueOf), List.of(expr)).setType(box.type);
     }
 
     private List<Attribute.TypeCompound> getAndRemoveNonFieldTAs(VarSymbol sym) {
@@ -2308,6 +2447,11 @@ public class Gen extends JCTree.Visitor {
 
     public void visitIdent(JCIdent tree) {
         Symbol sym = tree.sym;
+        if (desugarAutonomousFields && isAutonomousField(sym) && sym.owner == env.enclClass.sym) {
+            // This is a qualified reference, but only to the current class.
+            // See use of desugarAutonomousFields in Lower for other references.
+            sym = ((VarSymbol)sym).getAutonomousValue();
+        }
         if (tree.name == names._this || tree.name == names._super) {
             Item res = tree.name == names._this
                 ? items.makeThisItem()
@@ -2345,6 +2489,9 @@ public class Gen extends JCTree.Visitor {
 
     public void visitSelect(JCFieldAccess tree) {
         Symbol sym = tree.sym;
+        if (desugarAutonomousFields && isAutonomousField(sym) && sym.owner == env.enclClass.sym) {
+            sym = ((VarSymbol)sym).getAutonomousValue();
+        }
 
         if (tree.name == names._class) {
             code.emitLdc((LoadableConstant)checkDimension(tree.pos(), tree.selected.type));
@@ -2380,7 +2527,10 @@ public class Gen extends JCTree.Visitor {
             result = items.
                 makeImmediateItem(sym.type, ((VarSymbol) sym).getConstValue());
         } else {
-            if (isInvokeDynamic(sym)) {
+            if (isInvokeDynamic(sym) || isConstantDynamic(sym)) {
+                if (isConstantDynamic(sym)) {
+                    setTypeAnnotationPositions(tree.pos);
+                }
                 result = items.makeDynamicItem(sym);
                 return;
             } else {
@@ -2408,6 +2558,10 @@ public class Gen extends JCTree.Visitor {
 
     public boolean isInvokeDynamic(Symbol sym) {
         return sym.kind == MTH && ((MethodSymbol)sym).isDynamic();
+    }
+
+    public boolean isAutonomousField(Symbol sym) {
+        return (sym.flags() & AUTONOMOUS_FIELD) != 0;
     }
 
     public void visitLiteral(JCLiteral tree) {

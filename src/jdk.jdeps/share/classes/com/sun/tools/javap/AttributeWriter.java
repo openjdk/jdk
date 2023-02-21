@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.tools.classfile.EnclosingMethod_attribute;
 import com.sun.tools.classfile.Exceptions_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
+import com.sun.tools.classfile.AutonomousValue_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.LocalVariableTable_attribute;
 import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
@@ -365,6 +366,14 @@ public class AttributeWriter extends BasicWriter
     private void writeInnerClassHeader() {
         println("InnerClasses:");
         indent(+1);
+    }
+
+    @Override
+    public Void visitAutonomousValue(AutonomousValue_attribute attr, Void ignore) {
+        print("AutonomousValue: ");
+        constantWriter.write(attr.autonomousvalue_index);
+        println();
+        return null;
     }
 
     @Override

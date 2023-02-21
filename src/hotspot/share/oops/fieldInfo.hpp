@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,21 +46,25 @@ class FieldInfo {
   // Field info extracted from the class file and stored
   // as an array of 6 shorts.
 
-#define FIELDINFO_TAG_SIZE             2
-#define FIELDINFO_TAG_OFFSET           1 << 0
-#define FIELDINFO_TAG_CONTENDED        1 << 1
+  
+  static const int high_access_flags_bits   = 2;  // up to 16+2=18 flag bits
+  static const int high_access_flags_mask   = right_n_bits(high_access_flags_bits);
+  static const int offset_value_shift       = high_access_flags_bits + 2;
+  static const int is_offset_tag_bit        = (0x01 << (0 + high_access_flags_bits));
+  static const int is_contended_tag_mask    = (0x01 << (1 + high_access_flags_bits));
 
   // Packed field has the tag, and can be either of:
   //    hi bits <--------------------------- lo bits
   //   |---------high---------|---------low---------|
-  //    ..........................................CO
-  //    ..........................................00  - non-contended field
-  //    [--contention_group--]....................10  - contended field with contention group
-  //    [------------------offset----------------]01  - real field offset
+  //    ........................................COfg
+  //    ........................................00fg  - non-contended field
+  //    [--contention_group--]..................10..  - contended field with contention group
+  //    [------------------offset--------------]01fg  - real field offset
 
   // Bit O indicates if the packed field contains an offset (O=1) or not (O=0)
   // Bit C indicates if the field is contended (C=1) or not (C=0)
   //       (if it is contended, the high packed field contains the contention group)
+  // Bits fg indicate extended access flags (beyond the first 16)
 
   enum FieldOffset {
     access_flags_offset      = 0,
@@ -91,36 +95,45 @@ class FieldInfo {
     return ((FieldInfo*)(fields + index * field_slots));
   }
 
-  void initialize(u2 access_flags,
+  void initialize(u4 access_flags,
                   u2 name_index,
                   u2 signature_index,
                   u2 initval_index) {
-    _shorts[access_flags_offset] = access_flags;
+    _shorts[access_flags_offset] = (u2) access_flags;
     _shorts[name_index_offset] = name_index;
     _shorts[signature_index_offset] = signature_index;
     _shorts[initval_index_offset] = initval_index;
-    _shorts[low_packed_offset] = 0;
+    u4 hiaf = access_flags >> 16;
+    assert(hiaf <= high_access_flags_mask, "garbage access flags");
+    _shorts[low_packed_offset] = (u2) hiaf & high_access_flags_mask;
     _shorts[high_packed_offset] = 0;
   }
 
-  u2 access_flags() const                        { return _shorts[access_flags_offset];            }
+  int access_flags() const {
+    u4 hiaf = (_shorts[low_packed_offset] & high_access_flags_mask) << 16;
+    return _shorts[access_flags_offset] + hiaf;
+  }
   u4 offset() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) != 0, "Offset must have been set");
-    return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> FIELDINFO_TAG_SIZE;
+    assert((_shorts[low_packed_offset] & is_offset_tag_bit) != 0, "Offset must have been set");
+    return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> offset_value_shift;
   }
 
   bool is_contended() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0;
+    return (_shorts[low_packed_offset] & is_contended_tag_mask) != 0;
   }
 
   u2 contended_group() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0, "Field must be contended");
+    assert((_shorts[low_packed_offset] & is_offset_tag_bit) == 0, "Offset must not have been set");
+    assert((_shorts[low_packed_offset] & is_contended_tag_mask) != 0, "Field must be contended");
     return _shorts[high_packed_offset];
  }
 
   bool is_offset_set() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET)!= 0;
+    return (_shorts[low_packed_offset] & is_offset_tag_bit)!= 0;
+  }
+
+  bool is_autonomous() const {
+    return (access_flags() & JVM_ACC_FIELD_AUTONOMOUS) != 0;
   }
 
   Symbol* name(ConstantPool* cp) const {
@@ -139,17 +152,25 @@ class FieldInfo {
     return cp->symbol_at(index);
   }
 
-  void set_access_flags(u2 val)                  { _shorts[access_flags_offset] = val;             }
-  void set_offset(u4 val)                        {
-    val = val << FIELDINFO_TAG_SIZE; // make room for tag
-    _shorts[low_packed_offset] = extract_low_short_from_int(val) | FIELDINFO_TAG_OFFSET;
+  void set_access_flags(u4 val) {
+    _shorts[access_flags_offset] = (u2) val;
+    u4 hiaf = val >> 16;
+    assert(hiaf <= high_access_flags_mask, "garbage access flags");
+    u2 lpo_no_flags = _shorts[low_packed_offset] & ~high_access_flags_mask;
+    _shorts[low_packed_offset] = lpo_no_flags + ((u2) hiaf & high_access_flags_mask);
+  }
+  void set_offset(u4 val) {
+    assert(((val << offset_value_shift) >> offset_value_shift) == val, "no overflow");
+    val = val << offset_value_shift; // make room for tag and flags
+    u2 lpo_flags_only = _shorts[low_packed_offset] & high_access_flags_mask;
+    _shorts[low_packed_offset] = extract_low_short_from_int(val) | is_offset_tag_bit | lpo_flags_only;
     _shorts[high_packed_offset] = extract_high_short_from_int(val);
   }
 
   void set_contended_group(u2 val) {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) == 0, "Overwriting contended group");
-    _shorts[low_packed_offset] |= FIELDINFO_TAG_CONTENDED;
+    assert((_shorts[low_packed_offset] & is_offset_tag_bit) == 0, "Offset must not have been set");
+    assert((_shorts[low_packed_offset] & is_contended_tag_mask) == 0, "Overwriting contended group");
+    _shorts[low_packed_offset] |= is_contended_tag_mask;
     _shorts[high_packed_offset] = val;
   }
 

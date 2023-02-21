@@ -251,6 +251,7 @@ class ClassFileParser {
                               bool is_static,
                               u2 signature_index,
                               u2* const constantvalue_index_addr,
+                              u2* const autonomousvalue_index_addr,
                               bool* const is_synthetic_addr,
                               u2* const generic_signature_index_addr,
                               FieldAnnotationCollector* parsed_annotations,
@@ -445,8 +446,9 @@ class ClassFileParser {
                              const Symbol* sig,
                              TRAPS) const;
 
-  void verify_constantvalue(const ConstantPool* const cp,
-                            int constantvalue_index,
+  void verify_field_initval(const ConstantPool* cp,
+                            bool is_autonomousvalue,
+                            int initval_index,
                             int signature_index,
                             TRAPS) const;
 

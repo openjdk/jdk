@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,8 @@ public class JavacParser implements Parser {
     /** The Preview language setting. */
     private Preview preview;
 
+    private Options options;
+
     /** The name table. */
     private Names names;
 
@@ -179,6 +181,7 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.options = fac.options;
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
@@ -3433,6 +3436,10 @@ public class JavacParser implements Parser {
                     flag = Flags.SEALED;
                     break;
                 }
+                if (isAutonomousFieldIdentifier()) {
+                    flag = Flags.AUTONOMOUS_FIELD;
+                    break;
+                }
                 break loop;
             }
             default: break loop;
@@ -4515,13 +4522,14 @@ public class JavacParser implements Parser {
                             isInterface, isVoid, false, dc));
                     } else if (!isVoid && typarams.isEmpty()) {
                         if (!isRecord || (isRecord && (mods.flags & Flags.STATIC) != 0)) {
-                        List<JCTree> defs =
-                            variableDeclaratorsRest(pos, mods, type, name, isInterface, dc,
-                                                    new ListBuffer<JCTree>(), false).toList();
-                        accept(SEMI);
-                        storeEnd(defs.last(), S.prevToken().endPos);
-                        return defs;
-                    } else {
+                            boolean isAutonomous = (mods.flags & Flags.AUTONOMOUS_FIELD) != 0;
+                            List<JCTree> defs =
+                                variableDeclaratorsRest(pos, mods, type, name, isInterface || isAutonomous, dc,
+                                                        new ListBuffer<JCTree>(), false).toList();
+                            accept(SEMI);
+                            storeEnd(defs.last(), S.prevToken().endPos);
+                            return defs;
+                        } else {
                             int errPos = pos;
                             variableDeclaratorsRest(pos, mods, type, name, isInterface, dc,
                                     new ListBuffer<JCTree>(), false).toList();
@@ -4587,6 +4595,21 @@ public class JavacParser implements Parser {
             }
         }
         return false;
+    }
+
+    protected boolean isAutonomousFieldIdentifier() {
+        if (token.kind == IDENTIFIER && token.name() == names.auto &&
+            allowedAfterAutonomousIdentifier()) {
+            if (options.isSet("autonomousFields"))  return true;  //FIXME
+            checkSourceLevel(Feature.AUTONOMOUS_FIELD);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean allowedAfterAutonomousIdentifier() {
+        return true;  //FIXME: should we do some filtering here?
     }
 
     private boolean allowedAfterSealedOrNonSealed(Token next, boolean local, boolean currentIsNonSealed) {

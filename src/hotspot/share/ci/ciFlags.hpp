@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public:
   bool is_interface            () const { return (_flags & JVM_ACC_INTERFACE                 ) != 0; }
   bool is_abstract             () const { return (_flags & JVM_ACC_ABSTRACT                  ) != 0; }
   bool is_stable               () const { return (_flags & JVM_ACC_FIELD_STABLE              ) != 0; }
+  bool is_autonomous                 () const { return (_flags & JVM_ACC_FIELD_AUTONOMOUS    ) != 0; }
   // In case the current object represents a field, return true if
   // the field is modified outside of instance initializer methods
   // (or class/initializer methods if the field is static) and false

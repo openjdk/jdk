@@ -1012,6 +1012,15 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
         THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
       }
 
+      if (fd.is_autonomous()) {
+        ResourceMark rm(THREAD);
+        stringStream ss;
+        ss.print("Explicit update to %s autonomous-final field %s.%s attempted (in %s), but all updates are implicit",
+                 is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
+                current_klass->external_name());
+        THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+      }
+
       if (fd.constants()->pool_holder()->major_version() >= 53) {
         Method* m = link_info.current_method();
         assert(m != nullptr, "information about the current method must be available for 'put' bytecodes");
@@ -1047,6 +1056,21 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
 
   if (link_info.check_loader_constraints() && (sel_klass != current_klass) && (current_klass != nullptr)) {
     check_field_loader_constraints(field, sig, current_klass, sel_klass, CHECK);
+  }
+
+  // In exactly requests where the very first resolution of a static
+  // field must be detected in order to trigger pending class
+  // initializations, the very first resolution of a autonomous static field
+  // must trigger the autonomous initialization of just that one field.
+  //
+  // Although the two kinds of field might seem different, they have
+  // this in common: Both need to trigger some sort of complex
+  // initialization sequence before the `getstatic` (or `putstatic`)
+  // can proceed normally.  It is if each autonomous static field is
+  // declared in its own little holder class, whose initialization is
+  // triggered only by uses of that field.
+  if (is_static && initialize_class && fd.is_autonomous()) {
+    java_lang_Class::initialize_autonomous_static_field(sel_klass, &fd, CHECK);
   }
 
   // return information. note that the klass is set to the actual klass containing the

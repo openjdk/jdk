@@ -393,7 +393,7 @@
 
 #define VM_INT_CONSTANTS(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
+  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FieldInfo::offset_value_shift) \
                                                                           \
   declare_constant(CompLevel_none)                                        \
   declare_constant(CompLevel_simple)                                      \
@@ -413,6 +413,7 @@
   declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
   declare_constant(JVM_ACC_FIELD_STABLE)                                  \
+  declare_constant(JVM_ACC_FIELD_AUTONOMOUS)                              \
   declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
   declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \

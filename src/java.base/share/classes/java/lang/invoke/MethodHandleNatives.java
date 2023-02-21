@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ class MethodHandleNatives {
             MN_IS_TYPE             = 0x00080000, // nested type
             MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
             MN_TRUSTED_FINAL       = 0x00200000, // trusted final field
+            MN_AUTONOMOUS          = 0x00400000, // field has AutonomousValue attribute
             MN_REFERENCE_KIND_SHIFT = 24, // refKind
             MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT;
 

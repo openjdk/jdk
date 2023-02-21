@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public abstract class Attribute {
     public static final String EnclosingMethod          = "EnclosingMethod";
     public static final String Exceptions               = "Exceptions";
     public static final String InnerClasses             = "InnerClasses";
+    public static final String AutonomousValue          = "AutonomousValue";
     public static final String LineNumberTable          = "LineNumberTable";
     public static final String LocalVariableTable       = "LocalVariableTable";
     public static final String LocalVariableTypeTable   = "LocalVariableTypeTable";
@@ -124,6 +125,7 @@ public abstract class Attribute {
             standardAttributes.put(EnclosingMethod,   EnclosingMethod_attribute.class);
             standardAttributes.put(Exceptions,        Exceptions_attribute.class);
             standardAttributes.put(InnerClasses,      InnerClasses_attribute.class);
+            standardAttributes.put(AutonomousValue,   AutonomousValue_attribute.class);
             standardAttributes.put(LineNumberTable,   LineNumberTable_attribute.class);
             standardAttributes.put(LocalVariableTable, LocalVariableTable_attribute.class);
             standardAttributes.put(LocalVariableTypeTable, LocalVariableTypeTable_attribute.class);
@@ -191,6 +193,7 @@ public abstract class Attribute {
         R visitEnclosingMethod(EnclosingMethod_attribute attr, P p);
         R visitExceptions(Exceptions_attribute attr, P p);
         R visitInnerClasses(InnerClasses_attribute attr, P p);
+        R visitAutonomousValue(AutonomousValue_attribute attr, P p);
         R visitLineNumberTable(LineNumberTable_attribute attr, P p);
         R visitLocalVariableTable(LocalVariableTable_attribute attr, P p);
         R visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, P p);

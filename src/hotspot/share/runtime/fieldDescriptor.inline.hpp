@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,10 @@ inline FieldInfo* fieldDescriptor::field() const {
 }
 
 inline int fieldDescriptor::offset()                    const    { return field()->offset(); }
-inline bool fieldDescriptor::has_initial_value()        const    { return field()->initval_index() != 0; }
-inline int fieldDescriptor::initial_value_index()       const    { return field()->initval_index(); }
+inline bool fieldDescriptor::has_initial_value()        const    { return field()->initval_index() != 0 && !is_autonomous(); }
+inline int fieldDescriptor::initial_value_index()       const    { return is_autonomous() ? 0 : field()->initval_index(); }
+
+inline int fieldDescriptor::autonomous_value_index()          const    { return !is_autonomous() ? 0 : field()->initval_index(); }
 
 inline void fieldDescriptor::update_klass_field_access_flag() {
   InstanceKlass* ik = field_holder();

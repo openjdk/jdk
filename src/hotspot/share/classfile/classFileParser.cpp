@@ -906,18 +906,68 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
   }
 }
 
-void ClassFileParser::verify_constantvalue(const ConstantPool* const cp,
-                                           int constantvalue_index,
+void ClassFileParser::verify_field_initval(const ConstantPool* const cp,
+                                           bool is_autonomousvalue,
+                                           int initval_index,
                                            int signature_index,
                                            TRAPS) const {
   // Make sure the constant pool entry is of a type appropriate to this field
   guarantee_property(
-    (constantvalue_index > 0 &&
-      constantvalue_index < cp->length()),
-    "Bad initial value index %u in ConstantValue attribute in class file %s",
-    constantvalue_index, CHECK);
+    (initval_index > 0 &&
+      initval_index < cp->length()),
+    (is_autonomousvalue
+     ? "Bad autonomous value index %u in AutonomousValue attribute in class file %s"
+     : "Bad initial value index %u in ConstantValue attribute in class file %s"),
+    initval_index, CHECK);
 
-  const constantTag value_type = cp->tag_at(constantvalue_index);
+  const constantTag value_type = cp->tag_at(initval_index);
+  if (is_autonomousvalue) {
+    guarantee_property(
+      (value_type.is_loadable_constant()),
+      "Bad autonomous value index %u in AutonomousValue attribute in class file %s",
+      initval_index, CHECK);
+    Symbol* field_type = cp->symbol_at(signature_index);
+    Symbol* required_field_type = NULL;
+    if (value_type.is_dynamic_constant()) {
+      ConstantPool* nccp = const_cast<ConstantPool*>(cp); //FIXME
+      // FIXME: One possible fix is to convert many ConstantPool
+      // functions to be const (when and if that is safe).  Another is
+      // to convert the local methods in ClassFileParser to pass
+      // around non-const CP arguments.  Either way seems safe and
+      // reasonable.  Longer term, it would be good to decouple the
+      // interactions with the CP resolution state and CP-cache from
+      // the baseline CP API.  These interactions which always make CP
+      // client code much more uncertain than it should be.  The CP
+      // should always present a default option to work with original
+      // static information from the classfile, with "cached" indexes
+      // and state changes present only when explicitly
+      // requested. --JRR
+      const int name_and_type_ref_index =
+        nccp->name_and_type_ref_index_at(initval_index);
+      const int signature_ref_index =
+        nccp->signature_ref_index_at(name_and_type_ref_index);
+      required_field_type = cp->symbol_at(signature_ref_index);
+    } else if (value_type.is_klass_or_reference()) {
+      // autonomous value that resolves a CONSTANT_Class
+      required_field_type = vmSymbols::class_signature();
+    } else if (value_type.is_method_handle()) {
+      // autonomous value that resolves a CONSTANT_MethodHandle
+      required_field_type = vmSymbols::java_lang_invoke_MethodHandle_signature();
+    } else if (value_type.is_method_type()) {
+      // autonomous value that resolves a CONSTANT_MethodType
+      required_field_type = vmSymbols::java_lang_invoke_MethodType_signature();
+    }
+    if (required_field_type != NULL) {
+      guarantee_property(field_type == required_field_type,
+                         "Inconsistent type for AutonomousValue attribute in class file %s",
+                         CHECK);
+      return;
+    }
+    // Check for other CP types below.  It is not super-useful to make
+    // CONSTANT_Integer etc. autonomous as well as normal initial values,
+    // but it is simpler to specify rules for nested categories than
+    // for merely overlapping ones.
+  }
   switch(cp->basic_type_for_signature_at(signature_index)) {
     case T_LONG: {
       guarantee_property(value_type.is_long(),
@@ -956,7 +1006,7 @@ void ClassFileParser::verify_constantvalue(const ConstantPool* const cp,
     }
     default: {
       classfile_parse_error("Unable to set initial value %u in class file %s",
-                             constantvalue_index,
+                             initval_index,
                              THREAD);
     }
   }
@@ -1208,18 +1258,21 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
                                              u2 attributes_count,
                                              bool is_static, u2 signature_index,
                                              u2* const constantvalue_index_addr,
+                                             u2* const autonomousvalue_index_addr,
                                              bool* const is_synthetic_addr,
                                              u2* const generic_signature_index_addr,
                                              ClassFileParser::FieldAnnotationCollector* parsed_annotations,
                                              TRAPS) {
   assert(cfs != nullptr, "invariant");
   assert(constantvalue_index_addr != nullptr, "invariant");
+  assert(autonomousvalue_index_addr != nullptr, "invariant");
   assert(is_synthetic_addr != nullptr, "invariant");
   assert(generic_signature_index_addr != nullptr, "invariant");
   assert(parsed_annotations != nullptr, "invariant");
   assert(attributes_count > 0, "attributes_count should be greater than 0");
 
   u2 constantvalue_index = 0;
+  u2 autonomousvalue_index = 0;
   u2 generic_signature_index = 0;
   bool is_synthetic = false;
   const u1* runtime_visible_annotations = nullptr;
@@ -1257,7 +1310,22 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
 
       constantvalue_index = cfs->get_u2(CHECK);
       if (_need_verify) {
-        verify_constantvalue(cp, constantvalue_index, signature_index, CHECK);
+        verify_field_initval(cp, false, constantvalue_index, signature_index, CHECK);
+      }
+    } else if (is_static && attribute_name == vmSymbols::tag_autonomous_value()) {
+      // ignore if non-static
+      if (autonomousvalue_index != 0) {
+        classfile_parse_error("Duplicate AutonomousValue attribute in class file %s", THREAD);
+        return;
+      }
+      check_property(
+        attribute_length == 2,
+        "Invalid AutonomousValue field attribute length %u in class file %s",
+        attribute_length, CHECK);
+
+      autonomousvalue_index = cfs->get_u2(CHECK);
+      if (_need_verify) {
+        verify_field_initval(cp, true, autonomousvalue_index, signature_index, CHECK);
       }
     } else if (attribute_name == vmSymbols::tag_synthetic()) {
       if (attribute_length != 0) {
@@ -1350,7 +1418,13 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
     }
   }
 
+  if (autonomousvalue_index != 0 && constantvalue_index != 0) {
+    classfile_parse_error("Clashing AutonomousValue and ConstantValue attributes in class file %s", THREAD);
+    return;
+  }
+
   *constantvalue_index_addr = constantvalue_index;
+  *autonomousvalue_index_addr = autonomousvalue_index;
   *is_synthetic_addr = is_synthetic;
   *generic_signature_index_addr = generic_signature_index;
   AnnotationArray* a = assemble_annotations(runtime_visible_annotations,
@@ -1536,6 +1610,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     verify_legal_field_signature(name, sig, CHECK);
 
     u2 constantvalue_index = 0;
+    u2 autonomousvalue_index = 0;
     bool is_synthetic = false;
     u2 generic_signature_index = 0;
     const bool is_static = access_flags.is_static();
@@ -1548,6 +1623,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                              is_static,
                              signature_index,
                              &constantvalue_index,
+                             &autonomousvalue_index,
                              &is_synthetic,
                              &generic_signature_index,
                              &parsed_annotations,
@@ -1586,10 +1662,16 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     }
 
     FieldInfo* const field = FieldInfo::from_field_array(fa, n);
-    field->initialize(access_flags.as_short(),
+    int initval_index = (constantvalue_index != 0 ? constantvalue_index :
+                         autonomousvalue_index != 0 ? autonomousvalue_index :
+                         0);
+    if (autonomousvalue_index != 0) {
+      access_flags.set_is_autonomous();
+    }
+    field->initialize(access_flags.as_int(),
                       name_index,
                       signature_index,
-                      constantvalue_index);
+                      initval_index);
     const BasicType type = cp->basic_type_for_signature_at(signature_index);
 
     // Update FieldAllocationCount for this kind of field

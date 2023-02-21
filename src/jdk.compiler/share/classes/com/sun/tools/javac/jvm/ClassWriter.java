@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -961,6 +961,13 @@ public class ClassWriter extends ClassFile {
         if (v.getConstValue() != null) {
             int alenIdx = writeAttr(names.ConstantValue);
             databuf.appendChar(poolWriter.putConstant(v.getConstValue()));
+            endAttr(alenIdx);
+            acount++;
+        }
+        if (v.getAutonomousValue() != null) {
+            Assert.check(v.getConstValue() == null);  //VM does not allow both
+            int alenIdx = writeAttr(names.AutonomousValue);
+            databuf.appendChar(poolWriter.putConstant(v.getAutonomousValue()));
             endAttr(alenIdx);
             acount++;
         }
