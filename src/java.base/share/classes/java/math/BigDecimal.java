@@ -36,9 +36,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
-import java.util.List;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -441,7 +439,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * The value 0.1, with a scale of 1.
      */
-    static final BigDecimal ONE_TENTH = valueOf(1L, 1);
+    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
 
     /**
      * The value 0.5, with a scale of 1.
@@ -2347,11 +2345,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
-    BigDecimal square() {
+    private BigDecimal square() {
         return this.multiply(this);
     }
 
-    boolean isPowerOfTen() {
+    private boolean isPowerOfTen() {
         return BigInteger.ONE.equals(this.unscaledValue());
     }
 
@@ -4077,7 +4075,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @param  n the power of ten to be returned (>=0)
      * @return a {@code BigInteger} with the value (10<sup>n</sup>)
      */
-    static BigInteger bigTenToThe(int n) {
+    private static BigInteger bigTenToThe(int n) {
         if (n < 0)
             return BigInteger.ZERO;
 
