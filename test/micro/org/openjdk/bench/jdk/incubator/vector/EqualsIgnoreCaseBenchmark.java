@@ -36,7 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Exploration of vectorized latin1 equalsIgnoreCase using applying 'the oldest ASCII trick in the book'
+ * Exploration of vectorized latin1 equalsIgnoreCase applying 'the oldest ASCII trick in the book'
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
