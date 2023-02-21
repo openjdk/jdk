@@ -26,6 +26,7 @@
 #define SHARE_OPTO_PHASE_HPP
 
 #include "runtime/timer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class IfNode;
 class MergeMemNode;
@@ -147,6 +148,8 @@ public:
   Phase( PhaseNumber pnum );
 
   static void print_timers();
+
+  NONCOPYABLE(Phase);
 };
 
 #endif // SHARE_OPTO_PHASE_HPP

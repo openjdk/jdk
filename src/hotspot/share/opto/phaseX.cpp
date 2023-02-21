@@ -44,58 +44,68 @@
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
 //------------------------------NodeHash---------------------------------------
-NodeHash::NodeHash(uint est_max_size) :
-  _a(Thread::current()->resource_area()),
-  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ) // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
-#ifndef PRODUCT
-  , _grows(0),_look_probes(0), _lookup_hits(0), _lookup_misses(0),
-  _insert_probes(0), _delete_probes(0), _delete_hits(0), _delete_misses(0),
-   _total_inserts(0), _total_insert_probes(0)
-#endif
-{
-  // _sentinel must be in the current node space
-  _sentinel = new ProjNode(NULL, TypeFunc::Control);
-  memset(_table,0,sizeof(Node*)*_max);
-}
+NodeHash::NodeHash(uint est_max_size) : NodeHash(Thread::current()->resource_area(), est_max_size) {}
 
 //------------------------------NodeHash---------------------------------------
-NodeHash::NodeHash(Arena *arena, uint est_max_size) :
-  _a(arena),
-  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) )
-#ifndef PRODUCT
-  , _grows(0),_look_probes(0), _lookup_hits(0), _lookup_misses(0),
-  _insert_probes(0), _delete_probes(0), _delete_hits(0), _delete_misses(0),
-   _total_inserts(0), _total_insert_probes(0)
-#endif
-{
-  // _sentinel must be in the current node space
-  _sentinel = new ProjNode(NULL, TypeFunc::Control);
-  memset(_table,0,sizeof(Node*)*_max);
-}
-
-//------------------------------NodeHash---------------------------------------
-NodeHash::NodeHash(NodeHash *nh) {
-  debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
-  // just copy in all the fields
-  *this = *nh;
-  // nh->_sentinel must be in the current node space
-}
+NodeHash::NodeHash(Arena *arena, uint est_max_size) : _a(arena), _est_max(est_max_size) {}
 
 void NodeHash::replace_with(NodeHash *nh) {
-  debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
-  // just copy in all the fields
-  *this = *nh;
-  // nh->_sentinel must be in the current node space
+  _a = nh->_a;
+  _max = nh->_max;
+  _inserts = nh->_inserts;
+  _insert_limit = nh->_insert_limit;
+  _table = nh->_table;
+  _sentinel = nh->_sentinel;
+#ifndef PRODUCT
+  _grows = nh->_grows;
+  _look_probes = nh->_look_probes;
+  _lookup_hits = nh->_lookup_hits;
+  _lookup_misses = nh->_lookup_misses;
+  _insert_probes = nh->_insert_probes;
+  _delete_probes = nh->_delete_probes;
+  _delete_hits = nh->_delete_hits;
+  _delete_misses = nh->_delete_misses;
+  _total_inserts = nh->_total_inserts;
+  _total_insert_probes = nh->_total_insert_probes;
+#endif
+  nh->_max = 0;
+  nh->_inserts = 0;
+  nh->_insert_limit = 0;
+  nh->_table = nullptr;
+  nh->_sentinel = nullptr;
+#ifndef PRODUCT
+  nh->_grows = 0;
+  nh->_look_probes = 0;
+  nh->_lookup_hits = 0;
+  nh->_lookup_misses = 0;
+  nh->_insert_probes = 0;
+  nh->_delete_probes = 0;
+  nh->_delete_hits = 0;
+  nh->_delete_misses = 0;
+  nh->_total_inserts = 0;
+  nh->_total_insert_probes = 0;
+#endif
+}
+
+void NodeHash::before_insert() {
+  if (_table == nullptr) {
+    _max = round_up(_est_max < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : _est_max);
+    _insert_limit = insert_limit();
+    _table = NEW_ARENA_ARRAY(_a, Node*, _max);
+    memset(_table, 0, sizeof(Node*) * _max);
+    if (_sentinel == nullptr) {
+      _sentinel = new ProjNode(nullptr, TypeFunc::Control);
+    }
+  }
 }
 
 //------------------------------hash_find--------------------------------------
 // Find in hash table
 Node *NodeHash::hash_find( const Node *n ) {
   // ((Node*)n)->set_hash( n->hash() );
+  if (empty()) {
+    return nullptr;
+  }
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
     NOT_PRODUCT( _lookup_misses++ );
@@ -146,6 +156,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
     NOT_PRODUCT( _lookup_misses++ );
     return NULL;
   }
+  before_insert();
   uint key = hash & (_max-1);
   uint stride = key | 0x01;     // stride must be relatively prime to table siz
   uint first_sentinel = 0;      // replace a sentinel if seen.
@@ -206,6 +217,7 @@ void NodeHash::hash_insert( Node *n ) {
   if (hash == Node::NO_HASH) {
     return;
   }
+  before_insert();
   check_grow();
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
@@ -226,6 +238,9 @@ void NodeHash::hash_insert( Node *n ) {
 //------------------------------hash_delete------------------------------------
 // Replace in hash table with sentinel
 bool NodeHash::hash_delete( const Node *n ) {
+  if (empty()) {
+    return false;
+  }
   Node *k;
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
@@ -381,25 +396,6 @@ Node *NodeHash::find_index(uint idx) { // For debugging
   }
   return NULL;
 }
-#endif
-
-#ifdef ASSERT
-NodeHash::~NodeHash() {
-  // Unlock all nodes upon destruction of table.
-  if (_table != (Node**)badAddress)  clear();
-}
-
-void NodeHash::operator=(const NodeHash& nh) {
-  // Unlock all nodes upon replacement of table.
-  if (&nh == this)  return;
-  if (_table != (Node**)badAddress)  clear();
-  memcpy((void*)this, (void*)&nh, sizeof(*this));
-  // Do not increment hash_lock counts again.
-  // Instead, be sure we never again use the source table.
-  ((NodeHash*)&nh)->_table = (Node**)badAddress;
-}
-
-
 #endif
 
 
@@ -605,8 +601,8 @@ PhaseTransform::PhaseTransform( Arena *arena, PhaseNumber pnum ) : Phase(pnum),
 // Initialize with previously generated type information
 PhaseTransform::PhaseTransform( PhaseTransform *pt, PhaseNumber pnum ) : Phase(pnum),
   _arena(pt->_arena),
-  _nodes(pt->_nodes),
-  _types(pt->_types)
+  _nodes(&pt->_nodes),
+  _types(&pt->_types)
 {
   init_con_caches();
 #ifndef PRODUCT
@@ -960,7 +956,7 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
                                                  _delay_transform(igvn->_delay_transform),
-                                                 _stack(igvn->_stack ),
+                                                 _stack(&igvn->_stack),
                                                  _worklist(igvn->_worklist)
 {
   _iterGVN = true;

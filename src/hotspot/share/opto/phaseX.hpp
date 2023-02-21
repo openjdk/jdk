@@ -54,21 +54,21 @@ class   PhaseRegAlloc;
 // Storage is reclaimed when the Arena's lifetime is over.
 class NodeHash : public StackObj {
 protected:
-  Arena *_a;                    // Arena to allocate in
-  uint   _max;                  // Size of table (power of 2)
-  uint   _inserts;              // For grow and debug, count of hash_inserts
-  uint   _insert_limit;         // 'grow' when _inserts reaches _insert_limit
-  Node **_table;                // Hash table of Node pointers
-  Node  *_sentinel;             // Replaces deleted entries in hash table
+  Arena *_a;                              // Arena to allocate in
+  uint   _est_max;                        // Estimated max size
+  uint   _max = 0;                        // Size of table (power of 2)
+  uint   _inserts = 0;                    // For grow and debug, count of hash_inserts
+  uint   _insert_limit = 0;               // 'grow' when _inserts reaches _insert_limit
+  Node **_table = nullptr;                // Hash table of Node pointers
+  Node  *_sentinel = nullptr;             // Replaces deleted entries in hash table
+
+  void before_insert();
 
 public:
   NodeHash(uint est_max_size);
   NodeHash(Arena *arena, uint est_max_size);
-  NodeHash(NodeHash *use_this_state);
-#ifdef ASSERT
-  ~NodeHash();                  // Unlock all nodes upon destruction of table.
-  void operator=(const NodeHash&); // Unlock all nodes upon replacement of table.
-#endif
+  NodeHash(NodeHash *nh) { replace_with(nh); }
+
   Node  *hash_find(const Node*);// Find an equivalent version in hash table
   Node  *hash_find_insert(Node*);// If not in table insert else return found node
   void   hash_insert(Node*);    // Insert into hash table
@@ -87,6 +87,7 @@ public:
   void   clear();               // Set all entries to NULL, keep storage.
   // Size of hash table
   uint   size()         const { return _max; }
+  bool   empty()        const { return size() == 0; }
   // Return Node* at index in table
   Node  *at(uint table_index) {
     assert(table_index < _max, "Must be within table");
@@ -97,21 +98,26 @@ public:
   void   replace_with(NodeHash* nh);
   void   check_no_speculative_types(); // Check no speculative part for type nodes in table
 
-  Node  *sentinel() { return _sentinel; }
+  Node  *sentinel() {
+    if (_sentinel == nullptr) {
+      _sentinel = new ProjNode(nullptr, TypeFunc::Control);
+    }
+    return _sentinel;
+  }
 
 #ifndef PRODUCT
-  Node  *find_index(uint idx);  // For debugging
-  void   dump();                // For debugging, dump statistics
-  uint   _grows;                // For debugging, count of table grow()s
-  uint   _look_probes;          // For debugging, count of hash probes
-  uint   _lookup_hits;          // For debugging, count of hash_finds
-  uint   _lookup_misses;        // For debugging, count of hash_finds
-  uint   _insert_probes;        // For debugging, count of hash probes
-  uint   _delete_probes;        // For debugging, count of hash probes for deletes
-  uint   _delete_hits;          // For debugging, count of hash probes for deletes
-  uint   _delete_misses;        // For debugging, count of hash probes for deletes
-  uint   _total_inserts;        // For debugging, total inserts into hash table
-  uint   _total_insert_probes;  // For debugging, total probes while inserting
+  Node  *find_index(uint idx);      // For debugging
+  void   dump();                    // For debugging, dump statistics
+  uint   _grows = 0;                // For debugging, count of table grow()s
+  uint   _look_probes = 0;          // For debugging, count of hash probes
+  uint   _lookup_hits = 0;          // For debugging, count of hash_finds
+  uint   _lookup_misses = 0;        // For debugging, count of hash_finds
+  uint   _insert_probes = 0;        // For debugging, count of hash probes
+  uint   _delete_probes = 0;        // For debugging, count of hash probes for deletes
+  uint   _delete_hits = 0;          // For debugging, count of hash probes for deletes
+  uint   _delete_misses = 0;        // For debugging, count of hash probes for deletes
+  uint   _total_inserts = 0;        // For debugging, total inserts into hash table
+  uint   _total_insert_probes = 0;  // For debugging, total probes while inserting
 #endif
 
   NONCOPYABLE(NodeHash);
@@ -437,17 +443,19 @@ public:
   PhaseGVN( Arena *arena, uint est_max_size ) : PhaseValues( arena, est_max_size ) {}
   PhaseGVN( PhaseGVN *gvn ) : PhaseValues( gvn ) {}
 
+  void replace_with(PhaseGVN *gvn) {
+    if (this != gvn) {
+      this->~PhaseGVN();
+      ::new (static_cast<void*>(this)) PhaseGVN(gvn);
+    }
+  }
+
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
   Node  *transform( Node *n );
   Node  *transform_no_reclaim( Node *n );
   virtual void record_for_igvn(Node *n) {
     C->record_for_igvn(n);
-  }
-
-  void replace_with(PhaseGVN* gvn) {
-    _table.replace_with(&gvn->_table);
-    _types.replace_with(&gvn->_types);
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
@@ -491,11 +499,25 @@ public:
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
   PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
 
+  void reset(PhaseGVN *gvn) {
+    if (this != gvn) {
+      this->~PhaseIterGVN();
+      ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
+    }
+  }
+
+  void replace_with(PhaseIterGVN *gvn) {
+    if (this != gvn) {
+      this->~PhaseIterGVN();
+      ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
+    }
+  }
+
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
   virtual void record_for_igvn(Node *n) { }
 
-  Unique_Node_List _worklist;       // Iterative worklist
+  Unique_Node_List &_worklist;       // Iterative worklist
 
   // Given def-use info and an initial worklist, apply Node::Ideal,
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU

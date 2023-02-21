@@ -2042,7 +2042,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   }
   {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
-    igvn = PhaseIterGVN(initial_gvn());
+    igvn.reset(initial_gvn());
     igvn.optimize();
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
@@ -2270,13 +2270,13 @@ void Compile::Optimize() {
     Unique_Node_List new_worklist(C->comp_arena());
     {
       ResourceMark rm;
-      PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
+      PhaseRenumberLive prl(initial_gvn(), for_igvn(), &new_worklist);
     }
-    Unique_Node_List* save_for_igvn = for_igvn();
-    set_for_igvn(&new_worklist);
-    igvn = PhaseIterGVN(initial_gvn());
+    Unique_Node_List tmp_worklist(old_worklist);
+    old_worklist->replace_with(&new_worklist);
+    igvn.reset(initial_gvn());
     igvn.optimize();
-    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
+    old_worklist->replace_with(&tmp_worklist);
   }
 
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
@@ -2373,7 +2373,7 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   {
     TracePhase tp("iterGVN2", &timers[_t_iterGVN2]);
-    igvn = ccp;
+    igvn.replace_with(&ccp);
     igvn.optimize();
   }
   print_method(PHASE_ITER_GVN2, 2);

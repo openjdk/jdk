@@ -1530,12 +1530,18 @@ protected:
   Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
+  Node_Array() : _a(Thread::current()->resource_area()), _max(0), _nodes(nullptr) {}
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
     clear();
   }
+  Node_Array(Node_Array* na) {
+    replace_with(na);
+  }
 
-  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  Node_Array(Node_Array&&) = default;
+  Node_Array& operator=(Node_Array&&) = default;
+
   Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)NULL; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
@@ -1551,14 +1557,34 @@ public:
 
   uint Size() const { return _max; }
   void dump() const;
+
+  void replace_with(Node_Array *na) {
+    if (this != na) {
+      _a = na->_a;
+      _max = na->_max;
+      _nodes = na->_nodes;
+      na->_max = 0;
+      na->_nodes = nullptr;
+    }
+  }
+
+  NONCOPYABLE(Node_Array);
 };
 
 class Node_List : public Node_Array {
   friend class VMStructs;
   uint _cnt;
 public:
-  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List() : Node_Array(), _cnt(0) {}
+  Node_List(uint max) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+  Node_List(Node_List *nl) {
+    replace_with(nl);
+  }
+
+  Node_List(Node_List&&) = default;
+  Node_List& operator=(Node_List&&) = default;
+
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1583,6 +1609,14 @@ public:
   void dump() const;
   void dump_simple() const;
 
+  void replace_with(Node_List *nl) {
+    Node_Array::replace_with(nl);
+    if (nl != this) {
+      _cnt = nl->_cnt;
+      nl->_cnt = 0;
+    }
+  }
+
   NONCOPYABLE(Node_List);
 };
 
@@ -1594,6 +1628,12 @@ class Unique_Node_List : public Node_List {
 public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
+  Unique_Node_List(Unique_Node_List *unl) {
+    replace_with(unl);
+  }
+
+  Unique_Node_List(Unique_Node_List&&) = default;
+  Unique_Node_List& operator=(Unique_Node_List&&) = default;
 
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
@@ -1638,6 +1678,15 @@ public:
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }
 #endif
+
+  void replace_with(Unique_Node_List *unl) {
+    Node_List::replace_with(unl);
+    if (this != unl) {
+      _in_worklist.replace_with(&unl->_in_worklist);
+      _clock_index = unl->_clock_index;
+      unl->_clock_index = 0;
+    }
+  }
 
   NONCOPYABLE(Unique_Node_List);
 };
@@ -1698,19 +1747,16 @@ protected:
   Arena *_a;         // Arena to allocate in
   void grow();
 public:
-  Node_Stack(int size) {
-    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
-    _a = Thread::current()->resource_area();
-    _inodes = NEW_ARENA_ARRAY( _a, INode, max );
-    _inode_max = _inodes + max;
-    _inode_top = _inodes - 1; // stack is empty
+  Node_Stack() : Node_Stack(Thread::current()->resource_area(), 0) {}
+
+  Node_Stack(int size) : Node_Stack(Thread::current()->resource_area(), size) {}
+
+  Node_Stack(Arena *a, int size) {
+    reset(a, size);
   }
 
-  Node_Stack(Arena *a, int size) : _a(a) {
-    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
-    _inodes = NEW_ARENA_ARRAY( _a, INode, max );
-    _inode_max = _inodes + max;
-    _inode_top = _inodes - 1; // stack is empty
+  Node_Stack(Node_Stack *ns) {
+    replace_with(ns);
   }
 
   void pop() {
@@ -1752,6 +1798,34 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  // Reset Node_Stack state to be equivalent to the state immediately after Node_Stack(Arena*, int).
+  void reset(Arena *a, int size) {
+    _a = a;
+    if (size != 0) {
+      size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
+      _inodes = NEW_ARENA_ARRAY( _a, INode, max );
+      _inode_max = _inodes + max;
+    } else {
+      _inodes = nullptr;
+      _inode_max = nullptr;
+    }
+    _inode_top = _inodes - 1; // stack is empty
+  }
+
+  // Replace this Node_Stack with the other Node_Stack. The other Node_Stack will be reset to an
+  // empty state.
+  void replace_with(Node_Stack *ns) {
+    if (this != ns) {
+      _inode_top = ns->_inode_top;
+      _inode_max = ns->_inode_max;
+      _inodes = ns->_inodes;
+      _a = ns->_a;
+      ns->_inodes = nullptr;
+      ns->_inode_max = nullptr;
+      ns->_inode_top = ns->_inodes - 1;
+    }
+  }
 
   NONCOPYABLE(Node_Stack);
 };

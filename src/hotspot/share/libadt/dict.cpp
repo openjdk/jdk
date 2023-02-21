@@ -92,10 +92,6 @@ Dict::Dict(const Dict &d, Arena* arena)
   }
 }
 
-//------------------------------~Dict------------------------------------------
-// Delete an existing dictionary.
-Dict::~Dict() { }
-
 //------------------------------doubhash---------------------------------------
 // Double hash table size.  If can't do so, just suffer.  If can, then run
 // thru old hash table, moving things to new table.  Note that since hash

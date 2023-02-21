@@ -2778,7 +2778,7 @@ void Node_Array::grow(uint i) {
 }
 
 void Node_Array::insert(uint i, Node* n) {
-  if (_nodes[_max - 1]) {
+  if (_nodes == nullptr || _nodes[_max - 1]) {
     grow(_max);
   }
   Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(Node*)));
@@ -2979,7 +2979,7 @@ void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
 void Node_Stack::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
-  size_t max = old_max << 1;             // max * 2
+  size_t max = MAX2(old_max << 1, (size_t) OptoNodeListSize);             // max * 2
   _inodes = REALLOC_ARENA_ARRAY(_a, INode, _inodes, old_max, max);
   _inode_max = _inodes + max;
   _inode_top = _inodes + old_top;        // restore _top

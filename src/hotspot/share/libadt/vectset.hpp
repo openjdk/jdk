@@ -54,7 +54,9 @@ private:
 public:
   VectorSet();
   VectorSet(Arena* arena);
-  ~VectorSet() {}
+
+  VectorSet(VectorSet&&) = default;
+  VectorSet& operator=(VectorSet&&) = default;
 
   void insert(uint elem);
   bool is_empty() const;
@@ -110,6 +112,18 @@ public:
     }
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
+  }
+
+  void replace_with(VectorSet *vs) {
+    if (this != vs) {
+      _size = vs->_size;
+      _data = vs->_data;
+      _data_size = vs->_data_size;
+      _set_arena = vs->_set_arena;
+      vs->_size = 0;
+      vs->_data = nullptr;
+      vs->_data_size = 0;
+    }
   }
 
   NONCOPYABLE(VectorSet);
