@@ -242,8 +242,7 @@ public class IREncodingPrinter {
         // Please verify new CPU features before adding them. If we allow non-existent features
         // on this list, we will ignore tests and never execute them.
         List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
-            // General
-            "sha3",
+            // x86
             "fma",
             // Intel SSE
             "sse",
@@ -259,6 +258,7 @@ public class IREncodingPrinter {
             "avx512vl",
             "avx512f",
             // AArch64
+            "sha3",
             "asimd",
             "sve"
         ));
