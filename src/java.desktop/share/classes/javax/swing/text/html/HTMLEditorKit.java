@@ -673,6 +673,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     // ----- Accessibility support -----
     private AccessibleContext accessibleContext;
+    private Document doc;
 
     /**
      * returns the AccessibleContext associated with this editor kit
@@ -684,9 +685,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         if (theEditor == null) {
             return null;
         }
-        if (accessibleContext == null) {
+        if (accessibleContext == null
+            || doc != theEditor.getDocument()) {
             AccessibleHTML a = new AccessibleHTML(theEditor);
             accessibleContext = a.getAccessibleContext();
+            doc = theEditor.getDocument();
         }
         return accessibleContext;
     }

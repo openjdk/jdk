@@ -1661,6 +1661,7 @@ public class JEditorPane extends JTextComponent {
 // Accessibility support
 ////////////////
 
+    private Document doc;
 
     /**
      * Gets the AccessibleContext associated with this JEditorPane.
@@ -1674,9 +1675,11 @@ public class JEditorPane extends JTextComponent {
     @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (getEditorKit() instanceof HTMLEditorKit) {
-            if (accessibleContext == null || accessibleContext.getClass() !=
-                    AccessibleJEditorPaneHTML.class) {
+            if (accessibleContext == null
+                || accessibleContext.getClass() != AccessibleJEditorPaneHTML.class
+                || doc != JEditorPane.this.getDocument()) {
                 accessibleContext = new AccessibleJEditorPaneHTML();
+                doc = JEditorPane.this.getDocument();
             }
         } else if (accessibleContext == null || accessibleContext.getClass() !=
                        AccessibleJEditorPane.class) {
