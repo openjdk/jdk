@@ -70,9 +70,9 @@ import jdk.internal.access.JavaNioAccess;
 final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     static final Set<Charset> SUPPORTED_CHARSETS = Set.of(
-            UTF_8.INSTANCE,
-            ISO_8859_1.INSTANCE,
-            US_ASCII.INSTANCE
+        UTF_8.INSTANCE,
+        ISO_8859_1.INSTANCE,
+        US_ASCII.INSTANCE
     );
 
     private final FileChannel fc;
