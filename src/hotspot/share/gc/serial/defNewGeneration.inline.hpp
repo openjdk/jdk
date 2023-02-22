@@ -29,7 +29,6 @@
 
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"

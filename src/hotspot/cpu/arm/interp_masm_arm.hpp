@@ -144,7 +144,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void empty_expression_stack() {
       ldr(Rstack_top, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
       check_stack_top();
-      // NULL last_sp until next java call
+      // null last_sp until next java call
       str(zero_register(Rtemp), Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 

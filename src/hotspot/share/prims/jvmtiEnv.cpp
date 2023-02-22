@@ -928,13 +928,15 @@ JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
 jvmtiError
 JvmtiEnv::SuspendThread(jthread thread) {
   JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle self_tobj;
 
   jvmtiError err;
-  JavaThread* java_thread = nullptr;
-  oop thread_oop = nullptr;
   {
     JvmtiVTMSTransitionDisabler disabler(true);
     ThreadsListHandle tlh(current);
+    JavaThread* java_thread = nullptr;
+    oop thread_oop = nullptr;
 
     err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
     if (err != JVMTI_ERROR_NONE) {
@@ -946,9 +948,11 @@ JvmtiEnv::SuspendThread(jthread thread) {
       err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
       return err;
     }
+    // protect thread_oop as a safepoint can be reached in disabler destructor
+    self_tobj = Handle(current, thread_oop);
   }
   // Do self suspend for current JavaThread.
-  err = suspend_thread(thread_oop, current, /* single_suspend */ true, nullptr);
+  err = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
   return err;
 } /* end SuspendThread */
 
@@ -960,7 +964,7 @@ jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-  Handle self_tobj = Handle(current, nullptr);
+  Handle self_tobj;
   int self_idx = -1;
 
   {
@@ -1013,7 +1017,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
   }
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-  Handle self_tobj = Handle(current, nullptr);
+  Handle self_tobj;
 
   {
     ResourceMark rm(current);

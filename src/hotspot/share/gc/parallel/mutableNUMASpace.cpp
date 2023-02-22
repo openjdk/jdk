@@ -228,19 +228,6 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
   }
 }
 
-// Free all pages in the region.
-void MutableNUMASpace::free_region(MemRegion mr) {
-  HeapWord *start = align_up(mr.start(), page_size());
-  HeapWord *end = align_down(mr.end(), page_size());
-  if (end > start) {
-    MemRegion aligned_region(start, end);
-    assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
-           (intptr_t)aligned_region.byte_size() % page_size() == 0, "Bad alignment");
-    assert(region().contains(aligned_region), "Sanity");
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
-  }
-}
-
 // Update space layout. Perform adaptation.
 void MutableNUMASpace::update() {
   if (UseAdaptiveNUMAChunkSizing && adaptation_cycles() < samples_count()) {
@@ -391,51 +378,6 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   } else {
     *top_region = MemRegion();
   }
-}
-
-// Try to merge the invalid region with the bottom or top region by decreasing
-// the intersection area. Return the invalid_region aligned to the page_size()
-// boundary if it's inside the intersection. Return non-empty invalid_region
-// if it lies inside the intersection (also page-aligned).
-// |------------------new_region---------------------------------|
-// |----------------|-------invalid---|--------------------------|
-// |----bottom_region--|---intersection---|------top_region------|
-void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersection,
-                                     MemRegion *invalid_region) {
-  if (intersection->start() >= invalid_region->start() && intersection->contains(invalid_region->end())) {
-    *intersection = MemRegion(invalid_region->end(), intersection->end());
-    *invalid_region = MemRegion();
-  } else
-    if (intersection->end() <= invalid_region->end() && intersection->contains(invalid_region->start())) {
-      *intersection = MemRegion(intersection->start(), invalid_region->start());
-      *invalid_region = MemRegion();
-    } else
-      if (intersection->equals(*invalid_region) || invalid_region->contains(*intersection)) {
-        *intersection = MemRegion(new_region.start(), new_region.start());
-        *invalid_region = MemRegion();
-      } else
-        if (intersection->contains(invalid_region)) {
-            // That's the only case we have to make an additional bias_region() call.
-            HeapWord* start = invalid_region->start();
-            HeapWord* end = invalid_region->end();
-            if (UseLargePages && page_size() >= alignment()) {
-              HeapWord *p = align_down(start, alignment());
-              if (new_region.contains(p)) {
-                start = p;
-              }
-              p = align_up(end, alignment());
-              if (new_region.contains(end)) {
-                end = p;
-              }
-            }
-            if (intersection->start() > start) {
-              *intersection = MemRegion(start, intersection->end());
-            }
-            if (intersection->end() < end) {
-              *intersection = MemRegion(intersection->start(), end);
-            }
-            *invalid_region = MemRegion(start, end);
-        }
 }
 
 void MutableNUMASpace::initialize(MemRegion mr,

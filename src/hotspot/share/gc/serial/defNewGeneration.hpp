@@ -39,8 +39,8 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class DefNewYoungerGenClosure;
-class DefNewScanClosure;
+class OldGenScanClosure;
+class YoungGenScanClosure;
 class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
@@ -99,12 +99,6 @@ protected:
 
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
-
-  // Promotion failure handling
-  OopIterateClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
-    _promo_failure_scan_stack_closure = scan_stack_closure;
-  }
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
