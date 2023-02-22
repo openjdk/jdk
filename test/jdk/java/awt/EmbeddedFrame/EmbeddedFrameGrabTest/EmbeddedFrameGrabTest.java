@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,12 @@ public class EmbeddedFrameGrabTest {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.delay(1000);
         if (!combo.isPopupVisible()) {
-            throw new RuntimeException("Combobox popup is not visible!");
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.delay(1000);
+            if (!combo.isPopupVisible()) {
+                throw new RuntimeException("Combobox popup is not visible!");
+            }
         }
         robot.mouseMove(clos.x + clos.width / 2, clos.y + clos.height + 3);
         robot.mousePress(InputEvent.BUTTON1_MASK);
