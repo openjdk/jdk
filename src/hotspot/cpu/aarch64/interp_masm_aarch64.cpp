@@ -515,7 +515,7 @@ void InterpreterMacroAssembler::dispatch_only_noverify(TosState state) {
 void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
   // load next bytecode
   ldrb(rscratch1, Address(pre(rbcp, step)));
-  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll);
+  dispatch_base(state, Interpreter::dispatch_table(state), /*verifyoop*/true, generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
