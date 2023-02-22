@@ -2797,8 +2797,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         BigInteger root = ZERO, rootToN = ZERO, rem = ZERO;
         final int headLen = mag.length % n;
-        for (int i = headLen != 0 ? headLen : n; i <= mag.length; i += n) {
-            int[] ints = trustedStripLeadingZeroInts(Arrays.copyOfRange(mag, i == headLen ? 0 : i - n, i));
+        final int rootLen = mag.length / n + (headLen != 0 ? 1 : 0);
+        for (int i = 0, srcPos = headLen != 0 ? headLen : n; i < rootLen; i++, srcPos += n) {
+            int[] ints = trustedStripLeadingZeroInts(
+                    Arrays.copyOfRange(mag, Math.max(srcPos - n, 0), srcPos));
             BigInteger block = new BigInteger(ints, mag.length == 0 ? 0 : 1);
             if (rem.signum != 0)
                 block = rem.shiftLeft(n << 5).add(block);
