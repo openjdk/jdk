@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 import static java.lang.ref.Reference.reachabilityFence;
+import java.lang.ref.Cleaner.Cleanable;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -190,14 +191,11 @@ public class Executors {
      * @throws NullPointerException if threadFactory is null
      */
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
-        var executor = new ThreadPoolExecutor(1, 1,
-                                              0L, TimeUnit.MILLISECONDS,
-                                              new LinkedBlockingQueue<Runnable>(),
-                                              threadFactory);
-        var wrapper = new DelegatedExecutorService(executor);
-        // Register action to shut down executor when wrapper becomes phantom reachable
-        CleanerFactory.cleaner().register(wrapper, new ShutdownAction(executor));
-        return wrapper;
+        return new AutoShutdownDelegatedExecutorService
+            (new ThreadPoolExecutor(1, 1,
+                                    0L, TimeUnit.MILLISECONDS,
+                                    new LinkedBlockingQueue<Runnable>(),
+                                    threadFactory));
     }
 
     /**
@@ -826,6 +824,28 @@ public class Executors {
     }
 
     /**
+     * A DelegatedExecutorService that uses a Cleaner to shut down the underlying
+     * ExecutorService when the wrapper becomes phantom reachable.
+     */
+    private static class AutoShutdownDelegatedExecutorService
+            extends DelegatedExecutorService {
+        private final Cleanable cleaner;
+        AutoShutdownDelegatedExecutorService(ExecutorService executor) {
+            super(executor);
+            Runnable action = () -> {
+                PrivilegedAction<Void> pa = () -> { executor.shutdown(); return null; };
+                @SuppressWarnings("removal")
+                var ignore = AccessController.doPrivileged(pa);
+            };
+            cleaner = CleanerFactory.cleaner().register(this, action);
+        }
+        @Override
+        public void shutdown() {
+            cleaner.clean();
+        }
+    }
+
+    /**
      * A wrapper class that exposes only the ScheduledExecutorService
      * methods of a ScheduledExecutorService implementation.
      */
@@ -848,22 +868,6 @@ public class Executors {
         }
         public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
             return e.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-        }
-    }
-
-    /**
-     * An action that shuts down an ExecutorService.
-     */
-    private static class ShutdownAction implements Runnable {
-        private final ExecutorService e;
-        ShutdownAction(ExecutorService executor) {
-            e = executor;
-        }
-        @Override
-        public void run() {
-            PrivilegedAction<Void> pa = () -> { e.shutdown(); return null; };
-            @SuppressWarnings("removal")
-            var ignore = AccessController.doPrivileged(pa);
         }
     }
 

@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,11 +56,9 @@ class AutoShutdown {
     }
 
     private static Stream<Arguments> executorAndQueuedTaskCounts() {
-        Integer[] queuedTaskCounts = { 0, 1, 2 };
-        return executors()
-                .flatMap(s -> Stream.of(queuedTaskCounts)
-                                    .flatMap(i -> Stream.of(Arguments.of(s, i))));
-
+        int[] queuedTaskCounts = { 0, 1, 2 };
+        return executors().flatMap(s -> IntStream.of(queuedTaskCounts)
+                .mapToObj(i -> Arguments.of(s, i)));
     }
 
     /**
