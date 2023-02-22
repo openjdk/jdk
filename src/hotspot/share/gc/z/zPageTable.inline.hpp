@@ -47,11 +47,11 @@ inline ZPage* ZPageTable::at(size_t index) const {
 
 inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* table) :
     _iter(&table->_map),
-    _prev(NULL) {}
+    _prev(nullptr) {}
 
 inline bool ZPageTableIterator::next(ZPage** page) {
   for (ZPage* entry; _iter.next(&entry);) {
-    if (entry != NULL && entry != _prev) {
+    if (entry != nullptr && entry != _prev) {
       // Next page found
       *page = _prev = entry;
       return true;

@@ -143,7 +143,7 @@ void ZPageTable::insert(ZPage* page) {
   // visible before updating the page table.
   OrderAccess::storestore();
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
+  assert(_map.get(offset) == nullptr, "Invalid entry");
   _map.put(offset, size, page);
 
   if (page->is_old()) {
@@ -156,7 +156,7 @@ void ZPageTable::remove(ZPage* page) {
   const size_t size = page->size();
 
   assert(_map.get(offset) == page, "Invalid entry");
-  _map.put(offset, size, NULL);
+  _map.put(offset, size, nullptr);
 }
 
 void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {

@@ -38,7 +38,7 @@ static void* lookup_kernelbase_library() {
   const char* const name = "KernelBase";
   char ebuf[1024];
   void* const handle = os::dll_load(name, ebuf, sizeof(ebuf));
-  if (handle == NULL) {
+  if (handle == nullptr) {
     log_error_p(gc)("Failed to load library: %s", name);
   }
   return handle;
@@ -46,14 +46,14 @@ static void* lookup_kernelbase_library() {
 
 static void* lookup_kernelbase_symbol(const char* name) {
   static void* const handle = lookup_kernelbase_library();
-  if (handle == NULL) {
-    return NULL;
+  if (handle == nullptr) {
+    return nullptr;
   }
   return os::dll_lookup(handle, name);
 }
 
 static bool has_kernelbase_symbol(const char* name) {
-  return lookup_kernelbase_symbol(name) != NULL;
+  return lookup_kernelbase_symbol(name) != nullptr;
 }
 
 template <typename Fn>
@@ -64,7 +64,7 @@ static void install_kernelbase_symbol(Fn*& fn, const char* name) {
 template <typename Fn>
 static void install_kernelbase_1803_symbol_or_exit(Fn*& fn, const char* name) {
   install_kernelbase_symbol(fn, name);
-  if (fn == NULL) {
+  if (fn == nullptr) {
     log_error_p(gc)("Failed to lookup symbol: %s", name);
     vm_exit_during_initialization("ZGC requires Windows version 1803 or later");
   }

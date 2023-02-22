@@ -66,7 +66,7 @@ ZPage* ZPageCache::alloc_small_page() {
 
   // Try NUMA local page cache
   ZPage* const l1_page = _small.get(numa_id).remove_first();
-  if (l1_page != NULL) {
+  if (l1_page != nullptr) {
     ZStatInc(ZCounterPageCacheHitL1);
     return l1_page;
   }
@@ -80,7 +80,7 @@ ZPage* ZPageCache::alloc_small_page() {
     }
 
     ZPage* const l2_page = _small.get(remote_numa_id).remove_first();
-    if (l2_page != NULL) {
+    if (l2_page != nullptr) {
       ZStatInc(ZCounterPageCacheHitL2);
       return l2_page;
     }
@@ -88,17 +88,17 @@ ZPage* ZPageCache::alloc_small_page() {
     remote_numa_id++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageCache::alloc_medium_page() {
   ZPage* const page = _medium.remove_first();
-  if (page != NULL) {
+  if (page != nullptr) {
     ZStatInc(ZCounterPageCacheHitL1);
     return page;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageCache::alloc_large_page(size_t size) {
@@ -113,7 +113,7 @@ ZPage* ZPageCache::alloc_large_page(size_t size) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageCache::alloc_oversized_medium_page(size_t size) {
@@ -121,7 +121,7 @@ ZPage* ZPageCache::alloc_oversized_medium_page(size_t size) {
     return _medium.remove_first();
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageCache::alloc_oversized_large_page(size_t size) {
@@ -135,16 +135,16 @@ ZPage* ZPageCache::alloc_oversized_large_page(size_t size) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageCache::alloc_oversized_page(size_t size) {
   ZPage* page = alloc_oversized_large_page(size);
-  if (page == NULL) {
+  if (page == nullptr) {
     page = alloc_oversized_medium_page(size);
   }
 
-  if (page != NULL) {
+  if (page != nullptr) {
     ZStatInc(ZCounterPageCacheHitL3);
   }
 
@@ -163,10 +163,10 @@ ZPage* ZPageCache::alloc_page(ZPageType type, size_t size) {
     page = alloc_large_page(size);
   }
 
-  if (page == NULL) {
+  if (page == nullptr) {
     // Try allocate potentially oversized page
     ZPage* const oversized = alloc_oversized_page(size);
-    if (oversized != NULL) {
+    if (oversized != nullptr) {
       if (size < oversized->size()) {
         // Split oversized page
         page = oversized->split(type, size);
@@ -180,7 +180,7 @@ ZPage* ZPageCache::alloc_page(ZPageType type, size_t size) {
     }
   }
 
-  if (page == NULL) {
+  if (page == nullptr) {
     ZStatInc(ZCounterPageCacheMiss);
   }
 
@@ -200,7 +200,7 @@ void ZPageCache::free_page(ZPage* page) {
 
 bool ZPageCache::flush_list_inner(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to) {
   ZPage* const page = from->last();
-  if (page == NULL || !cl->do_page(page)) {
+  if (page == nullptr || !cl->do_page(page)) {
     // Don't flush page
     return false;
   }

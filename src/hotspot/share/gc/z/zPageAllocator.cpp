@@ -265,7 +265,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_low_address();
 
   ZPage* const page = alloc_page(ZPageType::large, size, flags, ZPageAge::eden);
-  if (page == NULL) {
+  if (page == nullptr) {
     return false;
   }
 
@@ -475,7 +475,7 @@ bool ZPageAllocator::alloc_page_common_inner(ZPageType type, size_t size, ZList<
 
   // Try allocate from the page cache
   ZPage* const page = _cache.alloc_page(type, size);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Success
     pages->insert_last(page);
     return true;
@@ -582,7 +582,7 @@ ZPage* ZPageAllocator::alloc_page_create(ZPageAllocation* allocation) {
   const ZVirtualMemory vmem = _virtual.alloc(size, allocation->flags().low_address());
   if (vmem.is_null()) {
     log_error(gc)("Out of address space");
-    return NULL;
+    return nullptr;
   }
 
   ZPhysicalMemory pmem;
@@ -670,9 +670,9 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
 
   // Slow path
   ZPage* const page = alloc_page_create(allocation);
-  if (page == NULL) {
+  if (page == nullptr) {
     // Out of address space
-    return NULL;
+    return nullptr;
   }
 
   // Commit page
@@ -688,12 +688,12 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   ZPage* const committed_page = page->split_committed();
   destroy_page(page);
 
-  if (committed_page != NULL) {
+  if (committed_page != nullptr) {
     map_page(committed_page);
     allocation->pages()->insert_last(committed_page);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
@@ -709,11 +709,11 @@ retry:
   // block in a safepoint if the non-blocking flag is not set.
   if (!alloc_page_or_stall(&allocation)) {
     // Out of memory
-    return NULL;
+    return nullptr;
   }
 
   ZPage* const page = alloc_page_finalize(&allocation);
-  if (page == NULL) {
+  if (page == nullptr) {
     // Failed to commit or map. Clean up and retry, in the hope that
     // we can still allocate by flushing the page cache (more aggressively).
     free_pages_alloc_failed(&allocation);
@@ -750,7 +750,7 @@ retry:
 void ZPageAllocator::satisfy_stalled() {
   for (;;) {
     ZPageAllocation* const allocation = _stalled.first();
-    if (allocation == NULL) {
+    if (allocation == nullptr) {
       // Allocation queue is empty
       return;
     }
@@ -945,7 +945,7 @@ bool ZPageAllocator::is_alloc_stalling_for_old() const {
 
 void ZPageAllocator::notify_out_of_memory() {
   // Fail allocation requests that were enqueued before the last major GC started
-  for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
+  for (ZPageAllocation* allocation = _stalled.first(); allocation != nullptr; allocation = _stalled.first()) {
     if (!has_alloc_seen_old(allocation)) {
       // Not out of memory, keep remaining allocation requests enqueued
       return;

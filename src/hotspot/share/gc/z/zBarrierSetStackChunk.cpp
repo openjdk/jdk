@@ -44,5 +44,5 @@ oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
 
 oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }

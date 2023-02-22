@@ -36,7 +36,7 @@
 #include "utilities/debug.hpp"
 
 inline ZHeap* ZHeap::heap() {
-  assert(_heap != NULL, "Not initialized");
+  assert(_heap != nullptr, "Not initialized");
   return _heap;
 }
 

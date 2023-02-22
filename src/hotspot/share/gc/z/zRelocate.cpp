@@ -388,7 +388,7 @@ static ZPage* alloc_page(ZAllocatorForRelocation* allocator, ZPageType type, siz
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
-    return NULL;
+    return nullptr;
   }
 
   ZAllocationFlags flags;
@@ -427,7 +427,7 @@ public:
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
     ZPage* const page = alloc_page(allocator, forwarding->type(), forwarding->size());
-    if (page == NULL) {
+    if (page == nullptr) {
       Atomic::inc(&_in_place_count);
     }
 
@@ -531,7 +531,7 @@ public:
     ZLocker<ZConditionLock> locker(&_lock);
     assert(_in_place, "Invalid state");
     assert(shared(age) == nullptr, "Invalid state");
-    assert(page != NULL, "Invalid page");
+    assert(page != nullptr, "Invalid page");
 
     set_shared(age, page);
     _in_place = false;
@@ -883,7 +883,7 @@ private:
 public:
   ZRelocateWork(Allocator* allocator, ZGeneration* generation) :
       _allocator(allocator),
-      _forwarding(NULL),
+      _forwarding(nullptr),
       _target(),
       _generation(generation),
       _other_promoted(0),

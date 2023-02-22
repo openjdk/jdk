@@ -91,7 +91,7 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
 
   // Attach GC data to nmethod
   ZNMethodData* data = gc_data(nm);
-  if (data == NULL) {
+  if (data == nullptr) {
     data = new ZNMethodData();
     set_gc_data(nm, data);
   }

@@ -84,7 +84,7 @@ public:
   ZRelocationSetInstallTask(ZForwardingAllocator* allocator, const ZRelocationSetSelector* selector) :
       ZTask("ZRelocationSetInstallTask"),
       _allocator(allocator),
-      _forwardings(NULL),
+      _forwardings(nullptr),
       _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
       _small_iter(selector->selected_small()),
       _medium_iter(selector->selected_medium()),
@@ -132,7 +132,7 @@ public:
 ZRelocationSet::ZRelocationSet(ZGeneration* generation) :
     _generation(generation),
     _allocator(),
-    _forwardings(NULL),
+    _forwardings(nullptr),
     _nforwardings(0),
     _promotion_lock(),
     _flip_promoted_pages(),

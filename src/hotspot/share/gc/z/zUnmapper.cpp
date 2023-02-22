@@ -45,11 +45,11 @@ ZPage* ZUnmapper::dequeue() {
 
   for (;;) {
     if (_stop) {
-      return NULL;
+      return nullptr;
     }
 
     ZPage* const page = _queue.remove_first();
-    if (page != NULL) {
+    if (page != nullptr) {
       return page;
     }
 
@@ -79,7 +79,7 @@ void ZUnmapper::unmap_and_destroy_page(ZPage* page) {
 void ZUnmapper::run_service() {
   for (;;) {
     ZPage* const page = dequeue();
-    if (page == NULL) {
+    if (page == nullptr) {
       // Stop
       return;
     }

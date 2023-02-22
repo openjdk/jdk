@@ -55,7 +55,7 @@ private:
       _nmethod_disarmed(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),
-      _invisible_root(NULL) {}
+      _invisible_root(nullptr) {}
 
   ~ZThreadLocalData() {
     delete _store_barrier_buffer;
@@ -107,13 +107,13 @@ public:
   }
 
   static void set_invisible_root(Thread* thread, zaddress_unsafe* root) {
-    assert(data(thread)->_invisible_root == NULL, "Already set");
+    assert(data(thread)->_invisible_root == nullptr, "Already set");
     data(thread)->_invisible_root = root;
   }
 
   static void clear_invisible_root(Thread* thread) {
-    assert(data(thread)->_invisible_root != NULL, "Should be set");
-    data(thread)->_invisible_root = NULL;
+    assert(data(thread)->_invisible_root != nullptr, "Should be set");
+    data(thread)->_invisible_root = nullptr;
   }
 
   static zaddress_unsafe* invisible_root(Thread* thread) {

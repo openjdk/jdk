@@ -52,7 +52,7 @@
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
 
-ZHeap* ZHeap::_heap = NULL;
+ZHeap* ZHeap::_heap = nullptr;
 
 ZHeap::ZHeap() :
     _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
@@ -65,7 +65,7 @@ ZHeap::ZHeap() :
     _initialized(false) {
 
   // Install global heap instance
-  assert(_heap == NULL, "Already initialized");
+  assert(_heap == nullptr, "Already initialized");
   _heap = this;
 
   if (!_page_allocator.is_initialized() || !_young.is_initialized() || !_old.is_initialized()) {
@@ -221,7 +221,7 @@ void ZHeap::out_of_memory() {
 
 ZPage* ZHeap::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
   ZPage* const page = _page_allocator.alloc_page(type, size, flags, age);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Insert page table entry
     _page_table.insert(page);
   }

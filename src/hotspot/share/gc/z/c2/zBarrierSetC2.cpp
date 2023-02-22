@@ -140,17 +140,17 @@ public:
   RegMask* live(const Node* node) {
     if (!node->is_Mach()) {
       // Don't need liveness for non-MachNodes
-      return NULL;
+      return nullptr;
     }
 
     const MachNode* const mach = node->as_Mach();
     if (mach->barrier_data() == ZBarrierElided) {
       // Don't need liveness data for nodes without barriers
-      return NULL;
+      return nullptr;
     }
 
     RegMask* live = (RegMask*)_live[node->_idx];
-    if (live == NULL) {
+    if (live == nullptr) {
       live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
       _live.map(node->_idx, (Node*)live);
     }
@@ -334,7 +334,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -455,7 +455,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const src = ac->in(ArrayCopyNode::Src);
   const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
 
-  if (ac->is_clone_array() && ary_ptr != NULL) {
+  if (ac->is_clone_array() && ary_ptr != nullptr) {
     BasicType bt = ary_ptr->elem()->array_element_basic_type();
     if (is_reference_type(bt)) {
       // Clone object array
@@ -925,7 +925,7 @@ void ZBarrierSetC2::compute_liveness_at_stubs() const {
 
       // If this node tracks liveness, update it
       RegMask* const regs = barrier_set_state()->live(node);
-      if (regs != NULL) {
+      if (regs != nullptr) {
         regs->OR(new_live);
       }
     }

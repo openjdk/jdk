@@ -383,7 +383,7 @@ uint32_t ZStatValue::id() const {
 // Stat iterable value
 //
 template <typename T> uint32_t ZStatIterableValue<T>::_count = 0;
-template <typename T> T*       ZStatIterableValue<T>::_first = NULL;
+template <typename T> T*       ZStatIterableValue<T>::_first = nullptr;
 
 template <typename T>
 ZStatIterableValue<T>::ZStatIterableValue(const char* group,
@@ -402,16 +402,16 @@ T* ZStatIterableValue<T>::insert() const {
 template <typename T>
 void ZStatIterableValue<T>::sort() {
   T* first_unsorted = _first;
-  _first = NULL;
+  _first = nullptr;
 
-  while (first_unsorted != NULL) {
+  while (first_unsorted != nullptr) {
     T* const value = first_unsorted;
     first_unsorted = value->_next;
-    value->_next = NULL;
+    value->_next = nullptr;
 
     T** current = &_first;
 
-    while (*current != NULL) {
+    while (*current != nullptr) {
       // First sort by group, then by name
       const int group_cmp = strcmp((*current)->group(), value->group());
       if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
@@ -1011,12 +1011,12 @@ ZStat::ZStat() :
 
 void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {
   // Sample counters
-  for (const ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+  for (const ZStatCounter* counter = ZStatCounter::first(); counter != nullptr; counter = counter->next()) {
     counter->sample_and_reset();
   }
 
   // Collect samples
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     ZStatSamplerHistory& sampler_history = history[sampler->id()];
     sampler_history.add(sampler->collect_and_reset());
   }
@@ -1041,7 +1041,7 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
   log.print("                                                             Last 10s              Last 10m              Last 10h                Total");
   log.print("                                                             Avg / Max             Avg / Max             Avg / Max             Avg / Max");
 
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     const ZStatSamplerHistory& sampler_history = history[sampler->id()];
     const ZStatUnitPrinter printer = sampler->printer();
     printer(log, *sampler, sampler_history);

@@ -28,54 +28,54 @@
 
 ZMemory* ZMemoryManager::create(zoffset start, size_t size) {
   ZMemory* const area = new ZMemory(start, size);
-  if (_callbacks._create != NULL) {
+  if (_callbacks._create != nullptr) {
     _callbacks._create(area);
   }
   return area;
 }
 
 void ZMemoryManager::destroy(ZMemory* area) {
-  if (_callbacks._destroy != NULL) {
+  if (_callbacks._destroy != nullptr) {
     _callbacks._destroy(area);
   }
   delete area;
 }
 
 void ZMemoryManager::shrink_from_front(ZMemory* area, size_t size) {
-  if (_callbacks._shrink_from_front != NULL) {
+  if (_callbacks._shrink_from_front != nullptr) {
     _callbacks._shrink_from_front(area, size);
   }
   area->shrink_from_front(size);
 }
 
 void ZMemoryManager::shrink_from_back(ZMemory* area, size_t size) {
-  if (_callbacks._shrink_from_back != NULL) {
+  if (_callbacks._shrink_from_back != nullptr) {
     _callbacks._shrink_from_back(area, size);
   }
   area->shrink_from_back(size);
 }
 
 void ZMemoryManager::grow_from_front(ZMemory* area, size_t size) {
-  if (_callbacks._grow_from_front != NULL) {
+  if (_callbacks._grow_from_front != nullptr) {
     _callbacks._grow_from_front(area, size);
   }
   area->grow_from_front(size);
 }
 
 void ZMemoryManager::grow_from_back(ZMemory* area, size_t size) {
-  if (_callbacks._grow_from_back != NULL) {
+  if (_callbacks._grow_from_back != nullptr) {
     _callbacks._grow_from_back(area, size);
   }
   area->grow_from_back(size);
 }
 
 ZMemoryManager::Callbacks::Callbacks() :
-    _create(NULL),
-    _destroy(NULL),
-    _shrink_from_front(NULL),
-    _shrink_from_back(NULL),
-    _grow_from_front(NULL),
-    _grow_from_back(NULL) {}
+    _create(nullptr),
+    _destroy(nullptr),
+    _shrink_from_front(nullptr),
+    _shrink_from_back(nullptr),
+    _grow_from_front(nullptr),
+    _grow_from_back(nullptr) {}
 
 ZMemoryManager::ZMemoryManager() :
     _freelist(),
@@ -89,7 +89,7 @@ zoffset ZMemoryManager::peek_low_address() const {
   ZLocker<ZLock> locker(&_lock);
 
   const ZMemory* const area = _freelist.first();
-  if (area != NULL) {
+  if (area != nullptr) {
     return area->start();
   }
 
@@ -126,7 +126,7 @@ zoffset ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated
   ZLocker<ZLock> locker(&_lock);
 
   ZMemory* const area = _freelist.first();
-  if (area != NULL) {
+  if (area != nullptr) {
     if (area->size() <= size) {
       // Smaller than or equal to requested, remove area
       const zoffset start = area->start();
@@ -182,7 +182,7 @@ void ZMemoryManager::free(zoffset start, size_t size) {
   for (ZMemory* area; iter.next(&area);) {
     if (start < area->start()) {
       ZMemory* const prev = _freelist.prev(area);
-      if (prev != NULL && start == prev->end()) {
+      if (prev != nullptr && start == prev->end()) {
         if (end == area->start()) {
           // Merge with prev and current area
           grow_from_back(prev, size + area->size());
@@ -209,7 +209,7 @@ void ZMemoryManager::free(zoffset start, size_t size) {
 
   // Insert last
   ZMemory* const last = _freelist.last();
-  if (last != NULL && start == last->end()) {
+  if (last != nullptr && start == last->end()) {
     // Merge with last area
     grow_from_back(last, size);
   } else {

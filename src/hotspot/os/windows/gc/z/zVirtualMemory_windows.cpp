@@ -167,7 +167,7 @@ private:
   }
 };
 
-static ZVirtualMemoryManagerImpl* _impl = NULL;
+static ZVirtualMemoryManagerImpl* _impl = nullptr;
 
 void ZVirtualMemoryManager::pd_initialize_before_reserve() {
   if (ZLargePages::is_enabled()) {

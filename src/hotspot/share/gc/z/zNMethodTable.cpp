@@ -44,7 +44,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZNMethodTableEntry* ZNMethodTable::_table = NULL;
+ZNMethodTableEntry* ZNMethodTable::_table = nullptr;
 size_t ZNMethodTable::_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;

@@ -49,7 +49,7 @@ inline void ZForwardingTable::insert(ZForwarding* forwarding) {
   const zoffset offset = forwarding->start();
   const size_t size = forwarding->size();
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
+  assert(_map.get(offset) == nullptr, "Invalid entry");
   _map.put(offset, size, forwarding);
 }
 
@@ -58,7 +58,7 @@ inline void ZForwardingTable::remove(ZForwarding* forwarding) {
   const size_t size = forwarding->size();
 
   assert(_map.get(offset) == forwarding, "Invalid entry");
-  _map.put(offset, size, NULL);
+  _map.put(offset, size, nullptr);
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

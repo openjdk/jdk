@@ -459,7 +459,7 @@ bool ZMark::try_steal_local(ZMarkContext* context) {
        victim_stripe != stripe;
        victim_stripe = _stripes.stripe_next(victim_stripe)) {
     ZMarkStack* const stack = stacks->steal(&_stripes, victim_stripe);
-    if (stack != NULL) {
+    if (stack != nullptr) {
       // Success, install the stolen stack
       stacks->install(&_stripes, stripe, stack);
       return true;
@@ -479,7 +479,7 @@ bool ZMark::try_steal_global(ZMarkContext* context) {
        victim_stripe != stripe;
        victim_stripe = _stripes.stripe_next(victim_stripe)) {
     ZMarkStack* const stack = victim_stripe->steal_stack();
-    if (stack != NULL) {
+    if (stack != nullptr) {
       // Success, install the stolen stack
       stacks->install(&_stripes, stripe, stack);
       return true;

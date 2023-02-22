@@ -67,7 +67,7 @@ zaddress_unsafe ZMapper::reserve(zaddress_unsafe addr, size_t size) {
     size,                                  // Size
     MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, // AllocationType
     PAGE_NOACCESS,                         // PageProtection
-    NULL,                                  // ExtendedParameters
+    nullptr,                               // ExtendedParameters
     0                                      // ParameterCount
     );
 
@@ -102,11 +102,11 @@ HANDLE ZMapper::create_paging_file_mapping(size_t size) {
 
   HANDLE const res = ZSyscall::CreateFileMappingW(
     INVALID_HANDLE_VALUE,         // hFile
-    NULL,                         // lpFileMappingAttribute
+    nullptr,                      // lpFileMappingAttribute
     PAGE_READWRITE | SEC_RESERVE, // flProtect
     size >> 32,                   // dwMaximumSizeHigh
     size & 0xFFFFFFFF,            // dwMaximumSizeLow
-    NULL                          // lpName
+    nullptr                       // lpName
     );
 
   // Caller responsible for error handling
@@ -134,12 +134,12 @@ uintptr_t ZMapper::map_view_no_placeholder(HANDLE file_handle, uintptr_t file_of
   void* const res = ZSyscall::MapViewOfFile3(
     file_handle,         // FileMapping
     GetCurrentProcess(), // ProcessHandle
-    NULL,                // BaseAddress
+    nullptr,             // BaseAddress
     file_offset,         // Offset
     size,                // ViewSize
     0,                   // AllocationType
     PAGE_NOACCESS,       // PageProtection
-    NULL,                // ExtendedParameters
+    nullptr,             // ExtendedParameters
     0                    // ParameterCount
     );
 
@@ -166,7 +166,7 @@ uintptr_t ZMapper::commit(uintptr_t addr, size_t size) {
     size,                // Size
     MEM_COMMIT,          // AllocationType
     PAGE_NOACCESS,       // PageProtection
-    NULL,                // ExtendedParameters
+    nullptr,             // ExtendedParameters
     0                    // ParameterCount
     );
 
@@ -207,17 +207,17 @@ HANDLE ZMapper::create_shared_awe_section() {
 
   HANDLE section = ZSyscall::CreateFileMapping2(
     INVALID_HANDLE_VALUE,                 // File
-    NULL,                                 // SecurityAttributes
+    nullptr,                              // SecurityAttributes
     SECTION_MAP_READ | SECTION_MAP_WRITE, // DesiredAccess
     PAGE_READWRITE,                       // PageProtection
     SEC_RESERVE | SEC_LARGE_PAGES,        // AllocationAttributes
     0,                                    // MaximumSize
-    NULL,                                 // Name
+    nullptr,                              // Name
     &parameter,                           // ExtendedParameters
     1                                     // ParameterCount
     );
 
-  if (section == NULL) {
+  if (section == nullptr) {
     fatal("Could not create shared AWE section (%d)", GetLastError());
   }
 
@@ -289,11 +289,11 @@ void ZMapper::map_view_replace_placeholder(HANDLE file_handle, uintptr_t file_of
     size,                    // ViewSize
     MEM_REPLACE_PLACEHOLDER, // AllocationType
     PAGE_READWRITE,          // PageProtection
-    NULL,                    // ExtendedParameters
+    nullptr,                 // ExtendedParameters
     0                        // ParameterCount
     );
 
-  if (res == NULL) {
+  if (res == nullptr) {
     fatal_error("Failed to map memory", addr, size);
   }
 }

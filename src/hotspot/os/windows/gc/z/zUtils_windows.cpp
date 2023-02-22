@@ -30,7 +30,7 @@
 uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
   void* const res = _aligned_malloc(size, alignment);
 
-  if (res == NULL) {
+  if (res == nullptr) {
     fatal("_aligned_malloc failed");
   }
 

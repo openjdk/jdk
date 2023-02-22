@@ -221,8 +221,8 @@ static bool barrier_needed(LIRAccess& access) {
 }
 
 ZBarrierSetC1::ZBarrierSetC1() :
-    _load_barrier_on_oop_field_preloaded_runtime_stub(NULL),
-    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(NULL),
+    _load_barrier_on_oop_field_preloaded_runtime_stub(nullptr),
+    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(nullptr),
     _store_barrier_on_oop_field_with_healing(nullptr),
     _store_barrier_on_oop_field_without_healing(nullptr) {}
 
@@ -500,7 +500,7 @@ public:
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ZBarrierSet::assembler()->generate_c1_load_barrier_runtime_stub(sasm, _decorators);
-    return NULL;
+    return nullptr;
   }
 };
 

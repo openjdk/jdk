@@ -112,7 +112,7 @@ static void list_append(zaddress& head, zaddress& tail, zaddress reference) {
 
 ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers) :
     _workers(workers),
-    _soft_reference_policy(NULL),
+    _soft_reference_policy(nullptr),
     _encountered_count(),
     _discovered_count(),
     _enqueued_count(),
@@ -143,7 +143,7 @@ bool ZReferenceProcessor::is_inactive(zaddress reference, oop referent, Referenc
     // A non-FinalReference is inactive if the referent is null. The referent can only
     // be null if the application called Reference.enqueue() or Reference.clear().
     (void)to_zaddress(referent); // Verifications
-    return referent == NULL;
+    return referent == nullptr;
   }
 }
 
@@ -161,7 +161,7 @@ bool ZReferenceProcessor::is_softly_live(zaddress reference, ReferenceType type)
   // Ask SoftReference policy
   const jlong clock = java_lang_ref_SoftReference::clock();
   assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != NULL, "Policy not initialized");
+  assert(_soft_reference_policy != nullptr, "Policy not initialized");
   return !_soft_reference_policy->should_clear_reference(to_oop(reference), clock);
 }
 

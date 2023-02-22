@@ -42,7 +42,7 @@ ZOnStackCodeBlobClosure::ZOnStackCodeBlobClosure() :
 
 void ZOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     const bool result = _bs_nm->nmethod_entry_barrier(nm);
     assert(result, "NMethod on-stack must be alive");
   }

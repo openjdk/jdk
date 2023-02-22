@@ -57,7 +57,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::unsupported() {
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline zpointer* ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::field_addr(oop base, ptrdiff_t offset) {
-  assert(base != NULL, "Invalid base");
+  assert(base != nullptr, "Invalid base");
   return reinterpret_cast<zpointer*>(reinterpret_cast<intptr_t>((void*)base) + offset);
 }
 

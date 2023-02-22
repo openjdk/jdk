@@ -33,7 +33,7 @@
 template <typename T, size_t S>
 inline ZStack<T, S>::ZStack() :
     _top(0),
-    _next(NULL) {}
+    _next(nullptr) {}
 
 template <typename T, size_t S>
 inline bool ZStack<T, S>::is_empty() const {
@@ -78,13 +78,13 @@ inline ZStack<T, S>** ZStack<T, S>::next_addr() {
 template <typename T>
 inline ZStackList<T>::ZStackList(uintptr_t base) :
     _base(base),
-    _head(encode_versioned_pointer(NULL, 0)) {}
+    _head(encode_versioned_pointer(nullptr, 0)) {}
 
 template <typename T>
 inline T* ZStackList<T>::encode_versioned_pointer(const T* stack, uint32_t version) const {
   uint64_t addr;
 
-  if (stack == NULL) {
+  if (stack == nullptr) {
     addr = (uint32_t)-1;
   } else {
     addr = ((uint64_t)stack - _base) >> ZMarkStackSizeShift;
@@ -98,7 +98,7 @@ inline void ZStackList<T>::decode_versioned_pointer(const T* vstack, T** stack, 
   const uint64_t addr = (uint64_t)vstack >> 32;
 
   if (addr == (uint32_t)-1) {
-    *stack = NULL;
+    *stack = nullptr;
   } else {
     *stack = (T*)((addr << ZMarkStackSizeShift) + _base);
   }
@@ -109,11 +109,11 @@ inline void ZStackList<T>::decode_versioned_pointer(const T* vstack, T** stack, 
 template <typename T>
 inline bool ZStackList<T>::is_empty() const {
   const T* vstack = _head;
-  T* stack = NULL;
+  T* stack = nullptr;
   uint32_t version = 0;
 
   decode_versioned_pointer(vstack, &stack, &version);
-  return stack == NULL;
+  return stack == nullptr;
 }
 
 template <typename T>
@@ -138,13 +138,13 @@ inline void ZStackList<T>::push(T* stack) {
 template <typename T>
 inline T* ZStackList<T>::pop() {
   T* vstack = _head;
-  T* stack = NULL;
+  T* stack = nullptr;
   uint32_t version = 0;
 
   for (;;) {
     decode_versioned_pointer(vstack, &stack, &version);
-    if (stack == NULL) {
-      return NULL;
+    if (stack == nullptr) {
+      return nullptr;
     }
 
     T* const new_vstack = encode_versioned_pointer(stack->next(), version + 1);
@@ -161,7 +161,7 @@ inline T* ZStackList<T>::pop() {
 
 template <typename T>
 inline void ZStackList<T>::clear() {
-  _head = encode_versioned_pointer(NULL, 0);
+  _head = encode_versioned_pointer(nullptr, 0);
 }
 
 inline bool ZMarkStripe::is_empty() const {
@@ -186,7 +186,7 @@ inline void ZMarkStripe::publish_stack(ZMarkStack* stack, ZMarkTerminate* termin
 inline ZMarkStack* ZMarkStripe::steal_stack() {
   // Steal overflowed stacks first, then published stacks
   ZMarkStack* const stack = _overflowed.pop();
-  if (stack != NULL) {
+  if (stack != nullptr) {
     return stack;
   }
 
@@ -226,7 +226,7 @@ inline void ZMarkThreadLocalStacks::install(ZMarkStripeSet* stripes,
                                             ZMarkStripe* stripe,
                                             ZMarkStack* stack) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
-  assert(*stackp == NULL, "Should be empty");
+  assert(*stackp == nullptr, "Should be empty");
   *stackp = stack;
 }
 
@@ -234,8 +234,8 @@ inline ZMarkStack* ZMarkThreadLocalStacks::steal(ZMarkStripeSet* stripes,
                                                  ZMarkStripe* stripe) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   ZMarkStack* const stack = *stackp;
-  if (stack != NULL) {
-    *stackp = NULL;
+  if (stack != nullptr) {
+    *stackp = nullptr;
   }
 
   return stack;
@@ -249,7 +249,7 @@ inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,
                                          bool publish) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   ZMarkStack* const stack = *stackp;
-  if (stack != NULL && stack->push(entry)) {
+  if (stack != nullptr && stack->push(entry)) {
     return true;
   }
 
@@ -262,7 +262,7 @@ inline bool ZMarkThreadLocalStacks::pop(ZMarkStackAllocator* allocator,
                                         ZMarkStackEntry& entry) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   ZMarkStack* const stack = *stackp;
-  if (stack != NULL && stack->pop(entry)) {
+  if (stack != nullptr && stack->pop(entry)) {
     return true;
   }
 

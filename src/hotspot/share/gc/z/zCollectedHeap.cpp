@@ -169,7 +169,7 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 
   // Expand and retry allocation
   MetaWord* const result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
-  if (result != NULL) {
+  if (result != nullptr) {
     return result;
   }
 

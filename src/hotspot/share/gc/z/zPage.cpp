@@ -219,7 +219,7 @@ ZPage* ZPage::split_committed() {
   const ZPhysicalMemory pmem = _physical.split_committed();
   if (pmem.is_null()) {
     // Nothing committed
-    return NULL;
+    return nullptr;
   }
 
   assert(!_physical.is_null(), "Should not be null");

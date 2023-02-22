@@ -201,14 +201,14 @@ ZMarkStackMagazine* ZMarkStackAllocator::create_magazine_from_space(uintptr_t ad
 ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
   // Try allocating from the free list first
   ZMarkStackMagazine* const magazine = _freelist.pop();
-  if (magazine != NULL) {
+  if (magazine != nullptr) {
     return magazine;
   }
 
   // Allocate new magazine
   const uintptr_t addr = _space.alloc(ZMarkStackMagazineSize);
   if (addr == 0) {
-    return NULL;
+    return nullptr;
   }
 
   return create_magazine_from_space(addr, ZMarkStackMagazineSize);

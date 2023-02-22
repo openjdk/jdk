@@ -54,7 +54,7 @@ class ZStatisticsCounterTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(ZStatCounter::count());
-    for (ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+    for (ZStatCounter* counter = ZStatCounter::first(); counter != nullptr; counter = counter->next()) {
       writer.write_key(counter->id());
       writer.write(counter->name());
     }
@@ -65,7 +65,7 @@ class ZStatisticsSamplerTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(ZStatSampler::count());
-    for (ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+    for (ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
       writer.write_key(sampler->id());
       writer.write(sampler->name());
     }

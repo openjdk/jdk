@@ -94,14 +94,14 @@ void ZRelocationSetSelectorGroup::semi_sort() {
 
   // Allocate destination array
   const int npages = _live_pages.length();
-  ZArray<ZPage*> sorted_live_pages(npages, npages, NULL);
+  ZArray<ZPage*> sorted_live_pages(npages, npages, nullptr);
 
   // Sort pages into partitions
   ZArrayIterator<ZPage*> iter2(&_live_pages);
   for (ZPage* page; iter2.next(&page);) {
     const size_t index = page->live_bytes() >> partition_size_shift;
     const int finger = partitions[index]++;
-    assert(sorted_live_pages.at(finger) == NULL, "Invalid finger");
+    assert(sorted_live_pages.at(finger) == nullptr, "Invalid finger");
     sorted_live_pages.at_put(finger, page);
   }
 

@@ -299,10 +299,10 @@ static size_t object_index(oop obj) {
 ZHeapIteratorBitMap* ZHeapIterator::object_bitmap(oop obj) {
   const zoffset offset = ZAddress::offset(to_zaddress(obj));
   ZHeapIteratorBitMap* bitmap = _bitmaps.get_acquire(offset);
-  if (bitmap == NULL) {
+  if (bitmap == nullptr) {
     ZLocker<ZLock> locker(&_bitmaps_lock);
     bitmap = _bitmaps.get(offset);
-    if (bitmap == NULL) {
+    if (bitmap == nullptr) {
       // Install new bitmap
       bitmap = new ZHeapIteratorBitMap(object_index_max());
       _bitmaps.release_put(offset, bitmap);
@@ -313,7 +313,7 @@ ZHeapIteratorBitMap* ZHeapIterator::object_bitmap(oop obj) {
 }
 
 bool ZHeapIterator::mark_object(oop obj) {
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return false;
   }
 

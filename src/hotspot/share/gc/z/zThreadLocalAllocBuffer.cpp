@@ -31,11 +31,11 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 
-ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = NULL;
+ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = nullptr;
 
 void ZThreadLocalAllocBuffer::initialize() {
   if (UseTLAB) {
-    assert(_stats == NULL, "Already initialized");
+    assert(_stats == nullptr, "Already initialized");
     _stats = new ZPerWorker<ThreadLocalAllocStats>();
     reset_statistics();
   }
