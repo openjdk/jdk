@@ -101,7 +101,7 @@ abstract class CharacterData {
      * search over all non-latin1 characters:
      *
      * {@snippet :
-     *   for (int c = 256; c < Character.MAX_VALUE; c++) {
+     *   for (int c = 256; c <= 0x3FFFF; c++) {
      *       int folded = Character.toLowerCase(Character.toUpperCase(c));
      *       if (folded <= 0XFF) {
      *           System.out.printf("0x%x folds to 0x%x%n", c, folded);

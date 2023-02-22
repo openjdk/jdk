@@ -108,10 +108,9 @@ public class EqualsIgnoreCase extends CompactString {
      */
     @Test
     public void guardUnicodeFoldingToLatin1() {
-        for (int c = 256; c < Character.MAX_VALUE; c++) {
+        for (int c = 256; c <= 0x3FFFF; c++) {
             int lc = Character.toLowerCase(Character.toUpperCase(c));
             if (lc <= 0XFF) {
-                System.out.println(c + " " + Integer.toHexString(c) + " lowercases to " + lc);
                 assertTrue(Character.toString(lc).equalsIgnoreCase(Character.toString(c)),
                         "%s and its lowercase %s should equalsIgnoreCase".formatted(c, lc));
             }
