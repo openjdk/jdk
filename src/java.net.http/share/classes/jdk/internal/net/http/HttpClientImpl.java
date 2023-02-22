@@ -583,7 +583,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     /**
-     * Remove the given subscriber to the subscribers list.
+     * Remove the given subscriber from the subscribers list.
      * @param subscriber the subscriber
      * @return true if the subscriber was found and removed from the list.
      */
