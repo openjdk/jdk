@@ -138,10 +138,10 @@ class CharacterDataLatin1 extends CharacterData {
         if (ch < 'A') { // Fast path for low code points
             return ch;
         }
-        int l = ch | 0x20; // Lowercase using 'oldest ASCII trick in the book'
-        if (l <= 'z' // In range a-z
-                || (l >= 0xE0 && l <= 0xFE && l != 0xF7)) { // ..or agrave-thorn, excluding division
-            return l;
+        int lower = ch | 0x20; // Lowercase using 'oldest ASCII trick in the book'
+        if (lower <= 'z' // In range a-z
+                || (lower >= 0xE0 && lower <= 0xFE && lower != 0xF7)) { // ..or agrave-thorn, excluding division
+            return lower;
         }
         return ch;
     }
@@ -150,10 +150,10 @@ class CharacterDataLatin1 extends CharacterData {
         if (ch < 'a') { // Fast path for low code points
             return ch;
         }
-        int U = ch & 0xDF; // Uppercase using 'oldest ASCII trick in the book'
-        if (U <= 'Z' // In range A-Z
-                || (U >= 0xC0 && U <= 0xDE && U != 0xD7)) { // ..or Agrave-Thorn, excluding multiplication
-            return U;
+        int upper = ch & 0xDF; // Uppercase using 'oldest ASCII trick in the book'
+        if (upper <= 'Z' // In range A-Z
+                || (upper >= 0xC0 && upper <= 0xDE && upper != 0xD7)) { // ..or Agrave-Thorn, not multiplication
+            return upper;
         }
 
         // Special-case for 'y with Diaeresis' which uppercases out of latin1
