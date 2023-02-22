@@ -258,7 +258,7 @@ public class IREncodingPrinter {
             "avx512dq",
             "avx512vl",
             "avx512f",
-            // Arm
+            // AArch64
             "asimd",
             "sve"
         ));
