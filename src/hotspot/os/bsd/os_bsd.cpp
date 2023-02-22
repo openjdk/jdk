@@ -69,6 +69,9 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#ifdef INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here
 # include <dlfcn.h>
@@ -2453,3 +2456,31 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#ifdef INCLUDE_JFR
+
+#include "mach/task_info.h"
+
+void os::Bsd::jfr_process_memory_info() {
+#ifdef __APPLE__
+  log_info(gc)("JFR:ing process memory info");
+
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
+  if (ret != KERN_SUCCESS) {
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(gc)("task_info failed");
+      first_warning = false;
+    }
+  }
+
+  EventResidentSetSize event;
+  event.set_size(info.resident_size);
+  event.set_peak(info.resident_size_max);
+  event.commit();
+#endif
+}
+#endif // INCLUDE_JFR

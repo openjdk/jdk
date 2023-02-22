@@ -115,6 +115,10 @@ class os::Bsd {
   static int get_node_by_cpu(int cpu_id);
 
   static void print_uptime_info(outputStream* st);
+
+#ifdef INCLUDE_JFR
+  static void jfr_process_memory_info();
+#endif
 };
 
 #endif // OS_BSD_OS_BSD_HPP
