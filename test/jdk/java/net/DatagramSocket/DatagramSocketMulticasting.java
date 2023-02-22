@@ -320,7 +320,7 @@ public class DatagramSocketMulticasting {
         for (int i = 1; i <= MAX_TRIES; i++) {
             p = new DatagramPacket(new byte[1024], 100);
             s.receive(p);
-            String messageReceived = new String(p.getData(), 0, p.getLength());
+            String messageReceived = new String(p.getData(), 0, p.getLength(), "UTF-8");
 
             System.out.format(
                     "TestSendReceive iteration [%s], Received DatagramPacket [%s] from [%s]%n",
@@ -367,7 +367,7 @@ public class DatagramSocketMulticasting {
                 if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
                     throw new RuntimeException("message shouldn't have been received");
                 } else {
-                    String messageReceived = new String(p.getData(), 0, p.getLength());
+                    String messageReceived = new String(p.getData(), 0, p.getLength(), "UTF-8");
                     System.out.format("Received unexpected message %s from %s%n",
                             messageReceived, p.getSocketAddress());
                 }
