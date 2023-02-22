@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.*;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static java.lang.Math.*;
 
 /**
  * The {@link RandomGenerator} interface is designed to provide a common
@@ -250,6 +251,255 @@ public interface RandomGenerator {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
+    }
+
+    private DoubleStream equiSpatialDoubles(double left, double right,
+            boolean isLeftClosed, boolean isRightOpen) {
+        /*
+         * Inspired by
+         *      Goualard, "Drawing random floating-point numbers from an
+         *      interval", ACM TOMACS, 2022, 32 (3)
+         *      (https://hal.science/hal-03282794v4)
+         * although implemented differently.
+         *
+         * It is assumed that left <= right.
+         * Whether the boundaries of the interval I = <left, right> are included
+         * is indicated by isLeftClosed and isRightOpen.
+         *
+         * delta > 0 is the smallest double such that every product k delta
+         * (k integer) that lies in I is an exact double as well.
+         * It turns out that delta is always a power of 2.
+         *
+         * kl is the k for the leftmost product k delta in I.
+         * kr is the k for the leftmost product k delta to the right of I.
+         * n is kr - kl
+         */
+        double delta;
+        long kl;
+        long kr;
+        long n;
+
+        if (left <= -right) {
+            /*
+             * Here,
+             *      left <= 0,      left <= right <= -left
+             *      P = Double.PRECISION
+             *
+             * delta is the distance from left to the next double in the
+             * direction of positive infinity.
+             * Every product k delta lying in [left, -left] is an exact double.
+             * Thus, every product k delta lying in I is an exact double, too.
+             * Any other positive eps < delta does not meet this property:
+             * some product k eps lying in I is not an exact double.
+             * On the other hand, any other eps > delta would generate more
+             * sparse products k eps, that is, less doubles in I.
+             * delta is therefore the best value to ensure the largest number
+             * of equidistant doubles in I.
+             *
+             * left / delta is an exact double and an exact integer with
+             *      -2^P <= left / delta <= 0
+             * Thus, kl is computed exactly.
+             *
+             * Mathematically,
+             *      kr = ceil(right / delta),           if isRightOpen
+             *      kr = floor(right / delta) + 1,      if !isRightOpen
+             * The double division rd = right / delta never overflows and is
+             * exact, except in the presence of underflows. But even underflows
+             * do not affect the outcomes of ceil() and floor(), except,
+             * in turn, when the result drops to 0, that is, rd = 0.
+             *
+             * crd is a corrected version of rd when rd is zero. It is simply
+             * right / delta, but rounded away from 0 to preserve information
+             * ensuring correct outcomes in ceil() and floor().
+             *
+             * We know that -2^P <= kl, so
+             *      -2^P <= kl + nextLong(n)
+             * Also, since right <= -left, we know that
+             *      kr <= -kl + 1
+             * so that
+             *      0 < n <= -2 kl + 1
+             * This implies
+             *      kl + nextLong(n) <= kl + (-2 kl) = -kl <= 2^P
+             * and thus
+             *      -2^P <= kl + nextLong(n) <= 2^P
+             * which shows that kl + nextLong(n) can be cast exactly to double.
+             *
+             * Further, if isLeftClosed then left = kl delta, so that we get
+             *      left = kl * delta <= (kl + nextLong(n)) * delta
+             * For any other k < kl, when nextLong(n) = 0 we would have
+             *      (k + nextLong(n)) * delta < left
+             * Otherwise, left = (kl - 1) delta, and therefore
+             *      left = (kl - 1) * delta < (kl + nextLong(n)) * delta
+             * For any other k < kl, when nextLong(n) = 0 we would get
+             *      (k + nextLong(n)) * delta <= left
+             * Either way, the lhs expression would not belong to I.
+             * That is, kl is the smallest integer such that kl delta always
+             * lies in I (it is an exact double).
+             *
+             * Similar considerations show that kr is the smallest integer such
+             * that kr delta lies to the right of I (it is an exact double).
+             *
+             * All the above means that (kl + nextLong(n)) * delta is an exact
+             * double lying in I and that kl and kr, thus n, are the best
+             * possible choices to ensure the largest number of equidistant
+             * doubles in I. Uniform distribution relies on the guarantee
+             * afforded by nextLong().
+             */
+            delta = nextUp(left) - left;
+            double rd = right / delta;
+            double crd = rd != 0 || right == 0 ? rd : copySign(Double.MIN_VALUE, right);
+            kr = isRightOpen ? (long) ceil(crd) : (long) floor(crd) + 1;
+            kl = (long) (left / delta) + (isLeftClosed ? 0 : 1);
+        } else {
+            /* Here,
+             *      right > 0,      -right < left <= right
+             *
+             * Considerations similar to the ones above apply here as well.
+             */
+            delta = right - nextDown(right);
+            double ld = left / delta;
+            double cld = ld != 0 || left == 0 ? ld : copySign(Double.MIN_VALUE, left);
+            kl = isLeftClosed ? (long) ceil(cld) : (long) floor(cld) + 1;
+            kr = (long) (right / delta) + (isRightOpen ? 0 : 1);
+        }
+        n = kr - kl;
+        return DoubleStream.generate(() -> (kl + nextLong(n)) * delta).sequential();
+    }
+
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified origin
+     * (inclusive) and the specified bound (exclusive).
+     *
+     * <p>The uniformity of the distribution of the {@code double}s produced by
+     * the stream is as good as the one of {@link #nextLong(long)}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
+     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
+     * is the smallest number for which all these multiples are exact {@code double}s.
+     * The generated {@code double}s are thus equidistant, as close as possible,
+     * and with the largest possible extension.
+     *
+     * @param origin the least value (inclusive) that can be produced
+     * @param bound the upper bound (exclusive) for each value produced
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
+     *         the specified origin (inclusive) and the specified bound (exclusive).
+     *         The stream never generates {@code -0.0}, although it may generate
+     *         {@code 0.0}
+     *
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *         or {@code bound} is not finite, or {@code origin}
+     *         is greater than or equal to {@code bound}
+     */
+    default DoubleStream equiDoublesLeftClosedRightOpen(double origin, double bound) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("the interval must not be empty");
+        }
+        return equiSpatialDoubles(origin, bound, true, true);
+    }
+
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified origin
+     * (inclusive) and the specified bound (inclusive).
+     *
+     * <p>The uniformity of the distribution of the {@code double}s produced by
+     * the stream is as good as the one of {@link #nextLong(long)}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
+     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
+     * is the smallest number for which all these multiples are exact {@code double}s.
+     * The generated {@code double}s are thus equidistant, as close as possible,
+     * and with the largest possible extension.
+     *
+     * @param origin the least value (inclusive) that can be produced
+     * @param bound the upper bound (inclusive) for each value produced
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
+     *         the specified origin (inclusive) and the specified bound (inclusive).
+     *         The stream never generates {@code -0.0}, although it may generate
+     *         {@code 0.0}
+     *
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *         or {@code bound} is not finite, or {@code origin}
+     *         is greater than {@code bound}
+     */
+    default DoubleStream equiDoublesLeftClosedRightClosed(double origin, double bound) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin <= bound &&
+                bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("the interval must not be empty");
+        }
+        return equiSpatialDoubles(origin, bound, true, false);
+    }
+
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified origin
+     * (exclusive) and the specified bound (exclusive).
+     *
+     * <p>The uniformity of the distribution of the {@code double}s produced by
+     * the stream is as good as the one of {@link #nextLong(long)}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
+     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
+     * is the smallest number for which all these multiples are exact {@code double}s.
+     * The generated {@code double}s are thus equidistant, as close as possible,
+     * and with the largest possible extension.
+     *
+     * @param origin the least value (exclusive) that can be produced
+     * @param bound the upper bound (exclusive) for each value produced
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
+     *         the specified origin (exclusive) and the specified bound (exclusive).
+     *         The stream never generates {@code -0.0}, although it may generate
+     *         {@code 0.0}
+     *
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *         or {@code bound} is not finite, or if the successor of {@code origin}
+     *         is greater than or equal to {@code bound}
+     */
+    default DoubleStream equiDoublesLeftOpenRightOpen(double origin, double bound) {
+        if (!(Double.NEGATIVE_INFINITY < origin && nextUp(origin) < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("the interval must not be empty");
+        }
+        return equiSpatialDoubles(origin, bound, false, true);
+    }
+
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified origin
+     * (exclusive) and the specified bound (inclusive).
+     *
+     * <p>The uniformity of the distribution of the {@code double}s produced by
+     * the stream is as good as the one of {@link #nextLong(long)}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
+     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
+     * is the smallest number for which all these multiples are exact {@code double}s.
+     * The generated {@code double}s are thus equidistant, as close as possible,
+     * and with the largest possible extension.
+     *
+     * @param origin the least value (exclusive) that can be produced
+     * @param bound the upper bound (inclusive) for each value produced
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
+     *         the specified origin (exclusive) and the specified bound (inclusive).
+     *         The stream never generates {@code -0.0}, although it may generate
+     *         {@code 0.0}
+     *
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *         or {@code bound} is not finite, or {@code origin}
+     *         is greater than or equal to {@code bound}
+     */
+    default DoubleStream equiDoublesLeftOpenRightClosed(double origin, double bound) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("the interval must not be empty");
+        }
+        return equiSpatialDoubles(origin, bound, false, false);
     }
 
     /**
