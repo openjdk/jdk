@@ -208,7 +208,7 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     // Lazily initialized system property value
-    private static String GB18030_2000;
+    private @Stable static String GB18030_2000;
 
     static boolean isGB18030_2000() {
         if (GB18030_2000 == null) {
