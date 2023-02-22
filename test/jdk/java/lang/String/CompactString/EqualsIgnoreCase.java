@@ -30,7 +30,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug 8077559 8248655
+ * @bug 8077559 8248655 8302871
  * @summary Tests Compact String. This one is for String.equalsIgnoreCase.
  * @run testng/othervm -XX:+CompactStrings EqualsIgnoreCase
  * @run testng/othervm -XX:-CompactStrings EqualsIgnoreCase
@@ -79,25 +79,27 @@ public class EqualsIgnoreCase extends CompactString {
     }
 
     /**
-     * Exhaustively check that all latin1 code point pairs are equalsIgnoreCased
-     * in a manner consistent with Character.toUpperCase, Character.toLowerCase
+     * Exhaustively check that all 256x256 latin1 code point pairs are equalsIgnoreCased
+     * in a manner consistent with Character.toLowerCase(Character.toUpperCase(c));
      */
     @Test
     public void checkConsistencyWithCharacterUppercaseLowerCase() {
-        for (int ab = 0; ab < 256; ab++) {
-            for (int bb = 0; bb < 256; bb++) {
-                char a = (char) ab, b = (char) bb;
-                String as = Character.toString(a);
-                String bs = Character.toString(b);
+        for (char a = 0; a < 256; a++) {
+            for (char b = 0; b < 256; b++) {
 
-                int na = Character.toLowerCase(Character.toUpperCase(a));
-                int nb = Character.toLowerCase(Character.toUpperCase(b));
-                if (na == nb) {
-                    assertTrue(as.equalsIgnoreCase(bs),
-                            "Expected %s to equalsIgnoreCase %s".formatted(as, bs));
+                int caseFoldA = Character.toLowerCase(Character.toUpperCase(a));
+                int caseFoldB = Character.toLowerCase(Character.toUpperCase(b));
+
+                String astr = Character.toString(a);
+                String bstr = Character.toString(b);
+
+                // If characters fold to the same lowercase, their strings should equalsIgnoreCase:
+                if (caseFoldA == caseFoldB) {
+                    assertTrue(astr.equalsIgnoreCase(bstr),
+                            "Expected %s to equalsIgnoreCase %s".formatted(astr, bstr));
                 } else {
-                    assertFalse(as.equalsIgnoreCase(bs),
-                            "Expected %s to not equalsIgnoreCase %s".formatted(as, bs));
+                    assertFalse(astr.equalsIgnoreCase(bstr),
+                            "Expected %s to not equalsIgnoreCase %s".formatted(astr, bstr));
                 }
             }
         }
