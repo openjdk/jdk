@@ -29,20 +29,28 @@
  */
 
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HexFormat;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 
 public class Zip64DataDescriptor {
 
-    @Test
-    public void shouldReadZip64Descriptor() throws IOException {
+    private byte[] zip;
 
+    @BeforeMethod
+    public void setup() {
         /**
          * Structure of the ZIP64 file used below . Note the precense
          * of a Zip64 extended information extra field and the
@@ -87,8 +95,55 @@ public class Zip64DataDescriptor {
                 0000b20000000000000001000000504b050600000000010001005c000000
                 560000000000""";
 
-        byte[] zip = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
+        zip = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
+    }
 
+    /**
+     * Verify that small-sized Zip64 entries can be parsed by ZipInputStream
+     */
+    @Test
+    public void shouldReadZip64Descriptor() throws IOException {
+        readZipInputStream();
+    }
+
+    /**
+     * For maximal backward compatibility when reading Zip64 descriptors, invalid
+     * Zip64 extra data sizes should be ignored
+     */
+    @Test
+    public void shouldIgnoreInvalidExtraSize() {
+
+        setExtraSize((short) 42);
+
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            readZipInputStream();
+        });
+
+        assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 5 bytes)");
+    }
+
+    /**
+     * Validate that an extra size exceeding the extra size is ignored
+     */
+    @Test
+    public void shouldIgnoreExcessiveExtraSize() {
+
+        setExtraSize(Short.MAX_VALUE);
+
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            readZipInputStream();
+        });
+
+        assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 5 bytes)");
+    }
+
+    private void setExtraSize(short invalidSize) {
+        int extSizeOffset = 37;
+        ByteBuffer.wrap(zip).order(ByteOrder.LITTLE_ENDIAN)
+                .putShort(extSizeOffset, invalidSize);
+    }
+
+    private void readZipInputStream() throws IOException {
         try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
             ZipEntry e;
             while ( (e = in.getNextEntry()) != null) {
