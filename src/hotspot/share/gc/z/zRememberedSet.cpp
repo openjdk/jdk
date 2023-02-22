@@ -24,12 +24,12 @@
 #include "memory/allocation.hpp"
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBitMap.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 int ZRememberedSet::_current = 0;
@@ -39,7 +39,7 @@ void ZRememberedSet::flip() {
 }
 
 ZRememberedSet::ZRememberedSet() :
-    _bitmap{CHeapBitMap(mtGC), CHeapBitMap(mtGC)} {
+    _bitmap{ZMovableBitMap(), ZMovableBitMap()} {
   // Defer initialization of the bitmaps until the owning
   // page becomes old and its remembered set is initialized.
 }

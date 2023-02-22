@@ -30,6 +30,16 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
+
+inline ZMovableBitMap::ZMovableBitMap() :
+    CHeapBitMap(mtGC) {}
+
+inline ZMovableBitMap::ZMovableBitMap(ZMovableBitMap&& bitmap) :
+    CHeapBitMap(mtGC) {
+  update(bitmap.map(), bitmap.size());
+  bitmap.update(nullptr, 0);
+}
+
 inline ZBitMap::ZBitMap(idx_t size_in_bits) :
     CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
 

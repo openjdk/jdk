@@ -478,9 +478,6 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  CHeapBitMap(CHeapBitMap &&bitmap) : GrowableBitMap(bitmap.map(), bitmap.size()), _flags(bitmap._flags) {
-    bitmap.update(nullptr, 0);
-  }
   explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();

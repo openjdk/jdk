@@ -26,6 +26,12 @@
 
 #include "utilities/bitMap.hpp"
 
+class ZMovableBitMap : public CHeapBitMap {
+public:
+  ZMovableBitMap();
+  ZMovableBitMap(ZMovableBitMap&& bitmap);
+};
+
 class ZBitMap : public CHeapBitMap {
 private:
   static bm_word_t bit_mask_pair(idx_t bit);

@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZREMEMBEREDSET_HPP
 
 #include "gc/z/zAddress.hpp"
-#include "utilities/bitMap.hpp"
+#include "gc/z/zBitMap.hpp"
 
 class OopClosure;
 class ZPage;
@@ -92,7 +92,7 @@ class ZRememberedSet {
 public:
   static int _current;
 
-  CHeapBitMap _bitmap[2];
+  ZMovableBitMap _bitmap[2];
 
   CHeapBitMap* current();
   const CHeapBitMap* current() const;
