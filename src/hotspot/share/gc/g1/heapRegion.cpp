@@ -534,6 +534,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
         print_object(&ls, obj);
       }
       log.error("----------");
+      _num_failures++;
       return true;
     }
     return false;
