@@ -22,7 +22,9 @@
  */
 #include <stdlib.h>
 #include "jni.h"
+#include "jni_util.h"
 #ifdef _WIN64
+#include <windows.h>
 #include <fileapi.h>
 #include <winerror.h>
 #else
@@ -39,16 +41,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Throws an exception with the given class name and detail message
- */
-static void ThrowException(JNIEnv *env, const char *name, const char *msg) {
-    jclass cls = (*env)->FindClass(env, name);
-    if (cls != NULL) {
-        (*env)->ThrowNew(env, cls, msg);
-    }
-}
 
+#ifdef _WIN64
+jboolean initialized = JNI_FALSE;
+BOOL(WINAPI * pfnGetDiskSpaceInformation)(LPCWSTR, LPVOID) = NULL;
+#endif
+
+//
+// root      the root of the volume
+// sizes[0]  total size:   number of bytes in the volume
+// sizes[1]  total space:  number of bytes visible to the caller
+// sizes[2]  free space:   number of free bytes in the volume
+// sizes[3]  usable space: number of bytes available to the caller
+//
 JNIEXPORT void JNICALL
 Java_GetXSpace_getSpace0
     (JNIEnv *env, jclass cls, jstring root, jlongArray sizes)
@@ -56,36 +61,71 @@ Java_GetXSpace_getSpace0
     jlong array[4];
     const jchar* chars = (*env)->GetStringChars(env, root, NULL);
     if (chars == NULL) {
-        ThrowException(env, "java/lang/RuntimeException", "GetStringChars");
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                     "GetStringChars");
     }
 
 #ifdef _WIN64
-    DISK_SPACE_INFORMATION diskSpaceInfo;
-    LPCWSTR path = (LPCWSTR)chars;
-    HRESULT result = GetDiskSpaceInformationW(path, &diskSpaceInfo);
-    (*env)->ReleaseStringChars(env, root, chars);
-    if (FAILED(result)) {
-        ThrowException(env, "java/lang/RuntimeException",
-                       "GetDiskSpaceInformationW");
-        return;
+    if (initialized == JNI_FALSE) {
+        initialized = JNI_TRUE;
+        HMODULE hmod = GetModuleHandleW(L"kernel32");
+        if (hmod != NULL) {
+            *(FARPROC*)&pfnGetDiskSpaceInformation =
+                GetProcAddress(hmod, "GetDiskSpaceInformationW");
+        }
     }
 
-    ULONGLONG bytesPerAllocationUnit =
-        diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
-    array[0] = (jlong)(diskSpaceInfo.ActualTotalAllocationUnits*
-                       bytesPerAllocationUnit);
-    array[1] = (jlong)(diskSpaceInfo.CallerTotalAllocationUnits*
-                       bytesPerAllocationUnit);
-    array[2] = (jlong)(diskSpaceInfo.ActualAvailableAllocationUnits*
-                       bytesPerAllocationUnit);
-    array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
-                       bytesPerAllocationUnit);
+    LPCWSTR path = (LPCWSTR)chars;
+
+    if (pfnGetDiskSpaceInformation != NULL) {
+        // use GetDiskSpaceInformationW
+        DISK_SPACE_INFORMATION diskSpaceInfo;
+        BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
+        if (FAILED(hres)) {
+            JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                         "GetDiskSpaceInformationW");
+            return;
+        }
+
+        ULONGLONG bytesPerAllocationUnit =
+            diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
+        array[0] = (jlong)(diskSpaceInfo.ActualTotalAllocationUnits*
+                           bytesPerAllocationUnit);
+        array[1] = (jlong)(diskSpaceInfo.CallerTotalAllocationUnits*
+                           bytesPerAllocationUnit);
+        array[2] = (jlong)(diskSpaceInfo.ActualAvailableAllocationUnits*
+                           bytesPerAllocationUnit);
+        array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
+                           bytesPerAllocationUnit);
+    } else {
+        // if GetDiskSpaceInformationW is unavailable ("The specified
+        // procedure could not be found"), fall back to GetDiskFreeSpaceExW
+        ULARGE_INTEGER freeBytesAvailable;
+        ULARGE_INTEGER totalNumberOfBytes;
+        ULARGE_INTEGER totalNumberOfFreeBytes;
+
+        if (GetDiskFreeSpaceExW(path, &freeBytesAvailable, &totalNumberOfBytes,
+            &totalNumberOfFreeBytes) == 0) {
+            JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                         "GetDiskFreeSpaceExW");
+            return;
+        }
+
+        // If quotas are in effect, it is impossible to obtain the volume size,
+        // so estimate it as free + used = free + (visible - available)
+        ULONGLONG used = totalNumberOfBytes.QuadPart - freeBytesAvailable.QuadPart;
+        array[0] = (jlong)(totalNumberOfFreeBytes.QuadPart + used);
+        array[1] = (jlong)totalNumberOfBytes.QuadPart;
+        array[2] = (jlong)totalNumberOfFreeBytes.QuadPart;
+        array[3] = (jlong)freeBytesAvailable.QuadPart;
+    }
 #else
     struct statfs buf;
     int result = statfs((const char*)chars, &buf);
     (*env)->ReleaseStringChars(env, root, chars);
     if (result < 0) {
-        ThrowException(env, "java/lang/RuntimeException", strerror(errno));
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                     strerror(errno));
         return;
     }
 

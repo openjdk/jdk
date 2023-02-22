@@ -224,22 +224,6 @@ public class GetXSpace {
                 throw new RuntimeException(e);
             }
 
-/* XXX
-            // On macOS, the number of 1024 byte blocks might be incorrectly
-            // calculated by 'df' using integer division by 2 of the number of
-            // 512 byte blocks, resulting in a size smaller than the actual
-            // value when the number of blocks is odd.
-            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0 ||
-                ts - s.total() != 512) {
-                if (Platform.isWindows()) {
-                    if (ts > s.total()) {
-                        fail(s.name() + " total space", ts, ">", s.total());
-                    }
-                } else {
-                    fail(s.name() + " total space", ts, "!=", s.total());
-                }
-            }
-*/
             if (Platform.isWindows()) {
                 if (ts > s.total()) {
                     fail(s.name() + " total space", ts, ">", s.total());
