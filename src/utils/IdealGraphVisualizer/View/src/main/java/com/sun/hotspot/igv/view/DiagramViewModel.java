@@ -52,8 +52,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
-    private FilterChain customFilterChain;
-
+    private final FilterChain customFilterChain;
     private FilterChain filterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
@@ -151,14 +150,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public DiagramViewModel(InputGraph graph) {
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider != null) {
-            customFilterChain = provider.createNewDefaultFilterChain();
-            provider.setCustomFilterChain(customFilterChain);
-            filterChain = customFilterChain;
-            provider.setFilterChain(filterChain);
-        } else {
-            customFilterChain = new FilterChain("DEFAULT");
-        }
+        customFilterChain = (provider != null) ? provider.createNewDefaultFilterChain() : new FilterChain();
+        filterChain = customFilterChain;
+
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
@@ -304,7 +298,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 filterChain.getChangedEvent().addListener(filterChainChangedListener);
             });
             provider.setCustomFilterChain(customFilterChain);
-            provider.setFilterChain(filterChain);
+            provider.selectFilterChain(filterChain);
         }
     }
 

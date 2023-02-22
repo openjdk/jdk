@@ -47,13 +47,13 @@ public class FilterChainProviderImplementation implements FilterChainProvider {
     }
 
     @Override
-    public void setFilterChain(FilterChain filterChain) {
-        FilterTopComponent.findInstance().setFilterChain(filterChain);
+    public void selectFilterChain(FilterChain filterChain) {
+        FilterTopComponent.findInstance().selectFilterChain(filterChain);
     }
 
     @Override
     public void setCustomFilterChain(FilterChain filterChain) {
-        FilterTopComponent.findInstance().setFilterChain(filterChain);
+        FilterTopComponent.findInstance().setCustomFilterChain(filterChain);
     }
 
     @Override

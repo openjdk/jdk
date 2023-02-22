@@ -31,6 +31,7 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -77,15 +78,15 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private final ScriptEngine engine;
     private final JComboBox<FilterChain> comboBox;
     private final FilterChain allFilterChains = new FilterChain();
-
     private static final FilterChain defaultFilterChain = new FilterChain("DEFAULT");
-
     private FilterChain customFilterChain;
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
+    private final ActionListener comboBoxSelectionChangedListener = l -> comboBoxSelectionChanged();
+
 
     public static FilterChain createNewDefaultFilterChain() {
-        FilterChain newCustomFilterChain = new FilterChain("CUSTOM");
+        FilterChain newCustomFilterChain = new FilterChain("--Custom--");
         newCustomFilterChain.addFilters(defaultFilterChain.getFilters());
         return newCustomFilterChain;
     }
@@ -133,7 +134,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         toolBar.add(MoveFilterDownAction.get(MoveFilterDownAction.class).createContextAwareInstance(this.getLookup()));
         this.add(view, BorderLayout.CENTER);
 
-        comboBox.addActionListener(l -> comboBoxSelectionChanged());
+        comboBox.addActionListener(comboBoxSelectionChangedListener);
         comboBoxSelectionChanged();
     }
 
@@ -150,14 +151,21 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         return allFilterChains;
     }
 
-    public void updateSelection() {
-        Node[] nodes = this.getExplorerManager().getSelectedNodes();
-        int[] arr = new int[nodes.length];
-        for (int i = 0; i < nodes.length; i++) {
-            int index = allFilterChains.getFilters().indexOf(((FilterNode) nodes[i]).getFilter());
-            arr[i] = index;
-        }
-        view.showSelection(arr);
+    public FilterChain getCurrentChain() {
+        return (FilterChain) comboBox.getSelectedItem();
+    }
+
+    public void selectFilterChain(FilterChain filterChain) {
+        comboBox.setSelectedItem(filterChain);
+        comboBox.repaint();
+    }
+
+    public void setCustomFilterChain(FilterChain filterChain) {
+        comboBox.removeActionListener(comboBoxSelectionChangedListener);
+        comboBox.removeItem(customFilterChain);
+        customFilterChain = filterChain;
+        comboBox.insertItemAt(customFilterChain, 0);
+        comboBox.addActionListener(comboBoxSelectionChangedListener);
     }
 
     private void comboBoxSelectionChanged() {
@@ -171,18 +179,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         currentChain.getChangedEvent().fire();
         SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != customFilterChain);
         SystemAction.get(SaveFilterSettingsAction.class).setEnabled(true);
-    }
-
-    public FilterChain getCurrentChain() {
-        return (FilterChain) comboBox.getSelectedItem();
-    }
-
-    public void setFilterChain(FilterChain filterChain) {
-        comboBox.setSelectedItem(filterChain);
-    }
-
-    public void setCustomFilterChain(FilterChain filterChain) {
-        customFilterChain = filterChain;
     }
 
     public void addFilterSetting() {
@@ -248,6 +244,16 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         protected void addNotify() {
             setKeys(allFilterChains.getFilters());
             updateSelection();
+        }
+
+        private void updateSelection() {
+            Node[] nodes = getExplorerManager().getSelectedNodes();
+            int[] arr = new int[nodes.length];
+            for (int i = 0; i < nodes.length; i++) {
+                int index = allFilterChains.getFilters().indexOf(((FilterNode) nodes[i]).getFilter());
+                arr[i] = index;
+            }
+            view.showSelection(arr);
         }
 
         @Override
