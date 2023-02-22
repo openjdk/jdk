@@ -98,7 +98,7 @@ abstract class CharacterData {
      *
      * For performance reasons, the implementation compares to a set of known
      * code points instead. These code points were found using an exhaustive
-     * search over all non-latin1 characters:
+     * search over all non-latin1 code points:
      *
      * {@snippet :
      *   for (int c = 256; c <= 0x3FFFF; c++) {
@@ -109,20 +109,28 @@ abstract class CharacterData {
      *   }
      * }
      *
-     * To catch regressions caused by future changes in Unicode code folding rules,
-     * an exhaustive test verifies that the constants in this method is always
+     * To catch regressions caused by future changes in Unicode, an exhaustive
+     * test verifies that the constants in this method is always
      * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
      */
-    static int latin1LowerCase(int c) {
+    static int latin1CaseFold(int c) {
         return switch (c) {
-            case 0x130 -> 0x69;   // Latin capital letter I with dot above. Upper: i
-            case 0x131 -> 0x69;   // Latin small letter dotless i.          Lower: I
-            case 0x178 -> 0xFF;   // Latin capital letter Y with diaeresis. Lower: Y with Diaeresis
-            case 0x17f -> 0x73;   // Latin small letter long s.             Upper: S
-            case 0x1e9e -> 0xDF;  // Latin capital letter sharp s.          Lower: Sharp s
-            case 0x212a -> 0x6B;  // Kelvin sign.                           Lower: k
-            case 0x212b -> 0xE5;  // Angstrom sign.                         Lower: A with Overring
-            default -> -1;
+            // Capital I with dot above: i
+            case 0x130  -> 'i';
+            // Small dotless i: i
+            case 0x131  -> 'i';
+            // Capital Y with diaeresis: Small y with Diaeresis
+            case 0x178  -> 0xFF;
+            // Small long s: Small s
+            case 0x17f  -> 's';
+            // Capital sharp S: Small sharp s
+            case 0x1e9e -> 0xDF;
+            // Kelvin sign: k
+            case 0x212a -> 'k';
+            // Angstrom sign: Small a with overring
+            case 0x212b -> 0xE5;
+            // c does not fold into latin1
+            default     -> -1;
         };
     }
 }
