@@ -112,7 +112,7 @@ public class Characters {
                 case "a-grave" -> 0xE0;
                 case "yD"      -> 0xE0;
                 case "micro"   -> 0xFF;
-                default -> Integer.parseInt(codePoint);;
+                default -> Integer.parseInt(codePoint);
             };
         }
         @Benchmark
