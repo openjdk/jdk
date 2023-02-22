@@ -86,7 +86,7 @@ class ChunkPool {
     // Free all chunks while in ThreadCritical lock
     // so NMT adjustment is stable.
     ThreadCritical tc;
-    while(cur != nullptr) {
+    while (cur != nullptr) {
       next = cur->next();
       os::free(cur);
       _num_chunks--;
