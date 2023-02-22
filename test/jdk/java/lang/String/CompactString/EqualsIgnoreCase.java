@@ -84,9 +84,8 @@ public class EqualsIgnoreCase extends CompactString {
      */
     @Test
     public void checkConsistencyWithCharacterUppercaseLowerCase() {
-        for (int ab = 0; ab < 256; ab++) {
-            for (int bb = 0; bb < 256; bb++) {
-                char a = (char) ab, b = (char) bb;
+        for (char a = 0; a < 256; a++) {
+            for (char b = 0; b < 256; b++) {
 
                 int caseFoldA = Character.toLowerCase(Character.toUpperCase(a));
                 int caseFoldB = Character.toLowerCase(Character.toUpperCase(b));
