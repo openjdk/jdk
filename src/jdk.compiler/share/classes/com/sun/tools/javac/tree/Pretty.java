@@ -1244,11 +1244,11 @@ public class Pretty extends JCTree.Visitor {
             if (tree.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 printExprs(tree.params);
             } else {
-                String sep = "";
+                char sep = '\0';
                 for (JCVariableDecl param : tree.params) {
                     print(sep);
                     print(param.name);
-                    sep = ",";
+                    sep = ',';
                 }
             }
             print(")->");
@@ -1453,9 +1453,9 @@ public class Pretty extends JCTree.Visitor {
                     print(tree.value.toString());
                     break;
                 case CHAR:
-                    print("\'");
+                    print('\'');
                     print(Convert.quote(String.valueOf((char)((Number)tree.value).intValue())));
-                    print("\'");
+                    print('\'');
                     break;
                 case BOOLEAN:
                     print(((Number)tree.value).intValue() == 1 ? "true" : "false");
