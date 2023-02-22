@@ -138,7 +138,7 @@ class CharacterDataLatin1 extends CharacterData {
         if (ch < 'A') { // Fast path for low code points
             return ch;
         }
-        // Lowercase by setting a single bit
+        // ASCII and Latin-1 were designed to optimize case-twiddling operations
         int lower = ch | 0x20;
         if (lower <= 'z' // In range a-z
                 || (lower >= 0xE0 && lower <= 0xFE && lower != 0xF7)) { // ..or agrave-thorn, excluding division
@@ -151,7 +151,7 @@ class CharacterDataLatin1 extends CharacterData {
         if (ch < 'a') { // Fast path for low code points
             return ch;
         }
-        // Uppercase by removing a single bit
+        // ASCII and Latin-1 were designed to optimize case-twiddling operations
         int upper = ch & 0xDF;
         if (upper <= 'Z' // In range A-Z
                 || (upper >= 0xC0 && upper <= 0xDE && upper != 0xD7)) { // ..or Agrave-Thorn, not multiplication
@@ -180,7 +180,7 @@ class CharacterDataLatin1 extends CharacterData {
          if (b1 == b2) {
              return true;
          }
-         // Uppercase b1 by removing a single bit
+         // ASCII and Latin-1 were designed to optimize case-twiddling operations
          int upper = b1 & 0xDF;
          if (upper < 'A') {
              return false;  // Low ASCII
