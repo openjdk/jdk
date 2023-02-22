@@ -81,32 +81,16 @@ class ChunkPool {
 
   // Prune the pool
   void prune() {
-    static const int blocksToKeep = 5;
-    Chunk* cur = nullptr;
+    Chunk* cur = _first;
     Chunk* next;
-    // if we have more than n chunks, free all of them
+    // Free all chunks while in ThreadCritical lock
+    // so NMT adjustment is stable.
     ThreadCritical tc;
-    if (_num_chunks > blocksToKeep) {
-      // free chunks at end of queue, for better locality
-      cur = _first;
-      for (size_t i = 0; i < (blocksToKeep - 1); i++) {
-        assert(cur != nullptr, "counter out of sync?");
-        cur = cur->next();
-      }
-      assert(cur != nullptr, "counter out of sync?");
-
+    while(cur != nullptr) {
       next = cur->next();
-      cur->set_next(nullptr);
+      os::free(cur);
+      _num_chunks--;
       cur = next;
-
-      // Free all remaining chunks while in ThreadCritical lock
-      // so NMT adjustment is stable.
-      while(cur != nullptr) {
-        next = cur->next();
-        os::free(cur);
-        _num_chunks--;
-        cur = next;
-      }
     }
   }
 
@@ -135,10 +119,10 @@ ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_s
 //
 
 class ChunkPoolCleaner : public PeriodicTask {
-  enum { CleaningInterval = 5000 };      // cleaning interval in ms
+  static const int cleaning_interval = 5000; // cleaning interval in ms
 
  public:
-   ChunkPoolCleaner() : PeriodicTask(CleaningInterval) {}
+   ChunkPoolCleaner() : PeriodicTask(cleaning_interval) {}
    void task() {
      ChunkPool::clean();
    }
