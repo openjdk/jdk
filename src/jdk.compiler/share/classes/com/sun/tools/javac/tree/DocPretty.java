@@ -94,7 +94,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     /**
      * Print list with separators.
      */
-    protected void print(List<? extends DocTree> list, char sep) throws IOException {
+    private void print(List<? extends DocTree> list, char sep) throws IOException {
         if (list.isEmpty())
             return;
         boolean first = true;
