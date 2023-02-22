@@ -81,7 +81,7 @@ public class Binary16ConversionNaN {
         float f =  Float.float16ToFloat(s);
         short s2 = Float.floatToFloat16(f);
 
-        if (s != s2) {
+        if (s2 != (s | 0x0200)) { // 0x0200 is QNaN bit
             errors++;
             System.out.println("Roundtrip failure on NaN value " +
                                Integer.toHexString(0xFFFF & (int)s) +

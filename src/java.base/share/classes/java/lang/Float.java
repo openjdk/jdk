@@ -1045,6 +1045,7 @@ public final class Float extends Number
                 sign * Float.POSITIVE_INFINITY :
                 Float.intBitsToFloat((bin16SignBit << 16) |
                                      0x7f80_0000 |
+                                     0x0040_0000 | //QNaN
                                      // Preserve NaN signif bits
                                      ( bin16SignifBits << SIGNIF_SHIFT ));
         }
@@ -1097,6 +1098,7 @@ public final class Float extends Number
             // Preserve sign and attempt to preserve significand bits
             return (short)(sign_bit
                     | 0x7c00 // max exponent + 1
+                    | 0x0200 // QNaN
                     // Preserve high order bit of float NaN in the
                     // binary16 result NaN (tenth bit); OR in remaining
                     // bits into lower 9 bits of binary 16 significand.

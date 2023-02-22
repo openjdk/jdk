@@ -337,6 +337,7 @@ public class Binary16Conversion {
             // Preserve sign and attempt to preserve significand bits
             return (short)(sign_bit
                     | 0x7c00 // max exponent + 1
+                    | 0x0200 // QNaN
                     // Preserve high order bit of float NaN in the
                     // binary16 result NaN (tenth bit); OR in remaining
                     // bits into lower 9 bits of binary 16 significand.

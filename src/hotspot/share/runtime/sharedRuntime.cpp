@@ -451,8 +451,9 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
   bits.f = x;
   jint doppel = bits.i;
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
-  if (g_isnan(x))
-    return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
+  if (g_isnan(x)) {
+    return (jshort)(sign_bit | 0x7c00 | 0x0200 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
+  }
 
   jfloat abs_f = (x >= 0.0f) ? x : (x * -1.0f);
 
@@ -521,7 +522,7 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
       bits.i = 0x7f800000;
       return sign * bits.f;
     } else {
-      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+      bits.i = (hf_sign_bit << 16) | 0x7f800000 | 0x00400000 |
                (hf_significand_bits << significand_shift);
       return bits.f;
     }
