@@ -2171,7 +2171,7 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != nullptr) {
       oop thread_obj = java_thread->threadObj();
-      if (thread_obj != nullptr && !thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+      if (thread_obj != nullptr && !thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
         return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
       }
     }
