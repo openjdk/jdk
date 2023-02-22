@@ -344,13 +344,16 @@ public abstract class HttpRequest {
      * <br><br>
      * <ul>
      *  <li> Retain all headers:
-     *  {@snippet : HttpRequest.newBuilder(request, (n, v) -> true)}
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> true) }
      *
      *  <li> Remove all headers:
-     *  {@snippet : HttpRequest.newBuilder(request, (n, v) -> false)}
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> false) }
      *
      *  <li> Remove a particular header (e.g. Foo-Bar):
-     *  {@snippet : HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar"))}
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar")) }
      * </ul>
      *
      * @param request the original request

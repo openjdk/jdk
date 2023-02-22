@@ -79,7 +79,7 @@ import static jdk.internal.net.http.common.Utils.charsetFrom;
  *
  * {@snippet :
  *     HttpResponse<String> response = client
- *     .send(request, BodyHandlers.ofString()); }
+ *       .send(request, BodyHandlers.ofString()); }
  *
  * <p> The class {@link BodyHandlers BodyHandlers} provides implementations
  * of many common response handlers. Alternatively, a custom {@code BodyHandler}
@@ -227,7 +227,8 @@ public interface HttpResponse<T> {
      *
      * <p> In the second example, the function returns a different subscriber
      * depending on the status code.
-     * {@snippet :   HttpRequest request = HttpRequest.newBuilder()
+     * {@snippet :
+     *    HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("http://www.foo.com/"))
      *        .build();
      *  BodyHandler<Path> bodyHandler = (rspInfo) -> rspInfo.statusCode() == 200
@@ -1337,7 +1338,8 @@ public interface HttpResponse<T> {
          * convert an {@code InputStream} into any annotated Java type.
          *
          * <p>For example:
-         * {@snippet :  public static <W> BodySubscriber<Supplier<W>> asJSON(Class<W> targetType) {
+         * {@snippet :
+         *   public static <W> BodySubscriber<Supplier<W>> asJSON(Class<W> targetType) {
          *     BodySubscriber<InputStream> upstream = BodySubscribers.ofInputStream();
          *
          *     BodySubscriber<Supplier<W>> downstream = BodySubscribers.mapping(

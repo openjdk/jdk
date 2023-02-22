@@ -292,7 +292,8 @@ public interface WebSocket {
          * typically used to make a request for more invocations.
          *
          * @implSpec The default implementation is equivalent to:
-         * {@snippet : webSocket.request(1); }
+         * {@snippet :
+         *  webSocket.request(1); }
          *
          * @param webSocket
          *         the WebSocket that has been connected
