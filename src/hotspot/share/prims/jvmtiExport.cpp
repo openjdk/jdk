@@ -1452,6 +1452,14 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
   // do JVMTI thread initialization (if needed)
   JvmtiEventController::thread_started(thread);
 
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    // Check for VirtualThreadStart event instead.
+    HandleMark hm(thread);
+    Handle vthread(thread, thread->threadObj());
+    JvmtiExport::post_vthread_start((jthread)vthread.raw_value());
+    return;
+  }
+
   // Do not post thread start event for hidden java thread.
   if (JvmtiEventController::is_enabled(JVMTI_EVENT_THREAD_START) &&
       !thread->is_hidden_from_external_view()) {
@@ -1485,6 +1493,14 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
+    return;
+  }
+
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    // Check for VirtualThreadEnd event instead.
+    HandleMark hm(thread);
+    Handle vthread(thread, thread->threadObj());
+    JvmtiExport::post_vthread_end((jthread)vthread.raw_value());
     return;
   }
 
