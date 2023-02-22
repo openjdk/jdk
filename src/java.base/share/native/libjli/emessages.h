@@ -57,7 +57,7 @@
 #define ARG_ERROR15     "Error: Option %s is not allowed in this context"
 #define ARG_ERROR16     "Error: Option %s in %s is not allowed in this context"
 #define ARG_ERROR17     "Error: Cannot specify main class in this context"
-#define ARG_ERROR18     "Error: Could not read %s"
+#define ARG_ERROR18     "Error: Failed to read %s"
 
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR
