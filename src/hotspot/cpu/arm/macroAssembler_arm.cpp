@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                                          Register temp_reg3,
                                          Label& L_success) {
   Label L_failure;
-  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, NULL);
-  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, NULL);
+  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, nullptr);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, nullptr);
   bind(L_failure);
 };
 
@@ -125,10 +125,10 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -205,9 +205,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   // a couple of useful fields in sub_klass:
   int ss_offset = in_bytes(Klass::secondary_supers_offset());
@@ -630,7 +630,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
                              AsmCondition cond
                              ) {
 
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0, cond);
     return;
   }
@@ -651,7 +651,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
 }
 
 void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) {
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0);
     return;
   }
@@ -842,7 +842,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     block_comment(buffer);
   }
 #endif
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -884,7 +884,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -940,7 +940,7 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
     if (tmp == noreg) {
       tmp = Rtemp;
       assert((! Thread::current()->is_Compiler_thread()) ||
-             (! (ciEnv::current()->task() == NULL)) ||
+             (! (ciEnv::current()->task() == nullptr)) ||
              (! (ciEnv::current()->comp_level() == CompLevel_full_optimization)),
              "Rtemp not available in C2"); // explicit tmp register required
       // XXX: could we mark the code buffer as not compatible with C2 ?
@@ -970,7 +970,7 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
   strb(R0, Address(tmp));
@@ -1104,7 +1104,7 @@ void MacroAssembler::debug(const char* msg, const intx* registers) {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  const char* buf = NULL;
+  const char* buf = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -1249,7 +1249,7 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
 // Preserves flags and all registers.
 // On SMP the updated value might not be visible to external observers without a synchronization barrier
 void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
-  if (counter_addr != NULL) {
+  if (counter_addr != nullptr) {
     InlinedAddress counter_addr_literal((address)counter_addr);
     Label done, retry;
     if (cond != al) {
@@ -1284,20 +1284,57 @@ void MacroAssembler::resolve_jobject(Register value,
                                      Register tmp1,
                                      Register tmp2) {
   assert_different_registers(value, tmp1, tmp2);
-  Label done, not_weak;
-  cbz(value, done);             // Use NULL as-is.
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(value, 0, not_weak);      // Test for jweak tag.
+  Label done, tagged, weak_tagged;
 
+  cbz(value, done);           // Use null as-is.
+  tst(value, JNIHandles::tag_mask); // Test for tag.
+  b(tagged, ne);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(tagged);
+  tst(value, JNIHandles::TypeTag::weak_global); // Test for weak tag.
+  b(weak_tagged, ne);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 Address(value, -JNIHandles::weak_tag_value), value, tmp1, tmp2, noreg);
-  b(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE,
-                 Address(value, 0), value, tmp1, tmp2, noreg);
+                 Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2, noreg);
   verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value,
+                                     Register tmp1,
+                                     Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use null as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    tst(value, JNIHandles::TypeTag::global); // Test for global tag.
+    b(valid_global_tag, ne);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -1619,6 +1656,10 @@ void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmConditi
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
 
+void MacroAssembler::load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond) {
+  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
+  load_klass(dst_klass, src_oop, cond);
+}
 
 // Blows src_klass.
 void MacroAssembler::store_klass(Register src_klass, Register dst_oop) {
@@ -1643,7 +1684,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -1655,7 +1696,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);

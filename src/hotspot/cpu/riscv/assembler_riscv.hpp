@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@
 #include "asm/register.hpp"
 #include "assembler_riscv.inline.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include <type_traits>
 
 #define XLEN 64
 
@@ -153,59 +157,128 @@ const FloatRegister g_FPArgReg[Argument::n_float_register_parameters_c] = {
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pcrel, literal };
+  enum mode { no_mode, base_plus_offset, literal };
 
  private:
-  Register _base;
-  Register _index;
-  int64_t _offset;
+  struct Nonliteral {
+    Nonliteral(Register base, Register index, int64_t offset)
+      : _base(base), _index(index), _offset(offset) {}
+    Register _base;
+    Register _index;
+    int64_t _offset;
+  };
+
+  struct Literal {
+    Literal(address target, const RelocationHolder& rspec)
+      : _target(target), _rspec(rspec) {}
+    // If the target is far we'll need to load the ea of this to a
+    // register to reach it. Otherwise if near we can do PC-relative
+    // addressing.
+    address _target;
+
+    RelocationHolder _rspec;
+  };
+
+  void assert_is_nonliteral() const NOT_DEBUG_RETURN;
+  void assert_is_literal() const NOT_DEBUG_RETURN;
+
+  // Discriminated union, based on _mode.
+  // - no_mode: uses dummy _nonliteral, for ease of copying.
+  // - literal: only _literal is used.
+  // - others: only _nonliteral is used.
   enum mode _mode;
+  union {
+    Nonliteral _nonliteral;
+    Literal _literal;
+  };
 
-  RelocationHolder _rspec;
-
-  // If the target is far we'll need to load the ea of this to a
-  // register to reach it. Otherwise if near we can do PC-relative
-  // addressing.
-  address          _target;
+  // Helper for copy constructor and assignment operator.
+  // Copy mode-relevant part of a into this.
+  void copy_data(const Address& a) {
+    assert(_mode == a._mode, "precondition");
+    if (_mode == literal) {
+      new (&_literal) Literal(a._literal);
+    } else {
+      // non-literal mode or no_mode.
+      new (&_nonliteral) Nonliteral(a._nonliteral);
+    }
+  }
 
  public:
-  Address()
-    : _base(noreg), _index(noreg), _offset(0), _mode(no_mode), _target(NULL) { }
-  Address(Register r)
-    : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(NULL) { }
+  // no_mode initializes _nonliteral for ease of copying.
+  Address() :
+    _mode(no_mode),
+    _nonliteral(noreg, noreg, 0)
+  {}
+
+  Address(Register r) :
+    _mode(base_plus_offset),
+    _nonliteral(r, noreg, 0)
+  {}
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  Address(Register r, T o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) {}
+  Address(Register r, T o) :
+    _mode(base_plus_offset),
+    _nonliteral(r, noreg, o)
+  {}
 
-  Address(Register r, ByteSize disp)
-    : Address(r, in_bytes(disp)) {}
-  Address(address target, RelocationHolder const& rspec)
-    : _base(noreg),
-      _index(noreg),
-      _offset(0),
-      _mode(literal),
-      _rspec(rspec),
-      _target(target) { }
+  Address(Register r, ByteSize disp) : Address(r, in_bytes(disp)) {}
+
+  Address(address target, const RelocationHolder& rspec) :
+    _mode(literal),
+    _literal(target, rspec)
+  {}
+
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
+  Address(const Address& a) : _mode(a._mode) { copy_data(a); }
+
+  // Verify the value is trivially destructible regardless of mode, so our
+  // destructor can also be trivial, and so our assignment operator doesn't
+  // need to destruct the old value before copying over it.
+  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
+  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+
+  Address& operator=(const Address& a) {
+    _mode = a._mode;
+    copy_data(a);
+    return *this;
+  }
+
+  ~Address() = default;
+
   const Register base() const {
-    guarantee((_mode == base_plus_offset | _mode == pcrel | _mode == literal), "wrong mode");
-    return _base;
+    assert_is_nonliteral();
+    return _nonliteral._base;
   }
+
   long offset() const {
-    return _offset;
+    assert_is_nonliteral();
+    return _nonliteral._offset;
   }
+
   Register index() const {
-    return _index;
+    assert_is_nonliteral();
+    return _nonliteral._index;
   }
+
   mode getMode() const {
     return _mode;
   }
 
-  bool uses(Register reg) const { return _base == reg; }
-  const address target() const { return _target; }
-  const RelocationHolder& rspec() const { return _rspec; }
+  bool uses(Register reg) const {
+    return _mode != literal && base() == reg;
+  }
+
+  const address target() const {
+    assert_is_literal();
+    return _literal._target;
+  }
+
+  const RelocationHolder& rspec() const {
+    assert_is_literal();
+    return _literal._rspec;
+  }
 };
 
 // Convenience classes
@@ -290,58 +363,6 @@ public:
     rmm = 0b100,     // round to Nearest, ties to Max Magnitude
     rdy = 0b111,     // in instruction's rm field, selects dynamic rounding mode.In Rounding Mode register, Invalid.
   };
-
-  void baseOffset32(Register Rd, const Address &adr, int32_t &offset) {
-    assert(Rd != noreg, "Rd must not be empty register!");
-    guarantee(Rd != adr.base(), "should use different registers!");
-    if (is_offset_in_range(adr.offset(), 32)) {
-      int32_t imm = adr.offset();
-      int32_t upper = imm, lower = imm;
-      lower = (imm << 20) >> 20;
-      upper -= lower;
-      lui(Rd, upper);
-      offset = lower;
-    } else {
-      movptr_with_offset(Rd, (address)(uintptr_t)adr.offset(), offset);
-    }
-    add(Rd, Rd, adr.base());
-  }
-
-  void baseOffset(Register Rd, const Address &adr, int32_t &offset) {
-    if (is_offset_in_range(adr.offset(), 12)) {
-      assert(Rd != noreg, "Rd must not be empty register!");
-      addi(Rd, adr.base(), adr.offset());
-      offset = 0;
-    } else {
-      baseOffset32(Rd, adr, offset);
-    }
-  }
-
-  void _li(Register Rd, int64_t imm);  // optimized load immediate
-  void li32(Register Rd, int32_t imm);
-  void li64(Register Rd, int64_t imm);
-  void movptr(Register Rd, address addr);
-  void movptr_with_offset(Register Rd, address addr, int32_t &offset);
-  void movptr(Register Rd, uintptr_t imm64);
-  void j(const address &dest, Register temp = t0);
-  void j(const Address &adr, Register temp = t0);
-  void j(Label &l, Register temp = t0);
-  void jal(Label &l, Register temp = t0);
-  void jal(const address &dest, Register temp = t0);
-  void jal(const Address &adr, Register temp = t0);
-  void jr(Register Rs);
-  void jalr(Register Rs);
-  void ret();
-  void call(const address &dest, Register temp = t0);
-  void call(const Address &adr, Register temp = t0);
-  void tail(const address &dest, Register temp = t0);
-  void tail(const Address &adr, Register temp = t0);
-  void call(Label &l, Register temp) {
-    call(target(l), temp);
-  }
-  void tail(Label &l, Register temp) {
-    tail(target(l), temp);
-  }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
     assert_cond(msb >= lsb && msb <= 31);
@@ -484,13 +505,7 @@ public:
 
 #undef INSN
 
-#define INSN_ENTRY_RELOC(result_type, header)                               \
-  result_type header {                                                      \
-    guarantee(rtype == relocInfo::internal_word_type,                       \
-              "only internal_word_type relocs make sense here");            \
-    relocate(InternalAddress(dest).rspec());
-
-  // Load/store register (all modes)
+// Load/store register (all modes)
 #define INSN(NAME, op, funct3)                                                                     \
   void NAME(Register Rd, Register Rs, const int32_t offset) {                                      \
     guarantee(is_offset_in_range(offset, 12), "offset is invalid.");                               \
@@ -514,62 +529,6 @@ public:
 
 #undef INSN
 
-#define INSN(NAME)                                                                                 \
-  void NAME(Register Rd, address dest) {                                                           \
-    assert_cond(dest != NULL);                                                                     \
-    int64_t distance = (dest - pc());                                                              \
-    if (is_offset_in_range(distance, 32)) {                                                        \
-      auipc(Rd, (int32_t)distance + 0x800);                                                        \
-      NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                               \
-    } else {                                                                                       \
-      int32_t offset = 0;                                                                          \
-      movptr_with_offset(Rd, dest, offset);                                                        \
-      NAME(Rd, Rd, offset);                                                                        \
-    }                                                                                              \
-  }                                                                                                \
-  INSN_ENTRY_RELOC(void, NAME(Register Rd, address dest, relocInfo::relocType rtype))              \
-    NAME(Rd, dest);                                                                                \
-  }                                                                                                \
-  void NAME(Register Rd, const Address &adr, Register temp = t0) {                                 \
-    switch (adr.getMode()) {                                                                       \
-      case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rd, adr.target());                                                                    \
-        break;                                                                                     \
-      }                                                                                            \
-      case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
-          NAME(Rd, adr.base(), adr.offset());                                                      \
-        } else {                                                                                   \
-          int32_t offset = 0;                                                                      \
-          if (Rd == adr.base()) {                                                                  \
-            baseOffset32(temp, adr, offset);                                                       \
-            NAME(Rd, temp, offset);                                                                \
-          } else {                                                                                 \
-            baseOffset32(Rd, adr, offset);                                                         \
-            NAME(Rd, Rd, offset);                                                                  \
-          }                                                                                        \
-        }                                                                                          \
-        break;                                                                                     \
-      }                                                                                            \
-      default:                                                                                     \
-        ShouldNotReachHere();                                                                      \
-    }                                                                                              \
-  }                                                                                                \
-  void NAME(Register Rd, Label &L) {                                                               \
-    wrap_label(Rd, L, &Assembler::NAME);                                                           \
-  }
-
-  INSN(lb);
-  INSN(lbu);
-  INSN(lh);
-  INSN(lhu);
-  INSN(lw);
-  INSN(lwu);
-  INSN(ld);
-
-#undef INSN
-
 #define INSN(NAME, op, funct3)                                                                     \
   void NAME(FloatRegister Rd, Register Rs, const int32_t offset) {                                 \
     guarantee(is_offset_in_range(offset, 12), "offset is invalid.");                               \
@@ -586,48 +545,6 @@ public:
   INSN(flw,  0b0000111, 0b010);
   INSN(_fld, 0b0000111, 0b011);
 
-#undef INSN
-
-#define INSN(NAME)                                                                                 \
-  void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != NULL);                                                                     \
-    int64_t distance = (dest - pc());                                                              \
-    if (is_offset_in_range(distance, 32)) {                                                        \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
-      NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                             \
-    } else {                                                                                       \
-      int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
-      NAME(Rd, temp, offset);                                                                      \
-    }                                                                                              \
-  }                                                                                                \
-  INSN_ENTRY_RELOC(void, NAME(FloatRegister Rd, address dest, relocInfo::relocType rtype, Register temp = t0)) \
-    NAME(Rd, dest, temp);                                                                          \
-  }                                                                                                \
-  void NAME(FloatRegister Rd, const Address &adr, Register temp = t0) {                            \
-    switch (adr.getMode()) {                                                                       \
-      case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rd, adr.target(), temp);                                                              \
-        break;                                                                                     \
-      }                                                                                            \
-      case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
-          NAME(Rd, adr.base(), adr.offset());                                                      \
-        } else {                                                                                   \
-          int32_t offset = 0;                                                                      \
-          baseOffset32(temp, adr, offset);                                                         \
-          NAME(Rd, temp, offset);                                                                  \
-        }                                                                                          \
-        break;                                                                                     \
-      }                                                                                            \
-      default:                                                                                     \
-        ShouldNotReachHere();                                                                      \
-    }                                                                                              \
-  }
-
-  INSN(flw);
-  INSN(fld);
 #undef INSN
 
 #define INSN(NAME, op, funct3)                                                                           \
@@ -650,46 +567,12 @@ public:
     emit(insn);                                                                                          \
   }
 
-  INSN(_beq, 0b1100011, 0b000);
-  INSN(_bne, 0b1100011, 0b001);
+  INSN(beq,  0b1100011, 0b000);
+  INSN(bne,  0b1100011, 0b001);
   INSN(bge,  0b1100011, 0b101);
   INSN(bgeu, 0b1100011, 0b111);
   INSN(blt,  0b1100011, 0b100);
   INSN(bltu, 0b1100011, 0b110);
-
-#undef INSN
-
-#define INSN(NAME)                                                                                       \
-  void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
-    assert_cond(dest != NULL);                                                                           \
-    int64_t offset = (dest - pc());                                                                      \
-    guarantee(is_imm_in_range(offset, 12, 1), "offset is invalid.");                                     \
-    NAME(Rs1, Rs2, offset);                                                                              \
-  }                                                                                                      \
-  INSN_ENTRY_RELOC(void, NAME(Register Rs1, Register Rs2, address dest, relocInfo::relocType rtype))     \
-    NAME(Rs1, Rs2, dest);                                                                                \
-  }
-
-  INSN(beq);
-  INSN(bne);
-  INSN(bge);
-  INSN(bgeu);
-  INSN(blt);
-  INSN(bltu);
-
-#undef INSN
-
-#define INSN(NAME, NEG_INSN)                                                                \
-  void NAME(Register Rs1, Register Rs2, Label &L, bool is_far = false) {                    \
-    wrap_label(Rs1, Rs2, L, &Assembler::NAME, &Assembler::NEG_INSN, is_far);                \
-  }
-
-  INSN(beq,  bne);
-  INSN(bne,  beq);
-  INSN(blt,  bge);
-  INSN(bge,  blt);
-  INSN(bltu, bgeu);
-  INSN(bgeu, bltu);
 
 #undef INSN
 
@@ -715,105 +598,6 @@ public:
   INSN(_sd,  Register,      0b0100011, 0b011);
   INSN(fsw,  FloatRegister, 0b0100111, 0b010);
   INSN(_fsd, FloatRegister, 0b0100111, 0b011);
-
-#undef INSN
-
-#define INSN(NAME, REGISTER)                                                                                \
-  INSN_ENTRY_RELOC(void, NAME(REGISTER Rs, address dest, relocInfo::relocType rtype, Register temp = t0))   \
-    NAME(Rs, dest, temp);                                                                                   \
-  }
-
-  INSN(sb,  Register);
-  INSN(sh,  Register);
-  INSN(sw,  Register);
-  INSN(sd,  Register);
-  INSN(fsw, FloatRegister);
-  INSN(fsd, FloatRegister);
-
-#undef INSN
-
-#define INSN(NAME)                                                                                 \
-  void NAME(Register Rs, address dest, Register temp = t0) {                                       \
-    assert_cond(dest != NULL);                                                                     \
-    assert_different_registers(Rs, temp);                                                          \
-    int64_t distance = (dest - pc());                                                              \
-    if (is_offset_in_range(distance, 32)) {                                                        \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
-      NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                             \
-    } else {                                                                                       \
-      int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
-      NAME(Rs, temp, offset);                                                                      \
-    }                                                                                              \
-  }                                                                                                \
-  void NAME(Register Rs, const Address &adr, Register temp = t0) {                                 \
-    switch (adr.getMode()) {                                                                       \
-      case Address::literal: {                                                                     \
-        assert_different_registers(Rs, temp);                                                      \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rs, adr.target(), temp);                                                              \
-        break;                                                                                     \
-      }                                                                                            \
-      case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
-          NAME(Rs, adr.base(), adr.offset());                                                      \
-        } else {                                                                                   \
-          int32_t offset= 0;                                                                       \
-          assert_different_registers(Rs, temp);                                                    \
-          baseOffset32(temp, adr, offset);                                                         \
-          NAME(Rs, temp, offset);                                                                  \
-        }                                                                                          \
-        break;                                                                                     \
-      }                                                                                            \
-      default:                                                                                     \
-        ShouldNotReachHere();                                                                      \
-    }                                                                                              \
-  }
-
-  INSN(sb);
-  INSN(sh);
-  INSN(sw);
-  INSN(sd);
-
-#undef INSN
-
-#define INSN(NAME)                                                                                 \
-  void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != NULL);                                                                     \
-    int64_t distance = (dest - pc());                                                              \
-    if (is_offset_in_range(distance, 32)) {                                                        \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
-      NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                             \
-    } else {                                                                                       \
-      int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
-      NAME(Rs, temp, offset);                                                                      \
-    }                                                                                              \
-  }                                                                                                \
-  void NAME(FloatRegister Rs, const Address &adr, Register temp = t0) {                            \
-    switch (adr.getMode()) {                                                                       \
-      case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rs, adr.target(), temp);                                                              \
-        break;                                                                                     \
-      }                                                                                            \
-      case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
-          NAME(Rs, adr.base(), adr.offset());                                                      \
-        } else {                                                                                   \
-          int32_t offset = 0;                                                                      \
-          baseOffset32(temp, adr, offset);                                                         \
-          NAME(Rs, temp, offset);                                                                  \
-        }                                                                                          \
-        break;                                                                                     \
-      }                                                                                            \
-      default:                                                                                     \
-        ShouldNotReachHere();                                                                      \
-    }                                                                                              \
-  }
-
-  INSN(fsw);
-  INSN(fsd);
 
 #undef INSN
 
@@ -855,58 +639,34 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, op)                                                                        \
-  void NAME(Register Rd, const int32_t offset) {                                              \
-    guarantee(is_imm_in_range(offset, 20, 1), "offset is invalid.");                          \
-    unsigned insn = 0;                                                                        \
-    patch((address)&insn, 6, 0, op);                                                          \
-    patch_reg((address)&insn, 7, Rd);                                                         \
-    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));                         \
-    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));                              \
-    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));                         \
-    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));                              \
-    emit(insn);                                                                               \
+#define INSN(NAME, op)                                                                \
+  void NAME(Register Rd, const int32_t offset) {                                      \
+    guarantee(is_imm_in_range(offset, 20, 1), "offset is invalid.");                  \
+    unsigned insn = 0;                                                                \
+    patch((address)&insn, 6, 0, op);                                                  \
+    patch_reg((address)&insn, 7, Rd);                                                 \
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));                 \
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));                      \
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));                 \
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));                      \
+    emit(insn);                                                                       \
   }
 
-  INSN(_jal, 0b1101111);
+  INSN(jal, 0b1101111);
 
 #undef INSN
 
-#define INSN(NAME)                                                                            \
-  void NAME(Register Rd, const address dest, Register temp = t0) {                            \
-    assert_cond(dest != NULL);                                                                \
-    int64_t offset = dest - pc();                                                             \
-    if (is_imm_in_range(offset, 20, 1)) {                                                     \
-      NAME(Rd, offset);                                                                       \
-    } else {                                                                                  \
-      assert_different_registers(Rd, temp);                                                   \
-      int32_t off = 0;                                                                        \
-      movptr_with_offset(temp, dest, off);                                                    \
-      jalr(Rd, temp, off);                                                                    \
-    }                                                                                         \
-  }                                                                                           \
-  void NAME(Register Rd, Label &L, Register temp = t0) {                                      \
-    assert_different_registers(Rd, temp);                                                     \
-    wrap_label(Rd, L, temp, &Assembler::NAME);                                                \
-  }
-
-  INSN(jal);
-
-#undef INSN
-
-#undef INSN_ENTRY_RELOC
-
-#define INSN(NAME, op, funct)                                                              \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                              \
-    guarantee(is_offset_in_range(offset, 12), "offset is invalid.");                       \
-    unsigned insn = 0;                                                                     \
-    patch((address)&insn, 6, 0, op);                                                       \
-    patch_reg((address)&insn, 7, Rd);                                                      \
-    patch((address)&insn, 14, 12, funct);                                                  \
-    patch_reg((address)&insn, 15, Rs);                                                     \
-    int32_t val = offset & 0xfff;                                                          \
-    patch((address)&insn, 31, 20, val);                                                    \
-    emit(insn);                                                                            \
+#define INSN(NAME, op, funct)                                                         \
+  void NAME(Register Rd, Register Rs, const int32_t offset) {                         \
+    guarantee(is_offset_in_range(offset, 12), "offset is invalid.");                  \
+    unsigned insn = 0;                                                                \
+    patch((address)&insn, 6, 0, op);                                                  \
+    patch_reg((address)&insn, 7, Rd);                                                 \
+    patch((address)&insn, 14, 12, funct);                                             \
+    patch_reg((address)&insn, 15, Rs);                                                \
+    int32_t val = offset & 0xfff;                                                     \
+    patch((address)&insn, 31, 20, val);                                               \
+    emit(insn);                                                                       \
   }
 
   INSN(_jalr, 0b1100111, 0b000);
@@ -922,13 +682,13 @@ public:
     unsigned insn = 0;
     guarantee(predecessor < 16, "predecessor is invalid");
     guarantee(successor < 16, "successor is invalid");
-    patch((address)&insn, 6, 0, 0b001111);
-    patch((address)&insn, 11, 7, 0b00000);
+    patch((address)&insn, 6, 0, 0b001111);      // opcode
+    patch((address)&insn, 11, 7, 0b00000);      // rd
     patch((address)&insn, 14, 12, 0b000);
-    patch((address)&insn, 19, 15, 0b00000);
-    patch((address)&insn, 23, 20, successor);
-    patch((address)&insn, 27, 24, predecessor);
-    patch((address)&insn, 31, 28, 0b0000);
+    patch((address)&insn, 19, 15, 0b00000);     // rs1
+    patch((address)&insn, 23, 20, successor);   // succ
+    patch((address)&insn, 27, 24, predecessor); // pred
+    patch((address)&insn, 31, 28, 0b0000);      // fm
     emit(insn);
   }
 
@@ -1034,10 +794,12 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     emit(insn);                                                                             \
   }
 
-  INSN(fsqrt_s,   0b1010011, 0b00000, 0b0101100);
-  INSN(fsqrt_d,   0b1010011, 0b00000, 0b0101101);
-  INSN(fcvt_s_d,  0b1010011, 0b00001, 0b0100000);
-  INSN(fcvt_d_s,  0b1010011, 0b00000, 0b0100001);
+  INSN(fsqrt_s,  0b1010011, 0b00000, 0b0101100);
+  INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
+  INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
+  INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
+  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
+  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
 #undef INSN
 
 // Immediate Instruction
@@ -1294,6 +1056,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
+  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
 
 #undef INSN
 
@@ -1314,6 +1077,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
   INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
   INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
+  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
 
 #undef INSN
 
@@ -1446,7 +1210,7 @@ enum VectorMask {
   }
 
   // Vector Mask
-  INSN(vpopc_m,  0b1010111, 0b010, 0b10000, 0b010000);
+  INSN(vcpop_m,  0b1010111, 0b010, 0b10000, 0b010000);
   INSN(vfirst_m, 0b1010111, 0b010, 0b10001, 0b010000);
 #undef INSN
 
@@ -1565,8 +1329,6 @@ enum VectorMask {
   INSN(vnmsac_vx, 0b1010111, 0b110, 0b101111);
   INSN(vmacc_vx,  0b1010111, 0b110, 0b101101);
 
-  INSN(vrsub_vx,  0b1010111, 0b100, 0b000011);
-
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1592,7 +1354,7 @@ enum VectorMask {
   }
 
   // Vector Single-Width Floating-Point Reduction Instructions
-  INSN(vfredsum_vs,   0b1010111, 0b001, 0b000001);
+  INSN(vfredusum_vs,  0b1010111, 0b001, 0b000001);
   INSN(vfredosum_vs,  0b1010111, 0b001, 0b000011);
   INSN(vfredmin_vs,   0b1010111, 0b001, 0b000101);
   INSN(vfredmax_vs,   0b1010111, 0b001, 0b000111);
@@ -1724,8 +1486,9 @@ enum VectorMask {
   INSN(vand_vx, 0b1010111, 0b100, 0b001001);
 
   // Vector Single-Width Integer Add and Subtract
-  INSN(vsub_vx, 0b1010111, 0b100, 0b000010);
-  INSN(vadd_vx, 0b1010111, 0b100, 0b000000);
+  INSN(vsub_vx,  0b1010111, 0b100, 0b000010);
+  INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
+  INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
 #undef INSN
 
@@ -1766,7 +1529,7 @@ enum VectorMask {
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {        \
     guarantee(is_imm_in_range(imm, 5, 0), "imm is invalid");                                       \
-    patch_VArith(op, Vd, funct3, (uint32_t)imm & 0x1f, Vs2, vm, funct6);                           \
+    patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
   INSN(vmsgt_vi,  0b1010111, 0b011, 0b011111);
@@ -1779,16 +1542,7 @@ enum VectorMask {
   INSN(vor_vi,    0b1010111, 0b011, 0b001010);
   INSN(vand_vi,   0b1010111, 0b011, 0b001001);
   INSN(vadd_vi,   0b1010111, 0b011, 0b000000);
-
-#undef INSN
-
-#define INSN(NAME, op, funct3, funct6)                                                             \
-  void NAME(VectorRegister Vd, int32_t imm, VectorRegister Vs2, VectorMask vm = unmasked) {        \
-    guarantee(is_imm_in_range(imm, 5, 0), "imm is invalid");                                       \
-    patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
-  }
-
-  INSN(vrsub_vi, 0b1010111, 0b011, 0b000011);
+  INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
 
 #undef INSN
 
@@ -1802,11 +1556,11 @@ enum VectorMask {
 
   // Vector Mask-Register Logical Instructions
   INSN(vmxnor_mm,   0b1010111, 0b010, 0b1, 0b011111);
-  INSN(vmornot_mm,  0b1010111, 0b010, 0b1, 0b011100);
+  INSN(vmorn_mm,    0b1010111, 0b010, 0b1, 0b011100);
   INSN(vmnor_mm,    0b1010111, 0b010, 0b1, 0b011110);
   INSN(vmor_mm,     0b1010111, 0b010, 0b1, 0b011010);
   INSN(vmxor_mm,    0b1010111, 0b010, 0b1, 0b011011);
-  INSN(vmandnot_mm, 0b1010111, 0b010, 0b1, 0b011000);
+  INSN(vmandn_mm,   0b1010111, 0b010, 0b1, 0b011000);
   INSN(vmnand_mm,   0b1010111, 0b010, 0b1, 0b011101);
   INSN(vmand_mm,    0b1010111, 0b010, 0b1, 0b011001);
 
@@ -1906,7 +1660,7 @@ enum Nf {
   }
 
   // Vector Load/Store Instructions
-  INSN(vl1r_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
+  INSN(vl1re8_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
 
 #undef INSN
 
@@ -1927,8 +1681,8 @@ enum Nf {
   }
 
   // Vector Unit-Stride Instructions
-  INSN(vle1_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
-  INSN(vse1_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vlm_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vsm_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
 
 #undef INSN
 
@@ -1990,7 +1744,7 @@ enum Nf {
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
-// Currently only support Zba and Zbb.
+// Currently only support Zba, Zbb and Zbs bitmanip extensions.
 // ====================================
 #define INSN(NAME, op, funct3, funct7)                  \
   void NAME(Register Rd, Register Rs1, Register Rs2) {  \
@@ -2065,6 +1819,7 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
 
@@ -2089,20 +1844,30 @@ enum Nf {
 // RISC-V Compressed Instructions Extension
 // ========================================
 // Note:
-// 1. When UseRVC is enabled, 32-bit instructions under 'CompressibleRegion's will be
-//    transformed to 16-bit instructions if compressible.
-// 2. RVC instructions in Assembler always begin with 'c_' prefix, as 'c_li',
-//    but most of time we have no need to explicitly use these instructions.
-// 3. 'CompressibleRegion' is introduced to hint instructions in this Region's RTTI range
-//    are qualified to be compressed with their 2-byte versions.
-//    An example:
+// 1. Assembler functions encoding 16-bit compressed instructions always begin with a 'c_'
+//    prefix, such as 'c_add'. Correspondingly, assembler functions encoding normal 32-bit
+//    instructions with begin with a '_' prefix, such as "_add". Most of time users have no
+//    need to explicitly emit these compressed instructions. Instead, they still use unified
+//    wrappers such as 'add' which do the compressing work through 'c_add' depending on the
+//    the operands of the instruction and availability of the RVC hardware extension.
+//
+// 2. 'CompressibleRegion' and 'IncompressibleRegion' are introduced to mark assembler scopes
+//     within which instructions are qualified or unqualified to be compressed into their 16-bit
+//     versions. An example:
 //
 //      CompressibleRegion cr(_masm);
-//      __ andr(...);      // this instruction could change to c.and if able to
+//      __ add(...);       // this instruction will be compressed into 'c.and' when possible
+//      {
+//         IncompressibleRegion ir(_masm);
+//         __ add(...);    // this instruction will not be compressed
+//         {
+//            CompressibleRegion cr(_masm);
+//            __ add(...); // this instruction will be compressed into 'c.and' when possible
+//         }
+//      }
 //
-// 4. Using -XX:PrintAssemblyOptions=no-aliases could distinguish RVC instructions from
-//    normal ones.
-//
+// 3. When printing JIT assembly code, using -XX:PrintAssemblyOptions=no-aliases could help
+//    distinguish compressed 16-bit instructions from normal 32-bit ones.
 
 private:
   bool _in_compressible_region;
@@ -2111,21 +1876,57 @@ public:
   void set_in_compressible_region(bool b) { _in_compressible_region = b; }
 public:
 
-  // a compressible region
-  class CompressibleRegion : public StackObj {
+  // an abstract compressible region
+  class AbstractCompressibleRegion : public StackObj {
   protected:
     Assembler *_masm;
     bool _saved_in_compressible_region;
-  public:
-    CompressibleRegion(Assembler *_masm)
+  protected:
+    AbstractCompressibleRegion(Assembler *_masm)
     : _masm(_masm)
-    , _saved_in_compressible_region(_masm->in_compressible_region()) {
+    , _saved_in_compressible_region(_masm->in_compressible_region()) {}
+  };
+  // a compressible region
+  class CompressibleRegion : public AbstractCompressibleRegion {
+  public:
+    CompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
       _masm->set_in_compressible_region(true);
     }
     ~CompressibleRegion() {
       _masm->set_in_compressible_region(_saved_in_compressible_region);
     }
   };
+  // an incompressible region
+  class IncompressibleRegion : public AbstractCompressibleRegion {
+  public:
+    IncompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
+      _masm->set_in_compressible_region(false);
+    }
+    ~IncompressibleRegion() {
+      _masm->set_in_compressible_region(_saved_in_compressible_region);
+    }
+  };
+
+public:
+  // Emit a relocation.
+  void relocate(RelocationHolder const& rspec, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
+  }
+  void relocate(relocInfo::relocType rtype, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
+  }
+  template <typename Callback>
+  void relocate(RelocationHolder const& rspec, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
+    IncompressibleRegion ir(this);  // relocations
+    emit_insts();
+  }
+  template <typename Callback>
+  void relocate(relocInfo::relocType rtype, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
+    IncompressibleRegion ir(this);  // relocations
+    emit_insts();
+  }
 
   // patch a 16-bit instruction.
   static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
@@ -2661,10 +2462,6 @@ public:
 
 private:
 // some helper functions
-  bool do_compress() const {
-    return UseRVC && in_compressible_region();
-  }
-
 #define FUNC(NAME, funct3, bits)                                                             \
   bool NAME(Register rs1, Register rd_rs2, int32_t imm12, bool ld) {                         \
     return rs1 == sp &&                                                                      \
@@ -2704,6 +2501,10 @@ private:
 #undef FUNC
 
 public:
+  bool do_compress() const {
+    return UseRVC && in_compressible_region();
+  }
+
 // --------------------------
 // Load/store register
 // --------------------------
@@ -2827,42 +2628,7 @@ public:
 #undef INSN
 
 // --------------------------
-// Conditional branch instructions
-// --------------------------
-#define INSN(NAME, C_NAME, NORMAL_NAME)                                                      \
-  void NAME(Register Rs1, Register Rs2, const int64_t offset) {                              \
-    /* beq/bne -> c.beqz/c.bnez */                                                           \
-    if (do_compress() &&                                                                     \
-        (offset != 0 && Rs2 == x0 && Rs1->is_compressed_valid() &&                           \
-        is_imm_in_range(offset, 8, 1))) {                                                    \
-      C_NAME(Rs1, offset);                                                                   \
-      return;                                                                                \
-    }                                                                                        \
-    NORMAL_NAME(Rs1, Rs2, offset);                                                           \
-  }
-
-  INSN(beq, c_beqz, _beq);
-  INSN(bne, c_bnez, _bne);
-
-#undef INSN
-
-// --------------------------
 // Unconditional branch instructions
-// --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, const int32_t offset) {                                             \
-    /* jal -> c.j */                                                                         \
-    if (do_compress() && offset != 0 && Rd == x0 && is_imm_in_range(offset, 11, 1)) {        \
-      c_j(offset);                                                                           \
-      return;                                                                                \
-    }                                                                                        \
-    _jal(Rd, offset);                                                                        \
-  }
-
-  INSN(jal);
-
-#undef INSN
-
 // --------------------------
 #define INSN(NAME)                                                                           \
   void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
@@ -2902,21 +2668,6 @@ public:
 
 // --------------------------
 // Immediate Instructions
-// --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, int64_t imm) {                                                      \
-    /* li -> c.li */                                                                         \
-    if (do_compress() && (is_imm_in_range(imm, 6, 0) && Rd != x0)) {                         \
-      c_li(Rd, imm);                                                                         \
-      return;                                                                                \
-    }                                                                                        \
-    _li(Rd, imm);                                                                            \
-  }
-
-  INSN(li);
-
-#undef INSN
-
 // --------------------------
 #define INSN(NAME)                                                                           \
   void NAME(Register Rd, Register Rs1, int32_t imm) {                                        \
@@ -3026,40 +2777,55 @@ public:
 
 #undef INSN
 
+// Cache Management Operations
+#define INSN(NAME, funct)                                                                    \
+  void NAME(Register Rs1) {                                                                  \
+    unsigned insn = 0;                                                                       \
+    patch((address)&insn, 6,  0, 0b0001111);                                                 \
+    patch((address)&insn, 14, 12, 0b010);                                                    \
+    patch_reg((address)&insn, 15, Rs1);                                                      \
+    patch((address)&insn, 31, 20, funct);                                                    \
+    emit(insn);                                                                              \
+  }
+
+  INSN(cbo_inval, 0b0000000000000);
+  INSN(cbo_clean, 0b0000000000001);
+  INSN(cbo_flush, 0b0000000000010);
+  INSN(cbo_zero,  0b0000000000100);
+
+#undef INSN
+
+#define INSN(NAME, funct)                                                                    \
+  void NAME(Register Rs1, int32_t offset) {                                                  \
+    guarantee((offset & 0x1f) == 0, "offset lowest 5 bits must be zero");                    \
+    int32_t upperOffset = offset >> 5;                                                       \
+    unsigned insn = 0;                                                                       \
+    patch((address)&insn, 6,  0, 0b0010011);                                                 \
+    patch((address)&insn, 14, 12, 0b110);                                                    \
+    patch_reg((address)&insn, 15, Rs1);                                                      \
+    patch((address)&insn, 24, 20, funct);                                                    \
+    upperOffset &= 0x7f;                                                                     \
+    patch((address)&insn, 31, 25, upperOffset);                                              \
+    emit(insn);                                                                              \
+  }
+
+  INSN(prefetch_i, 0b0000000000000);
+  INSN(prefetch_r, 0b0000000000001);
+  INSN(prefetch_w, 0b0000000000011);
+
+#undef INSN
+
 // ---------------------------------------------------------------------------------------
 
-  void bgt(Register Rs, Register Rt, const address &dest);
-  void ble(Register Rs, Register Rt, const address &dest);
-  void bgtu(Register Rs, Register Rt, const address &dest);
-  void bleu(Register Rs, Register Rt, const address &dest);
-  void bgt(Register Rs, Register Rt, Label &l, bool is_far = false);
-  void ble(Register Rs, Register Rt, Label &l, bool is_far = false);
-  void bgtu(Register Rs, Register Rt, Label &l, bool is_far = false);
-  void bleu(Register Rs, Register Rt, Label &l, bool is_far = false);
-
-  typedef void (Assembler::* jal_jalr_insn)(Register Rt, address dest);
-  typedef void (Assembler::* load_insn_by_temp)(Register Rt, address dest, Register temp);
-  typedef void (Assembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
-  typedef void (Assembler::* compare_and_branch_label_insn)(Register Rs1, Register Rs2, Label &L, bool is_far);
-
-  void wrap_label(Register r1, Register r2, Label &L, compare_and_branch_insn insn,
-                  compare_and_branch_label_insn neg_insn, bool is_far);
-  void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
-  void wrap_label(Register r, Label &L, jal_jalr_insn insn);
-
-  // Computational pseudo instructions
-  void add(Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
-
-  void sub(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
-
-  // RVB pseudo instructions
-  // zero extend word
-  void zext_w(Register Rd, Register Rs);
-
-  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(false) {
+#define INSN(NAME, REGISTER)                       \
+  void NAME(Register Rs) {                         \
+    jalr(REGISTER, Rs, 0);                         \
   }
+
+  INSN(jr,   x0);
+  INSN(jalr, x1);
+
+#undef INSN
 
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset) { Unimplemented(); }
@@ -3075,7 +2841,7 @@ public:
     return uabs(target - branch) < branch_range;
   }
 
-  virtual ~Assembler() {}
+  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}
 };
 
 #endif // CPU_RISCV_ASSEMBLER_RISCV_HPP

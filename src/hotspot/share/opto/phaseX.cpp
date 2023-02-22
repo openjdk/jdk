@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,7 +939,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump(3);
+    if (!no_dead_loop) n->dump_bfs(100,0,"#");
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -1018,7 +1018,7 @@ void PhaseIterGVN::shuffle_worklist() {
 
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
-  if (VerifyIterativeGVN) {
+  if (is_verify_def_use()) {
     ResourceMark rm;
     VectorSet visited;
     Node_List worklist;
@@ -1129,7 +1129,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 #endif
 
   C->verify_graph_edges();
-  if (VerifyIterativeGVN && PrintOpto) {
+  if (is_verify_def_use() && PrintOpto) {
     if (_verify_counter == _verify_full_passes) {
       tty->print_cr("VerifyIterativeGVN: %d transforms and verify passes",
                     (int) _verify_full_passes);
@@ -1147,6 +1147,8 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
       assert(false, "VerifyIterativeGVN: new modified node was added");
     }
   }
+
+  verify_optimize();
 #endif
 }
 #endif /* PRODUCT */
@@ -1210,6 +1212,97 @@ void PhaseIterGVN::optimize() {
   NOT_PRODUCT(verify_PhaseIterGVN();)
 }
 
+#ifdef ASSERT
+void PhaseIterGVN::verify_optimize() {
+  if (is_verify_Value()) {
+    ResourceMark rm;
+    Unique_Node_List worklist;
+    bool failure = false;
+    // BFS all nodes, starting at root
+    worklist.push(C->root());
+    for (uint j = 0; j < worklist.size(); ++j) {
+      Node* n = worklist.at(j);
+      failure |= verify_node_value(n);
+      // traverse all inputs and outputs
+      for (uint i = 0; i < n->req(); i++) {
+        if (n->in(i) != nullptr) {
+          worklist.push(n->in(i));
+        }
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        worklist.push(n->fast_out(i));
+      }
+    }
+    // If we get this assert, check why the reported nodes were not processed again in IGVN.
+    // We should either make sure that these nodes are properly added back to the IGVN worklist
+    // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
+    // in the verification code above if that is not possible for some reason (like Load nodes).
+    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
+  }
+}
+
+// Check that type(n) == n->Value(), return true if we have a failure.
+// We have a list of exceptions, see detailed comments in code.
+// (1) Integer "widen" changes, but the range is the same.
+// (2) LoadNode performs deep traversals. Load is not notified for changes far away.
+// (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+bool PhaseIterGVN::verify_node_value(Node* n) {
+  // If we assert inside type(n), because the type is still a nullptr, then maybe
+  // the node never went through gvn.transform, which would be a bug.
+  const Type* told = type(n);
+  const Type* tnew = n->Value(this);
+  if (told == tnew) {
+    return false;
+  }
+  // Exception (1)
+  // Integer "widen" changes, but range is the same.
+  if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
+    const TypeInteger* t0 = told->is_integer(tnew->basic_type());
+    const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
+    if (t0->lo_as_long() == t1->lo_as_long() &&
+        t0->hi_as_long() == t1->hi_as_long()) {
+      return false; // ignore integer widen
+    }
+  }
+  // Exception (2)
+  // LoadNode performs deep traversals. Load is not notified for changes far away.
+  if (n->is_Load() && !told->singleton()) {
+    // MemNode::can_see_stored_value looks up through many memory nodes,
+    // which means we would need to notify modifications from far up in
+    // the inputs all the way down to the LoadNode. We don't do that.
+    return false;
+  }
+  // Exception (3)
+  // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+    // SubNode::Value
+    // CmpPNode::sub
+    // MemNode::detect_ptr_independence
+    // MemNode::all_controls_dominate
+    // We find all controls of a pointer load, and see if they dominate the control of
+    // an allocation. If they all dominate, we know the allocation is after (independent)
+    // of the pointer load, and we can say the pointers are different. For this we call
+    // n->dominates(sub, nlist) to check if controls n of the pointer load dominate the
+    // control sub of the allocation. The problems is that sometimes dominates answers
+    // false conservatively, and later it can determine that it is indeed true. Loops with
+    // Region heads can lead to giving up, whereas LoopNodes can be skipped easier, and
+    // so the traversal becomes more powerful. This is difficult to remidy, we would have
+    // to notify the CmpP of CFG updates. Luckily, we recompute CmpP::Value during CCP
+    // after loop-opts, so that should take care of many of these cases.
+    return false;
+  }
+  tty->cr();
+  tty->print_cr("Missed Value optimization:");
+  n->dump_bfs(1, 0, "");
+  tty->print_cr("Current type:");
+  told->dump_on(tty);
+  tty->cr();
+  tty->print_cr("Optimized type:");
+  tnew->dump_on(tty);
+  tty->cr();
+  return true;
+}
+#endif
 
 /**
  * Register a new node with the optimizer.  Update the types array, the def-use
@@ -1244,8 +1337,15 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
-  if (VerifyIterativeGVN) {
+#ifdef ASSERT
+  if (is_verify_def_use()) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
+  }
+#endif
+
+  // Allow Bool -> Cmp idealisation in late inlining intrinsics that return a bool
+  if (n->is_Cmp()) {
+    add_users_to_worklist(n);
   }
 
   // Apply the Ideal call in a loop until it no longer applies
@@ -1489,7 +1589,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
     _worklist.push(nn);
   }
 #ifndef PRODUCT
-  if( VerifyIterativeGVN ) {
+  if (is_verify_def_use()) {
     for ( int i = 0; i < _verify_window_size; i++ ) {
       if ( _verify_window[i] == old )
         _verify_window[i] = nn;
@@ -1570,28 +1670,75 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           }
         }
       }
-      if (use_op == Op_CmpI) {
-        Node* phi = countedloop_phi_from_cmp((CmpINode*)use, n);
+      if (use_op == Op_CmpI || use_op == Op_CmpL) {
+        Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
         if (phi != NULL) {
-          // If an opaque node feeds into the limit condition of a
-          // CountedLoop, we need to process the Phi node for the
-          // induction variable when the opaque node is removed:
-          // the range of values taken by the Phi is now known and
-          // so its type is also known.
+          // Input to the cmp of a loop exit check has changed, thus
+          // the loop limit may have changed, which can then change the
+          // range values of the trip-count Phi.
           _worklist.push(phi);
         }
-        Node* in1 = use->in(1);
-        for (uint i = 0; i < in1->outcnt(); i++) {
-          if (in1->raw_out(i)->Opcode() == Op_CastII) {
-            Node* castii = in1->raw_out(i);
-            if (castii->in(0) != NULL && castii->in(0)->in(0) != NULL && castii->in(0)->in(0)->is_If()) {
-              Node* ifnode = castii->in(0)->in(0);
-              if (ifnode->in(1) != NULL && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == use) {
-                // Reprocess a CastII node that may depend on an
-                // opaque node value when the opaque node is
-                // removed. In case it carries a dependency we can do
-                // a better job of computing its type.
-                _worklist.push(castii);
+      }
+      if (use_op == Op_CmpI) {
+        Node* cmp = use;
+        Node* in1 = cmp->in(1);
+        Node* in2 = cmp->in(2);
+        // Notify CmpI / If pattern from CastIINode::Value (left pattern).
+        // Must also notify if in1 is modified and possibly turns into X (right pattern).
+        //
+        // in1  in2                   in1  in2
+        //  |    |                     |    |
+        //  +--- | --+                 |    |
+        //  |    |   |                 |    |
+        // CmpINode  |                CmpINode
+        //    |      |                   |
+        // BoolNode  |                BoolNode
+        //    |      |        OR         |
+        //  IfNode   |                 IfNode
+        //    |      |                   |
+        //  IfProj   |                 IfProj   X
+        //    |      |                   |      |
+        //   CastIINode                 CastIINode
+        //
+        if (in1 != in2) { // if they are equal, the CmpI can fold them away
+          if (in1 == n) {
+            // in1 modified -> could turn into X -> do traversal based on right pattern.
+            for (DUIterator_Fast i2max, i2 = cmp->fast_outs(i2max); i2 < i2max; i2++) {
+              Node* bol = cmp->fast_out(i2); // For each Bool
+              if (bol->is_Bool()) {
+                for (DUIterator_Fast i3max, i3 = bol->fast_outs(i3max); i3 < i3max; i3++) {
+                  Node* iff = bol->fast_out(i3); // For each If
+                  if (iff->is_If()) {
+                    for (DUIterator_Fast i4max, i4 = iff->fast_outs(i4max); i4 < i4max; i4++) {
+                      Node* if_proj = iff->fast_out(i4); // For each IfProj
+                      assert(if_proj->is_IfProj(), "If only has IfTrue and IfFalse as outputs");
+                      for (DUIterator_Fast i5max, i5 = if_proj->fast_outs(i5max); i5 < i5max; i5++) {
+                        Node* castii = if_proj->fast_out(i5); // For each CastII
+                        if (castii->is_CastII() &&
+                            castii->as_CastII()->carry_dependency()) {
+                          _worklist.push(castii);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            // Only in2 modified -> can assume X == in2 (left pattern).
+            assert(n == in2, "only in2 modified");
+            // Find all CastII with input in1.
+            for (DUIterator_Fast jmax, j = in1->fast_outs(jmax); j < jmax; j++) {
+              Node* castii = in1->fast_out(j);
+              if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
+                // Find If.
+                if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
+                  Node* ifnode = castii->in(0)->in(0);
+                  // Check that if connects to the cmp
+                  if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
+                    _worklist.push(castii);
+                  }
+                }
               }
             }
           }
@@ -1599,12 +1746,31 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    // If changed Cast input, check Phi users for simple cycles
+    // If changed Cast input, notify down for Phi and Sub - both do "uncast"
     if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
-        if (u->is_Phi())
+        if (u->is_Phi() || u->is_Sub()) {
+          // Phi (.., CastII, ..) or Sub(Cast(x), x)
           _worklist.push(u);
+        } else if (u->is_ConstraintCast()) {
+          // Follow cast-chains down to Sub: Sub( CastII(CastII(x)), x)
+          // This case is quite rare. Let's BFS-traverse casts, to find Subs:
+          ResourceMark rm;
+          Unique_Node_List casts;
+          casts.push(u); // start traversal
+          for (uint j = 0; j < casts.size(); ++j) {
+            Node* cast = casts.at(j); // for every cast
+            for (DUIterator_Fast kmax, k = cast->fast_outs(kmax); k < kmax; k++) {
+              Node* cast_use = cast->fast_out(k);
+              if (cast_use->is_ConstraintCast()) {
+                casts.push(cast_use); // traverse this cast also
+              } else if (cast_use->is_Sub()) {
+                _worklist.push(cast_use); // found Sub
+              }
+            }
+          }
+        }
       }
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
@@ -1613,6 +1779,15 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         Node* u = use->fast_out(i2);
         if (u->Opcode() == Op_RShiftI)
           _worklist.push(u);
+      }
+    }
+    // If changed LShift inputs, check And users for shift and mask (And) operation
+    if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+        Node* u = use->fast_out(i2);
+        if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
+          _worklist.push(u);
+        }
       }
     }
     // If changed AddI/SubI inputs, check CmpU for range check optimization.
@@ -1640,6 +1815,16 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         if (imem != NULL)  add_users_to_worklist0(imem);
       }
     }
+    // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
+    // CatchNode::Value() is responsible for killing that path. The CatchNode has to be explicitly enqueued for igvn
+    // to guarantee the change is not missed.
+    if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
+      Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
+      if (p != NULL) {
+        add_users_to_worklist0(p);
+      }
+    }
+
     if (use_op == Op_Initialize) {
       Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
       if (imem != NULL)  add_users_to_worklist0(imem);
@@ -1666,6 +1851,13 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           }
           _worklist.push(u);
         }
+      }
+    }
+    if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+      assert(use->outcnt() <= 1, "OpaqueZeroTripGuard can't be shared");
+      if (use->outcnt() == 1) {
+        Node* cmp = use->unique_out();
+        _worklist.push(cmp);
       }
     }
   }
@@ -1737,19 +1929,15 @@ PhaseCCP::~PhaseCCP() {
 
 
 #ifdef ASSERT
-static bool ccp_type_widens(const Type* t, const Type* t0) {
-  assert(t->meet(t0) == t, "Not monotonic");
-  switch (t->base() == t0->base() ? t->base() : Type::Top) {
-  case Type::Int:
-    assert(t0->isa_int()->_widen <= t->isa_int()->_widen, "widen increases");
-    break;
-  case Type::Long:
-    assert(t0->isa_long()->_widen <= t->isa_long()->_widen, "widen increases");
-    break;
-  default:
-    break;
+void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
+  if (tnew->meet(told) != tnew->remove_speculative()) {
+    n->dump(1);
+    tty->print("told = "); told->dump(); tty->cr();
+    tty->print("tnew = "); tnew->dump(); tty->cr();
+    fatal("Not monotonic");
   }
-  return true;
+  assert(!told->isa_int() || !tnew->isa_int() || told->is_int()->_widen <= tnew->is_int()->_widen, "widen increases");
+  assert(!told->isa_long() || !tnew->isa_long() || told->is_long()->_widen <= tnew->is_long()->_widen, "widen increases");
 }
 #endif //ASSERT
 
@@ -1767,6 +1955,7 @@ void PhaseCCP::analyze() {
   // Push root onto worklist
   Unique_Node_List worklist;
   worklist.push(C->root());
+  DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
@@ -1775,6 +1964,7 @@ void PhaseCCP::analyze() {
   // This loop is the meat of CCP.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
+    DEBUG_ONLY(worklist_verify.push(n);)
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
@@ -1782,13 +1972,31 @@ void PhaseCCP::analyze() {
     }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
-      assert(ccp_type_widens(new_type, type(n)), "ccp type must widen");
+      DEBUG_ONLY(verify_type(n, new_type, type(n));)
       dump_type_and_node(n, new_type);
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);
     }
   }
+  DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
+
+#ifdef ASSERT
+// For every node n on verify list, check if type(n) == n->Value()
+// We have a list of exceptions, see comments in verify_node_value.
+void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
+  bool failure = false;
+  while (worklist_verify.size()) {
+    Node* n = worklist_verify.pop();
+    failure |= verify_node_value(n);
+  }
+  // If we get this assert, check why the reported nodes were not processed again in CCP.
+  // We should either make sure that these nodes are properly added back to the CCP worklist
+  // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
+  // in the verification code above if that is not possible for some reason (like Load nodes).
+  assert(!failure, "Missed optimization opportunity in PhaseCCP");
+}
+#endif
 
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
@@ -1837,6 +2045,8 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_counted_loop_phi(worklist, parent, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
+  push_cast_ii(worklist, parent, use);
+  push_opaque_zero_trip_guard(worklist, use);
 }
 
 
@@ -1851,6 +2061,7 @@ void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
 
 // If we changed the receiver type to a call, we need to revisit the Catch node following the call. It's looking for a
 // non-NULL receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
+// Same is true if the type of a ValidLengthTest input to an AllocateArrayNode changes.
 void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
   if (use->is_Call()) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
@@ -1939,6 +2150,28 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
   }
 }
 
+// CastII::Value() optimizes CmpI/If patterns if the right input of the CmpI has a constant type. If the CastII input is
+// the same node as the left input into the CmpI node, the type of the CastII node can be improved accordingly. Add the
+// CastII node back to the worklist to re-apply Value() to either not miss this optimization or to undo it because it
+// cannot be applied anymore. We could have optimized the type of the CastII before but now the type of the right input
+// of the CmpI (i.e. 'parent') is no longer constant. The type of the CastII must be widened in this case.
+void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
+    Node* other_cmp_input = use->in(1);
+    for (DUIterator_Fast imax, i = other_cmp_input->fast_outs(imax); i < imax; i++) {
+      Node* cast_ii = other_cmp_input->fast_out(i);
+      if (cast_ii->is_CastII()) {
+        push_if_not_bottom_type(worklist, cast_ii);
+      }
+    }
+  }
+}
+
+void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const {
+  if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+    push_if_not_bottom_type(worklist, use->unique_out());
+  }
+}
 
 //------------------------------do_transform-----------------------------------
 // Top level driver for the recursive transformer
@@ -2088,7 +2321,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_CountedLoop:
   case Op_Conv2B:
   case Op_Opaque1:
-  case Op_Opaque2:
     _worklist.push(n);
     break;
   default:
@@ -2150,52 +2382,39 @@ void PhasePeephole::do_transform() {
     Block* block = _cfg.get_block(block_number);
     bool block_not_printed = true;
 
-    // and each instruction within a block
-    uint end_index = block->number_of_nodes();
-    // block->end_idx() not valid after PhaseRegAlloc
-    for( uint instruction_index = 1; instruction_index < end_index; ++instruction_index ) {
-      Node     *n = block->get_node(instruction_index);
-      if( n->is_Mach() ) {
-        MachNode *m = n->as_Mach();
-        int deleted_count = 0;
-        // check for peephole opportunities
-        MachNode *m2 = m->peephole(block, instruction_index, _regalloc, deleted_count);
-        if( m2 != NULL ) {
+    for (bool progress = true; progress;) {
+      progress = false;
+      // block->end_idx() not valid after PhaseRegAlloc
+      uint end_index = block->number_of_nodes();
+      for( uint instruction_index = end_index - 1; instruction_index > 0; --instruction_index ) {
+        Node     *n = block->get_node(instruction_index);
+        if( n->is_Mach() ) {
+          MachNode *m = n->as_Mach();
+          // check for peephole opportunities
+          int result = m->peephole(block, instruction_index, &_cfg, _regalloc);
+          if( result != -1 ) {
 #ifndef PRODUCT
-          if( PrintOptoPeephole ) {
-            // Print method, first time only
-            if( C->method() && method_name_not_printed ) {
-              C->method()->print_short_name(); tty->cr();
-              method_name_not_printed = false;
+            if( PrintOptoPeephole ) {
+              // Print method, first time only
+              if( C->method() && method_name_not_printed ) {
+                C->method()->print_short_name(); tty->cr();
+                method_name_not_printed = false;
+              }
+              // Print this block
+              if( Verbose && block_not_printed) {
+                tty->print_cr("in block");
+                block->dump();
+                block_not_printed = false;
+              }
+              // Print the peephole number
+              tty->print_cr("peephole number: %d", result);
             }
-            // Print this block
-            if( Verbose && block_not_printed) {
-              tty->print_cr("in block");
-              block->dump();
-              block_not_printed = false;
-            }
-            // Print instructions being deleted
-            for( int i = (deleted_count - 1); i >= 0; --i ) {
-              block->get_node(instruction_index-i)->as_Mach()->format(_regalloc); tty->cr();
-            }
-            tty->print_cr("replaced with");
-            // Print new instruction
-            m2->format(_regalloc);
-            tty->print("\n\n");
-          }
+            inc_peepholes();
 #endif
-          // Remove old nodes from basic block and update instruction_index
-          // (old nodes still exist and may have edges pointing to them
-          //  as register allocation info is stored in the allocator using
-          //  the node index to live range mappings.)
-          uint safe_instruction_index = (instruction_index - deleted_count);
-          for( ; (instruction_index > safe_instruction_index); --instruction_index ) {
-            block->remove_node( instruction_index );
+            // Set progress, start again
+            progress = true;
+            break;
           }
-          // install new node after safe_instruction_index
-          block->insert_node(m2, safe_instruction_index + 1);
-          end_index = block->number_of_nodes() - 1; // Recompute new block size
-          NOT_PRODUCT( inc_peepholes(); )
         }
       }
     }

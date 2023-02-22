@@ -364,7 +364,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
   if (regalloc->node_regs_max_index() > 0 &&
       OptoReg::is_valid(regalloc->get_reg_first(n))) { // Check for undefined
     char buf[50];
-    regalloc->dump_register(n,buf);
+    regalloc->dump_register(n,buf,sizeof(buf));
     st->print(" %s%d]=%s",msg,i,buf);
   } else {                      // No register, but might be constant
     const Type *t = n->bottom_type();
@@ -1551,6 +1551,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_req( KlassNode          , klass_node);
   init_req( InitialTest        , initial_test);
   init_req( ALength            , topnode);
+  init_req( ValidLengthTest    , topnode);
   C->add_macro_node(this);
 }
 
@@ -1575,54 +1576,6 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
   // For now only enable fast locking for non-array types
   mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
-}
-
-//=============================================================================
-Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
-
-  const Type* type = phase->type(Ideal_length());
-  if (type->isa_int() && type->is_int()->_hi < 0) {
-    if (can_reshape) {
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      // Unreachable fall through path (negative array length),
-      // the allocation can only throw so disconnect it.
-      Node* proj = proj_out_or_null(TypeFunc::Control);
-      Node* catchproj = NULL;
-      if (proj != NULL) {
-        for (DUIterator_Fast imax, i = proj->fast_outs(imax); i < imax; i++) {
-          Node *cn = proj->fast_out(i);
-          if (cn->is_Catch()) {
-            catchproj = cn->as_Multi()->proj_out_or_null(CatchProjNode::fall_through_index);
-            break;
-          }
-        }
-      }
-      if (catchproj != NULL && catchproj->outcnt() > 0 &&
-          (catchproj->outcnt() > 1 ||
-           catchproj->unique_out()->Opcode() != Op_Halt)) {
-        assert(catchproj->is_CatchProj(), "must be a CatchProjNode");
-        Node* nproj = catchproj->clone();
-        igvn->register_new_node_with_optimizer(nproj);
-
-        Node *frame = new ParmNode( phase->C->start(), TypeFunc::FramePtr );
-        frame = phase->transform(frame);
-        // Halt & Catch Fire
-        Node* halt = new HaltNode(nproj, frame, "unexpected negative array length");
-        igvn->add_input_to(phase->C->root(), halt);
-        phase->transform(halt);
-
-        igvn->replace_node(catchproj, phase->C->top());
-        return this;
-      }
-    } else {
-      // Can't correct it during regular GVN so register for IGVN
-      phase->C->record_for_igvn(this);
-    }
-  }
-  return NULL;
 }
 
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a

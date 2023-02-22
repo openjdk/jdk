@@ -47,6 +47,8 @@ class G1BarrierSet: public CardTableBarrierSet {
     return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   }
 
+  void invalidate(JavaThread* thread, MemRegion mr);
+
  public:
   G1BarrierSet(G1CardTable* table);
   ~G1BarrierSet() { }
@@ -70,15 +72,13 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  // NB: if you do a whole-heap invalidation, the "usual invariant" defined
-  // above no longer applies.
-  void invalidate(MemRegion mr);
+  inline void invalidate(MemRegion mr);
+  inline void write_region(JavaThread* thread, MemRegion mr);
 
-  void write_region(MemRegion mr)         { invalidate(mr); }
-  void write_ref_array_work(MemRegion mr) { invalidate(mr); }
+  inline void write_ref_array_work(MemRegion mr);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field, oop new_val);
+  void write_ref_field_post(T* field);
   void write_ref_field_post_slow(volatile CardValue* byte);
 
   virtual void on_thread_create(Thread* thread);

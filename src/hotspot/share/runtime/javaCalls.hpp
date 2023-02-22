@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ class JavaCallWrapper: StackObj {
   ~JavaCallWrapper();
 
   // Accessors
-  JavaThread*      thread() const           { return _thread; }
   JNIHandleBlock*  handles() const          { return _handles; }
 
   JavaFrameAnchor* anchor(void)             { return &_anchor; }
@@ -65,10 +64,9 @@ class JavaCallWrapper: StackObj {
   JavaValue*       result() const           { return _result; }
   // GC support
   Method*          callee_method()          { return _callee_method; }
-  oop              receiver()               { return _receiver; }
   void             oops_do(OopClosure* f);
 
-  bool             is_first_frame() const   { return _anchor.last_Java_sp() == NULL; }
+  bool             is_first_frame() const   { return _anchor.last_Java_sp() == nullptr; }
 
 };
 

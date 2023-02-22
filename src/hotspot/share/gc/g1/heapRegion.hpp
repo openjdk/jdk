@@ -457,6 +457,8 @@ public:
 
   inline bool in_collection_set() const;
 
+  void prepare_remset_for_scan();
+
   // Methods used by the HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into
@@ -582,10 +584,7 @@ public:
   void print() const;
   void print_on(outputStream* st) const;
 
-  void verify(VerifyOption vo, bool *failures) const;
-
-  void verify_rem_set(VerifyOption vo, bool *failures) const;
-  void verify_rem_set() const;
+  void verify(VerifyOption vo, bool* failures) const;
 };
 
 // HeapRegionClosure is used for iterating over regions.

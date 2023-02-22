@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class ThreadShadow: public CHeapObj<mtThread> {
 
  public:
   oop  pending_exception() const                 { return _pending_exception; }
-  bool has_pending_exception() const             { return _pending_exception != NULL; }
+  bool has_pending_exception() const             { return _pending_exception != nullptr; }
   const char* exception_file() const             { return _exception_file; }
   int  exception_line() const                    { return _exception_line; }
 
@@ -94,8 +94,8 @@ class ThreadShadow: public CHeapObj<mtThread> {
   // use CLEAR_PENDING_NONASYNC_EXCEPTION to clear probable nonasync exception.
   void clear_pending_nonasync_exception();
 
-  ThreadShadow() : _pending_exception(NULL),
-                   _exception_file(NULL), _exception_line(0) {}
+  ThreadShadow() : _pending_exception(nullptr),
+                   _exception_file(nullptr), _exception_line(0) {}
 };
 
 
@@ -124,7 +124,7 @@ class Exceptions {
   } ExceptionMsgToUtf8Mode;
   // Throw exceptions: w/o message, w/ message & with formatted message.
   static void _throw_oop(JavaThread* thread, const char* file, int line, oop exception);
-  static void _throw(JavaThread* thread, const char* file, int line, Handle exception, const char* msg = NULL);
+  static void _throw(JavaThread* thread, const char* file, int line, Handle exception, const char* msg = nullptr);
 
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
@@ -184,9 +184,9 @@ class Exceptions {
   static void print_exception_counts_on_error(outputStream* st);
 
   // for AbortVMOnException flag
-  static void debug_check_abort(Handle exception, const char* message = NULL);
-  static void debug_check_abort_helper(Handle exception, const char* message = NULL);
-  static void debug_check_abort(const char *value_string, const char* message = NULL);
+  static void debug_check_abort(Handle exception, const char* message = nullptr);
+  static void debug_check_abort_helper(Handle exception, const char* message = nullptr);
+  static void debug_check_abort(const char *value_string, const char* message = nullptr);
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
@@ -225,7 +225,7 @@ class Exceptions {
 #define CHECK_(result)                           THREAD); if (HAS_PENDING_EXCEPTION) return result; (void)(0
 #define CHECK_0                                  CHECK_(0)
 #define CHECK_NH                                 CHECK_(Handle())
-#define CHECK_NULL                               CHECK_(NULL)
+#define CHECK_NULL                               CHECK_(nullptr)
 #define CHECK_false                              CHECK_(false)
 #define CHECK_JNI_ERR                            CHECK_(JNI_ERR)
 
@@ -234,17 +234,17 @@ class Exceptions {
 #define CHECK_AND_CLEAR_(result)                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return result; } (void)(0
 #define CHECK_AND_CLEAR_0                       CHECK_AND_CLEAR_(0)
 #define CHECK_AND_CLEAR_NH                      CHECK_AND_CLEAR_(Handle())
-#define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(NULL)
+#define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(nullptr)
 #define CHECK_AND_CLEAR_false                   CHECK_AND_CLEAR_(false)
 
-// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError and j.l.ThreadDeath.
+// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError.
 // So use it with caution.
 #define CLEAR_PENDING_NONASYNC_EXCEPTION        (((ThreadShadow*)THREAD)->clear_pending_nonasync_exception())
 #define CHECK_AND_CLEAR_NONASYNC                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return; } (void)(0
 #define CHECK_AND_CLEAR_NONASYNC_(result)       THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return result; } (void)(0
 #define CHECK_AND_CLEAR_NONASYNC_0              CHECK_AND_CLEAR_NONASYNC_(0)
 #define CHECK_AND_CLEAR_NONASYNC_NH             CHECK_AND_CLEAR_NONASYNC_(Handle())
-#define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(NULL)
+#define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(nullptr)
 #define CHECK_AND_CLEAR_NONASYNC_false          CHECK_AND_CLEAR_NONASYNC_(false)
 
 // The THROW... macros should be used to throw an exception. They require a THREAD variable to be
@@ -260,7 +260,7 @@ class Exceptions {
   { Exceptions::_throw(THREAD_AND_LOCATION, e);                             return;  }
 
 #define THROW(name)                                 \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, NULL); return;  }
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, nullptr); return;  }
 
 #define THROW_MSG(name, message)                    \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message); return;  }
@@ -281,7 +281,7 @@ class Exceptions {
   { Exceptions::_throw(THREAD_AND_LOCATION, e);                           return result; }
 
 #define THROW_(name, result)                        \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, NULL); return result; }
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, nullptr); return result; }
 
 #define THROW_MSG_(name, message, result)           \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message); return result; }
@@ -306,10 +306,10 @@ class Exceptions {
 #define THROW_WRAPPED_0(name, oop_to_wrap)  THROW_WRAPPED_(name, oop_to_wrap, 0)
 #define THROW_ARG_0(name, signature, arg)   THROW_ARG_(name, signature, arg, 0)
 #define THROW_MSG_CAUSE_0(name, message, cause) THROW_MSG_CAUSE_(name, message, cause, 0)
-#define THROW_MSG_CAUSE_NULL(name, message, cause) THROW_MSG_CAUSE_(name, message, cause, NULL)
+#define THROW_MSG_CAUSE_NULL(name, message, cause) THROW_MSG_CAUSE_(name, message, cause, nullptr)
 
-#define THROW_NULL(name)                    THROW_(name, NULL)
-#define THROW_MSG_NULL(name, message)       THROW_MSG_(name, message, NULL)
+#define THROW_NULL(name)                    THROW_(name, nullptr)
+#define THROW_MSG_NULL(name, message)       THROW_MSG_(name, message, nullptr)
 
 // The CATCH macro checks that no exception has been thrown by a function; it is used at
 // call sites about which is statically known that the callee cannot throw an exception

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -39,126 +42,126 @@
 // eliminating the indirection and using instances instead.
 // Consider using GCC's __read_mostly.
 
-Mutex*   Patching_lock                = NULL;
-Mutex*   CompiledMethod_lock          = NULL;
-Monitor* SystemDictionary_lock        = NULL;
-Mutex*   InvokeMethodTable_lock       = NULL;
-Mutex*   SharedDictionary_lock        = NULL;
-Monitor* ClassInitError_lock          = NULL;
-Mutex*   Module_lock                  = NULL;
-Mutex*   CompiledIC_lock              = NULL;
-Mutex*   InlineCacheBuffer_lock       = NULL;
-Mutex*   VMStatistic_lock             = NULL;
-Mutex*   JmethodIdCreation_lock       = NULL;
-Mutex*   JfieldIdCreation_lock        = NULL;
-Monitor* JNICritical_lock             = NULL;
-Mutex*   JvmtiThreadState_lock        = NULL;
-Monitor* EscapeBarrier_lock           = NULL;
-Monitor* JvmtiVTMSTransition_lock     = NULL;
-Monitor* Heap_lock                    = NULL;
+Mutex*   Patching_lock                = nullptr;
+Mutex*   CompiledMethod_lock          = nullptr;
+Monitor* SystemDictionary_lock        = nullptr;
+Mutex*   InvokeMethodTable_lock       = nullptr;
+Mutex*   SharedDictionary_lock        = nullptr;
+Monitor* ClassInitError_lock          = nullptr;
+Mutex*   Module_lock                  = nullptr;
+Mutex*   CompiledIC_lock              = nullptr;
+Mutex*   InlineCacheBuffer_lock       = nullptr;
+Mutex*   VMStatistic_lock             = nullptr;
+Mutex*   JmethodIdCreation_lock       = nullptr;
+Mutex*   JfieldIdCreation_lock        = nullptr;
+Monitor* JNICritical_lock             = nullptr;
+Mutex*   JvmtiThreadState_lock        = nullptr;
+Monitor* EscapeBarrier_lock           = nullptr;
+Monitor* JvmtiVTMSTransition_lock     = nullptr;
+Monitor* Heap_lock                    = nullptr;
 #ifdef INCLUDE_PARALLELGC
-Mutex*   PSOldGenExpand_lock      = NULL;
+Mutex*   PSOldGenExpand_lock      = nullptr;
 #endif
-Mutex*   AdapterHandlerLibrary_lock   = NULL;
-Mutex*   SignatureHandlerLibrary_lock = NULL;
-Mutex*   VtableStubs_lock             = NULL;
-Mutex*   SymbolArena_lock             = NULL;
-Monitor* StringDedup_lock             = NULL;
-Mutex*   StringDedupIntern_lock       = NULL;
-Monitor* CodeCache_lock               = NULL;
-Mutex*   MethodData_lock              = NULL;
-Mutex*   TouchedMethodLog_lock        = NULL;
-Mutex*   RetData_lock                 = NULL;
-Monitor* VMOperation_lock             = NULL;
-Monitor* Threads_lock                 = NULL;
-Mutex*   NonJavaThreadsList_lock      = NULL;
-Mutex*   NonJavaThreadsListSync_lock  = NULL;
-Monitor* CGC_lock                     = NULL;
-Monitor* STS_lock                     = NULL;
-Monitor* G1OldGCCount_lock            = NULL;
-Mutex*   G1DetachedRefinementStats_lock = NULL;
-Mutex*   MarkStackFreeList_lock       = NULL;
-Mutex*   MarkStackChunkList_lock      = NULL;
-Mutex*   MonitoringSupport_lock       = NULL;
-Mutex*   ParGCRareEvent_lock          = NULL;
-Monitor* ConcurrentGCBreakpoints_lock = NULL;
-Mutex*   Compile_lock                 = NULL;
-Monitor* MethodCompileQueue_lock      = NULL;
-Monitor* CompileThread_lock           = NULL;
-Monitor* Compilation_lock             = NULL;
-Mutex*   CompileTaskAlloc_lock        = NULL;
-Mutex*   CompileStatistics_lock       = NULL;
-Mutex*   DirectivesStack_lock         = NULL;
-Mutex*   MultiArray_lock              = NULL;
-Monitor* Terminator_lock              = NULL;
-Monitor* InitCompleted_lock           = NULL;
-Monitor* BeforeExit_lock              = NULL;
-Monitor* Notify_lock                  = NULL;
-Mutex*   ExceptionCache_lock          = NULL;
+Mutex*   AdapterHandlerLibrary_lock   = nullptr;
+Mutex*   SignatureHandlerLibrary_lock = nullptr;
+Mutex*   VtableStubs_lock             = nullptr;
+Mutex*   SymbolArena_lock             = nullptr;
+Monitor* StringDedup_lock             = nullptr;
+Mutex*   StringDedupIntern_lock       = nullptr;
+Monitor* CodeCache_lock               = nullptr;
+Mutex*   TouchedMethodLog_lock        = nullptr;
+Mutex*   RetData_lock                 = nullptr;
+Monitor* VMOperation_lock             = nullptr;
+Monitor* Threads_lock                 = nullptr;
+Mutex*   NonJavaThreadsList_lock      = nullptr;
+Mutex*   NonJavaThreadsListSync_lock  = nullptr;
+Monitor* CGC_lock                     = nullptr;
+Monitor* STS_lock                     = nullptr;
+Monitor* G1OldGCCount_lock            = nullptr;
+Mutex*   G1RareEvent_lock             = nullptr;
+Mutex*   G1DetachedRefinementStats_lock = nullptr;
+Mutex*   MarkStackFreeList_lock       = nullptr;
+Mutex*   MarkStackChunkList_lock      = nullptr;
+Mutex*   MonitoringSupport_lock       = nullptr;
+Monitor* ConcurrentGCBreakpoints_lock = nullptr;
+Mutex*   Compile_lock                 = nullptr;
+Monitor* MethodCompileQueue_lock      = nullptr;
+Monitor* CompileThread_lock           = nullptr;
+Monitor* Compilation_lock             = nullptr;
+Mutex*   CompileTaskAlloc_lock        = nullptr;
+Mutex*   CompileStatistics_lock       = nullptr;
+Mutex*   DirectivesStack_lock         = nullptr;
+Mutex*   MultiArray_lock              = nullptr;
+Monitor* Terminator_lock              = nullptr;
+Monitor* InitCompleted_lock           = nullptr;
+Monitor* BeforeExit_lock              = nullptr;
+Monitor* Notify_lock                  = nullptr;
+Mutex*   ExceptionCache_lock          = nullptr;
 #ifndef PRODUCT
-Mutex*   FullGCALot_lock              = NULL;
+Mutex*   FullGCALot_lock              = nullptr;
 #endif
 
-Mutex*   tty_lock                     = NULL;
+Mutex*   tty_lock                     = nullptr;
 
-Mutex*   RawMonitor_lock              = NULL;
-Mutex*   PerfDataMemAlloc_lock        = NULL;
-Mutex*   PerfDataManager_lock         = NULL;
-Mutex*   OopMapCacheAlloc_lock        = NULL;
+Mutex*   RawMonitor_lock              = nullptr;
+Mutex*   PerfDataMemAlloc_lock        = nullptr;
+Mutex*   PerfDataManager_lock         = nullptr;
+Mutex*   OopMapCacheAlloc_lock        = nullptr;
 
-Mutex*   FreeList_lock                = NULL;
-Mutex*   OldSets_lock                 = NULL;
-Mutex*   Uncommit_lock                = NULL;
-Monitor* RootRegionScan_lock          = NULL;
+Mutex*   FreeList_lock                = nullptr;
+Mutex*   OldSets_lock                 = nullptr;
+Mutex*   Uncommit_lock                = nullptr;
+Monitor* RootRegionScan_lock          = nullptr;
 
-Mutex*   Management_lock              = NULL;
-Monitor* MonitorDeflation_lock        = NULL;
-Monitor* Service_lock                 = NULL;
-Monitor* Notification_lock            = NULL;
-Monitor* PeriodicTask_lock            = NULL;
-Monitor* RedefineClasses_lock         = NULL;
-Mutex*   Verify_lock                  = NULL;
-Monitor* Zip_lock                     = NULL;
+Mutex*   Management_lock              = nullptr;
+Monitor* MonitorDeflation_lock        = nullptr;
+Monitor* Service_lock                 = nullptr;
+Monitor* Notification_lock            = nullptr;
+Monitor* PeriodicTask_lock            = nullptr;
+Monitor* RedefineClasses_lock         = nullptr;
+Mutex*   Verify_lock                  = nullptr;
+Monitor* Zip_lock                     = nullptr;
 
 #if INCLUDE_JFR
-Mutex*   JfrStacktrace_lock           = NULL;
-Monitor* JfrMsg_lock                  = NULL;
-Mutex*   JfrBuffer_lock               = NULL;
-Monitor* JfrThreadSampler_lock        = NULL;
+Mutex*   JfrStacktrace_lock           = nullptr;
+Monitor* JfrMsg_lock                  = nullptr;
+Mutex*   JfrBuffer_lock               = nullptr;
+Monitor* JfrThreadSampler_lock        = nullptr;
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
-Mutex*   UnsafeJlong_lock             = NULL;
+Mutex*   UnsafeJlong_lock             = nullptr;
 #endif
-Mutex*   CodeHeapStateAnalytics_lock  = NULL;
+Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
-Monitor* ContinuationRelativize_lock  = NULL;
+Monitor* ContinuationRelativize_lock  = nullptr;
 
-Mutex*   Metaspace_lock               = NULL;
-Monitor* MetaspaceCritical_lock       = NULL;
-Mutex*   ClassLoaderDataGraph_lock    = NULL;
-Monitor* ThreadsSMRDelete_lock        = NULL;
-Mutex*   ThreadIdTableCreate_lock     = NULL;
-Mutex*   SharedDecoder_lock           = NULL;
-Mutex*   DCmdFactory_lock             = NULL;
-Mutex*   NMTQuery_lock                = NULL;
+Mutex*   Metaspace_lock               = nullptr;
+Monitor* MetaspaceCritical_lock       = nullptr;
+Mutex*   ClassLoaderDataGraph_lock    = nullptr;
+Monitor* ThreadsSMRDelete_lock        = nullptr;
+Mutex*   ThreadIdTableCreate_lock     = nullptr;
+Mutex*   SharedDecoder_lock           = nullptr;
+Mutex*   DCmdFactory_lock             = nullptr;
+Mutex*   NMTQuery_lock                = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
-Mutex*   CDSClassFileStream_lock      = NULL;
+Mutex*   CDSClassFileStream_lock      = nullptr;
 #endif
-Mutex*   DumpTimeTable_lock           = NULL;
-Mutex*   CDSLambda_lock               = NULL;
-Mutex*   DumpRegion_lock              = NULL;
-Mutex*   ClassListFile_lock           = NULL;
-Mutex*   UnregisteredClassesTable_lock= NULL;
-Mutex*   LambdaFormInvokers_lock      = NULL;
+Mutex*   DumpTimeTable_lock           = nullptr;
+Mutex*   CDSLambda_lock               = nullptr;
+Mutex*   DumpRegion_lock              = nullptr;
+Mutex*   ClassListFile_lock           = nullptr;
+Mutex*   UnregisteredClassesTable_lock= nullptr;
+Mutex*   LambdaFormInvokers_lock      = nullptr;
+Mutex*   ScratchObjects_lock          = nullptr;
 #endif // INCLUDE_CDS
-Mutex*   Bootclasspath_lock           = NULL;
+Mutex*   Bootclasspath_lock           = nullptr;
 
 #if INCLUDE_JVMCI
-Monitor* JVMCI_lock                   = NULL;
-Monitor* JVMCIRuntime_lock            = NULL;
+Monitor* JVMCI_lock                   = nullptr;
+Monitor* JVMCIRuntime_lock            = nullptr;
 #endif
 
 
@@ -169,7 +172,7 @@ static int _num_mutex;
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   // check if this thread owns the lock (common case)
-  assert(lock != NULL, "Need non-NULL lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
   if (!Universe::is_fully_initialized()) return;
@@ -178,7 +181,7 @@ void assert_locked_or_safepoint(const Mutex* lock) {
 
 // a weaker assertion than the above
 void assert_locked_or_safepoint_weak(const Mutex* lock) {
-  assert(lock != NULL, "Need non-NULL lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->is_locked()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
   if (!Universe::is_fully_initialized()) return;
@@ -187,14 +190,9 @@ void assert_locked_or_safepoint_weak(const Mutex* lock) {
 
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
-  assert(lock != NULL, "Need non-NULL lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
-}
-
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (thread->is_handshake_safe_for(Thread::current())) return;
-  assert_locked_or_safepoint(lock);
 }
 #endif
 
@@ -294,7 +292,6 @@ void mutex_init() {
   def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
 
   def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
-  def(MethodData_lock              , PaddedMutex  , safepoint);
   def(TouchedMethodLog_lock        , PaddedMutex  , safepoint);
 
   def(CompileThread_lock           , PaddedMonitor, safepoint);
@@ -333,6 +330,7 @@ void mutex_init() {
   def(DumpRegion_lock              , PaddedMutex  , nosafepoint);
   def(ClassListFile_lock           , PaddedMutex  , nosafepoint);
   def(LambdaFormInvokers_lock      , PaddedMutex  , safepoint);
+  def(ScratchObjects_lock          , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , nosafepoint);
   def(Zip_lock                     , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
@@ -361,7 +359,7 @@ void mutex_init() {
 
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
-    defl(ParGCRareEvent_lock       , PaddedMutex  , Threads_lock, true);
+    defl(G1RareEvent_lock          , PaddedMutex  , Threads_lock, true);
   }
 
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
@@ -373,11 +371,21 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);
-  defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock); // used for JNI critical regions
+  defl(JNICritical_lock            , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   defl(JVMCI_lock                  , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+}
+
+void MutexLocker::post_initialize() {
+  // Print mutex ranks if requested.
+  LogTarget(Info, vmmutex) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    print_lock_ranks(&ls);
+  }
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
@@ -397,7 +405,7 @@ void print_owned_locks_on_error(outputStream* st) {
   bool none = true;
   for (int i = 0; i < _num_mutex; i++) {
      // see if it has an owner
-     if (_mutex_array[i]->owner() != NULL) {
+     if (_mutex_array[i]->owner() != nullptr) {
        if (none) {
           // print format used by Mutex::print_on_error()
           st->print_cr(" ([mutex/lock_event])");
@@ -408,4 +416,40 @@ void print_owned_locks_on_error(outputStream* st) {
      }
   }
   if (none) st->print_cr("None");
+}
+
+void print_lock_ranks(outputStream* st) {
+  st->print_cr("VM Mutex/Monitor ranks: ");
+
+#ifdef ASSERT
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
+  int min_rank = INT_MAX;
+  int max_rank = INT_MIN;
+  for (int i = 0; i < _num_mutex; i++) {
+    Mutex* m = _mutex_array[i];
+    int r = (int) m->rank();
+    if (min_rank > r) min_rank = r;
+    if (max_rank < r) max_rank = r;
+  }
+
+  // Print the listings rank by rank
+  for (int r = min_rank; r <= max_rank; r++) {
+    bool first = true;
+    for (int i = 0; i < _num_mutex; i++) {
+      Mutex* m = _mutex_array[i];
+      if (r != (int) m->rank()) continue;
+
+      if (first) {
+        st->cr();
+        st->print_cr("Rank \"%s\":", m->rank_name());
+        first = false;
+      }
+      st->print_cr("  %s", m->name());
+    }
+  }
+#else
+  st->print_cr("  Only known in debug builds.");
+#endif // ASSERT
 }

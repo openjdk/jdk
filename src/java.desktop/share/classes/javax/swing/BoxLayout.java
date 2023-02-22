@@ -498,9 +498,9 @@ public class BoxLayout implements LayoutManager2, Serializable {
 
     /**
      * Given one of the 4 axis values, resolve it to an absolute axis.
-     * The relative axis values, PAGE_AXIS and LINE_AXIS are converted
-     * to their absolute couterpart given the target's ComponentOrientation
-     * value.  The absolute axes, X_AXIS and Y_AXIS are returned unmodified.
+     * The relative axis values, PAGE_AXIS and LINE_AXIS, are converted
+     * to their absolute counterpart given the target's ComponentOrientation
+     * value.  The absolute axes, X_AXIS and Y_AXIS, are returned unmodified.
      *
      * @param axis the axis to resolve
      * @param o the ComponentOrientation to resolve against

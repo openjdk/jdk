@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -810,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -817,11 +819,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("\t");
   for (int i = 0; i < OptoPrologueNops; i++) {
     st->print_cr("NOP"); st->print("\t");
-  }
-
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
   }
 
   long framesize = C->output()->frame_size_in_bytes();
@@ -837,14 +834,16 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -890,6 +889,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -918,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();

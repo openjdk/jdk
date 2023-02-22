@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /
  * @requires vm.jvmci
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -30,13 +31,13 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
- * @compile CodeInstallerTest.java
  * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:-UseJVMCICompiler compiler.jvmci.errors.TestInvalidCompilationResult
  */
 
 package compiler.jvmci.errors;
 
+import compiler.jvmci.common.CodeInstallerTest;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataPatch;

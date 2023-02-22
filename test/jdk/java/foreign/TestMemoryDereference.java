@@ -27,7 +27,6 @@
  * @run testng TestMemoryDereference
  */
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 
 import java.nio.ByteBuffer;
@@ -36,14 +35,7 @@ import java.nio.ByteOrder;
 import java.lang.foreign.ValueLayout;
 import org.testng.annotations.*;
 
-import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.*;
 
 public class TestMemoryDereference {
@@ -97,14 +89,6 @@ public class TestMemoryDereference {
             return new Accessor<>(value, segmentGetter, segmentSetter, bufferGetter, bufferSetter);
         }
     }
-
-    // unaligned constants
-    public final static ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
-    public final static ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
-    public final static ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-    public final static ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-    public final static ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
-    public final static ValueLayout.OfAddress ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
 
     @Test(dataProvider = "accessors")
     public void testMemoryAccess(String testName, Accessor<?> accessor) {
@@ -204,20 +188,20 @@ public class TestMemoryDereference {
                         (s, x) -> s.set(JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getDouble(8), (bb, v) -> bb.order(BE).putDouble(8, v))
                 },
-                { "address/offset", new Accessor<>(MemoryAddress.ofLong(42),
+                { "address/offset", new Accessor<>(MemorySegment.ofAddress(42),
                         s -> s.get(ADDRESS_UNALIGNED, 8), (s, x) -> s.set(ADDRESS_UNALIGNED, 8, x),
                         (bb) -> {
                             ByteBuffer nb = bb.order(NE);
                             long addr = ADDRESS_UNALIGNED.byteSize() == 8 ?
                                     nb.getLong(8) : nb.getInt(8);
-                            return MemoryAddress.ofLong(addr);
+                            return MemorySegment.ofAddress(addr);
                         },
                         (bb, v) -> {
                             ByteBuffer nb = bb.order(NE);
                             if (ADDRESS_UNALIGNED.byteSize() == 8) {
-                                nb.putLong(8, v.toRawLongValue());
+                                nb.putLong(8, v.address());
                             } else {
-                                nb.putInt(8, (int)v.toRawLongValue());
+                                nb.putInt(8, (int)v.address());
                             }
                         })
                 },

@@ -80,7 +80,7 @@ final class JavaElementHandler extends ElementHandler {
     }
 
     /**
-     * Adds the argument to the list of readed objects.
+     * Adds the argument to the list of read objects.
      *
      * @param argument  the value of the element that contained in this one
      */

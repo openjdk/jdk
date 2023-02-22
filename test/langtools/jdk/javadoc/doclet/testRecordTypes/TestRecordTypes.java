@@ -45,8 +45,8 @@ import toolbox.ToolBox;
 
 public class TestRecordTypes extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestRecordTypes tester = new TestRecordTypes();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestRecordTypes();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();
@@ -513,8 +513,8 @@ public class TestRecordTypes extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <h2 title="Contents">Contents</h2>
-                    <ul>
-                    <li><a href="#record-class">Record Classes</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-record-class"><a href="#record-class">Record Classes</a></li>
                     </ul>""",
                 """
                     <div id="record-class">
@@ -545,8 +545,8 @@ public class TestRecordTypes extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <h2 title="Contents">Contents</h2>
-                    <ul>
-                    <li><a href="#method">Methods</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-method"><a href="#method">Methods</a></li>
                     </ul>""",
                 """
                     <div id="method">

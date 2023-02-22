@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,6 +735,29 @@ SafePointNode* GraphKit::clone_map() {
   return clonemap;
 }
 
+//-----------------------------destruct_map_clone------------------------------
+//
+// Order of destruct is important to increase the likelyhood that memory can be re-used. We need
+// to destruct/free/delete in the exact opposite order as clone_map().
+void GraphKit::destruct_map_clone(SafePointNode* sfp) {
+  if (sfp == nullptr) return;
+
+  Node* mem = sfp->memory();
+  JVMState* jvms = sfp->jvms();
+
+  if (jvms != nullptr) {
+    delete jvms;
+  }
+
+  remove_for_igvn(sfp);
+  gvn().clear_type(sfp);
+  sfp->destruct(&_gvn);
+
+  if (mem != nullptr) {
+    gvn().clear_type(mem);
+    mem->destruct(&_gvn);
+  }
+}
 
 //-----------------------------set_map_clone-----------------------------------
 void GraphKit::set_map_clone(SafePointNode* m) {
@@ -1019,15 +1042,15 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
     code = method()->java_code_at_bci(bci() + 1);
   }
 
-  BasicType rtype = T_ILLEGAL;
-  int       rsize = 0;
-
   if (code != Bytecodes::_illegal) {
     depth = Bytecodes::depth(code); // checkcast=0, athrow=-1
-    rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
-    if (rtype < T_CONFLICT)
-      rsize = type2size[rtype];
   }
+
+  auto rsize = [&]() {
+    assert(code != Bytecodes::_illegal, "code is illegal!");
+    BasicType rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
+    return (rtype < T_CONFLICT) ? type2size[rtype] : 0;
+  };
 
   switch (code) {
   case Bytecodes::_illegal:
@@ -1089,8 +1112,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       inputs = iter.get_dimensions();
-      assert(rsize == 1, "");
-      depth = rsize - inputs;
+      assert(rsize() == 1, "");
+      depth = 1 - inputs;
     }
     break;
 
@@ -1099,8 +1122,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_freturn:
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
-    assert(rsize == -depth, "");
-    inputs = rsize;
+    assert(rsize() == -depth, "");
+    inputs = -depth;
     break;
 
   case Bytecodes::_jsr:
@@ -1111,7 +1134,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
   default:
     // bytecode produces a typed result
-    inputs = rsize - depth;
+    inputs = rsize() - depth;
     assert(inputs >= 0, "");
     break;
   }
@@ -1550,7 +1573,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 bool require_atomic_access,
                                 bool unaligned,
                                 bool mismatched,
-                                bool unsafe) {
+                                bool unsafe,
+                                int barrier_data) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1565,6 +1589,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   if (unsafe) {
     st->as_Store()->set_unsafe_access();
   }
+  st->as_Store()->set_barrier_data(barrier_data);
   st = _gvn.transform(st);
   set_memory(st, adr_idx);
   // Back-to-back stores can only remove intermediate store with DU info
@@ -2182,7 +2207,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
 
   // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
-    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, Type::trust_interfaces);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
@@ -2601,7 +2626,9 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
   // Make a catch node with just two handlers:  fall-through and catch-all
   Node* i_o  = _gvn.transform( new ProjNode(call, TypeFunc::I_O, separate_io_proj) );
   Node* catc = _gvn.transform( new CatchNode(control(), i_o, 2) );
-  Node* norm = _gvn.transform( new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci) );
+  Node* norm = new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci);
+  _gvn.set_type_bottom(norm);
+  C->record_for_igvn(norm);
   Node* excp = _gvn.transform( new CatchProjNode(catc, CatchProjNode::catch_all_index,    CatchProjNode::no_handler_bci) );
 
   { PreserveJVMState pjvms(this);
@@ -2634,7 +2661,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
   default: fatal("unexpected comparison type %s", type2name(bt));
   }
-  gvn.transform(cmp);
+  cmp = gvn.transform(cmp);
   Node* bol = gvn.transform(new BoolNode(cmp, test));
   IfNode* iff = new IfNode(ctrl, bol, p, COUNT_UNKNOWN);
   gvn.transform(iff);
@@ -2842,7 +2869,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     Node* *casted_receiver) {
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
@@ -2871,7 +2898,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 //------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
   Node* want_klass = makecon(tklass);
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
@@ -2994,7 +3021,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls)) == Compile::SSC_always_true) {
+        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, Type::trust_interfaces)) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
@@ -3180,8 +3207,8 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
                               Node* *failure_control) {
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr();
-  const Type *toop = tk->cast_to_exactness(false)->as_instance_type();
+  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr()->try_improve();
+  const TypeOopPtr *toop = tk->cast_to_exactness(false)->as_instance_type();
 
   // Fast cutout:  Check the case that the cast is vacuously true.
   // This detects the common cases where the test will short-circuit
@@ -3852,20 +3879,28 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
   }
 
+  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
+  Node* valid_length_test = _gvn.intcon(1);
+  if (ary_type->isa_aryptr()) {
+    BasicType bt = ary_type->isa_aryptr()->elem()->array_element_basic_type();
+    jint max = TypeAryPtr::max_array_length(bt);
+    Node* valid_length_cmp  = _gvn.transform(new CmpUNode(length, intcon(max)));
+    valid_length_test = _gvn.transform(new BoolNode(valid_length_cmp, BoolTest::le));
+  }
+
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
     = new AllocateArrayNode(C, AllocateArrayNode::alloc_type(TypeInt::INT),
                             control(), mem, i_o(),
                             size, klass_node,
                             initial_slow_test,
-                            length);
+                            length, valid_length_test);
 
   // Cast to correct type.  Note that the klass_node may be constant or not,
   // and in the latter case the actual array type will be inexact also.
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
   if (ary_type->isa_aryptr() && length_type != NULL) {
     // Try to get a better type than POS for the size
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);

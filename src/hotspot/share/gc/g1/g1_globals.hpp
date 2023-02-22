@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,53 +168,15 @@
           "Size of an update buffer")                                       \
           range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
                                                                             \
-  product(size_t, G1ConcRefinementYellowZone, 0,                            \
-          "Number of enqueued update buffers that will "                    \
-          "trigger concurrent processing. Will be selected ergonomically "  \
-          "by default.")                                                    \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(size_t, G1ConcRefinementRedZone, 0,                               \
-          "Maximum number of enqueued update buffers before mutator "       \
-          "threads start processing new ones instead of enqueueing them. "  \
-          "Will be selected ergonomically by default.")                     \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(size_t, G1ConcRefinementGreenZone, 0,                             \
-          "The number of update buffers that are left in the queue by the " \
-          "concurrent processing threads. Will be selected ergonomically "  \
-          "by default.")                                                    \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(uintx, G1ConcRefinementServiceIntervalMillis, 300,                \
-          "The G1 service thread wakes up every specified number of "       \
-          "milliseconds to do miscellaneous work.")                         \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(size_t, G1ConcRefinementThresholdStep, 2,                         \
-          "Each time the remembered set update queue increases by this "    \
-          "amount activate the next refinement thread if available. "       \
-          "The actual step size will be selected ergonomically by "         \
-          "default, with this value used to determine a lower bound.")      \
-          range(1, SIZE_MAX)                                                \
-                                                                            \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
           "processing remembered set update buffers during the collection " \
           "pause.")                                                         \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, G1UseAdaptiveConcRefinement, true,                          \
-          "Select green, yellow and red zones adaptively to meet the "      \
-          "the pause requirements.")                                        \
-                                                                            \
-  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
-          "Log base 2 of the length of conc RS hot-card cache.")            \
-          range(0, 27)                                                      \
-                                                                            \
-  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
-          "The threshold that defines (>=) a hot card.")                    \
-          range(0, max_jubyte)                                              \
+  product(bool, G1UseConcRefinement, true, DIAGNOSTIC,                      \
+          "Control whether concurrent refinement is performed. "            \
+          "Disabling effectively ignores G1RSetUpdatingPauseTimePercent")   \
                                                                             \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
@@ -251,10 +213,9 @@
           "set container.")                                                 \
           range(1, 100)                                                     \
                                                                             \
-  develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failures to print.  "         \
-          "-1 means print all.")                                            \
-          range(-1, max_jint)                                               \
+  develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
+          "The maximum number of verification failures to print.")          \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
@@ -273,11 +234,6 @@
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
-                                                                            \
-  develop(uintx, G1DummyRegionsPerGC, 0,                                    \
-          "The number of dummy regions G1 will allocate at the end of "     \
-          "each evacuation pause in order to artificially fill up the "     \
-          "heap and stress the marking implementation.")                    \
                                                                             \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \
@@ -376,6 +332,11 @@
           "The number of chunks assigned per worker thread for "            \
           "retained region restore purposes.")                              \
           range(1, 256)                                                     \
+                                                                            \
+  product(uint, G1NumCardsCostSampleThreshold, 1000, DIAGNOSTIC,            \
+          "Threshold for the number of cards when reporting card cost "     \
+          "related prediction sample. That sample must involve the same or "\
+          "more than that number of cards to be used.")                     \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

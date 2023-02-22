@@ -160,13 +160,14 @@ operations for which thread.stop and thread.interrupt do not work
 properly.</p>
 <hr>
 <h2>Why are <code>Thread.suspend</code> and
-<code>Thread.resume</code> deprecated?</h2>
-<p><code>Thread.suspend</code> is inherently deadlock-prone. If the
-target thread holds a lock on the monitor protecting a critical
-system resource when it is suspended, no thread can access this
-resource until the target thread is resumed. If the thread that
-would resume the target thread attempts to lock this monitor prior
-to calling <code>resume</code>, deadlock results. Such deadlocks
+<code>Thread.resume</code> deprecated and the ability to suspend or
+resume a thread removed?</h2>
+<p><code>Thread.suspend</code> was inherently deadlock-prone. If the
+target thread held a lock on a monitor protecting a critical
+system resource when it is suspended, no thread could access the
+resource until the target thread was resumed. If the thread intending
+to resume the target thread attempted to lock the monitor prior
+to calling <code>resume</code>, deadlock resulted. Such deadlocks
 typically manifest themselves as "frozen" processes.</p>
 <hr>
 <h2>What should I use instead of <code>Thread.suspend</code> and

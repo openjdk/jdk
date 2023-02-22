@@ -492,7 +492,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
     /**
      * Set the busy state for the model. The model is considered
-     * busy when it is running a separate (interruptable)
+     * busy when it is running a separate (interruptible)
      * thread in order to load the contents of a directory.
      */
     private synchronized void setBusy(final boolean busy, int fid) {

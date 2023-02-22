@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,9 @@ package java.lang;
 
 /**
  * Thrown to indicate that a thread is not in an appropriate state
- * for the requested operation. See, for example, the
- * {@code suspend} and {@code resume} methods in class
- * {@code Thread}.
+ * for the requested operation.
  *
- * @see     java.lang.Thread#resume()
- * @see     java.lang.Thread#suspend()
+ * @see Thread#start()
  * @since   1.0
  */
 public class IllegalThreadStateException extends IllegalArgumentException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,23 +195,50 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         return res;
     }
 
-    @Override
+    /*package-private*/
     @ForceInline
-    public VectorMask<E> indexInRange(int offset, int limit) {
+    VectorMask<E> indexPartiallyInRange(int offset, int limit) {
         int vlength = length();
         Vector<E> iota = vectorSpecies().zero().addIndex(1);
         VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
-        return this.andNot(badMask);
+        return badMask.not();
+    }
+
+    /*package-private*/
+    @ForceInline
+    VectorMask<E> indexPartiallyInRange(long offset, long limit) {
+        int vlength = length();
+        Vector<E> iota = vectorSpecies().zero().addIndex(1);
+        VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
+        return badMask.not();
     }
 
     @Override
     @ForceInline
-    public VectorMask<E> indexInRange(long offset, long limit) {
-        int vlength = length();
-        Vector<E> iota = vectorSpecies().zero().addIndex(1);
-        VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
-        return this.andNot(badMask);
+    public VectorMask<E> indexInRange(int offset, int limit) {
+        if (offset < 0) {
+            return this.and(indexPartiallyInRange(offset, limit));
+        } else if (offset >= limit) {
+            return vectorSpecies().maskAll(false);
+        } else if (limit - offset >= length()) {
+            return this;
+        }
+        return this.and(indexPartiallyInUpperRange(offset, limit));
     }
+
+    @ForceInline
+    public VectorMask<E> indexInRange(long offset, long limit) {
+        if (offset < 0) {
+            return this.and(indexPartiallyInRange(offset, limit));
+        } else if (offset >= limit) {
+            return vectorSpecies().maskAll(false);
+        } else if (limit - offset >= length()) {
+            return this;
+        }
+        return this.and(indexPartiallyInUpperRange(offset, limit));
+    }
+
+    abstract VectorMask<E> indexPartiallyInUpperRange(long offset, long limit);
 
     /*package-private*/
     @ForceInline
@@ -225,7 +252,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         // For integral types, *all* lane bits will be set.
         // The bits for -1.0 are like {0b10111*0000*}.
         // FIXME: Use a conversion intrinsic for this operation.
-        // https://bugs.openjdk.java.net/browse/JDK-8225740
+        // https://bugs.openjdk.org/browse/JDK-8225740
         return (AbstractVector<E>) zero.blend(mone, this);
     }
 

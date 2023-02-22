@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     off       the start offset in the data
      * @param     len       the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
+     * @throws    IndexOutOfBoundsException {@inheritDoc}
      */
     public void write(byte[] b, int off, int len) throws IOException;
 

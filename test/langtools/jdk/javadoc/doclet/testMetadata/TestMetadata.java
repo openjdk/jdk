@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestMetadata extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestMetadata tester = new TestMetadata();
+        var tester = new TestMetadata();
         tester.runTests();
     }
 
@@ -149,6 +149,7 @@ public class TestMetadata extends JavadocTester {
         "constants-summary-page",
         "deprecated-list-page",
         "doc-file-page",
+        "external-specs-page",
         "help-page",
         "index-page",
         "index-redirect-page",
@@ -215,6 +216,7 @@ public class TestMetadata extends JavadocTester {
             "ConstantsSummaryWriterImpl",
             "DeprecatedListWriter",
             "DocFileWriter",
+            "ExternalSpecsWriter",
             "HelpWriter",
             "IndexRedirectWriter",
             "IndexWriter",
@@ -343,6 +345,10 @@ public class TestMetadata extends JavadocTester {
                 passed("no constraint for user-provided doc-files");
                 break;
 
+            case "ExternalSpecsWriter":
+                check(generator, content, content.startsWith("external specifications"));
+                break;
+
             case "HelpWriter":
                 check(generator, content, content.contains("help"));
                 break;
@@ -396,7 +402,16 @@ public class TestMetadata extends JavadocTester {
             case PACKAGES:
                 tb.writeJavaFiles(src,
                     "/** Package pA. {@systemProperty exampleProperty} */ package pA;",
-                    "/** Class pA.CA. */ package pA; public class CA { @Deprecated public static final int ZERO = 0; }",
+                    """
+                        /** Class pA.CA. */
+                        package pA; public class CA {
+                            /**
+                             * First sentence.
+                             * @spec http://example.com example reference
+                             */
+                            @Deprecated public static final int ZERO = 0;
+                        }
+                        """,
                     "/** Anno pA.Anno, */ package pA; public @interface Anno { }",
                     "/** Serializable pA.Ser, */ package pA; public class Ser implements java.io.Serializable { }",
                     "/** Package pB. */ package pB;",
@@ -411,7 +426,17 @@ public class TestMetadata extends JavadocTester {
                 new ModuleBuilder(tb, "mA")
                         .exports("pA")
                         .classes("/** Package mA/pA. */ package pA;")
-                        .classes("/** Class mA/pA.CA. */ package pA; public class CA { @Deprecated public static int ZERO = 0; }")
+                        .classes("""
+                            /** Class mA/pA.CA. */
+                            package pA;
+                            public class CA {
+                                /**
+                                 * First sentence.
+                                 * @spec http://example.com example reference
+                                 */
+                                @Deprecated public static int ZERO = 0;
+                            }
+                        """)
                         .write(src);
                 new ModuleBuilder(tb, "mB")
                         .exports("pB")

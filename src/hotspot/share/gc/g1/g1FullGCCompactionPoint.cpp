@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
     _collector(collector),
     _current_region(nullptr),
     _compaction_top(nullptr) {
-  _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
+  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 
@@ -116,6 +116,17 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-HeapRegion* G1FullGCCompactionPoint::remove_last() {
-  return _compaction_regions->pop();
+void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
+  HeapRegion* cur = current_region();
+  assert(cur->hrm_index() >= bottom, "Sanity!");
+
+  int start_index = 0;
+  for (HeapRegion* r : *_compaction_regions) {
+    if (r->hrm_index() < bottom) {
+      start_index++;
+    }
+  }
+
+  assert(start_index >= 0, "Should have at least one region");
+  _compaction_regions->trunc_to(start_index);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,17 +72,16 @@ protected:
          DoUnrollOnly        = 1<<10,
          VectorizedLoop      = 1<<11,
          HasAtomicPostLoop   = 1<<12,
-         HasRangeChecks      = 1<<13,
-         IsMultiversioned    = 1<<14,
-         StripMined          = 1<<15,
-         SubwordLoop         = 1<<16,
-         ProfileTripFailed   = 1<<17,
-         LoopNestInnerLoop = 1 << 18,
-         LoopNestLongOuterLoop = 1 << 19};
+         IsMultiversioned    = 1<<13,
+         StripMined          = 1<<14,
+         SubwordLoop         = 1<<15,
+         ProfileTripFailed   = 1<<16,
+         LoopNestInnerLoop = 1 << 17,
+         LoopNestLongOuterLoop = 1 << 18};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
-  enum { LoopNotRCEChecked = 0, LoopRCEChecked = 1, RCEPostLoop = 2 };
+  enum { RCEPostLoop = 1 };
 
   // Expected trip count from profile data
   float _profile_trip_cnt;
@@ -94,7 +93,6 @@ public:
   bool is_inner_loop() const { return _loop_flags & InnerLoop; }
   void set_inner_loop() { _loop_flags |= InnerLoop; }
 
-  bool range_checks_present() const { return _loop_flags & HasRangeChecks; }
   bool is_multiversioned() const { return _loop_flags & IsMultiversioned; }
   bool is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
   bool is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
@@ -113,8 +111,6 @@ public:
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
   void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
-  void mark_has_range_checks() { _loop_flags |=  HasRangeChecks; }
-  void clear_has_range_checks() { _loop_flags &= ~HasRangeChecks; }
   void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
@@ -126,8 +122,6 @@ public:
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
 
-  int has_been_range_checked() const { return _postloop_flags & LoopRCEChecked; }
-  void set_has_been_range_checked() { _postloop_flags |= LoopRCEChecked; }
   int is_rce_post_loop() const { return _postloop_flags & RCEPostLoop; }
   void set_is_rce_post_loop() { _postloop_flags |= RCEPostLoop; }
 
@@ -355,6 +349,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  static bool is_zero_trip_guard_if(const IfNode* iff);
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
@@ -619,7 +615,9 @@ public:
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint
-          _rce_candidate:1;     // True if candidate for range check elimination
+          _rce_candidate:1,     // True if candidate for range check elimination
+          _has_range_checks:1,
+          _has_range_checks_computed:1;
 
   Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
@@ -631,6 +629,7 @@ public:
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
+      _has_range_checks(0), _has_range_checks_computed(0),
       _safepts(NULL),
       _required_safept(NULL),
       _allow_optimizations(true)
@@ -778,14 +777,20 @@ public:
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
-#ifdef ASSERT
-  // Tell whether the body contains nodes marked as reductions.
-  bool has_reduction_nodes() const;
-#endif // ASSERT
+  bool compute_has_range_checks() const;
+  bool range_checks_present() {
+    if (!_has_range_checks_computed) {
+      if (compute_has_range_checks()) {
+        _has_range_checks = 1;
+      }
+      _has_range_checks_computed = 1;
+    }
+    return _has_range_checks;
+  }
 
 #ifndef PRODUCT
-  void dump_head() const;       // Dump loop head only
-  void dump() const;            // Dump this loop recursively
+  void dump_head();       // Dump loop head only
+  void dump();            // Dump this loop recursively
   void verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent) const;
 #endif
 
@@ -800,6 +805,19 @@ public:
   bool is_residual_iters_large(int unroll_cnt, CountedLoopNode *cl) const {
     return (unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt();
   }
+
+  void collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const;
+
+  bool empty_loop_with_data_nodes(PhaseIdealLoop* phase) const;
+
+  void enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq) const;
+
+  bool process_safepoint(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq,
+                         Node* sfpt) const;
+
+  bool empty_loop_candidate(PhaseIdealLoop* phase) const;
+
+  bool empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const;
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
@@ -1053,6 +1071,12 @@ private:
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
+
+#ifdef ASSERT
+  // verify that regions in irreducible loops are marked is_in_irreducible_loop
+  void verify_regions_in_irreducible_loops();
+  bool is_in_irreducible_loop(RegionNode* region);
+#endif
 
   // Place Data nodes in some loop nest
   void build_loop_early( VectorSet &visited, Node_List &worklist, Node_Stack &nstack );
@@ -1313,22 +1337,22 @@ public:
                                       jlong* p_scale, Node** p_offset,
                                       bool* p_short_scale, int depth);
 
-
-  // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
-  enum class UnswitchingAction {
-    None,            // No special action.
-    FastLoopCloning, // Need to clone nodes for the fast loop.
-    SlowLoopRewiring // Need to rewire nodes for the slow loop.
-  };
-
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool if_cont_is_true_proj = true, Node_List* old_new = NULL,
-                                        UnswitchingAction unswitching_action = UnswitchingAction::None);
+                                        int opcode, bool rewire_uncommon_proj_phi_inputs = false,
+                                        bool if_cont_is_true_proj = true);
 
-  // Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate.
-  Node* clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new);
+ private:
+  // Helper functions for create_new_if_for_predicate()
+  void set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
+  Node* clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  Dict clone_nodes(const Node_List& list_to_clone);
+  void rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl, const Node_List& nodes_with_same_ctrl,
+                                   const Dict& old_new_mapping);
+  void rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping, const Node* next);
 
+ public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
   static Node* skip_all_loop_predicates(Node* entry);
@@ -1414,10 +1438,7 @@ public:
   }
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-  int do_range_check( IdealLoopTree *loop, Node_List &old_new );
-
-  // Check to see if do_range_check(...) cleaned the main loop of range-checks
-  void has_range_checks(IdealLoopTree *loop);
+  void do_range_check(IdealLoopTree *loop, Node_List &old_new);
 
   // Process post loops which have range checks and try to build a multi-version
   // guard to safely determine if we can execute the post loop which was RCE'd.
@@ -1527,12 +1548,6 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
-  // Reorganize offset computations to lower register pressure.
-  // Mostly prevent loop-fallout uses of the pre-incremented trip counter
-  // (which are then alive with the post-incremented trip counter
-  // forcing an extra register move)
-  void reorg_offsets( IdealLoopTree *loop );
-
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1575,6 +1590,9 @@ private:
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
+  bool cannot_split_division(const Node* n, const Node* region) const;
+  static bool is_divisor_counted_loop_phi(const Node* divisor, const Node* loop);
+  bool loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const;
 
   // Determine if a method is too big for a/another round of split-if, based on
   // a magic (approximate) ratio derived from the equally magic constant 35000,
@@ -1651,8 +1669,8 @@ private:
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
   void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
-  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                               Node_List* old_new = NULL);
+  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry,
+                                               Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                     ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
   ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
@@ -1661,10 +1679,8 @@ private:
   static void check_created_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
 
   bool _created_loop_node;
-#ifdef ASSERT
-  void dump_real_LCA(Node* early, Node* wrong_lca);
-  bool check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const;
-#endif
+  DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)
+  NOT_PRODUCT(void dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const;)
 
 public:
   void set_created_loop_node() { _created_loop_node = true; }
@@ -1677,7 +1693,9 @@ public:
 
 #ifndef PRODUCT
   void dump() const;
-  void dump_idom(Node* n) const;
+  void dump_idom(Node* n) const { dump_idom(n, 1000); } // For debugging
+  void dump_idom(Node* n, uint count) const;
+  void get_idoms(Node* n, uint count, Unique_Node_List& idoms) const;
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   void verify() const;          // Major slow  :-)
   void verify_compare(Node* n, const PhaseIdealLoop* loop_verify, VectorSet &visited) const;
@@ -1739,6 +1757,14 @@ public:
                      Node_List*& split_bool_set, Node_List*& split_cex_set);
 
   void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
+
+  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
+
+  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
+
+  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
+
+  bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 };
 
 

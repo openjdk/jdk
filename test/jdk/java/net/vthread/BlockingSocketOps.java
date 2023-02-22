@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,19 @@
 /**
  * @test id=default
  * @bug 8284161
- * @summary Basic tests of virtual threads doing blocking I/O with java.net sockets
+ * @summary Test virtual threads doing blocking I/O on java.net sockets
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 BlockingSocketOps
+ * @run junit BlockingSocketOps
  */
 
 /**
- * @test id=indirect-register
- * @summary Basic tests of virtual threads doing blocking I/O with java.net sockets
+ * @test id=direct-register
+ * @summary Test virtual threads doing blocking I/O on java.net sockets and with
+ *    the I/O poller configured to use direct registration
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingSocketOps
+ * @run junit/othervm -Djdk.useDirectRegister BlockingSocketOps
  */
 
 /**
@@ -43,7 +44,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
  */
 
 import java.io.Closeable;
@@ -61,18 +62,16 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BlockingSocketOps {
-
-    private static final long DELAY = 2000;
+class BlockingSocketOps {
 
     /**
      * Socket read/write, no blocking.
      */
     @Test
-    public void testSocketReadWrite1() throws Exception {
+    void testSocketReadWrite1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -95,7 +94,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in read.
      */
     @Test
-    public void testSocketRead1() throws Exception {
+    void testSocketRead1() throws Exception {
         testSocketRead(0);
     }
 
@@ -103,7 +102,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in timed read.
      */
     @Test
-    public void testSocketRead2() throws Exception {
+    void testSocketRead2() throws Exception {
         testSocketRead(60_000);
     }
 
@@ -113,19 +112,18 @@ public class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // schedule write
-                byte[] ba = "XXX".getBytes("UTF-8");
-                ScheduledWriter.schedule(s1, ba, DELAY);
+                // delayed write from sc1
+                byte[] ba1 = "XXX".getBytes("UTF-8");
+                runAfterParkedAsync(() -> s1.getOutputStream().write(ba1));
 
-                // read should block
+                // read from sc2 should block
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     s2.setSoTimeout(timeout);
                 }
-                ba = new byte[10];
-                int n = s2.getInputStream().read(ba);
+                byte[] ba2 = new byte[10];
+                int n = s2.getInputStream().read(ba2);
                 assertTrue(n > 0);
-                assertTrue(ba[0] == 'X');
+                assertTrue(ba2[0] == 'X');
             }
         });
     }
@@ -134,37 +132,45 @@ public class BlockingSocketOps {
      * Virtual thread blocks in write.
      */
     @Test
-    public void testSocketWrite1() throws Exception {
+    void testSocketWrite1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // schedule thread to read to EOF
-                ScheduledReader.schedule(s2, true, DELAY);
+                // delayed read from s2 to EOF
+                InputStream in = s2.getInputStream();
+                Thread reader = runAfterParkedAsync(() ->
+                        in.transferTo(OutputStream.nullOutputStream()));
 
                 // write should block
                 byte[] ba = new byte[100*1024];
-                OutputStream out = s1.getOutputStream();
-                for (int i=0; i<1000; i++) {
-                    out.write(ba);
+                try (OutputStream out = s1.getOutputStream()) {
+                    for (int i = 0; i < 1000; i++) {
+                        out.write(ba);
+                    }
                 }
+
+                // wait for reader to finish
+                reader.join();
             }
         });
     }
 
     /**
-     * Virtual thread blocks in read, peer closes connection.
+     * Virtual thread blocks in read, peer closes connection gracefully.
      */
     @Test
-    public void testSocketReadPeerClose1() throws Exception {
+    void testSocketReadPeerClose1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                ScheduledCloser.schedule(s2, DELAY);
+                // delayed close of s2
+                runAfterParkedAsync(s2::close);
 
+                // read from s1 should block, then read -1
                 int n = s1.getInputStream().read();
                 assertTrue(n == -1);
             }
@@ -175,18 +181,20 @@ public class BlockingSocketOps {
      * Virtual thread blocks in read, peer closes connection abruptly.
      */
     @Test
-    public void testSocketReadPeerClose2() throws Exception {
+    void testSocketReadPeerClose2() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
+                // delayed abrupt close of s2
                 s2.setSoLinger(true, 0);
-                ScheduledCloser.schedule(s2, DELAY);
+                runAfterParkedAsync(s2::close);
 
+                // read from s1 should block, then throw
                 try {
-                    s1.getInputStream().read();
-                    fail();
+                    int n = s1.getInputStream().read();
+                    fail("read " + n);
                 } catch (IOException ioe) {
                     // expected
                 }
@@ -198,7 +206,7 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in read.
      */
     @Test
-    public void testSocketReadAsyncClose1() throws Exception {
+    void testSocketReadAsyncClose1() throws Exception {
         testSocketReadAsyncClose(0);
     }
 
@@ -206,7 +214,7 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in timed read.
      */
     @Test
-    public void testSocketReadAsyncClose2() throws Exception {
+    void testSocketReadAsyncClose2() throws Exception {
         testSocketReadAsyncClose(0);
     }
 
@@ -214,14 +222,17 @@ public class BlockingSocketOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
-                ScheduledCloser.schedule(s, DELAY);
+
+                // delayed close of s
+                runAfterParkedAsync(s::close);
+
+                // read from s should block, then throw
+                if (timeout > 0) {
+                    s.setSoTimeout(timeout);
+                }
                 try {
-                    if (timeout > 0) {
-                        assert timeout > DELAY;
-                        s.setSoTimeout(timeout);
-                    }
                     int n = s.getInputStream().read();
-                    throw new RuntimeException("read returned " + n);
+                    fail("read " + n);
                 } catch (SocketException expected) { }
             }
         });
@@ -231,7 +242,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in Socket read.
      */
     @Test
-    public void testSocketReadInterrupt1() throws Exception {
+    void testSocketReadInterrupt1() throws Exception {
         testSocketReadInterrupt(0);
     }
 
@@ -239,7 +250,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in Socket read with timeout
      */
     @Test
-    public void testSocketReadInterrupt2() throws Exception {
+    void testSocketReadInterrupt2() throws Exception {
         testSocketReadInterrupt(60_000);
     }
 
@@ -247,14 +258,19 @@ public class BlockingSocketOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
+                // read from s should block, then throw
+                if (timeout > 0) {
+                    s.setSoTimeout(timeout);
+                }
                 try {
-                    if (timeout > 0) {
-                        assert timeout > DELAY;
-                        s.setSoTimeout(timeout);
-                    }
                     int n = s.getInputStream().read();
-                    throw new RuntimeException("read returned " + n);
+                    fail("read " + n);
                 } catch (SocketException expected) {
                     assertTrue(Thread.interrupted());
                     assertTrue(s.isClosed());
@@ -267,11 +283,15 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in write.
      */
     @Test
-    public void testSocketWriteAsyncClose() throws Exception {
+    void testSocketWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
-                ScheduledCloser.schedule(s, DELAY);
+
+                // delayedclose of s
+                runAfterParkedAsync(s::close);
+
+                // write to s should block, then throw
                 try {
                     byte[] ba = new byte[100*1024];
                     OutputStream out = s.getOutputStream();
@@ -284,14 +304,19 @@ public class BlockingSocketOps {
     }
 
     /**
-     * Virtual thread interrupted while blocked in Socket write
+     * Virtual thread interrupted while blocked in Socket write.
      */
     @Test
-    public void testSocketWriteInterrupt() throws Exception {
+    void testSocketWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
+                // write to s should block, then throw
                 try {
                     byte[] ba = new byte[100*1024];
                     OutputStream out = s.getOutputStream();
@@ -310,14 +335,16 @@ public class BlockingSocketOps {
      * Virtual thread reading urgent data when SO_OOBINLINE is enabled.
      */
     @Test
-    public void testSocketReadUrgentData() throws Exception {
+    void testSocketReadUrgentData() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
                 // urgent data should be received
-                ScheduledUrgentData.scheduleUrgentData(s2, 'X', DELAY);
+                runAfterParkedAsync(() -> s2.sendUrgentData('X'));
+
+                // read should block, then read the OOB byte
                 s1.setOOBInline(true);
                 byte[] ba = new byte[10];
                 int n = s1.getInputStream().read(ba);
@@ -340,10 +367,15 @@ public class BlockingSocketOps {
      * ServerSocket accept, no blocking.
      */
     @Test
-    public void testServerSocketAccept1() throws Exception {
+    void testServerSocketAccept1() throws Exception {
         VThreadRunner.run(() -> {
-            try (var listener = new ServerSocket(0)) {
-                var socket1 = new Socket(listener.getInetAddress(), listener.getLocalPort());
+            try (var listener = new ServerSocket()) {
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                listener.bind(new InetSocketAddress(loopback, 0));
+
+                // establish connection
+                var socket1 = new Socket(loopback, listener.getLocalPort());
+
                 // accept should not block
                 var socket2 = listener.accept();
                 socket1.close();
@@ -356,7 +388,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in accept.
      */
     @Test
-    public void testServerSocketAccept2() throws Exception {
+    void testServerSocketAccept2() throws Exception {
         testServerSocketAccept(0);
     }
 
@@ -364,18 +396,23 @@ public class BlockingSocketOps {
      * Virtual thread blocks in timed accept.
      */
     @Test
-    public void testServerSocketAccept3() throws Exception {
+    void testServerSocketAccept3() throws Exception {
         testServerSocketAccept(60_000);
     }
 
     void testServerSocketAccept(int timeout) throws Exception {
         VThreadRunner.run(() -> {
-            try (var listener = new ServerSocket(0)) {
+            try (var listener = new ServerSocket()) {
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                listener.bind(new InetSocketAddress(loopback, 0));
+
+                // schedule connect
                 var socket1 = new Socket();
-                ScheduledConnector.schedule(socket1, listener.getLocalSocketAddress(), DELAY);
-                // accept will block
+                SocketAddress remote = listener.getLocalSocketAddress();
+                runAfterParkedAsync(() -> socket1.connect(remote));
+
+                // accept should block
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     listener.setSoTimeout(timeout);
                 }
                 var socket2 = listener.accept();
@@ -389,7 +426,7 @@ public class BlockingSocketOps {
      * ServerSocket close while virtual thread blocked in accept.
      */
     @Test
-    public void testServerSocketAcceptAsyncClose1() throws Exception {
+    void testServerSocketAcceptAsyncClose1() throws Exception {
         testServerSocketAcceptAsyncClose(0);
     }
 
@@ -397,53 +434,64 @@ public class BlockingSocketOps {
      * ServerSocket close while virtual thread blocked in timed accept.
      */
     @Test
-    public void testServerSocketAcceptAsyncClose2() throws Exception {
+    void testServerSocketAcceptAsyncClose2() throws Exception {
         testServerSocketAcceptAsyncClose(60_000);
     }
 
     void testServerSocketAcceptAsyncClose(int timeout) throws Exception {
         VThreadRunner.run(() -> {
-            try (var listener = new ServerSocket(0)) {
-                ScheduledCloser.schedule(listener, DELAY);
+            try (var listener = new ServerSocket()) {
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                listener.bind(new InetSocketAddress(loopback, 0));
+
+                // delayed close of listener
+                runAfterParkedAsync(listener::close);
+
+                // accept should block, then throw
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     listener.setSoTimeout(timeout);
                 }
                 try {
                     listener.accept().close();
-                    throw new RuntimeException("connection accepted???");
+                    fail("connection accepted???");
                 } catch (SocketException expected) { }
             }
         });
     }
 
     /**
-     * Virtual thread interrupted while blocked in ServerSocket accept
+     * Virtual thread interrupted while blocked in ServerSocket accept.
      */
     @Test
-    public void testServerSocketAcceptInterrupt1() throws Exception {
+    void testServerSocketAcceptInterrupt1() throws Exception {
         testServerSocketAcceptInterrupt(0);
     }
 
     /**
-     * Virtual thread interrupted while blocked in ServerSocket accept with timeout
+     * Virtual thread interrupted while blocked in ServerSocket accept with timeout.
      */
     @Test
-    public void testServerSocketAcceptInterrupt2() throws Exception {
+    void testServerSocketAcceptInterrupt2() throws Exception {
         testServerSocketAcceptInterrupt(60_000);
     }
 
     void testServerSocketAcceptInterrupt(int timeout) throws Exception {
         VThreadRunner.run(() -> {
-            try (var listener = new ServerSocket(0)) {
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+            try (var listener = new ServerSocket()) {
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                listener.bind(new InetSocketAddress(loopback, 0));
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
+                // accept should block, then throw
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     listener.setSoTimeout(timeout);
                 }
                 try {
                     listener.accept().close();
-                    throw new RuntimeException("connection accepted???");
+                    fail("connection accepted???");
                 } catch (SocketException expected) {
                     assertTrue(Thread.interrupted());
                     assertTrue(listener.isClosed());
@@ -456,7 +504,7 @@ public class BlockingSocketOps {
      * DatagramSocket receive/send, no blocking.
      */
     @Test
-    public void testDatagramSocketSendReceive1() throws Exception {
+    void testDatagramSocketSendReceive1() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramSocket s1 = new DatagramSocket(null);
                  DatagramSocket s2 = new DatagramSocket(null)) {
@@ -475,25 +523,25 @@ public class BlockingSocketOps {
                 byte[] ba = new byte[100];
                 DatagramPacket p2 = new DatagramPacket(ba, ba.length);
                 s2.receive(p2);
-                assertEquals(p2.getSocketAddress(), s1.getLocalSocketAddress());
+                assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
                 assertTrue(ba[0] == 'X');
             }
         });
     }
 
     /**
-     * Virtual thread blocks in DatagramSocket receive
+     * Virtual thread blocks in DatagramSocket receive.
      */
     @Test
-    public void testDatagramSocketSendReceive2() throws Exception {
+    void testDatagramSocketSendReceive2() throws Exception {
         testDatagramSocketSendReceive(0);
     }
 
     /**
-     * Virtual thread blocks in DatagramSocket receive with timeout
+     * Virtual thread blocks in DatagramSocket receive with timeout.
      */
     @Test
-    public void testDatagramSocketSendReceive3() throws Exception {
+    void testDatagramSocketSendReceive3() throws Exception {
         testDatagramSocketSendReceive(60_000);
     }
 
@@ -506,36 +554,35 @@ public class BlockingSocketOps {
                 s1.bind(new InetSocketAddress(lh, 0));
                 s2.bind(new InetSocketAddress(lh, 0));
 
-                // schedule send
+                // delayed send
                 byte[] bytes = "XXX".getBytes("UTF-8");
                 DatagramPacket p1 = new DatagramPacket(bytes, bytes.length);
                 p1.setSocketAddress(s2.getLocalSocketAddress());
-                ScheduledSender.schedule(s1, p1, DELAY);
+                runAfterParkedAsync(() -> s1.send(p1));
 
                 // receive should block
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     s2.setSoTimeout(timeout);
                 }
                 byte[] ba = new byte[100];
                 DatagramPacket p2 = new DatagramPacket(ba, ba.length);
                 s2.receive(p2);
-                assertEquals(p2.getSocketAddress(), s1.getLocalSocketAddress());
+                assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
                 assertTrue(ba[0] == 'X');
             }
         });
     }
 
     /**
-     * Virtual thread blocks in DatagramSocket receive that times out
+     * Virtual thread blocks in DatagramSocket receive that times out.
      */
     @Test
-    public void testDatagramSocketReceiveTimeout() throws Exception {
+    void testDatagramSocketReceiveTimeout() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
-                s.setSoTimeout(2000);
+                s.setSoTimeout(500);
                 byte[] ba = new byte[100];
                 DatagramPacket p = new DatagramPacket(ba, ba.length);
                 try {
@@ -550,7 +597,7 @@ public class BlockingSocketOps {
      * DatagramSocket close while virtual thread blocked in receive.
      */
     @Test
-    public void testDatagramSocketReceiveAsyncClose1() throws Exception {
+    void testDatagramSocketReceiveAsyncClose1() throws Exception {
         testDatagramSocketReceiveAsyncClose(0);
     }
 
@@ -558,7 +605,7 @@ public class BlockingSocketOps {
      * DatagramSocket close while virtual thread blocked with timeout.
      */
     @Test
-    public void testDatagramSocketReceiveAsyncClose2() throws Exception {
+    void testDatagramSocketReceiveAsyncClose2() throws Exception {
         testDatagramSocketReceiveAsyncClose(60_000);
     }
 
@@ -568,12 +615,11 @@ public class BlockingSocketOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
 
-                // schedule close
-                ScheduledCloser.schedule(s, DELAY);
+                // delayed close of s
+                runAfterParkedAsync(s::close);
 
-                // receive
+                // receive should block, then throw
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     s.setSoTimeout(timeout);
                 }
                 try {
@@ -590,15 +636,15 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in DatagramSocket receive.
      */
     @Test
-    public void testDatagramSocketReceiveInterrupt1() throws Exception {
+    void testDatagramSocketReceiveInterrupt1() throws Exception {
         testDatagramSocketReceiveInterrupt(0);
     }
 
     /**
-     * Virtual thread interrupted while blocked in DatagramSocket receive with timeout
+     * Virtual thread interrupted while blocked in DatagramSocket receive with timeout.
      */
     @Test
-    public void testDatagramSocketReceiveInterrupt2() throws Exception {
+    void testDatagramSocketReceiveInterrupt2() throws Exception {
         testDatagramSocketReceiveInterrupt(60_000);
     }
 
@@ -607,15 +653,15 @@ public class BlockingSocketOps {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
+                // receive should block, then throw
                 if (timeout > 0) {
-                    assert timeout > DELAY;
                     s.setSoTimeout(timeout);
                 }
-
-                // schedule interrupt
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
-
-                // receive
                 try {
                     byte[] ba = new byte[100];
                     DatagramPacket p = new DatagramPacket(ba, ba.length);
@@ -628,8 +674,6 @@ public class BlockingSocketOps {
             }
         });
     }
-
-    // -- supporting classes --
 
     /**
      * Creates a loopback connection
@@ -668,191 +712,32 @@ public class BlockingSocketOps {
         }
     }
 
-    /**
-     * Closes a socket after a delay
-     */
-    static class ScheduledCloser implements Runnable {
-        private final Closeable c;
-        private final long delay;
-        ScheduledCloser(Closeable c, long delay) {
-            this.c = c;
-            this.delay = delay;
-        }
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                c.close();
-            } catch (Exception e) { }
-        }
-        static void schedule(Closeable c, long delay) {
-            new Thread(new ScheduledCloser(c, delay)).start();
-        }
+    @FunctionalInterface
+    interface ThrowingRunnable {
+        void run() throws Exception;
     }
 
     /**
-     * Interrupts a thread after a delay
+     * Runs the given task asynchronously after the current virtual thread has parked.
+     * @return the thread started to run the task
      */
-    static class ScheduledInterrupter implements Runnable {
-        private final Thread thread;
-        private final long delay;
-
-        ScheduledInterrupter(Thread thread, long delay) {
-            this.thread = thread;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
+    static Thread runAfterParkedAsync(ThrowingRunnable task) {
+        Thread target = Thread.currentThread();
+        if (!target.isVirtual())
+            throw new WrongThreadException();
+        return Thread.ofPlatform().daemon().start(() -> {
             try {
-                Thread.sleep(delay);
-                thread.interrupt();
-            } catch (Exception e) { }
-        }
-
-        static void schedule(Thread thread, long delay) {
-            new Thread(new ScheduledInterrupter(thread, delay)).start();
-        }
-    }
-
-    /**
-     * Reads from a socket, and to EOF, after a delay
-     */
-    static class ScheduledReader implements Runnable {
-        private final Socket s;
-        private final boolean readAll;
-        private final long delay;
-
-        ScheduledReader(Socket s, boolean readAll, long delay) {
-            this.s = s;
-            this.readAll = readAll;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                byte[] ba = new byte[8192];
-                InputStream in = s.getInputStream();
-                for (;;) {
-                    int n = in.read(ba);
-                    if (n == -1 || !readAll)
-                        break;
+                Thread.State state = target.getState();
+                while (state != Thread.State.WAITING
+                        && state != Thread.State.TIMED_WAITING) {
+                    Thread.sleep(20);
+                    state = target.getState();
                 }
-            } catch (Exception e) { }
-        }
-
-        static void schedule(Socket s, boolean readAll, long delay) {
-            new Thread(new ScheduledReader(s, readAll, delay)).start();
-        }
-    }
-
-    /**
-     * Writes to a socket after a delay
-     */
-    static class ScheduledWriter implements Runnable {
-        private final Socket s;
-        private final byte[] ba;
-        private final long delay;
-
-        ScheduledWriter(Socket s, byte[] ba, long delay) {
-            this.s = s;
-            this.ba = ba.clone();
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                s.getOutputStream().write(ba);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(Socket s, byte[] ba, long delay) {
-            new Thread(new ScheduledWriter(s, ba, delay)).start();
-        }
-    }
-
-    /**
-     * Establish a connection to a socket address after a delay
-     */
-    static class ScheduledConnector implements Runnable {
-        private final Socket socket;
-        private final SocketAddress address;
-        private final long delay;
-
-        ScheduledConnector(Socket socket, SocketAddress address, long delay) {
-            this.socket = socket;
-            this.address = address;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                socket.connect(address);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(Socket socket, SocketAddress address, long delay) {
-            new Thread(new ScheduledConnector(socket, address, delay)).start();
-        }
-    }
-
-    /**
-     * Sends a datagram to a target address after a delay
-     */
-    static class ScheduledSender implements Runnable {
-        private final DatagramSocket socket;
-        private final DatagramPacket packet;
-        private final long delay;
-
-        ScheduledSender(DatagramSocket socket, DatagramPacket packet, long delay) {
-            this.socket = socket;
-            this.packet = packet;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                socket.send(packet);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(DatagramSocket socket, DatagramPacket packet, long delay) {
-            new Thread(new ScheduledSender(socket, packet, delay)).start();
-        }
-    }
-
-    /**
-     * Sends urgent data after a delay
-     */
-    static class ScheduledUrgentData implements Runnable {
-        private final Socket s;
-        private final int data;
-        private final long delay;
-
-        ScheduledUrgentData(Socket s, int data, long delay) {
-            this.s = s;
-            this.data = data;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                s.sendUrgentData(data);
-            } catch (Exception e) { }
-        }
-
-        static void scheduleUrgentData(Socket s, int data, long delay) {
-            new Thread(new ScheduledUrgentData(s, data, delay)).start();
-        }
+                Thread.sleep(20);  // give a bit more time to release carrier
+                task.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

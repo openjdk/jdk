@@ -38,8 +38,6 @@
 static JNINativeMethod methods[] = {
     {"start0",           "()V",        (void *)&JVM_StartThread},
     {"isAlive0",         "()Z",        (void *)&JVM_IsThreadAlive},
-    {"suspend0",         "()V",        (void *)&JVM_SuspendThread},
-    {"resume0",          "()V",        (void *)&JVM_ResumeThread},
     {"setPriority0",     "(I)V",       (void *)&JVM_SetThreadPriority},
     {"yield0",           "()V",        (void *)&JVM_Yield},
     {"sleep0",           "(J)V",       (void *)&JVM_Sleep},
@@ -52,9 +50,12 @@ static JNINativeMethod methods[] = {
     {"dumpThreads",      "([" THD ")[[" STE, (void *)&JVM_DumpThreads},
     {"getStackTrace0",   "()" OBJ,     (void *)&JVM_GetStackTrace},
     {"setNativeName",    "(" STR ")V", (void *)&JVM_SetNativeThreadName},
-    {"extentLocalCache",  "()[" OBJ,    (void *)&JVM_ExtentLocalCache},
-    {"setExtentLocalCache", "([" OBJ ")V",(void *)&JVM_SetExtentLocalCache},
-    {"getNextThreadIdOffset", "()J",     (void *)&JVM_GetNextThreadIdOffset}
+    {"scopedValueCache", "()[" OBJ,    (void *)&JVM_ScopedValueCache},
+    {"setScopedValueCache", "([" OBJ ")V",(void *)&JVM_SetScopedValueCache},
+    {"getNextThreadIdOffset", "()J",   (void *)&JVM_GetNextThreadIdOffset},
+    {"findScopedValueBindings", "()" OBJ, (void *)&JVM_FindScopedValueBindings},
+    {"ensureMaterializedForStackWalk",
+                         "(" OBJ ")V", (void*)&JVM_EnsureMaterializedForStackWalk_func},
 };
 
 #undef THD

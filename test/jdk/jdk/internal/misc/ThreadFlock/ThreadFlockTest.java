@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,18 @@
  */
 
 /*
- * @test
+ * @test id=platform
  * @summary Basic tests for ThreadFlock
  * @modules java.base/jdk.internal.misc
- * @compile --enable-preview -source ${jdk.version} ThreadFlockTest.java
- * @run testng/othervm --enable-preview ThreadFlockTest
+ * @enablePreview
+ * @run junit/othervm -DthreadFactory=platform ThreadFlockTest
+ */
+
+/*
+ * @test id=virtual
+ * @modules java.base/jdk.internal.misc
+ * @enablePreview
+ * @run junit/othervm -DthreadFactory=virtual ThreadFlockTest
  */
 
 import java.time.Duration;
@@ -36,56 +43,58 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.internal.misc.ThreadFlock;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ThreadFlockTest {
-    private ScheduledExecutorService scheduler;
+class ThreadFlockTest {
+    private static ScheduledExecutorService scheduler;
+    private static List<ThreadFactory> threadFactories;
 
-    @BeforeClass
-    public void setUp() throws Exception {
-        ThreadFactory factory = (task) -> {
-            Thread thread = new Thread(task);
-            thread.setDaemon(true);
-            return thread;
-        };
-        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+    @BeforeAll
+    static void setup() throws Exception {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        // thread factories
+        String value = System.getProperty("threadFactory");
+        List<ThreadFactory> list = new ArrayList<>();
+        if (value == null || value.equals("platform"))
+            list.add(Thread.ofPlatform().factory());
+        if (value == null || value.equals("virtual"))
+            list.add(Thread.ofVirtual().factory());
+        assertTrue(list.size() > 0, "No thread factories for tests");
+        threadFactories = list;
     }
 
-    @AfterClass
-    public void tearDown() {
+    @AfterAll
+    static void shutdown() {
         scheduler.shutdown();
     }
 
-    @DataProvider(name = "factories")
-    public Object[][] factories() {
-        var defaultThreadFactory = Executors.defaultThreadFactory();
-        var virtualThreadFactory = Thread.ofVirtual().factory();
-        return new Object[][] {
-                { defaultThreadFactory, },
-                { virtualThreadFactory, },
-        };
+    private static Stream<ThreadFactory> factories() {
+        return threadFactories.stream();
     }
 
     /**
      * Test ThreadFlock::name.
      */
     @Test
-    public void testName() {
+    void testName() {
         try (var flock = ThreadFlock.open(null)) {
-            assertEquals(flock.name(), null);
+            assertNull(flock.name());
             flock.close();
-            assertEquals(flock.name(), null);  // after close
+            assertNull(flock.name());  // after close
         }
         try (var flock = ThreadFlock.open("fetcher")) {
-            assertEquals(flock.name(), "fetcher");
+            assertEquals("fetcher", flock.name());
             flock.close();
-            assertEquals(flock.name(), "fetcher");  // after close
+            assertEquals("fetcher", flock.name());  // after close
         }
     }
 
@@ -93,7 +102,7 @@ public class ThreadFlockTest {
      * Test ThreadFlock::owner.
      */
     @Test
-    public void testOwner() {
+    void testOwner() {
         try (var flock = ThreadFlock.open(null)) {
             assertTrue(flock.owner() == Thread.currentThread());
             flock.close();
@@ -105,7 +114,7 @@ public class ThreadFlockTest {
      * Test ThreadFlock::isXXXX methods.
      */
     @Test
-    public void testState() {
+    void testState() {
         try (var flock = ThreadFlock.open(null)) {
             assertFalse(flock.isShutdown());
             assertFalse(flock.isClosed());
@@ -126,8 +135,9 @@ public class ThreadFlockTest {
     /**
      * Test ThreadFlock::threads enumerates all threads.
      */
-    @Test(dataProvider = "factories")
-    public void testThreads(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testThreads(ThreadFactory factory) {
         CountDownLatch latch = new CountDownLatch(1);
         var exception = new AtomicReference<Exception>();
         Runnable awaitLatch = () -> {
@@ -151,21 +161,22 @@ public class ThreadFlockTest {
             }
 
             // check thread ThreadFlock::threads enumerates all threads
-            assertEquals(threads, flock.threads().collect(Collectors.toSet()));
+            assertEquals(flock.threads().collect(Collectors.toSet()), threads);
 
         } finally {
             latch.countDown();  // release threads
             flock.close();
         }
         assertTrue(flock.threads().count() == 0);
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
      * Test ThreadFlock::containsThread with nested flocks.
      */
-    @Test(dataProvider = "factories")
-    public void testContainsThread1(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testContainsThread1(ThreadFactory factory) {
         CountDownLatch latch = new CountDownLatch(1);
         var exception = new AtomicReference<Exception>();
 
@@ -207,8 +218,9 @@ public class ThreadFlockTest {
     /**
      * Test ThreadFlock::containsThread with a tree of flocks.
      */
-    @Test(dataProvider = "factories")
-    public void testContainsThread2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testContainsThread2(ThreadFactory factory) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         var exception = new AtomicReference<Exception>();
 
@@ -261,8 +273,9 @@ public class ThreadFlockTest {
     /**
      * Test that start causes a thread to execute.
      */
-    @Test(dataProvider = "factories")
-    public void testStart(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStart(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             AtomicBoolean executed = new AtomicBoolean();
             Thread thread = factory.newThread(() -> executed.set(true));
@@ -275,44 +288,48 @@ public class ThreadFlockTest {
     /**
      * Test that start throws IllegalStateException when shutdown
      */
-    @Test(dataProvider = "factories")
-    public void testStartAfterShutdown(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStartAfterShutdown(ThreadFactory factory) {
         try (var flock = ThreadFlock.open(null)) {
             flock.shutdown();
             Thread thread = factory.newThread(() -> { });
-            expectThrows(IllegalStateException.class, () -> flock.start(thread));
+            assertThrows(IllegalStateException.class, () -> flock.start(thread));
         }
     }
 
     /**
      * Test that start throws IllegalStateException when closed
      */
-    @Test(dataProvider = "factories")
-    public void testStartAfterClose(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStartAfterClose(ThreadFactory factory) {
         var flock = ThreadFlock.open(null);
         flock.close();;
         Thread thread = factory.newThread(() -> { });
-        expectThrows(IllegalStateException.class, () -> flock.start(thread));
+        assertThrows(IllegalStateException.class, () -> flock.start(thread));
     }
 
     /**
      * Test that start throws IllegalThreadStateException when invoked to
      * start a thread that has already started.
      */
-    @Test(dataProvider = "factories")
-    public void testStartAfterStarted(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStartAfterStarted(ThreadFactory factory) {
         try (var flock = ThreadFlock.open(null)) {
             Thread thread = factory.newThread(() -> { });
             flock.start(thread);
-            expectThrows(IllegalThreadStateException.class, () -> flock.start(thread));
+            assertThrows(IllegalThreadStateException.class, () -> flock.start(thread));
         }
     }
 
     /**
      * Test start is confined to threads in the flock.
      */
-    @Test(dataProvider = "factories")
-    public void testStartConfined(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStartConfined(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             // thread in flock
             testStartConfined(flock, task -> {
@@ -355,7 +372,7 @@ public class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }
@@ -365,7 +382,7 @@ public class ThreadFlockTest {
      * Test awaitAll with no threads.
      */
     @Test
-    public void testAwaitAllWithNoThreads() throws Exception {
+    void testAwaitAllWithNoThreads() throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             assertTrue(flock.awaitAll());
             assertTrue(flock.awaitAll(Duration.ofSeconds(1)));
@@ -375,13 +392,14 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with threads running.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllWithThreads(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllWithThreads(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             AtomicBoolean done = new AtomicBoolean();
             Runnable task = () -> {
                 try {
-                    Thread.sleep(Duration.ofSeconds(1));
+                    Thread.sleep(Duration.ofMillis(50));
                     done.set(true);
                 } catch (InterruptedException e) { }
             };
@@ -395,8 +413,9 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with timeout, threads finish before timeout expires.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllWithTimeout1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllWithTimeout1(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             Runnable task = () -> {
                 try {
@@ -416,12 +435,15 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with timeout, timeout expires before threads finish.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllWithTimeout2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllWithTimeout2(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
+            var latch = new CountDownLatch(1);
+
             Runnable task = () -> {
                 try {
-                    Thread.sleep(Duration.ofSeconds(30));
+                    latch.await();
                 } catch (InterruptedException e) { }
             };
             Thread thread = factory.newThread(task);
@@ -431,12 +453,12 @@ public class ThreadFlockTest {
                 long startMillis = millisTime();
                 try {
                     flock.awaitAll(Duration.ofSeconds(2));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException e) {
                     checkDuration(startMillis, 1900, 4000);
                 }
             } finally {
-                thread.interrupt();
+                latch.countDown();
             }
         }
     }
@@ -444,12 +466,15 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with timeout many times.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllWithTimeout3(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllWithTimeout3(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
+            var latch = new CountDownLatch(1);
+
             Runnable task = () -> {
                 try {
-                    Thread.sleep(Duration.ofSeconds(30));
+                    latch.await();
                 } catch (InterruptedException e) { }
             };
             Thread thread = factory.newThread(task);
@@ -458,12 +483,12 @@ public class ThreadFlockTest {
             try {
                 for (int i = 0; i < 3; i++) {
                     try {
-                        flock.awaitAll(Duration.ofSeconds(1));
-                        fail();
+                        flock.awaitAll(Duration.ofMillis(50));
+                        fail("awaitAll did not throw");
                     } catch (TimeoutException expected) { }
                 }
             } finally {
-                thread.interrupt();
+                latch.countDown();
             }
 
             boolean done = flock.awaitAll();
@@ -474,12 +499,15 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with a 0 or negative timeout.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllWithTimeout4(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllWithTimeout4(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
+            var latch = new CountDownLatch(1);
+
             Runnable task = () -> {
                 try {
-                    Thread.sleep(Duration.ofSeconds(30));
+                    latch.await();
                 } catch (InterruptedException e) { }
             };
             Thread thread = factory.newThread(task);
@@ -488,14 +516,14 @@ public class ThreadFlockTest {
             try {
                 try {
                     flock.awaitAll(Duration.ofSeconds(0));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
                 try {
                     flock.awaitAll(Duration.ofSeconds(-1));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
             } finally {
-                thread.interrupt();
+                latch.countDown();
             }
 
             boolean done = flock.awaitAll();
@@ -506,8 +534,9 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with interrupt status set, should interrupt thread.
      */
-    @Test(dataProvider = "factories")
-    public void testInterruptAwaitAll1(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInterruptAwaitAll1(ThreadFactory factory) {
         CountDownLatch latch = new CountDownLatch(1);
         var exception = new AtomicReference<Exception>();
         Runnable awaitLatch = () -> {
@@ -527,7 +556,7 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
-                fail();
+                fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -537,9 +566,9 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                fail();
+                fail("awaitAll did not throw");
             } catch (TimeoutException e) {
-                fail();
+                fail("TimeoutException not expected");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -553,14 +582,15 @@ public class ThreadFlockTest {
         }
 
         // thread should not have throw any exception
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
      * Test interrupt of awaitAll.
      */
-    @Test(dataProvider = "factories")
-    public void testInterruptAwaitAll2(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInterruptAwaitAll2(ThreadFactory factory) {
         CountDownLatch latch = new CountDownLatch(1);
         var exception = new AtomicReference<Exception>();
         Runnable awaitLatch = () -> {
@@ -579,7 +609,7 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll();
-                fail();
+                fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -588,9 +618,9 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                fail();
+                fail("awaitAll did not throw");
             } catch (TimeoutException e) {
-                fail();
+                fail("TimeoutException not expected");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -604,14 +634,14 @@ public class ThreadFlockTest {
         }
 
         // thread should not have throw any exception
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
      * Test awaitAll after close.
      */
     @Test
-    public void testAwaitAfterClose() throws Exception {
+    void testAwaitAfterClose() throws Exception {
         var flock = ThreadFlock.open(null);
         flock.close();
         assertTrue(flock.awaitAll());
@@ -621,8 +651,9 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll is flock confined.
      */
-    @Test(dataProvider = "factories")
-    public void testAwaitAllConfined(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testAwaitAllConfined(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             // thread in flock
             testAwaitAllConfined(flock, task -> {
@@ -661,8 +692,9 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with the wakeup permit.
      */
-    @Test(dataProvider = "factories")
-    public void testWakeupAwaitAll1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testWakeupAwaitAll1(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             CountDownLatch latch = new CountDownLatch(1);
             var exception = new AtomicReference<Exception>();
@@ -689,8 +721,9 @@ public class ThreadFlockTest {
     /**
      * Schedule a thread to wakeup the owner waiting in awaitAll.
      */
-    @Test(dataProvider = "factories")
-    public void testWakeupAwaitAll2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testWakeupAwaitAll2(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             CountDownLatch latch = new CountDownLatch(1);
             var exception = new AtomicReference<Exception>();
@@ -706,7 +739,7 @@ public class ThreadFlockTest {
 
             // schedule thread to invoke wakeup
             Thread thread2 = factory.newThread(() -> {
-                try { Thread.sleep(Duration.ofSeconds(1)); } catch (Exception e) { }
+                try { Thread.sleep(Duration.ofMillis(500)); } catch (Exception e) { }
                 flock.wakeup();
             });
             flock.start(thread2);
@@ -722,8 +755,9 @@ public class ThreadFlockTest {
     /**
      * Test wakeup is flock confined.
      */
-    @Test(dataProvider = "factories")
-    public void testWakeupConfined(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testWakeupConfined(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             // thread in flock
             testWakeupConfined(flock, task -> {
@@ -757,7 +791,7 @@ public class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }
@@ -767,7 +801,7 @@ public class ThreadFlockTest {
      * Test close with no threads running.
      */
     @Test
-    public void testCloseWithNoThreads() {
+    void testCloseWithNoThreads() {
         var flock = ThreadFlock.open(null);
         flock.close();
         assertTrue(flock.isClosed());
@@ -777,12 +811,13 @@ public class ThreadFlockTest {
     /**
      * Test close with threads running.
      */
-    @Test(dataProvider = "factories")
-    public void testCloseWithThreads(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testCloseWithThreads(ThreadFactory factory) {
         var exception = new AtomicReference<Exception>();
         Runnable sleepTask = () -> {
             try {
-                Thread.sleep(Duration.ofSeconds(1));
+                Thread.sleep(Duration.ofMillis(50));
             } catch (Exception e) {
                 exception.set(e);
             }
@@ -796,14 +831,14 @@ public class ThreadFlockTest {
         }
         assertTrue(flock.isClosed());
         assertTrue(flock.threads().count() == 0);
-        assertTrue(exception.get() == null); // no exception thrown
+        assertNull(exception.get()); // no exception thrown
     }
 
     /**
      * Test close after flock is closed.
      */
     @Test
-    public void testCloseAfterClose() {
+    void testCloseAfterClose() {
         var flock = ThreadFlock.open(null);
         flock.close();
         assertTrue(flock.isClosed());
@@ -814,8 +849,9 @@ public class ThreadFlockTest {
     /**
      * Test close is owner confined.
      */
-    @Test(dataProvider = "factories")
-    public void testCloseConfined(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testCloseConfined(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             // thread in flock
             testCloseConfined(flock, task -> {
@@ -854,8 +890,9 @@ public class ThreadFlockTest {
     /**
      * Test close with interrupt status set, should not interrupt threads.
      */
-    @Test(dataProvider = "factories")
-    public void testInterruptClose1(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInterruptClose1(ThreadFactory factory) {
         var exception = new AtomicReference<Exception>();
         Runnable sleepTask = () -> {
             try {
@@ -871,14 +908,15 @@ public class ThreadFlockTest {
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
      * Test interrupt thread block in close.
      */
-    @Test(dataProvider = "factories")
-    public void testInterruptClose2(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInterruptClose2(ThreadFactory factory) {
         var exception = new AtomicReference<Exception>();
         Runnable sleepTask = () -> {
             try {
@@ -894,14 +932,15 @@ public class ThreadFlockTest {
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
      * Test shutdown is confined to threads in the flock.
      */
-    @Test(dataProvider = "factories")
-    public void testShutdownConfined(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testShutdownConfined(ThreadFactory factory) throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             // thread in flock
             testShutdownConfined(flock, task -> {
@@ -943,7 +982,7 @@ public class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }
@@ -953,12 +992,12 @@ public class ThreadFlockTest {
      * Test that closing an enclosing thread flock closes a nested thread flocks.
      */
     @Test
-    public void testStructureViolation() {
+    void testStructureViolation() {
         try (var flock1 = ThreadFlock.open("flock1")) {
             try (var flock2 = ThreadFlock.open("flock2")) {
                 try {
                     flock1.close();
-                    fail();
+                    fail("close did not throw");
                 } catch (RuntimeException e) {
                     assertTrue(e.toString().contains("Structure"));
                 }
@@ -971,8 +1010,9 @@ public class ThreadFlockTest {
     /**
      * Test Thread exiting with an open flock. The exiting thread should close the flock.
      */
-    @Test(dataProvider = "factories")
-    public void testThreadExitWithOpenFlock(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testThreadExitWithOpenFlock(ThreadFactory factory) throws Exception {
         var flockRef = new AtomicReference<ThreadFlock>();
         var childRef = new AtomicReference<Thread>();
 
@@ -1002,7 +1042,7 @@ public class ThreadFlockTest {
      * Test toString includes the flock name.
      */
     @Test
-    public void testToString() {
+    void testToString() {
         try (var flock = ThreadFlock.open("xxxx")) {
             assertTrue(flock.toString().contains("xxx"));
         }
@@ -1012,11 +1052,11 @@ public class ThreadFlockTest {
      * Test for NullPointerException.
      */
     @Test
-    public void testNulls() {
+    void testNulls() {
         try (var flock = ThreadFlock.open(null)) {
-            expectThrows(NullPointerException.class, () -> flock.start(null));
-            expectThrows(NullPointerException.class, () -> flock.awaitAll(null));
-            expectThrows(NullPointerException.class, () -> flock.containsThread(null));
+            assertThrows(NullPointerException.class, () -> flock.start(null));
+            assertThrows(NullPointerException.class, () -> flock.awaitAll(null));
+            assertThrows(NullPointerException.class, () -> flock.containsThread(null));
         }
     }
 

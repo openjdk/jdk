@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,6 +280,22 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     *
+     * @since 21
+     */
+    @Override
+    public R visitEscape(EscapeTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
@@ -512,6 +528,23 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     public R visitSnippet(SnippetTree node, P p) {
         R r = scan(node.getAttributes(), p);
         r = scanAndReduce(node.getBody(), p, r);
+        return r;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node {@inheritDoc}
+     * @param p    {@inheritDoc}
+     * @return the result of scanning
+     * @since 20
+     */
+    @Override
+    public R visitSpec(SpecTree node, P p) {
+        R r = scan(node.getURL(), p);
+        r = scanAndReduce(node.getTitle(), p, r);
         return r;
     }
 

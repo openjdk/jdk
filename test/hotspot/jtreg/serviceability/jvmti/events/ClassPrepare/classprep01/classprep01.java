@@ -49,8 +49,8 @@ public class classprep01 {
         System.loadLibrary("classprep01");
     }
 
-    native static void getReady();
-    native static int check();
+    native static void getReady(Thread thread);
+    native static int check(Thread thread);
 
     static volatile int result;
     public static void main(String args[]) {
@@ -59,9 +59,9 @@ public class classprep01 {
     }
     public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
-            getReady();
+            getReady(Thread.currentThread());
             new TestClassVirtual().run();
-            result = check();
+            result = check(Thread.currentThread());
         });
         try {
             thread.join();
@@ -74,9 +74,22 @@ public class classprep01 {
         }
     }
     public static void testPlatformThread() {
-        getReady();
+        Thread otherThread = new Thread(() -> {
+            new TestClass2().run();
+        });
+
+        getReady(Thread.currentThread());
+
+        // should generate the events
         new TestClass().run();
-        result = check();
+
+        // loading classes on other thread should not generate the events
+        otherThread.start();
+        try {
+            otherThread.join();
+        } catch (InterruptedException e) {
+        }
+        result = check(Thread.currentThread());
         if (result != 0) {
             throw new RuntimeException("check failed with result " + result);
         }
@@ -88,7 +101,7 @@ public class classprep01 {
         void run();
     }
 
-     static class TestClass implements TestInterface {
+    static class TestClass implements TestInterface {
         static int i = 0;
         int count = 0;
         static {
@@ -116,5 +129,12 @@ public class classprep01 {
         }
     }
 
+    interface TestInterface2 {
+        void run();
+    }
 
+    static class TestClass2 implements TestInterface2 {
+        public void run() {
+        }
+    }
 }

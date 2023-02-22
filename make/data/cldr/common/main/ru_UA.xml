@@ -61,9 +61,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y 'г'.</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y 'г'.</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y 'г'.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="unconfirmed">LLLL–LLLL y</greatestDifference>

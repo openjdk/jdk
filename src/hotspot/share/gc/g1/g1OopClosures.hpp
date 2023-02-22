@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -33,7 +34,6 @@ class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
 class G1ConcurrentMark;
-class DirtyCardToOopClosure;
 class G1CMBitMap;
 class G1ParScanThreadState;
 class G1ScanEvacuatedObjClosure;
@@ -179,7 +179,7 @@ public:
 };
 
 // Closure for iterating over object fields during concurrent marking
-class G1CMOopClosure : public MetadataVisitingOopIterateClosure {
+class G1CMOopClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1CollectedHeap*   _g1h;
   G1CMTask*          _task;
 public:
@@ -190,13 +190,13 @@ public:
 };
 
 // Closure to scan the root regions during concurrent marking
-class G1RootRegionScanClosure : public MetadataVisitingOopIterateClosure {
-private:
+class G1RootRegionScanClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   uint _worker_id;
 public:
   G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint worker_id) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, nullptr),
     _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -232,6 +232,38 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
+};
+
+class G1VerificationClosure : public BasicOopIterateClosure {
+protected:
+  G1CollectedHeap* _g1h;
+  oop _containing_obj;
+  size_t _num_failures;
+  VerifyOption _vo;
+
+public:
+  G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo);
+
+  void set_containing_obj(oop obj) {
+    _containing_obj = obj;
+  }
+
+  bool has_failures() { return _num_failures != 0; }
+  size_t num_failures() { return _num_failures; }
+
+  void print_object(outputStream* out, oop obj);
+};
+
+class G1VerifyLiveClosure : public G1VerificationClosure {
+
+  template <class T>
+  inline void do_oop_work(T* p);
+
+public:
+  G1VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) { do_oop_work(p); }
 };
 
 #endif // SHARE_GC_G1_G1OOPCLOSURES_HPP

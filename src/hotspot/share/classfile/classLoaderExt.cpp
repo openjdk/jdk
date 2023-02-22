@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,9 +130,9 @@ char* ClassLoaderExt::read_manifest(JavaThread* current, ClassPathEntry* entry,
   assert(entry->is_jar_file(), "must be");
   manifest = (char*) ((ClassPathZipEntry*)entry )->open_entry(current, name, &size, true);
 
-  if (manifest == NULL) { // No Manifest
+  if (manifest == nullptr) { // No Manifest
     *manifest_size = 0;
-    return NULL;
+    return nullptr;
   }
 
 
@@ -152,7 +152,7 @@ char* ClassLoaderExt::read_manifest(JavaThread* current, ClassPathEntry* entry,
 char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size) {
   const char* tag = "Class-Path: ";
   const int tag_len = (int)strlen(tag);
-  char* found = NULL;
+  char* found = nullptr;
   char* line_start = manifest;
   char* end = manifest + manifest_size;
 
@@ -160,12 +160,12 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
 
   while (line_start < end) {
     char* line_end = strchr(line_start, '\n');
-    if (line_end == NULL) {
+    if (line_end == nullptr) {
       // JAR spec require the manifest file to be terminated by a new line.
       break;
     }
     if (strncmp(tag, line_start, tag_len) == 0) {
-      if (found != NULL) {
+      if (found != nullptr) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
         log_warning(cds)("Warning: Duplicate name in Manifest: %s.\n"
@@ -182,30 +182,29 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry,
-                                          bool check_for_duplicates) {
+void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry) {
   ResourceMark rm(current);
   jint manifest_size;
   char* manifest = read_manifest(current, entry, &manifest_size);
 
-  if (manifest == NULL) {
+  if (manifest == nullptr) {
     return;
   }
 
-  if (strstr(manifest, "Extension-List:") != NULL) {
+  if (strstr(manifest, "Extension-List:") != nullptr) {
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
 
-  if (cp_attr != NULL && strlen(cp_attr) > 0) {
+  if (cp_attr != nullptr && strlen(cp_attr) > 0) {
     trace_class_path("found Class-Path: ", cp_attr);
 
     char sep = os::file_separator()[0];
     const char* dir_name = entry->name();
     const char* dir_tail = strrchr(dir_name, sep);
     int dir_len;
-    if (dir_tail == NULL) {
+    if (dir_tail == nullptr) {
       dir_len = 0;
     } else {
       dir_len = dir_tail - dir_name + 1;
@@ -217,7 +216,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
 
     while (file_start < end) {
       char* file_end = strchr(file_start, ' ');
-      if (file_end != NULL) {
+      if (file_end != nullptr) {
         *file_end = 0;
         file_end += 1;
       } else {

@@ -1,7 +1,7 @@
 EXPECT_START
 DocComment[DOC_COMMENT, pos:10
   preamble: 9
-    DocType[DOC_TYPE, pos:10, HTML_PUBLIC_"-//...W3C//DTD_HTML_4.01//EN"|________"http://www.w3.org/TR/html4/strict.dtd"]
+    DocType[DOC_TYPE, pos:10, HTML_PUBLIC_"-//W3C//DTD_HTML_4..../www.w3.org/TR/html4/strict.dtd"]
     Comment[COMMENT, pos:99, <!--_/nodynamiccopyright/_-->]
     StartElement[START_ELEMENT, pos:129
       name:HTML
@@ -23,7 +23,7 @@ DocComment[DOC_COMMENT, pos:10
       attributes: empty
     ]
   firstSentence: 1
-    Text[TEXT, pos:192, A_simple_well_fo...rmed_html_document]
+    Text[TEXT, pos:192, A_simple_well_formed_html_document]
   body: 4
     StartElement[START_ELEMENT, pos:227
       name:pre

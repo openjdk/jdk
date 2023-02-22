@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -296,6 +299,12 @@ public abstract class BaseOptions {
     private int sourceTabSize;
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    private URI specBaseURI;
+
+    /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
      * Specifies whether those methods that override a supertype's method
@@ -410,7 +419,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-excludedocfilessubdir", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedDocFileDirs, args.get(0));
+                        excludedDocFileDirs.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -527,7 +536,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-noqualifier", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedQualifiers, args.get(0));
+                        excludedQualifiers.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -670,6 +679,26 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--spec-base-url", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URL",
+                                            e.getMessage()));
+                            return false;
+                        }
+                    }
+                },
+
                 new Hidden(resources, "--disable-javafx-strict-checks") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -733,15 +762,6 @@ public abstract class BaseOptions {
             }
         }
         return true;
-    }
-
-    private void addToSet(Set<String> s, String str) {
-        StringTokenizer st = new StringTokenizer(str, ":");
-        String current;
-        while (st.hasMoreTokens()) {
-            current = st.nextToken();
-            s.add(current);
-        }
     }
 
     /**
@@ -1048,6 +1068,14 @@ public abstract class BaseOptions {
      */
     public int sourceTabSize() {
         return sourceTabSize;
+    }
+
+    /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    public URI specBaseURI() {
+        return specBaseURI;
     }
 
     /**

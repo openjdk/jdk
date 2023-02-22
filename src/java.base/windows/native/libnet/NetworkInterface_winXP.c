@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,7 +576,9 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
         return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_nameID, name);
+    (*env)->DeleteLocalRef(env, name);
     (*env)->SetObjectField(env, netifObj, ni_displayNameID, displayName);
+    (*env)->DeleteLocalRef(env, displayName);
     (*env)->SetIntField(env, netifObj, ni_indexID, ifs->index);
     /*
      * Get the IP addresses for this interface if necessary
@@ -646,8 +648,10 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
                 return NULL;
             }
             (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
+            (*env)->DeleteLocalRef(env, ia2Obj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+            (*env)->DeleteLocalRef(env, ibObj);
         } else /* AF_INET6 */ {
             int scope;
             jboolean ret;
@@ -674,13 +678,17 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+            (*env)->DeleteLocalRef(env, ibObj);
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
+        (*env)->DeleteLocalRef(env, iaObj);
         addrs = addrs->next;
         addr_index++;
     }
     (*env)->SetObjectField(env, netifObj, ni_addrsID, addrArr);
+    (*env)->DeleteLocalRef(env, addrArr);
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
+    (*env)->DeleteLocalRef(env, bindsArr);
 
     free_netaddr(netaddrPToFree);
 
@@ -693,6 +701,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
       return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_childsID, childArr);
+    (*env)->DeleteLocalRef(env, childArr);
 
     /* return the NetworkInterface */
     return netifObj;
@@ -871,6 +880,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll_XP
 
         /* put the NetworkInterface into the array */
         (*env)->SetObjectArrayElement(env, netIFArr, arr_index++, netifObj);
+        (*env)->DeleteLocalRef(env, netifObj);
         curr = curr->next;
     }
 

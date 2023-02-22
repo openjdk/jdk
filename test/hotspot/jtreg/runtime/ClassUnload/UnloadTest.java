@@ -23,7 +23,7 @@
 
 /*
  * @test UnloadTest
- * @bug 8210559
+ * @bug 8210559 8297740
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -35,29 +35,35 @@
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
+import java.lang.reflect.Array;
+
 /**
- * Test that verifies that classes are unloaded when they are no longer reachable.
+ * Test that verifies that liveness of classes is correctly tracked.
  *
- * The test creates a class loader, uses the loader to load a class and creates an instance
- * of that class. The it nulls out all the references to the instance, class and class loader
- * and tries to trigger class unloading. Then it verifies that the class is no longer
- * loaded by the VM.
+ * The test creates a class loader, uses the loader to load a class and creates
+ * an instance related to that class.
+ * 1. Then, it nulls out references to the class loader, triggers class
+ *    unloading and verifies the class is *not* unloaded.
+ * 2. Next, it nulls out references to the instance, triggers class unloading
+ *    and verifies the class is unloaded.
  */
 public class UnloadTest {
-    private static String className = "test.Empty";
+    // Using a global static field to keep the object live in -Xcomp mode.
+    private static Object o;
 
     public static void main(String... args) throws Exception {
-       run();
+       test_unload_instance_klass();
+       test_unload_obj_array_klass();
     }
 
-    private static void run() throws Exception {
+    private static void test_unload_instance_klass() throws Exception {
+        final String className = "test.Empty";
         final WhiteBox wb = WhiteBox.getWhiteBox();
 
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "is not expected to be alive yet");
 
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
-        Class<?> c = cl.loadClass(className);
-        Object o = c.newInstance();
+        o = cl.loadClass(className).newInstance();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
@@ -65,8 +71,42 @@ public class UnloadTest {
         int loadedRefcount = wb.getSymbolRefcount(loaderName);
         System.out.println("Refcount of symbol " + loaderName + " is " + loadedRefcount);
 
-        cl = null; c = null; o = null;
+        cl = null;
         ClassUnloadCommon.triggerUnloading();
+
+        ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
+
+        o = null;
+        ClassUnloadCommon.triggerUnloading();
+
+
+        ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+
+        int unloadedRefcount = wb.getSymbolRefcount(loaderName);
+        System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);
+        ClassUnloadCommon.failIf(unloadedRefcount != (loadedRefcount - 1), "Refcount must be decremented");
+    }
+
+    private static void test_unload_obj_array_klass() throws Exception {
+        final WhiteBox wb = WhiteBox.getWhiteBox();
+
+        ClassLoader cl = ClassUnloadCommon.newClassLoader();
+        o = Array.newInstance(cl.loadClass("test.Empty"), 1);
+        final String className = o.getClass().getName();
+
+        ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
+
+        String loaderName = cl.getName();
+        int loadedRefcount = wb.getSymbolRefcount(loaderName);
+        System.out.println("Refcount of symbol " + loaderName + " is " + loadedRefcount);
+
+        cl = null;
+        ClassUnloadCommon.triggerUnloading();
+        ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
+
+        o = null;
+        ClassUnloadCommon.triggerUnloading();
+
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
 
         int unloadedRefcount = wb.getSymbolRefcount(loaderName);

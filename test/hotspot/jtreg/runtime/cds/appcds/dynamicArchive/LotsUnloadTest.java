@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LotsUnloadTest
  */
 
-// Note: for https://bugs.openjdk.java.net/browse/JDK-8278602, this test case does NOT
+// Note: for https://bugs.openjdk.org/browse/JDK-8278602, this test case does NOT
 // reliably reproduce the problem. Reproduction requires patching ZGC. Please see
 // the bug report for instructions.
 //

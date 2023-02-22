@@ -58,7 +58,6 @@
   do_klass(System_klass,                                java_lang_System                                      ) \
   do_klass(Throwable_klass,                             java_lang_Throwable                                   ) \
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
-  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath                                 ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
   do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
@@ -197,4 +196,3 @@
   /*end*/
 
 #endif // SHARE_CLASSFILE_VMCLASSMACROS_HPP
-

@@ -42,9 +42,12 @@ public class CallingSequence {
     private final List<Binding> returnBindings;
     private final List<List<Binding>> argumentBindings;
 
+    private final LinkerOptions linkerOptions;
+
     public CallingSequence(boolean forUpcall, MethodType callerMethodType, MethodType calleeMethodType, FunctionDescriptor desc,
                            boolean needsReturnBuffer, long returnBufferSize, long allocationSize,
-                           List<List<Binding>> argumentBindings, List<Binding> returnBindings) {
+                           List<List<Binding>> argumentBindings, List<Binding> returnBindings,
+                           LinkerOptions linkerOptions) {
         this.forUpcall = forUpcall;
         this.callerMethodType = callerMethodType;
         this.calleeMethodType = calleeMethodType;
@@ -54,6 +57,7 @@ public class CallingSequence {
         this.allocationSize = allocationSize;
         this.returnBindings = returnBindings;
         this.argumentBindings = argumentBindings;
+        this.linkerOptions = linkerOptions;
     }
 
     /**
@@ -179,6 +183,16 @@ public class CallingSequence {
 
     public boolean hasReturnBindings() {
         return !returnBindings.isEmpty();
+    }
+
+    public int capturedStateMask() {
+        return linkerOptions.capturedCallState()
+                .mapToInt(CapturableState::mask)
+                .reduce(0, (a, b) -> a | b);
+    }
+
+    public int numLeadingParams() {
+        return 2 + (linkerOptions.hasCapturedCallState() ? 1 : 0); // 2 for addr, allocator
     }
 
     public String asString() {

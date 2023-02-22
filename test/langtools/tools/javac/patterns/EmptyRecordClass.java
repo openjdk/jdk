@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} EmptyRecordClass.java
+ * @enablePreview
+ * @compile EmptyRecordClass.java
  */
 
 public class EmptyRecordClass {

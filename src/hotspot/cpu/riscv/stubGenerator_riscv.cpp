@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -329,7 +331,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(c_rarg6, parameters_done);
 
     address loop = __ pc();
-    __ ld(t0, c_rarg5, 0);
+    __ ld(t0, Address(c_rarg5, 0));
     __ addi(c_rarg5, c_rarg5, wordSize);
     __ addi(c_rarg6, c_rarg6, -1);
     __ push_reg(t0);
@@ -385,6 +387,8 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(L);
     }
 #endif
+
+    __ pop_cont_fastpath(xthread);
 
     // restore callee-save registers
     __ fld(f27, f27_save);
@@ -610,27 +614,8 @@ class StubGenerator: public StubCodeGenerator {
     // make sure object is 'reasonable'
     __ beqz(x10, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-    if (UseZGC) {
-      // Check if mask is good.
-      // verifies that ZAddressBadMask & x10 == 0
-      __ ld(c_rarg3, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(c_rarg2, x10, c_rarg3);
-      __ bnez(c_rarg2, error);
-    }
-#endif
-
-    // Check if the oop is in the right area of memory
-    __ mv(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-    __ andr(c_rarg2, x10, c_rarg3);
-    __ mv(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-
-    // Compare c_rarg2 and c_rarg3.
-    __ bne(c_rarg2, c_rarg3, error);
-
-    // make sure klass is 'reasonable', which is not zero.
-    __ load_klass(x10, x10);  // get klass
-    __ beqz(x10, error);      // if klass is NULL it is broken
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->check_oop(_masm, x10, c_rarg2, c_rarg3, error);
 
     // return if everything seems ok
     __ bind(exit);
@@ -651,9 +636,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    int32_t offset = 0;
-    __ movptr_with_offset(t0, CAST_FROM_FN_PTR(address, MacroAssembler::debug64), offset);
-    __ jalr(x1, t0, offset);
+    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -673,26 +656,36 @@ class StubGenerator: public StubCodeGenerator {
   address generate_zero_blocks() {
     Label done;
 
-    const Register base = x28, cnt = x29;
+    const Register base = x28, cnt = x29, tmp1 = x30, tmp2 = x31;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "zero_blocks");
     address start = __ pc();
 
+    if (UseBlockZeroing) {
+      // Ensure count >= 2*CacheLineSize so that it still deserves a cbo.zero
+      // after alignment.
+      Label small;
+      int low_limit = MAX2(2 * CacheLineSize, BlockZeroingLowLimit) / wordSize;
+      __ mv(tmp1, low_limit);
+      __ blt(cnt, tmp1, small);
+      __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
+      __ bind(small);
+    }
+
     {
       // Clear the remaining blocks.
       Label loop;
-      __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
-      __ bltz(cnt, done);
+      __ mv(tmp1, MacroAssembler::zero_words_block_size);
+      __ blt(cnt, tmp1, done);
       __ bind(loop);
       for (int i = 0; i < MacroAssembler::zero_words_block_size; i++) {
-        __ sd(zr, Address(base, 0));
-        __ add(base, base, 8);
+        __ sd(zr, Address(base, i * wordSize));
       }
+      __ add(base, base, MacroAssembler::zero_words_block_size * wordSize);
       __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
-      __ bgez(cnt, loop);
+      __ bge(cnt, tmp1, loop);
       __ bind(done);
-      __ add(cnt, cnt, MacroAssembler::zero_words_block_size);
     }
 
     __ ret();
@@ -869,7 +862,11 @@ class StubGenerator: public StubCodeGenerator {
   //
   /*
    * if (is_aligned) {
-   *   goto copy_8_bytes;
+   *   if (count >= 32)
+   *     goto copy32_loop;
+   *   if (count >= 8)
+   *     goto copy8_loop;
+   *   goto copy_small;
    * }
    * bool is_backwards = step < 0;
    * int granularity = uabs(step);
@@ -887,9 +884,12 @@ class StubGenerator: public StubCodeGenerator {
    *
    * if ((dst % 8) == (src % 8)) {
    *   aligned;
-   *   goto copy8;
+   *   goto copy_big;
    * }
    *
+   * copy_big:
+   * if the amount to copy is more than (or equal to) 32 bytes goto copy32_loop
+   *  else goto copy8_loop
    * copy_small:
    *   load element one by one;
    * done;
@@ -950,10 +950,10 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backwards = step < 0;
     int granularity = uabs(step);
 
-    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17;
+    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
 
     Label same_aligned;
-    Label copy8, copy_small, done;
+    Label copy_big, copy32_loop, copy8_loop, copy_small, done;
 
     copy_insn ld_arr = NULL, st_arr = NULL;
     switch (granularity) {
@@ -988,36 +988,69 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (is_aligned) {
+      __ addi(tmp, cnt, -32);
+      __ bgez(tmp, copy32_loop);
       __ addi(tmp, cnt, -8);
-      __ bgez(tmp, copy8);
+      __ bgez(tmp, copy8_loop);
       __ j(copy_small);
+    } else {
+      __ mv(tmp, 16);
+      __ blt(cnt, tmp, copy_small);
+
+      __ xorr(tmp, src, dst);
+      __ andi(tmp, tmp, 0b111);
+      __ bnez(tmp, copy_small);
+
+      __ bind(same_aligned);
+      __ andi(tmp, src, 0b111);
+      __ beqz(tmp, copy_big);
+      if (is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      (_masm->*ld_arr)(tmp3, Address(src), t0);
+      (_masm->*st_arr)(tmp3, Address(dst), t0);
+      if (!is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      __ addi(cnt, cnt, -granularity);
+      __ beqz(cnt, done);
+      __ j(same_aligned);
+
+      __ bind(copy_big);
+      __ mv(tmp, 32);
+      __ blt(cnt, tmp, copy8_loop);
     }
-
-    __ mv(tmp, 16);
-    __ blt(cnt, tmp, copy_small);
-
-    __ xorr(tmp, src, dst);
-    __ andi(tmp, tmp, 0b111);
-    __ bnez(tmp, copy_small);
-
-    __ bind(same_aligned);
-    __ andi(tmp, src, 0b111);
-    __ beqz(tmp, copy8);
+    __ bind(copy32_loop);
     if (is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
+      __ addi(src, src, -wordSize * 4);
+      __ addi(dst, dst, -wordSize * 4);
     }
-    (_masm->*ld_arr)(tmp3, Address(src), t0);
-    (_masm->*st_arr)(tmp3, Address(dst), t0);
-    if (!is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
-    }
-    __ addi(cnt, cnt, -granularity);
-    __ beqz(cnt, done);
-    __ j(same_aligned);
+    // we first load 32 bytes, then write it, so the direction here doesn't matter
+    __ ld(tmp3, Address(src));
+    __ ld(tmp4, Address(src, 8));
+    __ ld(tmp5, Address(src, 16));
+    __ ld(tmp6, Address(src, 24));
+    __ sd(tmp3, Address(dst));
+    __ sd(tmp4, Address(dst, 8));
+    __ sd(tmp5, Address(dst, 16));
+    __ sd(tmp6, Address(dst, 24));
 
-    __ bind(copy8);
+    if (!is_backwards) {
+      __ addi(src, src, wordSize * 4);
+      __ addi(dst, dst, wordSize * 4);
+    }
+    __ addi(tmp, cnt, -(32 + wordSize * 4));
+    __ addi(cnt, cnt, -wordSize * 4);
+    __ bgez(tmp, copy32_loop); // cnt >= 32, do next loop
+
+    __ beqz(cnt, done); // if that's all - done
+
+    __ addi(tmp, cnt, -8); // if not - copy the reminder
+    __ bltz(tmp, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8_loop
+
+    __ bind(copy8_loop);
     if (is_backwards) {
       __ addi(src, src, -wordSize);
       __ addi(dst, dst, -wordSize);
@@ -1028,11 +1061,11 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize);
       __ addi(dst, dst, wordSize);
     }
+    __ addi(tmp, cnt, -(8 + wordSize));
     __ addi(cnt, cnt, -wordSize);
-    __ addi(tmp4, cnt, -8);
-    __ bgez(tmp4, copy8); // cnt >= 8, do next loop
+    __ bgez(tmp, copy8_loop); // cnt >= 8, do next loop
 
-    __ beqz(cnt, done);
+    __ beqz(cnt, done); // if that's all - done
 
     __ bind(copy_small);
     if (is_backwards) {
@@ -1778,7 +1811,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(t0, dst);
+      __ load_klass(t0, dst, t1);
       __ beqz(t0, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
@@ -1797,7 +1830,7 @@ class StubGenerator: public StubCodeGenerator {
     // Handle objArrays completely differently...
     const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ lw(lh, Address(scratch_src_klass, lh_offset));
-    __ mvw(t0, objArray_lh);
+    __ mv(t0, objArray_lh);
     __ beq(lh, t0, L_objArray);
 
     // if [src->klass() != dst->klass()] then return -1
@@ -1814,7 +1847,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("assert primitive array {");
       Label L;
-      __ mvw(t1, Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift);
+      __ mv(t1, (int32_t)(Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift));
       __ bge(lh, t1, L);
       __ stop("must be a primitive array");
       __ bind(L);
@@ -1887,7 +1920,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L;
       __ andi(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> x22_elsize
       __ addw(lh, lh, zr);
-      __ mvw(t0, LogBytesPerLong);
+      __ mv(t0, LogBytesPerLong);
       __ beq(x22_elsize, t0, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
@@ -1925,7 +1958,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       // Before looking at dst.length, make sure dst is also an objArray.
       __ lwu(t0, Address(t2, lh_offset));
-      __ mvw(t1, objArray_lh);
+      __ mv(t1, objArray_lh);
       __ bne(t0, t1, L_failed);
 
       // It is safe to examine both src.length and dst.length.
@@ -2409,7 +2442,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
@@ -3740,9 +3773,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
-    int32_t offset = 0;
-    __ movptr_with_offset(t0, runtime_entry, offset);
-    __ jalr(x1, t0, offset);
+    __ call(runtime_entry);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -3764,7 +3795,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif // ASSERT
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-
     // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub* stub =
       RuntimeStub::new_runtime_stub(name,
@@ -3776,28 +3806,152 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+#undef __
+#define __ _masm->
+
+  address generate_cont_thaw(Continuation::thaw_kind kind) {
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    address start = __ pc();
+
+    if (return_barrier) {
+      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    if (return_barrier) {
+      // preserve possible return value from a method returning to the return barrier
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    __ mv(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    Label thaw_success;
+    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
+    __ bnez(t1, thaw_success);
+    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ jr(t0);
+    __ bind(thaw_success);
+
+    // make room for the thawed frames
+    __ sub(t0, sp, t1);
+    __ andi(sp, t0, -16); // align
+
+    if (return_barrier) {
+      // save original return value -- again
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries
+    __ mv(c_rarg1, kind);
+
+    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 is the sp of the yielding frame
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    } else {
+      __ mv(x10, zr); // return 0 (success) from doYield
+    }
+
+    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
+    __ mv(fp, t1);
+    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
+
+    if (return_barrier_exception) {
+      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
+      __ verify_oop(x10);
+      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
+
+      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
+
+      __ mv(x11, x10); // the exception handler
+      __ mv(x10, x9); // restore return value contaning the exception oop
+      __ verify_oop(x10);
+
+      __ leave();
+      __ mv(x13, ra);
+      __ jr(x11); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret();
+    }
+
+    return start;
+  }
+
   address generate_cont_thaw() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
+    address start = __ pc();
+    generate_cont_thaw(Continuation::thaw_top);
+    return start;
   }
 
   address generate_cont_returnBarrier() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    // TODO: will probably need multiple return barriers depending on return type
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    return start;
   }
 
   address generate_cont_returnBarrier_exception() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
   }
 
 #if INCLUDE_JFR
-
-#undef __
-#define __ _masm->
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
     __ set_last_Java_frame(sp, fp, the_pc, t0);
@@ -3806,14 +3960,8 @@ class StubGenerator: public StubCodeGenerator {
 
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    Label null_jobject;
-    __ beqz(x10, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(x10, t0, t1);
   }
-
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -3839,6 +3987,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+
     jfr_epilogue(_masm);
     __ leave();
     __ ret();
@@ -3853,9 +4002,9 @@ class StubGenerator: public StubCodeGenerator {
     return stub;
   }
 
-#undef __
-
 #endif // INCLUDE_JFR
+
+#undef __
 
   // Initialization
   void generate_initial() {
@@ -3893,15 +4042,15 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub == nullptr ? nullptr
-                                                    : StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
   void generate_all() {
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
-      StubRoutines::_verify_oop_subroutine_entry   = generate_verify_oop();
+      StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
     }
+
     StubRoutines::_throw_AbstractMethodError_entry =
       generate_throw_exception("AbstractMethodError throw_exception",
                                CAST_FROM_FN_PTR(address,
@@ -3975,8 +4124,6 @@ class StubGenerator: public StubCodeGenerator {
       generate_all();
     }
   }
-
-  ~StubGenerator() {}
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 8

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -811,7 +811,7 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
   address start = __ pc();
-
+  // B
   __ emit_data64(0x0706050403020100, relocInfo::none);
   __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
   __ emit_data64(0x1716151413121110, relocInfo::none);
@@ -820,7 +820,51 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
   __ emit_data64(0x3736353433323130, relocInfo::none);
   __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
-
+  // W
+  __ emit_data64(0x0003000200010000, relocInfo::none);
+  __ emit_data64(0x0007000600050004, relocInfo::none);
+  __ emit_data64(0x000B000A00090008, relocInfo::none);
+  __ emit_data64(0x000F000E000D000C, relocInfo::none);
+  __ emit_data64(0x0013001200110010, relocInfo::none);
+  __ emit_data64(0x0017001600150014, relocInfo::none);
+  __ emit_data64(0x001B001A00190018, relocInfo::none);
+  __ emit_data64(0x001F001E001D001C, relocInfo::none);
+  // D
+  __ emit_data64(0x0000000100000000, relocInfo::none);
+  __ emit_data64(0x0000000300000002, relocInfo::none);
+  __ emit_data64(0x0000000500000004, relocInfo::none);
+  __ emit_data64(0x0000000700000006, relocInfo::none);
+  __ emit_data64(0x0000000900000008, relocInfo::none);
+  __ emit_data64(0x0000000B0000000A, relocInfo::none);
+  __ emit_data64(0x0000000D0000000C, relocInfo::none);
+  __ emit_data64(0x0000000F0000000E, relocInfo::none);
+  // Q
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0x0000000000000001, relocInfo::none);
+  __ emit_data64(0x0000000000000002, relocInfo::none);
+  __ emit_data64(0x0000000000000003, relocInfo::none);
+  __ emit_data64(0x0000000000000004, relocInfo::none);
+  __ emit_data64(0x0000000000000005, relocInfo::none);
+  __ emit_data64(0x0000000000000006, relocInfo::none);
+  __ emit_data64(0x0000000000000007, relocInfo::none);
+  // D - FP
+  __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+  __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+  __ emit_data64(0x40A0000040800000, relocInfo::none); // 4.0f, 5.0f
+  __ emit_data64(0x40E0000040C00000, relocInfo::none); // 6.0f, 7.0f
+  __ emit_data64(0x4110000041000000, relocInfo::none); // 8.0f, 9.0f
+  __ emit_data64(0x4130000041200000, relocInfo::none); // 10.0f, 11.0f
+  __ emit_data64(0x4150000041400000, relocInfo::none); // 12.0f, 13.0f
+  __ emit_data64(0x4170000041600000, relocInfo::none); // 14.0f, 15.0f
+  // Q - FP
+  __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+  __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
+  __ emit_data64(0x4000000000000000, relocInfo::none); // 2.0d
+  __ emit_data64(0x4008000000000000, relocInfo::none); // 3.0d
+  __ emit_data64(0x4010000000000000, relocInfo::none); // 4.0d
+  __ emit_data64(0x4014000000000000, relocInfo::none); // 5.0d
+  __ emit_data64(0x4018000000000000, relocInfo::none); // 6.0d
+  __ emit_data64(0x401c000000000000, relocInfo::none); // 7.0d
   return start;
 }
 
@@ -1049,26 +1093,8 @@ address StubGenerator::generate_verify_oop() {
   __ testptr(rax, rax);
   __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-  if (UseZGC) {
-    // Check if metadata bits indicate a bad oop
-    __ testptr(rax, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-    __ jcc(Assembler::notZero, error);
-  }
-#endif
-
-  // Check if the oop is in the right area of memory
-  __ movptr(c_rarg2, rax);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(c_rarg2, c_rarg3);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-  __ cmpptr(c_rarg2, c_rarg3);
-  __ jcc(Assembler::notZero, error);
-
-  // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(rax, rax, rscratch1);  // get klass
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+   bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
 
   // return if everything seems ok
   __ bind(exit);
@@ -1616,7 +1642,6 @@ address StubGenerator::generate_base64_encodeBlock()
   // calculate length from offsets
   __ movl(length, end_offset);
   __ subl(length, start_offset);
-  __ cmpl(length, 0);
   __ jcc(Assembler::lessEqual, L_exit);
 
   // Code for 512-bit VBMI encoding.  Encodes 48 input bytes into 64
@@ -1659,8 +1684,7 @@ address StubGenerator::generate_base64_encodeBlock()
   }
 
   __ BIND(L_not512);
-  if (VM_Version::supports_avx2()
-      && VM_Version::supports_avx512vlbw()) {
+  if (VM_Version::supports_avx2()) {
     /*
     ** This AVX2 encoder is based off the paper at:
     **      https://dl.acm.org/doi/10.1145/3132709
@@ -1677,15 +1701,17 @@ address StubGenerator::generate_base64_encodeBlock()
     __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()), rax);
     // 6-bit mask for 2nd and 4th (and multiples) 6-bit values
     __ movl(rax, 0x0fc0fc00);
+    __ movdl(xmm8, rax);
     __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()), rax);
-    __ evpbroadcastd(xmm8, rax, Assembler::AVX_256bit);
+    __ vpbroadcastd(xmm8, xmm8, Assembler::AVX_256bit);
 
     // Multiplication constant for "shifting" right by 6 and 10
     // bits
     __ movl(rax, 0x04000040);
 
     __ subl(length, 24);
-    __ evpbroadcastd(xmm7, rax, Assembler::AVX_256bit);
+    __ movdl(xmm7, rax);
+    __ vpbroadcastd(xmm7, xmm7, Assembler::AVX_256bit);
 
     // For the first load, we mask off reading of the first 4
     // bytes into the register. This is so we can get 4 3-byte
@@ -1787,19 +1813,23 @@ address StubGenerator::generate_base64_encodeBlock()
     // Load masking register for first and third (and multiples)
     // 6-bit values.
     __ movl(rax, 0x003f03f0);
-    __ evpbroadcastd(xmm6, rax, Assembler::AVX_256bit);
+    __ movdl(xmm6, rax);
+    __ vpbroadcastd(xmm6, xmm6, Assembler::AVX_256bit);
     // Multiplication constant for "shifting" left by 4 and 8 bits
     __ movl(rax, 0x01000010);
-    __ evpbroadcastd(xmm5, rax, Assembler::AVX_256bit);
+    __ movdl(xmm5, rax);
+    __ vpbroadcastd(xmm5, xmm5, Assembler::AVX_256bit);
 
     // Isolate 6-bit chunks of interest
     __ vpand(xmm0, xmm8, xmm1, Assembler::AVX_256bit);
 
     // Load constants for encoding
     __ movl(rax, 0x19191919);
-    __ evpbroadcastd(xmm3, rax, Assembler::AVX_256bit);
+    __ movdl(xmm3, rax);
+    __ vpbroadcastd(xmm3, xmm3, Assembler::AVX_256bit);
     __ movl(rax, 0x33333333);
-    __ evpbroadcastd(xmm4, rax, Assembler::AVX_256bit);
+    __ movdl(xmm4, rax);
+    __ vpbroadcastd(xmm4, xmm4, Assembler::AVX_256bit);
 
     // Shift output bytes 0 and 2 into proper lanes
     __ vpmulhuw(xmm2, xmm0, xmm7, Assembler::AVX_256bit);
@@ -2107,6 +2137,80 @@ address StubGenerator::base64_vbmi_join_2_3_addr() {
   return start;
 }
 
+address StubGenerator::base64_AVX2_decode_tables_addr() {
+  __ align64();
+  StubCodeMark mark(this, "StubRoutines", "AVX2_tables_base64");
+  address start = __ pc();
+
+  assert(((unsigned long long)start & 0x3f) == 0,
+         "Alignment problem (0x%08llx)", (unsigned long long)start);
+  __ emit_data(0x2f2f2f2f, relocInfo::none, 0);
+  __ emit_data(0x5f5f5f5f, relocInfo::none, 0);  // for URL
+
+  __ emit_data(0xffffffff, relocInfo::none, 0);
+  __ emit_data(0xfcfcfcfc, relocInfo::none, 0);  // for URL
+
+  // Permute table
+  __ emit_data64(0x0000000100000000, relocInfo::none);
+  __ emit_data64(0x0000000400000002, relocInfo::none);
+  __ emit_data64(0x0000000600000005, relocInfo::none);
+  __ emit_data64(0xffffffffffffffff, relocInfo::none);
+
+  // Shuffle table
+  __ emit_data64(0x090a040506000102, relocInfo::none);
+  __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
+  __ emit_data64(0x090a040506000102, relocInfo::none);
+  __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
+
+  // merge table
+  __ emit_data(0x01400140, relocInfo::none, 0);
+
+  // merge multiplier
+  __ emit_data(0x00011000, relocInfo::none, 0);
+
+  return start;
+}
+
+address StubGenerator::base64_AVX2_decode_LUT_tables_addr() {
+  __ align64();
+  StubCodeMark mark(this, "StubRoutines", "AVX2_tables_URL_base64");
+  address start = __ pc();
+
+  assert(((unsigned long long)start & 0x3f) == 0,
+         "Alignment problem (0x%08llx)", (unsigned long long)start);
+  // lut_lo
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+
+  // lut_roll
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+
+  // lut_lo URL
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1b1b1a1b1b131111, relocInfo::none);
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1b1b1a1b1b131111, relocInfo::none);
+
+  // lut_roll URL
+  __ emit_data64(0xb9b9bfbf0411e000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf0411e000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+
+  // lut_hi
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
+
+  return start;
+}
+
 address StubGenerator::base64_decoding_table_addr() {
   StubCodeMark mark(this, "StubRoutines", "decoding_table_base64");
   address start = __ pc();
@@ -2263,7 +2367,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   Label L_process256, L_process64, L_process64Loop, L_exit, L_processdata, L_loadURL;
   Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
-  Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
+  Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero, L_lastChunk;
 
   // calculate length from offsets
   __ movl(length, end_offset);
@@ -2273,11 +2377,11 @@ address StubGenerator::generate_base64_decodeBlock() {
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
      VM_Version::supports_avx512bw()) {
-    __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
-    __ jcc(Assembler::lessEqual, L_bruteForce);
+    __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
+    __ jcc(Assembler::lessEqual, L_lastChunk);
 
     __ cmpl(isMIME, 0);
-    __ jcc(Assembler::notEqual, L_bruteForce);
+    __ jcc(Assembler::notEqual, L_lastChunk);
 
     // Load lookup tables based on isURL
     __ cmpl(isURL, 0);
@@ -2475,7 +2579,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Decode all bytes within our merged input
     __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
     __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
-    __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+    __ evporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
     // Check for error.  Compare (decoded | initial) to all invalid.
     // If any bytes have their high-order bit set, then we have an error.
@@ -2528,6 +2632,89 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ BIND(L_bruteForce);
   }   // End of if(avx512_vbmi)
 
+  if (VM_Version::supports_avx2()) {
+    Label L_tailProc, L_topLoop, L_enterLoop;
+
+    __ cmpl(isMIME, 0);
+    __ jcc(Assembler::notEqual, L_lastChunk);
+
+    // Check for buffer too small (for algorithm)
+    __ subl(length, 0x2c);
+    __ jcc(Assembler::less, L_tailProc);
+
+    __ shll(isURL, 2);
+
+    // Algorithm adapted from https://arxiv.org/abs/1704.00605, "Faster Base64
+    // Encoding and Decoding using AVX2 Instructions".  URL modifications added.
+
+    // Set up constants
+    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
+    __ vpbroadcastd(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
+    __ vpbroadcastd(xmm10, Address(r13, isURL, Address::times_1, 0x08), Assembler::AVX_256bit);  // -1 or -4
+    __ vmovdqu(xmm12, Address(r13, 0x10));  // permute
+    __ vmovdqu(xmm13, Address(r13, 0x30)); // shuffle
+    __ vpbroadcastd(xmm7, Address(r13, 0x50), Assembler::AVX_256bit);  // merge
+    __ vpbroadcastd(xmm6, Address(r13, 0x54), Assembler::AVX_256bit);  // merge mult
+
+    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_LUT_tables_addr()));
+    __ shll(isURL, 4);
+    __ vmovdqu(xmm11, Address(r13, isURL, Address::times_1, 0x00));  // lut_lo
+    __ vmovdqu(xmm8, Address(r13, isURL, Address::times_1, 0x20)); // lut_roll
+    __ shrl(isURL, 6);  // restore isURL
+    __ vmovdqu(xmm9, Address(r13, 0x80));  // lut_hi
+    __ jmp(L_enterLoop);
+
+    __ align32();
+    __ bind(L_topLoop);
+    // Add in the offset value (roll) to get 6-bit out values
+    __ vpaddb(xmm0, xmm0, xmm2, Assembler::AVX_256bit);
+    // Merge and permute the output bits into appropriate output byte lanes
+    __ vpmaddubsw(xmm0, xmm0, xmm7, Assembler::AVX_256bit);
+    __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
+    __ vpshufb(xmm0, xmm0, xmm13, Assembler::AVX_256bit);
+    __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
+    // Store the output bytes
+    __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0);
+    __ addptr(source, 0x20);
+    __ addptr(dest, 0x18);
+    __ subl(length, 0x20);
+    __ jcc(Assembler::less, L_tailProc);
+
+    __ bind(L_enterLoop);
+
+    // Load in encoded string (32 bytes)
+    __ vmovdqu(xmm2, Address(source, start_offset, Address::times_1, 0x0));
+    // Extract the high nibble for indexing into the lut tables.  High 4 bits are don't care.
+    __ vpsrld(xmm1, xmm2, 0x4, Assembler::AVX_256bit);
+    __ vpand(xmm1, xmm4, xmm1, Assembler::AVX_256bit);
+    // Extract the low nibble. 5F/2F will isolate the low-order 4 bits.  High 4 bits are don't care.
+    __ vpand(xmm3, xmm2, xmm4, Assembler::AVX_256bit);
+    // Check for special-case (0x2F or 0x5F (URL))
+    __ vpcmpeqb(xmm0, xmm4, xmm2, Assembler::AVX_256bit);
+    // Get the bitset based on the low nibble.  vpshufb uses low-order 4 bits only.
+    __ vpshufb(xmm3, xmm11, xmm3, Assembler::AVX_256bit);
+    // Get the bit value of the high nibble
+    __ vpshufb(xmm5, xmm9, xmm1, Assembler::AVX_256bit);
+    // Make sure 2F / 5F shows as valid
+    __ vpandn(xmm3, xmm0, xmm3, Assembler::AVX_256bit);
+    // Make adjustment for roll index.  For non-URL, this is a no-op,
+    // for URL, this adjusts by -4.  This is to properly index the
+    // roll value for 2F / 5F.
+    __ vpand(xmm0, xmm0, xmm10, Assembler::AVX_256bit);
+    // If the and of the two is non-zero, we have an invalid input character
+    __ vptest(xmm3, xmm5);
+    // Extract the "roll" value - value to add to the input to get 6-bit out value
+    __ vpaddb(xmm0, xmm0, xmm1, Assembler::AVX_256bit); // Handle 2F / 5F
+    __ vpshufb(xmm0, xmm8, xmm0, Assembler::AVX_256bit);
+    __ jcc(Assembler::equal, L_topLoop);  // Fall through on error
+
+    __ bind(L_tailProc);
+
+    __ addl(length, 0x2c);
+
+    __ vzeroupper();
+  }
+
   // Use non-AVX code to decode 4-byte chunks into 3 bytes of output
 
   // Register state (Linux):
@@ -2557,6 +2744,8 @@ address StubGenerator::generate_base64_decodeBlock() {
   const Register byte2 = r15;
   const Register byte3 = WIN64_ONLY(r8) NOT_WIN64(rdx);
   const Register byte4 = WIN64_ONLY(r10) NOT_WIN64(r9);
+
+  __ bind(L_lastChunk);
 
   __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
   __ cmpl(length, 0);
@@ -2716,26 +2905,38 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
 
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
+  Label L_continue;
+
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
+    Label L_doSmall;
+
+    __ cmpl(len, 384);
+    __ jcc(Assembler::lessEqual, L_doSmall);
+
     __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
     __ kernel_crc32_avx512(crc, buf, len, j, l, k);
-  } else {
-#ifdef _WIN64
-    __ push(y);
-    __ push(z);
-#endif
-    __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                            a, j, k,
-                            l, y, z,
-                            c_farg0, c_farg1, c_farg2,
-                            is_pclmulqdq_supported);
-#ifdef _WIN64
-    __ pop(z);
-    __ pop(y);
-#endif
+
+    __ jmp(L_continue);
+
+    __ bind(L_doSmall);
   }
+#ifdef _WIN64
+  __ push(y);
+  __ push(z);
+#endif
+  __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                          a, j, k,
+                          l, y, z,
+                          c_farg0, c_farg1, c_farg2,
+                          is_pclmulqdq_supported);
+#ifdef _WIN64
+  __ pop(z);
+  __ pop(y);
+#endif
+
+  __ bind(L_continue);
   __ movl(rax, crc);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -3291,19 +3492,19 @@ void StubGenerator::generate_libm_stubs() {
       StubRoutines::_dcos = generate_libmCos(); // from stubGenerator_x86_64_cos.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-      StubRoutines::_dtan = generate_libmTan();
+      StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
-      StubRoutines::_dexp = generate_libmExp();
+      StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
-      StubRoutines::_dpow = generate_libmPow();
+      StubRoutines::_dpow = generate_libmPow(); // from stubGenerator_x86_64_pow.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-      StubRoutines::_dlog = generate_libmLog();
+      StubRoutines::_dlog = generate_libmLog(); // from stubGenerator_x86_64_log.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
-      StubRoutines::_dlog10 = generate_libmLog10();
+      StubRoutines::_dlog10 = generate_libmLog10(); // from stubGenerator_x86_64_log.cpp
     }
   }
 }
@@ -3460,7 +3661,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  CodeBuffer code("jfr_write_checkpoint", 512, 64);
+  CodeBuffer code("jfr_write_checkpoint", 1024, 64);
   MacroAssembler* _masm = new MacroAssembler(&code);
   address start = __ pc();
 
@@ -3475,14 +3676,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   __ reset_last_Java_frame(true);
 
   // rax is jobject handle result, unpack and process it through a barrier.
-  Label L_null_jobject;
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, L_null_jobject);
-
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, ACCESS_READ | IN_NATIVE, T_OBJECT, rax, Address(rax, 0), c_rarg0, r15_thread);
-
-  __ bind(L_null_jobject);
+  __ resolve_global_jobject(rax, r15_thread, c_rarg0);
 
   __ leave();
   __ ret(0);
@@ -3665,6 +3859,10 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
+  if (UsePoly1305Intrinsics) {
+    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
     StubRoutines::x86::generate_CRC32C_table(supports_clmul);
@@ -3675,6 +3873,8 @@ void StubGenerator::generate_initial() {
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
+
+  generate_libm_stubs();
 }
 
 void StubGenerator::generate_phase1() {
@@ -3759,6 +3959,8 @@ void StubGenerator::generate_all() {
 
   generate_ghash_stubs();
 
+  generate_chacha_stubs();
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true, "md5_implCompressMB");
@@ -3790,12 +3992,12 @@ void StubGenerator::generate_all() {
   }
 
   if (UseBASE64Intrinsics) {
-    if(VM_Version::supports_avx2() &&
-       VM_Version::supports_avx512bw() &&
-       VM_Version::supports_avx512vl()) {
+    if(VM_Version::supports_avx2()) {
       StubRoutines::x86::_avx2_shuffle_base64 = base64_avx2_shuffle_addr();
       StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
       StubRoutines::x86::_avx2_lut_base64 = base64_avx2_lut_addr();
+      StubRoutines::x86::_avx2_decode_tables_base64 = base64_AVX2_decode_tables_addr();
+      StubRoutines::x86::_avx2_decode_lut_tables_base64 = base64_AVX2_decode_LUT_tables_addr();
     }
     StubRoutines::x86::_encoding_table_base64 = base64_encoding_table_addr();
     if (VM_Version::supports_avx512_vbmi()) {

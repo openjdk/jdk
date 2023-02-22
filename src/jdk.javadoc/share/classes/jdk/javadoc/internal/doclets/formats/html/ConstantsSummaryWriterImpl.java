@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getContentsHeader() {
-        return new HtmlTree(TagName.UL);
+        return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
     @Override
@@ -116,13 +116,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        bodyContents.addMainContent(div);
         Content headingContent = contents.contentsHeading;
         var heading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent);
         var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
         section.add(content);
-        div.add(section);
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(section);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         //generate links backward only to public classes.
         Content classLink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
             getLink(new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CONSTANT_SUMMARY, typeElement)) :
+                    HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, typeElement)) :
             Text.of(utils.getFullyQualifiedName(typeElement));
 
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
@@ -182,7 +182,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         }
         caption.add(classLink);
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -208,7 +208,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                     .add(Entity.NO_BREAK_SPACE);
         }
         Content type = getLink(new HtmlLinkInfo(configuration,
-                HtmlLinkInfo.Kind.CONSTANT_SUMMARY, member.asType()));
+                HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, member.asType()));
         code.add(type);
         typeContent.add(code);
         return typeContent;
@@ -221,7 +221,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the name column of the constant table row
      */
     private Content getNameColumn(VariableElement member) {
-        Content nameContent = getDocLink(HtmlLinkInfo.Kind.CONSTANT_SUMMARY,
+        Content nameContent = getDocLink(HtmlLinkInfo.Kind.PLAIN,
                 member, member.getSimpleName());
         return HtmlTree.CODE(nameContent);
     }

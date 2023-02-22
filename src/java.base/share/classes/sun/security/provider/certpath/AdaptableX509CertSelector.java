@@ -131,8 +131,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
 
         if (ext != null) {
             ski = ext.getEncodedKeyIdentifier();
-            SerialNumber asn = (SerialNumber)ext.get(
-                AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
+            SerialNumber asn = ext.getSerialNumber();
             if (asn != null) {
                 serial = asn.getNumber();
             }

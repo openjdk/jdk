@@ -31,6 +31,7 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -49,6 +50,9 @@ import java.util.function.UnaryOperator;
  * given an address pointing to a segment associated with the root layout (see {@link #dereferenceHandle()}).
  */
 public class LayoutPath {
+
+    private static final long[] EMPTY_STRIDES = new long[0];
+    private static final long[] EMPTY_BOUNDS = new long[0];
 
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
@@ -123,7 +127,7 @@ public class LayoutPath {
                 l.name().get().equals(name)) {
                 elem = l;
                 break;
-            } else if (g.isStruct()) {
+            } else if (g instanceof StructLayout) {
                 offset += l.bitSize();
             }
         }
@@ -180,11 +184,11 @@ public class LayoutPath {
     public MethodHandle sliceHandle() {
         if (strides.length == 0) {
             // trigger checks eagerly
-            Utils.bitsToBytesOrThrow(offset, Utils.bitsToBytesThrowOffset);
+            Utils.bitsToBytesOrThrow(offset, Utils.BITS_TO_BYTES_THROW_OFFSET);
         }
 
         MethodHandle offsetHandle = offsetHandle(); // bit offset
-        offsetHandle = MethodHandles.filterReturnValue(offsetHandle, Utils.MH_bitsToBytesOrThrowForOffset); // byte offset
+        offsetHandle = MethodHandles.filterReturnValue(offsetHandle, Utils.MH_BITS_TO_BYTES_OR_THROW_FOR_OFFSET); // byte offset
 
         MethodHandle sliceHandle = MH_SLICE; // (MS, long, long) -> MS
         sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
@@ -256,9 +260,6 @@ public class LayoutPath {
         newBounds[bounds.length] = maxIndex;
         return newBounds;
     }
-
-    private static final long[] EMPTY_STRIDES = new long[0];
-    private static final long[] EMPTY_BOUNDS = new long[0];
 
     /**
      * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation

@@ -35,6 +35,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
@@ -196,9 +197,19 @@ public abstract class TagletWriter {
                                                 String id, String lang);
 
     /**
+     * Returns the output for one or more {@code @spec} tags.
+     *
+     * @param element  the element that owns the doc comment
+     * @param specTags the array of @spec tags.
+     *
+     * @return the output
+     */
+    protected abstract Content specTagOutput(Element element, List<? extends SpecTree> specTags);
+
+    /**
      * Returns the output for a {@code {@systemProperty...}} tag.
      *
-     * @param element           The element that owns the doc comment
+     * @param element           the element that owns the doc comment
      * @param systemPropertyTag the system property tag
      *
      * @return the output
@@ -213,24 +224,14 @@ public abstract class TagletWriter {
     protected abstract Content getThrowsHeader();
 
     /**
-     * Returns the output for a {@code @throws} tag.
-     *
-     * @param element        The element that owns the doc comment
-     * @param throwsTag      the throws tag
-     * @param substituteType instantiated type of a generic type-variable, or null
-     *
-     * @return the output
-     */
-    protected abstract Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType);
-
-    /**
      * Returns the output for a default {@code @throws} tag.
      *
      * @param throwsType the type that is thrown
+     * @param content    the optional content to add as a description
      *
      * @return the output
      */
-    protected abstract Content throwsTagOutput(TypeMirror throwsType);
+    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content);
 
     /**
      * Returns the output for a {@code {@value}} tag.

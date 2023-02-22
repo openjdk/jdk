@@ -42,7 +42,8 @@ import org.openide.util.actions.CallableSystemAction;
 @ActionRegistration(displayName = "#CTL_ZoomInAction")
 @ActionReferences({
         @ActionReference(path = "Menu/View", position = 450),
-        @ActionReference(path = "Shortcuts", name = "D-EQUALS")
+        @ActionReference(path = "Shortcuts", name = "D-EQUALS"),
+        @ActionReference(path = "Shortcuts", name = "DS-MINUS")
 })
 @Messages({
         "CTL_ZoomInAction=Zoom in",
@@ -65,11 +66,11 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomInAction");
+        return NbBundle.getMessage(ZoomInAction.class, "CTL_ZoomInAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomInAction");
+        return NbBundle.getMessage(ZoomInAction.class, "HINT_ZoomInAction");
     }
 
     @Override
@@ -84,6 +85,6 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoom_in.png";
+        return "com/sun/hotspot/igv/view/images/zoomIn.svg"; // NOI18N
     }
 }

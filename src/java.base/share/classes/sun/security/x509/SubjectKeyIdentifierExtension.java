@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -50,27 +48,16 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class SubjectKeyIdentifierExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.SubjectKeyIdentifier";
-    /**
-     * Attribute names.
-     */
+public class SubjectKeyIdentifierExtension extends Extension {
+
     public static final String NAME = "SubjectKeyIdentifier";
-    public static final String KEY_ID = "key_id";
 
     // Private data member
     private KeyIdentifier id;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (id == null) {
             this.extensionValue = null;
             return;
@@ -85,8 +72,7 @@ implements CertAttrSet<String> {
      * The criticality is set to False.
      * @param octetString the octet string identifying the key identifier.
      */
-    public SubjectKeyIdentifierExtension(byte[] octetString)
-    throws IOException {
+    public SubjectKeyIdentifierExtension(byte[] octetString) {
         id = new KeyIdentifier(octetString);
 
         this.extensionId = PKIXExtensions.SubjectKey_Id;
@@ -122,77 +108,27 @@ implements CertAttrSet<String> {
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to.
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream to write the extension to.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.SubjectKey_Id;
             critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
+    }
+
+    public KeyIdentifier getKeyIdentifier() {
+        return id;
     }
 
     /**
-     * Set the attribute value.
+     * Return the name of this extension.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            if (!(obj instanceof KeyIdentifier)) {
-              throw new IOException("Attribute value should be of" +
-                                    " type KeyIdentifier.");
-            }
-            id = (KeyIdentifier)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:SubjectKeyIdentifierExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public KeyIdentifier get(String name) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            return (id);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:SubjectKeyIdentifierExtension.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            id = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:SubjectKeyIdentifierExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(KEY_ID);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              G1FullGCTracer* tracer) :
     _rm(),
     _explicit_gc(explicit_gc),
+    _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
     _timer(),
@@ -50,7 +51,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _active(),
     _tracer_mark(&_timer, _tracer),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
-    _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
+    _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
                                  HeapRegion::GrainWords :

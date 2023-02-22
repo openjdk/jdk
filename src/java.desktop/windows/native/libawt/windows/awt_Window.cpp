@@ -738,7 +738,7 @@ LRESULT CALLBACK AwtWindow::WarningWindowProc(HWND hwnd, UINT uMsg, WPARAM wPara
 
         case WM_MOUSEACTIVATE:
             {
-                // Retrive the owner of the warning window.
+                // Retrieve the owner of the warning window.
                 HWND javaWindow = ::GetParent(hwnd);
                 if (javaWindow) {
                     // If the window is blocked by a modal dialog, substitute
@@ -1997,7 +1997,7 @@ LRESULT AwtWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             mr = WmGetIcon(wParam, retValue);
             break;
         case WM_SYSCOMMAND:
-            //Fixed 6355340: Contents of frame are not layed out properly on maximize
+            //Fixed 6355340: Contents of frame are not laid out properly on maximize
             if ((wParam & 0xFFF0) == SC_SIZE) {
                 AwtWindow::sm_resizing = TRUE;
                 mr = WmSysCommand(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
@@ -2740,7 +2740,7 @@ BOOL AwtWindow::UpdateOwnedIconCallback(HWND hWndOwned, LPARAM lParam)
 
 void AwtWindow::DoUpdateIcon()
 {
-    //Does nothing for windows, is overriden for frames and dialogs
+    //Does nothing for windows, is overridden for frames and dialogs
 }
 
 void AwtWindow::RedrawWindow()

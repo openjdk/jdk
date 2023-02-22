@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@
 #include "utilities/nativeCallStack.hpp"
 
 inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
-  : _size(size), _mst_marker(mst_marker), _flags(NMTUtil::flag_to_index(flags)),
+  : _size(size), _mst_marker(mst_marker), _flags(flags),
     _unused(0), _canary(_header_canary_life_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
@@ -45,31 +45,29 @@ inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_mark
   set_footer(_footer_canary_life_mark); // set after initializing _size
 }
 
+inline void MallocHeader::revive() {
+  assert(_canary == _header_canary_dead_mark, "must be dead");
+  assert(get_footer() == _footer_canary_dead_mark, "must be dead");
+  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
+  _canary = _header_canary_life_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_life_mark);
+  set_footer(_footer_canary_life_mark);
+}
+
+// The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
   set_footer(_footer_canary_dead_mark);
 }
 
-inline void MallocHeader::assert_block_integrity() const {
-  char msg[256];
-  address corruption = NULL;
-  if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
-  }
-}
-
-inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
-  // Note: if you modify the error messages here, make sure you
-  // adapt the associated gtests too.
-
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
+inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* msg, size_t msglen) {
+  // Handle the pointer as an integral type
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(payload);
+  // Weed out obviously wrong block addresses of null or very low
+  // values. Note that we should not call this for ::free(nullptr),
   // which should be handled by os::free() above us.
-  if (((size_t)p2i(this)) < K) {
+  if (ptr < K) {
     jio_snprintf(msg, msglen, "invalid block address");
     return false;
   }
@@ -89,11 +87,38 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   // we test the smallest alignment we know.
   // Should we ever start using std::max_align_t, this would be one place to
   // fix up.
-  if (!is_aligned(this, sizeof(uint64_t))) {
-    *p_corruption = (address)this;
+  if (!is_aligned(ptr, sizeof(uint64_t))) {
     jio_snprintf(msg, msglen, "block address is unaligned");
     return false;
   }
+  return true;
+}
+
+template<typename InTypeParam, typename OutTypeParam>
+inline OutTypeParam MallocHeader::resolve_checked_impl(InTypeParam memblock) {
+  char msg[256];
+  address corruption = nullptr;
+  if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
+    fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
+  }
+  OutTypeParam header_pointer = (OutTypeParam)memblock - 1;
+  if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
+    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer);
+    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
+  }
+  return header_pointer;
+}
+
+inline MallocHeader* MallocHeader::resolve_checked(void* memblock) {
+  return MallocHeader::resolve_checked_impl<void*, MallocHeader*>(memblock);
+}
+inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
+  return MallocHeader::resolve_checked_impl<const void*, const MallocHeader*>(memblock);
+}
+
+inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
+  // Note: if you modify the error messages here, make sure you
+  // adapt the associated gtests too.
 
   // Check header canary
   if (_canary != _header_canary_life_mark) {
@@ -122,7 +147,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   if (get_footer() != _footer_canary_life_mark) {
     *p_corruption = footer_address();
     jio_snprintf(msg, msglen, "footer canary broken at " PTR_FORMAT " (buffer overflow?)",
-                p2i(footer_address()));
+                 p2i(footer_address()));
     return false;
   }
   return true;

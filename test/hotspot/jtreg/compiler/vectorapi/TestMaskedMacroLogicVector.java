@@ -71,7 +71,7 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV" , " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testSubWordBoolean(boolean[] r, boolean[] a, boolean[] b) {
         for (int i = 0; i < r.length; i++) {
             r[i] = booleanFunc1(a[i], b[i]);
@@ -94,7 +94,7 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV" , " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testSubWordChar(short[] r, char[] a, char[] b) {
         for (int i = 0; i < r.length; i++) {
             r[i] = charFunc1(a[i], b[i]);
@@ -132,19 +132,19 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt1_Int128(int[] r, int[] a, int[] b, int[] c) {
         testInt1Kernel(IntVector.SPECIES_128, r, a, b, c);
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt1_Int256(int[] r, int[] a, int[] b, int[] c) {
         testInt1Kernel(IntVector.SPECIES_256, r, a, b, c);
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt1_Int512(int[] r, int[] a, int[] b, int[] c) {
         testInt1Kernel(IntVector.SPECIES_512, r, a, b, c);
     }
@@ -182,17 +182,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt2_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt2Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt2_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt2Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt2_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt2Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -230,17 +230,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt3_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt3Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt3_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt3Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt3_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt3Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -280,17 +280,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
     public void testInt4_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
     public void testInt4_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
     public void testInt4_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -328,17 +328,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt5_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt5Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt5_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt5Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt5_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt5Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -376,17 +376,17 @@ public class TestMaskedMacroLogicVector {
         }
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt6_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt6Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt6_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt6Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt6_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt6Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -425,17 +425,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt7_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt7Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt7_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt7Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt7_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt7Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -473,17 +473,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt8_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt8Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt8_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt8Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testInt8_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt8Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }
@@ -526,12 +526,12 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testLong_Long256(long[] r, long[] a, long[] b, long[] c) {
         testLongKernel(LongVector.SPECIES_256, r, a, b, c);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"MacroLogicV", " > 0 "})
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
     public void testLong_Long512(long[] r, long[] a, long[] b, long[] c) {
         testLongKernel(LongVector.SPECIES_512, r, a, b, c);
     }
