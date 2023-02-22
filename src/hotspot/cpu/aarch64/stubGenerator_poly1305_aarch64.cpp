@@ -42,8 +42,6 @@ address generate_poly1305_processBlocks2() {
   // Arguments
   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
-  __ incrementw(Address(&trips), 1);
-
   // Rn is the randomly-generated key, packed into three registers
   Register R[] = { *++regs, *++regs, *++regs,};
   __ pack_26(R[0], R[1], R[2], r_start);
@@ -64,18 +62,25 @@ address generate_poly1305_processBlocks2() {
   __ lsl(RR2, R[2], 26);
   __ add(RR2, RR2, RR2, __ LSL, 2);
 
+  // Load the initial state
+  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+
+  // Just one block?
+  Label SMALL;
+  __ subs(zr, length, BLOCK_LENGTH * 4);
+  __ br(__ LE, SMALL);
+
   // We're going to use R**2
   {
-    __ poly1305_multiply(u0, R, R, RR2, regs);
-    __ poly1305_reduce(u0);
-    Register u0_lo[] = {u0[0]._lo, u0[1]._lo, u0[2]._lo};
-    __ copy_3_regs(R, u0_lo);
+    __ poly1305_multiply(u1, R, R, RR2, regs);
+    __ poly1305_reduce(u1);
+    Register u1_lo[] = {u1[0]._lo, u1[1]._lo, u1[2]._lo};
+    __ copy_3_regs(R, u1_lo);
 
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
   }
 
-  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
   // u0 contains the initial state. Clear the others.
   for (int i = 0; i < 3; i++) {
     __ mov(u0[i]._hi, 0);
@@ -83,51 +88,73 @@ address generate_poly1305_processBlocks2() {
   }
 
   static constexpr int BLOCK_LENGTH = 16;
-  Label DONE, LOOP;
 
-  __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
-  __ br(~ Assembler::GT, DONE); {
+  {
+    Label DONE, LOOP;
+
     __ bind(LOOP);
+    __ subsw(rscratch1, length, BLOCK_LENGTH * 4);
+    __ br(Assembler::LT, DONE);
 
     __ poly1305_step(S1, u1, input_start);
     __ poly1305_multiply(u1, S1, R, RR2, regs);
     __ poly1305_reduce(u1);
 
+    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
+
+    __ incrementw(Address(&trips), 1);
+
+    poo = __ pc();
+
+    __ subw(length, length, BLOCK_LENGTH * 2);
+    __ b(LOOP);
+
+    __ bind(DONE);
+  }
+
+  // Last two parallel blocks
+  {
+    __ poly1305_step(S1, u1, input_start);
+    __ poly1305_multiply(u1, S1, R, RR2, regs);
+    __ poly1305_reduce(u1);
+
+    __ pack_26(R[0], R[1], R[2], r_start);
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    // Load R**1
     __ poly1305_step(S0, u0, input_start);
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
     __ subw(length, length, BLOCK_LENGTH * 2);
-    __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
-    __ br(Assembler::GT, LOOP);
-
-    poo = __ pc();
   }
-  __ bind(DONE);
 
-  {
-    Label one;
-    __ subsw(rscratch1, length, BLOCK_LENGTH * 2);
-    __ br(__ LT, one);
-
-    __ poly1305_step(S1, u1, input_start);
-    __ poly1305_multiply(u1, S1, R, RR2, regs);
-    __ poly1305_reduce(u1);
-
-  __ bind(one);
-    __ pack_26(R[0], R[1], R[2], r_start);
-    __ lsl(RR2, R[2], 26);
-    __ add(RR2, RR2, RR2, __ LSL, 2);
-
-    __ poly1305_step(S0, u0, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
-  }
   // __ add_3_reg_pairs(u0, u1);
 
   __ add(u0[0]._lo, u0[0]._lo, u1[0]._lo);
   __ add(u0[1]._lo, u0[1]._lo, u1[1]._lo);
   __ add(u0[2]._lo, u0[2]._lo, u1[2]._lo);
+
+  // Maybe some last blocks
+  __ bind(SMALL);
+  {
+    Label DONE, LOOP;
+
+    __ bind(LOOP);
+    __ subsw(length, length, BLOCK_LENGTH);
+    __ br(__ LT, DONE);
+
+    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
+
+    __ b(LOOP);
+    __ bind(DONE);
+  }
+
   __ poly1305_fully_reduce(S0, u0);
 
   // And store it all back
