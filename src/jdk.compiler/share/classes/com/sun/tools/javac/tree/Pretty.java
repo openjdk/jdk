@@ -1464,9 +1464,9 @@ public class Pretty extends JCTree.Visitor {
                     print("null");
                     break;
                 default:
-                    print("\"");
+                    print('"');
                     print(Convert.quote(tree.value.toString()));
-                    print("\"");
+                    print('"');
                     break;
             }
         } catch (IOException e) {

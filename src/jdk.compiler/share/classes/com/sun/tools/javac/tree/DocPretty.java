@@ -94,7 +94,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     /**
      * Print list with separators.
      */
-    protected void print(List<? extends DocTree> list, String sep) throws IOException {
+    protected void print(List<? extends DocTree> list, char sep) throws IOException {
         if (list.isEmpty())
             return;
         boolean first = true;
@@ -188,8 +188,8 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             List<? extends DocTree> t = node.getBlockTags();
             print(b);
             if (!b.isEmpty() && !t.isEmpty())
-                print("\n");
-            print(t, "\n");
+                print('\n');
+            print(t, '\n');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -498,7 +498,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             List<? extends DocTree> attrs = node.getAttributes();
             if (!attrs.isEmpty()) {
                 print(' ');
-                print(attrs, " ");
+                print(attrs, ' ');
             }
             if (node.getBody() != null) {
                 print(" :\n");
@@ -533,7 +533,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             List<? extends DocTree> attrs = node.getAttributes();
             if (!attrs.isEmpty()) {
                 print(' ');
-                print(attrs, " ");
+                print(attrs, ' ');
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
                 if (node.isSelfClosing() && last instanceof AttributeTree attributeTree
                         && attributeTree.getValueKind() == ValueKind.UNQUOTED)
