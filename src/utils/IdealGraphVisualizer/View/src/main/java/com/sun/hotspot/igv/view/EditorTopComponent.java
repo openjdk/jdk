@@ -428,6 +428,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         model.setShowNodeHull(getModel().getShowNodeHull());
         model.setShowEmptyBlocks(getModel().getShowEmptyBlocks());
         model.setHideDuplicates(getModel().getHideDuplicates());
+        model.initFiltersFromModel(getModel());
         EditorTopComponent etc = new EditorTopComponent(model);
         etc.resetUndoRedo();
         return etc;

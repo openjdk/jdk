@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.ColorFilter;
+import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
@@ -52,7 +53,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
-    private final FilterChain customFilterChain;
+    private FilterChain customFilterChain;
     private FilterChain filterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
@@ -329,7 +330,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-        getFilterChain().apply(diagram, filterChain);
+        filterChain.apply(diagram, filterChain);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
             f.addRule(stateColorRule("same",    Color.white));
@@ -340,8 +341,22 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
     }
 
+    public void initFiltersFromModel(DiagramViewModel other) {
+        customFilterChain = new FilterChain(other.getCustomFilterChain().getName());
+        customFilterChain.addFilters(other.getCustomFilterChain().getFilters());
+        if (other.getFilterChain() == other.getCustomFilterChain()) {
+            filterChain = customFilterChain;
+        } else {
+            filterChain = other.getFilterChain();
+        }
+    }
+
     public FilterChain getFilterChain() {
         return filterChain;
+    }
+
+    public FilterChain getCustomFilterChain() {
+        return customFilterChain;
     }
 
     /*
