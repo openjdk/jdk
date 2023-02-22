@@ -96,7 +96,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
-                    sendNotification(createNotication(recording));
+                    sendNotification(createNotification(recording));
                     return null;
                 }
             }, context);
@@ -457,7 +457,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         listeners.removeAll(toBeRemoved);
     }
 
-    private Notification createNotication(Recording recording) {
+    private Notification createNotification(Recording recording) {
         try {
             Long id = recording.getId();
             Object oldValue = changes.get(recording.getId());
@@ -470,7 +470,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             return new AttributeChangeNotification(getObjectName(), sequenceNumber.incrementAndGet(), System.currentTimeMillis(), "Recording " + recording.getName() + " is "
                     + recording.getState(), ATTRIBUTE_RECORDINGS, newValue.getClass().getName(), oldValue, newValue);
         } catch (AttributeNotFoundException | MBeanException | ReflectionException e) {
-            throw new RuntimeException("Could not create notifcation for FlightRecorderMXBean. " + e.getMessage(), e);
+            throw new RuntimeException("Could not create notification for FlightRecorderMXBean. " + e.getMessage(), e);
         }
     }
 }
