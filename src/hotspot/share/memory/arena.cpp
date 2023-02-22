@@ -82,7 +82,7 @@ class ChunkPool {
   // Prune the pool
   void prune() {
     Chunk* cur = _first;
-    Chunk* next;
+    Chunk* next = nullptr;
     // Free all chunks while in ThreadCritical lock
     // so NMT adjustment is stable.
     ThreadCritical tc;
