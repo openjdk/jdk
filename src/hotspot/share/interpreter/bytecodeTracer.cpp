@@ -652,8 +652,8 @@ void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   if (mdo != nullptr) {
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
-      st->print("  %d", mdo->dp_to_di(data->dp()));
-      st->fill_to(6);
+      st->print("  %d ", mdo->dp_to_di(data->dp()));
+      st->fill_to(7);
       data->print_data_on(st, mdo);
     }
   }
