@@ -535,9 +535,9 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       }
       log.error("----------");
       _num_failures++;
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
 
   template <class T>
