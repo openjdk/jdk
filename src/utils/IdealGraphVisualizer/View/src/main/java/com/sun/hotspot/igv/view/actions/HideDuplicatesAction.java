@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ import org.openide.util.ImageUtilities;
  */
 public class HideDuplicatesAction extends AbstractAction {
 
-    public HideDuplicatesAction() {
+    public HideDuplicatesAction(boolean selected) {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(Action.SELECTED_KEY, false);
+        putValue(Action.SELECTED_KEY, selected);
         putValue(Action.SHORT_DESCRIPTION, "Hide graphs which are the same as the previous graph");
     }
 

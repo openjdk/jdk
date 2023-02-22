@@ -79,7 +79,7 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
-  static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
+  static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_ExceptionTableElement,           int)                                          \
@@ -158,8 +158,8 @@
                                                                                                                                      \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
-  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
+  volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
+  volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,12 @@ public:
   };
 
   // Locks _allocation_mutex.
-  // precondition: ptr != NULL.
+  // precondition: ptr != nullptr.
   EntryStatus allocation_status(const oop* ptr) const;
 
-  // Allocates and returns a new entry.  Returns NULL if memory allocation
+  // Allocates and returns a new entry.  Returns null if memory allocation
   // failed.  Locks _allocation_mutex.
-  // postcondition: result == NULL or *result == NULL.
+  // postcondition: result == nullptr or *result == nullptr.
   oop* allocate();
 
   // Maximum number of entries that can be obtained by one call to
@@ -120,18 +120,18 @@ public:
   // precondition: size > 0.
   // postcondition: result <= min(size, bulk_allocate_limit).
   // postcondition: ptrs[i] is an allocated entry for i in [0, result).
-  // postcondition: *ptrs[i] == NULL for i in [0, result).
+  // postcondition: *ptrs[i] == nullptr for i in [0, result).
   size_t allocate(oop** ptrs, size_t size);
 
   // Deallocates ptr.  No locking.
   // precondition: ptr is a valid allocated entry.
-  // precondition: *ptr == NULL.
+  // precondition: *ptr == nullptr.
   void release(const oop* ptr);
 
   // Releases all the ptrs.  Possibly faster than individual calls to
   // release(oop*).  Best if ptrs is sorted by address.  No locking.
   // precondition: All elements of ptrs are valid allocated entries.
-  // precondition: *ptrs[i] == NULL, for i in [0,size).
+  // precondition: *ptrs[i] == nullptr, for i in [0,size).
   void release(const oop* const* ptrs, size_t size);
 
   // Applies f to each allocated entry's location.  f must be a function or
@@ -155,9 +155,9 @@ public:
   // - is_alive->do_object_b(*p) must be a valid expression whose value is
   // convertible to bool.
   //
-  // For weak_oops_do, if *p == NULL then neither is_alive nor closure will be
+  // For weak_oops_do, if *p == nullptr then neither is_alive nor closure will be
   // invoked for p.  If is_alive->do_object_b(*p) is false, then closure will
-  // not be invoked on p, and *p will be set to NULL.
+  // not be invoked on p, and *p will be set to null.
 
   template<typename Closure> inline void oops_do(Closure* closure);
   template<typename Closure> inline void oops_do(Closure* closure) const;
@@ -181,7 +181,7 @@ public:
 
   // Called by the GC after an iteration that may clear dead referents.
   // This calls the registered callback function, if any.  num_dead is the
-  // number of entries which were either already NULL or were cleared by the
+  // number of entries which were either already null or were cleared by the
   // iteration.
   void report_num_dead(size_t num_dead) const;
 
@@ -317,7 +317,7 @@ private:
   template<typename IsAlive, typename F>
   static IfAliveFn<IsAlive, F> if_alive_fn(IsAlive* is_alive, F f);
 
-  // Wrapper for iteration handler, automatically skipping NULL entries.
+  // Wrapper for iteration handler, automatically skipping null entries.
   template<typename F> class SkipNullFn;
   template<typename F> static SkipNullFn<F> skip_null_fn(F f);
 };

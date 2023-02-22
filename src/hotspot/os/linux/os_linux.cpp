@@ -200,6 +200,9 @@ struct new_mallinfo {
 };
 typedef struct new_mallinfo (*mallinfo2_func_t)(void);
 static mallinfo2_func_t g_mallinfo2 = nullptr;
+
+typedef int (*malloc_info_func_t)(int options, FILE *stream);
+static malloc_info_func_t g_malloc_info = nullptr;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -803,7 +806,7 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
     //
     // The following 'minstack_size > os::vm_page_size() + PTHREAD_STACK_MIN'
     // if check is done for precaution.
-    if (minstack_size > (size_t)os::vm_page_size() + PTHREAD_STACK_MIN) {
+    if (minstack_size > os::vm_page_size() + PTHREAD_STACK_MIN) {
       tls_size = minstack_size - os::vm_page_size() - PTHREAD_STACK_MIN;
     }
   }
@@ -1108,7 +1111,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   //   lower end of primordial stack; reduce ulimit -s value a little bit
   //   so we won't install guard page on ld.so's data section.
   //   But ensure we don't underflow the stack size - allow 1 page spare
-  if (stack_size >= (size_t)(3 * os::vm_page_size())) {
+  if (stack_size >= 3 * os::vm_page_size()) {
     stack_size -= 2 * os::vm_page_size();
   }
 
@@ -2263,7 +2266,7 @@ void os::Linux::print_steal_info(outputStream* st) {
 void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
@@ -2705,7 +2708,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  if (UseTransparentHugePages && alignment_hint > (size_t)vm_page_size()) {
+  if (UseTransparentHugePages && alignment_hint > vm_page_size()) {
     // We don't check the return value: madvise(MADV_HUGEPAGE) may not
     // be supported or the memory may already be backed by huge pages.
     ::madvise(addr, bytes, MADV_HUGEPAGE);
@@ -2718,7 +2721,7 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   // uncommitted at all. We don't do anything in this case to avoid creating a segment with
   // small pages on top of the SHM segment. This method always works for small pages, so we
   // allow that in any case.
-  if (alignment_hint <= (size_t)os::vm_page_size() || can_commit_large_page_memory()) {
+  if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
     commit_memory(addr, bytes, alignment_hint, !ExecMem);
   }
 }
@@ -3449,7 +3452,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
                          byte_size_in_exact_unit(page_size),
                          exact_unit_for_byte_size(page_size));
       for (size_t page_size_ = _page_sizes.next_smaller(page_size);
-          page_size_ != (size_t)os::vm_page_size();
+          page_size_ != os::vm_page_size();
           page_size_ = _page_sizes.next_smaller(page_size_)) {
         flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
         p = mmap(nullptr, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
@@ -3919,7 +3922,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED;
 
   // For large pages additional flags are required.
-  if (page_size > (size_t) os::vm_page_size()) {
+  if (page_size > os::vm_page_size()) {
     flags |= MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   }
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
@@ -3949,7 +3952,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
   assert(_page_sizes.contains(page_size), "Must be a valid page size");
-  assert(page_size > (size_t)os::vm_page_size(), "Must be a large page size");
+  assert(page_size > os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.
@@ -4279,13 +4282,16 @@ void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  int page_size = sysconf(_SC_PAGESIZE);
-  OSInfo::set_vm_page_size(page_size);
-  OSInfo::set_vm_allocation_granularity(page_size);
-  if (os::vm_page_size() <= 0) {
+  int sys_pg_size = sysconf(_SC_PAGESIZE);
+  if (sys_pg_size < 0) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
+  }
+  size_t page_size = (size_t) sys_pg_size;
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() == 0) {
+    fatal("os_linux.cpp: os::init: OSInfo::set_vm_page_size failed");
   }
   _page_sizes.add(os::vm_page_size());
 
@@ -4294,6 +4300,7 @@ void os::init(void) {
 #ifdef __GLIBC__
   g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
   g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_malloc_info = CAST_TO_FN_PTR(malloc_info_func_t, dlsym(RTLD_DEFAULT, "malloc_info"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -5384,6 +5391,13 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     // We should have either mallinfo or mallinfo2
     ShouldNotReachHere();
   }
+}
+
+int os::Linux::malloc_info(FILE* stream) {
+  if (g_malloc_info == nullptr) {
+    return -2;
+  }
+  return g_malloc_info(0, stream);
 }
 #endif // __GLIBC__
 

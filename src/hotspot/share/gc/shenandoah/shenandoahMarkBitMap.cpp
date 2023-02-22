@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,7 @@ size_t ShenandoahMarkBitMap::mark_distance() {
 
 HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
                                                      const HeapWord* limit) const {
-  assert(limit != NULL, "limit must not be NULL");
+  assert(limit != nullptr, "limit must not be null");
   // Round addr up to a possible object boundary to be safe.
   size_t const addr_offset = address_to_index(align_up(addr, HeapWordSize << LogMinObjAlignment));
   size_t const limit_offset = address_to_index(limit);
