@@ -40,6 +40,11 @@ import jdk.jfr.internal.jfc.JFC;
 
 /**
  * A collection of settings and metadata describing the configuration.
+ * <p>
+ * The following example shows how the {@code Configuration} class can be used
+ * to list available configurations and how to pass a configuration object to a
+ * {@code Recording}.
+ * {@snippet class = "Snippets" region = "ConfigurationxsOverview"}
  *
  * @since 9
  */

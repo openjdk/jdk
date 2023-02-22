@@ -33,6 +33,12 @@ import java.lang.annotation.Target;
 /**
  * Event field annotation, specifies that the value is a boolean flag, a {@code true} or
  * {@code false} value.
+ * <p>
+ * The following example shows how the {@code BooleanFlag} annotation can be used to
+ * hint to a graphical user interface that the rollback setting is a boolean
+ * value that could displayed as a checkbox.
+ *
+ * {@snippet class="Snippets" region="BooleanFlagOverview"}
  *
  * @since 9
  */

@@ -32,6 +32,11 @@ import java.lang.annotation.Target;
 
 /**
  * Event field annotation, specifies that a value represents an amount of data (for example, bytes).
+ * <p>
+ * The following example shows how the {@code DataAmount} annotation can be used to
+ * set the units {@code BITS} and {@code BYTES} to event fields.
+ *
+ * {@snippet class="Snippets" region="DataAmountOverview"}
  *
  * @since 9
  */
