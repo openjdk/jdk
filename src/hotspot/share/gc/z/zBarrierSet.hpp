@@ -93,7 +93,7 @@ public:
     //
     static oop oop_load_in_heap(zpointer* p);
     static oop oop_load_in_heap(oop* p)       { return oop_load_in_heap((zpointer*)p); };
-    static oop oop_load_in_heap(narrowOop* p) { unsupported(); return NULL; }
+    static oop oop_load_in_heap(narrowOop* p) { unsupported(); return nullptr; }
 
     static oop oop_load_in_heap_at(oop base, ptrdiff_t offset);
 
@@ -109,12 +109,12 @@ public:
 
     static oop oop_atomic_cmpxchg_in_heap(zpointer* p, oop compare_value, oop new_value);
     static oop oop_atomic_cmpxchg_in_heap(oop* p, oop compare_value, oop new_value)       { return oop_atomic_cmpxchg_in_heap((zpointer*)p, compare_value, new_value); }
-    static oop oop_atomic_cmpxchg_in_heap(narrowOop* p, oop compare_value, oop new_value) { unsupported(); return NULL; }
+    static oop oop_atomic_cmpxchg_in_heap(narrowOop* p, oop compare_value, oop new_value) { unsupported(); return nullptr; }
     static oop oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value);
 
     static oop oop_atomic_xchg_in_heap(zpointer* p, oop new_value);
     static oop oop_atomic_xchg_in_heap(oop* p, oop new_value)       { return oop_atomic_xchg_in_heap((zpointer*)p, new_value); }
-    static oop oop_atomic_xchg_in_heap(narrowOop* p, oop new_value) { unsupported(); return NULL; }
+    static oop oop_atomic_xchg_in_heap(narrowOop* p, oop new_value) { unsupported(); return nullptr; }
     static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value);
 
     static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, zpointer* src_raw,
@@ -138,17 +138,17 @@ public:
     //
     static oop oop_load_not_in_heap(zpointer* p);
     static oop oop_load_not_in_heap(oop* p);
-    static oop oop_load_not_in_heap(narrowOop* p) { unsupported(); return NULL; }
+    static oop oop_load_not_in_heap(narrowOop* p) { unsupported(); return nullptr; }
 
     static oop oop_atomic_cmpxchg_not_in_heap(zpointer* p, oop compare_value, oop new_value);
     static oop oop_atomic_cmpxchg_not_in_heap(oop* p, oop compare_value, oop new_value) {
       return oop_atomic_cmpxchg_not_in_heap((zpointer*)p, compare_value, new_value);
     }
-    static oop oop_atomic_cmpxchg_not_in_heap(narrowOop* addr, oop compare_value, oop new_value) { unsupported(); return NULL; }
+    static oop oop_atomic_cmpxchg_not_in_heap(narrowOop* addr, oop compare_value, oop new_value) { unsupported(); return nullptr; }
 
     static oop oop_atomic_xchg_not_in_heap(zpointer* p, oop new_value);
     static oop oop_atomic_xchg_not_in_heap(oop* p, oop new_value)       { return oop_atomic_xchg_not_in_heap((zpointer*)p, new_value); }
-    static oop oop_atomic_xchg_not_in_heap(narrowOop* p, oop new_value) { unsupported(); return NULL; }
+    static oop oop_atomic_xchg_not_in_heap(narrowOop* p, oop new_value) { unsupported(); return nullptr; }
   };
 };
 

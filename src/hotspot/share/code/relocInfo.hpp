@@ -1100,7 +1100,7 @@ class barrier_Relocation : public DataRelocation {
 
  public:
   int offset() override                  { ShouldNotReachHere(); return 0; }
-  address value() override               { ShouldNotReachHere(); return NULL; }
+  address value() override               { ShouldNotReachHere(); return nullptr; }
   void set_value(address value) override { ShouldNotReachHere(); }
 };
 

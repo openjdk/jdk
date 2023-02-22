@@ -45,15 +45,15 @@ inline void ZStoreBarrierBuffer::add(volatile zpointer* p, zpointer prev) {
 
 inline ZStoreBarrierBuffer* ZStoreBarrierBuffer::buffer_for_store(bool heal) {
   if (heal) {
-    return NULL;
+    return nullptr;
   }
   Thread* const thread = Thread::current();
   if (!thread->is_Java_thread()) {
-    return NULL;
+    return nullptr;
   }
 
   ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(JavaThread::cast(thread));
-  return ZBufferStoreBarriers ? buffer : NULL;
+  return ZBufferStoreBarriers ? buffer : nullptr;
 }
 
 #endif // SHARE_GC_Z_ZSTOREBARRIERBUFFER_INLINE_HPP

@@ -935,7 +935,7 @@ bool ZPageAllocator::is_alloc_stalling_for_old() const {
   ZLocker<ZLock> locker(&_lock);
 
   ZPageAllocation* const allocation = _stalled.first();
-  if (allocation == NULL) {
+  if (allocation == nullptr) {
     // No stalled allocations
     return false;
   }
@@ -959,7 +959,7 @@ void ZPageAllocator::notify_out_of_memory() {
 
 void ZPageAllocator::restart_gc() const {
   ZPageAllocation* const allocation = _stalled.first();
-  if (allocation == NULL) {
+  if (allocation == nullptr) {
     // No stalled allocations
     return;
   }

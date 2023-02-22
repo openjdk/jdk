@@ -43,12 +43,12 @@
 // that assumes that the loaded pointer is frequently going to be load-good or null
 // when checked. Therefore, the nmethod load barriers just apply the shift with the
 // current "good" shift (which is patched with nmethod entry barriers for each GC
-// phase). If the result of that shift was a raw NULL value, then the ZF flag is set.
+// phase). If the result of that shift was a raw null value, then the ZF flag is set.
 // If the result is a good pointer, then the very last bit that was removed by the
 // shift, must have been a 1, which would have set the CF flag. Therefore, the "above"
 // branch condition code is used to take a slowpath only iff CF == 0 and ZF == 0.
 // CF == 0 implies it was not a good pointer, and ZF == 0 implies the resulting address
-// was not a NULL value. Then we decide that the pointer is bad. This optimization
+// was not a null value. Then we decide that the pointer is bad. This optimization
 // is necessary to get satisfactory performance, but does come with a few constraints:
 // 1) The load barrier can only recognize 4 different good patterns across all GC phases.
 //    The reason is that when a load barrier applies the currently good shift, then

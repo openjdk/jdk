@@ -175,7 +175,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
   const uintptr_t value = static_cast<uintptr_t>(ptr);
 
   if (value == 0) {
-    // Accept raw NULL
+    // Accept raw null
     return false;
   }
 

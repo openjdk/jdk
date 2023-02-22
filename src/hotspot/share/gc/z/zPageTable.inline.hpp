@@ -70,7 +70,7 @@ template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {
   _index_distributor.do_indices([&](int index) {
     ZPage* const page = _table->at(index);
-    if (page != NULL) {
+    if (page != nullptr) {
       const size_t start_index = untype(page->start()) >> ZGranuleSizeShift;
       if (size_t(index) == start_index) {
         // Next page found

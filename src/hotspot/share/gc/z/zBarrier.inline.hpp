@@ -134,8 +134,8 @@ inline ZGeneration* ZBarrier::remap_generation(zpointer ptr) {
   }
 
   const zaddress_unsafe addr = ZPointer::uncolor_unsafe(ptr);
-  if (ZGeneration::young()->forwarding(addr) != NULL) {
-    assert(ZGeneration::old()->forwarding(addr) == NULL, "Mutually exclusive");
+  if (ZGeneration::young()->forwarding(addr) != nullptr) {
+    assert(ZGeneration::old()->forwarding(addr) == nullptr, "Mutually exclusive");
     return ZGeneration::young();
   } else {
     return ZGeneration::old();
@@ -345,7 +345,7 @@ inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath s
   const zaddress good_addr = slow_path(load_good_addr);
 
   // Self heal
-  if (p != NULL) {
+  if (p != nullptr) {
     // Color
     const zpointer good_ptr = color(good_addr, o);
 
@@ -679,7 +679,7 @@ inline void ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(volatile zpo
     return ZBarrier::no_keep_alive_heap_store_slow_path(p, addr);
   };
 
-  barrier(is_store_good_fast_path, slow_path, color_store_good, NULL, prev);
+  barrier(is_store_good_fast_path, slow_path, color_store_good, nullptr, prev);
 }
 
 inline void ZBarrier::remember(volatile zpointer* p) {

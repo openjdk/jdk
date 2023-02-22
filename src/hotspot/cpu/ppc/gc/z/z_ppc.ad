@@ -96,7 +96,7 @@ static void z_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
   z_store_barrier(_masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
   z_color(_masm, rold_zpointer, oldval);
   __ cmpxchgd(CCR0, R0, rold_zpointer, rnew_zpointer, mem,
-              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, NULL, true,
+              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
 
   if (acquire) {
@@ -118,7 +118,7 @@ static void z_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
   z_store_barrier(_masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
   z_color(_masm, rold_zpointer, oldval);
   __ cmpxchgd(CCR0, res, rold_zpointer, rnew_zpointer, mem,
-              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, NULL, true,
+              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
   z_uncolor(_masm, res);
 

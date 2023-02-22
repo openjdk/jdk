@@ -80,7 +80,7 @@ public:
     switch (generation) {
       case ZGenerationIdOptional::young: return &subphase.young();
       case ZGenerationIdOptional::old: return &subphase.old();
-      default: return NULL;
+      default: return nullptr;
     }
   }
 
@@ -112,7 +112,7 @@ void ZCLDsIteratorStrong::apply(CLDClosure* cl) {
 
 void ZCLDsIteratorWeak::apply(CLDClosure* cl) {
   ZRootStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph, _generation);
-  ClassLoaderDataGraph::roots_cld_do(NULL /* strong */, cl /* weak */);
+  ClassLoaderDataGraph::roots_cld_do(nullptr /* strong */, cl /* weak */);
 }
 
 void ZCLDsIteratorAll::apply(CLDClosure* cl) {

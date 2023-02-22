@@ -114,7 +114,7 @@ static void z_verify_possibly_weak_oop(zpointer* p) {
     //guarantee(ZPointer::is_store_good(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
     guarantee(ZPointer::is_marked_old(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
 
-    const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+    const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
     guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
     guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
   }
@@ -148,14 +148,14 @@ public:
 
       // Minor collections could have relocated the object;
       // use load barrier to find correct object.
-      const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+      const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
       z_verify_root_oop_object(addr, p);
     } else {
       // Don't know the state of the oop
       if (is_valid(o)) {
         // it looks like a valid colored oop;
         // use load barrier to find correct object.
-        const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+        const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
         z_verify_root_oop_object(addr, p);
       }
     }
@@ -262,10 +262,10 @@ public:
     JavaThread* const jt = JavaThread::cast(thread);
     const ZStackWatermark* const watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
     if (watermark->processing_started_acquire()) {
-      thread->oops_do_no_frames(_verify_cl, NULL);
+      thread->oops_do_no_frames(_verify_cl, nullptr);
 
        if (watermark->processing_completed_acquire()) {
-         thread->oops_do_frames(_verify_cl, NULL);
+         thread->oops_do_frames(_verify_cl, nullptr);
        }
     }
   }
@@ -448,7 +448,7 @@ void ZVerify::after_weak_processing() {
 
 typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
-static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = NULL;
+static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 
 #define BAD_REMSET_ARG(p, ptr, addr) \
   "Missing remembered set at " PTR_FORMAT " pointing at " PTR_FORMAT \
@@ -479,7 +479,7 @@ public:
       return;
     }
 
-    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(p) != NULL) {
+    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(p) != nullptr) {
       // If this oop location is in the store barrier buffer, we can't assume
       // that it should have a remset entry
       return;
@@ -597,7 +597,7 @@ public:
       return;
     }
 
-    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(p) != NULL) {
+    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(p) != nullptr) {
       // If this to-space oop location is in the store barrier buffer, we
       // can't assume that it should have a remset entry
       return;
@@ -606,7 +606,7 @@ public:
     const uintptr_t p_offset = uintptr_t(p) - untype(_to_addr);
     volatile zpointer* const fromspace_p = (volatile zpointer*)(untype(_from_addr) + p_offset);
 
-    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(fromspace_p) != NULL) {
+    if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(fromspace_p) != nullptr) {
       // If this from-space oop location is in the store barrier buffer, we
       // can't assume that it should have a remset entry
       return;

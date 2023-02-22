@@ -310,11 +310,11 @@ public:
   }
 
   ZStatTimer(const ZStatSubPhase& phase) :
-      ZStatTimer(phase, NULL /* timer */) {
+      ZStatTimer(phase, nullptr /* timer */) {
   }
 
   ZStatTimer(const ZStatCriticalPhase& phase) :
-      ZStatTimer(phase, NULL /* timer */) {
+      ZStatTimer(phase, nullptr /* timer */) {
   }
 
   ~ZStatTimer() {

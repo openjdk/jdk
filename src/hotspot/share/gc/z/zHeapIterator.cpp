@@ -72,7 +72,7 @@ public:
       _field_cl(field_cl) {}
 
   void visit_field(oop base, oop* p) const {
-    if (_field_cl != NULL) {
+    if (_field_cl != nullptr) {
       _field_cl->do_field(base, p);
     }
   }
@@ -131,7 +131,7 @@ public:
       _context(context) {}
 
   virtual void do_oop(oop* p) {
-    _context.visit_field(NULL, p);
+    _context.visit_field(nullptr, p);
     const oop obj = load_oop(p);
     _context.mark_and_push(obj);
   }
@@ -156,7 +156,7 @@ public:
       _context(context) {}
 
   virtual void do_oop(oop* p) {
-    _context.visit_field(NULL, p);
+    _context.visit_field(nullptr, p);
     const oop obj = load_oop(p);
     _context.mark_and_push(obj);
   }
@@ -476,7 +476,7 @@ void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context) {
 }
 
 void ZHeapIterator::object_iterate(ObjectClosure* object_cl, uint worker_id) {
-  const ZHeapIteratorContext context(this, object_cl, NULL /* field_cl */, worker_id);
+  const ZHeapIteratorContext context(this, object_cl, nullptr /* field_cl */, worker_id);
 
   if (_visit_weaks) {
     object_iterate_inner<true /* VisitWeaks */>(context);

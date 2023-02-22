@@ -87,7 +87,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
 
   ZForwarding* const forwarding = ZGeneration::old()->forwarding(ZOffset::address_unsafe(page->start()));
 
-  if (forwarding == NULL) {
+  if (forwarding == nullptr) {
     // This page was provably not part of the old relocation set
     return true;
   }

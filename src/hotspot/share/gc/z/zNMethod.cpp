@@ -80,10 +80,10 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
       if (!reloc->oop_is_immediate()) {
         // Non-immediate oop found
         has_non_immediate_oops = true;
-      } else if (reloc->oop_value() != NULL) {
-        // Non-NULL immediate oop found. NULL oops can safely be
+      } else if (reloc->oop_value() != nullptr) {
+        // Non-null immediate oop found. null oops can safely be
         // ignored since the method will be re-registered if they
-        // are later patched to be non-NULL.
+        // are later patched to be non-null.
         immediate_oops.push(reloc->oop_addr());
       }
     }

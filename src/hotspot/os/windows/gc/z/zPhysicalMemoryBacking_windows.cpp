@@ -196,7 +196,7 @@ public:
   void unmap(zaddress_unsafe addr, size_t size) const {
     const size_t npages = size >> ZGranuleSizeShift;
 
-    const bool res = MapUserPhysicalPages((char*)untype(addr), npages, NULL);
+    const bool res = MapUserPhysicalPages((char*)untype(addr), npages, nullptr);
     if (!res) {
       fatal("Failed to unmap view " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
             addr, size / M, GetLastError());

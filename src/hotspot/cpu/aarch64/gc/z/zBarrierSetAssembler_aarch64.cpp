@@ -181,15 +181,15 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ ldrh(rtmp, ref_addr);
       // Atomic operations must ensure that the contents of memory are store-good before
       // an atomic operation can execute.
-      // A not relocatable object could have spurious raw NULL pointers in its fields after
+      // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
       __ movzw(rnew_zpointer, barrier_Relocation::unpatched);
       __ cmpw(rtmp, rnew_zpointer);
     } else {
       __ ldr(rtmp, ref_addr);
-      // Stores on relocatable objects never need to deal with raw NULL pointers in fields.
-      // Raw NULL pointers may only exist in the young generation, as they get pruned when
+      // Stores on relocatable objects never need to deal with raw null pointers in fields.
+      // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeMov);
@@ -279,12 +279,12 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ b(medium_path_continuation);
   } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
-    // raw NULL value. If it was not NULL, then there is no doubt we need to take a slow path.
+    // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     __ lea(rtmp2, ref_addr);
     __ ldr(rtmp1, rtmp2);
     __ cbnz(rtmp1, slow_path);
 
-    // If we get this far, we know there is a young raw NULL value in the field.
+    // If we get this far, we know there is a young raw null value in the field.
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
     __ movzw(rtmp1, barrier_Relocation::unpatched);
     __ cmpxchg(rtmp2, zr, rtmp1,
@@ -297,7 +297,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ b(medium_path_continuation);
   } else {
     // A non-atomic relocatable object won't get to the medium fast path due to a
-    // raw NULL in the young generation. We only get here because the field is bad.
+    // raw null in the young generation. We only get here because the field is bad.
     // In this path we don't need any self healing, so we can avoid a runtime call
     // most of the time by buffering the store barrier to be applied lazily.
     store_barrier_buffer_add(masm,
@@ -1442,7 +1442,7 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   // make sure klass is 'reasonable', which is not zero.
   __ load_klass(tmp1, obj);  // get klass
   __ tst(tmp1, tmp1);
-  __ br(Assembler::EQ, error); // if klass is NULL it is broken
+  __ br(Assembler::EQ, error); // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory

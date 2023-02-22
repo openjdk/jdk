@@ -199,7 +199,7 @@ ZForwarding* ZRelocateQueue::prune_and_claim() {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 class ZRelocateQueueSynchronizeThread {
@@ -236,7 +236,7 @@ void ZRelocateQueue::desynchronize_thread() {
 ZForwarding* ZRelocateQueue::synchronize_poll() {
   // Fast path avoids locking
   if (!needs_attention()) {
-    return NULL;
+    return nullptr;
   }
 
   // Slow path to get the next forwarding and/or synchronize
@@ -244,14 +244,14 @@ ZForwarding* ZRelocateQueue::synchronize_poll() {
 
   {
     ZForwarding* const forwarding = prune_and_claim();
-    if (forwarding != NULL) {
+    if (forwarding != nullptr) {
       // Don't become synchronized while there are elements in the queue
       return forwarding;
     }
   }
 
   if (!_synchronize) {
-    return NULL;
+    return nullptr;
   }
 
   ZRelocateQueueSynchronizeThread rqst(this);
@@ -260,12 +260,12 @@ ZForwarding* ZRelocateQueue::synchronize_poll() {
     _lock.wait();
 
     ZForwarding* const forwarding = prune_and_claim();
-    if (forwarding != NULL) {
+    if (forwarding != nullptr) {
       return forwarding;
     }
   } while (_synchronize);
 
-  return NULL;
+  return nullptr;
 }
 
 void ZRelocateQueue::clear() {
@@ -431,7 +431,7 @@ public:
       Atomic::inc(&_in_place_count);
     }
 
-    if (target != NULL) {
+    if (target != nullptr) {
       // Retire the old target page
       retire_target_page(_generation, target);
     }
@@ -444,13 +444,13 @@ public:
   }
 
   void free_target_page(ZPage* page) {
-    if (page != NULL) {
+    if (page != nullptr) {
       retire_target_page(_generation, page);
     }
   }
 
   zaddress alloc_object(ZPage* page, size_t size) const {
-    return (page != NULL) ? page->alloc_object(size) : zaddress::null;
+    return (page != nullptr) ? page->alloc_object(size) : zaddress::null;
   }
 
   void undo_alloc_object(ZPage* page, zaddress addr, size_t size) const {
@@ -480,7 +480,7 @@ public:
 
   ~ZRelocateMediumAllocator() {
     for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
-      if (_shared[i] != NULL) {
+      if (_shared[i] != nullptr) {
         retire_target_page(_generation, _shared[i]);
       }
     }
@@ -511,13 +511,13 @@ public:
       ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
       ZPage* const to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
       set_shared(to_age, to_page);
-      if (to_page == NULL) {
+      if (to_page == nullptr) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
       }
 
       // This thread is responsible for retiring the shared target page
-      if (target != NULL) {
+      if (target != nullptr) {
         retire_target_page(_generation, target);
       }
     }
@@ -530,7 +530,7 @@ public:
 
     ZLocker<ZConditionLock> locker(&_lock);
     assert(_in_place, "Invalid state");
-    assert(shared(age) == NULL, "Invalid state");
+    assert(shared(age) == nullptr, "Invalid state");
     assert(page != NULL, "Invalid page");
 
     set_shared(age, page);
@@ -544,7 +544,7 @@ public:
   }
 
   zaddress alloc_object(ZPage* page, size_t size) const {
-    return (page != NULL) ? page->alloc_object_atomic(size) : zaddress::null;
+    return (page != nullptr) ? page->alloc_object_atomic(size) : zaddress::null;
   }
 
   void undo_alloc_object(ZPage* page, zaddress addr, size_t size) const {
@@ -748,7 +748,7 @@ private:
     const zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
     ZForwarding* const forwarding = ZGeneration::young()->forwarding(addr_unsafe);
 
-    if (forwarding == NULL) {
+    if (forwarding == nullptr) {
       // Object isn't being relocated
       const zaddress addr = safe(addr_unsafe);
       if (!add_remset_if_young(p, addr)) {
@@ -868,7 +868,7 @@ private:
       const ZPageAge to_age = _forwarding->to_age();
       ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target(to_age));
       set_target(to_age, to_page);
-      if (to_page != NULL) {
+      if (to_page != nullptr) {
         continue;
       }
 
@@ -1120,7 +1120,7 @@ public:
       // worker thread needs to finish relocate these pages, and allow the
       // other threads to continue and proceed to a blocking state. After that,
       // the worker threads are allowed to safepoint synchronize.
-      for (ZForwarding* forwarding; (forwarding = _queue->synchronize_poll()) != NULL;) {
+      for (ZForwarding* forwarding; (forwarding = _queue->synchronize_poll()) != nullptr;) {
         do_forwarding(forwarding);
       }
 
@@ -1160,7 +1160,7 @@ static void remap_and_maybe_add_remset(volatile zpointer* p) {
   const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(p, ptr);
 
   if (is_null(addr)) {
-    // No need for remset entries for NULL pointers
+    // No need for remset entries for null pointers
     return;
   }
 

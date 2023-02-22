@@ -171,7 +171,7 @@ const uintptr_t   ZPointerRemapped11      = z_pointer_bit(ZPointerRemappedShift,
 
 // The shift table is tightly coupled with the zpointer layout given above
 constexpr int     ZPointerLoadShiftTable[] = {
-  ZPointerRemappedShift + ZPointerRemappedShift, // [0] NULL
+  ZPointerRemappedShift + ZPointerRemappedShift, // [0] Null
   ZPointerRemappedShift + 1,                     // [1] Remapped00
   ZPointerRemappedShift + 2,                     // [2] Remapped01
   0,

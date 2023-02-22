@@ -79,7 +79,7 @@ oop ZContinuation::load_oop(stackChunkOop chunk, void* addr) {
   const zpointer zptr = materialize_zpointer(chunk, addr);
 
   // Apply the load barrier, without healing the zaddress/zpointer
-  return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(NULL /* p */, zptr));
+  return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(nullptr /* p */, zptr));
 }
 
 ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk)

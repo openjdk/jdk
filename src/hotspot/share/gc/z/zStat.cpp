@@ -796,7 +796,7 @@ ZStatSubPhase::ZStatSubPhase(const char* name, ZGenerationId id) :
     ZStatPhase(id == ZGenerationId::young ? "Young Subphase" : "Old Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  if (timer != NULL) {
+  if (timer != nullptr) {
     assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
     timer->register_gc_phase_start(name(), start);
   }
@@ -815,7 +815,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
     return;
   }
 
-  if (timer != NULL) {
+  if (timer != nullptr) {
     assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
     timer->register_gc_phase_end(end);
   }
@@ -869,7 +869,7 @@ ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
     ZStatTimer(phase, ZGeneration::old()->gc_timer()) {}
 
 ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
-    ZStatTimer(phase, NULL /* gc_timer */) {
+    ZStatTimer(phase, nullptr /* gc_timer */) {
   assert(Thread::current()->is_Worker_thread(), "Should only be called by worker thread");
 }
 

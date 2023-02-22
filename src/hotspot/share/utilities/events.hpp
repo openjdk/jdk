@@ -300,10 +300,10 @@ inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_zgc_phase_switch(const char* format, ...) {
-  if (LogEvents && _zgc_phase_switch != NULL) {
+  if (LogEvents && _zgc_phase_switch != nullptr) {
     va_list ap;
     va_start(ap, format);
-    _zgc_phase_switch->logv(NULL /* thread */, format, ap);
+    _zgc_phase_switch->logv(nullptr /* thread */, format, ap);
     va_end(ap);
   }
 }

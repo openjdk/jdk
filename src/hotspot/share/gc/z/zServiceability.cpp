@@ -183,7 +183,7 @@ ZServiceability::ZServiceability(size_t initial_capacity,
     _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
     _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
     _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
-    _counters(NULL) {
+    _counters(nullptr) {
 }
 
 void ZServiceability::initialize() {

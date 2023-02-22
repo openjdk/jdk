@@ -192,7 +192,7 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
 zaddress ZBarrier::heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal) {
   ZStoreBarrierBuffer* buffer = ZStoreBarrierBuffer::buffer_for_store(heal);
 
-  if (buffer != NULL) {
+  if (buffer != nullptr) {
     // Buffer store barriers whenever possible
     buffer->add(p, prev);
   } else {

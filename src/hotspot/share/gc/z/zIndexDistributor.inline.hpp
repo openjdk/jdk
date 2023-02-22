@@ -299,7 +299,7 @@ inline void* ZIndexDistributor::create_strategy(int count) {
   switch (ZIndexDistributorStrategy) {
   case 0: return new ZIndexDistributorClaimTree(count);
   case 1: return new ZIndexDistributorStriped(count);
-  default: fatal("Unknown ZIndexDistributorStrategy"); return NULL;
+  default: fatal("Unknown ZIndexDistributorStrategy"); return nullptr;
   };
 }
 

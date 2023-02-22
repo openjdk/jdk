@@ -235,7 +235,7 @@ private:
 public:
   ZFindBaseOopClosure(volatile zpointer* p) :
       _p(p),
-      _result(NULL) {}
+      _result(nullptr) {}
 
   virtual void do_object(oop obj) {
     const uintptr_t p_int = reinterpret_cast<uintptr_t>(_p);
@@ -292,11 +292,11 @@ void ZPage::print_on_msg(outputStream* out, const char* msg) const {
                 seqnum(),
                 is_allocating()  ? " Allocating " : "",
                 is_relocatable() ? " Relocatable" : "",
-                msg == NULL ? "" : msg);
+                msg == nullptr ? "" : msg);
 }
 
 void ZPage::print_on(outputStream* out) const {
-  print_on_msg(out, NULL);
+  print_on_msg(out, nullptr);
 }
 
 void ZPage::print() const {

@@ -50,7 +50,7 @@ size_t ZAllocatorEden::remaining() const {
 
 ZPageAge ZAllocatorForRelocation::install() {
   for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
-    if (_relocation[i] == NULL) {
+    if (_relocation[i] == nullptr) {
       _relocation[i] = this;
       return static_cast<ZPageAge>(i + 1);
     }

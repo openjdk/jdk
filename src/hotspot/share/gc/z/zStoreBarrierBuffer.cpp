@@ -96,7 +96,7 @@ void ZStoreBarrierBuffer::install_base_pointers_inner() {
     // load good and check if the page is being relocated.
     ZGeneration* const remap_generation = ZBarrier::remap_generation(ptr);
     ZForwarding* const forwarding = remap_generation->forwarding(p_unsafe);
-    if (forwarding != NULL) {
+    if (forwarding != nullptr) {
       // Page is being relocated
       ZPage* const page = forwarding->page();
       _base_pointers[i] = page->find_base(p);

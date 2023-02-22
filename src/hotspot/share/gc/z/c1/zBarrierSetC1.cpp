@@ -223,8 +223,8 @@ static bool barrier_needed(LIRAccess& access) {
 ZBarrierSetC1::ZBarrierSetC1() :
     _load_barrier_on_oop_field_preloaded_runtime_stub(NULL),
     _load_barrier_on_weak_oop_field_preloaded_runtime_stub(NULL),
-    _store_barrier_on_oop_field_with_healing(NULL),
-    _store_barrier_on_oop_field_without_healing(NULL) {}
+    _store_barrier_on_oop_field_with_healing(nullptr),
+    _store_barrier_on_oop_field_without_healing(nullptr) {}
 
 address ZBarrierSetC1::load_barrier_on_oop_field_preloaded_runtime_stub(DecoratorSet decorators) const {
   assert((decorators & ON_PHANTOM_OOP_REF) == 0, "Unsupported decorator");
@@ -253,7 +253,7 @@ private:
 
 public:
   LIR_OpZColor(LIR_Opr opr) :
-    LIR_Op(lir_none, opr, NULL /* info */),
+    LIR_Op(lir_none, opr, nullptr /* info */),
     _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {
@@ -292,7 +292,7 @@ public:
                       LIR_Opr new_zpointer,
                       CodeStub* stub,
                       CodeEmitInfo* info) :
-    LIR_Op(lir_none, new_zpointer, NULL /* info */),
+    LIR_Op(lir_none, new_zpointer, nullptr /* info */),
     _addr(addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
@@ -310,7 +310,7 @@ public:
     state->do_output(_new_zpointer);
     state->do_stub(_stub);
 
-    if (_info != NULL) {
+    if (_info != nullptr) {
       state->do_info(_info);
     }
   }
@@ -318,7 +318,7 @@ public:
   virtual void emit_code(LIR_Assembler* ce) {
     const ZBarrierSetAssembler* const bs_asm =
         (const ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-    if (_info != NULL) {
+    if (_info != nullptr) {
       ce->add_debug_info_for_null_check_here(_info);
     }
     bs_asm->generate_c1_store_barrier(ce,
@@ -397,7 +397,7 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
                                     new_zpointer,
                                     stub,
                                     access.access_emit_info()));
-  access.access_emit_info() = NULL;
+  access.access_emit_info() = nullptr;
 
   return new_zpointer;
 }
@@ -520,7 +520,7 @@ public:
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ZBarrierSet::assembler()->generate_c1_store_barrier_runtime_stub(sasm, _self_healing);
-    return NULL;
+    return nullptr;
   }
 };
 

@@ -145,7 +145,7 @@ private:
   const uintptr_t                    _color;
 
   static ZUncoloredRoot::RootFunction select_function(void* context) {
-    if (context == NULL) {
+    if (context == nullptr) {
       return ZUncoloredRoot::process;
     }
 
@@ -171,7 +171,7 @@ void ZStackWatermark::process_head(void* context) {
   _jt->oops_do_no_frames(&cl, &cb_cl);
 
   zaddress_unsafe* const invisible_root = ZThreadLocalData::invisible_root(_jt);
-  if (invisible_root != NULL) {
+  if (invisible_root != nullptr) {
     ZUncoloredRoot::process_invisible(invisible_root, color);
   }
 }

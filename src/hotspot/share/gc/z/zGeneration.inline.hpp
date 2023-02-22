@@ -129,7 +129,7 @@ inline void ZGeneration::mark_object_if_active(zaddress addr) {
 
 inline zaddress ZGeneration::relocate_or_remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
-  if (forwarding == NULL) {
+  if (forwarding == nullptr) {
     // Not forwarding
     return safe(addr);
   }
@@ -140,7 +140,7 @@ inline zaddress ZGeneration::relocate_or_remap_object(zaddress_unsafe addr) {
 
 inline zaddress ZGeneration::remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
-  if (forwarding == NULL) {
+  if (forwarding == nullptr) {
     // Not forwarding
     return safe(addr);
   }

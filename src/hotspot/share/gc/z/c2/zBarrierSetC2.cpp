@@ -70,20 +70,20 @@ public:
       _table(table),
       _current_entry(table->_table[0]),
       _current_index(0) {
-      if (_current_entry == NULL) {
+      if (_current_entry == nullptr) {
         next();
       }
     }
 
-    bool has_next() { return _current_entry != NULL; }
+    bool has_next() { return _current_entry != nullptr; }
     K key()         { return _current_entry->_key; }
     V value()       { return _current_entry->_value; }
 
     void next() {
-      if (_current_entry != NULL) {
+      if (_current_entry != nullptr) {
         _current_entry = _current_entry->_next;
       }
-      while (_current_entry == NULL && ++_current_index < _table_size) {
+      while (_current_entry == nullptr && ++_current_index < _table_size) {
         _current_entry = _table->_table[_current_index];
       }
     }
@@ -104,12 +104,12 @@ public:
   }
 
   V* get(K key) const {
-    for (ZArenaHashtableEntry* e = _table[key & _table_mask]; e != NULL; e = e->_next) {
+    for (ZArenaHashtableEntry* e = _table[key & _table_mask]; e != nullptr; e = e->_next) {
       if (e->_key == key) {
         return &(e->_value);
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   Iterator iterator() {
@@ -128,7 +128,7 @@ private:
 
 public:
   ZBarrierSetC2State(Arena* arena) :
-    _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, NULL)),
+    _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
     _live(arena),
     _trampoline_stubs_count(0),
     _stubs_start_offset(0) {}
@@ -492,7 +492,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     Node* const payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
     const char*   copyfunc_name = "arraycopy";
-    const address copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
+    const address copyfunc_addr = phase->basictype2arraycopy(bt, nullptr, nullptr, true, copyfunc_name, true);
 
     const TypePtr* const raw_adr_type = TypeRawPtr::BOTTOM;
     const TypeFunc* const call_type = OptoRuntime::fast_arraycopy_Type();
@@ -563,7 +563,7 @@ static uint block_index(const Block* block, const Node* node) {
 
 // Look through various node aliases
 static const Node* look_through_node(const Node* node) {
-  while (node != NULL) {
+  while (node != nullptr) {
     const Node* new_node = node;
     if (node->is_Mach()) {
       const MachNode* const node_mach = node->as_Mach();
@@ -574,7 +574,7 @@ static const Node* look_through_node(const Node* node) {
         new_node = node->in(1);
       }
     }
-    if (new_node == node || new_node == NULL) {
+    if (new_node == node || new_node == nullptr) {
       break;
     } else {
       node = new_node;
@@ -600,16 +600,16 @@ static bool is_concrete(intptr_t offset) {
 }
 
 // Compute base + offset components of the memory address accessed by mach.
-// Return a node representing the base address, or NULL if the base cannot be
-// found or the offset is undefined or a concrete negative value. If a non-NULL
+// Return a node representing the base address, or null if the base cannot be
+// found or the offset is undefined or a concrete negative value. If a non-null
 // base is returned, the offset is a concrete, nonnegative value or unknown.
 static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
-  const TypePtr* adr_type = NULL;
+  const TypePtr* adr_type = nullptr;
   offset = 0;
   const Node* base = mach->get_base_and_disp(offset, adr_type);
 
-  if (base == NULL || base == NodeSentinel) {
-    return NULL;
+  if (base == nullptr || base == NodeSentinel) {
+    return nullptr;
   }
 
   if (offset == 0 && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
@@ -620,11 +620,11 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);
-    assert(base != NULL, "");
+    assert(base != nullptr, "");
   }
 
   if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
-    return NULL;
+    return nullptr;
   }
 
   return look_through_node(base);
@@ -682,10 +682,10 @@ static bool is_allocation(const Node* node) {
   if (fast_mach->ideal_Opcode() != Op_LoadP) {
     return false;
   }
-  const TypePtr* const adr_type = NULL;
+  const TypePtr* const adr_type = nullptr;
   intptr_t offset;
   const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == NULL || !base->is_Mach() || !is_concrete(offset)) {
+  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
     return false;
   }
   const MachNode* const base_mach = base->as_Mach();
@@ -710,7 +710,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
     Block* const access_block = cfg->get_block_for_node(access);
     const uint access_index = block_index(access_block, access);
 
-    if (access_obj == NULL) {
+    if (access_obj == nullptr) {
       // No information available
       continue;
     }
@@ -736,7 +736,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
         intptr_t mem_offset;
         const Node* const mem_obj = get_base_and_offset(mem_mach, mem_offset);
 
-        if (mem_obj == NULL ||
+        if (mem_obj == nullptr ||
             !is_concrete(access_offset) ||
             !is_concrete(mem_offset)) {
           // No information available

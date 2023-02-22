@@ -278,7 +278,7 @@ private:
     if (!finalizable) {
       return ZGeneration::old()->reference_discoverer();
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

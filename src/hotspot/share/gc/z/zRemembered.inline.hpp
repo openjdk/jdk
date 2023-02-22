@@ -33,13 +33,13 @@
 
 inline void ZRemembered::remember(volatile zpointer* p) const {
   ZPage* page = _page_table->get(p);
-  assert(page != NULL,  "Page missing in page table");
+  assert(page != nullptr,  "Page missing in page table");
   page->remember(p);
 }
 
 inline bool ZRemembered::is_remembered(volatile zpointer* p) const {
   ZPage* page = _page_table->get(p);
-  assert(page != NULL,  "Page missing in page table");
+  assert(page != nullptr,  "Page missing in page table");
   return page->is_remembered(p);
 }
 

@@ -83,7 +83,7 @@ class NativeInstruction {
   static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != NULL); return is_lui_at(instr) && extract_rd(instr) == zr; }
 
   static bool is_srli_at(address instr) {
-    assert_cond(instr != NULL);
+    assert_cond(instr != nullptr);
     return extract_opcode(instr) == 0b0010011 &&
            extract_funct3(instr) == 0b101 &&
            Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;

@@ -72,7 +72,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _relocated_remembered_fields_publish_young_seqnum(0),
     _in_place(false),
     _in_place_top_at_start(),
-    _in_place_thread(NULL) {}
+    _in_place_thread(nullptr) {}
 
 inline ZPageType ZForwarding::type() const {
   return _page->type();

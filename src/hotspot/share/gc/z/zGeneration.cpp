@@ -128,7 +128,7 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_workers(),
     _stat_mark(),
     _stat_relocation(),
-    _gc_timer(NULL) {
+    _gc_timer(nullptr) {
 }
 
 bool ZGeneration::is_initialized() const {
@@ -323,13 +323,13 @@ ConcurrentGCTimer* ZGeneration::gc_timer() const {
 }
 
 void ZGeneration::set_gc_timer(ConcurrentGCTimer* gc_timer) {
-  assert(_gc_timer == NULL, "Incorrect scoping");
+  assert(_gc_timer == nullptr, "Incorrect scoping");
   _gc_timer = gc_timer;
 }
 
 void ZGeneration::clear_gc_timer() {
-  assert(_gc_timer != NULL, "Incorrect scoping");
-  _gc_timer = NULL;
+  assert(_gc_timer != nullptr, "Incorrect scoping");
+  _gc_timer = nullptr;
 }
 
 void ZGeneration::log_phase_switch(Phase from, Phase to) {
@@ -1350,7 +1350,7 @@ class ZRemapThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
     JavaThread* const jt = JavaThread::cast(thread);
-    StackWatermarkSet::finish_processing(jt, NULL, StackWatermarkKind::gc);
+    StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
 };
 
