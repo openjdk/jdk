@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ static jfieldID nameserversID;
  * for each adapter on the system. Returned in *adapters.
  * Buffer is malloc'd and must be freed (unless error returned)
  */
-int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
+static int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
     DWORD ret;
     IP_ADAPTER_ADDRESSES *adapterInfo;
     ULONG len;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  * questions.
  */
 #include "net_util.h"
+#include "NetworkInterface.h"
 
-#include "java_net_NetworkInterface.h"
 #include "java_net_InetAddress.h"
-
-#include <wbemidl.h>
+#include "java_net_NetworkInterface.h"
 
 /*
  * Windows implementation of the java.net.NetworkInterface native methods.
@@ -57,27 +56,31 @@ jfieldID ni_ibaddressID;        /* InterfaceAddress.address */
 jfieldID ni_ibbroadcastID;      /* InterfaceAddress.broadcast */
 jfieldID ni_ibmaskID;           /* InterfaceAddress.maskLength */
 
-typedef struct _netaddr {
-    SOCKADDR_INET Address;
-    SCOPE_ID ScopeId;
-    UINT8 PrefixLength;
-    struct _netaddr *Next;
-} netaddr;
-
-BOOL getAddressTables(
-        MIB_UNICASTIPADDRESS_TABLE **uniAddrs, MIB_ANYCASTIPADDRESS_TABLE **anyAddrs) {
+static BOOL getAddressTables(
+        JNIEnv *env, MIB_UNICASTIPADDRESS_TABLE **uniAddrs,
+        MIB_ANYCASTIPADDRESS_TABLE **anyAddrs) {
+    ULONG apiRetVal;
     ADDRESS_FAMILY addrFamily = ipv6_available() ? AF_UNSPEC : AF_INET;
-    if (GetUnicastIpAddressTable(addrFamily, uniAddrs) != NO_ERROR) {
+
+    apiRetVal = GetUnicastIpAddressTable(addrFamily, uniAddrs);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetUnicastIpAddressTable");
         return FALSE;
     }
-    if (GetAnycastIpAddressTable(addrFamily, anyAddrs) != NO_ERROR) {
+    apiRetVal = GetAnycastIpAddressTable(addrFamily, anyAddrs);
+    if (apiRetVal != NO_ERROR) {
         FreeMibTable(*uniAddrs);
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetAnycastIpAddressTable");
         return FALSE;
     }
     return TRUE;
 }
 
-void freeNetaddrs(netaddr *netaddrP) {
+static void freeNetaddrs(netaddr *netaddrP) {
     netaddr *curr = netaddrP;
     while (curr != NULL) {
         netaddrP = netaddrP->Next;
@@ -86,7 +89,7 @@ void freeNetaddrs(netaddr *netaddrP) {
     }
 }
 
-jobject createNetworkInterface(
+static jobject createNetworkInterface(
         JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs,
         MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
     WCHAR ifName[NDIS_IF_MAX_BUFFER_SIZE];
@@ -94,7 +97,7 @@ jobject createNetworkInterface(
     jobjectArray addrArr, bindsArr, childArr;
     netaddr *addrsHead = NULL, *addrsCurrent = NULL;
     int addrCount = 0;
-    ULONG i, mask;
+    ULONG apiRetVal, i, mask;
 
     // instantiate the NetworkInterface object
     netifObj = (*env)->NewObject(env, ni_class, ni_ctor);
@@ -103,9 +106,12 @@ jobject createNetworkInterface(
     }
 
     // set the NetworkInterface's name
-    if (ConvertInterfaceLuidToNameW(
-            &(ifRow->InterfaceLuid), (PWSTR) &ifName, NDIS_IF_MAX_BUFFER_SIZE)
-            != ERROR_SUCCESS) {
+    apiRetVal = ConvertInterfaceLuidToNameW(
+            &(ifRow->InterfaceLuid), (PWSTR) &ifName, NDIS_IF_MAX_BUFFER_SIZE);
+    if (apiRetVal != ERROR_SUCCESS) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "ConvertInterfaceLuidToNameW");
         return NULL;
     }
     name = (*env)->NewString(
@@ -137,7 +143,6 @@ jobject createNetworkInterface(
             addrCount++;
             addrsCurrent = malloc(sizeof(netaddr));
             addrsCurrent->Address = uniAddrs->Table[i].Address;
-            addrsCurrent->ScopeId = uniAddrs->Table[i].ScopeId;
             addrsCurrent->PrefixLength = uniAddrs->Table[i].OnLinkPrefixLength;
             addrsCurrent->Next = addrsHead;
             addrsHead = addrsCurrent;
@@ -148,7 +153,6 @@ jobject createNetworkInterface(
             addrCount++;
             addrsCurrent = malloc(sizeof(netaddr));
             addrsCurrent->Address = anyAddrs->Table[i].Address;
-            addrsCurrent->ScopeId = anyAddrs->Table[i].ScopeId;
             addrsCurrent->PrefixLength = NO_PREFIX;
             addrsCurrent->Next = addrsHead;
             addrsHead = addrsCurrent;
@@ -194,9 +198,13 @@ jobject createNetworkInterface(
             if (addrsCurrent->PrefixLength != NO_PREFIX) {
                 (*env)->SetShortField(
                         env, bindAddr, ni_ibmaskID, addrsCurrent->PrefixLength);
-                if (ConvertLengthToIpv4Mask(
-                        addrsCurrent->PrefixLength, &mask) != NO_ERROR) {
+                apiRetVal = ConvertLengthToIpv4Mask(addrsCurrent->PrefixLength, &mask);
+                if (apiRetVal != NO_ERROR) {
                     freeNetaddrs(addrsHead);
+                    SetLastError(apiRetVal);
+                    NET_ThrowByNameWithLastError(
+                            env, JNU_JAVANETPKG "SocketException",
+                            "ConvertLengthToIpv4Mask");
                     return NULL;
                 }
                 bcastAddr = (*env)->NewObject(env, ia4_class, ia4_ctrID);
@@ -277,26 +285,35 @@ jobject createNetworkInterface(
     return netifObj;
 }
 
-jobject createNetworkInterfaceForSingleRowWithTables(
-        JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs,
-        MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
-    if (GetIfEntry2(ifRow) != NO_ERROR) {
+static jobject createNetworkInterfaceForSingleRowWithTables(
+        JNIEnv *env, BOOL throwIfNotFound, MIB_IF_ROW2 *ifRow,
+        MIB_UNICASTIPADDRESS_TABLE *uniAddrs, MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
+    ULONG apiRetVal;
+
+    apiRetVal = GetIfEntry2(ifRow);
+    if (apiRetVal != NO_ERROR) {
+        if (throwIfNotFound && apiRetVal == ERROR_FILE_NOT_FOUND) {
+            SetLastError(apiRetVal);
+            NET_ThrowByNameWithLastError(
+                    env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
+        }
         return NULL;
     }
     return createNetworkInterface(env, ifRow, uniAddrs, anyAddrs);
 }
 
-jobject createNetworkInterfaceForSingleRow(JNIEnv *env, MIB_IF_ROW2 *ifRow) {
+static jobject createNetworkInterfaceForSingleRow(
+        JNIEnv *env, BOOL throwIfNotFound, MIB_IF_ROW2 *ifRow) {
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
     MIB_ANYCASTIPADDRESS_TABLE *anyAddrs;
     jobject netifObj;
 
-    if (getAddressTables(&uniAddrs, &anyAddrs) == FALSE) {
+    if (getAddressTables(env, &uniAddrs, &anyAddrs) == FALSE) {
         return NULL;
     }
 
     netifObj = createNetworkInterfaceForSingleRowWithTables(
-            env, ifRow, uniAddrs, anyAddrs);
+            env, throwIfNotFound, ifRow, uniAddrs, anyAddrs);
 
     FreeMibTable(uniAddrs);
     FreeMibTable(anyAddrs);
@@ -314,7 +331,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(
     MIB_IF_ROW2 ifRow = {0};
 
     ifRow.InterfaceIndex = index;
-    return createNetworkInterfaceForSingleRow(env, &ifRow);
+    return createNetworkInterfaceForSingleRow(env, FALSE, &ifRow);
 }
 
 /*
@@ -325,16 +342,22 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0(
         JNIEnv *env, jclass cls, jstring name) {
     const jchar *nameChars;
-    DWORD convertResult;
+    ULONG apiRetVal;
     MIB_IF_ROW2 ifRow = {0};
 
     nameChars = (*env)->GetStringChars(env, name, NULL);
-    convertResult = ConvertInterfaceNameToLuidW(nameChars, &(ifRow.InterfaceLuid));
+    apiRetVal = ConvertInterfaceNameToLuidW(nameChars, &(ifRow.InterfaceLuid));
     (*env)->ReleaseStringChars(env, name, nameChars);
-    if (convertResult != ERROR_SUCCESS) {
+    if (apiRetVal != ERROR_SUCCESS) {
+        if (apiRetVal != ERROR_INVALID_NAME) {
+            SetLastError(apiRetVal);
+            NET_ThrowByNameWithLastError(
+                    env, JNU_JAVANETPKG "SocketException",
+                    "ConvertInterfaceNameToLuidW");
+        }
         return NULL;
     }
-    return createNetworkInterfaceForSingleRow(env, &ifRow);
+    return createNetworkInterfaceForSingleRow(env, TRUE, &ifRow);
 }
 
 /*
@@ -350,8 +373,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
     MIB_IF_ROW2 ifRow = {0};
     jobject result = NULL;
 
-    if (getAddressTables(&uniAddrs, &anyAddrs) == FALSE) {
-        return JNI_FALSE;
+    if (getAddressTables(env, &uniAddrs, &anyAddrs) == FALSE) {
+        return NULL;
     }
 
     for (i = 0; i < uniAddrs->NumEntries; i++) {
@@ -361,7 +384,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
                         uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             ifRow.InterfaceLuid = uniAddrs->Table[i].InterfaceLuid;
             result = createNetworkInterfaceForSingleRowWithTables(
-                    env, &ifRow, uniAddrs, anyAddrs);
+                    env, TRUE, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
@@ -370,7 +393,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
                 env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
             ifRow.InterfaceLuid = anyAddrs->Table[i].InterfaceLuid;
             result = createNetworkInterfaceForSingleRowWithTables(
-                    env, &ifRow, uniAddrs, anyAddrs);
+                    env, TRUE, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
@@ -393,7 +416,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0(
     ULONG i;
     jboolean result = JNI_FALSE;
 
-    if (getAddressTables(&uniAddrs, &anyAddrs) == FALSE) {
+    if (getAddressTables(env, &uniAddrs, &anyAddrs) == FALSE) {
         return JNI_FALSE;
     }
 
@@ -431,10 +454,14 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(
     jobjectArray ifArray;
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
     MIB_ANYCASTIPADDRESS_TABLE *anyAddrs;
-    ULONG i;
+    ULONG apiRetVal, i;
     jobject ifObj;
 
-    if (GetIfTable2(&ifTable) != NO_ERROR) {
+    apiRetVal = GetIfTable2(&ifTable);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfTable2");
         return NULL;
     }
 
@@ -444,7 +471,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(
         return NULL;
     }
 
-    if (getAddressTables(&uniAddrs, &anyAddrs) == FALSE) {
+    if (getAddressTables(env, &uniAddrs, &anyAddrs) == FALSE) {
         FreeMibTable(ifTable);
         return NULL;
     }
@@ -476,9 +503,14 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll(
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0(
         JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
+    ULONG apiRetVal;
 
     ifRow.InterfaceIndex = index;
-    if (GetIfEntry2(&ifRow) != NO_ERROR) {
+    apiRetVal = GetIfEntry2(&ifRow);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
         return JNI_FALSE;
     }
     return ifRow.AdminStatus == NET_IF_ADMIN_STATUS_UP &&
@@ -494,9 +526,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0(
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(
         JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
+    ULONG apiRetVal;
 
     ifRow.InterfaceIndex = index;
-    if (GetIfEntry2(&ifRow) != NO_ERROR) {
+    apiRetVal = GetIfEntry2(&ifRow);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
         return JNI_FALSE;
     }
     return ifRow.AccessType == NET_IF_ACCESS_POINT_TO_POINT ? JNI_TRUE : JNI_FALSE;
@@ -510,9 +547,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0(
         JNIEnv *env, jclass cls, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
+    ULONG apiRetVal;
 
     ifRow.InterfaceIndex = index;
-    if (GetIfEntry2(&ifRow) != NO_ERROR) {
+    apiRetVal = GetIfEntry2(&ifRow);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
         return JNI_FALSE;
     }
     return ifRow.Type == IF_TYPE_SOFTWARE_LOOPBACK ? JNI_TRUE : JNI_FALSE;
@@ -526,10 +568,15 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0(
 JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(
         JNIEnv *env, jclass class, jbyteArray addrArray, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
+    ULONG apiRetVal;
     jbyteArray macAddr;
 
     ifRow.InterfaceIndex = index;
-    if (GetIfEntry2(&ifRow) != NO_ERROR) {
+    apiRetVal = GetIfEntry2(&ifRow);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
         return NULL;
     }
     if (ifRow.PhysicalAddressLength == 0) {
@@ -553,9 +600,14 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(
 JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(
         JNIEnv *env, jclass class, jstring name, jint index) {
     MIB_IF_ROW2 ifRow = {0};
+    ULONG apiRetVal;
 
     ifRow.InterfaceIndex = index;
-    if (GetIfEntry2(&ifRow) != NO_ERROR) {
+    apiRetVal = GetIfEntry2(&ifRow);
+    if (apiRetVal != NO_ERROR) {
+        SetLastError(apiRetVal);
+        NET_ThrowByNameWithLastError(
+                env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
         return -1;
     }
     return ifRow.Mtu;
@@ -575,7 +627,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(
     We also have the additional complication that multicast sending
     can be enabled while receiving is disabled.
 
-    There are not many ways to access these settings.
+    There are no good ways to access these settings.
     GetAdaptersAddresses has a NO_MULTICAST flag, but I have never seen it set,
     even when multicast is disabled.
     The flags appear to be stored in the registry,
@@ -585,112 +637,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(
     I also tried some socket IOCTLs (e.g. SIO_ROUTING_INTERFACE_QUERY)
     but all of those succeeded even when multicast was disabled.
     Same for various setsockopt params (e.g. IP_MULTICAST_IF).
-    So using COM to execute a WMI query was the best solution I could come up with.
-
-    The PowerShell equivalent of this code is:
-    Get-WmiObject -Query "select MldLevel from MSFT_NetIPv6Protocol" -Namespace "ROOT/StandardCimv2"
-    Subsitute IPv4 if desired.
-    The property is still called MldLevel here even though it is IGMPLevel elsewhere.
-
-    You can also change the value using PowerShell (admin rights needed):
-    Set-NetIPv4Protocol -IGMPLevel <None, SendOnly, All>
-    Set-NetIPv6Protocol -MldLevel <None, SendOnly, All>
+    It's also possible to use COM to execute a WMI query:
+    "SELECT MldLevel FROM MSFT_NetIPv4Protocol" in namespace "ROOT\\StandardCimv2"
+    But during review, we agreed that wasn't great either.
+    So we're just going to unconditionally return true
+    since multicast is unlikely to be disabled,
+    and a boolean can't represent the full range of possibilities anyway.
     */
-    jboolean retVal = JNI_FALSE;
-    IWbemLocator *locator;
-    IWbemServices *services;
-    IEnumWbemClassObject *results;
-    IWbemClassObject *result;
-    ULONG returnedCount;
-    BSTR resource, language, query;
-    VARIANT value;
-
-    if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED))) {
-        goto done0;
-    }
-
-    if (FAILED(CoInitializeSecurity(
-            NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT,
-            RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL))) {
-        goto done1;
-    }
-
-    if (FAILED(CoCreateInstance(
-            &CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, &IID_IWbemLocator, &locator))) {
-        goto done1;
-    }
-
-    resource = SysAllocString(L"ROOT\\StandardCimv2");
-    if (resource == NULL) {
-        goto done2;
-    }
-
-    language = SysAllocString(L"WQL");
-    if (language == NULL) {
-        goto done3;
-    }
-
-    query = SysAllocString(ipv6_available() ?
-            L"SELECT MldLevel FROM MSFT_NetIPv6Protocol" :
-            L"SELECT MldLevel FROM MSFT_NetIPv4Protocol");
-    if (query == NULL) {
-        goto done4;
-    }
-
-    if (FAILED(locator->lpVtbl->ConnectServer(
-            locator, resource, NULL, NULL, NULL, 0, NULL, NULL, &services))) {
-        goto done5;
-    }
-
-    if (FAILED(services->lpVtbl->ExecQuery(
-            services, language, query, WBEM_FLAG_BIDIRECTIONAL, NULL, &results))) {
-        goto done6;
-    }
-
-    if (FAILED(results->lpVtbl->Next(
-            results, WBEM_INFINITE, 1, &result, &returnedCount))) {
-        goto done7;
-    }
-
-    if (returnedCount == 0) {
-        goto done8;
-    }
-
-    if (FAILED(result->lpVtbl->Get(result, L"MldLevel", 0, &value, NULL, NULL))) {
-        goto done8; // note that we must NOT call VariantClear in this case
-    }
-
-    // 0 = None; 1 = SendOnly; 2 = All
-    retVal = value.uintVal == 0 ? JNI_FALSE : JNI_TRUE;
-
-    VariantClear(&value);
-
-    done8:
-    result->lpVtbl->Release(result);
-
-    done7:
-    results->lpVtbl->Release(results);
-
-    done6:
-    services->lpVtbl->Release(services);
-
-    done5:
-    SysFreeString(query);
-
-    done4:
-    SysFreeString(language);
-
-    done3:
-    SysFreeString(resource);
-
-    done2:
-    locator->lpVtbl->Release(locator);
-
-    done1:
-    CoUninitialize();
-
-    done0:
-    return retVal;
+    return JNI_TRUE;
 }
 
 /*
