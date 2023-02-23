@@ -367,7 +367,7 @@ public:
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
   // Setup link to hierarchy and deoptimize
-  static void add_to_hierarchy(InstanceKlass* k, JavaThread* current);
+  static void add_to_hierarchy(JavaThread* current, InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes

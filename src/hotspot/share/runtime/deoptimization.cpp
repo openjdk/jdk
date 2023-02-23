@@ -149,6 +149,12 @@ void DeoptimizationScope::dependent(CompiledMethod* cm) {
 void DeoptimizationScope::deoptimize_marked() {
   assert(!_deopted, "Already deopted");
 
+  // We are not alive yet.
+  if (!Universe::is_fully_initialized()) {
+    DEBUG_ONLY(_deopted = true;)
+    return;
+  }
+
   // Safepoints are a special case, handled here.
   if (SafepointSynchronize::is_at_safepoint()) {
     DeoptimizationScope::_committed_deopt_gen = DeoptimizationScope::_active_deopt_gen;

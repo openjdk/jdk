@@ -900,8 +900,8 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   }
 
   // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(THREAD, k);
   // But, do not add to dictionary.
-  add_to_hierarchy(k, THREAD);
 
   k->link_class(CHECK_NULL);
 
@@ -1486,9 +1486,8 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
     JavaCalls::call(&result, m, &args, CHECK);
   }
 
-  // Add the new class. We need recompile lock during update of CHA.
   // Add to class hierarchy, and do possible deoptimizations.
-  add_to_hierarchy(k, THREAD);
+  add_to_hierarchy(THREAD, k);
 
   {
     MutexLocker mu_r(THREAD, Compile_lock);
@@ -1608,17 +1607,14 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 
 // ----------------------------------------------------------------------------
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is held, to ensure that the compiler is not using the class hierarchy, and that deoptimization will kick in
-// before a new class is used.
+// is held, to ensure that the compiler is not using the class hierarchy.
 
-void SystemDictionary::add_to_hierarchy(InstanceKlass* k, JavaThread* current) {
+void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
+  assert(k != nullptr, "just checking");
+  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
   DeoptimizationScope deopt_scope;
   {
     MutexLocker ml(current, Compile_lock);
-    assert(k != nullptr, "just checking");
-    if (Universe::is_fully_initialized()) {
-      assert_locked_or_safepoint(Compile_lock);
-    }
 
     k->set_init_state(InstanceKlass::loaded);
     // make sure init_state store is already done.
@@ -1629,7 +1625,7 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, JavaThread* current) {
     k->append_to_sibling_list();                    // add to superklass/sibling list
     k->process_interfaces();                        // handle all "implements" declarations
 
-    // Now flush all code that depended on old class hierarchy.
+    // Now mark all code that depended on old class hierarchy.
     // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
     if (Universe::is_fully_initialized()) {
       CodeCache::mark_dependents_on(&deopt_scope, k);
