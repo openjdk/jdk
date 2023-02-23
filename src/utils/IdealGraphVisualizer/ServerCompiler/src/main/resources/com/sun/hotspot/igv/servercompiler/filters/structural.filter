@@ -7,17 +7,17 @@ remove("short_name", "FP|RA|IO|RP");
 // Condense inputs for all nodes.
 var anyNode = new Properties.RegexpPropertyMatcher("name", ".*");
 var f = new RemoveInputsFilter("");
-f.addRule(new RemoveInputsFilter.RemoveInputsRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Root")), new MatcherSelector(anyNode)));
+f.addRule(new RemoveInputsFilter.RemoveInputsRule(matches("name", "Root"), new MatcherSelector(anyNode)));
 f.apply(graph);
 
-var fun = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect"));
-var topCon = and([new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Con")),
-                  new MatcherSelector(new Properties.RegexpPropertyMatcher("type", "top"))]);
+var fun = matches("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect");
+var topCon = and([matches("name", "Con"),
+                  matches("type", "top")]);
 var f = new RemoveInputsFilter("");
-f.addRule(new RemoveInputsFilter.RemoveInputsRule(fun, or([topCon, new MatcherSelector(new Properties.RegexpPropertyMatcher("short_name", "I"))])));
+f.addRule(new RemoveInputsFilter.RemoveInputsRule(fun, or([topCon, matches("short_name", "I")])));
 f.apply(graph);
 
-var other = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray"));
+var other = matches("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray");
 var f = new RemoveInputsFilter("");
 f.addRule(new RemoveInputsFilter.RemoveInputsRule(other, topCon));
 f.apply(graph);
@@ -25,9 +25,9 @@ f.apply(graph);
 new RemoveEmptySlotsFilter("", new MatcherSelector(anyNode)).apply(graph);
 
 // Inline Parm and start MachProj nodes, except control ones.
-new SplitFilter("", and([new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Parm|MachProj")),
-                         new InvertSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("category", "control"))),
-                         new SuccessorSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Start")))]),
+new SplitFilter("", and([matches("name", "Parm|MachProj"),
+                         new InvertSelector(matches("category", "control")),
+                         new SuccessorSelector(matches("name", "Start"))]),
                 "[short_name]").apply(graph);
 
 // Combine single-input nodes.
@@ -45,6 +45,6 @@ f.apply(graph);
 
 // Inline (split) constant nodes.
 split("name", "BoxLock");
-new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "MachTemp")), "T").apply(graph);
-new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "ThreadLocal")), "TL").apply(graph);
-new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)")), "[short_name]", "[name]").apply(graph);
+new SplitFilter("", matches("name", "MachTemp"), "T").apply(graph);
+new SplitFilter("", matches("name", "ThreadLocal"), "TL").apply(graph);
+new SplitFilter("", matches("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)"), "[short_name]", "[name]").apply(graph);

@@ -126,3 +126,7 @@ function or(selectors) {
 function and(selectors) {
     return new AndSelector(selectors);
 }
+
+function matches(property, value) {
+    return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, value));
+}
