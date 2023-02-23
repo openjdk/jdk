@@ -34,7 +34,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import jdk.internal.misc.VM;
 import sun.nio.cs.Surrogate;
+import sun.security.action.GetPropertyAction;
 
 public class GB18030
     extends Charset
@@ -43,7 +45,11 @@ public class GB18030
     private static final int GB18030_DOUBLE_BYTE = 2;
     private static final int GB18030_FOUR_BYTE = 3;
 
-    private static final boolean IS_2000 = StandardCharsets.isGB18030_2000();
+    // Assumes non-2000 standard if initialized during System.initPhase1(),
+    // as the system property is not ready to be read in that case.
+    static final boolean IS_2000 =
+        VM.initLevel() >= 1 &&
+        "2000".equals(GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", ""));
 
     public GB18030() {
         super("GB18030", $ALIASES$);

@@ -34,9 +34,7 @@ import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.action.GetPropertyAction;
 
 public class StandardCharsets extends CharsetProvider {
 
@@ -61,9 +59,8 @@ public class StandardCharsets extends CharsetProvider {
 
     private String canonicalize(String csn) {
         if (csn.startsWith("gb18030-")) {
-            var is2000 = isGB18030_2000();
-            return csn.equals("gb18030-2022") && !is2000 ||
-                   csn.equals("gb18030-2000") && is2000 ? "gb18030" : csn;
+            return csn.equals("gb18030-2022") && !GB18030.IS_2000 ||
+                   csn.equals("gb18030-2000") && GB18030.IS_2000 ? "gb18030" : csn;
         } else {
             String acn = aliasMap().get(csn);
             return (acn != null) ? acn : csn;
@@ -205,20 +202,5 @@ public class StandardCharsets extends CharsetProvider {
                 }
 
             };
-    }
-
-    // Lazily initialized system property value
-    private @Stable static String GB18030_2000;
-
-    static boolean isGB18030_2000() {
-        if (GB18030_2000 == null) {
-            if (VM.initLevel() < 1) {
-                // Cannot get the system property yet. Assumes non-2000
-                GB18030_2000 = "";
-            } else {
-                GB18030_2000 = GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", "");
-            }
-        }
-        return "2000".equals(GB18030_2000);
     }
 }

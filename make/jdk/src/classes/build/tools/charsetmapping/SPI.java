@@ -96,7 +96,7 @@ public class SPI {
                              if (cs.aliases == null || cs.aliases.length == 0) {
                                  if (cs.csName.equals("GB18030")) {
                                      out.printf("    static String[] aliases_GB18030() { return new String[] {%n");
-                                     out.printf("            isGB18030_2000() ? \"gb18030-2000\" : \"gb18030-2022\"%n");
+                                     out.printf("            GB18030.IS_2000 ? \"gb18030-2000\" : \"gb18030-2022\"%n");
                                      out.printf("        };%n");
                                      out.printf("    }%n%n");
                                  } else {
