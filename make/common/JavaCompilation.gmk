@@ -271,7 +271,7 @@ define SetupJavaCompilationBody
   JAVA_WARNINGS_ARE_ERRORS ?= -Werror
 
   # Tell javac to do exactly as told and no more
-  PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
+  PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding UTF-8
 
   $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS) $$(JAVA_WARNINGS_ARE_ERRORS)
   $1_FLAGS += $$($1_JAVAC_FLAGS)
