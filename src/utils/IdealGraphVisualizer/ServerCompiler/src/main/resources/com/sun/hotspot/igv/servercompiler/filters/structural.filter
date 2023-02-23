@@ -26,8 +26,8 @@ new RemoveEmptySlotsFilter("", new MatcherSelector(anyNode)).apply(graph);
 
 // Inline Parm and start MachProj nodes, except control ones.
 new SplitFilter("", and([matches("name", "Parm|MachProj"),
-                         new InvertSelector(matches("category", "control")),
-                         new SuccessorSelector(matches("name", "Start"))]),
+                         not(matches("category", "control")),
+                         successorOf(matches("name", "Start"))]),
                 "[short_name]").apply(graph);
 
 // Combine single-input nodes.

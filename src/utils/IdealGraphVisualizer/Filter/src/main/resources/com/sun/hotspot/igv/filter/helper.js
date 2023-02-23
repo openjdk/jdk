@@ -127,6 +127,14 @@ function and(selectors) {
     return new AndSelector(selectors);
 }
 
+function not(selector) {
+    return new InvertSelector(selector);
+}
+
+function successorOf(selector) {
+    return new SuccessorSelector(selector);
+}
+
 function matches(property, value) {
     return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, value));
 }
