@@ -59,6 +59,14 @@ public class InputSlot extends Slot {
         this.originalIndex = originalIndex;
     }
 
+    public int gapSize() {
+        int index = getPosition();
+        int originalIndex = getOriginalIndex();
+        InputSlot prevSlot = index > 0 ? getFigure().getInputSlots().get(index - 1) : null;
+        int prevOriginalIndex = index > 0 ? prevSlot.getOriginalIndex() : -1;
+        return originalIndex - prevOriginalIndex - 1;
+    }
+
     @Override
     public Point getRelativePosition() {
         int gap = getFigure().getWidth() - Figure.getSlotsWidth(getFigure().getInputSlots());

@@ -38,8 +38,6 @@ public class Figure extends Properties.Entity implements Vertex {
     public static final int OVERLAPPING = 6;
     public static final int SLOT_START = 4;
     public static final int SLOT_OFFSET = 8;
-    public static final int TOP_CFG_HEIGHT = 7;
-    public static final int BOTTOM_CFG_HEIGHT = 6;
     public static final int WARNING_WIDTH = 16;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
@@ -72,14 +70,6 @@ public class Figure extends Properties.Entity implements Vertex {
             lines++;
         }
         heightCash = lines * metrics.getHeight() + INSET;
-        if (diagram.isCFG()) {
-            if (hasNamedInputSlot()) {
-                heightCash += TOP_CFG_HEIGHT;
-            }
-            if (hasNamedOutputSlot()) {
-                heightCash += BOTTOM_CFG_HEIGHT;
-            }
-        }
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -164,7 +154,7 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public boolean hasInputList() {
-        return diagram.isCFG() && !getPredecessors().isEmpty();
+        return diagram.isCFG() && !getInputSlots().isEmpty();
     }
 
     public void setBlock(Block block) {
@@ -274,24 +264,6 @@ public class Figure extends Properties.Entity implements Vertex {
         return Collections.unmodifiableList(outputSlots);
     }
 
-    public boolean hasNamedInputSlot() {
-        for (InputSlot is : getInputSlots()) {
-            if (is.hasSourceNodes() && is.shouldShowName()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean hasNamedOutputSlot() {
-        for (OutputSlot os : getOutputSlots()) {
-            if (os.hasSourceNodes() && os.shouldShowName()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     void removeInputSlot(InputSlot s) {
         s.removeAllConnections();
         inputSlots.remove(s);
@@ -320,8 +292,32 @@ public class Figure extends Properties.Entity implements Vertex {
         if (hasInputList()) {
             String inputList = " ← ";
             List<String> inputs = new ArrayList<>(getPredecessors().size());
-            for (Figure p : getPredecessors()) {
-                inputs.add(p.getProperties().resolveString(diagram.getTinyNodeText()));
+            for (InputSlot is : getInputSlots()) {
+                String inputLabel = null;
+                if (is.getConnections().isEmpty()) {
+                    if (is.hasSourceNodes() && is.shouldShowName()) {
+                        inputLabel = "[" + is.getShortName() + "]";
+                    } else {
+                        inputLabel = "_";
+                    }
+                } else {
+                    OutputSlot os = is.getConnections().get(0).getOutputSlot();
+                    Figure f = os.getFigure();
+                    String nodeTinyLabel = f.getProperties().resolveString(diagram.getTinyNodeText());
+                    if (os.hasSourceNodes() && os.shouldShowName()) {
+                        nodeTinyLabel += ":" + os.getShortName();
+                    }
+                    inputLabel = nodeTinyLabel;
+                }
+                if (inputLabel != null) {
+                    int gapSize = is.gapSize();
+                    if (gapSize == 1) {
+                        inputs.add("_");
+                    } else if (gapSize > 1) {
+                        inputs.add("…");
+                    }
+                    inputs.add(inputLabel);
+                }
             }
             inputList += String.join("  ", inputs);
             if (result.size() == 1) {

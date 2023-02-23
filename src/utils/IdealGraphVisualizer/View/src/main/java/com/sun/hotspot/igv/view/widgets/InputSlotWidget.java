@@ -76,10 +76,8 @@ public class InputSlotWidget extends SlotWidget {
         // If there is a gap between the current slot and the previous one, and
         // both are visible, draw a label in between signaling the gap.
         int index = inputSlot.getPosition();
-        int originalIndex = inputSlot.getOriginalIndex();
         InputSlot prevSlot = index > 0 ? inputSlot.getFigure().getInputSlots().get(index - 1) : null;
-        int prevOriginalIndex = index > 0 ? prevSlot.getOriginalIndex() : -1;
-        if (originalIndex > prevOriginalIndex + 1 &&
+        if (inputSlot.gapSize() > 0 &&
             hasVisibleConnection(inputSlot) && hasVisibleConnection(prevSlot)) {
             Graphics2D g = scene.getGraphics();
             String label = "...";

@@ -587,20 +587,22 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             addObject(figure, figureWidget);
             mainLayer.addChild(figureWidget);
 
-            for (InputSlot inputSlot : figure.getInputSlots()) {
-                SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget, figureWidget);
-                slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
-                slotWidget.getActions().addAction(hoverAction);
-                slotWidget.getActions().addAction(selectAction);
-                addObject(inputSlot, slotWidget);
-            }
+            if (!getModel().getShowCFG()) {
+                for (InputSlot inputSlot : figure.getInputSlots()) {
+                    SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget, figureWidget);
+                    slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
+                    slotWidget.getActions().addAction(hoverAction);
+                    slotWidget.getActions().addAction(selectAction);
+                    addObject(inputSlot, slotWidget);
+                }
 
-            for (OutputSlot outputSlot : figure.getOutputSlots()) {
-                SlotWidget slotWidget = new OutputSlotWidget(outputSlot, this, figureWidget, figureWidget);
-                slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
-                slotWidget.getActions().addAction(hoverAction);
-                slotWidget.getActions().addAction(selectAction);
-                addObject(outputSlot, slotWidget);
+                for (OutputSlot outputSlot : figure.getOutputSlots()) {
+                    SlotWidget slotWidget = new OutputSlotWidget(outputSlot, this, figureWidget, figureWidget);
+                    slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
+                    slotWidget.getActions().addAction(hoverAction);
+                    slotWidget.getActions().addAction(selectAction);
+                    addObject(outputSlot, slotWidget);
+                }
             }
         }
     }
