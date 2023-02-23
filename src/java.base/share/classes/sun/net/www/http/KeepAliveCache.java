@@ -50,7 +50,7 @@ import sun.util.logging.PlatformLogger;
  * @author Dave Brown
  */
 public class KeepAliveCache
-    extends HashMap<KeepAliveKey, ClientVector>
+    extends HashMap<KeepAliveKey, KeepAliveCache.ClientVector>
     implements Runnable {
     @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
@@ -300,68 +300,69 @@ public class KeepAliveCache
     {
         throw new NotSerializableException();
     }
-}
 
-/* LIFO order for reusing HttpClients. Most recent entries at the front.
- * If > maxConns are in use, discard oldest.
- */
-class ClientVector extends ArrayDeque<KeepAliveEntry> {
-    @java.io.Serial
-    private static final long serialVersionUID = -8680532108106489459L;
-
-    // sleep time in milliseconds, before cache clear
-    int nap;
-
-    ClientVector(int nap) {
-        this.nap = nap;
-    }
-
-    /* return a still valid, idle HttpClient */
-    HttpClient get() {
-        // check the most recent connection, use if still valid
-        KeepAliveEntry e = peekFirst();
-        if (e == null) {
-            return null;
-        }
-        long currentTime = System.currentTimeMillis();
-        if ((currentTime - e.idleStartTime) > nap) {
-            return null; // all connections stale - will be cleaned up later
-        } else {
-            pollFirst();
-            if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
-                String msg = "cached HttpClient was idle for "
-                        + Long.toString(currentTime - e.idleStartTime);
-                KeepAliveCache.logger.finest(msg);
-            }
-            return e.hc;
-        }
-    }
-
-    HttpClient put(HttpClient h) {
-        HttpClient staleClient = null;
-        assert KeepAliveCache.getMaxConnections() > 0;
-        if (size() >= KeepAliveCache.getMaxConnections()) {
-            // remove oldest connection
-            staleClient = removeLast().hc;
-        }
-        addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
-        // close after releasing the locks
-        return staleClient;
-    }
-
-    /*
-     * Do not serialize this class!
+    /* LIFO order for reusing HttpClients. Most recent entries at the front.
+     * If > maxConns are in use, discard oldest.
      */
-    @java.io.Serial
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        throw new NotSerializableException();
-    }
+    class ClientVector extends ArrayDeque<KeepAliveEntry> {
+        @java.io.Serial
+        private static final long serialVersionUID = -8680532108106489459L;
 
-    @java.io.Serial
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException
-    {
-        throw new NotSerializableException();
+        // sleep time in milliseconds, before cache clear
+        int nap;
+
+        ClientVector(int nap) {
+            this.nap = nap;
+        }
+
+        /* return a still valid, idle HttpClient */
+        HttpClient get() {
+            assert cacheLock.isHeldByCurrentThread();
+            // check the most recent connection, use if still valid
+            KeepAliveEntry e = peekFirst();
+            if (e == null) {
+                return null;
+            }
+            long currentTime = System.currentTimeMillis();
+            if ((currentTime - e.idleStartTime) > nap) {
+                return null; // all connections stale - will be cleaned up later
+            } else {
+                pollFirst();
+                if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                    String msg = "cached HttpClient was idle for "
+                            + Long.toString(currentTime - e.idleStartTime);
+                    KeepAliveCache.logger.finest(msg);
+                }
+                return e.hc;
+            }
+        }
+
+        HttpClient put(HttpClient h) {
+            assert cacheLock.isHeldByCurrentThread();
+            HttpClient staleClient = null;
+            assert KeepAliveCache.getMaxConnections() > 0;
+            if (size() >= KeepAliveCache.getMaxConnections()) {
+                // remove oldest connection
+                staleClient = removeLast().hc;
+            }
+            addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
+            // close after releasing the locks
+            return staleClient;
+        }
+
+        /*
+         * Do not serialize this class!
+         */
+        @java.io.Serial
+        private void writeObject(ObjectOutputStream stream) throws IOException {
+            throw new NotSerializableException();
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new NotSerializableException();
+        }
     }
 }
 
