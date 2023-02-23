@@ -34,7 +34,7 @@ public class AndSelector implements Selector {
 
     private Selector[] selectors;
 
-    public AndSelector(Selector... selectors) {
+    public AndSelector(Selector[] selectors) {
         this.selectors = selectors;
     }
 

@@ -34,7 +34,7 @@ public class OrSelector implements Selector {
 
     private Selector[] selectors;
 
-    public OrSelector(Selector... selectors) {
+    public OrSelector(Selector[] selectors) {
         this.selectors = selectors;
     }
 

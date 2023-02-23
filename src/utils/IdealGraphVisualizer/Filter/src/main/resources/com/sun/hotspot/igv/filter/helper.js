@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,3 +118,11 @@ var pink = Color.pink
 var red = Color.red;
 var yellow = Color.yellow;
 var white = Color.white;
+
+function or(selectors) {
+    return new OrSelector(selectors);
+}
+
+function and(selectors) {
+    return new AndSelector(selectors);
+}
