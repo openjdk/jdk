@@ -33,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @bug 8023093 8138748 8142398
+ * @bug 8023093 8138748 8142398 8303102
  * @summary Performs a sanity test for the ManagementAgent.status diagnostic command.
  *          Management agent may be disabled, started (only local connections) and started.
  *          The test asserts that the expected text is being printed.
