@@ -1388,6 +1388,12 @@ void VMError::report_and_maybe_die_impl(AfterReportAction after_report_action,
                                         const char* filename, int lineno,
                                         size_t size)
 {
+  // Non-termination is only permitted when Windows-only UseOSErrorReporting
+  // is enabled.
+  assert(after_report_action == AfterReportAction::Die
+         WINDOWS_ONLY( || UseOSErrorReporting),
+         "must terminate");
+
   // A single scratch buffer to be used from here on.
   // Do not rely on it being preserved across function calls.
   static char buffer[O_BUFLEN];
