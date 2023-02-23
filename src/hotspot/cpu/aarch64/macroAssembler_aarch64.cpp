@@ -5958,10 +5958,10 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
 
   // Add the high part of u1 to u2
   extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-  bfc(u[1]._lo, 52, 64-52);
-  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
   adds(u[2]._lo, u[2]._lo, rscratch1);
+  NOT_DEBUG(adc(u[2]._hi, u[2]._hi, zr);)
 #ifdef ASSERT
+  adcs(u[2]._hi, u[2]._hi, zr);
   {
     Label L;
     br(CC, L);
@@ -5969,6 +5969,8 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
     BIND(L);
   }
 #endif
+  bfc(u[1]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
 
   // Then multiply the high part of u2 by 5 and add it back to u1:u0
   extr(rscratch1, u[2]._hi, u[2]._lo, 26);
@@ -6005,6 +6007,20 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
     BIND(L);
   }
 #endif
+
+  // Add the high part of u1 to u2
+  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+  adds(u[2]._lo, u[2]._lo, rscratch1);
+#ifdef ASSERT
+  {
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
+  }
+#endif
+  bfc(u[1]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
 }
 
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
