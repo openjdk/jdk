@@ -1310,18 +1310,28 @@ void C2_MacroAssembler::sve_vmaskcast_extend(PRegister dst, PRegister src,
 
 // Narrow src predicate to dst predicate with the same lane count but
 // smaller element size, e.g. 512Long -> 64Byte
-void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src,
+void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                                              uint dst_element_length_in_bytes, uint src_element_length_in_bytes) {
   // The insignificant bits in src predicate are expected to be zero.
+  // To ensure the higher order bits of the resultant narrowed vector are 0, an all-zero predicate is
+  // passed as the second argument. An example narrowing operation with a given mask would be -
+  // 128Long -> 64Int on a 128-bit machine i.e 2L -> 2I
+  // Mask (for 2 Longs) : TF
+  // Predicate register for the above mask (16 bits) : 00000001 00000000
+  // After narrowing (uzp1 dst.b, src.b, ptmp.b) : 0000 0000 0001 0000
+  // Which translates to mask for 2 integers as : TF (lower half is considered while upper half is 0)
+  assert_different_registers(src, ptmp);
+  assert_different_registers(dst, ptmp);
+  sve_pfalse(ptmp);
   if (dst_element_length_in_bytes * 2 == src_element_length_in_bytes) {
-    sve_uzp1(dst, B, src, src);
+    sve_uzp1(dst, B, src, ptmp);
   } else if (dst_element_length_in_bytes * 4 == src_element_length_in_bytes) {
-    sve_uzp1(dst, H, src, src);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, H, src, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else if (dst_element_length_in_bytes * 8 == src_element_length_in_bytes) {
-    sve_uzp1(dst, S, src, src);
-    sve_uzp1(dst, H, dst, dst);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, S, src, ptmp);
+    sve_uzp1(dst, H, dst, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else {
     assert(false, "unsupported");
     ShouldNotReachHere();

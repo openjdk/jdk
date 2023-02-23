@@ -3700,18 +3700,19 @@ instruct vmaskcast_extend_sve(pReg dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskcast_narrow_sve(pReg dst, pReg src) %{
+instruct vmaskcast_narrow_sve(pReg dst, pReg src, pReg ptmp) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
-  format %{ "vmaskcast_narrow_sve $dst, $src" %}
+  effect(TEMP_DEF dst, TEMP ptmp);
+  format %{ "vmaskcast_narrow_sve $dst, $src\t# KILL $ptmp" %}
   ins_encode %{
     uint length_in_bytes_dst = Matcher::vector_length_in_bytes(this);
     uint length_in_bytes_src = Matcher::vector_length_in_bytes(this, $src);
     assert(length_in_bytes_dst * 2 == length_in_bytes_src ||
            length_in_bytes_dst * 4 == length_in_bytes_src ||
            length_in_bytes_dst * 8 == length_in_bytes_src, "invalid vector length");
-    __ sve_vmaskcast_narrow($dst$$PRegister, $src$$PRegister,
+    __ sve_vmaskcast_narrow($dst$$PRegister, $src$$PRegister, $ptmp$$PRegister,
                             length_in_bytes_dst, length_in_bytes_src);
   %}
   ins_pipe(pipe_slow);
