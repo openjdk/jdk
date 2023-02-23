@@ -31,8 +31,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -200,7 +202,8 @@ public class CompileProperties {
         log.verbose("parsing: " + propertiesPath);
         Properties p = new Properties();
         try {
-            p.load(new FileInputStream(propertiesPath));
+            FileInputStream input = new FileInputStream(propertiesPath);
+            p.load(new InputStreamReader(input, StandardCharsets.UTF_8));
         } catch ( FileNotFoundException e ) {
             ok = false;
             log.error("Cannot find file " + propertiesPath, e);
@@ -246,7 +249,7 @@ public class CompileProperties {
             Writer writer = null;
             try {
                 writer = new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream(outputPath), "8859_1"));
+                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.UTF_8));
                 MessageFormat format = new MessageFormat(FORMAT);
                 writer.write(format.format(new Object[] { packageString, className, superClass, data }));
             } catch ( IOException e ) {
@@ -301,19 +304,10 @@ public class CompileProperties {
                 case '\f':outBuffer.append('\\'); outBuffer.append('f');
                 break;
                 default:
-                    if ((aChar < 0x0020) || (aChar > 0x007e)) {
+                    if (specialSaveChars.indexOf(aChar) != -1) {
                         outBuffer.append('\\');
-                        outBuffer.append('u');
-                        outBuffer.append(toHex((aChar >> 12) & 0xF));
-                        outBuffer.append(toHex((aChar >>  8) & 0xF));
-                        outBuffer.append(toHex((aChar >>  4) & 0xF));
-                        outBuffer.append(toHex( aChar        & 0xF));
-                    } else {
-                        if (specialSaveChars.indexOf(aChar) != -1) {
-                            outBuffer.append('\\');
-                        }
-                        outBuffer.append(aChar);
                     }
+                    outBuffer.append(aChar);
             }
         }
         return outBuffer.toString();
