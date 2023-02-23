@@ -252,27 +252,22 @@ public class KeepAliveCache
 
                 for (KeepAliveKey key : keySet()) {
                     ClientVector v = get(key);
-                    v.lock();
-                    try {
-                        KeepAliveEntry e = v.peekLast();
-                        while (e != null) {
-                            if ((currentTime - e.idleStartTime) > v.nap) {
-                                v.pollLast();
-                                if (closeList == null) {
-                                    closeList = new ArrayList<>();
-                                }
-                                closeList.add(e.hc);
-                            } else {
-                                break;
+                    KeepAliveEntry e = v.peekLast();
+                    while (e != null) {
+                        if ((currentTime - e.idleStartTime) > v.nap) {
+                            v.pollLast();
+                            if (closeList == null) {
+                                closeList = new ArrayList<>();
                             }
-                            e = v.peekLast();
+                            closeList.add(e.hc);
+                        } else {
+                            break;
                         }
+                        e = v.peekLast();
+                    }
 
-                        if (v.isEmpty()) {
-                            keysToRemove.add(key);
-                        }
-                    } finally {
-                        v.unlock();
+                    if (v.isEmpty()) {
+                        keysToRemove.add(key);
                     }
                 }
 
@@ -313,7 +308,6 @@ public class KeepAliveCache
 class ClientVector extends ArrayDeque<KeepAliveEntry> {
     @java.io.Serial
     private static final long serialVersionUID = -8680532108106489459L;
-    private final ReentrantLock lock = new ReentrantLock();
 
     // sleep time in milliseconds, before cache clear
     int nap;
@@ -324,53 +318,35 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
 
     /* return a still valid, idle HttpClient */
     HttpClient get() {
-        lock();
-        try {
-            // check the most recent connection, use if still valid
-            KeepAliveEntry e = peekFirst();
-            if (e == null) {
-                return null;
+        // check the most recent connection, use if still valid
+        KeepAliveEntry e = peekFirst();
+        if (e == null) {
+            return null;
+        }
+        long currentTime = System.currentTimeMillis();
+        if ((currentTime - e.idleStartTime) > nap) {
+            return null; // all connections stale - will be cleaned up later
+        } else {
+            pollFirst();
+            if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                String msg = "cached HttpClient was idle for "
+                        + Long.toString(currentTime - e.idleStartTime);
+                KeepAliveCache.logger.finest(msg);
             }
-            long currentTime = System.currentTimeMillis();
-            if ((currentTime - e.idleStartTime) > nap) {
-                return null; // all connections stale - will be cleaned up later
-            } else {
-                pollFirst();
-                if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
-                    String msg = "cached HttpClient was idle for "
-                            + Long.toString(currentTime - e.idleStartTime);
-                    KeepAliveCache.logger.finest(msg);
-                }
-                return e.hc;
-            }
-        } finally {
-            unlock();
+            return e.hc;
         }
     }
 
     HttpClient put(HttpClient h) {
         HttpClient staleClient = null;
-        lock();
-        try {
-            assert KeepAliveCache.getMaxConnections() > 0;
-            if (size() >= KeepAliveCache.getMaxConnections()) {
-                // remove oldest connection
-                staleClient = removeLast().hc;
-            }
-            addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
-        } finally {
-            unlock();
+        assert KeepAliveCache.getMaxConnections() > 0;
+        if (size() >= KeepAliveCache.getMaxConnections()) {
+            // remove oldest connection
+            staleClient = removeLast().hc;
         }
+        addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
         // close after releasing the locks
         return staleClient;
-    }
-
-    final void lock() {
-        lock.lock();
-    }
-
-    final void unlock() {
-        lock.unlock();
     }
 
     /*
