@@ -1244,11 +1244,11 @@ public class Pretty extends JCTree.Visitor {
             if (tree.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 printExprs(tree.params);
             } else {
-                char sep = '\0';
+                String sep = "";
                 for (JCVariableDecl param : tree.params) {
                     print(sep);
                     print(param.name);
-                    sep = ',';
+                    sep = ",";
                 }
             }
             print(")->");
