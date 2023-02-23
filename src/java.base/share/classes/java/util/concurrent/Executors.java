@@ -833,15 +833,18 @@ public class Executors {
         AutoShutdownDelegatedExecutorService(ExecutorService executor) {
             super(executor);
             Runnable action = () -> {
-                PrivilegedAction<Void> pa = () -> { executor.shutdown(); return null; };
-                @SuppressWarnings("removal")
-                var ignore = AccessController.doPrivileged(pa);
+                if (!executor.isShutdown()) {
+                    PrivilegedAction<Void> pa = () -> { executor.shutdown(); return null; };
+                    @SuppressWarnings("removal")
+                    var ignore = AccessController.doPrivileged(pa);
+                }
             };
             cleaner = CleanerFactory.cleaner().register(this, action);
         }
         @Override
         public void shutdown() {
-            cleaner.clean();
+            super.shutdown();
+            cleaner.clean();  // unregisters the cleanable
         }
     }
 
