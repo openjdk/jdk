@@ -119,10 +119,10 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // no modifiers supported at this time
-        for (WatchEvent.Modifier modifier : modifiers) {
+        if (modifiers != null) {
+            WatchEvent.Modifier modifier = modifiers[0];
             if (modifier == null)
                 throw new NullPointerException();
-
             throw new UnsupportedOperationException("Modifier not supported");
         }
 

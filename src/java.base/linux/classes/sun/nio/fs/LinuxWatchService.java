@@ -226,7 +226,8 @@ class LinuxWatchService
             }
 
             // no modifiers supported at this time
-            for (WatchEvent.Modifier modifier : modifiers) {
+            if (modifiers != null) {
+                WatchEvent.Modifier modifier = modifiers[0];
                 if (modifier == null)
                     return new NullPointerException();
                 return new UnsupportedOperationException("Modifier not supported");
