@@ -919,16 +919,19 @@ public interface HttpResponse<T> {
      * {@snippet :
      *   // Streams the response body to a File
      *   HttpResponse<Path> response = client
-     *     .send(request, responseInfo -> BodySubscribers.ofFile(Paths.get("example.html"));
+     *     .send(request, responseInfo -> BodySubscribers.ofFile(Paths.get("example.html")); }
      *
+     * {@snippet :
      *   // Accumulates the response body and returns it as a byte[]
      *   HttpResponse<byte[]> response = client
-     *     .send(request, responseInfo -> BodySubscribers.ofByteArray());
+     *     .send(request, responseInfo -> BodySubscribers.ofByteArray()); }
      *
+     * {@snippet :
      *   // Discards the response body
      *   HttpResponse<Void> response = client
-     *     .send(request, responseInfo -> BodySubscribers.discarding());
+     *     .send(request, responseInfo -> BodySubscribers.discarding()); }
      *
+     * {@snippet :
      *   // Accumulates the response body as a String then maps it to its bytes
      *   HttpResponse<byte[]> response = client
      *     .send(request, responseInfo ->
