@@ -1356,11 +1356,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         }
         long size = elementCount * srcElementLayout.byteSize();
         srcImpl.checkAccess(srcOffset, size, true);
-        if (dstImpl instanceof NativeMemorySegmentImpl && dstImpl.byteSize() == 0) {
-            // NativeMemorySegmentImpl can be used without size. We can't check if the access is in bounds.
-        } else {
-            dstImpl.checkAccess(dstOffset, size, false);
-        }
+        dstImpl.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
