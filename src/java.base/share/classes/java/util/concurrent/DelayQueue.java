@@ -51,8 +51,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code Delayed} elements, in which an element can only be taken
  * when its delay has expired.  The <em>head</em> of the queue is that
  * {@code Delayed} element whose delay expired furthest in the
- * past.  If no delay has expired there is no head and {@code poll}
- * will return {@code null}. Expiration occurs when an element's
+ * past. Expiration occurs when an element's
  * {@code getDelay(TimeUnit.NANOSECONDS)} method returns a value less
  * than or equal to zero.  Even though unexpired elements cannot be
  * removed using {@code take} or {@code poll}, they are otherwise
@@ -181,7 +180,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Retrieves and removes the head of this queue, or returns {@code null}
+     * Retrieves and removes the expired head of this queue, or returns {@code null}
      * if this queue has no elements with an expired delay.
      *
      * @return the head of this queue, or {@code null} if this
@@ -201,8 +200,9 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Retrieves and removes the head of this queue, waiting if necessary
-     * until an element with an expired delay is available on this queue.
+     * Retrieves and removes the expired head of this queue,
+     * waiting if necessary until an element with an expired delay is available
+     * on this queue.
      *
      * @return the head of this queue
      * @throws InterruptedException {@inheritDoc}
@@ -242,9 +242,9 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Retrieves and removes the head of this queue, waiting if necessary
-     * until an element with an expired delay is available on this queue,
-     * or the specified wait time expires.
+     * Retrieves and removes the expired head of this queue,
+     * waiting if necessary until an element with an expired delay is available
+     * on this queue, or the specified wait time expires.
      *
      * @return the head of this queue, or {@code null} if the
      *         specified waiting time elapses before an element with
@@ -293,11 +293,11 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Retrieves, but does not remove, the head of this queue, or
-     * returns {@code null} if this queue is empty.  Unlike
-     * {@code poll}, if no expired elements are available in the queue,
-     * this method returns the element that will expire next,
-     * if one exists.
+     * Retrieves, but does not remove, the head of this queue regardless of its
+     * expiration status, or returns {@code null} if this queue is empty.
+     * Unlike {@code poll} and {@code take}, if no expired elements are
+     * available in the queue, this method returns the element that will expire
+     * next, if one exists.
      *
      * @return the head of this queue, or {@code null} if this
      *         queue is empty
