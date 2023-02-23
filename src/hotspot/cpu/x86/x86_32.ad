@@ -12681,21 +12681,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
   ins_pipe( pipe_jcc );
 %}
 
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
@@ -12874,21 +12859,6 @@ instruct jmpLoopEnd_short(cmpOp cop, eFlagsReg cr, label labl) %{
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "J$cop,us $labl\t# Loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe( pipe_jcc );
-  ins_short_branch(1);
-%}
-
 instruct jmpLoopEndUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   match(CountedLoopEnd cop cmp);
   effect(USE labl);

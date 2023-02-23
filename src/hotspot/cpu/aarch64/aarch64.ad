@@ -16523,25 +16523,7 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
   ins_pipe(pipe_branch);
 %}
 
-// counted loop end branch near Unsigned
-instruct branchLoopEndU(cmpOpU cmp, rFlagsRegU cr, label lbl)
-%{
-  match(CountedLoopEnd cmp cr);
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  // short variant.
-  // ins_short_branch(1);
-  format %{ "b$cmp $lbl \t// counted loop end unsigned" %}
-
-  ins_encode(aarch64_enc_br_conU(cmp, lbl));
-
-  ins_pipe(pipe_branch);
-%}
-
 // counted loop end branch far
-// counted loop end branch far unsigned
 // TODO: fixme
 
 // ============================================================================

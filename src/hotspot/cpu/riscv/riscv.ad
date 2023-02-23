@@ -8963,6 +8963,25 @@ instruct cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl)
   ins_short_branch(1);
 %}
 
+instruct cmpL_loop(cmpOp cmp, iRegL op1, iRegL op2, label lbl)
+%{
+  // Same match rule as `far_cmpL_loop'.
+  match(CountedLoopEnd cmp (CmpL op1 op2));
+
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "b$cmp  $op1, $op2, $lbl\t#@cmpL_loop" %}
+
+  ins_encode %{
+    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), as_Register($op2$$reg), *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
 // Compare unsigned long and branch near instructions
 instruct cmpUL_branch(cmpOpU cmp, iRegL op1, iRegL op2, label lbl)
 %{
@@ -9290,6 +9309,20 @@ instruct far_cmpL_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl) %{
   ins_pipe(pipe_cmp_branch);
 %}
 
+instruct far_cmpLloop(cmpOp cmp, iRegL op1, iRegL op2, label lbl) %{
+  match(CountedLoopEnd cmp (CmpL op1 op2));
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+  format %{ "far_b$cmp  $op1, $op2, $lbl\t#@far_cmpL_loop" %}
+
+  ins_encode %{
+    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), as_Register($op2$$reg), *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+%}
+
 instruct far_cmpUL_branch(cmpOpU cmp, iRegL op1, iRegL op2, label lbl) %{
   match(If cmp (CmpUL op1 op2));
   effect(USE lbl);
@@ -9452,6 +9485,23 @@ instruct far_cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_cost(BRANCH_COST * 2);
 
   format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpL_reg_imm0_branch" %}
+
+  ins_encode %{
+    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmpz_branch);
+%}
+
+instruct far_cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+%{
+  match(CountedLoopEnd cmp (CmpL op1 zero));
+
+  effect(USE op1, USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+
+  format %{ "far_b$cmp  $op1, zr, $lbl\t#@far_cmpL_reg_imm0_loop" %}
 
   ins_encode %{
     __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label), /* is_far */ true);
