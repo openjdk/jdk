@@ -309,8 +309,10 @@ public final class StrictMath {
      * @param   a   a value.
      * @return  the positive square root of {@code a}.
      */
-    @IntrinsicCandidate
-    public static native double sqrt(double a);
+    // @IntrinsicCandidate -- Temporarily disable for testing
+    public static double sqrt(double a) {
+        return FdLibm.Sqrt.compute(a);
+    }
 
     /**
      * Returns the cube root of a {@code double} value.  For
