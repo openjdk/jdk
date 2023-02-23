@@ -88,6 +88,7 @@ class ChunkPool {
       os::free(cur);
       cur = next;
     }
+    _first = nullptr;
   }
 
   static void clean() {
