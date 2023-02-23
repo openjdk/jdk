@@ -17,7 +17,7 @@ var f = new RemoveInputsFilter("");
 f.addRule(new RemoveInputsFilter.RemoveInputsRule(fun, new OrSelector(topCon, new MatcherSelector(new Properties.RegexpPropertyMatcher("short_name", "I")))));
 f.apply(graph);
 
-var other = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarRelease|Unlock|Lock|Allocate|AllocateArray"));
+var other = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray"));
 var f = new RemoveInputsFilter("");
 f.addRule(new RemoveInputsFilter.RemoveInputsRule(other, topCon));
 f.apply(graph);
