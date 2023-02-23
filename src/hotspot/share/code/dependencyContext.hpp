@@ -27,12 +27,12 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 
 class nmethod;
+class DeoptimizationScope;
 class DepChange;
 
 //

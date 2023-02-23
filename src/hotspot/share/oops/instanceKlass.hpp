@@ -31,7 +31,6 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
@@ -40,6 +39,7 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class DeoptimizationScope;
 class klassItable;
 class RecordComponent;
 
