@@ -48,53 +48,17 @@ public class RemoveInputsFilter extends AbstractFilter {
 
     @Override
     public void apply(Diagram diagram) {
-
         for (RemoveInputsRule r : rules) {
-
-            List<Figure> list = r.getSelector().selected(diagram);
+            List<Figure> list = r.getNodeSelector().selected(diagram);
+            List<Figure> slotList = r.getSlotSelector().selected(diagram);
             for (Figure f : list) {
-                int z = 0;
-                List<InputSlot> last = new ArrayList<>();
                 for (InputSlot is : f.getInputSlots()) {
-                    if (z >= r.getStartingIndex() && z <= r.getEndIndex() && is.getConnections().size() > 0) {
-                        StringBuilder sb = new StringBuilder();
-                        List<FigureConnection> conns = is.getConnections();
-                        for (int i = 0; i < conns.size(); i++) {
-                            FigureConnection c = conns.get(i);
-                            OutputSlot os = c.getOutputSlot();
-                            Figure pred = os.getFigure();
-                            if (i != 0) {
-                                sb.append("<BR>");
-                            }
-                            sb.append(pred.getLines()[0]);
+                    List<FigureConnection> conns = is.getConnections();
+                    if (conns.size() == 1) {
+                        Figure i = conns.get(0).getOutputSlot().getFigure();
+                        if (slotList.contains(i)) {
+                            is.removeAllConnections();
                         }
-                        is.removeAllConnections();
-                        is.setShortName("X");
-                        is.setText(sb.toString());
-                        last.add(is);
-                    } else {
-                        last.clear();
-                    }
-                    z++;
-                }
-
-                if (last.size() > 3) {
-                    InputSlot first = last.get(0);
-                    first.setShortName("XX");
-
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < last.size(); i++) {
-                        InputSlot is2 = last.get(i);
-                        if (i != 0) {
-                            sb.append("<BR>");
-                        }
-                        sb.append(is2.getText());
-                    }
-
-                    first.setText(sb.toString());
-
-                    for (int i = 0; i < last.size(); i++) {
-                        f.removeSlot(last.get(i));
                     }
                 }
             }
@@ -107,34 +71,20 @@ public class RemoveInputsFilter extends AbstractFilter {
 
     public static class RemoveInputsRule {
 
-        private Selector selector;
-        private int startingIndex;
-        private int endIndex;
+        private Selector nodeSelector;
+        private Selector slotSelector;
 
-        public RemoveInputsRule(Selector selector) {
-            this(selector, 0);
+        public RemoveInputsRule(Selector nodeSelector, Selector slotSelector) {
+            this.nodeSelector = nodeSelector;
+            this.slotSelector = slotSelector;
         }
 
-        public RemoveInputsRule(Selector selector, int startIndex) {
-            this(selector, startIndex, Integer.MAX_VALUE);
+        public Selector getNodeSelector() {
+            return nodeSelector;
         }
 
-        public RemoveInputsRule(Selector selector, int startIndex, int endIndex) {
-            this.startingIndex = startIndex;
-            this.endIndex = endIndex;
-            this.selector = selector;
-        }
-
-        public int getStartingIndex() {
-            return startingIndex;
-        }
-
-        public int getEndIndex() {
-            return endIndex;
-        }
-
-        public Selector getSelector() {
-            return selector;
+        public Selector getSlotSelector() {
+            return slotSelector;
         }
     }
 }

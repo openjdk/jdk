@@ -100,7 +100,7 @@ public class Diagram {
 
             int toIndex = e.getToIndex();
             while (toFigure.getInputSlots().size() <= toIndex) {
-                toFigure.createInputSlot(toIndex);
+                toFigure.createInputSlot();
             }
             InputSlot inputSlot = toFigure.getInputSlots().get(toIndex);
 
@@ -110,6 +110,14 @@ public class Diagram {
                 c.setStyle(Connection.ConnectionStyle.BOLD);
             } else if (e.getState() == InputEdge.State.DELETED) {
                 c.setStyle(Connection.ConnectionStyle.DASHED);
+            }
+        }
+
+        for (Figure f : figures) {
+            int i = 0;
+            for (InputSlot inputSlot : f.getInputSlots()) {
+                inputSlot.setOriginalIndex(i);
+                i++;
             }
         }
 

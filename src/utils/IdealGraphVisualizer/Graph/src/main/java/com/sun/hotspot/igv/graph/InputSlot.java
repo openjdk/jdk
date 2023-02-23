@@ -32,11 +32,11 @@ import java.util.List;
  */
 public class InputSlot extends Slot {
 
-    private final int originalIndex;
+    private int originalIndex;
 
-    protected InputSlot(Figure figure, int wantedIndex, int originalIndex) {
+    protected InputSlot(Figure figure, int wantedIndex) {
         super(figure, wantedIndex);
-        this.originalIndex = originalIndex;
+        this.originalIndex = -1;
     }
 
     @Override
@@ -53,6 +53,10 @@ public class InputSlot extends Slot {
 
     public int getOriginalIndex() {
         return originalIndex;
+    }
+
+    public void setOriginalIndex(int originalIndex) {
+        this.originalIndex = originalIndex;
     }
 
     @Override

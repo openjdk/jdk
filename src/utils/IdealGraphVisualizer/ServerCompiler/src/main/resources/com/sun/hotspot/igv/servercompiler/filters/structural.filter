@@ -1,12 +1,28 @@
-// Hide secondary edges.
-remove("short_name", "FP|RA|IO");
-removeInputs("name", "Root");
+// Remove self-loops.
 new RemoveSelfLoopsFilter("Remove Self-Loops").apply(graph);
-removeInputs("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect", 5);
-removeInputs("name", "Halt", 1);
-removeInputs("name", "Unlock|Lock", 7);
-removeInputs("name", "Allocate", 7);
-removeInputs("name", "AllocateArray", 9);
+
+// Hide secondary edges.
+remove("short_name", "FP|RA|IO|RP");
+
+// Condense inputs for all nodes.
+var anyNode = new Properties.RegexpPropertyMatcher("name", ".*");
+var f = new RemoveInputsFilter("");
+f.addRule(new RemoveInputsFilter.RemoveInputsRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Root")), new MatcherSelector(anyNode)));
+f.apply(graph);
+
+var fun = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect"));
+var topCon = new AndSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Con")),
+                                                 new MatcherSelector(new Properties.RegexpPropertyMatcher("type", "top")));
+var f = new RemoveInputsFilter("");
+f.addRule(new RemoveInputsFilter.RemoveInputsRule(fun, new OrSelector(topCon, new MatcherSelector(new Properties.RegexpPropertyMatcher("short_name", "I")))));
+f.apply(graph);
+
+var other = new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarRelease|Unlock|Lock|Allocate|AllocateArray"));
+var f = new RemoveInputsFilter("");
+f.addRule(new RemoveInputsFilter.RemoveInputsRule(other, topCon));
+f.apply(graph);
+
+new RemoveEmptySlotsFilter("", new MatcherSelector(anyNode)).apply(graph);
 
 // Inline Parm and start MachProj nodes, except control ones.
 new SplitFilter("", new AndSelector(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Parm|MachProj")),
@@ -15,7 +31,6 @@ new SplitFilter("", new AndSelector(new MatcherSelector(new Properties.RegexpPro
                 "[short_name]").apply(graph);
 
 // Combine single-input nodes.
-var anyNode = new Properties.RegexpPropertyMatcher("name", ".*");
 var f = new CombineFilter("Combine Filter");
 f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "Proj|IfFalse|IfTrue|JProj|MachProj|JumpProj|CatchProj|Parm")));
 f.addRule(new CombineFilter.CombineRule(anyNode, new Properties.RegexpPropertyMatcher("name", "SCMemProj"), false, "SCM"));

@@ -227,8 +227,8 @@ public class Figure extends Properties.Entity implements Vertex {
         return inputNode;
     }
 
-    public InputSlot createInputSlot(int originalIndex) {
-        InputSlot slot = new InputSlot(this, -1, originalIndex);
+    public InputSlot createInputSlot() {
+        InputSlot slot = new InputSlot(this, -1);
         inputSlots.add(slot);
         return slot;
     }
