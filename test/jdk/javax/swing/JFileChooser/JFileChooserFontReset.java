@@ -22,7 +22,8 @@
  */
 /*
  * @test
- * @bug 6753661
+ * @bug 6753661 8302882
+ * @key headful
  * @summary  Verifies if JFileChooser font reset after Look & Feel change
  * @run main JFileChooserFontReset
  */
