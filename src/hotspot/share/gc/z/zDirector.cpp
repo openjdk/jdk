@@ -911,7 +911,7 @@ static ZDirectorStats sample_stats() {
   };
 }
 
-void ZDirector::run_service() {
+void ZDirector::run_thread() {
   // Main loop
   while (wait_for_tick()) {
     ZDirectorStats stats = sample_stats();
@@ -921,7 +921,7 @@ void ZDirector::run_service() {
   }
 }
 
-void ZDirector::stop_service() {
+void ZDirector::terminate() {
   ZLocker<ZConditionLock> locker(&_monitor);
   _stopped = true;
   _monitor.notify();

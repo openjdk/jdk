@@ -195,7 +195,7 @@ void ZDriverMinor::handle_alloc_stalls() const {
   handle_alloc_stalling_for_young();
 }
 
-void ZDriverMinor::run_service() {
+void ZDriverMinor::run_thread() {
   // Main loop
   for (;;) {
     // Wait for GC request
@@ -221,7 +221,7 @@ void ZDriverMinor::run_service() {
   }
 }
 
-void ZDriverMinor::stop_service() {
+void ZDriverMinor::terminate() {
   const ZDriverRequest request(GCCause::_no_gc, 0, 0);
   _port.send_async(request);
 }
@@ -439,7 +439,7 @@ void ZDriverMajor::handle_alloc_stalls() const {
   handle_alloc_stalling_for_old();
 }
 
-void ZDriverMajor::run_service() {
+void ZDriverMajor::run_thread() {
   // Main loop
   for (;;) {
     // Wait for GC request
@@ -466,7 +466,7 @@ void ZDriverMajor::run_service() {
   }
 }
 
-void ZDriverMajor::stop_service() {
+void ZDriverMajor::terminate() {
   const ZDriverRequest request(GCCause::_no_gc, 0, 0);
   _port.send_async(request);
 }

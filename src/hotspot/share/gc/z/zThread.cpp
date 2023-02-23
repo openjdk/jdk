@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,30 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZUNCOMMITTER_HPP
-#define SHARE_GC_Z_ZUNCOMMITTER_HPP
-
-#include "gc/z/zLock.hpp"
+#include "precompiled.hpp"
 #include "gc/z/zThread.hpp"
+#include "runtime/mutexLocker.hpp"
 
-class ZPageAllocator;
+void ZThread::run_service() {
+  run_thread();
 
-class ZUncommitter : public ZThread {
-private:
-  ZPageAllocator* const  _page_allocator;
-  mutable ZConditionLock _lock;
-  bool                   _stop;
+  MonitorLocker ml(Terminator_lock, Monitor::_no_safepoint_check_flag);
 
-  bool wait(uint64_t timeout) const;
-  bool should_continue() const;
+  // Wait for signal to terminate
+  while (!should_terminate()) {
+    ml.wait();
+  }
+}
 
-protected:
-  virtual void run_thread();
-  virtual void terminate();
+void ZThread::stop_service() {
+  {
+    // Signal thread to terminate
+    // The should_terminate() flag should be true, and this notifies waiters
+    // to wake up.
+    MonitorLocker ml(Terminator_lock);
+    assert(should_terminate(), "This should be called when should_terminate has been set");
+    ml.notify_all();
+  }
 
-public:
-  ZUncommitter(ZPageAllocator* page_allocator);
-};
-
-#endif // SHARE_GC_Z_ZUNCOMMITTER_HPP
+  terminate();
+}

@@ -1050,7 +1050,7 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
   log.print("=========================================================================================================================================================");
 }
 
-void ZStat::run_service() {
+void ZStat::run_thread() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Debug, gc, stats) log;
 
@@ -1073,7 +1073,7 @@ void ZStat::run_service() {
   delete [] history;
 }
 
-void ZStat::stop_service() {
+void ZStat::terminate() {
   _metronome.stop();
 }
 

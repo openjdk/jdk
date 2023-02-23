@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_Z_ZDRIVER_HPP
 #define SHARE_GC_Z_ZDRIVER_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zDriverPort.hpp"
+#include "gc/z/zThread.hpp"
 #include "gc/z/zTracer.hpp"
 
 class ZDriverMinor;
@@ -34,7 +34,7 @@ class ZDriverMajor;
 class ZLock;
 class VM_ZOperation;
 
-class ZDriver : public ConcurrentGCThread {
+class ZDriver : public ZThread {
   friend class ZDriverLocker;
   friend class ZDriverUnlocker;
 
@@ -74,8 +74,8 @@ private:
   void handle_alloc_stalls() const;
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZDriverMinor();
@@ -104,8 +104,8 @@ private:
   void handle_alloc_stalls() const;
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZDriverMajor();

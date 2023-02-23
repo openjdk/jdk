@@ -24,13 +24,13 @@
 #ifndef SHARE_GC_Z_ZSTAT_HPP
 #define SHARE_GC_Z_ZSTAT_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zMetronome.hpp"
 #include "gc/z/zRelocationSetSelector.hpp"
+#include "gc/z/zThread.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -378,7 +378,7 @@ public:
 //
 // Stat thread
 //
-class ZStat : public ConcurrentGCThread {
+class ZStat : public ZThread {
 private:
   static const uint64_t sample_hz = 1;
 
@@ -389,8 +389,8 @@ private:
   void print(LogTargetHandle log, const ZStatSamplerHistory* history) const;
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZStat();

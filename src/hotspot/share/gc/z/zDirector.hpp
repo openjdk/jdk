@@ -24,10 +24,10 @@
 #ifndef SHARE_GC_Z_ZDIRECTOR_HPP
 #define SHARE_GC_Z_ZDIRECTOR_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zThread.hpp"
 
-class ZDirector : public ConcurrentGCThread {
+class ZDirector : public ZThread {
 private:
   static const uint64_t decision_hz = 10;
   static ZDirector* _director;
@@ -38,8 +38,8 @@ private:
   bool wait_for_tick();
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZDirector();

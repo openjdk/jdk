@@ -47,14 +47,8 @@ void ConcurrentGCThread::run() {
 
   run_service();
 
-  MonitorLocker ml(Terminator_lock, Monitor::_no_safepoint_check_flag);
-
-  // Wait for signal to terminate
-  while (!_should_terminate) {
-    ml.wait();
-  }
-
   // Signal thread has terminated
+  MonitorLocker ml(Terminator_lock);
   Atomic::release_store(&_has_terminated, true);
   ml.notify_all();
 }
@@ -64,11 +58,7 @@ void ConcurrentGCThread::stop() {
   assert(!has_terminated(), "Invalid state");
 
   // Signal thread to terminate
-  {
-    MonitorLocker ml(Terminator_lock);
-    Atomic::release_store_fence(&_should_terminate, true);
-    ml.notify_all();
-  }
+  Atomic::release_store_fence(&_should_terminate, true);
 
   stop_service();
 

@@ -76,19 +76,19 @@ void ZUnmapper::unmap_and_destroy_page(ZPage* page) {
   _lock.notify_all();
 }
 
-void ZUnmapper::run_service() {
+void ZUnmapper::run_thread() {
   for (;;) {
     ZPage* const page = dequeue();
     if (page == nullptr) {
       // Stop
-      return;
+      break;
     }
 
     do_unmap_and_destroy_page(page);
   }
 }
 
-void ZUnmapper::stop_service() {
+void ZUnmapper::terminate() {
   ZLocker<ZConditionLock> locker(&_lock);
   _stop = true;
   _lock.notify_all();

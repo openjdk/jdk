@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,22 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZUNCOMMITTER_HPP
-#define SHARE_GC_Z_ZUNCOMMITTER_HPP
+#ifndef SHARE_GC_Z_ZTHREAD_HPP
+#define SHARE_GC_Z_ZTHREAD_HPP
 
-#include "gc/z/zLock.hpp"
-#include "gc/z/zThread.hpp"
+#include "gc/shared/concurrentGCThread.hpp"
 
-class ZPageAllocator;
+// A ZThread is a ConcurrentGCThread with some ZGC-specific handling of GC shutdown
 
-class ZUncommitter : public ZThread {
+class ZThread : public ConcurrentGCThread {
 private:
-  ZPageAllocator* const  _page_allocator;
-  mutable ZConditionLock _lock;
-  bool                   _stop;
-
-  bool wait(uint64_t timeout) const;
-  bool should_continue() const;
-
-protected:
-  virtual void run_thread();
-  virtual void terminate();
+  virtual void run_service();
+  virtual void stop_service();
 
 public:
-  ZUncommitter(ZPageAllocator* page_allocator);
+
+  virtual void run_thread() = 0;
+  virtual void terminate() = 0;
 };
 
-#endif // SHARE_GC_Z_ZUNCOMMITTER_HPP
+#endif // SHARE_GC_Z_ZTHREAD_HPP
