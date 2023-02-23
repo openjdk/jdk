@@ -25,7 +25,6 @@
  * @test
  * @bug 8138583
  * @summary Add C2 AArch64 Superword support for scalar sum reduction optimizations : double abs & neg test
- * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRedAbsNeg_Double
  */
@@ -55,7 +54,7 @@ public class SumRedAbsNeg_Double {
     }
 
     @Run(test = {"sumReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
@@ -91,6 +90,8 @@ public class SumRedAbsNeg_Double {
         }
     }
 
+    /* Does not vectorize due to profitability heuristic
+       (with or without store) in SuperWord::profitable. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD})

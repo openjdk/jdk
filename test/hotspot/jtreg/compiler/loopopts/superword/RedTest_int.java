@@ -44,15 +44,15 @@ public class RedTest_int {
         int i = 0;
         Scenario[] scenarios = new Scenario[8];
         for (int maxUnroll : new int[] {2, 4, 8, 16}) {
-          scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
-                                         "-XX:LoopMaxUnroll=" + maxUnroll,
-                                         "-XX:-TieredCompilation");
-          i++;
+            scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll,
+                                           "-XX:-TieredCompilation");
+            i++;
         }
         for (int maxUnroll : new int[] {2, 4, 8, 16}) {
-          scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
-                                         "-XX:LoopMaxUnroll=" + maxUnroll);
-          i++;
+            scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll);
+            i++;
         }
         framework.addScenarios(scenarios);
         framework.start();
@@ -63,7 +63,7 @@ public class RedTest_int {
                  "andReductionImplement",
                  "xorReductionImplement",
                  "mulReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         int[] a = new int[NUM];
         int[] b = new int[NUM];
@@ -164,8 +164,8 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.OR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
-            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-            counts = {IRNode.OR_REDUCTION_V, ">= 1"})
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.OR_REDUCTION_V, ">= 1"})
     public static int orReductionImplement(
             int[] a,
             int[] b,
@@ -183,8 +183,8 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.AND_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
-            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-            counts = {IRNode.AND_REDUCTION_V, ">= 1"})
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.AND_REDUCTION_V, ">= 1"})
     public static int andReductionImplement(
             int[] a,
             int[] b,
@@ -202,8 +202,8 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.XOR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
-            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-            counts = {IRNode.XOR_REDUCTION_V, ">= 1"})
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.XOR_REDUCTION_V, ">= 1"})
     public static int xorReductionImplement(
             int[] a,
             int[] b,
@@ -221,8 +221,8 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.MUL_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
-            applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-            counts = {IRNode.MUL_REDUCTION_VI, ">= 1"})
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.MUL_REDUCTION_VI, ">= 1"})
     public static int mulReductionImplement(
             int[] a,
             int[] b,

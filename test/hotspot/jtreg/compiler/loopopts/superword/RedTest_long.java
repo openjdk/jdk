@@ -45,15 +45,15 @@ public class RedTest_long {
         int i = 0;
         Scenario[] scenarios = new Scenario[8];
         for (int maxUnroll : new int[] {2, 4, 8, 16}) {
-          scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
-                                         "-XX:LoopMaxUnroll=" + maxUnroll,
-                                         "-XX:-TieredCompilation");
-          i++;
+            scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll,
+                                           "-XX:-TieredCompilation");
+            i++;
         }
         for (int maxUnroll : new int[] {2, 4, 8, 16}) {
-          scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
-                                         "-XX:LoopMaxUnroll=" + maxUnroll);
-          i++;
+            scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll);
+            i++;
         }
         framework.addScenarios(scenarios);
         framework.start();
@@ -64,7 +64,7 @@ public class RedTest_long {
                  "andReductionImplement",
                  "xorReductionImplement",
                  "mulReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public static void runTests() throws Exception {
         long[] a = new long[NUM];
         long[] b = new long[NUM];
@@ -140,6 +140,7 @@ public class RedTest_long {
            c[i] = 0x13;
         }
     }
+
 
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},

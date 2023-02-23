@@ -25,7 +25,6 @@
  * @test
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar product reduction optimizations : int test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.ProdRed_Int
  */
@@ -54,7 +53,7 @@ public class ProdRed_Int {
     }
 
     @Run(test = {"prodReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         int[] a = new int[256 * 1024];
         int[] b = new int[256 * 1024];

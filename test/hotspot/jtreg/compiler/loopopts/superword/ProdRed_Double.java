@@ -25,7 +25,6 @@
  * @test
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar product reduction optimizations : float test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.ProdRed_Double
  */
@@ -53,11 +52,13 @@ public class ProdRed_Double {
         framework.start();
     }
 
-    @Run(test = {"prodReductionImplement"},
-        mode = RunMode.STANDALONE)
+    @Run(test = {"prodReductionImplement",
+                 "prodReductionWithStoreImplement"},
+         mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
+        double[] c = new double[256 * 1024];
         prodReductionInit(a, b);
         double valid = 2000;
         double total = 0;
@@ -65,13 +66,13 @@ public class ProdRed_Double {
             total = j + 1;
             total = prodReductionImplement(a, b, total);
         }
-        if (total == valid) {
-            System.out.println("Success");
-        } else {
-            System.out.println("Invalid sum of elements variable in total: " + total);
-            System.out.println("Expected value = " + valid);
-            throw new Exception("Failed");
+        testCorrectness(valid, total, "prodReduction");
+        total = 0;
+        for (int j = 0; j < 2000; j++) {
+            total = j + 1;
+            total = prodReductionWithStoreImplement(a, b, c, total);
         }
+        testCorrectness(valid, total, "prodReductionWithStore");
     }
 
     public static void prodReductionInit(double[] a, double[] b) {
@@ -81,7 +82,8 @@ public class ProdRed_Double {
         }
     }
 
-    //8300865 : No reduction nodes emitted (x86_64)
+    /* Vectorization is expected but not enabled (SuperWord::implemented).
+       A positive @IR test should be added later. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.MUL_REDUCTION_VD})
@@ -90,6 +92,33 @@ public class ProdRed_Double {
             total *= a[i] - b[i];
         }
         return total;
+    }
+
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.MUL_REDUCTION_VD})
+    @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfCPUFeature = {"sse2", "true"},
+        counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
+    public static double prodReductionWithStoreImplement(double[] a, double[] b, double[] c, double total) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = a[i] - b[i];
+            total *= c[i];
+        }
+        return total;
+    }
+
+    public static void testCorrectness(
+            double total,
+            double valid,
+            String op) throws Exception {
+        if (total == valid) {
+            System.out.println(op + ": Success");
+        } else {
+            System.out.println("Invalid total: " + total);
+            System.out.println("Expected value = " + valid);
+            throw new Exception(op + ": Failed");
+        }
     }
 
 }

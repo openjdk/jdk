@@ -25,7 +25,7 @@
  * @test
  * @bug 8076276
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : long test
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires vm.bits == "64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRed_Long
  */
@@ -54,7 +54,7 @@ public class SumRed_Long {
     }
 
     @Run(test = {"sumReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public static void runTests() throws Exception {
         long[] a = new long[256 * 1024];
         long[] b = new long[256 * 1024];
@@ -89,9 +89,14 @@ public class SumRed_Long {
         }
     }
 
+    /* Require avx2 due to filtering out small vector lengths (SuperWord::implemented).
+       Additionally providing a negative test to test this heuristic. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VL})
+    @IR(applyIfCPUFeature = {"avx2", "false"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VL, "= 0"})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1"})

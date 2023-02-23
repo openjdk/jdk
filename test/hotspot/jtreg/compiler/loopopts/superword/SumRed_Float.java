@@ -25,7 +25,6 @@
  * @test
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : float test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRed_Float
  */
@@ -54,7 +53,7 @@ public class SumRed_Float {
     }
 
     @Run(test = {"sumReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public static void runTests() throws Exception {
         float[] a = new float[256 * 1024];
         float[] b = new float[256 * 1024];

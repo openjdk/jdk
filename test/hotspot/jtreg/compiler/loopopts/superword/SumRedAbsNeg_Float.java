@@ -25,7 +25,6 @@
  * @test
  * @bug 8138583
  * @summary Add C2 AArch64 Superword support for scalar sum reduction optimizations : float abs & neg test
- * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRedAbsNeg_Float
  */
@@ -55,18 +54,17 @@ public class SumRedAbsNeg_Float {
     }
 
     @Run(test = {"sumReductionImplement"},
-        mode = RunMode.STANDALONE)
+         mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         float[] a = new float[256 * 1024];
         float[] b = new float[256 * 1024];
         float[] c = new float[256 * 1024];
-        float[] d = new float[256 * 1024];
         sumReductionInit(a, b, c);
         float total = 0;
         float valid = (float) 4.611686E18;
 
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
 
         if (total == valid) {
@@ -94,15 +92,16 @@ public class SumRedAbsNeg_Float {
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VF})
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">= 1", IRNode.ABS_V, ">= 1", IRNode.NEG_V, ">= 1"})
     public static float sumReductionImplement(
             float[] a,
             float[] b,
             float[] c,
-            float[] d,
             float total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
-            total += d[i];
+            total +=  Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
         }
         return total;
     }
