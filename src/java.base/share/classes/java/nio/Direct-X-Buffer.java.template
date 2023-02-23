@@ -187,6 +187,11 @@ class Direct$Type$Buffer$RW$$BO$
         att = null;
     }
 
+    // Temporarily keep the long,int constructor around
+    private Direct$Type$Buffer(long addr, int cap) {
+        this(addr, (long)cap);
+    }
+
     // Throw an IllegalArgumentException if the capacity is not in
     // the range [0, Integer.MAX_VALUE]
     //
@@ -270,7 +275,7 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
-                                              rem, 
+                                              rem,
                                               rem,
                                               off,
 #if[byte]
