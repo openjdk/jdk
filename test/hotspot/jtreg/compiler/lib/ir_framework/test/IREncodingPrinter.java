@@ -240,7 +240,8 @@ public class IREncodingPrinter {
         }
 
         // Please verify new CPU features before adding them. If we allow non-existent features
-        // on this list, we will ignore tests and never execute them.
+        // on this list, we will ignore tests and never execute them. Consult CPU_FEATURE_FLAGS
+        // in corresponding vm_version_.hpp file to find correct cpu feature's name.
         List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
             // x86
             "fma",
