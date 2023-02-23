@@ -28,6 +28,7 @@ package sun.security.provider.certpath.ldap;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.*;
+import javax.naming.CompositeName;
 import javax.naming.Context;
 import javax.naming.InvalidNameException;
 import javax.naming.NamingEnumeration;
@@ -231,6 +232,20 @@ final class LDAPCertStoreImpl {
             requestedAttributes = new ArrayList<>(5);
         }
 
+        private static String checkName(String name) throws CertStoreException {
+            if (name == null) {
+                throw new CertStoreException("Name absent");
+            }
+            try {
+                if (new CompositeName(name).size() > 1) {
+                    throw new CertStoreException("Invalid name: " + name);
+                }
+            } catch (InvalidNameException ine) {
+                throw new CertStoreException("Invalid name: " + name, ine);
+            }
+            return name;
+        }
+
         void addRequestedAttribute(String attrId) {
             if (valueMap != null) {
                 throw new IllegalStateException("Request already sent");
@@ -307,6 +322,11 @@ final class LDAPCertStoreImpl {
                         if (!newUri.getScheme().equalsIgnoreCase("ldap")) {
                             throw new IllegalArgumentException("Not LDAP");
                         }
+                        String newDn = newUri.getPath();
+                        if (newDn != null && newDn.charAt(0) == '/') {
+                            newDn = newDn.substring(1);
+                        }
+                        checkName(newDn);
                     } catch (Exception e) {
                         throw new NamingException("Cannot follow referral to "
                                 + lre.getReferralInfo());
@@ -356,7 +376,7 @@ final class LDAPCertStoreImpl {
          * or does not contain any values, a zero length byte array is
          * returned. NOTE that it is assumed that all values are byte arrays.
          */
-        private byte[][] getAttributeValues(Attribute attr)
+        private static byte[][] getAttributeValues(Attribute attr)
                 throws NamingException {
             byte[][] values;
             if (attr == null) {
