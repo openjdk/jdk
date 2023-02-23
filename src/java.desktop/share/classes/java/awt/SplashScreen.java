@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
  */
 package java.awt;
 
-import java.io.IOException;
-import java.awt.image.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.io.File;
-import sun.util.logging.PlatformLogger;
 import sun.awt.image.SunWritableRaster;
+import sun.util.logging.PlatformLogger;
+
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferInt;
+import java.awt.image.SinglePixelPackedSampleModel;
+import java.io.IOException;
+import java.net.*;
 
 /**
  * The splash screen can be displayed at application startup, before the
@@ -208,33 +210,28 @@ public final class SplashScreen {
             throw new IllegalStateException("no splash screen available");
         }
     }
+
     /**
      * Returns the current splash screen image.
      *
      * @return URL for the current splash screen image file
      * @throws IllegalStateException if the splash screen has already been closed
      */
-    @SuppressWarnings("deprecation")
     public URL getImageURL() throws IllegalStateException {
         synchronized (SplashScreen.class) {
             checkVisible();
             if (imageURL == null) {
                 try {
                     String fileName = _getImageFileName(splashPtr);
-                    String jarName = _getImageJarName(splashPtr);
                     if (fileName != null) {
-                        if (jarName != null) {
-                            @SuppressWarnings("deprecation")
-                            var _unused = imageURL =
-                                    new URL("jar:"+(new File(jarName).toURL().toString())+"!/"+fileName);
-                        } else {
-                            imageURL = new File(fileName).toURL();
-                        }
+                        String jarName = _getImageJarName(splashPtr);
+                        // When calling java -jar, point to the file within the jar
+                        String schema = jarName != null ? "jar:" + jarName + "!/" : "file:";
+                        imageURL = new URI(schema + fileName).toURL();
                     }
-                }
-                catch(java.net.MalformedURLException e) {
+                } catch (MalformedURLException | URISyntaxException e) {
                     if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("MalformedURLException caught in the getImageURL() method", e);
+                        log.fine("MalformedURLException or URISyntaxException caught in the getImageURL() method", e);
                     }
                 }
             }
@@ -429,8 +426,24 @@ public final class SplashScreen {
     private static native Rectangle _getBounds(long splashPtr);
     private static native long _getInstance();
     private static native void _close(long splashPtr);
+
+    /**
+     * Gets the path to the image passed via {@code java -splash:}.
+     *
+     * @param splashPtr the pointer to the native splash struct
+     * @return the path name to the splash image or {@code null}
+     */
     private static native String _getImageFileName(long splashPtr);
+
+    /**
+     * Gets the path to the {@code .jar} file passed via {@code java -jar}.
+     * This will be {@code null} when Java is not executing from a jar.
+     *
+     * @param SplashPtr the pointer to the native splash struct
+     * @return the path name to the jar file or {@code null}
+     */
     private static native String _getImageJarName(long SplashPtr);
+
     private static native boolean _setImageData(long SplashPtr, byte[] data);
     private static native float _getScaleFactor(long SplashPtr);
 
