@@ -35,11 +35,9 @@ import java.lang.annotation.Target;
  * Event annotation, specifies the default setting value for a periodic event.
  * <p>
  * The following example shows how the {@code Period} annotation can be used
- * to create an application that prints increasing numbers, but for multiples of three
- * prints "Fizz" instead of the number and for the multiples of five prints
- * "Buzz". For numbers that are multiples of both three and five "FizzBuzz" is printed.
+ * to emit an events at different intervals.
  *
- * {@snippet class="Snippets" region="PeriodOverview"}
+ * {@snippet class = "Snippets" region = "PeriodOverview"}
  *
  * @since 9
  */

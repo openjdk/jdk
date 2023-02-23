@@ -31,14 +31,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Event field annotation, specifies that the value is a boolean flag, a {@code true} or
- * {@code false} value.
+ * Event field annotation, specifies that the value is a boolean flag, a
+ * {@code true} or {@code false} value.
  * <p>
- * The following example shows how the {@code BooleanFlag} annotation can be used to
- * hint to a graphical user interface that the rollback setting is a boolean
- * value that could displayed as a checkbox.
- *
- * {@snippet class="Snippets" region="BooleanFlagOverview"}
+ * The following example shows how the {@code BooleanFlag} annotation can be
+ * used to describe that a setting is a boolean value. This information can be
+ * used by a graphical user interface to display the setting as a checkbox.
+ * 
+ * {@snippet class = "Snippets" region = "BooleanFlagOverview"}
  *
  * @since 9
  */

@@ -58,13 +58,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -263,15 +263,17 @@ public class Snippets {
     // @start region="EnabledOverview"
     @Name("StopWatch")
     @Label("Stop Watch")
+    @Category("Debugging")
+    @StackTrace(false)
     @Enabled(false)
-    public class StopWatch extends Event {
+    static public class StopWatchEvent extends Event {
     }
 
     public void update() {
-        StopWatch event = new StopWatch();
-        event.begin();
+        StopWatchEvent e = new StopWatchEvent();
+        e.begin();
         code: // @replace regex='code:' replacement="..."
-        event.commit();
+        e.commit();
     }
     // @end
     /*
@@ -323,16 +325,17 @@ public class Snippets {
 
     void EventSettingOverview() throws Exception {
         // @start region="EventSettingOverview"
-        Recording r = new Recording();
-        r.enable("jdk.CPULoad")
-         .withPeriod(Duration.ofSeconds(1));
-        r.enable("jdk.FileWrite")
-         .withoutStackTrace()
-         .withThreshold(Duration.ofNanos(10));
-        r.start();
-        Thread.sleep(10_000);
-        r.stop();
-        r.dump(Files.createTempFile("recording", ".jfr"));
+        try (Recording r = new Recording()) {
+            r.enable("jdk.CPULoad")
+             .withPeriod(Duration.ofSeconds(1));
+            r.enable("jdk.FileWrite")
+             .withoutStackTrace()
+             .withThreshold(Duration.ofNanos(10));
+            r.start();
+            Thread.sleep(10_000);
+            r.stop();
+            r.dump(Files.createTempFile("recording", ".jfr"));
+        }
         // @end
     }
     void EventTypeOverview() {
@@ -492,12 +495,13 @@ public class Snippets {
  void RecordingnOverview() throws Exception {
      // @start region="RecordingOverview"
      Configuration c = Configuration.getConfiguration("default");
-     Recording r = new Recording(c);
-     r.start();
-     System.gc();
-     Thread.sleep(5000);
-     r.stop();
-     r.dump(Files.createTempFile("my-recording", ".jfr"));
+     try (Recording r = new Recording(c)) {
+         r.start();
+         System.gc();
+         Thread.sleep(5000);
+         r.stop();
+         r.dump(Files.createTempFile("my-recording", ".jfr"));
+     }
      // @end
  }
 
@@ -599,4 +603,42 @@ public class Snippets {
      }
  }
  // @end
+ 
+ static class ValueDsecriptorOverview {
+     // @start region="ValueDescriptorOverview"
+     void printTypes() {
+         Map<String, List<ValueDescriptor>> typeMap = new LinkedHashMap<>();
+         for (EventType eventType : FlightRecorder.getFlightRecorder().getEventTypes()) {
+             findTypes(typeMap, eventType.getName(), eventType.getFields());
+         }
+         for (String type : typeMap.keySet()) {
+             System.out.println("Type: " + type);
+             for (ValueDescriptor field : typeMap.get(type)) {
+                 System.out.println(" Field: " + field.getName());
+                 String arrayBrackets = field.isArray() ? "[]" : "";
+                 System.out.println("  Type: " + field.getTypeName() + arrayBrackets);
+                 if (field.getLabel() != null) {
+                     System.out.println("  Label: " + field.getLabel());
+                 }
+                 if (field.getDescription() != null) {
+                     System.out.println("  Description: " + field.getDescription());
+                 }
+                 if (field.getContentType() != null) {
+                     System.out.println("  Content Types: " + field.getContentType());
+                 }
+             }
+             System.out.println();
+         }
+     }
+
+     void findTypes(Map<String, List<ValueDescriptor>> typeMap, String typeName, List<ValueDescriptor> fields) {
+         if (!typeMap.containsKey(typeName)) {
+             typeMap.put(typeName, fields);
+             for (ValueDescriptor subField : fields) {
+                 findTypes(typeMap, subField.getTypeName(), subField.getFields());
+             }
+         }
+     }
+     // @end
+ }
 }
