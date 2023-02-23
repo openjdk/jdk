@@ -1823,106 +1823,63 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Appends {@code times} copies of the character {@code c} to this sequence.
+     * Appends {@code count} copies of the character {@code c} to this sequence.
      * <p>
-     * The length of this sequence increases by {@code times}.
+     * The length of this sequence increases by {@code count}.
      *
      * @param c      character to append
-     * @param times  number of times to repeat
+     * @param count  number of times to copy
      *
      * @return  a reference to this object.
      *
      * @since 21
-     * @throws IllegalArgumentException  if {@code times} is less than zero
-     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
-     * if the result overflows the buffer
+     * @throws IllegalArgumentException  if {@code count} is less than zero
+     * @throws StringIndexOutOfBoundsException  if the result overflows the buffer
      */
-    public AbstractStringBuilder repeat(char c, int times) {
-        if (times < 0) {
-            throw new IllegalArgumentException("times is less than zero: " + times);
+    public AbstractStringBuilder repeat(char c, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is less than zero: " + count);
         }
-        if (times == 0) {
+        if (count == 0) {
             return this;
         }
-        ensureCapacityInternal(count + times);
+        ensureCapacityInternal(this.count + count);
         if (isLatin1() && StringLatin1.canEncode(c)) {
-            int index = count;
-            while (times-- != 0) {
+            int index = this.count;
+            while (count-- != 0) {
                 value[index++] = (byte) c;
             }
-            count = index;
+            this.count = index;
         } else {
             if (isLatin1()) {
                 inflate();
             }
-            int index = count;
-            while (times-- != 0) {
+            int index = this.count;
+            while (count-- != 0) {
                 StringUTF16.putCharSB(value, index++, c);
             }
-            count = index;
+            this.count = index;
         }
         return this;
     }
 
-    private AbstractStringBuilder repeatNull(int times) {
-        if (times < 0) {
-            throw new IllegalArgumentException("times is less than zero: " + times);
-        } else if (times == 0) {
+    private AbstractStringBuilder repeatNull(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is less than zero: " + count);
+        } else if (count == 0) {
             return this;
         }
-        int offset = count;
+        int offset = this.count;
         appendNull();
-        int length = count - offset;
+        int length = this.count - offset;
         int valueLength = length << coder;
-        if ((Integer.MAX_VALUE - offset) / times < valueLength) {
+        if ((Integer.MAX_VALUE - offset) / count < valueLength) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
-        int limit = times * length;
+        int limit = count * length;
         ensureCapacityInternal(offset + limit);
         String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
-        count = offset + limit;
-        return this;
-    }
-
-    /**
-     * Appends {@code times} copies of the specified string {@code str} to this sequence.
-     * <p>
-     * The length of this sequence increases by {@code times} times the string length.
-     *
-     * @param str    a string
-     * @param times  number of times to repeat
-     *
-     * @return  a reference to this object.
-     *
-     * @since 21
-     * @throws IllegalArgumentException  if {@code times} is less than zero
-     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
-     * if the result overflows the buffer
-     */
-    public AbstractStringBuilder repeat(String str, int times) {
-        if (str == null) {
-            return repeatNull(times);
-        } else if (times < 0) {
-            throw new IllegalArgumentException("times is less than zero: " + times);
-        } else if (times == 0) {
-            return this;
-        } else if (times == 1) {
-            return append(str);
-        }
-        int length = str.length();
-        if (length == 1) {
-            return repeat(str.charAt(0), times);
-        }
-        int valueLength = length << str.coder();
-        if ((Integer.MAX_VALUE - count) / times < valueLength) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
-        }
-        int limit = times * length;
-        int offset = count;
-        ensureCapacityInternal(offset + limit);
-        putStringAt(offset, str);
-        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
-        count = offset + limit;
+        this.count = offset + limit;
         return this;
     }
 
@@ -1930,40 +1887,39 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * Appends {@code count} copies of the specified {@code CharSequence} {@code cs}
      * to this sequence.
      * <p>
-     * The length of this sequence increases by {@code times} times the
+     * The length of this sequence increases by {@code count} times the
      * {@code CharSequence} length.
      *
-     * @param cs    a {@code CharSequence}
-     * @param times  number of times to repeat
+     * @param cs     a {@code CharSequence}
+     * @param count  number of times to copy
      *
      * @return  a reference to this object.
      *
      * @since 21
-     * @throws IllegalArgumentException  if {@code times} is less than zero
-     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
-     * if the result overflows the buffer
+     * @throws IllegalArgumentException  if {@code count} is less than zero
+     * @throws StringIndexOutOfBoundsException  if the result overflows the buffer
      */
-    public AbstractStringBuilder repeat(CharSequence cs, int times) {
+    public AbstractStringBuilder repeat(CharSequence cs, int count) {
         if (cs == null) {
-            return repeatNull(times);
-        } else if (times < 0) {
-            throw new IllegalArgumentException("times is less than zero: " + times);
-        } else if (times == 0) {
+            return repeatNull(count);
+        } else if (count < 0) {
+            throw new IllegalArgumentException("count is less than zero: " + count);
+        } else if (count == 0) {
             return this;
-        } else if (times == 1) {
+        } else if (count == 1) {
             return append(cs);
         }
 
         int length = cs.length();
         if (length == 1) {
-            return repeat(cs.charAt(0), times);
+            return repeat(cs.charAt(0), count);
         }
         int valueLength = length << UTF16;
-        if ((Integer.MAX_VALUE - count) / times < valueLength) {
+        if ((Integer.MAX_VALUE - this.count) / count < valueLength) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
-        int limit = times * length;
-        int offset = count;
+        int limit = count * length;
+        int offset = this.count;
         ensureCapacityInternal(offset + limit);
         if (cs instanceof String str) {
             putStringAt(offset, str);
@@ -1973,7 +1929,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             appendChars(cs, 0, length);
         }
         String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
-        count = offset + limit;
+        this.count = offset + limit;
         return this;
     }
 }

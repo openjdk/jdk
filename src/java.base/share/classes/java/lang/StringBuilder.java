@@ -452,8 +452,8 @@ public final class StringBuilder
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
     @Override
-    public StringBuilder repeat(char c, int times) {
-        super.repeat(c, times);
+    public StringBuilder repeat(char c, int count) {
+        super.repeat(c, count);
         return this;
     }
 
@@ -463,19 +463,8 @@ public final class StringBuilder
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
     @Override
-    public StringBuilder repeat(String str, int times) {
-        super.repeat(str, times);
-        return this;
-    }
-
-    /**
-     * @since 21
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     */
-    @Override
-    public StringBuilder repeat(CharSequence cs, int times) {
-        super.repeat(cs, times);
+    public StringBuilder repeat(CharSequence cs, int count) {
+        super.repeat(cs, count);
         return this;
     }
 
