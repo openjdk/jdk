@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,6 @@ public final class FileSystemOption<T> {
         new FileSystemOption<>(ExtendedOptions.FILE_TREE);
     public static final FileSystemOption<Void> DIRECT =
         new FileSystemOption<>(ExtendedOptions.DIRECT);
-    public static final FileSystemOption<Integer> SENSITIVITY_HIGH =
-        new FileSystemOption<>(ExtendedOptions.SENSITIVITY_HIGH);
-    public static final FileSystemOption<Integer> SENSITIVITY_MEDIUM =
-        new FileSystemOption<>(ExtendedOptions.SENSITIVITY_MEDIUM);
-    public static final FileSystemOption<Integer> SENSITIVITY_LOW =
-        new FileSystemOption<>(ExtendedOptions.SENSITIVITY_LOW);
 
     private final ExtendedOptions.InternalOption<T> internalOption;
     private FileSystemOption(ExtendedOptions.InternalOption<T> option) {

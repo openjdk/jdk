@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,4 @@ public final class ExtendedOptions {
     public static final InternalOption<Void> FILE_TREE = new InternalOption<>();
 
     public static final InternalOption<Void> DIRECT = new InternalOption<>();
-
-    public static final InternalOption<Integer> SENSITIVITY_HIGH = new InternalOption<>();
-    public static final InternalOption<Integer> SENSITIVITY_MEDIUM = new InternalOption<>();
-    public static final InternalOption<Integer> SENSITIVITY_LOW = new InternalOption<>();
 }

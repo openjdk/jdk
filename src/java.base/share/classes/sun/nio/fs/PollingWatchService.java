@@ -122,11 +122,8 @@ class PollingWatchService
         for (WatchEvent.Modifier modifier : modifiers) {
             if (modifier == null)
                 throw new NullPointerException();
-            if (!ExtendedOptions.SENSITIVITY_HIGH.matches(modifier) &&
-                !ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier) &&
-                !ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
-                throw new UnsupportedOperationException("Modifier not supported");
-            }
+
+            throw new UnsupportedOperationException("Modifier not supported");
         }
 
         // check if watch service is closed
@@ -140,7 +137,8 @@ class PollingWatchService
                 new PrivilegedExceptionAction<PollingWatchKey>() {
                     @Override
                     public PollingWatchKey run() throws IOException {
-                        return doPrivilegedRegister(path, eventSet);
+                        return doPrivilegedRegister(path, eventSet,
+                                                    POLLING_INTERVAL);
                     }
                 });
         } catch (PrivilegedActionException pae) {
@@ -154,7 +152,8 @@ class PollingWatchService
     // registers directory returning a new key if not already registered or
     // existing key if already registered
     private PollingWatchKey doPrivilegedRegister(Path path,
-                                                 Set<? extends WatchEvent.Kind<?>> events)
+                                                 Set<? extends WatchEvent.Kind<?>> events,
+                                                 int sensitivityInSeconds)
         throws IOException
     {
         // check file is a directory and get its file key if possible
@@ -183,7 +182,7 @@ class PollingWatchService
                     watchKey.disable();
                 }
             }
-            watchKey.enable(events);
+            watchKey.enable(events, sensitivityInSeconds);
             return watchKey;
         }
 
@@ -293,7 +292,7 @@ class PollingWatchService
         }
 
         // enables periodic polling
-        void enable(Set<? extends WatchEvent.Kind<?>> events) {
+        void enable(Set<? extends WatchEvent.Kind<?>> events, long period) {
             synchronized (this) {
                 // update the events
                 this.events = events;
@@ -301,8 +300,7 @@ class PollingWatchService
                 // create the periodic task to poll directories
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
-                    .scheduleAtFixedRate(thunk, POLLING_INTERVAL,
-                                         POLLING_INTERVAL, TimeUnit.SECONDS);
+                    .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);
             }
         }
 
