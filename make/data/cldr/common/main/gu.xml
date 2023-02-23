@@ -1043,6 +1043,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ઝિમ્બાબ્વે</territory>
 			<territory type="ZZ">અજ્ઞાત પ્રદેશ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ઈંગ્લેન્ડ</subdivision>
+			<subdivision type="gbsct">સ્કોટલેન્ડ</subdivision>
+			<subdivision type="gbwls">વેલ્સ</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN">પિનયિન રોમનાઇઝેશન</variant>
 			<variant type="WADEGILE">વેડ-ગિલ્સ રોમનાઇઝેશન</variant>

@@ -1110,6 +1110,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">津巴布韦</territory>
 			<territory type="ZZ">未知地区</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">英格兰</subdivision>
+			<subdivision type="gbsct">苏格兰</subdivision>
+			<subdivision type="gbwls">威尔士</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">传统德文拼字</variant>
 			<variant type="1994">标准雷西亚拼字</variant>

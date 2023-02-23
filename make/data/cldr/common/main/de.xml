@@ -175,6 +175,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="elx">Elamisch</language>
 			<language type="en">Englisch</language>
 			<language type="en_GB" alt="short">Englisch (GB)</language>
+			<language type="en_US" alt="short">Englisch (USA)</language>
 			<language type="enm">Mittelenglisch</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanisch</language>
@@ -1166,6 +1167,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Simbabwe</territory>
 			<territory type="ZZ">Unbekannte Region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">England</subdivision>
+			<subdivision type="gbsct">Schottland</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Alte deutsche Rechtschreibung</variant>
 			<variant type="1994">Standardisierte Resianische Rechtschreibung</variant>

@@ -169,6 +169,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">جنوبی ہائیڈا</language>
 			<language type="he">عبرانی</language>
 			<language type="hi">ہندی</language>
+			<language type="hi_Latn">ہندی (لاطینی)</language>
 			<language type="hi_Latn" alt="variant">ہنگلش</language>
 			<language type="hil">ہالیگینون</language>
 			<language type="hmn">ہمانگ</language>
@@ -849,6 +850,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">زمبابوے</territory>
 			<territory type="ZZ">نامعلوم علاقہ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انگلینڈ</subdivision>
+			<subdivision type="gbsct">اسکاٹ لینڈ</subdivision>
+			<subdivision type="gbwls">ویلز</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">کیلنڈر</key>
 			<key type="cf">کرنسی فارمیٹ</key>

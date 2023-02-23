@@ -386,6 +386,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Wala Mailhing Rehiyon</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglatera</subdivision>
+			<subdivision type="gbsct">Scotland</subdivision>
+			<subdivision type="gbwls">Wales (apil sa nasod)</subdivision>
+		</subdivisions>
 		<types>
 			<type key="calendar" type="gregorian">Gregorian nga Kalendaryo</type>
 			<type key="calendar" type="iso8601">Kalendaryo sa ISO-8601</type>

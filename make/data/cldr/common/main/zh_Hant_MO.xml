@@ -12,6 +12,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Hant"/>
 		<territory type="MO"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="yue" alt="menu">粵語</language>
+		</languages>
+		<territories>
+			<territory type="CI" alt="variant">象牙海岸</territory>
+		</territories>
+	</localeDisplayNames>
 	<numbers>
 		<currencies>
 			<currency type="MOP">

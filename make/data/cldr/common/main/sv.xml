@@ -1181,6 +1181,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">okänd region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">England</subdivision>
+			<subdivision type="gbsct">Skottland</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">traditionell tysk stavning</variant>
 			<variant type="1994">1994 års resisk stavning</variant>
@@ -1607,11 +1612,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -2002,7 +2007,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -3062,11 +3067,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -3200,7 +3205,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -3471,11 +3476,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -3559,11 +3564,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>

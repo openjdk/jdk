@@ -80,6 +80,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ur">烏爾都文</language>
 			<language type="wbp">瓦爾皮里文</language>
 			<language type="yue">廣東話</language>
+			<language type="yue" alt="menu">粵語</language>
 			<language type="zgh">摩洛哥標準塔馬齊格特文</language>
 		</languages>
 		<scripts>
@@ -119,6 +120,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">伯利茲</territory>
 			<territory type="CC">科科斯 (基林) 群島</territory>
 			<territory type="CI">科特迪瓦</territory>
+			<territory type="CI" alt="variant">象牙海岸</territory>
 			<territory type="CP">克里珀頓島</territory>
 			<territory type="CR">哥斯達黎加</territory>
 			<territory type="CV">佛得角</territory>

@@ -1165,6 +1165,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">Bilinmeyen Bölge</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">İngiltere</subdivision>
+			<subdivision type="gbsct">İskoçya</subdivision>
+			<subdivision type="gbwls">Galler</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Geleneksel Almanca Yazım Kuralları</variant>
 			<variant type="1994">Standart Resia Yazım Kuralları</variant>

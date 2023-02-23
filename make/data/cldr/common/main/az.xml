@@ -1026,6 +1026,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">Naməlum Region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">İngiltərə</subdivision>
+			<subdivision type="gbsct">Şotlandiya</subdivision>
+			<subdivision type="gbwls">Uels</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">Təqvim</key>
 			<key type="cf">Valyuta Formatı</key>

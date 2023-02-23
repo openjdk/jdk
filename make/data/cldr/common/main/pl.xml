@@ -1154,6 +1154,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Nieznany region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglia</subdivision>
+			<subdivision type="gbsct">Szkocja</subdivision>
+			<subdivision type="gbwls">Walia</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">tradycyjna ortografia niemiecka</variant>
 			<variant type="1994">standardowa ortografia regionu Resia</variant>

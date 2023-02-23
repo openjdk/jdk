@@ -852,6 +852,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Rexión descoñecida</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglaterra</subdivision>
+			<subdivision type="gbsct">Escocia</subdivision>
+			<subdivision type="gbwls">Gales</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">calendario</key>
 			<key type="cf">formato de moeda</key>

@@ -811,6 +811,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Ṣimibabe</territory>
 			<territory type="ZZ">Àgbègbè àìmọ̀</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Ilẹ̀gẹ̀ẹ́sì</subdivision>
+			<subdivision type="gbsct">Skọ́tlándì</subdivision>
+			<subdivision type="gbwls">Wélsì</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">Kàlẹ́ńdà</key>
 			<key type="cf">Ìgúnrégé Kọ́rẹ́ńsì</key>

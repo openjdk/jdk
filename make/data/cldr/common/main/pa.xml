@@ -471,7 +471,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zgh">ਮਿਆਰੀ ਮੋਰੋਕੇਨ ਟਾਮਾਜ਼ਿਕ</language>
 			<language type="zh">ਚੀਨੀ</language>
 			<language type="zh" alt="menu">ਚੀਨੀ, ਮੈਂਡਰਿਨ</language>
+			<language type="zh_Hans">ਚੀਨੀ (ਸਰਲ)</language>
 			<language type="zh_Hans" alt="long">ਚੀਨੀ ਮੈਂਡਰਿਨ (ਸਰਲ)</language>
+			<language type="zh_Hant">ਚੀਨੀ (ਰਵਾਇਤੀ)</language>
 			<language type="zh_Hant" alt="long">ਚੀਨੀ ਮੈਂਡਰਿਨ (ਰਵਾਇਤੀ)</language>
 			<language type="zu">ਜ਼ੁਲੂ</language>
 			<language type="zun">ਜ਼ੂਨੀ</language>
@@ -850,6 +852,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ਜ਼ਿੰਬਾਬਵੇ</territory>
 			<territory type="ZZ">ਅਣਪਛਾਤਾ ਇਲਾਕਾ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ਇੰਗਲੈਂਡ</subdivision>
+			<subdivision type="gbsct">ਸਕਾਟਲੈਂਡ</subdivision>
+			<subdivision type="gbwls">ਵੇਲਸ</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">ਕੈਲੰਡਰ</key>
 			<key type="cf">ਮੁਦਰਾ ਬਣਤਰ</key>

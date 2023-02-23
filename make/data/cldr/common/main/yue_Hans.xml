@@ -1136,6 +1136,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">辛巴威</territory>
 			<territory type="ZZ">未知区域</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">英伦</subdivision>
+			<subdivision type="gbsct">苏格兰</subdivision>
+			<subdivision type="gbwls">威尔斯</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">传统德语拼字学</variant>
 			<variant type="1994" draft="contributed">标准雷西亚拼字</variant>

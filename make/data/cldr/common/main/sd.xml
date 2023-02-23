@@ -834,6 +834,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">زمبابوي</territory>
 			<territory type="ZZ">اڻڄاتل خطو</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انگلينڊ</subdivision>
+			<subdivision type="gbsct">اسڪاٽلينڊ</subdivision>
+			<subdivision type="gbwls">ويلز</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="POSIX">ڪمپيوٽر</variant>
 		</variants>

@@ -1016,6 +1016,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">Neznano ali neveljavno območje</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglija</subdivision>
+			<subdivision type="gbsct">Škotska</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">tradicionalni nemški pravopis</variant>
 			<variant type="1994">standardizirani rezijanski pravopis (1994)</variant>

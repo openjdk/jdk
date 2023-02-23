@@ -959,6 +959,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">Тодорхойгүй бүс</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англи</subdivision>
+			<subdivision type="gbsct">Шотланд</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">цаглавар</key>
 			<key type="cf">мөнгөн тэмдэгтийн хэлбэр</key>

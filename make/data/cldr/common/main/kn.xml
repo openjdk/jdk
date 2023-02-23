@@ -1036,6 +1036,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ಜಿಂಬಾಬ್ವೆ</territory>
 			<territory type="ZZ">ಅಜ್ಞಾತ ಪ್ರದೇಶ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ಇಂಗ್ಲೆಂಡ್‌</subdivision>
+			<subdivision type="gbsct">ಸ್ಕಾಟ್ಲೆಂಡ್</subdivision>
+			<subdivision type="gbwls">ವೇಲ್ಸ್‌</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="contributed">ಪಿನ್‌ಯಿನ್ ರೋಮನೈಸೇಶನ್</variant>
 			<variant type="WADEGILE" draft="contributed">ವೇಡ್-ಗೈಲ್ಸ್ ರೋಮನೈಸೇಶನ್</variant>

@@ -845,6 +845,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Onbekende gebied</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Engeland</subdivision>
+			<subdivision type="gbsct">Skotland</subdivision>
+			<subdivision type="gbwls">Wallis</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="unconfirmed">Duitse ortografie van 1901</variant>
 			<variant type="1996" draft="unconfirmed">Duitse ortografie van 1996</variant>

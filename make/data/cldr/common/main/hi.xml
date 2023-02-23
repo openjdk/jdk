@@ -211,6 +211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">दक्षिणी हाइदा</language>
 			<language type="he">हिब्रू</language>
 			<language type="hi">हिन्दी</language>
+			<language type="hi_Latn">हिन्दी (लैटिन)</language>
 			<language type="hi_Latn" alt="variant">हिंग्लिश</language>
 			<language type="hil">हिलिगेनन</language>
 			<language type="hit">हिताइत</language>
@@ -1044,6 +1045,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ज़िम्बाब्वे</territory>
 			<territory type="ZZ">अज्ञात क्षेत्र</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">इंग्लैंड</subdivision>
+			<subdivision type="gbsct">स्कॉटलैंड</subdivision>
+			<subdivision type="gbwls">वेल्स</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">पारम्पारिक जर्मन वर्तनी</variant>
 			<variant type="1996">जर्मेनी की 1996 वर्तनी</variant>

@@ -1080,6 +1080,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">짐바브웨</territory>
 			<territory type="ZZ">알려지지 않은 지역</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">잉글랜드</subdivision>
+			<subdivision type="gbsct">스코틀랜드</subdivision>
+			<subdivision type="gbwls">웨일즈</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="contributed">전통 독일어 표기법</variant>
 			<variant type="1994" draft="provisional">표준 레지아어 표기법</variant>

@@ -1039,6 +1039,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">زیمبابوه</territory>
 			<territory type="ZZ">ناحیهٔ نامشخص</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انگلستان</subdivision>
+			<subdivision type="gbsct">اسکاتلند</subdivision>
+			<subdivision type="gbwls">ویلز</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">رسم‌الخط سنتی آلمانی</variant>
 			<variant type="1996">رسم‌الخط آلمانی ۱۹۹۶ میلادی</variant>

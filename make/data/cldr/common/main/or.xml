@@ -208,6 +208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">ସାଉଥ୍ ହାଇଡା</language>
 			<language type="he">ହେବ୍ର୍ୟୁ</language>
 			<language type="hi">ହିନ୍ଦୀ</language>
+			<language type="hi_Latn">ହିନ୍ଦୀ (ଲାଟିନ୍)</language>
 			<language type="hi_Latn" alt="variant">ହିଂଲିସ</language>
 			<language type="hil">ହିଲିଗୈନନ୍</language>
 			<language type="hit">ହିତୀତେ</language>
@@ -1020,6 +1021,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ଜିମ୍ବାୱେ</territory>
 			<territory type="ZZ">ଅଜଣା ଅଞ୍ଚଳ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ଇଂଲଣ୍ଡ</subdivision>
+			<subdivision type="gbsct">ସ୍କଟଲ୍ୟାଣ୍ଡ</subdivision>
+			<subdivision type="gbwls">ୱେଲ୍ସ</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ପାରମ୍ପରିକ ଜର୍ମାନ ବର୍ଣ୍ଣପ୍ରକରଣ</variant>
 			<variant type="1996">1996ର ଜର୍ମାନ ବର୍ଣ୍ଣପ୍ରକରଣ</variant>

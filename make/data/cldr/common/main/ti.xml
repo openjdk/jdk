@@ -98,6 +98,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dar">ዳርግዋ</language>
 			<language type="dav">ታይታ</language>
 			<language type="de">ጀርመን</language>
+			<language type="de_CH">ጀርመን (ስዊዘርላንድ)</language>
 			<language type="dgr">ዶግሪብ</language>
 			<language type="dje">ዛርማ</language>
 			<language type="doi">ዶግሪ</language>
@@ -113,11 +114,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">ኤካጁክ</language>
 			<language type="el">ግሪኽኛ</language>
 			<language type="en">እንግሊዝኛ</language>
+			<language type="en_AU">እንግሊዝኛ (ኣውስትራልያ)</language>
+			<language type="en_CA">እንግሊዝኛ (ካናዳ)</language>
+			<language type="en_GB">እንግሊዝኛ (ብሪጣንያ)</language>
 			<language type="en_GB" alt="short">እንግሊዝኛ (ዩ.ኪ.)</language>
 			<language type="en_US">እንግሊዝኛ (ሕቡራት መንግስታት)</language>
 			<language type="en_US" alt="short">እንግሊዝኛ (ሕ.መ.)</language>
 			<language type="eo">ኤስፐራንቶ</language>
 			<language type="es">ስጳንኛ</language>
+			<language type="es_419">ስጳንኛ (ላቲን ኣመሪካ)</language>
+			<language type="es_ES">ስጳንኛ (ስጳኛ)</language>
+			<language type="es_MX">ስጳንኛ (ሜክሲኮ)</language>
 			<language type="et">ኤስቶንኛ</language>
 			<language type="eu">ባስክኛ</language>
 			<language type="ewo">ኤዎንዶ</language>
@@ -130,6 +137,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo">ፋሮእይና</language>
 			<language type="fon">ፎን</language>
 			<language type="fr">ፈረንሳይኛ</language>
+			<language type="fr_CA">ፈረንሳይኛ (ካናዳ)</language>
+			<language type="fr_CH">ፈረንሳይኛ (ስዊዘርላንድ)</language>
 			<language type="frc">ካጁን ፈረንሳይ</language>
 			<language type="frr">ሰሜናዊ ፍሪስኛ</language>
 			<language type="fur">ፍርዩልኛ</language>
@@ -325,6 +334,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="prg">ፕሩስኛ</language>
 			<language type="ps">ፓሽቶ</language>
 			<language type="pt">ፖርቱጊዝኛ</language>
+			<language type="pt_BR">ፖርቱጊዝኛ (ብራዚል)</language>
+			<language type="pt_PT">ፖርቱጊዝኛ (ፖርቱጋል)</language>
 			<language type="qu">ቀችዋ</language>
 			<language type="rap">ራፓኑይ</language>
 			<language type="rar">ራሮቶንጋንኛ</language>

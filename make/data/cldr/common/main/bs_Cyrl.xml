@@ -143,6 +143,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="el">грчки</language>
 			<language type="elx">еламитски</language>
 			<language type="en">енглески</language>
+			<language type="en_GB" alt="short">енглески (УК)</language>
+			<language type="en_US" alt="short">енглески (САД)</language>
 			<language type="enm">средњи енглески</language>
 			<language type="eo">есперанто</language>
 			<language type="es">шпански</language>
@@ -547,6 +549,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh" alt="menu">кинески (мандарински)</language>
 			<language type="zh_Hans">кинески (поједностављен)</language>
 			<language type="zh_Hans" alt="long">кинески мандариснки поједностављен</language>
+			<language type="zh_Hant">кинески (традиционални)</language>
 			<language type="zh_Hant" alt="long">кинески мандарински (традиционални)</language>
 			<language type="zu">зулу</language>
 			<language type="zun">зуни</language>

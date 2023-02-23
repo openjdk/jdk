@@ -4610,10 +4610,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 		</currencies>
-		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0}?</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0}?</pluralMinimalPairs>
-		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">

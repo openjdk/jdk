@@ -124,6 +124,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">Baskwe</language>
 			<language type="ewo">Ewọndọ</language>
 			<language type="fa">Peshianụ</language>
+			<language type="fa_AF">Peshianụ (Afghanistan)</language>
 			<language type="ff">Fula</language>
 			<language type="fi">Fịnịsh</language>
 			<language type="fil">Fịlịpịnọ</language>
@@ -290,6 +291,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nia">Nias</language>
 			<language type="niu">Niwan</language>
 			<language type="nl">Dọchị</language>
+			<language type="nl_BE">Dọchị (Belgium)</language>
 			<language type="nmg">Kwasịọ</language>
 			<language type="nn">Nọrweyịan Nynersk</language>
 			<language type="nnh">Nglembọn</language>

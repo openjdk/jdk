@@ -219,6 +219,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">Βόρεια Χάιντα</language>
 			<language type="he">Εβραϊκά</language>
 			<language type="hi">Χίντι</language>
+			<language type="hi_Latn">Χίντι (Λατινικό)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hil">Χιλιγκαϊνόν</language>
 			<language type="hit">Χιτίτε</language>
@@ -1044,6 +1045,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Ζιμπάμπουε</territory>
 			<territory type="ZZ">Άγνωστη περιοχή</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Αγγλία</subdivision>
+			<subdivision type="gbsct">Σκοτία</subdivision>
+			<subdivision type="gbwls">Ουαλία</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Παραδοσιακή γερμανική ορθογραφία</variant>
 			<variant type="1994">Τυποποιημένη ορθογραφία Ρεσιάν</variant>

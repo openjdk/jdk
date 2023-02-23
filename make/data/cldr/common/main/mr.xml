@@ -1035,6 +1035,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">झिम्बाब्वे</territory>
 			<territory type="ZZ">अज्ञात प्रदेश</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">इंग्लंड</subdivision>
+			<subdivision type="gbsct">स्कॉटलंड</subdivision>
+			<subdivision type="gbwls">वेल्स</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN">पिनयिन रोमनायझेशन</variant>
 			<variant type="WADEGILE">वादे-गिलेस रोमनायझेशन</variant>

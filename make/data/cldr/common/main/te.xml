@@ -217,6 +217,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">దక్షిణ హైదా</language>
 			<language type="he">హిబ్రూ</language>
 			<language type="hi">హిందీ</language>
+			<language type="hi_Latn">హిందీ (లాటిన్)</language>
 			<language type="hi_Latn" alt="variant">హింగ్లీష్</language>
 			<language type="hil">హిలిగెనాన్</language>
 			<language type="hit">హిట్టిటే</language>
@@ -1040,6 +1041,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">జింబాబ్వే</territory>
 			<territory type="ZZ">తెలియని ప్రాంతం</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ఇంగ్లాండ్</subdivision>
+			<subdivision type="gbsct">స్కాట్లాండ్</subdivision>
+			<subdivision type="gbwls">వేల్స్</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ప్రాచీన ఙర్మన వర్ణక్రమం</variant>
 			<variant type="1996">1996 ఙర్మన వర్ణక్రమం</variant>

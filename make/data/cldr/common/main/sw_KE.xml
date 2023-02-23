@@ -278,6 +278,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="YT">Mayote</territory>
 			<territory type="ZZ">Eneo Lisilojulikana</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="hc">Kipindi cha saa (12 dhidi ya 24)</key>
 			<key type="va">Tofauti ya Lugha</key>

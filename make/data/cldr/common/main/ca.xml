@@ -1128,6 +1128,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbàbue</territory>
 			<territory type="ZZ">regió desconeguda</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglaterra</subdivision>
+			<subdivision type="gbsct">Escòcia</subdivision>
+			<subdivision type="gbwls">Gal·les</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ortografia alemanya tradicional</variant>
 			<variant type="1994">ortografia resiana estandarditzada</variant>

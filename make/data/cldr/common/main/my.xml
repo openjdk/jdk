@@ -863,6 +863,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ဇင်ဘာဘွေ</territory>
 			<territory type="ZZ">မသိ (သို့) မရှိသော ဒေသ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">အင်္ဂလန်</subdivision>
+			<subdivision type="gbsct">စကော့တလန်</subdivision>
+			<subdivision type="gbwls">ဝေလ</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ရှေးရိုးစဉ်လာ ဂျာမန် ရေးထုံး</variant>
 			<variant type="1996">၁၉၉၆ ဂျာမန် ရေးထုံး</variant>

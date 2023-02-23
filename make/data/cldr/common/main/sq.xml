@@ -965,6 +965,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">I panjohur</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Angli</subdivision>
+			<subdivision type="gbsct">Skoci</subdivision>
+			<subdivision type="gbwls">Uells</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">Kalendari</key>
 			<key type="cf">Formati valutor</key>

@@ -1040,6 +1040,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ஜிம்பாப்வே</territory>
 			<territory type="ZZ">அறியப்படாத பிரதேசம்</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">இங்கிலாந்து</subdivision>
+			<subdivision type="gbsct">ஸ்காட்லாந்து</subdivision>
+			<subdivision type="gbwls">வேல்ஸ்</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN">பின்யின் ரோமானைசெஷன்</variant>
 			<variant type="WADEGILE">வேட்-கைல்ஸ் ரோமனைஷேசன்</variant>

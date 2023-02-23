@@ -1532,8 +1532,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="math_symbols">maths symbol</characterLabel>
 	</characterLabels>
 	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="title">Mr</nameField>
+		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title" draft="provisional">Prof. Dr</nameField>
+			<nameField type="title">Prof Dr</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -837,6 +837,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">জিম্বাবৱে</territory>
 			<territory type="ZZ">অজ্ঞাত ক্ষেত্ৰ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ইংলেণ্ড</subdivision>
+			<subdivision type="gbsct">স্কটলেণ্ড</subdivision>
+			<subdivision type="gbwls">ৱেলছ্</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">কেলেণ্ডাৰ</key>
 			<key type="cf">মুদ্ৰা সজ্জা</key>

@@ -100,6 +100,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">даргин тілі</language>
 			<language type="dav">таита тілі</language>
 			<language type="de">неміс тілі</language>
+			<language type="de_AT">неміс тілі (Аустрия)</language>
 			<language type="de_CH">швейцариялық әдеби неміс тілі</language>
 			<language type="dgr">догриб тілі</language>
 			<language type="dje">зарма тілі</language>
@@ -953,6 +954,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">Белгісіз аймақ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англия</subdivision>
+			<subdivision type="gbsct">Шотландия</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="contributed">Дәстүрлі неміс орфографиясы</variant>
 			<variant type="1994" draft="contributed">Стандартты резия орфографиясы</variant>

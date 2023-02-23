@@ -219,6 +219,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">സതേൺ ഹൈഡ</language>
 			<language type="he">ഹീബ്രു</language>
 			<language type="hi">ഹിന്ദി</language>
+			<language type="hi_Latn">ഹിന്ദി (ലാറ്റിൻ)</language>
 			<language type="hi_Latn" alt="variant">ഹിംഗ്ലീഷ്</language>
 			<language type="hil">ഹിലിഗയ്നോൺ</language>
 			<language type="hit">ഹിറ്റൈറ്റ്</language>
@@ -1049,6 +1050,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">സിംബാബ്‌വേ</territory>
 			<territory type="ZZ">അജ്ഞാത പ്രദേശം</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ഇംഗ്ലണ്ട്</subdivision>
+			<subdivision type="gbsct">സ്‌കോട്ട്‌ലന്റ്</subdivision>
+			<subdivision type="gbwls">വെയിൽസ്</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1996">1996-ലെ ജർമൻ ലിപി</variant>
 			<variant type="1606NICT">1606 വരെയുള്ള ആധുനികമദ്ധ്യകാല ഫ്രഞ്ച്</variant>

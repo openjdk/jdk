@@ -923,6 +923,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ዚምቧቤ</territory>
 			<territory type="ZZ">ያልታወቀ ክልል</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">እንግሊዝ</subdivision>
+			<subdivision type="gbsct">ስኮትላንድ</subdivision>
+			<subdivision type="gbwls">ዌልስ</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">የቀን አቆጣጠር</key>
 			<key type="cf">የምንዛሪ ቅርጸት</key>

@@ -135,6 +135,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GW" draft="unconfirmed">Guinea-Bissau</territory>
 			<territory type="GY" draft="unconfirmed">Guyana</territory>
 			<territory type="HK" draft="unconfirmed">RAE de Hong Kong (China)</territory>
+			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM" draft="unconfirmed">Isles Heard e McDonald</territory>
 			<territory type="HN" draft="unconfirmed">Honduras</territory>
 			<territory type="HT" draft="unconfirmed">Aití</territory>

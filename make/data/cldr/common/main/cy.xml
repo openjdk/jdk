@@ -218,6 +218,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">Haida Deheuol</language>
 			<language type="he">Hebraeg</language>
 			<language type="hi">Hindi</language>
+			<language type="hi_Latn">Hindi (Lladin)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hil">Hiligaynon</language>
 			<language type="hit">Hetheg</language>
@@ -974,6 +975,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Rhanbarth Anhysbys</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Lloegr</subdivision>
+			<subdivision type="gbsct">Yr Alban</subdivision>
+			<subdivision type="gbwls">Cymru</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">orgraff draddodiadol yr Almaeneg</variant>
 			<variant type="1606NICT">Ffrangeg Canol Diweddar hyd at 1606</variant>

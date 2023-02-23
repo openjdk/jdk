@@ -1156,6 +1156,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabvė</territory>
 			<territory type="ZZ">nežinoma sritis</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglija</subdivision>
+			<subdivision type="gbsct">Škotija</subdivision>
+			<subdivision type="gbwls">Velsas</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Įprasta vokiečių rašyba</variant>
 			<variant type="1994">Sunorminta Resian rašyba</variant>

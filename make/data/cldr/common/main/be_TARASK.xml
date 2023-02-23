@@ -30,6 +30,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa" draft="provisional">авадгіская</language>
 			<language type="ay" draft="provisional">аймарская</language>
 			<language type="az" draft="provisional">азэрбайджанская</language>
+			<language type="az" alt="short" draft="provisional">азербайджанская</language>
 			<language type="bas" draft="provisional">басайская</language>
 			<language type="be_TARASK" draft="provisional">беларуская (клясычная)</language>
 			<language type="bem" draft="provisional">бембанская</language>

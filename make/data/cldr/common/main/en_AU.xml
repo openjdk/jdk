@@ -1915,12 +1915,4 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="950" alt="ultrablack">ultra black</styleName>
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultra heavy</styleName>
 	</typographicNames>
-	<personNames>
-		<sampleName item="nativeFull">
-			<nameField type="title">Mr</nameField>
-		</sampleName>
-		<sampleName item="foreignFull">
-			<nameField type="title">Prof Dr</nameField>
-		</sampleName>
-	</personNames>
 </ldml>

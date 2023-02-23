@@ -967,6 +967,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">neznámy región</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglicko</subdivision>
+			<subdivision type="gbsct">Škótsko</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="provisional">romanizovaná mandarínčina</variant>
 			<variant type="SCOTLAND" draft="contributed">škótska štandardná angličtina</variant>

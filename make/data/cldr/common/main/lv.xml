@@ -155,6 +155,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="elx">elamiešu</language>
 			<language type="en">angļu</language>
 			<language type="en_GB">angļu (Lielbritānija)</language>
+			<language type="en_US" alt="short">angļu (ASV)</language>
 			<language type="enm">vidusangļu</language>
 			<language type="eo">esperanto</language>
 			<language type="es">spāņu</language>
@@ -207,6 +208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">dienvidhaidu</language>
 			<language type="he">ivrits</language>
 			<language type="hi">hindi</language>
+			<language type="hi_Latn">hindi (latīņu)</language>
 			<language type="hi_Latn" alt="variant">hinglišs</language>
 			<language type="hil">hiligainonu</language>
 			<language type="hit">hetu</language>
@@ -978,6 +980,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">nezināms reģions</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglija</subdivision>
+			<subdivision type="gbsct">Skotija</subdivision>
+			<subdivision type="gbwls">Velsa</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">tradicionālā vācu ortogrāfija</variant>
 			<variant type="1996">vācu ortogrāfija no 1996. gada</variant>

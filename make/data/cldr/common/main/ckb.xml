@@ -744,6 +744,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">زیمبابوی</territory>
 			<territory type="ZZ">ناوچەی نەناسراو</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ئینگلاند</subdivision>
+			<subdivision type="gbsct">سکۆتلەندا</subdivision>
+			<subdivision type="gbwls">وەیڵز</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar" draft="unconfirmed">ڕۆژژمێر</key>
 			<key type="collation" draft="unconfirmed">ڕیزبەندی</key>

@@ -1432,11 +1432,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</units>
 	<personNames>
 		<initialPattern type="initial">{0}</initialPattern>
-		<sampleName item="nativeFull">
-			<nameField type="title">Mr</nameField>
-		</sampleName>
-		<sampleName item="foreignFull">
-			<nameField type="title">Prof Dr</nameField>
-		</sampleName>
 	</personNames>
 </ldml>

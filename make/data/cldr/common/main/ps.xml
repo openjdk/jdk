@@ -118,6 +118,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_CA">کاناډايي انګلیسي</language>
 			<language type="en_GB">بريتانوی انګلیسي</language>
 			<language type="en_GB" alt="short">یو کي انګلیسي</language>
+			<language type="en_US">انګليسي (متحده آيالات)</language>
 			<language type="en_US" alt="short">د متحده آيالاتو انګليسي</language>
 			<language type="eo">اسپرانتو</language>
 			<language type="es">هسپانوي</language>
@@ -835,6 +836,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">زیمبابوی</territory>
 			<territory type="ZZ">نامعلومه سيمه</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انګلېنډ</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">جنتري</key>
 			<key type="cf">اسعارو بڼه</key>

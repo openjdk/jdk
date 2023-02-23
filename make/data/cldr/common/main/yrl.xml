@@ -143,6 +143,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">geregu</language>
 			<language type="elx">eramite</language>
 			<language type="en">ẽgirixi</language>
+			<language type="en_US" alt="short">ẽgirixi (EUA)</language>
 			<language type="enm">ẽgirixi médiu</language>
 			<language type="eo">esiperãtu</language>
 			<language type="es">isipãyu</language>
@@ -998,6 +999,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Sĩbabuwe</territory>
 			<territory type="ZZ">Tetãma Ũbawaukuamamẽ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Ĩgara-iwí</subdivision>
+			<subdivision type="gbsct">Esikusiya</subdivision>
+			<subdivision type="gbwls">Tetãma Galiwara</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">kuatiasawasupí arimã rikusawarupí</variant>
 			<variant type="1994">kuatiasawasupí resiawara muretewa</variant>

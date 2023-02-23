@@ -259,6 +259,7 @@ annotations.
 			<language type="hdn">Northern Haida</language>
 			<language type="he">Hebrew</language>
 			<language type="hi">Hindi</language>
+			<language type="hi_Latn">Hindi (Latin)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hif">Fiji Hindi</language>
 			<language type="hil">Hiligaynon</language>
@@ -1000,6 +1001,7 @@ annotations.
 			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Clipperton Island</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Costa Rica</territory>
 			<territory type="CU">Cuba</territory>
 			<territory type="CV">Cape Verde</territory>
@@ -1227,6 +1229,11 @@ annotations.
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Unknown Region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">England</subdivision>
+			<subdivision type="gbsct">Scotland</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Traditional German orthography</variant>
 			<variant type="1994">Standardized Resian orthography</variant>

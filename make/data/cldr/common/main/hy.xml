@@ -186,6 +186,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">հարավային հայդա</language>
 			<language type="he">եբրայերեն</language>
 			<language type="hi">հինդի</language>
+			<language type="hi_Latn">հինդի (լատինական)</language>
 			<language type="hi_Latn" alt="variant">հինգլիշ</language>
 			<language type="hil">հիլիգայնոն</language>
 			<language type="hmn">հմոնգ</language>
@@ -914,6 +915,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Զիմբաբվե</territory>
 			<territory type="ZZ">Անհայտ տարածաշրջան</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Անգլիա</subdivision>
+			<subdivision type="gbsct">Շոտլանդիա</subdivision>
+			<subdivision type="gbwls">Ուելս</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="AREVELA" draft="contributed">արևելահայերեն</variant>
 			<variant type="AREVMDA" draft="contributed">արեւմտահայերէն</variant>

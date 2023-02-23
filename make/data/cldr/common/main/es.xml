@@ -1043,6 +1043,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabue</territory>
 			<territory type="ZZ">Región desconocida</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglaterra</subdivision>
+			<subdivision type="gbsct">Escocia</subdivision>
+			<subdivision type="gbwls">Gales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Ortografía alemana tradicional</variant>
 			<variant type="1994" draft="provisional">Ortografía estandarizada del resiano</variant>

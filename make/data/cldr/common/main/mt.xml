@@ -836,6 +836,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">iż-Żimbabwe</territory>
 			<territory type="ZZ">Reġjun Mhux Magħruf</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">l-Ingilterra</subdivision>
+			<subdivision type="gbsct">l-Iskozja</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="REVISED">Ortografija Irriveda</variant>
 		</variants>

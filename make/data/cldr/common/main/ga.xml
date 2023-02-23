@@ -939,6 +939,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">an tSiombáib</territory>
 			<territory type="ZZ">Réigiún Anaithnid</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Sasana</subdivision>
+			<subdivision type="gbsct">Albain</subdivision>
+			<subdivision type="gbwls">an Bhreatain Bheag</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Litriú Traidisiúnta na Gearmáinise</variant>
 			<variant type="1994">Ortagrafaíocht Resian Chaighdeánaithe</variant>

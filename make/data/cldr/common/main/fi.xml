@@ -1202,6 +1202,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">tuntematon alue</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Englanti</subdivision>
+			<subdivision type="gbsct">Skotlanti</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">saksan perinteinen oikeinkirjoitus</variant>
 			<variant type="1994">sloveenin resian murteen yhdenmukaistettu oikeinkirjoitus</variant>

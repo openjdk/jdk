@@ -1022,6 +1022,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">Nepoznat region</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Engleska</subdivision>
+			<subdivision type="gbsct">Škotska</subdivision>
+			<subdivision type="gbwls">Vels</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Tradicionalna nemačka ortografija</variant>
 			<variant type="1994">Standardnizovana resijanska ortografija</variant>

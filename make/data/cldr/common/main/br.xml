@@ -1001,6 +1001,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Rannved dianav</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Bro-Saoz</subdivision>
+			<subdivision type="gbsct">Skos</subdivision>
+			<subdivision type="gbwls">Kembre</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">reizhskrivadur alamanek hengounel</variant>
 			<variant type="1994">reizhskrivadur resianek skoueriekaet</variant>
@@ -1395,11 +1400,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
 						</intervalFormatItem>

@@ -1022,6 +1022,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">জিম্বাবোয়ে</territory>
 			<territory type="ZZ">অজানা অঞ্চল</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ইংল্যান্ড</subdivision>
+			<subdivision type="gbsct">স্কটল্যান্ড</subdivision>
+			<subdivision type="gbwls">ওয়েল্স</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="provisional">পিনইন রোমানাইজেশন</variant>
 			<variant type="WADEGILE" draft="provisional">ওয়াদে-গিলেস রোমানাইজেশন</variant>

@@ -102,6 +102,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">ដាចវ៉ា</language>
 			<language type="dav">តៃតា</language>
 			<language type="de">អាល្លឺម៉ង់</language>
+			<language type="de_CH">អាល្លឺម៉ង់ (ស្វ៊ីស)</language>
 			<language type="dgr">ដូគ្រីប</language>
 			<language type="dje">ហ្សាម៉ា</language>
 			<language type="doi">ដូហ្គ្រី</language>
@@ -117,6 +118,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eka">អ៊ីកាជុក</language>
 			<language type="el">ក្រិក</language>
 			<language type="en">អង់គ្លេស</language>
+			<language type="en_GB" alt="short">អង់គ្លេស (ច.អ.)</language>
 			<language type="en_US" alt="short">អង់គ្លេស (ស.រ.អ.)</language>
 			<language type="eo">អេស្ពេរ៉ាន់តូ</language>
 			<language type="es">អេស្ប៉ាញ</language>
@@ -133,6 +135,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">ហ្វារូស</language>
 			<language type="fon">ហ្វ៊ុន</language>
 			<language type="fr">បារាំង</language>
+			<language type="fr_CH">បារាំង (ស្វ៊ីស)</language>
 			<language type="frc">បារាំងកាហ្សង់</language>
 			<language type="frr">ហ្វ្រ៊ីសៀន​ខាងជើង</language>
 			<language type="fur">ហ៊្វ្រូលាន</language>
@@ -873,6 +876,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ស៊ីមបាវ៉េ</territory>
 			<territory type="ZZ">តំបន់មិនស្គាល់</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">អង់គ្លេស</subdivision>
+			<subdivision type="gbsct">ស្កុតឡែន</subdivision>
+			<subdivision type="gbwls">វ៉ាល់ស៍</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">ប្រតិទិន</key>
 			<key type="cf">ទម្រង់រូបិយបណ្ណ</key>

@@ -154,6 +154,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">grego</language>
 			<language type="elx">elamite</language>
 			<language type="en">inglês</language>
+			<language type="en_US" alt="short">inglês (EUA)</language>
 			<language type="enm">inglês médio</language>
 			<language type="eo">esperanto</language>
 			<language type="es">espanhol</language>
@@ -1037,6 +1038,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbábue</territory>
 			<territory type="ZZ">Região desconhecida</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglaterra</subdivision>
+			<subdivision type="gbsct">Escócia</subdivision>
+			<subdivision type="gbwls">País de Gales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ortografia alemã tradicional</variant>
 			<variant type="1994">ortografia resiana padronizada</variant>

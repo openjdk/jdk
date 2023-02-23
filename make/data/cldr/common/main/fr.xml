@@ -1196,6 +1196,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">région indéterminée</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Angleterre</subdivision>
+			<subdivision type="gbsct">Écosse</subdivision>
+			<subdivision type="gbwls">Pays de Galles</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">orthographe allemande traditionnelle</variant>
 			<variant type="1994">orthographe normalisée de Resia</variant>

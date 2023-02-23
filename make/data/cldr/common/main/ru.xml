@@ -1073,6 +1073,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">неизвестный регион</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англия</subdivision>
+			<subdivision type="gbsct">Шотландия</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="contributed">Традиционная немецкая орфография</variant>
 			<variant type="1994" draft="contributed">Стандартизированная резьянская орфография</variant>

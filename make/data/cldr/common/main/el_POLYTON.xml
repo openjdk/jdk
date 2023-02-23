@@ -70,6 +70,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CF">Κεντροαφρικανικὴ Δημοκρατία</territory>
 			<territory type="CH">Ἑλβετία</territory>
 			<territory type="CI" draft="unconfirmed">Ἀκτὴ Ἐλεφαντοστού</territory>
+			<territory type="CI" alt="variant">Ακτή Ελεφαντοστού</territory>
 			<territory type="CK">Νῆσοι Κούκ</territory>
 			<territory type="CV" draft="unconfirmed">Πράσινο Ἀκρωτήριο</territory>
 			<territory type="CX">Νῆσος Χριστουγέννων</territory>

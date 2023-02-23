@@ -245,6 +245,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hax">Haida Dheasach</language>
 			<language type="he">Eabhra</language>
 			<language type="hi">Hindis</language>
+			<language type="hi_Latn">Hindis (Laideann)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hif">Hindis Fhìditheach</language>
 			<language type="hil">Hiligaynon</language>
@@ -1162,6 +1163,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">An t-Sìombab</territory>
 			<territory type="ZZ">Roinn-dùthcha neo-aithnichte</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Sasainn</subdivision>
+			<subdivision type="gbsct">Alba</subdivision>
+			<subdivision type="gbwls">A’ Chuimrigh</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Litreachadh tradaiseanta na Gearmailtise</variant>
 			<variant type="1994">Litreachadh stannardach dual-chainnt Resia</variant>

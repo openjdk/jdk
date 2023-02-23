@@ -847,6 +847,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">සිම්බාබ්වේ</territory>
 			<territory type="ZZ">හඳුනා නොගත් කළාපය</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">එංගලන්තය</subdivision>
+			<subdivision type="gbsct">ස්කොට්ලන්තය</subdivision>
+			<subdivision type="gbwls">වේල්සය</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">දින දර්ශනය</key>
 			<key type="cf">මුදල් ආකෘති</key>

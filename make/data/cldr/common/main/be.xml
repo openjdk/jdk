@@ -863,6 +863,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зімбабвэ</territory>
 			<territory type="ZZ">Невядомы рэгіён</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англія</subdivision>
+			<subdivision type="gbsct">Шатландыя</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">каляндар</key>
 			<key type="cf">фармат валюты</key>

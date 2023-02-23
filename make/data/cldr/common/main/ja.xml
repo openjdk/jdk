@@ -246,6 +246,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">南部ハイダ語</language>
 			<language type="he">ヘブライ語</language>
 			<language type="hi">ヒンディー語</language>
+			<language type="hi_Latn">ヒンディー語 (ラテン文字)</language>
 			<language type="hi_Latn" alt="variant">インド英語 (ヒングリッシュ)</language>
 			<language type="hif">フィジー・ヒンディー語</language>
 			<language type="hil">ヒリガイノン語</language>
@@ -1161,6 +1162,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ジンバブエ</territory>
 			<territory type="ZZ">不明な地域</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">イングランド</subdivision>
+			<subdivision type="gbsct">スコットランド</subdivision>
+			<subdivision type="gbwls">ウェールズ</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ドイツ語旧正書法</variant>
 			<variant type="1994" draft="contributed">標準レージア方言正書法</variant>

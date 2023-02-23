@@ -168,6 +168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">janubiy hayda</language>
 			<language type="he">ivrit</language>
 			<language type="hi">hind</language>
+			<language type="hi_Latn">hind (lotin)</language>
 			<language type="hi_Latn" alt="variant">hinglish</language>
 			<language type="hil">hiligaynon</language>
 			<language type="hmn">xmong</language>
@@ -462,6 +463,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zgh">tamazigxt</language>
 			<language type="zh">xitoy</language>
 			<language type="zh" alt="menu">xitoy, mandarin</language>
+			<language type="zh_Hans">xitoy (soddalashgan)</language>
 			<language type="zh_Hans" alt="long">xitoy (soddalashtirilgan mandarin)</language>
 			<language type="zh_Hant">xitoy (an’anaviy)</language>
 			<language type="zh_Hant" alt="long">xitoy (an’anaviy mandarin)</language>
@@ -841,6 +843,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">Noma’lum mintaqa</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Angliya</subdivision>
+			<subdivision type="gbsct">Shotlandiya</subdivision>
+			<subdivision type="gbwls">Uels</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">taqvim</key>
 			<key type="cf">valyuta formati</key>

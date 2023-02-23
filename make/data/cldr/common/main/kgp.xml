@@ -143,6 +143,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">gregu</language>
 			<language type="elx">eramĩte</language>
 			<language type="en">ĩnhgrej</language>
+			<language type="en_US" alt="short">ĩnhgrej (EUA)</language>
 			<language type="enm">ĩnhgrej kuju</language>
 			<language type="eo">enhperỹtu</language>
 			<language type="es">enhpỹjór</language>
@@ -998,6 +999,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Jĩmamuje</territory>
 			<territory type="ZZ">Reji’ỹv Veja tũ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Ĩgratéra</subdivision>
+			<subdivision type="gbsct">Enhkósija</subdivision>
+			<subdivision type="gbwls">Vares</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">arimỹv vẽnhrá si-pẽ</variant>
 			<variant type="1994">resijỹnỹ vẽnhrá hár-pẽ</variant>

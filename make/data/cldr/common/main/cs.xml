@@ -147,6 +147,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">dargština</language>
 			<language type="dav">taita</language>
 			<language type="de">němčina</language>
+			<language type="de_AT">němčina (Rakousko)</language>
 			<language type="de_CH">němčina standardní (Švýcarsko)</language>
 			<language type="del">delawarština</language>
 			<language type="den">slejvština (athabaský jazyk)</language>
@@ -172,13 +173,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">řečtina</language>
 			<language type="elx">elamitština</language>
 			<language type="en">angličtina</language>
+			<language type="en_AU">angličtina (Austrálie)</language>
+			<language type="en_CA">angličtina (Kanada)</language>
 			<language type="en_GB">angličtina (Velká Británie)</language>
 			<language type="en_GB" alt="short">angličtina (VB)</language>
 			<language type="en_US">angličtina (USA)</language>
 			<language type="enm">angličtina (středověká)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španělština</language>
+			<language type="es_419">španělština (Latinská Amerika)</language>
 			<language type="es_ES">španělština (Evropa)</language>
+			<language type="es_MX">španělština (Mexiko)</language>
 			<language type="esu">jupikština (středoaljašská)</language>
 			<language type="et">estonština</language>
 			<language type="eu">baskičtina</language>
@@ -196,6 +201,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">faerština</language>
 			<language type="fon">fonština</language>
 			<language type="fr">francouzština</language>
+			<language type="fr_CA">francouzština (Kanada)</language>
+			<language type="fr_CH">francouzština (Švýcarsko)</language>
 			<language type="frc">francouzština (cajunská)</language>
 			<language type="frm">francouzština (středověká)</language>
 			<language type="fro">francouzština (stará)</language>
@@ -239,6 +246,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">haidština (jižní)</language>
 			<language type="he">hebrejština</language>
 			<language type="hi">hindština</language>
+			<language type="hi_Latn">hindština (latinka)</language>
 			<language type="hi_Latn" alt="variant">hingliš</language>
 			<language type="hif">hindština (Fidži)</language>
 			<language type="hil">hiligajnonština</language>
@@ -478,6 +486,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pro">provensálština</language>
 			<language type="ps">paštština</language>
 			<language type="pt">portugalština</language>
+			<language type="pt_BR">portugalština (Brazílie)</language>
 			<language type="pt_PT">portugalština (Evropa)</language>
 			<language type="qu">kečuánština</language>
 			<language type="quc">kičé</language>
@@ -660,6 +669,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh" alt="menu">standardní čínština</language>
 			<language type="zh_Hans">čínština (zjednodušená)</language>
 			<language type="zh_Hans" alt="long">standardní čínština (zjednodušená)</language>
+			<language type="zh_Hant">čínština (tradiční)</language>
 			<language type="zh_Hant" alt="long">standardní čínština (tradiční)</language>
 			<language type="zu">zuluština</language>
 			<language type="zun">zunijština</language>
@@ -1151,6 +1161,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">neznámá oblast</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Anglie</subdivision>
+			<subdivision type="gbsct">Skotsko</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="provisional">pinyin</variant>
 			<variant type="SCOTLAND" draft="contributed">angličtina (Skotsko)</variant>

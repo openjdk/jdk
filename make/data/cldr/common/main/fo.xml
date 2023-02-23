@@ -89,6 +89,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dar">dargwa</language>
 			<language type="dav">taita</language>
 			<language type="de">týskt</language>
+			<language type="de_AT">týskt (Eysturríki)</language>
 			<language type="de_CH">høgt týskt (Sveis)</language>
 			<language type="dgr">dogrib</language>
 			<language type="dje">sarma</language>
@@ -104,10 +105,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">ekajuk</language>
 			<language type="el">grikskt</language>
 			<language type="en">enskt</language>
+			<language type="en_AU">enskt (Avstralia)</language>
+			<language type="en_CA">enskt (Kanada)</language>
+			<language type="en_GB">enskt (Stórabretland)</language>
 			<language type="en_GB" alt="short">enskt (UK)</language>
+			<language type="en_US">enskt (Sambandsríki Amerika)</language>
 			<language type="en_US" alt="short">enskt (USA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">spanskt</language>
+			<language type="es_419">spanskt (Latínamerika)</language>
+			<language type="es_ES">spanskt (Spania)</language>
+			<language type="es_MX">spanskt (Meksiko)</language>
 			<language type="et">estiskt</language>
 			<language type="eu">baskiskt</language>
 			<language type="ewo">ewondo</language>
@@ -120,6 +128,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo">føroyskt</language>
 			<language type="fon">fon</language>
 			<language type="fr">franskt</language>
+			<language type="fr_CA">franskt (Kanada)</language>
+			<language type="fr_CH">franskt (Sveis)</language>
 			<language type="fur">friuliskt</language>
 			<language type="fy">vestur frísiskt</language>
 			<language type="ga">írskt</language>

@@ -1063,6 +1063,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ຊິມບັບເວ</territory>
 			<territory type="ZZ">ຂົງເຂດທີ່ບໍ່ຮູ້ຈັກ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ອັງກິດ</subdivision>
+			<subdivision type="gbsct">ສະກັອດແລນ</subdivision>
+			<subdivision type="gbwls">ເວລສ໌</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ເຢຍລະມັນອໍໂທກຣາຟີດັ້ງເດີມ</variant>
 			<variant type="1994">ອັກສອນເຣຊ່ຽນມາດຕະຖານ</variant>

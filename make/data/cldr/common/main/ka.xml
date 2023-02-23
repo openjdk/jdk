@@ -1021,6 +1021,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ზიმბაბვე</territory>
 			<territory type="ZZ">უცნობი რეგიონი</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ინგლისი</subdivision>
+			<subdivision type="gbsct">შოტლანდია</subdivision>
+			<subdivision type="gbwls">უელსი</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="unconfirmed">ტრადიციული გერმანული ორთოგრაფია</variant>
 			<variant type="1994" draft="unconfirmed">სტანდარტული რეზიანული ორთოგრაფია</variant>

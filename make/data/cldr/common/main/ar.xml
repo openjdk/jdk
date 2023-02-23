@@ -1031,6 +1031,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">زيمبابوي</territory>
 			<territory type="ZZ">منطقة غير معروفة</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">إنجلترا</subdivision>
+			<subdivision type="gbsct">اسكتلندا</subdivision>
+			<subdivision type="gbwls">ويلز</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">التهجئة الألمانية التقليدية</variant>
 			<variant type="1996">التهجئة الألمانية لعام 1996</variant>

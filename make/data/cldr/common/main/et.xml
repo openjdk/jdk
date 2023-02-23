@@ -1176,6 +1176,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">tundmatu piirkond</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglismaa</subdivision>
+			<subdivision type="gbsct">Šotimaa</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">saksa traditsiooniline kirjaviis</variant>
 			<variant type="1994">normitud Resia kirjaviis</variant>

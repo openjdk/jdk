@@ -456,9 +456,4 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0}, and {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
-	<personNames>
-		<sampleName item="nativeFull">
-			<nameField type="title">Mr</nameField>
-		</sampleName>
-	</personNames>
 </ldml>
