@@ -1122,10 +1122,6 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
   // JRT_END does an implicit safepoint check, hence we are guaranteed to block
   // if this is called during a safepoint
 
-  if (java_lang_VirtualThread::notify_jvmti_events()) {
-    JvmtiExport::check_vthread_and_suspend_at_safepoint(current);
-  }
-
   if (JvmtiExport::should_post_single_step()) {
     // This function is called by the interpreter when single stepping. Such single
     // stepping could unwind a frame. Then, it is important that we process any frames

@@ -335,7 +335,8 @@ public class TypeEnter implements Completer {
                 log.error(Errors.NoJavaLang);
                 throw new Abort();
             }
-            importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env); // alternative
+            importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
+                javaLang, env);
         }
 
         private void staticImports(JCCompilationUnit tree, Env<AttrContext> env, ImportFilter staticImportFilter) {
@@ -437,7 +438,7 @@ public class TypeEnter implements Completer {
         }
 
         private void doImport(JCImport tree) {
-            JCFieldAccess imp = (JCFieldAccess)tree.qualid;
+            JCFieldAccess imp = tree.qualid;
             Name name = TreeInfo.name(imp);
 
             // Create a local environment pointing to this tree to disable

@@ -33,6 +33,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -122,14 +123,6 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   }
 
   array->oop_iterate_range(mark_closure(), beg_index, end_index);
-
-  if (VerifyDuringGC) {
-    _verify_closure.set_containing_obj(array);
-    array->oop_iterate_range(&_verify_closure, beg_index, end_index);
-    if (_verify_closure.failures()) {
-      fatal("there should not have been any failures");
-    }
-  }
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
@@ -140,17 +133,6 @@ inline void G1FullGCMarker::follow_object(oop obj) {
     follow_array((objArrayOop)obj);
   } else {
     obj->oop_iterate(mark_closure());
-    if (VerifyDuringGC) {
-      if (obj->is_instanceRef()) {
-        return;
-      }
-      _verify_closure.set_containing_obj(obj);
-      obj->oop_iterate(&_verify_closure);
-      if (_verify_closure.failures()) {
-        log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        fatal("there should not have been any failures");
-      }
-    }
   }
 }
 

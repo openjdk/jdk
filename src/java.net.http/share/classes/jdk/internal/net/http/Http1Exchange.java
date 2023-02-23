@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,24 +209,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected void onSubscribed() {
+        protected void register() {
             exchange.registerResponseSubscriber(this);
         }
 
         @Override
-        protected void complete(Throwable t) {
-            try {
-                exchange.unregisterResponseSubscriber(this);
-            } finally {
-                super.complete(t);
-            }
-        }
-
-        @Override
-        protected void onCancel() {
-            // If the subscription is cancelled the
-            // subscriber may or may not get completed.
-            // Therefore we need to unregister it
+        protected void unregister() {
             exchange.unregisterResponseSubscriber(this);
         }
     }
@@ -278,7 +266,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // The Http1ResponseBodySubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    private void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+    private boolean registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
         Throwable failed = null;
         synchronized (lock) {
             failed = this.failed;
@@ -288,13 +276,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
         if (failed != null) {
             subscriber.onError(failed);
+            return false;
         } else {
-            client.registerSubscriber(subscriber);
+            return client.registerSubscriber(subscriber);
         }
     }
 
-    private void unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
-        client.unregisterSubscriber(subscriber);
+    private boolean unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+        return client.unregisterSubscriber(subscriber);
     }
 
     @Override

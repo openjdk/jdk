@@ -31,6 +31,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+#include "runtime/thread.hpp"
 
 class Klass;
 
@@ -63,7 +64,7 @@ oop_store_in_heap(T* addr, oop value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
   Raw::oop_store(addr, value);
-  bs->template write_ref_field_post<decorators>(addr, value);
+  bs->template write_ref_field_post<decorators>(addr);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -74,7 +75,7 @@ oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
   bs->template write_ref_field_pre<decorators>(addr);
   oop result = Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
   if (result == compare_value) {
-    bs->template write_ref_field_post<decorators>(addr, new_value);
+    bs->template write_ref_field_post<decorators>(addr);
   }
   return result;
 }
@@ -86,7 +87,7 @@ oop_atomic_xchg_in_heap(T* addr, oop new_value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
   oop result = Raw::oop_atomic_xchg(addr, new_value);
-  bs->template write_ref_field_post<decorators>(addr, new_value);
+  bs->template write_ref_field_post<decorators>(addr);
   return result;
 }
 
@@ -137,7 +138,7 @@ inline void ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 clone_in_heap(oop src, oop dst, size_t size) {
   Raw::clone(src, dst, size);
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
-  bs->write_region(MemRegion((HeapWord*)(void*)dst, size));
+  bs->invalidate(MemRegion((HeapWord*)(void*)dst, size));
 }
 
 #endif // SHARE_GC_SHARED_MODREFBARRIERSET_INLINE_HPP

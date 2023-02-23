@@ -671,9 +671,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCImport extends JCTree implements ImportTree {
         public boolean staticImport;
         /** The imported class(es). */
-        public JCTree qualid;
+        public JCFieldAccess qualid;
         public com.sun.tools.javac.code.Scope importScope;
-        protected JCImport(JCTree qualid, boolean importStatic) {
+        protected JCImport(JCFieldAccess qualid, boolean importStatic) {
             this.qualid = qualid;
             this.staticImport = importStatic;
         }
@@ -683,7 +683,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public boolean isStatic() { return staticImport; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCTree getQualifiedIdentifier() { return qualid; }
+        public JCFieldAccess getQualifiedIdentifier() { return qualid; }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.IMPORT; }
@@ -3459,7 +3459,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCCompilationUnit TopLevel(List<JCTree> defs);
         JCPackageDecl PackageDecl(List<JCAnnotation> annotations,
                                   JCExpression pid);
-        JCImport Import(JCTree qualid, boolean staticImport);
+        JCImport Import(JCFieldAccess qualid, boolean staticImport);
         JCClassDecl ClassDef(JCModifiers mods,
                           Name name,
                           List<JCTypeParameter> typarams,
