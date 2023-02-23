@@ -1182,7 +1182,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaTh
   if (state == linked && UseVtableBasedCHA && Universe::is_fully_initialized()) {
     DeoptimizationScope deopt_scope;
     {
-      // Now flush all code that assumes the class is not linked.
+      // Now mark all code that assumes the class is not linked.
       // Set state under the Compile_lock also.
       MutexLocker ml(current, Compile_lock);
 

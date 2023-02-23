@@ -1608,7 +1608,7 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 
 // ----------------------------------------------------------------------------
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is held, to ensure that the compiler is not using the class hierarchy.
+// is grabbed, to ensure that the compiler is not using the class hierarchy.
 
 void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   assert(k != nullptr, "just checking");
