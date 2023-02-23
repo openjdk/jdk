@@ -38,8 +38,8 @@ private:
 
   // Print an action event.
   static void print(const char* action, HeapRegion* hr) {
-    log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
-                          action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
+    log_trace(gc, region)("G1HR %s(%s) %u [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
+                          action, hr->get_type_str(), hr->hrm_index(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
 public:

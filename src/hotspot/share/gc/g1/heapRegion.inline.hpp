@@ -191,6 +191,15 @@ inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   reset_after_full_gc_common();
 }
 
+inline void HeapRegion::reset_compacted_humongous_after_full_gc(HeapWord* new_top) {
+  set_top(new_top);
+  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // But all objects are live, we get this by setting TAMS to bottom.
+  init_top_at_mark_start();
+
+  reset_after_full_gc_common();
+}
+
 inline void HeapRegion::reset_skip_compacting_after_full_gc() {
   assert(!is_free(), "must be");
 

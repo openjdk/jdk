@@ -26,6 +26,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -116,6 +117,19 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
+void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
+  assert(hr->is_starts_humongous(), "Sanity!");
+
+  _collector->add_humongous_region(hr);
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  do {
+    add(hr);
+    _collector->update_from_skip_compacting_to_compacting(hr->hrm_index());
+    hr = g1h->next_region_in_humongous(hr);
+  } while (hr != nullptr);
+}
+
 void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
   HeapRegion* cur = current_region();
   assert(cur->hrm_index() >= bottom, "Sanity!");
@@ -129,4 +143,77 @@ void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
 
   assert(start_index >= 0, "Should have at least one region");
   _compaction_regions->trunc_to(start_index);
+}
+
+uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
+  assert(hr->is_starts_humongous(), "Sanity!");
+
+  oop obj = cast_to_oop(hr->bottom());
+  size_t obj_size = obj->size();
+  int num_regions = (int) G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
+
+  if (!has_regions()) {
+    return num_regions;
+  }
+
+  // Find contiguous compaction target regions for the humongous object
+  Pair<uint, uint> range = find_contiguous_before(hr, num_regions);
+  uint range_begin = range.first;
+  uint range_end = range.second;
+
+  if (range_begin == range_end) {
+    // No contiguous compaction target regions found, so the object cannot be moved
+    log_debug(gc, region)("Humongous object in region %u of size %zu (%u regions) cannot be moved", hr->hrm_index(), obj_size, num_regions);
+    return num_regions;
+  }
+
+  // Preserve the mark for the humongous object as the region was initially not compacting.
+  _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
+
+  HeapRegion* destn_hr = _compaction_regions->at(range_begin);
+  obj->forward_to(cast_to_oop(destn_hr->bottom()));
+  assert(obj->is_forwarded(), "Object must be forwarded!");
+
+  log_debug(gc, region) ("Forward Region: from %u to %u - %u num_regions %u ",
+                         hr->hrm_index(), destn_hr->hrm_index(), (destn_hr->hrm_index() + num_regions - 1), num_regions);
+
+  // Add the humongous object regions to the compaction point
+  add_humongous(hr);
+
+  // Remove covered regions from compaction target candidates.
+  _compaction_regions->erase(range_begin, (range_begin + num_regions));
+
+  return num_regions;
+}
+
+Pair<uint, uint> G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
+  assert(num_regions > 0, "Sanity!");
+  assert(has_regions(), "Sanity!");
+
+  if (num_regions == 1) {
+    // If only one region, return the first region.
+    return Pair<uint, uint> (0, 1);
+  }
+
+  uint contiguous_region_count = 1;
+
+  uint range_end = 1;
+  uint range_limit = (uint)_compaction_regions->length();
+
+  for (; range_end < range_limit; range_end++) {
+    if (contiguous_region_count == num_regions) {
+      break;
+    }
+    // Check if the current region and the previous region are contiguous.
+    bool regions_are_contiguous = (_compaction_regions->at(range_end)->hrm_index() - _compaction_regions->at(range_end - 1)->hrm_index()) == 1;
+    contiguous_region_count =  regions_are_contiguous ? contiguous_region_count + 1 : 1;
+  }
+
+  if (contiguous_region_count < num_regions &&
+      hr->hrm_index() -  _compaction_regions->at(range_end-1)->hrm_index() != 1) {
+    // We reached the end but the final region is not contiguous with the target region, reset the length to 1.
+    contiguous_region_count = 1;
+  }
+  // Return the indices of the first and last contiguous regions.
+  return Pair<uint, uint> (range_end - contiguous_region_count, range_end - 1);
 }

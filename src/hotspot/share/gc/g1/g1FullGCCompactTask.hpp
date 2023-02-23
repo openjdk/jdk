@@ -40,6 +40,7 @@ class G1FullGCCompactTask : public G1FullGCTask {
   HeapRegionClaimer _claimer;
 
   void compact_region(HeapRegion* hr);
+  void compact_humongous(HeapRegion* hr);
 
 public:
   G1FullGCCompactTask(G1FullCollector* collector) :
@@ -48,6 +49,7 @@ public:
     _claimer(collector->workers()) { }
   void work(uint worker_id);
   void serial_compaction();
+  void humongous_compaction();
 
   class G1CompactRegionClosure : public StackObj {
     G1CMBitMap* _bitmap;
