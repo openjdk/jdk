@@ -104,7 +104,9 @@ static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_c
   if (old_size < new_size) {
     EXPECT_RANGE_IS_MARKED_WITH(p2, old_size, old_content);
 #ifdef ASSERT
-    EXPECT_RANGE_IS_MARKED_WITH((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    if (MemTracker::enabled()) {
+      EXPECT_RANGE_IS_MARKED_WITH((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    }
 #endif
   } else {
     EXPECT_RANGE_IS_MARKED_WITH(p2, new_size, old_content);

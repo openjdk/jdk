@@ -99,6 +99,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
+  // Also, with concurrent GC, it is possible that frames in continuation stack
+  // chunks are not visited if they are allocated after concurrent GC started.
   OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 

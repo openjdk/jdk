@@ -25,7 +25,6 @@
  * @test
  * @bug 8294583
  * @summary JShell: NPE in switch with non existing record pattern
- * @requires vm.continuations
  * @build KullaTesting TestingInputStream
  * @run testng Test8294583
  */

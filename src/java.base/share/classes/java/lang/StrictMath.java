@@ -547,7 +547,9 @@ public final class StrictMath {
      *          in polar coordinates that corresponds to the point
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
-    public static native double atan2(double y, double x);
+    public static double atan2(double y, double x) {
+        return FdLibm.Atan2.compute(y, x);
+    }
 
     /**
      * Returns the value of the first argument raised to the power of the
