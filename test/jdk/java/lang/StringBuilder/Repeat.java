@@ -116,42 +116,42 @@ public class Repeat {
         try {
             sb.repeat(' ', Integer.MAX_VALUE);
             throw new RuntimeException("No OutOfMemoryError thrown");
-        } catch (OutOfMemoryError | StringIndexOutOfBoundsException ex) {
+        } catch (OutOfMemoryError | IndexOutOfBoundsException ex) {
             // Okay
         }
 
         try {
             sb.repeat("    ", Integer.MAX_VALUE);
             throw new RuntimeException("No OutOfMemoryError thrown");
-        } catch (OutOfMemoryError | StringIndexOutOfBoundsException ex) {
+        } catch (OutOfMemoryError | IndexOutOfBoundsException ex) {
             // Okay
         }
 
         try {
             sb.repeat(MYCHARS, Integer.MAX_VALUE);
             throw new RuntimeException("No OutOfMemoryError thrown");
-        } catch (OutOfMemoryError | StringIndexOutOfBoundsException ex) {
+        } catch (OutOfMemoryError | IndexOutOfBoundsException ex) {
             // Okay
         }
 
         try {
             sb.repeat(' ', -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | StringIndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
             // Okay
         }
 
         try {
             sb.repeat("abc", -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | StringIndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
             // Okay
         }
 
         try {
             sb.repeat(MYCHARS, -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | StringIndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
             // Okay
         }
 

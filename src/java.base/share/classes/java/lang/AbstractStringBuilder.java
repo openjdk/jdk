@@ -1834,52 +1834,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @since 21
      * @throws IllegalArgumentException  if {@code count} is less than zero
-     * @throws StringIndexOutOfBoundsException  if the result overflows the buffer
+     * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(char c, int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count is less than zero: " + count);
-        }
-        if (count == 0) {
-            return this;
-        }
-        ensureCapacityInternal(this.count + count);
-        if (isLatin1() && StringLatin1.canEncode(c)) {
-            int index = this.count;
-            while (count-- != 0) {
-                value[index++] = (byte) c;
-            }
-            this.count = index;
-        } else {
-            if (isLatin1()) {
-                inflate();
-            }
-            int index = this.count;
-            while (count-- != 0) {
-                StringUTF16.putCharSB(value, index++, c);
-            }
-            this.count = index;
-        }
-        return this;
-    }
-
-    private AbstractStringBuilder repeatNull(int count) {
         if (count < 0) {
             throw new IllegalArgumentException("count is less than zero: " + count);
         } else if (count == 0) {
             return this;
         }
-        int offset = this.count;
-        appendNull();
-        int length = this.count - offset;
-        int valueLength = length << coder;
-        if ((Integer.MAX_VALUE - offset) / count < valueLength) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        ensureCapacityInternal(this.count + count);
+        int index = this.count;
+        int limit = index + count;
+        boolean isLatin1 = isLatin1();
+        if (isLatin1 && StringLatin1.canEncode(c)) {
+            while (index < limit) {
+                value[index++] = (byte)c;
+            }
+        } else {
+            if (isLatin1) {
+                inflate();
+            }
+            while (index < limit) {
+                StringUTF16.putCharSB(value, index++, c);
+            }
         }
-        int limit = count * length;
-        ensureCapacityInternal(offset + limit);
-        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
-        this.count = offset + limit;
+        this.count = limit;
         return this;
     }
 
@@ -1897,30 +1876,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @since 21
      * @throws IllegalArgumentException  if {@code count} is less than zero
-     * @throws StringIndexOutOfBoundsException  if the result overflows the buffer
+     * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(CharSequence cs, int count) {
-        if (cs == null) {
-            return repeatNull(count);
-        } else if (count < 0) {
+        if (count < 0) {
             throw new IllegalArgumentException("count is less than zero: " + count);
         } else if (count == 0) {
             return this;
         } else if (count == 1) {
             return append(cs);
         }
-
+        if (cs == null) {
+            cs = "null";
+        }
         int length = cs.length();
         if (length == 1) {
             return repeat(cs.charAt(0), count);
         }
-        int valueLength = length << UTF16;
-        if ((Integer.MAX_VALUE - this.count) / count < valueLength) {
+        int offset = this.count;
+        int valueLength = length << coder;
+        if ((Integer.MAX_VALUE - offset) / count < valueLength) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
-        int limit = count * length;
-        int offset = this.count;
-        ensureCapacityInternal(offset + limit);
+        int total = count * length;
+        int limit = offset + total;
+        ensureCapacityInternal(limit);
         if (cs instanceof String str) {
             putStringAt(offset, str);
         } else  if (cs instanceof AbstractStringBuilder asb) {
@@ -1928,8 +1908,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         } else {
             appendChars(cs, 0, length);
         }
-        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
-        this.count = offset + limit;
+        String.repeatCopyRest(value, offset << coder, total << coder, length << coder);
+        this.count = limit;
         return this;
     }
 }

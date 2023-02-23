@@ -711,7 +711,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     /**
      * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public synchronized StringBuffer repeat(char c, int count) {
@@ -722,7 +722,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     /**
      * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public synchronized StringBuffer repeat(CharSequence cs, int count) {
