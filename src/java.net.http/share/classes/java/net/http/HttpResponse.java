@@ -279,16 +279,19 @@ public interface HttpResponse<T> {
      * {@snippet :
      *   // Receives the response body as a String
      *   HttpResponse<String> response = client
-     *     .send(request, BodyHandlers.ofString());
+     *     .send(request, BodyHandlers.ofString()); }
      *
+     * {@snippet :
      *   // Receives the response body as a file
      *   HttpResponse<Path> response = client
-     *     .send(request, BodyHandlers.ofFile(Paths.get("example.html")));
+     *     .send(request, BodyHandlers.ofFile(Paths.get("example.html"))); }
      *
+     * {@snippet :
      *   // Receives the response body as an InputStream
      *   HttpResponse<InputStream> response = client
-     *     .send(request, BodyHandlers.ofInputStream());
+     *     .send(request, BodyHandlers.ofInputStream()); }
      *
+     * {@snippet :
      *   // Discards the response body
      *   HttpResponse<Void> response = client
      *     .send(request, BodyHandlers.discarding());  }

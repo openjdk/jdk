@@ -573,15 +573,17 @@ public abstract class HttpRequest {
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "text/plain; charset=UTF-8")
      *        .POST(BodyPublishers.ofString("some body text"))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a File
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "application/json")
      *        .POST(BodyPublishers.ofFile(Paths.get("file.json")))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a byte array
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
