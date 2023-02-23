@@ -93,19 +93,19 @@ public final class DefaultCompressPlugin extends AbstractPlugin implements Resou
         if (level != null) {
             switch (level) {
                 case LEVEL_0:
-                    System.err.println(getMessage("warn.prefix") + " " +
-                            MessageFormat.format(getMessage("compress.warn.argumentdeprecated"), LEVEL_0));
+                    System.err.println(MessageFormat
+                            .format(getMessage("compress.warn.argumentdeprecated"), LEVEL_0));
                     ss = null;
                     zip = null;
                     break;
                 case LEVEL_1:
-                    System.err.println(getMessage("warn.prefix") + " " +
-                            MessageFormat.format(getMessage("compress.warn.argumentdeprecated"), LEVEL_1));
+                    System.err.println(MessageFormat
+                            .format(getMessage("compress.warn.argumentdeprecated"), LEVEL_1));
                     ss = new StringSharingPlugin(resFilter);
                     break;
                 case LEVEL_2:
-                    System.err.println(getMessage("warn.prefix") + " " +
-                            MessageFormat.format(getMessage("compress.warn.argumentdeprecated"), LEVEL_2));
+                    System.err.println(MessageFormat
+                            .format(getMessage("compress.warn.argumentdeprecated"), LEVEL_2));
                     zip = new ZipPlugin(resFilter);
                     break;
                 default:
