@@ -30,35 +30,22 @@ public class StraceBase {
             "java.lang.System",
             "java.lang.Object",
             "java.lang.Thread",
+            "jdk.internal.event.Event",
             "jdk.internal.event.ThreadSleepEvent",
             "jdk.internal.misc.Blocker",
             "jdk.internal.misc.VM",
             "jdk.internal.vm.StackableScope",
     };
 
-    private static boolean isValidJavaName(String name) {
-        if (!Character.isJavaIdentifierStart(name.charAt(0))) {
-            return false;
-        }
-        for (var ch : name.toCharArray()) {
-            if (!(Character.isJavaIdentifierPart(ch) || ch == '.')) {
-                return false;
-            }
-        }
-        return true;
-    }
     /**
      *   Method verifies that StackTraceElement is sane and might be expected in the current stack.
      */
     final static boolean checkElement(StackTraceElement element) {
         String className = element.getClassName();
         String methodName = element.getMethodName();
-        if (!isValidJavaName(className) || !isValidJavaName(methodName)) {
-            return false;
-        }
-        if (className.startsWith("nsk.stress.strace.strace")) {
-            if (methodName.startsWith("recursiveMethod")
-                    || methodName.startsWith("run")) {
+        if (className.matches("nsk.stress.strace.strace\\d\\d\\dThread")) {
+            if (methodName.matches("recursiveMethod\\d?")
+                    || methodName.equals("run")) {
                 return true;
             }
             return false;
