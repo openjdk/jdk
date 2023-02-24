@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,8 @@ public interface RMIConnection extends Closeable, Remote {
      * in parameter contains a pattern or no <code>ObjectName</code>
      * is specified for the MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public ObjectInstance createMBean(String className,
@@ -207,7 +208,8 @@ public interface RMIConnection extends Closeable, Remote {
      * in parameter contains a pattern or no <code>ObjectName</code>
      * is specified for the MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public ObjectInstance createMBean(String className,
@@ -268,7 +270,8 @@ public interface RMIConnection extends Closeable, Remote {
      * in parameter contains a pattern, or no <code>ObjectName</code>
      * is specified for the MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public ObjectInstance createMBean(String className,
@@ -333,7 +336,8 @@ public interface RMIConnection extends Closeable, Remote {
      * in parameter contains a pattern, or no <code>ObjectName</code>
      * is specified for the MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public ObjectInstance createMBean(String className,
@@ -371,7 +375,8 @@ public interface RMIConnection extends Closeable, Remote {
      * unregister is the {@link javax.management.MBeanServerDelegate
      * MBeanServerDelegate} MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public void unregisterMBean(ObjectName name, Subject delegationSubject)
@@ -400,7 +405,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public ObjectInstance getObjectInstance(ObjectName name,
@@ -429,7 +435,8 @@ public interface RMIConnection extends Closeable, Remote {
      * query an empty list is returned.
      *
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public Set<ObjectInstance>
@@ -460,7 +467,8 @@ public interface RMIConnection extends Closeable, Remote {
      * returned.
      *
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public Set<ObjectName>
@@ -485,7 +493,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public boolean isRegistered(ObjectName name, Subject delegationSubject)
@@ -502,7 +511,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @return the number of MBeans registered.
      *
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public Integer getMBeanCount(Subject delegationSubject)
@@ -539,7 +549,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeMBeanException Wraps a runtime exception thrown
      * by the MBean's getter.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      *
      * @see #setAttribute
@@ -576,7 +587,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null or attributes in parameter is null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      *
      * @see #setAttributes
@@ -620,7 +632,8 @@ public interface RMIConnection extends Closeable, Remote {
      * name in parameter is null or the attribute in parameter is
      * null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      *
      * @see #getAttribute
@@ -662,7 +675,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null or attributes in parameter is null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      *
      * @see #getAttributes
@@ -708,7 +722,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.Exception</code> thrown while trying to invoke
      * the method.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
      * IllegalArgumentException} when <code>name</code> or
@@ -736,7 +751,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @return the default domain.
      *
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public String getDefaultDomain(Subject delegationSubject)
@@ -753,7 +769,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @return the list of domains.
      *
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public String[] getDomains(Subject delegationSubject)
@@ -778,7 +795,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws ReflectionException An exception occurred when
      * trying to invoke the getMBeanInfo of a Dynamic MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
@@ -808,7 +826,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws InstanceNotFoundException The MBean specified is not
      * registered in the MBean server.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
@@ -852,7 +871,8 @@ public interface RMIConnection extends Closeable, Remote {
      * {@link javax.management.NotificationListener} interface,
      * or <code>name</code> or <code>listener</code> is null.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      *
      * @see #removeNotificationListener(ObjectName, ObjectName, Subject)
@@ -883,7 +903,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws ListenerNotFoundException The listener is not
      * registered in the MBean.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
      * IllegalArgumentException} when <code>name</code> or
@@ -925,7 +946,8 @@ public interface RMIConnection extends Closeable, Remote {
      * registered in the MBean, or it is not registered with the given
      * filter and handback.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to perform this operation.
+     * if any, does not have permission to perform this operation,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
      * IllegalArgumentException} when <code>name</code> or
@@ -994,7 +1016,8 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>names</code> does not correspond to any registered MBean.
      * @throws SecurityException if, for one of the MBeans, the
      * client, or the delegated Subject if any, does not have
-     * permission to add a listener.
+     * permission to add a listener,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      */
     public Integer[] addNotificationListeners(ObjectName[] names,
@@ -1033,7 +1056,8 @@ public interface RMIConnection extends Closeable, Remote {
      * MBean discarded a listener for some reason other than a call to
      * <code>MBeanServer.removeNotificationListener</code>.
      * @throws SecurityException if the client, or the delegated Subject
-     * if any, does not have permission to remove the listeners.
+     * if any, does not have permission to remove the listeners,
+     * or if a delegated Subject is specified and subject delegation is not supported.
      * @throws IOException if a general communication exception occurred.
      * @throws IllegalArgumentException if <code>ObjectName</code> or
      * <code>listenerIds</code> is null or if <code>listenerIds</code>
