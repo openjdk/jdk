@@ -150,7 +150,6 @@ public final class LocaleServiceProviderPool {
     /**
      * {@return a stream of the available locales for all provider classes}
      *
-     * Returns a stream of available locales for all the provider classes.
      * This stream is constructed from all the locales
      * that are provided by each provider, including the JRE.
      */
