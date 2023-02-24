@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,14 +217,20 @@ public final class ProcessTools {
         try {
             if (timeout > -1) {
                 if (timeout == 0) {
-                    latch.await();
+                    while (!latch.await(1, TimeUnit.SECONDS)) {
+                        if (!p.isAlive()) {
+                            //Fail if process finished before printed expected string
+                            latch.countDown();
+                            throw new RuntimeException("Started process is not alive.");
+                        }
+                    }
                 } else {
                     if (!latch.await(Utils.adjustTimeout(timeout), unit)) {
                         throw new TimeoutException();
                     }
                 }
             }
-        } catch (TimeoutException | InterruptedException e) {
+        } catch (TimeoutException | InterruptedException | RuntimeException e) {
             System.err.println("Failed to start a process (thread dump follows)");
             for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
