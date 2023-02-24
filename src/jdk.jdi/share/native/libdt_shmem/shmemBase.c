@@ -31,9 +31,7 @@
 #include "shmemBase.h"
 #include "jdwpTransport.h"  /* for Packet, TransportCallback */
 
-#if defined(_WIN32)
-  #define PRId64 "I64d"
-#endif
+#include <inttypes.h>
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
