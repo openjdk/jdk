@@ -36,7 +36,6 @@ import compiler.lib.ir_framework.*;
 
 public class SumRedSqrt_Double {
     public static void main(String[] args) throws Exception {
-
         TestFramework framework = new TestFramework();
         framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
                            "-XX:LoopUnrollLimit=250",

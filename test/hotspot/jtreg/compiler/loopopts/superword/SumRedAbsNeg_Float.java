@@ -101,7 +101,7 @@ public class SumRedAbsNeg_Float {
             float[] c,
             float total) {
         for (int i = 0; i < a.length; i++) {
-            total +=  Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
+            total += Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
         }
         return total;
     }

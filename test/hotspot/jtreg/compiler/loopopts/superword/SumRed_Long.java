@@ -89,8 +89,9 @@ public class SumRed_Long {
         }
     }
 
-    /* Require avx2 due to filtering out small vector lengths (SuperWord::implemented).
-       Additionally providing a negative test to test this heuristic. */
+    /* Require avx2 due to filtering out small vector lengths
+       for long and int (SuperWord::implemented).
+       Additionally providing a negative test for this. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VL})
