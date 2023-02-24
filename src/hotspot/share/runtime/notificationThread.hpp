@@ -37,11 +37,17 @@ class NotificationThread : public JavaThread {
  private:
 
   static void notification_thread_entry(JavaThread* thread, TRAPS);
-  NotificationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
+  NotificationThread(ThreadFunction entry_point) : JavaThread(entry_point) {}
 
  public:
   static void initialize();
 
+  // Serviceability Agent relies on being able to identify types based on their vtable address. If
+  // we do not override any virtual methods and RTTI is disabled, MSVC may emit a single vtable for
+  // JavaThread and NotificationThread. This results in the vtable symbols for both classes pointing
+  // to the same address and Serviceability Agent thinking all JavaThread are NotificationThread. So
+  // while this method is not directly used anywhere, it must exist.
+  bool is_Notification_thread() const override { return true; }
 };
 
 #endif // SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP
