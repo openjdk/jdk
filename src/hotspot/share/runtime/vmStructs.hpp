@@ -188,13 +188,18 @@ private:
 #ifdef ASSERT
 
 // This macro checks the type of a VMStructEntry by comparing pointer types
-#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
-  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
+#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) { \
+  static_assert( \
+    std::is_convertible< \
+      std::add_pointer_t<decltype(declval<typeName>().fieldName)>, \
+      std::add_pointer_t<type>>::value, \
+    "type mismatch for " XSTR(fieldName) " member of " XSTR(typeName)); \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "..."); \
+}
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
-#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
- {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
+#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) \
+  CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, std::add_volatile_t<type>)
 
 // This macro checks the type of a static VMStructEntry by comparing pointer types
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
