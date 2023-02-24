@@ -1315,6 +1315,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
   while (_reader.has_bytes_left()) {
     if (!apply_opcode()) {
       assert(false, "Could not apply opcode");
+      delete _state;
       return false;
     }
 
@@ -1330,7 +1331,9 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
       if (does_offset_match_entry(previous_address, previous_file, previous_line)) {
         // We are using an int for the line number which should never be larger than INT_MAX for any files.
         *line = (int)_state->_line;
-        return get_filename_from_header(_state->_file, filename, filename_len);
+        bool ret = get_filename_from_header(_state->_file, filename, filename_len);
+        delete _state;
+        return ret;
       }
 
       // We do not actually store the matrix while searching the correct entry. Enable logging to print/debug it.
@@ -1346,7 +1349,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
       }
     }
   }
-
+  delete _state;
   assert(false, "Did not find an entry in the line number information matrix that matches " UINT32_FORMAT_X_0, _offset_in_library);
   return false;
 }
