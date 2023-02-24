@@ -249,7 +249,7 @@ public class CompileProperties {
             Writer writer = null;
             try {
                 writer = new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.UTF_8));
+                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.ISO_8859_1));
                 MessageFormat format = new MessageFormat(FORMAT);
                 writer.write(format.format(new Object[] { packageString, className, superClass, data }));
             } catch ( IOException e ) {
@@ -304,10 +304,19 @@ public class CompileProperties {
                 case '\f':outBuffer.append('\\'); outBuffer.append('f');
                 break;
                 default:
-                    if (specialSaveChars.indexOf(aChar) != -1) {
+                    if ((aChar < 0x0020) || (aChar > 0x007e)) {
                         outBuffer.append('\\');
+                        outBuffer.append('u');
+                        outBuffer.append(toHex((aChar >> 12) & 0xF));
+                        outBuffer.append(toHex((aChar >> 8) & 0xF));
+                        outBuffer.append(toHex((aChar >> 4) & 0xF));
+                        outBuffer.append(toHex(aChar & 0xF));
+                    } else {
+                        if (specialSaveChars.indexOf(aChar) != -1) {
+                            outBuffer.append('\\');
+                        }
+                        outBuffer.append(aChar);
                     }
-                    outBuffer.append(aChar);
             }
         }
         return outBuffer.toString();
