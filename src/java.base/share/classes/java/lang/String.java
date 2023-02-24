@@ -2386,6 +2386,10 @@ public final class String
      * @return  the index of the first occurrence of the character in the
      *          character sequence represented by this object, or
      *          {@code -1} if the character does not occur.
+     *
+     * @apiNote An invocation of this method on a {@link String} {@code s}
+     * is behaviorally equivalent to the invocation
+     * {@code s.indexOf(ch, 0, s.length())}.
      */
     public int indexOf(int ch) {
         return indexOf(ch, 0, length());
@@ -2429,6 +2433,10 @@ public final class String
      *          character sequence represented by this object that is greater
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur.
+     *
+     * @apiNote An invocation of this method on a {@link String} {@code s}
+     * is behaviorally equivalent to the invocation
+     * {@code s.indexOf(ch, fromIndex, s.length())}.
      */
     public int indexOf(int ch, int fromIndex) {
         return indexOf(ch, fromIndex, length());
@@ -2459,7 +2467,7 @@ public final class String
      * {@code toIndex}, then {@code -1} is returned.
      *
      * <p>There are no restrictions on the value of {@code fromIndex} and
-     * {@code toIndex}. Negative values have the same effect as it they were zero.
+     * {@code toIndex}. Negative values have the same effect as if they were zero.
      * Values greater than the length of this string have the same effect
      * as if they were equal to the length of this string.
      *
@@ -2476,6 +2484,7 @@ public final class String
      *          character sequence represented by this object that is greater
      *          than or equal to {@code fromIndex} and less than {@code toIndex},
      *          or {@code -1} if the character does not occur.
+     * @since   21
      */
     public int indexOf(int ch, int fromIndex, int toIndex) {
         return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, toIndex)

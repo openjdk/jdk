@@ -213,9 +213,9 @@ final class StringLatin1 {
     }
 
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int toIndex) {
+    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
-        for (int i = fromIndex; i < toIndex; i++) {
+        for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
                return i;
             }

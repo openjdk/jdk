@@ -534,13 +534,13 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int toIndex) {
-        checkBoundsBeginEnd(fromIndex, toIndex, value);
-        return indexOfCharUnsafe(value, ch, fromIndex, toIndex);
+    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
+        checkBoundsBeginEnd(fromIndex, max, value);
+        return indexOfCharUnsafe(value, ch, fromIndex, max);
     }
 
-    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int toIndex) {
-        for (int i = fromIndex; i < toIndex; i++) {
+    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
+        for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
             }
@@ -551,12 +551,12 @@ final class StringUTF16 {
     /**
      * Handles (rare) calls of indexOf with a supplementary character.
      */
-    private static int indexOfSupplementary(byte[] value, int ch, int fromIndex, int toIndex) {
+    private static int indexOfSupplementary(byte[] value, int ch, int fromIndex, int max) {
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
             final char lo = Character.lowSurrogate(ch);
-            checkBoundsBeginEnd(fromIndex, toIndex, value);
-            for (int i = fromIndex; i < toIndex - 1; i++) {
+            checkBoundsBeginEnd(fromIndex, max, value);
+            for (int i = fromIndex; i < max - 1; i++) {
                 if (getChar(value, i) == hi && getChar(value, i + 1) == lo) {
                     return i;
                 }
