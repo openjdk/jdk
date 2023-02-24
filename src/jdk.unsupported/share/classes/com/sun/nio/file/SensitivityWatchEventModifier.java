@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,15 @@ import jdk.internal.misc.FileSystemOption;
  * watch service implementation that polls the file system.
  *
  * @since 1.7
+ *
+ * @deprecated
+ * This {@code enum} is only used by the polling implementation of
+ * {@code WatchService}.  This implementation is used only on macOS and
+ * likely to be removed in a future release when a version based on the native
+ * file event notification facility becomes available.
  */
 
+@Deprecated(since="7", forRemoval = true)
 public enum SensitivityWatchEventModifier implements Modifier {
     /**
      * High sensitivity.
