@@ -192,7 +192,7 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
 
 template <> void DCmdArgument<char*>::init_value(TRAPS) {
   set_value(nullptr); // Must be initialized before calling parse_value
-  if (has_default() && _default_string != nullptr) {
+  if (has_default()) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
   }
 }
