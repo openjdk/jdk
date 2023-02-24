@@ -251,7 +251,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_init_thread(Thread::current()),
+             method->method_holder()->is_init_thread(JavaThread::current()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {

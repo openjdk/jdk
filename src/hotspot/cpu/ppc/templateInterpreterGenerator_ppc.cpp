@@ -1703,8 +1703,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-  __ verify_thread();
-
   // --------------------------------------------------------------------------
   // JVMTI support
   __ notify_method_entry();
@@ -1957,7 +1955,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ mr(Rexception, R3_RET);
 
-    __ verify_thread();
     __ verify_oop(Rexception);
 
     // Expression stack must be empty before entering the VM in case of an exception.
@@ -2086,7 +2083,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   Interpreter::_remove_activation_entry = __ pc();
   {
     __ pop_ptr(Rexception);
-    __ verify_thread();
     __ verify_oop(Rexception);
     __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
 

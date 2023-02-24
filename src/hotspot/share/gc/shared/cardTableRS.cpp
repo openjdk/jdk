@@ -434,10 +434,6 @@ void CardTableRS::verify() {
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   CardTable(whole_heap) { }
 
-void CardTableRS::initialize() {
-  CardTable::initialize();
-}
-
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
                                          OopIterateClosure* cl,

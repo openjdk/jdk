@@ -1299,7 +1299,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   }
   assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");
   Node* src         = argument(0); // byte[]
-  Node* tgt         = argument(1); // tgt is int ch
+  Node* int_ch      = argument(1);
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
@@ -1311,6 +1311,15 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 
   // Range checks
   generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
+
+  // Check for int_ch >= 0
+  Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
+  Node* int_ch_bol = _gvn.transform(new BoolNode(int_ch_cmp, BoolTest::ge));
+  {
+    BuildCutout unless(this, int_ch_bol, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
+  }
   if (stopped()) {
     return true;
   }
@@ -1318,7 +1327,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, ae);
+  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, int_ch, ae);
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   _gvn.transform(result);
 
@@ -1646,7 +1655,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     set_sp(old_sp);
     return false;
   }
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2361,7 +2370,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2612,7 +2621,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     return false;
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
