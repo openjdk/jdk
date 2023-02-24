@@ -1163,141 +1163,105 @@ bool StringConcat::validate_control_flow() {
   return !fail;
 }
 
+// Mirror of Integer.stringSize, return the count of digits in integer,
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   if (arg->is_Con()) {
     // Constant integer. Compute constant length
     jint arg_val = arg->get_int();
-    jint count = 1;
-    if (arg_val < 0) {
-      // Special case for min_jint - it can't be negated.
-      if (arg_val == min_jint) {
-        return __ intcon(11);
-      }
-
+    jint d = 1;
+    if (arg_val >= 0) {
+      d = 0;
       arg_val = -arg_val;
-      count++;
     }
-    for (int i = 0; i < (int)(sizeof(SIZE_TABLE) / sizeof(SIZE_TABLE[0])); i++) {
-      if (arg_val <= SIZE_TABLE[i]) {
-        count += i;
-        break;
+    jint p = -10;
+    for (int i = 1; i < 10; i++) {
+      if (arg_val > p) {
+        return __ intcon(i + d);
       }
+      p = 10 * p;
     }
-    return __ intcon(count);
+    return __ intcon(10 + d);
   }
 
+  // int d = 1;
+  // if (x >= 0) {
+  //     d = 0;
+  //     x = -x;
+  // }
+  RegionNode* sign_merge = new RegionNode(3);
+  kit.gvn().set_type(sign_merge, Type::CONTROL);
+  Node* digit_cnt = new PhiNode(sign_merge, TypeInt::INT);
+  kit.gvn().set_type(digit_cnt, TypeInt::INT);
+  Node* val = new PhiNode(sign_merge, TypeInt::INT);
+  kit.gvn().set_type(val, TypeInt::INT);
+
+  IfNode* iff = kit.create_and_map_if(kit.control(),
+                                      __ Bool(__ CmpI(arg, __ intcon(0)), BoolTest::ge),
+                                      PROB_FAIR, COUNT_UNKNOWN);
+  sign_merge->init_req(1, __ IfTrue(iff));
+  sign_merge->init_req(2, __ IfFalse(iff));
+  digit_cnt->init_req(1, __ intcon(0));
+  digit_cnt->init_req(2, __ intcon(1));
+  val->init_req(1, __ SubI(__ intcon(0), arg));
+  val->init_req(2, arg);
+  kit.set_control(sign_merge);
+
+  // int p = -10;
+  // for (int i = 1; i < 10; i++) {
+  //     if (x > p)
+  //         return i + d;
+  //     p = 10 * p;
+  // }
   RegionNode* final_merge = new RegionNode(3);
   kit.gvn().set_type(final_merge, Type::CONTROL);
   Node* final_size = new PhiNode(final_merge, TypeInt::INT);
   kit.gvn().set_type(final_size, TypeInt::INT);
-  Node* final_mem = new PhiNode(final_merge, Type::MEMORY, TypePtr::BOTTOM);
-  kit.gvn().set_type(final_mem, Type::MEMORY);
-  Node* final_io = new PhiNode(final_merge, Type::ABIO);
-  kit.gvn().set_type(final_io, Type::ABIO);
 
-  IfNode* iff = kit.create_and_map_if(kit.control(),
-                                      __ Bool(__ CmpI(arg, __ intcon(0x80000000)), BoolTest::ne),
-                                      PROB_FAIR, COUNT_UNKNOWN);
-  Node* is_min = __ IfFalse(iff);
-  final_merge->init_req(1, is_min);
-  final_size->init_req(1, __ intcon(11));
-  final_mem->init_req(1, kit.merged_memory());
-  final_io->init_req(1, kit.i_o());
+  kit.add_empty_predicates();
+  C->set_has_loops(true);
 
-  kit.set_control(__ IfTrue(iff));
-  if (kit.stopped()) {
-    final_merge->init_req(2, C->top());
-    final_size->init_req(2, C->top());
-    final_mem->init_req(2, C->top());
-    final_io->init_req(2, C->top());
-  } else {
-    // int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-    RegionNode *r = new RegionNode(3);
-    kit.gvn().set_type(r, Type::CONTROL);
-    Node *phi = new PhiNode(r, TypeInt::INT);
-    kit.gvn().set_type(phi, TypeInt::INT);
-    Node *size = new PhiNode(r, TypeInt::INT);
-    kit.gvn().set_type(size, TypeInt::INT);
-    Node* chk = __ CmpI(arg, __ intcon(0));
-    Node* p = __ Bool(chk, BoolTest::lt);
-    IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_FAIR, COUNT_UNKNOWN);
-    Node* lessthan = __ IfTrue(iff);
-    Node* greaterequal = __ IfFalse(iff);
-    r->init_req(1, lessthan);
-    phi->init_req(1, __ SubI(__ intcon(0), arg));
-    size->init_req(1, __ intcon(1));
-    r->init_req(2, greaterequal);
-    phi->init_req(2, arg);
-    size->init_req(2, __ intcon(0));
-    kit.set_control(r);
-    C->record_for_igvn(r);
-    C->record_for_igvn(phi);
-    C->record_for_igvn(size);
+  RegionNode* loop = new RegionNode(3);
+  kit.gvn().set_type(loop, Type::CONTROL);
+  Node* index = new PhiNode(loop, TypeInt::INT);
+  kit.gvn().set_type(index, TypeInt::INT);
+  Node* temp = new PhiNode(loop, TypeInt::INT);
+  kit.gvn().set_type(temp, TypeInt::INT);
 
-    // int[] sizeTable = new int[10];
-    // sizeTable[0] = 9;
-    // sizeTable[1] = 99;
-    // ...
-    // sizeTable[9] = Integer.MAX_VALUE
-    Node* sizeTable = NULL;
-    {
-      PreserveReexecuteState preexces(&kit);
-      kit.jvms()->set_should_reexecute(true);
-      Node* array_klass = __ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
-      sizeTable = kit.new_array(array_klass, __ intcon(10), 1);
-    }
-    for (int i = 0; i < 10; i++) {
-      Node* elem = kit.array_element_address(sizeTable, __ intcon(i), T_INT);
-      __ store_to_memory(kit.control(), elem, __ intcon(SIZE_TABLE[i]), T_INT,
-                        TypeAryPtr::INTS, MemNode::unordered);
-    }
+  loop->init_req(1, kit.control());
+  index->init_req(1, __ intcon(1));
+  temp->init_req(1, __ intcon(-10));
+  kit.set_control(loop);
 
-    // for (int i=0; ; i++)
-    //   if (x <= sizeTable[i])
-    //     return i+1;
+  Node* limit = __ CmpI(index, __ intcon(10));
+  Node* limitb = __ Bool(limit, BoolTest::lt);
+  IfNode* iff2 = kit.create_and_map_if(kit.control(), limitb, PROB_MIN, COUNT_UNKNOWN);
+  Node* limit_less = __ IfTrue(iff2);
+  kit.set_control(limit_less);
 
-    // Add loop predicate first.
-    kit.add_empty_predicates();
-    C->set_has_loops(true);
+  Node* cmp = __ CmpI(val, temp);
+  Node* cmpb = __ Bool(cmp, BoolTest::gt);
+  IfNode* iff3 = kit.create_and_map_if(kit.control(), cmpb, PROB_MIN, COUNT_UNKNOWN);
+  Node* cmp_le = __ IfFalse(iff3);  
+  kit.set_control(cmp_le);
 
-    RegionNode *loop = new RegionNode(3);
-    loop->init_req(1, kit.control());
-    kit.gvn().set_type(loop, Type::CONTROL);
+  loop->init_req(2, kit.control());
+  index->init_req(2, __ AddI(index, __ intcon(1)));
+  temp->init_req(2, __ MulI(temp, __ intcon(10)));
 
-    Node *index = new PhiNode(loop, TypeInt::INT);
-    index->init_req(1, __ intcon(0));
-    kit.gvn().set_type(index, TypeInt::INT);
-    kit.set_control(loop);
-
-    Node* value = kit.load_array_element(sizeTable, index, TypeAryPtr::INTS, /* set_ctrl */ false);
-    C->record_for_igvn(value);
-    Node* limit = __ CmpI(phi, value);
-    Node* limitb = __ Bool(limit, BoolTest::le);
-    IfNode* iff2 = kit.create_and_map_if(kit.control(), limitb, PROB_MIN, COUNT_UNKNOWN);
-    Node* lessEqual = __ IfTrue(iff2);
-    Node* greater = __ IfFalse(iff2);
-
-    loop->init_req(2, greater);
-    index->init_req(2, __ AddI(index, __ intcon(1)));
-
-    kit.set_control(lessEqual);
-    C->record_for_igvn(loop);
-    C->record_for_igvn(index);
-
-    final_merge->init_req(2, kit.control());
-    final_size->init_req(2, __ AddI(__ AddI(index, size), __ intcon(1)));
-    final_mem->init_req(2, kit.reset_memory());
-    final_io->init_req(2, kit.i_o());
-  }
-
+  final_merge->init_req(1, __ IfFalse(iff2));
+  final_merge->init_req(2, __ IfTrue(iff3));
+  final_size->init_req(1, __ AddI(digit_cnt, __ intcon(10)));
+  final_size->init_req(2, __ AddI(digit_cnt, index));
   kit.set_control(final_merge);
-  kit.set_all_memory(final_mem);
-  kit.set_i_o(final_io);
 
+  C->record_for_igvn(sign_merge);
+  C->record_for_igvn(digit_cnt);
+  C->record_for_igvn(val);
   C->record_for_igvn(final_merge);
   C->record_for_igvn(final_size);
-  C->record_for_igvn(final_mem);
-  C->record_for_igvn(final_io);
+  C->record_for_igvn(loop);
+  C->record_for_igvn(index);
+  C->record_for_igvn(temp);
   return final_size;
 }
 
