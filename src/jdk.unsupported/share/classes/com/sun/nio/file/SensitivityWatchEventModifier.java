@@ -32,13 +32,14 @@ import jdk.internal.misc.FileSystemOption;
  * Defines the <em>sensitivity levels</em> when registering objects with a
  * watch service implementation that polls the file system.
  *
- * @since 1.7
- *
  * @deprecated
  * This {@code enum} is only used by the polling implementation of
- * {@code WatchService}.  This implementation is used only on macOS and
- * likely to be removed in a future release when a version based on the native
- * file event notification facility becomes available.
+ * {@link java.nio.file.WatchService WatchService}.  The polling
+ * {@code WatchService} is used only on macOS and likely to be removed
+ * in a future release when a version based on the native file event
+ * notification facility becomes available.
+ *
+ * @since 1.7
  */
 
 @Deprecated(since="7", forRemoval = true)
