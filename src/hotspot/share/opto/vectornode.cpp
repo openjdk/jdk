@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,8 +551,16 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_LShiftI:  case Op_LShiftL:
   case Op_RShiftI:  case Op_RShiftL:
   case Op_URShiftI: case Op_URShiftL:
+  case Op_RoundDoubleMode:
     *start = 1;
     *end   = 2; // 1 vector operand
+    break;
+  case Op_RotateLeft:
+  case Op_RotateRight:
+    // Rotate shift could have 1 or 2 vector operand(s), depending on
+    // whether shift distance is a supported constant or not.
+    *start = 1;
+    *end   = (n->is_Con() && Matcher::supports_vector_constant_rotates(n->get_int())) ? 2 : 3;
     break;
   case Op_AddI: case Op_AddL: case Op_AddF: case Op_AddD:
   case Op_SubI: case Op_SubL: case Op_SubF: case Op_SubD:
@@ -1085,9 +1093,8 @@ int ExtractNode::opcode(BasicType bt) {
 }
 
 // Extract a scalar element of vector.
-Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
-  assert((int)position < Matcher::max_vector_size(bt), "pos in range");
-  ConINode* pos = ConINode::make((int)position);
+Node* ExtractNode::make(Node* v, ConINode* pos, BasicType bt) {
+  assert(pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
   switch (bt) {
   case T_BOOLEAN: return new ExtractUBNode(v, pos);
   case T_BYTE:    return new ExtractBNode(v, pos);

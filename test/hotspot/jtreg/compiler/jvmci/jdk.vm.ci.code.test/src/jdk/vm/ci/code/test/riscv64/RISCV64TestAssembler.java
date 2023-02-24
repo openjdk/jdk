@@ -226,8 +226,7 @@ public class RISCV64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
-        emitGrowStack(cc.getStackSize());
-        frameSize += cc.getStackSize();
+        growFrame(cc.getStackSize());
         AllocatableValue[] args = cc.getArguments();
         for (int i = 0; i < args.length; i++) {
             emitLoad(args[i], prim[i]);
@@ -236,8 +235,7 @@ public class RISCV64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallEpilogue(CallingConvention cc) {
-        emitGrowStack(-cc.getStackSize());
-        frameSize -= cc.getStackSize();
+        growFrame(-cc.getStackSize());
     }
 
     @Override

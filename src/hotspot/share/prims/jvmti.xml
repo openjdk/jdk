@@ -11058,7 +11058,8 @@ myInit() {
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
-          Current thread is a virtual thread.
+          The current thread is a virtual thread and the implementation does not support
+          getting the current thread CPU time when the current thread is a virtual thread.
         </error>
       </errors>
     </function>
@@ -11140,7 +11141,8 @@ myInit() {
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
-          <paramlink id="thread"/> is a virtual thread.
+          <paramlink id="thread"/> is a virtual thread and the implementation does not
+          support getting the thread CPU time of a virtual thread.
         </error>
       </errors>
     </function>

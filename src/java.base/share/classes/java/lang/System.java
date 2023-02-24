@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1902,6 +1902,9 @@ public final class System {
      * Runtime.getRuntime().exit(n)
      * </pre></blockquote>
      *
+     * @implNote
+     * The initiation of the shutdown sequence is logged by {@link Runtime#exit(int)}.
+     *
      * @param  status exit status.
      * @throws SecurityException
      *         if a security manager exists and its {@code checkExit} method
@@ -2461,10 +2464,15 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
+            public int countPositives(byte[] bytes, int offset, int length) {
+                return StringCoding.countPositives(bytes, offset, length);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
-
+            public char getUTF16Char(byte[] bytes, int index) {
+                return StringUTF16.getChar(bytes, index);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
