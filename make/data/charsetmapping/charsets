@@ -479,7 +479,7 @@ charset x-IBM874 IBM874
 # alias for GB18030 is generated at runtime
 charset GB18030 GB18030
     package sun.nio.cs
-    type    template
+    type    source
 
 ########################################################
 #
