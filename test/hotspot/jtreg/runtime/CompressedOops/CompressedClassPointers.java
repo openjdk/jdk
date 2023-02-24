@@ -25,11 +25,11 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
- * @comment Testing compressed class pointers without compressed oops is not possible
-            on MacOS because the heap is given an  arbitrary address that occasionally
-            collides with where we would ideally have placed the compressed class space.
  * @requires vm.bits == 64 & !vm.graal.enabled
  * @requires vm.flagless
+ * @comment Testing compressed class pointers without compressed oops is not possible
+ *          on MacOS because the heap is given an arbitrary address that occasionally
+ *          collides with where we would ideally have placed the compressed class space.
  * @requires os.family != "mac"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
