@@ -226,7 +226,7 @@ class LinuxWatchService
             }
 
             // no modifiers supported at this time
-            if (modifiers != null) {
+            if (modifiers.length > 0) {
                 WatchEvent.Modifier modifier = modifiers[0];
                 if (modifier == null)
                     return new NullPointerException();
