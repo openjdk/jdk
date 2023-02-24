@@ -111,7 +111,7 @@ class AutoShutdown {
     }
 
     /**
-     * Returns the delegate for the given ExecutorService. The given ExectorService
+     * Returns the delegate for the given ExecutorService. The given ExecutorService
      * must be a Executors$DelegatedExecutorService.
      */
     private ExecutorService getDelegate(ExecutorService executor) throws Exception {
@@ -122,7 +122,7 @@ class AutoShutdown {
     }
 
     /**
-     * Invokes System.gc and and waits for the given ExecutorService to terminate.
+     * Invokes System.gc and waits for the given ExecutorService to terminate.
      */
     private void gcAndAwaitTermination(ExecutorService executor) throws Exception {
         System.err.println(executor);

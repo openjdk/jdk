@@ -758,7 +758,11 @@ public class Executors {
                 e.execute(command);
             } finally { reachabilityFence(this); }
         }
-        public void shutdown() { e.shutdown(); }
+        public void shutdown() {
+            try {
+                e.shutdown();
+            } finally { reachabilityFence(this); }
+        }
         public List<Runnable> shutdownNow() {
             try {
                 return e.shutdownNow();
@@ -829,7 +833,7 @@ public class Executors {
      */
     private static class AutoShutdownDelegatedExecutorService
             extends DelegatedExecutorService {
-        private final Cleanable cleaner;
+        private final Cleanable cleanable;
         AutoShutdownDelegatedExecutorService(ExecutorService executor) {
             super(executor);
             Runnable action = () -> {
@@ -839,12 +843,12 @@ public class Executors {
                     var ignore = AccessController.doPrivileged(pa);
                 }
             };
-            cleaner = CleanerFactory.cleaner().register(this, action);
+            cleanable = CleanerFactory.cleaner().register(this, action);
         }
         @Override
         public void shutdown() {
             super.shutdown();
-            cleaner.clean();  // unregisters the cleanable
+            cleanable.clean();  // unregisters the cleanable
         }
     }
 
