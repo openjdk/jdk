@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8289647
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -1330,6 +1330,47 @@ public class RecordCompilationTests extends CompilationTestCase {
                             "    }\n" +
                             "    class record {}\n" +
                             "}");
+        } finally {
+            setCompileOptions(previousOptions);
+        }
+    }
+
+    public void testMultipleAnnosInRecord() throws Exception {
+        String[] previousOptions = getCompileOptions();
+
+        try {
+            String imports = """
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    """;
+
+            String annotTemplate =
+                    """
+                    @Target(ElementType.#TARGET)
+                    @interface anno#TARGET { }
+                    """;
+
+            String recordTemplate =
+                    """
+                    record R(#TARGETS String s) {}
+                    """;
+
+            String[] generalOptions = {
+                    "-processor", Processor.class.getName(),
+            };
+
+            List<String> targets = List.of("FIELD", "RECORD_COMPONENT", "PARAMETER", "METHOD");
+
+            var interfaces = targets.stream().map(t -> annotTemplate.replaceAll("#TARGET", t)).collect(Collectors.joining("\n"));
+            var recordAnnotations = targets.stream().map(t -> "@anno" + t).collect(Collectors.joining(" "));
+            String record = recordTemplate.replaceFirst("#TARGETS", recordAnnotations);
+            String code = String.format("%s\n%s\n%s\n",imports,interfaces,record);
+            String[] testOptions = generalOptions.clone();
+            setCompileOptions(testOptions);
+
+            assertOK(true, code);
+
+        // let's reset the default compiler options for other tests
         } finally {
             setCompileOptions(previousOptions);
         }
