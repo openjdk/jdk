@@ -34,23 +34,23 @@ import java.io.PrintStream;
 
 public class TestNoClassDefFoundCause {
 
-    static class CrashWithSOE {
+    static class ClassThrowsSOE {
 
         private static ClassLoader cl = ClassLoader.getSystemClassLoader();
         private static String className = "TestNoClassDefFoundCause$CantBeLoaded";
-        private static CrashWithSOE b;
+        private static ClassThrowsSOE b;
 
         static {
             try {
-                b = new CrashWithSOE();
+                b = new ClassThrowsSOE();
             } catch (Throwable tt) {
                 b = null;
             }
         }
 
-        public CrashWithSOE() throws Throwable {
+        public ClassThrowsSOE() throws Throwable {
             try {
-                new CrashWithSOE();
+                new ClassThrowsSOE();
             } catch (StackOverflowError se) {
                 try {
                     Object inst = cl.loadClass(className).newInstance();
@@ -61,7 +61,7 @@ public class TestNoClassDefFoundCause {
         }
     }
 
-    private static void verify_stack(Throwable e, String cause) throws Exception {
+    private static void verifyStack(Throwable e, String cause) throws Exception {
         ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(byteOS);
         e.printStackTrace(printStream);
@@ -74,11 +74,11 @@ public class TestNoClassDefFoundCause {
 
     public static void main(String args[]) throws Exception{
         try {
-            CrashWithSOE b = new CrashWithSOE();
+            ClassThrowsSOE b = new ClassThrowsSOE();
             throw new RuntimeException("Error: Any expected exception wasn't thrown");
         }catch (NoClassDefFoundError t){
             System.err.println("Check results:");
-            verify_stack(t, "Caused by: java.lang.StackOverflowError");
+            verifyStack(t, "Caused by: java.lang.StackOverflowError");
             System.err.println("Exception stack trace for " + t.toString() + " is ok");
         } catch (Throwable t) {
             System.err.println("Exception NoClassDefFoundError wasn't thrown");
