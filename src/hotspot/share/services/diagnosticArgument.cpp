@@ -183,20 +183,20 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
   if (str == nullptr) {
     _value = nullptr;
   } else {
-    _value = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
+    // Use realloc as we may have a default set.
+    _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
     int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
     assert((size_t)n <= len, "Unexpected number of characters in string");
   }
 }
 
 template <> void DCmdArgument<char*>::init_value(TRAPS) {
+  set_value(nullptr); // Must be initialized before calling parse_value
   if (has_default() && _default_string != nullptr) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
     if (HAS_PENDING_EXCEPTION) {
      fatal("Default string must be parsable");
     }
-  } else {
-    set_value(nullptr);
   }
 }
 
