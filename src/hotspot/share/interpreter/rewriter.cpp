@@ -624,6 +624,11 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
   // rewritten in the RO section of the shared archive.
   // Relocated bytecodes don't have to be restored, only the cp cache entries
   int len = _methods->length();
+#if INCLUDE_CDS
+  // For old shared classes, in order to avoid writing into the CDS archive, don't update
+  // the methods with jsr bytecode.
+  bool do_update = !(UseSharedSpaces && _klass->is_shared() && _klass->major_version() < 50);
+#endif
   for (int i = len-1; i >= 0; i--) {
     methodHandle m(THREAD, _methods->at(i));
 
@@ -637,7 +642,10 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
         return;
       }
       // Method might have gotten rewritten.
-      methods->at_put(i, m());
+#if INCLUDE_CDS
+      if (do_update)
+#endif
+        methods->at_put(i, m());
     }
   }
 }
