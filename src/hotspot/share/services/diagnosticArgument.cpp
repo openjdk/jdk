@@ -194,9 +194,6 @@ template <> void DCmdArgument<char*>::init_value(TRAPS) {
   set_value(nullptr); // Must be initialized before calling parse_value
   if (has_default() && _default_string != nullptr) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-     fatal("Default string must be parsable");
-    }
   }
 }
 
