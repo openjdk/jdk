@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,30 +363,30 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         final byte[] classBytes = cw.toByteArray();
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
-            Lookup lookup;
+            Lookup lookup = null;
             try {
                 if (useImplMethodHandle) {
                     lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
-                        NESTMATE, STRONG);
+                                                                   NESTMATE, STRONG);
                 } else {
                     lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
                 }
-            } catch (Throwable t) {
+                return lookup.lookupClass();
+            } finally {
                 // If requested, dump out to a file for debugging purposes
                 if (dumper != null) {
-                    doDump(lambdaClassName + ".failed-" + counter.incrementAndGet(), classBytes);
+                    final String name;
+                    if (lookup != null) {
+                        final String definedName = lookup.lookupClass().getName();
+                        final int suffixIdx = definedName.lastIndexOf('/');
+                        assert suffixIdx != -1;
+                        name = lambdaClassName + '.' + definedName.substring(suffixIdx + 1);
+                    } else {
+                        name = lambdaClassName + ".failed-" + counter.incrementAndGet();
+                    }
+                    doDump(name, classBytes);
                 }
-                throw t;
             }
-            final Class<?> clazz = lookup.lookupClass();
-            // If requested, dump out to a file for debugging purposes
-            if (dumper != null) {
-                final String definedName = clazz.getName();
-                final int suffixIdx = definedName.lastIndexOf('/');
-                assert suffixIdx != -1;
-                doDump(lambdaClassName + '.' + definedName.substring(suffixIdx + 1), classBytes);
-            }
-            return clazz;
         } catch (IllegalAccessException e) {
             throw new LambdaConversionException("Exception defining lambda proxy class", e);
         } catch (Throwable t) {
