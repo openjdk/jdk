@@ -1212,7 +1212,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return A stream of installed locales.}
+     * {@return a stream of installed locales}
      *
      * The returned stream represents the union of locales supported
      * by the Java runtime environment and by installed
@@ -1220,6 +1220,7 @@ public final class Locale implements Cloneable, Serializable {
      * implementations. At a minimum, the returned stream must contain a
      * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
      * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
+     *
      * @implNote Unlike {@code getAvailableLocales()}, this method does
      * not create a defensive copy of the Locale array.
      * @since 21

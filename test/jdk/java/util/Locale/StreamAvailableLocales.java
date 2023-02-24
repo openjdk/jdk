@@ -23,7 +23,7 @@
 /*
  * @test
  * @summary Test the implementation
- * of Locale.streamAvailableLocales()
+ * of Locale.availableLocales()
  * @bug 8282319
  * @run junit StreamAvailableLocales
  */
@@ -40,7 +40,7 @@ public class StreamAvailableLocales {
 
     /**
      * Test to validate that the methods: Locale.getAvailableLocales()
-     * and Locale.streamAvailableLocales() contain the same underlying elements
+     * and Locale.availableLocales() contain the same underlying elements
      */
     @Test
     public void testStreamEqualsArray() {
@@ -49,10 +49,10 @@ public class StreamAvailableLocales {
         Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
         if (Arrays.equals(arrayLocales, convertedLocales)) {
             System.out.println("$$$ Passed: The underlying elements" +
-                    " of getAvailableLocales() and streamAvailableLocales() are the same!");
+                    " of getAvailableLocales() and availableLocales() are the same!");
         } else {
             throw new RuntimeException("$$$ Error: The underlying elements" +
-                    " of getAvailableLocales() and streamAvailableLocales()" +
+                    " of getAvailableLocales() and availableLocales()" +
                     " are not the same.");
         }
     }
