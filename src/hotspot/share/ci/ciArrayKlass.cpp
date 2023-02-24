@@ -94,9 +94,9 @@ bool ciArrayKlass::is_leaf_type() {
 
 
 // ------------------------------------------------------------------
-// ciArrayKlass::base_element_type
+// ciArrayKlass::make
 //
-// What type is obtained when this array is indexed as many times as possible?
+// Make an array klass of the specified element type.
 ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
   if (element_type->is_primitive_type()) {
     return ciTypeArrayKlass::make(element_type->basic_type());
