@@ -86,8 +86,8 @@ public class SqrtTests {
 
         // Probe near decision points in the FDLIBM algorithm.
         double[] decisionPoints = {
-            Double.MIN_VALUE;
-            Double.MAX_VALUE;
+            Double.MIN_VALUE,
+            Double.MAX_VALUE,
         };
 
         for (double testPoint : decisionPoints) {

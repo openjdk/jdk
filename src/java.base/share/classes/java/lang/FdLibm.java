@@ -104,6 +104,15 @@ class FdLibm {
                                        ( ((long)high)) << 32 );
     }
 
+    /**
+     * Return a double with its high-order bits of the first argument
+     * and the low-order bits of the second argument..
+     */
+    private static double __HI_LO(int high, int low) {
+        return Double.longBitsToDouble(((long)high << 32) |
+                                       (low & 0xffff_ffffL));
+    }
+
     /** Returns the arcsine of x.
      *
      * Method :
@@ -685,9 +694,7 @@ class FdLibm {
                 ix1 |= sign;
             }
             ix0 += (m << 20);
-            z = __HI(z, ix0);
-            z = __LO(z, ix1);
-            return z;
+            return __HI_LO(ix0, ix1);
         }
     }
 

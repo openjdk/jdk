@@ -66,9 +66,10 @@ public class ExhaustingTests {
     private static long testUnaryMethods() {
         long failures = 0;
         UnaryTestCase[] testCases = {
-            // Since sqrt is correctly rounded, could additionaly the
-            // transliteration or StrictMath sqrt methods to against
-            // Math::sqrt.
+            // Since sqrt is correctly rounded and thus for each input
+            // there is one well-defined correct result, additional
+            // comparison of the transliteration sqrt or StrictMath
+            // sqrt could be made against Math::sqrt.
             new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt,  DEFAULT_SHIFT),
             new UnaryTestCase("cbrt",  FdlibmTranslit::cbrt,  StrictMath::cbrt,  DEFAULT_SHIFT),
 

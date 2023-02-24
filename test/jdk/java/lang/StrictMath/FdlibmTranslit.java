@@ -650,7 +650,7 @@ public class FdlibmTranslit {
                     ix1 -= t1;
                     q1  += r;
                 }
-                ix0 += ix0 + ((ix1&sign)>>>31);
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
                 ix1 += ix1;
                 r>>>=1; // unsigned shift
             }
