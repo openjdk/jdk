@@ -375,10 +375,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             } finally {
                 // If requested, dump out to a file for debugging purposes
                 if (dumper != null) {
-                    final String name;
+                    String name;
                     if (lookup != null) {
-                        final String definedName = lookup.lookupClass().getName();
-                        final int suffixIdx = definedName.lastIndexOf('/');
+                        String definedName = lookup.lookupClass().getName();
+                        int suffixIdx = definedName.lastIndexOf('/');
                         assert suffixIdx != -1;
                         name = lambdaClassName + '.' + definedName.substring(suffixIdx + 1);
                     } else {
