@@ -34,6 +34,7 @@
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
+#include "gc/g1/g1FullGCResetMetadataTask.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -117,6 +118,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _heap(heap),
     _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
+    _has_compaction_targets(false),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
@@ -207,9 +209,15 @@ void G1FullCollector::collect() {
 
   phase2_prepare_compaction();
 
-  phase3_adjust_pointers();
+  if (has_compaction_targets()) {
+    phase3_adjust_pointers();
 
-  phase4_do_compaction();
+    phase4_do_compaction();
+  } else {
+    log_info(gc, phases) ("No Regions selected for compaction. Skipping Phase 3: Adjust pointers and Phase 4: Compact heap");
+  }
+
+  phase5_reset_metadata();
 
   G1CollectedHeap::finish_codecache_marking_cycle();
 }
@@ -322,6 +330,10 @@ void G1FullCollector::phase2_prepare_compaction() {
 
   phase2a_determine_worklists();
 
+  if (!has_compaction_targets()) {
+    return;
+  }
+
   bool has_free_compaction_targets = phase2b_forward_oops();
 
   // Try to avoid OOM immediately after Full GC in case there are no free regions
@@ -357,11 +369,6 @@ uint G1FullCollector::truncate_parallel_cps() {
     }
   }
 
-  if (lowest_current == (uint)-1) {
-    // worker compaction points are empty
-    return lowest_current;
-  }
-
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
     if (cp->has_regions()) {
@@ -386,9 +393,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
-  if (start_serial >= _heap->max_reserved_regions()) {
-    return;
-  }
+  assert(start_serial < _heap->max_reserved_regions(), "Called on empty parallel compaction queues");
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
@@ -429,6 +434,13 @@ void G1FullCollector::phase4_do_compaction() {
   if (serial_compaction_point()->has_regions()) {
     task.serial_compaction();
   }
+}
+
+void G1FullCollector::phase5_reset_metadata() {
+  // Clear region metadata that is invalid after GC for all regions.
+  GCTraceTime(Info, gc, phases) info("Phase 5: Reset Metadata", scope()->timer());
+  G1FullGCResetMetadataTask task(this);
+  run_task(&task);
 }
 
 void G1FullCollector::restore_marks() {

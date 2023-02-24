@@ -34,43 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-// Do work for all skip-compacting regions.
-class G1ResetSkipCompactingClosure : public HeapRegionClosure {
-  G1FullCollector* _collector;
-
-public:
-  G1ResetSkipCompactingClosure(G1FullCollector* collector) : _collector(collector) { }
-
-  bool do_heap_region(HeapRegion* r) {
-    uint region_index = r->hrm_index();
-    // Only for skip-compaction regions; early return otherwise.
-    if (!_collector->is_skip_compacting(region_index)) {
-      return false;
-    }
-#ifdef ASSERT
-    if (r->is_humongous()) {
-      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
-      assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
-    } else if (r->is_open_archive()) {
-      bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
-      assert(!is_empty, "should contain at least one live obj");
-    } else if (r->is_closed_archive()) {
-      // should early-return above
-      ShouldNotReachHere();
-    } else {
-      assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
-             "should be quite full");
-    }
-#endif
-    assert(_collector->compaction_top(r) == nullptr,
-           "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
-           r->hrm_index(), p2i(_collector->compaction_top(r)), p2i(r->bottom()));
-
-    r->reset_skip_compacting_after_full_gc();
-    return false;
-  }
-};
-
 void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
   assert(_bitmap->is_marked(obj), "Should only compact marked objects");
   _bitmap->clear(obj);
@@ -124,10 +87,6 @@ void G1FullGCCompactTask::work(uint worker_id) {
        ++it) {
     compact_region(*it);
   }
-
-  G1ResetSkipCompactingClosure hc(collector());
-  G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
-  log_task("Compaction task", worker_id, start);
 }
 
 void G1FullGCCompactTask::serial_compaction() {
