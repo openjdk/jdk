@@ -67,7 +67,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
 void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
   _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
-  char* app_class_path = os::strdup(Arguments::get_appclasspath());
+  const char* app_class_path = Arguments::get_appclasspath();
 
   if (strcmp(app_class_path, ".") == 0) {
     // This doesn't make any sense, even for AppCDS, so let's skip it. We
