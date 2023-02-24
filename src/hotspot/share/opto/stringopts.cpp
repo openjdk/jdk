@@ -1238,7 +1238,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   Node* cmp = __ CmpI(val, temp);
   Node* cmpb = __ Bool(cmp, BoolTest::gt);
   IfNode* iff3 = kit.create_and_map_if(kit.control(), cmpb, PROB_MIN, COUNT_UNKNOWN);
-  Node* cmp_le = __ IfFalse(iff3);  
+  Node* cmp_le = __ IfFalse(iff3);
   kit.set_control(cmp_le);
 
   loop->init_req(2, kit.control());
