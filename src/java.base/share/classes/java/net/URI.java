@@ -2135,10 +2135,12 @@ public final class URI
                 path = base.substring(0, i + 1);
         } else {
             StringBuilder sb = new StringBuilder(base.length() + cn);
-            // 5.2 (6a)
-            if (i >= 0)
+            // 5.2 (6a-b)
+            if (i >= 0 || !absolute) {
                 sb.append(base, 0, i + 1);
-            // 5.2 (6b)
+            } else {
+                sb.append('/');
+            }
             sb.append(child);
             path = sb.toString();
         }
