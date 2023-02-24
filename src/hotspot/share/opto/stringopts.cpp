@@ -369,9 +369,6 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
-static jint SIZE_TABLE[] = { 9, 99, 999, 9999, 99999, 999999, 9999999,
-                            99999999, 999999999, 0x7fffffff };
-
 Node_List PhaseStringOpts::collect_toString_calls() {
   Node_List string_calls;
   Node_List worklist;
@@ -1770,10 +1767,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   int args = MAX2(sc->num_arguments(), 1);
   RegionNode* overflow = new RegionNode(args);
   kit.gvn().set_type(overflow, Type::CONTROL);
-  Node* overflow_mem = new PhiNode(overflow, Type::MEMORY, TypePtr::BOTTOM);
-  kit.gvn().set_type(overflow_mem, Type::MEMORY);
-  Node* overflow_io = new PhiNode(overflow, Type::ABIO);
-  kit.gvn().set_type(overflow_io, Type::ABIO);
 
   // Create a hook node to hold onto the individual sizes since they
   // are need for the copying phase.
@@ -1946,8 +1939,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
-      overflow_mem->set_req(argi, kit.merged_memory());
-      overflow_io->set_req(argi, kit.i_o());
     }
   }
 
@@ -1955,8 +1946,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Hook
     PreserveJVMState pjvms(&kit);
     kit.set_control(overflow);
-    kit.set_all_memory(overflow_mem);
-    kit.set_i_o(overflow_io);
     C->record_for_igvn(overflow);
     kit.uncommon_trap(Deoptimization::Reason_intrinsic,
                       Deoptimization::Action_make_not_entrant);
