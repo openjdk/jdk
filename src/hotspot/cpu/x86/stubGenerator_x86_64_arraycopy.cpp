@@ -1828,7 +1828,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
                                                        const char *name, bool dest_uninitialized) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
 #if COMPILER2_OR_JVMCI
-  if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
+  if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize >= 32) {
      return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3,
                                                aligned, is_oop, dest_uninitialized);
   }
