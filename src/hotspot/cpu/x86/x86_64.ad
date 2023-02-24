@@ -13053,20 +13053,6 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   ins_pipe(pipe_jcc);
 %}
 
-instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(200);
-  format %{ "j$cop,u   $labl\t# loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe(pipe_jcc);
-%}
-
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -13230,21 +13216,6 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
 
   ins_cost(300);
   format %{ "j$cop,s   $labl\t# loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe(pipe_jcc);
-  ins_short_branch(1);
-%}
-
-instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
   ins_encode %{
     Label* L = $labl$$label;
