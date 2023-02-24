@@ -47,7 +47,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -958,7 +957,7 @@ class StubGenerator: public StubCodeGenerator {
     Label same_aligned;
     Label copy_big, copy32_loop, copy8_loop, copy_small, done;
 
-    __ beqz(count, done, true);
+    __ beqz(count, done);
     __ slli(cnt, count, exact_log2(granularity));
     if (is_backwards) {
       __ add(src, s, cnt);
@@ -972,15 +971,15 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(tmp, cnt, -32);
       __ bgez(tmp, copy32_loop);
       __ addi(tmp, cnt, -8);
-      __ bgez(tmp, copy8_loop, true);
+      __ bgez(tmp, copy8_loop);
       __ j(copy_small);
     } else {
       __ mv(tmp, 16);
-      __ blt(cnt, tmp, copy_small, true);
+      __ blt(cnt, tmp, copy_small);
 
       __ xorr(tmp, src, dst);
       __ andi(tmp, tmp, 0b111);
-      __ bnez(tmp, copy_small, true);
+      __ bnez(tmp, copy_small);
 
       __ bind(same_aligned);
       __ andi(tmp, src, 0b111);
@@ -996,12 +995,12 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(dst, dst, step);
       }
       __ addi(cnt, cnt, -granularity);
-      __ beqz(cnt, done, true);
+      __ beqz(cnt, done);
       __ j(same_aligned);
 
       __ bind(copy_big);
       __ mv(tmp, 32);
-      __ blt(cnt, tmp, copy8_loop, true);
+      __ blt(cnt, tmp, copy8_loop);
     }
     __ bind(copy32_loop);
     if (is_backwards) {
