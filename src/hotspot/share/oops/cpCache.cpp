@@ -472,17 +472,8 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
 
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
-  // Try to discover the cause
-  oop cause = java_lang_Throwable::cause(PENDING_EXCEPTION);
-  Symbol* cause_sym = nullptr;
-  Symbol* cause_msg = nullptr;
 
-  if (cause != NULL ) {
-    cause_sym = cause->klass()->name();
-    cause_msg = java_lang_Throwable::detail_message(cause);
-  }
-
-  SystemDictionary::add_resolution_error(cpool, index, error, message, cause_sym, cause_msg);
+  SystemDictionary::add_resolution_error(cpool, index, error, message);
   set_indy_resolution_failed();
   return true;
 }
