@@ -203,18 +203,25 @@ void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
                                        Address src,
                                        Register tmp) {
   assert(bytes <= 8, "can only deal with non-vector registers");
-  if (bytes == 1) {
+  switch (bytes) {
+  case 1:
     __ movb(dst, src);
-  } else if (bytes == 2) {
+    break;
+  case 2:
     __ movw(dst, src);
-  } else if (bytes == 4) {
+    break;
+  case 4:
     __ movl(dst, src);
-  } else if (bytes == 8) {
+    break;
+  case 8:
 #ifdef _LP64
     __ movq(dst, src);
 #else
     fatal("No support for 8 bytes copy");
 #endif
+    break;
+  default:
+    fatal("Unexpected size");
   }
 #ifdef _LP64
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
@@ -236,18 +243,25 @@ void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
   }
 #endif
   assert(bytes <= 8, "can only deal with non-vector registers");
-  if (bytes == 1) {
+  switch (bytes) {
+  case 1:
     __ movb(dst, src);
-  } else if (bytes == 2) {
+    break;
+  case 2:
     __ movw(dst, src);
-  } else if (bytes == 4) {
+    break;
+  case 4:
     __ movl(dst, src);
-  } else if (bytes == 8) {
+    break;
+  case 8:
 #ifdef _LP64
     __ movq(dst, src);
 #else
     fatal("No support for 8 bytes copy");
 #endif
+    break;
+  default:
+    fatal("Unexpected size");
   }
 }
 

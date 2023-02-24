@@ -1162,15 +1162,17 @@ void StubGenerator::setup_arg_regs(int nargs) {
 #ifdef _WIN64
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
          "unexpected argument registers");
-  if (nargs >= 4)
+  if (nargs == 4) {
     __ mov(rax, r9);  // r9 is also saved_rdi
+  }
   __ movptr(saved_rdi, rdi);
   __ movptr(saved_rsi, rsi);
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
-  if (nargs >= 4)
+  if (nargs == 4) {
     __ mov(rcx, rax); // c_rarg3 (via rax)
+  }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
          "unexpected argument registers");
@@ -1194,8 +1196,9 @@ void StubGenerator::restore_arg_regs() {
 // be adapted if r9 is needed also.
 void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   const Register saved_r15 = r9;
+  assert(nargs == 3 || nargs == 4, "else fix");
 #ifdef _WIN64
-  if (nargs >= 4) {
+  if (nargs == 4) {
     __ mov(rax, r9);       // r9 is also saved_r15
   }
   __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
@@ -1208,8 +1211,8 @@ void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
-  if (nargs >= 4) {
-      __ mov(rcx, rax); // c_rarg3 (via rax)
+  if (nargs == 4) {
+    __ mov(rcx, rax); // c_rarg3 (via rax)
   }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
