@@ -2710,7 +2710,7 @@ public class Check {
      *  ambiguities for both forEachRemaining() and tryAdvance() (in both cases the
      *  overloads are IntConsumer and Consumer&lt;? super Integer&gt;). So we only want
      *  to "blame" a class when that class is itself responsible for creating the
-     *  ambiguity. So we declare that site is "responsible" for the ambigutity between
+     *  ambiguity. So we declare that site is "responsible" for the ambiguity between
      *  two methods m1 and m2 if there is no direct supertype T of site such that
      *  m1 and m2, or some overrides thereof, both exist and are ambiguous in T.
      *  As an optimization, we first check if either method is declared in site and
