@@ -6,6 +6,8 @@
 import java.math.*;
 import java.util.Random;
 
+import static java.math.Rational.*;
+
 public class StringConstructor {
 
     public static void main(String[] args) throws Exception {
@@ -31,6 +33,12 @@ public class StringConstructor {
         constructWithError("11.e-+");
         constructWithError("11.e-+1");
         constructWithError("11.e+-1");
+        constructWithError("1.2(3)4");
+        constructWithError("1.(3)4");
+        constructWithError("1.38452)486425");
+        constructWithError("1.3(4");
+        constructWithError("1.752(3248)4324");
+        constructWithError("1.752ddj32sh84324");
 
         // Range checks
         constructWithOverflow("1e"+Integer.MIN_VALUE);
@@ -45,6 +53,32 @@ public class StringConstructor {
 
         leadingExponentZeroTest();
         nonAsciiZeroTest();
+
+        Rational[][] testCases = {
+                {new Rational(1), new Rational("0.(9)")},
+                {valueOf(1, 2), new Rational("0.5")},
+                {valueOf(1, 3), new Rational("0.(3)")},
+                {valueOf(1, 6), new Rational("0.1(6)")},
+                {valueOf(1, 7), new Rational("0.(142857)")},
+                {valueOf(1, 8), new Rational("0.125")},
+                {valueOf(1, 9), new Rational("0.(1)")},
+                {valueOf(1, 11), new Rational("0.(09)")},
+                {valueOf(1, 12), new Rational("0.08(3)")},
+                {valueOf(1, 29), new Rational("0.(0344827586206896551724137931)")},
+                {valueOf(1, 81), new Rational("0.(012345679)")},
+                {valueOf(1, 97), new Rational("0.(010309278350515463917525773195876288659793814432989690721649484536082474226804123711340206185567)")},
+                {valueOf(1, 119), new Rational("0.(008403361344537815126050420168067226890756302521)")},
+                {valueOf(2, 3), new Rational("0.(6)")},
+                {valueOf(9, 11), new Rational("0.(81)")},
+                {valueOf(7, 12), new Rational("0.58(3)")},
+                {valueOf(22, 7), new Rational("3.(142857)")},
+
+        };
+
+        for (Rational[] test : testCases) {
+            if (!test[0].equals(test[1]))
+                throw new RuntimeException("expected: " + test[0] + ", actual: " + test[1]);
+        }
     }
 
     /*

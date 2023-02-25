@@ -387,8 +387,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // incoming strings end up here.
 
         // Use locals for fields values until completion
-        final BigInteger fl; // record floor
-        BigInteger num, den; // record numerator and denominator
+        BigInteger fl, num, den; // record floor, numerator and denominator
 
         final int end = offset + len;
 
@@ -482,7 +481,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // compute the denominator
             if (num.signum == 0) { // no fraction
                 den = BigInteger.ONE;
-            } else {
+            } else { // num != 0
                 // 10^n == 2^n * 5^n
                 int twoExp = preperiod.length();
                 final AtomicLong fiveExp = new AtomicLong(twoExp);
@@ -539,6 +538,13 @@ public class Rational extends Number implements Comparable<Rational> {
                 }
                 // multiply the denominator by (2^twoExp * 5^fiveExp)
                 den = den.shiftLeft(twoExp).multiply(bigFiveToThe(fiveExp.intValue()));
+                // now the fraction is simplified
+                
+                // handle 0.999... case, 0.(9) == 1
+                if (den.equals(BigInteger.ONE)) { // the fraction part is equal to 1, since num != 0
+                    fl = fl.add(1);
+                    num = BigInteger.ZERO;
+                }
             }
         }
 
