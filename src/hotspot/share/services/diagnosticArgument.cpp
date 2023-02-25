@@ -178,10 +178,15 @@ template <> void DCmdArgument<bool>::init_value(TRAPS) {
 
 template <> void DCmdArgument<bool>::destroy_value() { }
 
+template <> void DCmdArgument<char*>::destroy_value() {
+  FREE_C_HEAP_ARRAY(char, _value);
+  set_value(nullptr);
+}
+
 template <> void DCmdArgument<char*>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   if (str == nullptr) {
-    _value = nullptr;
+    destroy_value();
   } else {
     // Use realloc as we may have a default set.
     _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
@@ -195,11 +200,6 @@ template <> void DCmdArgument<char*>::init_value(TRAPS) {
   if (has_default()) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
   }
-}
-
-template <> void DCmdArgument<char*>::destroy_value() {
-  FREE_C_HEAP_ARRAY(char, _value);
-  set_value(nullptr);
 }
 
 template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
