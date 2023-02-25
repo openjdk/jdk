@@ -375,11 +375,13 @@ public class Rational extends Number implements Comparable<Rational> {
         // protect against huge length, len == 0, negative values, and integer overflow
         try {
             Objects.checkFromIndexSize(offset, len, in.length);
-            Objects.checkIndex(0, len);
         } catch (IndexOutOfBoundsException e) {
             throw new NumberFormatException
                 ("Bad offset or len arguments for char[] input.");
         }
+        
+        if (len == 0)
+            throw new NumberFormatException("Empty input.");
 
         // This is the primary String to Rational constructor; all
         // incoming strings end up here; it generates at most six
@@ -409,7 +411,7 @@ public class Rational extends Number implements Comparable<Rational> {
         } else {
             // check for unexpected sign character
             char c = in[intStart];
-            checkDigit(c, c + " is not a valid character for integer part.");
+            checkDigit(c, "Invalid character for integer part: " + c);
             
             try {
                 fl = new BigInteger(new String(in, intStart, intEnd - intStart));
@@ -438,7 +440,7 @@ public class Rational extends Number implements Comparable<Rational> {
             } else {
                 // check for unexpected sign character
                 char c = preperiod.charAt(0);
-                checkDigit(c, c + " is not a valid character for preperiod.");
+                checkDigit(c, "Invalid character for preperiod: " + c);
                 
                 try {
                     prepInt = new BigInteger(preperiod);
@@ -466,7 +468,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 final String period = new String(in, prepEnd + 1, periodLen);
                 // check for unexpected sign character
                 char c = period.charAt(0);
-                checkDigit(c, c + " is not a valid character for period.");
+                checkDigit(c, "Invalid character for period: " + c);
                 
                 try {
                     num = new BigInteger(preperiod + period).subtract(prepInt);
