@@ -38,7 +38,7 @@ typedef WindowsSystemMemoryBarrier SystemMemoryBarrierDefault;
 class NoSystemMemoryBarrier {
  public:
   static bool initialize() {
-    log_error(os)("SystemMemoryBarrier not supported on this platform");
+    log_trace(os)("SystemMemoryBarrier not supported on this platform");
     return false;
   }
   static void emit() {
