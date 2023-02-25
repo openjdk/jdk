@@ -379,59 +379,60 @@ public class Rational extends Number implements Comparable<Rational> {
             throw new NumberFormatException
                 ("Bad offset or len arguments for char[] input.");
         }
-        
+
         if (len == 0)
             throw new NumberFormatException("Empty input.");
 
         // This is the primary String to Rational constructor; all
-        // incoming strings end up here; it generates at most six
-        // intermediate (temporary) object (strings and BigIntegers)
-        // to store fraction components and the exponent.
-        
+        // incoming strings end up here.
+
         // Use locals for fields values until completion
         final BigInteger fl; // record floor
         BigInteger num, den; // record numerator and denominator
-        
+
         final int end = offset + len;
-        
+
         // handle the sign
         final boolean isneg = in[offset] == '-'; // leading minus means negative
         final int intStart = offset + (isneg || in[offset] == '+' ? 1 : 0);
-        
+
         int i;
         for (i = intStart; i < end && in[i] != 'e' && in[i] != 'E'; i++);
         final int signifEnd = i;
-        
+        // intStart <= signifEnd <= end
+
         for (i = intStart; i < signifEnd && in[i] != '.'; i++);
         final int intEnd = i;
-        
+        // intStart <= intEnd <= signifEnd <= end
+
         // handle integer part
         if (intStart == intEnd) { // no integer part
             fl = BigInteger.ZERO;
-        } else {
+        } else { // intStart < intEnd
             // check for unexpected sign character
             char c = in[intStart];
-            checkDigit(c, "Invalid character for integer part: " + c);
-            
+            checkDigit(c, "Bad character for integer part: " + c);
+
             try {
                 fl = new BigInteger(new String(in, intStart, intEnd - intStart));
             } catch (NumberFormatException e) {
-                throw new NumberFormatException("Invalid integer part: " + e.getMessage());
+                throw new NumberFormatException("Bad integer part: " + e.getMessage());
             }
         }
-        
+
         // handle fraction part
-        final int fracStart = intEnd + 1;
+        final int fracStart = intEnd + 1; // skip the decimal point if present
         if (fracStart >= signifEnd) { // no fraction
             if (intStart == intEnd) // no integer part
                 throw new NumberFormatException("No such significand.");
-            
+
             num = BigInteger.ZERO;
             den = BigInteger.ONE;
-        } else { // in[intEnd] == '.'
+        } else { // intEnd + 1 < signifEnd, so in[intEnd] == '.'
             for (i = fracStart; i < signifEnd && in[i] != '('; i++);
             final int prepEnd = i;
-            
+            // fracStart <= prepEnd <= signifEnd
+
             // handle preperiod
             final String preperiod = new String(in, fracStart, prepEnd - fracStart);
             final BigInteger prepInt;
@@ -440,43 +441,44 @@ public class Rational extends Number implements Comparable<Rational> {
             } else {
                 // check for unexpected sign character
                 char c = preperiod.charAt(0);
-                checkDigit(c, "Invalid character for preperiod: " + c);
-                
+                checkDigit(c, "Bad character for preperiod: " + c);
+
                 try {
                     prepInt = new BigInteger(preperiod);
                 } catch (NumberFormatException e) {
-                    throw new NumberFormatException("Invalid preperiod: " + e.getMessage());
+                    throw new NumberFormatException("Bad preperiod: " + e.getMessage());
                 }
             }
-            
+
             // handle period
             final int periodLen;
             if (prepEnd == signifEnd) { // no period
                 num = prepInt;
                 periodLen = 0;
-            } else { // in[prepEnd] == '('
+            } else { // prepEnd <= (signifEnd - 1), so in[prepEnd] == '('
                 // check for incorrect position of closing bracket
                 if (in[signifEnd - 1] != ')')
                     throw new NumberFormatException("Incorrect position or missing closing bracket for period.");
-                
+                // now in[signifEnd - 1] == ')'
+
                 periodLen = (signifEnd - 1) - (prepEnd + 1);
-                // periodLen >= 0
-                // since prepEnd <= (signifEnd - 1) && in[signifEnd - 1] == ')'
+                // (prepEnd + 1) <= (signifEnd - 1),
+                // since prepEnd <= (signifEnd - 1) && in[prepEnd] != in[signifEnd - 1]
                 if (periodLen == 0)
                     throw new NumberFormatException("Round brackets surrounding empty period.");
-                
+
                 final String period = new String(in, prepEnd + 1, periodLen);
                 // check for unexpected sign character
                 char c = period.charAt(0);
-                checkDigit(c, "Invalid character for period: " + c);
-                
+                checkDigit(c, "Bad character for period: " + c);
+
                 try {
                     num = new BigInteger(preperiod + period).subtract(prepInt);
                 } catch (NumberFormatException e) {
-                    throw new NumberFormatException("Invalid period: " + e.getMessage());
+                    throw new NumberFormatException("Bad period: " + e.getMessage());
                 }
             }
-            
+
             // compute the denominator
             if (num.signum == 0) { // no fraction
                 den = BigInteger.ONE;
@@ -490,37 +492,76 @@ public class Rational extends Number implements Comparable<Rational> {
                 twoExp -= shift;
                 // remove common powers of five
                 num = removePowersOfFive(num, fiveExp);
-                
+
                 // set the prefix of the denominator
                 if (periodLen == 0) { // no period
                     den = BigInteger.ONE;
                 } else {
-                    den = new BigInteger("9".repeat(periodLen));
-                    // simplify before multiply by (2^twoExp * 5^fiveExp)
-                    BigInteger[] frac = simplify(num, den);
+                    // remove common powers of three easy to detect
+                    final BigInteger THREE = BigInteger.valueOf(3);
+                    final int maxDivs3 = periodLen % 3 == 0 ? 3 : 2;
+                    boolean rem = false;
+                    int nDivs3 = 0;
+                    do {
+                        BigInteger[] divRem3 = num.divideAndRemainder(THREE);
+                        if (divRem3[1].signum == 0) {
+                            num = divRem3[0];
+                            nDivs3++;
+                        } else {
+                            rem = true;
+                        }
+                    } while (!rem && nDivs3 < maxDivs3);
+                    
+                    // compute the prefix according to removed powers of 3
+                    final String prefix;
+                    switch (nDivs3) {
+                    case 0: // no power removed
+                        prefix = "9".repeat(periodLen);
+                        break;
+                    case 1: // 999...9 / 3 == 333...3
+                        prefix = "3".repeat(periodLen);
+                        break;
+                    case 2: // 333...3 / 3 == 111...1
+                        prefix = "1".repeat(periodLen);
+                        break;
+                    case 3: // maxDivs3 == 3, so periodLen % 3 == 0
+                        // hence 111...1 is a multiple of 3
+                        // 111..1 / 3 == 37037...037
+                        prefix = "037".repeat(periodLen / 3);
+                        break;
+                    default:
+                        throw new AssertionError("Bad number of divisions by 3.");
+                    }
+                    // simplify the fraction before multiplying the denominator
+                    BigInteger[] frac = simplify(num, new BigInteger(prefix));
                     num = frac[0];
                     den = frac[1];
                 }
-                // multiply the prefix by (2^twoExp * 5^fiveExp)
+                // multiply the denominator by (2^twoExp * 5^fiveExp)
                 den = den.shiftLeft(twoExp).multiply(bigFiveToThe(fiveExp.intValue()));
             }
         }
-        
-        // set fields values
-        this.signum = fl.signum == 0 && num.signum == 0 ? 0 : (isneg ? -1 : 1);
+
+        // handle exponent
+        final int exp;
         if (signifEnd == end) { // no exponent
-            this.floor = fl;
-            this.numerator = num;
-            this.denominator = den;
-        } else { // handle exponent
-            final int exp;
+            exp = 0;
+        } else { // signifEnd + 1 <= end
             try {
                 exp = Integer.parseInt(new String(in, signifEnd + 1, end - (signifEnd + 1)));
             } catch (NumberFormatException e) {
-                throw new NumberFormatException("Invalid exponent: " + e.getMessage());
+                throw new NumberFormatException("Bad exponent: " + e.getMessage());
             }
+        }
+
+        // set fields values
+        this.signum = fl.signum == 0 && num.signum == 0 ? 0 : (isneg ? -1 : 1);
+        if (exp == 0) {
+            this.floor = fl;
+            this.numerator = num;
+            this.denominator = den;
+        } else {
             final Rational res = new Rational(this.signum, fl, num, den).scaleByPowerOfTen(exp);
-            
             this.floor = res.floor;
             this.numerator = res.numerator;
             this.denominator = res.denominator;
@@ -618,6 +659,10 @@ public class Rational extends Number implements Comparable<Rational> {
      * The character-to-digit mapping is provided by
      * {@link java.lang.Character#digit} set to convert to radix 10. The String may
      * not contain any extraneous characters (whitespace, for example).
+     *
+     * <p>
+     * The value of the returned {@code Rational} is equal to
+     * <i>significand</i> &times; 10<sup>&nbsp;<i>exponent</i></sup>.
      *
      * @apiNote For values other than {@code float} and {@code double} NaN and
      *          &plusmn;Infinity, this constructor is compatible with the values
