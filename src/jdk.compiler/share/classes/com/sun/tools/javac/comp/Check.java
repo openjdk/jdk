@@ -31,6 +31,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToIntBiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -94,6 +95,10 @@ import javax.lang.model.util.ElementKindVisitor14;
  */
 public class Check {
     protected static final Context.Key<Check> checkKey = new Context.Key<>();
+
+    // Flag bits indicating which item(s) chosen from a pair of items
+    private static final int FIRST = 0x01;
+    private static final int SECOND = 0x02;
 
     private final Names names;
     private final Log log;
@@ -2703,63 +2708,69 @@ public class Check {
          }
      }
 
-    /** Report warnings for potentially ambiguous method declarations in the given site.
-     *
-     *  Sometimes ambiguous methods are unaviodable because they're inherited from a
-     *  single supertype. For example, any subtype of Spliterator.OfInt will have
-     *  ambiguities for both forEachRemaining() and tryAdvance() (in both cases the
-     *  overloads are IntConsumer and Consumer&lt;? super Integer&gt;). So we only want
-     *  to "blame" a class when that class is itself responsible for creating the
-     *  ambiguity. So we declare that site is "responsible" for the ambiguity between
-     *  two methods m1 and m2 if there is no direct supertype T of site such that
-     *  m1 and m2, or some overrides thereof, both exist and are ambiguous in T.
-     *  As an optimization, we first check if either method is declared in site and
-     *  does not override any other methods (in which case site is responsible).
-     */
+    /** Report warnings for potentially ambiguous method declarations in the given site. */
     void checkPotentiallyAmbiguousOverloads(JCClassDecl tree, Type site) {
 
         // Skip if warning not enabled
         if (!lint.isEnabled(LintCategory.OVERLOADS))
             return;
 
-        // Gather all of site's methods, including overridden methods, grouped by name.
-        // We sort the groups by name simply to eliminate non-determinism in the analysis.
-        List<java.util.List<MethodSymbol>> methodsByName = StreamSupport.stream(
-            types.membersClosure(site, false).getSymbols(new ClashFilter(site), RECURSIVE).spliterator(), false)
-          .map(MethodSymbol.class::cast)
-          .filter(m -> m.owner.type.tsym != syms.objectType.tsym)
-          .collect(Collectors.groupingBy(m -> m.name, Collectors.toCollection(ArrayList::new)))
-          .entrySet()
-          .stream()
-          .sorted(Comparator.comparing(e -> e.getKey().toString()))
-          .map(Map.Entry::getValue)
-          .peek(Collections::reverse)               // seems to help warning ordering
-          .collect(List.collector());
+        // Gather all of site's methods, including overridden methods, grouped by name (except Object methods)
+        List<java.util.List<MethodSymbol>> methodGroups = methodsGroupedByName(site,
+            new PotentiallyAmbiguousFilter(site), ArrayList::new);
+
+        // Reverse all the lists, which seems to help with warning ordering
+        methodGroups.forEach(Collections::reverse);
+
+        // Build the predicate that determines if site is responsible for an ambiguity
+        BiPredicate<MethodSymbol, MethodSymbol> responsible = buildResponsiblePredicate(site, methodGroups);
+
+        // Warn about ambiguous overload method pairs for which site is responsible
+        methodGroups.forEach(list -> compareAndRemove(list, (m1, m2) -> {
+
+            // See if this is an ambiguous overload for which "site" is responsible
+            if (!potentiallyAmbiguousOverload(site, m1, m2) || !responsible.test(m1, m2))
+                return 0;
+
+            // Locate the warning at one of the methods, if possible
+            DiagnosticPosition pos =
+                m1.owner == site.tsym ? TreeInfo.diagnosticPositionFor(m1, tree) :
+                m2.owner == site.tsym ? TreeInfo.diagnosticPositionFor(m2, tree) :
+                tree.pos();
+
+            // Log the warning
+            log.warning(LintCategory.OVERLOADS, pos,
+                Warnings.PotentiallyAmbiguousOverload(
+                    m1.asMemberOf(site, types), m1.location(),
+                    m2.asMemberOf(site, types), m2.location()));
+
+            // Don't warn again for either of these two methods
+            return FIRST | SECOND;
+        }));
+    }
+
+    /** Build a predicate that determines, given two methods that are members of the given class,
+     *  whether the class should be held "responsible" if the methods are potentially ambiguous.
+     *
+     *  Sometimes ambiguous methods are unavoidable because they're inherited from a supertype.
+     *  For example, any subtype of Spliterator.OfInt will have ambiguities for both
+     *  forEachRemaining() and tryAdvance() (in both cases the overloads are IntConsumer and
+     *  Consumer&lt;? super Integer&gt;). So we only want to "blame" a class when that class is
+     *  itself responsible for creating the ambiguity. We declare that a class C is "responsible"
+     *  for the ambiguity between two methods m1 and m2 if there is no direct supertype T of C
+     *  such that m1 and m2, or some overrides thereof, both exist in T and are ambiguous in T.
+     *  As an optimization, we first check if either method is declared in C and does not override
+     *  any other methods; in this case the class is definitely responsible.
+     */
+    BiPredicate<MethodSymbol, MethodSymbol> buildResponsiblePredicate(Type site,
+        List<? extends java.util.List<MethodSymbol>> methodGroups) {
 
         // Define the "overrides" predicate
         BiPredicate<MethodSymbol, MethodSymbol> overrides = (m1, m2) -> m1.overrides(m2, site.tsym, types, false);
 
-        // Define a processor that removes overridden methods from a list
-        Consumer<java.util.List<MethodSymbol>> overriddenRemover = list -> {
-            for (int i = 0; i < list.size() - 1; i++) {
-                MethodSymbol m1 = list.get(i);
-                for (int j = i + 1; j < list.size(); j++) {
-                    MethodSymbol m2 = list.get(j);
-                    if (overrides.test(m1, m2)) {
-                        list.remove(j--);           // remove m2
-                        continue;
-                    }
-                    if (overrides.test(m2, m1)) {
-                        list.remove(i--);           // remove m1
-                        break;
-                    }
-                }
-            }
-        };
-
         // Map each method declared in site to a list of the supertype method(s) it directly overrides
-        HashMap<MethodSymbol, java.util.List<MethodSymbol>> overriddenMethodsMap = new HashMap<>();
-        methodsByName.forEach(list -> {
+        HashMap<MethodSymbol, ArrayList<MethodSymbol>> overriddenMethodsMap = new HashMap<>();
+        methodGroups.forEach(list -> {
             for (MethodSymbol m : list) {
 
                 // Skip methods not declared in site
@@ -2767,34 +2778,33 @@ public class Check {
                     continue;
 
                 // Gather all supertype methods overridden by m, directly or indirectly
-                java.util.List<MethodSymbol> overriddenMethods = list.stream()
-                  .filter(m2 -> m2 != m)
-                  .filter(m2 -> overrides.test(m, m2))
+                ArrayList<MethodSymbol> overriddenMethods = list.stream()
+                  .filter(m2 -> m2 != m && overrides.test(m, m2))
                   .collect(Collectors.toCollection(ArrayList::new));
 
                 // Eliminate non-direct overrides
-                overriddenRemover.accept(overriddenMethods);
+                removePreempted(overriddenMethods, overrides);
 
                 // Add to map
                 overriddenMethodsMap.put(m, overriddenMethods);
             }
         });
 
-        // Remove overridden methods from each name group, leaving site's actual member methods
-        methodsByName.forEach(overriddenRemover);
+        // Now remove overridden methods from each group, leaving only site's actual members
+        methodGroups.forEach(list -> removePreempted(list, overrides));
 
         // Allow site's own declared methods (only) to apply @SuppressWarnings("overloads")
-        methodsByName.forEach(list -> list.removeIf(
+        methodGroups.forEach(list -> list.removeIf(
             m -> m.owner == site.tsym && !lint.augment(m).isEnabled(LintCategory.OVERLOADS)));
 
-        // Define the predicate that determines if site is "responsible" for an ambiguity
-        BiPredicate<MethodSymbol, MethodSymbol> responsible = (m1, m2) -> {
+        // Build the predicate
+        return (m1, m2) -> {
 
             // Get corresponding supertype methods (if declared in site)
             java.util.List<MethodSymbol> overriddenMethods1 = overriddenMethodsMap.get(m1);
             java.util.List<MethodSymbol> overriddenMethods2 = overriddenMethodsMap.get(m2);
 
-            // Quick check for when a method was added by site itself
+            // Quick check for the case where a method was added by site itself
             if (overriddenMethods1 != null && overriddenMethods1.isEmpty())
                 return true;
             if (overriddenMethods2 != null && overriddenMethods2.isEmpty())
@@ -2806,7 +2816,7 @@ public class Check {
             java.util.List<MethodSymbol> supertypeMethods2 = overriddenMethods2 != null ?
               overriddenMethods2 : Collections.singletonList(m2);
 
-            // See if some direct supertype is at fault
+            // See if we can blame some direct supertype instead
             return types.directSupertypes(site).stream()
               .filter(stype -> stype != syms.objectType)
               .map(stype -> stype.tsym.type)                // view supertype in its original form
@@ -2824,35 +2834,70 @@ public class Check {
                 return false;
             });
         };
+    }
 
-        // Now identify ambiguous overload method pairs for which site is responsible
-        methodsByName.forEach(list -> {
-            for (int i = 0; i < list.size() - 1; i++) {
-                MethodSymbol m1 = list.get(i);
-                for (int j = i + 1; j < list.size(); j++) {
-                    MethodSymbol m2 = list.get(j);
-                    if (potentiallyAmbiguousOverload(site, m1, m2) && responsible.test(m1, m2)) {
+    /** Gather all of site's methods, including overridden methods, grouped and sorted by name,
+     *  after applying the given filter.
+     */
+    <C extends Collection<MethodSymbol>> List<C> methodsGroupedByName(Type site,
+            Predicate<Symbol> filter, Supplier<? extends C> groupMaker) {
+        Iterable<Symbol> symbols = types.membersClosure(site, false).getSymbols(filter, RECURSIVE);
+        return StreamSupport.stream(symbols.spliterator(), false)
+          .map(MethodSymbol.class::cast)
+          .collect(Collectors.groupingBy(m -> m.name, Collectors.toCollection(groupMaker)))
+          .entrySet()
+          .stream()
+          .sorted(Comparator.comparing(e -> e.getKey().toString()))
+          .map(Map.Entry::getValue)
+          .collect(List.collector());
+    }
 
-                        // Locate the warning at one of the methods, if possible
-                        DiagnosticPosition pos =
-                            m1.owner == site.tsym ? TreeInfo.diagnosticPositionFor(m1, tree) :
-                            m2.owner == site.tsym ? TreeInfo.diagnosticPositionFor(m2, tree) :
-                            tree.pos();
-
-                        // Log warning
-                        log.warning(LintCategory.OVERLOADS, pos,
-                            Warnings.PotentiallyAmbiguousOverload(
-                                m1.asMemberOf(site, types), m1.location(),
-                                m2.asMemberOf(site, types), m2.location()));
-
-                        // Don't warn again for either of these two methods
-                        list.remove(j);
-                        list.remove(i--);
-                        break;
-                    }
+    /** Compare elements in a list pair-wise in order to remove some of them.
+     *  @param list mutable list of items
+     *  @param comparer returns flag bit(s) to remove FIRST and/or SECOND
+     */
+    <T> void compareAndRemove(java.util.List<T> list, ToIntBiFunction<? super T, ? super T> comparer) {
+        for (int index1 = 0; index1 < list.size() - 1; index1++) {
+            T item1 = list.get(index1);
+            for (int index2 = index1 + 1; index2 < list.size(); index2++) {
+                T item2 = list.get(index2);
+                int flags = comparer.applyAsInt(item1, item2);
+                if ((flags & SECOND) != 0)
+                    list.remove(index2--);          // remove item2
+                if ((flags & FIRST) != 0) {
+                    list.remove(index1--);          // remove item1
+                    break;
                 }
             }
+        }
+    }
+
+    /** Remove elements in a list that are preempted by some other element in the list.
+     *  @param list mutable list of items
+     *  @param preempts decides if one item preempts another, causing the second one to be removed
+     */
+    <T> void removePreempted(java.util.List<T> list, BiPredicate<? super T, ? super T> preempts) {
+        compareAndRemove(list, (item1, item2) -> {
+            int flags = 0;
+            if (preempts.test(item1, item2))
+                flags |= SECOND;
+            if (preempts.test(item2, item1))
+                flags |= FIRST;
+            return flags;
         });
+    }
+
+    /** Filters method candidates for the "potentially ambiguous method" check */
+    class PotentiallyAmbiguousFilter extends ClashFilter {
+
+        PotentiallyAmbiguousFilter(Type site) {
+            super(site);
+        }
+
+        @Override
+        boolean shouldSkip(Symbol s) {
+            return s.owner.type.tsym == syms.objectType.tsym || super.shouldSkip(s);
+        }
     }
 
     /**
