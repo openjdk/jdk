@@ -41,6 +41,8 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -131,6 +133,9 @@ public abstract class BaseFileManager implements JavaFileManager {
     protected String classLoaderClass;
 
     protected final Locations locations;
+
+    // This is non-null when output file clash detection is enabled
+    private HashSet<Path> outputFilesWritten;
 
     /**
      * A flag for clients to use to indicate that this file manager should
@@ -272,6 +277,10 @@ public abstract class BaseFileManager implements JavaFileManager {
             case MULTIRELEASE:
                 multiReleaseValue = value;
                 locations.setMultiReleaseValue(value);
+                return true;
+
+            case DETECT_OUTPUT_FILE_CLASHES:
+                outputFilesWritten = new HashSet<>();
                 return true;
 
             default:
@@ -510,5 +519,33 @@ public abstract class BaseFileManager implements JavaFileManager {
         for (T t : it)
             Objects.requireNonNull(t);
         return it;
+    }
+
+// Output File Clash Detection
+
+    /** Record the fact that we have started writing to an output file.
+     */
+    synchronized void newOutputToPath(Path path) throws IOException {
+
+        // Is output file clash detection enabled?
+        if (outputFilesWritten == null)
+            return;
+
+        // Individual files can be access concurrently, so synchronize here
+        synchronized (this) {
+
+            // Get the "canonical" version of the file's path; we are assuming
+            // here that two clashing files will resolve to the same real path.
+            Path realPath;
+            try {
+                realPath = path.toRealPath();
+            } catch (NoSuchFileException e) {
+                return;         // should never happen except on broken filesystems
+            }
+
+            // Check whether we've already opened this file for output
+            if (!outputFilesWritten.add(realPath))
+                throw new IOException("output file clash: " + path);
+        }
     }
 }
