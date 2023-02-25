@@ -74,7 +74,7 @@ public class RangeTests {
 
     private static int testRoundingFromBigInteger(BigInteger bi, int scale, MathContext mc) {
         int failures = 0;
-        BigDecimal bd1 = new Rational(new BigDecimal(bi, scale)).toBigDecimal(mc);
+        BigDecimal bd1 = Rational.valueOf(new BigDecimal(bi, scale)).toBigDecimal(mc);
         BigDecimal bd2 = new BigDecimal(bi, scale, mc);
         if (!bd1.equals(bd2)) {
             System.out.println("new Rational(new BigDecimal(BigInteger,int)).toBigDecimal(MathContext):"

@@ -4,6 +4,7 @@
  */
 
 import java.math.*;
+import java.util.Random;
 
 public class StringConstructor {
 
@@ -32,20 +33,29 @@ public class StringConstructor {
         constructWithError("11.e+-1");
 
         // Range checks
-        constructWithError("1e" + Integer.MIN_VALUE);
-        constructWithError("10e" + Integer.MIN_VALUE);
-        constructWithError("0.01e" + Integer.MIN_VALUE);
-        constructWithError("1e" + ((long) Integer.MIN_VALUE - 1));
+        constructWithOverflow("1e"+Integer.MIN_VALUE);
+        constructWithOverflow("10e"+Integer.MIN_VALUE);
+        constructWithOverflow("0.01e"+Integer.MIN_VALUE);
+
+        /* These Strings have an exponent > Integer.MAX_VALUE or < Integer.MIN_VALUE */
+        constructWithError("1e"+((long)Integer.MIN_VALUE-1));
+        constructWithError("1.0E+2147483649");
+        constructWithError("-9.223372036854775808E+2147483666");
+        constructWithError("1.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000E+2147483748");
 
         leadingExponentZeroTest();
         nonAsciiZeroTest();
     }
 
     /*
-     * Verify value is set properly if the significand has non-ASCII leading zeros.
+     * Verify precision is set properly if the significand has
+     * non-ASCII leading zeros.
      */
     private static void nonAsciiZeroTest() {
-        String values[] = { "00004e5", "\u0660\u0660\u0660\u06604e5", };
+        String values[] = {
+            "00004e5",
+            "\u0660\u0660\u0660\u06604e5",
+        };
 
         Rational expected = new Rational("4e5");
 
@@ -70,8 +80,8 @@ public class StringConstructor {
 
         // Test with more excess zeros than the largest number of
         // decimal digits needed to represent a long
-        int limit = ((int) Math.log10(Long.MAX_VALUE)) + 6;
-        for (int i = 0; i < limit; i++, middle += "0") {
+        int limit  = ((int)Math.log10(Long.MAX_VALUE)) + 6;
+        for(int i = 0; i < limit; i++, middle += "0") {
             String t1 = start + middle;
             String t2 = t1 + end;
 
@@ -99,7 +109,17 @@ public class StringConstructor {
         try {
             new Rational(badString);
             throw new RuntimeException(badString + " accepted");
-        } catch (NumberFormatException e) {
+        } catch(NumberFormatException e) {
+            // expected
+        }
+    }
+
+    private static void constructWithOverflow(String badString) {
+        try {
+            new Rational(badString);
+            throw new RuntimeException(badString + " accepted");
+        } catch(ArithmeticException e) {
+            // expected
         }
     }
 }

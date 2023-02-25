@@ -206,6 +206,11 @@ public class Rational extends Number implements Comparable<Rational> {
      * this Rational.
      */
     private final BigInteger denominator;
+    
+    /**
+     * Used to store the canonical string representation, if computed.
+     */
+    private transient String stringCache;
 
     /** use serialVersionUID from JDK 21 for interoperability */
     @java.io.Serial
@@ -291,13 +296,13 @@ public class Rational extends Number implements Comparable<Rational> {
         // At this point, val == sign * significand * 2**exponent.
 
         if (significand == 0) {
-            signum = 0;
-            floor = BigInteger.ZERO;
-            numerator = BigInteger.ZERO;
-            denominator = BigInteger.ONE;
+            this.signum = 0;
+            this.floor = BigInteger.ZERO;
+            this.numerator = BigInteger.ZERO;
+            this.denominator = BigInteger.ONE;
         } else {
-            signum = sign;
-
+            this.signum = sign;
+            
             if (exponent < 0) {
                 // Simplify even significands
                 int shift = Math.min(-exponent, Long.numberOfTrailingZeros(significand));
@@ -308,13 +313,13 @@ public class Rational extends Number implements Comparable<Rational> {
                 // and the significand and the denominator are relative primes
                 // the significand is odd or the denominator is one
                 long quot = exponent > -64 ? significand >>> -exponent : 0L; // avoid mod 64 shifting
-                floor = BigInteger.valueOf(quot);
-                numerator = BigInteger.valueOf(significand - (quot << -exponent));
-                denominator = BigInteger.ONE.shiftLeft(-exponent);
+                this.floor = BigInteger.valueOf(quot);
+                this.numerator = BigInteger.valueOf(significand - (quot << -exponent));
+                this.denominator = BigInteger.ONE.shiftLeft(-exponent);
             } else { // integer value
-                floor = BigInteger.valueOf(significand).shiftLeft(exponent);
-                numerator = BigInteger.ZERO;
-                denominator = BigInteger.ONE;
+                this.floor = BigInteger.valueOf(significand).shiftLeft(exponent);
+                this.numerator = BigInteger.ZERO;
+                this.denominator = BigInteger.ONE;
             }
         }
     }
@@ -339,184 +344,13 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Translates a {@code BigInteger} into a {@code Rational}, with the specified
-     * signum. Assumes that the {@code BigInteger} is non-negative.
+     * signum. Assumes that the {@code BigInteger} is non-negative and the signum
+     * is correct.
      *
      * @param val {@code BigInteger} value to be converted to {@code Rational}.
      */
     private Rational(int sign, BigInteger val) {
-        signum = sign;
-        floor = val;
-        numerator = BigInteger.ZERO;
-        denominator = BigInteger.ONE;
-    }
-
-    /**
-     * Accept no subclasses.
-     */
-    private static BigDecimal toStrictBigDecimal(BigDecimal val) {
-        return (val.getClass() == BigDecimal.class) ? val : new BigDecimal(val.toString());
-    }
-
-    /**
-     * Translates a {@code BigDecimal} into a {@code Rational}.
-     *
-     * @param val {@code BigDecimal} value to be converted to {@code Rational}.
-     */
-    public Rational(BigDecimal val) {
-        val = toStrictBigDecimal(val);
-        signum = val.signum();
-
-        if (signum == 0) {
-            floor = BigInteger.ZERO;
-            numerator = BigInteger.ZERO;
-            denominator = BigInteger.ONE;
-        } else {
-            val = val.abs();
-
-            if (val.scale() <= 0) { // no fractional part
-                floor = BigDecimal.bigMultiplyPowerTen(val.unscaledValue(), -val.scale());
-                numerator = BigInteger.ZERO;
-                denominator = BigInteger.ONE;
-            } else { // val.scale() > 0
-                floor = val.toBigInteger();
-
-                BigDecimal frac = val.subtract(new BigDecimal(floor));
-                if (frac.signum() == 0) { // no fractional part
-                    numerator = BigInteger.ZERO;
-                    denominator = BigInteger.ONE;
-                } else { // non-zero fractional part
-                    BigInteger num = frac.unscaledValue();
-                    // frac.scale() > 0
-                    // 10^n = 2^n * 5^n
-                    int twoExp = frac.scale();
-                    final AtomicLong fiveExp = new AtomicLong(twoExp);
-                    // simplify by two
-                    final int shift = Math.min(twoExp, num.getLowestSetBit());
-                    num = num.shiftRight(shift);
-                    twoExp -= shift;
-
-                    numerator = removePowersOfFive(num, fiveExp); // simplify by five
-                    denominator = bigFiveToThe((int) fiveExp.get()).shiftLeft(twoExp);
-                }
-            }
-        }
-    }
-
-    /**
-     * {@code FIVE_SQUARES.get(n) == 5^(1L << n)}
-     */
-    private static final ArrayList<BigInteger> FIVE_SQUARES = new ArrayList<>(Integer.SIZE);
-
-    static {
-        FIVE_SQUARES.add(BigInteger.valueOf(5));
-    }
-
-    /**
-     * Returns {@code 5^n}. {@code n} is considered unsigned.
-     */
-    private static BigInteger bigFiveToThe(int n) {
-        BigInteger acc = BigInteger.ONE;
-        final int nBits = BigInteger.bitLengthForInt(n);
-
-        final int end = Math.min(nBits, FIVE_SQUARES.size());
-        for (int i = 0; i < end; i++) {
-            if ((n & 1) == 1)
-                acc = acc.multiply(FIVE_SQUARES.get(i));
-
-            n >>>= 1;
-        }
-
-        BigInteger pow = FIVE_SQUARES.get(FIVE_SQUARES.size() - 1);
-        while (FIVE_SQUARES.size() < nBits) {
-            pow = pow.simpleSquare();
-            FIVE_SQUARES.add(pow);
-
-            if ((n & 1) == 1)
-                acc = acc.multiply(pow);
-
-            n >>>= 1;
-        }
-
-        return acc;
-    }
-
-    /**
-     * If before calling this method {@code remaining.get() == r}, the method
-     * returns the least integer {@code n > 0} such that
-     * {@code (val == n * 5^(r - remaining.get()) && 0 <= remaining.get() <= r)}
-     * will hold after calling this method. Assumes {@code val > 0 && r >= 0}.
-     */
-    private static BigInteger removePowersOfFive(BigInteger val, AtomicLong remaining) {
-        BigInteger divisor = FIVE_SQUARES.get(0);
-        int i = 0;
-
-        // divide val and square the divisor as much as possible
-        boolean stop = false;
-        do {
-            BigInteger[] divRem = val.divideAndRemainder(divisor);
-
-            if (divRem[1].signum != 0) {
-                stop = true;
-            } else { // no remainder
-                val = divRem[0];
-                remaining.addAndGet(-(1L << i));
-
-                if (remaining.get() < 1L << i || divisor.compareTo(val) > 0) {
-                    stop = true;
-                } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
-                    final BigInteger square;
-                    final int last = FIVE_SQUARES.size() - 1;
-
-                    // compute divisor^2
-                    if (i < last) {
-                        square = FIVE_SQUARES.get(i + 1);
-                    } else {
-                        square = FIVE_SQUARES.get(last).simpleSquare();
-                        FIVE_SQUARES.add(square);
-                    }
-
-                    if (square.compareTo(val) <= 0) {
-                        // square the divisor
-                        divisor = square;
-                        i++;
-                    }
-                }
-            }
-        } while (!stop);
-        i--; // by conditions for stop, val can no longer be divided by the divisor
-
-        while (i >= 0 && remaining.get() > 0) {
-            // find, if exists, the greatest non-negative n <= i
-            // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
-            final int highestBit = Math.min(i, Long.SIZE - 1 - Long.numberOfLeadingZeros(remaining.get()));
-            if (FIVE_SQUARES.get(highestBit).compareTo(val) <= 0) {
-                // easy case, no need to search for n
-                i = highestBit;
-            } else {
-                final int pos = Collections.binarySearch(FIVE_SQUARES.subList(0, highestBit), val);
-                i = pos >= 0 ? pos : -(pos + 1) - 1;
-            }
-            // now i == n
-
-            // divide val as much as possible
-            if (i >= 0) {
-                divisor = FIVE_SQUARES.get(i);
-                do {
-                    BigInteger[] divRem = val.divideAndRemainder(divisor);
-
-                    if (divRem[1].signum == 0) {
-                        val = divRem[0];
-                        remaining.addAndGet(-(1L << i));
-                    }
-
-                    i--; // by definition of n, val can no longer be divided by 5^(1 << i)
-                    if (i >= 0)
-                        divisor = FIVE_SQUARES.get(i);
-                } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
-            }
-        }
-
-        return val;
+        this(sign, val, BigInteger.ZERO, BigInteger.ONE);
     }
 
     /**
@@ -537,8 +371,163 @@ public class Rational extends Number implements Comparable<Rational> {
      *                               a decimal number or the defined subarray is not
      *                               wholly within {@code in}.
      */
-    public Rational(char[] in, int offset, int len) {
-        this(new BigDecimal(in, offset, len));
+    public Rational(char[] in, final int offset, final int len) {
+        // protect against huge length, len == 0, negative values, and integer overflow
+        try {
+            Objects.checkFromIndexSize(offset, len, in.length);
+            Objects.checkIndex(0, len);
+        } catch (IndexOutOfBoundsException e) {
+            throw new NumberFormatException
+                ("Bad offset or len arguments for char[] input.");
+        }
+
+        // This is the primary String to Rational constructor; all
+        // incoming strings end up here; it generates at most six
+        // intermediate (temporary) object (strings and BigIntegers)
+        // to store fraction components and the exponent.
+        
+        // Use locals for fields values until completion
+        final BigInteger fl; // record floor
+        BigInteger num, den; // record numerator and denominator
+        
+        final int end = offset + len;
+        
+        // handle the sign
+        final boolean isneg = in[offset] == '-'; // leading minus means negative
+        final int intStart = offset + (isneg || in[offset] == '+' ? 1 : 0);
+        
+        int i;
+        for (i = intStart; i < end && in[i] != 'e' && in[i] != 'E'; i++);
+        final int signifEnd = i;
+        
+        for (i = intStart; i < signifEnd && in[i] != '.'; i++);
+        final int intEnd = i;
+        
+        // handle integer part
+        if (intStart == intEnd) { // no integer part
+            fl = BigInteger.ZERO;
+        } else {
+            // check for unexpected sign character
+            char c = in[intStart];
+            checkDigit(c, c + " is not a valid character for integer part.");
+            
+            try {
+                fl = new BigInteger(new String(in, intStart, intEnd - intStart));
+            } catch (NumberFormatException e) {
+                throw new NumberFormatException("Invalid integer part: " + e.getMessage());
+            }
+        }
+        
+        // handle fraction part
+        final int fracStart = intEnd + 1;
+        if (fracStart >= signifEnd) { // no fraction
+            if (intStart == intEnd) // no integer part
+                throw new NumberFormatException("No such significand.");
+            
+            num = BigInteger.ZERO;
+            den = BigInteger.ONE;
+        } else { // in[intEnd] == '.'
+            for (i = fracStart; i < signifEnd && in[i] != '('; i++);
+            final int prepEnd = i;
+            
+            // handle preperiod
+            final String preperiod = new String(in, fracStart, prepEnd - fracStart);
+            final BigInteger prepInt;
+            if (preperiod.length() == 0) { // no preperiod
+                prepInt = BigInteger.ZERO;
+            } else {
+                // check for unexpected sign character
+                char c = preperiod.charAt(0);
+                checkDigit(c, c + " is not a valid character for preperiod.");
+                
+                try {
+                    prepInt = new BigInteger(preperiod);
+                } catch (NumberFormatException e) {
+                    throw new NumberFormatException("Invalid preperiod: " + e.getMessage());
+                }
+            }
+            
+            // handle period
+            final int periodLen;
+            if (prepEnd == signifEnd) { // no period
+                num = prepInt;
+                periodLen = 0;
+            } else { // in[prepEnd] == '('
+                // check for incorrect position of closing bracket
+                if (in[signifEnd - 1] != ')')
+                    throw new NumberFormatException("Incorrect position or missing closing bracket for period.");
+                
+                periodLen = (signifEnd - 1) - (prepEnd + 1);
+                // periodLen >= 0
+                // since prepEnd <= (signifEnd - 1) && in[signifEnd - 1] == ')'
+                if (periodLen == 0)
+                    throw new NumberFormatException("Round brackets surrounding empty period.");
+                
+                final String period = new String(in, prepEnd + 1, periodLen);
+                // check for unexpected sign character
+                char c = period.charAt(0);
+                checkDigit(c, c + " is not a valid character for period.");
+                
+                try {
+                    num = new BigInteger(preperiod + period).subtract(prepInt);
+                } catch (NumberFormatException e) {
+                    throw new NumberFormatException("Invalid period: " + e.getMessage());
+                }
+            }
+            
+            // compute the denominator
+            if (num.signum == 0) { // no fraction
+                den = BigInteger.ONE;
+            } else {
+                // 10^n == 2^n * 5^n
+                int twoExp = preperiod.length();
+                final AtomicLong fiveExp = new AtomicLong(twoExp);
+                // remove common powers of two
+                final int shift = Math.min(twoExp, num.getLowestSetBit());
+                num = num.shiftRight(shift);
+                twoExp -= shift;
+                // remove common powers of five
+                num = removePowersOfFive(num, fiveExp);
+                
+                // set the prefix of the denominator
+                if (periodLen == 0) { // no period
+                    den = BigInteger.ONE;
+                } else {
+                    den = new BigInteger("9".repeat(periodLen));
+                    // simplify before multiply by (2^twoExp * 5^fiveExp)
+                    BigInteger[] frac = simplify(num, den);
+                    num = frac[0];
+                    den = frac[1];
+                }
+                // multiply the prefix by (2^twoExp * 5^fiveExp)
+                den = den.shiftLeft(twoExp).multiply(bigFiveToThe(fiveExp.intValue()));
+            }
+        }
+        
+        // set fields values
+        this.signum = fl.signum == 0 && num.signum == 0 ? 0 : (isneg ? -1 : 1);
+        if (signifEnd == end) { // no exponent
+            this.floor = fl;
+            this.numerator = num;
+            this.denominator = den;
+        } else { // handle exponent
+            final int exp;
+            try {
+                exp = Integer.parseInt(new String(in, signifEnd + 1, end - (signifEnd + 1)));
+            } catch (NumberFormatException e) {
+                throw new NumberFormatException("Invalid exponent: " + e.getMessage());
+            }
+            final Rational res = new Rational(this.signum, fl, num, den).scaleByPowerOfTen(exp);
+            
+            this.floor = res.floor;
+            this.numerator = res.numerator;
+            this.denominator = res.denominator;
+        }
+    }
+
+    private void checkDigit(char c, String message) throws NumberFormatException {
+        if (Character.digit(c, 10) == -1)
+            throw new NumberFormatException(message);
     }
 
     /**
@@ -560,7 +549,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Translates the string representation of a decimal number into a
+     * Translates the string representation of a {@code Rational} into a
      * {@code Rational}. The string representation consists of an optional sign,
      * {@code '+'} (<code> '&#92;u002B'</code>) or {@code '-'}
      * (<code>'&#92;u002D'</code>), followed by a sequence of zero or more decimal
@@ -569,9 +558,11 @@ public class Rational extends Number implements Comparable<Rational> {
      *
      * <p>
      * The fraction consists of a decimal point followed by zero or more decimal
-     * digits. The string must contain at least one digit in either the integer or
-     * the fraction. The number formed by the sign, the integer and the fraction is
-     * referred to as the <i>significand</i>.
+     * digits ("the preperiod"), optionally followed by zero or more decimal digits
+     * surrounded by round brackets {@code '(', ')'} ("the period"). The string must
+     * contain at least one digit in either the integer or the fraction. The number
+     * formed by the sign, the integer and the fraction is referred to as the
+     * <i>significand</i>.
      *
      * <p>
      * The exponent consists of the character {@code 'e'}
@@ -582,7 +573,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * More formally, the strings this constructor accepts are described by the
      * following grammar: <blockquote>
      * <dl>
-     * <dt><i>DecimalString:</i>
+     * <dt><i>RationalString:</i>
      * <dd><i>Sign<sub>opt</sub> Significand Exponent<sub>opt</sub></i>
      * <dt><i>Sign:</i>
      * <dd>{@code +}
@@ -594,7 +585,13 @@ public class Rational extends Number implements Comparable<Rational> {
      * <dt><i>IntegerPart:</i>
      * <dd><i>Digits</i>
      * <dt><i>FractionPart:</i>
+     * <dd><i>Preperiod Period<sub>opt</sub></i>
+     * <dd><i>Period</i>
+     * <dd><i>Preperiod</i>
+     * <dt><i>Preperiod:</i>
      * <dd><i>Digits</i>
+     * <dt><i>Period:</i>
+     * <dd>{@code (} <i>Digits</i> {@code )}
      * <dt><i>Exponent:</i>
      * <dd><i>ExponentIndicator SignedInteger</i>
      * <dt><i>ExponentIndicator:</i>
@@ -612,41 +609,13 @@ public class Rational extends Number implements Comparable<Rational> {
      * </blockquote>
      *
      * <p>
-     * The scale of the decimal number represented by the returned {@code Rational}
-     * will be the number of digits in the fraction, or zero if the string contains
-     * no decimal point, subject to adjustment for any exponent; if the string
-     * contains an exponent, the exponent is subtracted from the scale. The value of
-     * the resulting scale must lie between {@code Integer.MIN_VALUE} and
+     * The value of the expopnent must lie between {@code Integer.MIN_VALUE} and
      * {@code Integer.MAX_VALUE}, inclusive.
      *
      * <p>
      * The character-to-digit mapping is provided by
      * {@link java.lang.Character#digit} set to convert to radix 10. The String may
      * not contain any extraneous characters (whitespace, for example).
-     *
-     * <p>
-     * <b>Examples:</b><br>
-     * The value of the returned {@code Rational} is equal to <i>significand</i>
-     * &times; 10<sup>&nbsp;<i>exponent</i></sup>. For each string on the left, the
-     * resulting representation [{@code denominator}/{@code numerator}] is shown on
-     * the right.
-     *
-     * <pre>
-     * "0"            [0/1]
-     * "0.00"         [0/1]
-     * "123"          [123/1]
-     * "-123"         [-123/1]
-     * "1.23E3"       [1230/1]
-     * "1.23E+3"      [1230/1]
-     * "12.3E+7"      [123000000/1]
-     * "12.0"         [12/1]
-     * "12.3"         [123/10]
-     * "0.00123"      [123/100000]
-     * "-1.23E-12"    [-123/100000000000000]
-     * "1234.5E-4"    [2469/20000]
-     * "0E+7"         [0/1]
-     * "-0"           [0/1]
-     * </pre>
      *
      * @apiNote For values other than {@code float} and {@code double} NaN and
      *          &plusmn;Infinity, this constructor is compatible with the values
@@ -655,13 +624,43 @@ public class Rational extends Number implements Comparable<Rational> {
      *          {@code double} into a Rational, as it doesn't suffer from the
      *          unpredictability of the {@link #Rational(double)} constructor.
      *
-     * @param val String representation of a decimal number.
+     * @param val String representation of {@code Rational}.
      *
      * @throws NumberFormatException if {@code val} is not a valid representation of
-     *                               a decimal number.
+     *                               a {@code Rational}.
      */
     public Rational(String val) {
         this(val.toCharArray(), 0, val.length());
+    }
+
+    /**
+     * Accept no subclasses.
+     */
+    private static BigDecimal toStrictBigDecimal(BigDecimal val) {
+        return (val.getClass() == BigDecimal.class) ? val : new BigDecimal(val.toString());
+    }
+
+    /**
+     * Translates a {@code BigDecimal} into a {@code Rational}.
+     *
+     * @param val {@code BigDecimal} value to be converted to {@code Rational}.
+     * @return a {@code Rational} whose value is equal to {@code val}.
+     */
+    public static Rational valueOf(BigDecimal val) {
+        val = toStrictBigDecimal(val);
+
+        if (val.signum() == 0)
+            return ZERO;
+
+        int scale = val.scale();
+        Rational unscaled = new Rational(val.unscaledValue());
+
+        if (scale == 0)
+            return unscaled;
+
+        // Possible int overflow in (-scale) is not a trouble,
+        // because leftScaleByPowerOfTen considers its argument unsigned
+        return scale < 0 ? unscaled.leftScaleByPowerOfTen(-scale) : unscaled.rightScaleByPowerOfTen(scale);
     }
 
     /**
@@ -684,12 +683,12 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a Rational whose value is represented by the fraction with the
+     * Returns a Rational whose value is equal to the fraction with the
      * specified numerator and denominator.
      *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
-     * @return a Rational whose value is represented by the fraction with the
+     * @return a Rational whose value equal to by the fraction with the
      *         specified numerator and denominator
      * @throws ArithmeticException if the specified denominator is zero
      */
@@ -700,16 +699,16 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num.signum() == 0)
             return ZERO;
 
-        return new Rational(num).divide(new Rational(den));
+        return valueOf(num).divide(valueOf(den));
     }
 
     /**
-     * Returns a Rational whose value is represented by the fraction with the
+     * Returns a Rational whose value is equal to the fraction with the
      * specified numerator and denominator.
      *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
-     * @return a Rational whose value is represented by the fraction with the
+     * @return a Rational whose value is equal to the fraction with the
      *         specified numerator and denominator
      * @throws ArithmeticException if the specified denominator is zero
      */
@@ -725,12 +724,12 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a Rational whose value is represented by the fraction with the
+     * Returns a Rational whose value is equal to the fraction with the
      * specified numerator and denominator.
      *
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
-     * @return a Rational whose value is represented by the fraction with the
+     * @return a Rational whose value is equal to the fraction with the
      *         specified numerator and denominator
      * @throws ArithmeticException if the specified denominator is zero
      */
@@ -746,7 +745,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a Rational whose value is represented by the specified parameters.
+     * Returns a Rational whose value is equal to the specified parameters.
      * Assumes that {@code signum != 0} and that the denominator and the numerator
      * are positive.
      */
@@ -767,8 +766,8 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Constructs a new Rational with the specified values. Assumes that the passed
-     * values are always valid.
+     * Constructs a new Rational with the specified values. Assumes that the specified
+     * values are correct.
      */
     private Rational(int sign, BigInteger floor, BigInteger num, BigInteger den) {
         this.signum = sign;
@@ -1440,7 +1439,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
        // Scale the result into the appropriate range.
        // if rounding mode is half-way, the least digit was discarded
-       return new Rational(new BigDecimal(root, rootScale));
+       return valueOf(new BigDecimal(root, rootScale));
     }
 
     private static boolean halfWay(RoundingMode rm) {
@@ -1624,7 +1623,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Returns a Rational whose value is equal to ({@code this} * 10<sup>n</sup>).
-     * Assumes {@code n > 0}.
+     * {@code n} is considered unsigned and non-zero.
      *
      * @param n the positive exponent power of ten to scale by
      * @return a Rational whose value is equal to ({@code this} * 10<sup>n</sup>)
@@ -1634,17 +1633,17 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (numerator.signum == 1) { // non-zero fractional part
             // multiply fraction by 2^n
-            final int shiftDen = Math.min(n, denominator.getLowestSetBit());
+            final int shiftDen = (int) Math.min(n & BigInteger.LONG_MASK, denominator.getLowestSetBit());
             resNum = numerator.shiftLeft(n - shiftDen);
             resDen = denominator.shiftRight(shiftDen);
             // multiply fraction by 5^n
-            final AtomicLong fiveExp = new AtomicLong(n);
+            final AtomicLong fiveExp = new AtomicLong(n & BigInteger.LONG_MASK);
             resDen = removePowersOfFive(resDen, fiveExp);
-            final BigInteger fivePow = bigFiveToThe((int) fiveExp.get());
+            final BigInteger fivePow = bigFiveToThe(fiveExp.intValue());
             resNum = resNum.multiply(fivePow);
 
             // floor * 10^n == floor * 2^n * 5^n == (floor << n) * (5^fiveExp * 5^(n - fiveExp))
-            resFloor = floor.shiftLeft(n).multiply(fivePow).multiply(bigFiveToThe(n - (int) fiveExp.get()));
+            resFloor = unsignedShiftLeft(floor, n).multiply(fivePow).multiply(bigFiveToThe(n - fiveExp.intValue()));
 
             if (resNum.compareTo(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
@@ -1655,7 +1654,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 resDen = frac[1];
             }
         } else { // no fractional part
-            resFloor = floor.shiftLeft(n).multiply(bigFiveToThe(n));
+            resFloor = unsignedShiftLeft(floor, n).multiply(bigFiveToThe(n));
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
@@ -1691,19 +1690,136 @@ public class Rational extends Number implements Comparable<Rational> {
                 // divide fraction of shifted by 5^n
                 AtomicLong fiveExp = new AtomicLong(n & BigInteger.LONG_MASK);
                 resNum = removePowersOfFive(shifted.numerator, fiveExp);
-                resDen = shifted.denominator.multiply(bigFiveToThe((int) fiveExp.get()));
+                resDen = shifted.denominator.multiply(bigFiveToThe(fiveExp.intValue()));
             }
         } else if (rem.signum == 1) { // no fraction of shifted, non-zero remainder
             // set result fraction to rem/5^n
             AtomicLong fiveExp = new AtomicLong(n & BigInteger.LONG_MASK);
             resNum = removePowersOfFive(rem, fiveExp);
-            resDen = bigFiveToThe((int) fiveExp.get());
+            resDen = bigFiveToThe(fiveExp.intValue());
         } else { // no fraction of shifted, no remainder
             resNum = BigInteger.ZERO;
             resDen = BigInteger.ONE;
         }
 
         return new Rational(signum, resFloor, resNum, resDen);
+    }
+
+    /**
+     * {@code FIVE_SQUARES.get(n) == 5^(1L << n)}
+     */
+    private static final ArrayList<BigInteger> FIVE_SQUARES = new ArrayList<>(Integer.SIZE);
+
+    static {
+        FIVE_SQUARES.add(BigInteger.valueOf(5));
+    }
+
+    /**
+     * Returns {@code 5^n}. {@code n} is considered unsigned.
+     */
+    private static BigInteger bigFiveToThe(int n) {
+        BigInteger acc = BigInteger.ONE;
+        final int nBits = BigInteger.bitLengthForInt(n);
+
+        final int end = Math.min(nBits, FIVE_SQUARES.size());
+        for (int i = 0; i < end; i++) {
+            if ((n & 1) == 1)
+                acc = acc.multiply(FIVE_SQUARES.get(i));
+
+            n >>>= 1;
+        }
+
+        BigInteger pow = FIVE_SQUARES.get(FIVE_SQUARES.size() - 1);
+        while (FIVE_SQUARES.size() < nBits) {
+            pow = pow.simpleSquare();
+            FIVE_SQUARES.add(pow);
+
+            if ((n & 1) == 1)
+                acc = acc.multiply(pow);
+
+            n >>>= 1;
+        }
+
+        return acc;
+    }
+
+    /**
+     * If before calling this method {@code remaining.get() == r}, the method
+     * returns the least integer {@code n > 0} such that
+     * {@code (val == n * 5^(r - remaining.get()) && 0 <= remaining.get() <= r)}
+     * will hold after calling this method. Assumes {@code val > 0 && r >= 0}.
+     */
+    private static BigInteger removePowersOfFive(BigInteger val, AtomicLong remaining) {
+        BigInteger divisor = FIVE_SQUARES.get(0);
+        int i = 0;
+
+        // divide val and square the divisor as much as possible
+        boolean stop = false;
+        do {
+            BigInteger[] divRem = val.divideAndRemainder(divisor);
+
+            if (divRem[1].signum != 0) {
+                stop = true;
+            } else { // no remainder
+                val = divRem[0];
+                remaining.addAndGet(-(1L << i));
+
+                if (remaining.get() < 1L << i || divisor.compareTo(val) > 0) {
+                    stop = true;
+                } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
+                    final BigInteger square;
+                    final int last = FIVE_SQUARES.size() - 1;
+
+                    // compute divisor^2
+                    if (i < last) {
+                        square = FIVE_SQUARES.get(i + 1);
+                    } else {
+                        square = FIVE_SQUARES.get(last).simpleSquare();
+                        FIVE_SQUARES.add(square);
+                    }
+
+                    if (square.compareTo(val) <= 0) {
+                        // square the divisor
+                        divisor = square;
+                        i++;
+                    }
+                }
+            }
+        } while (!stop);
+        i--; // by conditions for stop, val can no longer be divided by the divisor
+
+        while (i >= 0 && remaining.get() > 0) {
+            // find, if exists, the greatest non-negative n <= i
+            // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
+            final int highestBit = Math.min(i, Long.SIZE - 1 - Long.numberOfLeadingZeros(remaining.get()));
+            if (FIVE_SQUARES.get(highestBit).compareTo(val) <= 0) {
+                // easy case, no need to search for n
+                i = highestBit;
+            } else {
+                final int pos = Collections.binarySearch(FIVE_SQUARES.subList(0, highestBit), val);
+                i = pos >= 0 ? pos : -(pos + 1) - 1;
+            }
+            // now i == n
+
+            // divide val as much as possible
+            if (i >= 0) {
+                divisor = FIVE_SQUARES.get(i);
+                do {
+                    BigInteger[] divRem = val.divideAndRemainder(divisor);
+
+                    if (divRem[1].signum == 0) {
+                        val = divRem[0];
+                        remaining.addAndGet(-(1L << i));
+                    }
+
+                    i--; // by definition of n, val can no longer be divided by 5^(1 << i)
+                    if (i >= 0)
+                        divisor = FIVE_SQUARES.get(i);
+                } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
+            }
+        }
+
+        return val;
     }
 
     /**
@@ -1719,7 +1835,7 @@ public class Rational extends Number implements Comparable<Rational> {
      *         settings.
      */
     public Rational round(MathContext mc) {
-        return new Rational(toBigDecimal(mc));
+        return valueOf(toBigDecimal(mc));
     }
 
     // Format Converters
@@ -1901,7 +2017,7 @@ public class Rational extends Number implements Comparable<Rational> {
         final long biasedExp;
         int nBits; // computed bits of significand
         MutableBigInteger rem = new MutableBigInteger(numerator);
-        final MutableBigInteger den = new MutableBigInteger(denominator);
+        final MutableBigInteger den = new MutableBigInteger(denominator.mag);
 
         // compute initial value of significand
         if (floor.signum == 1) { // non-zero integer part
@@ -2030,7 +2146,7 @@ public class Rational extends Number implements Comparable<Rational> {
         final int biasedExp;
         int nBits; // computed bits of significand
         MutableBigInteger rem = new MutableBigInteger(numerator);
-        final MutableBigInteger den = new MutableBigInteger(denominator);
+        final MutableBigInteger den = new MutableBigInteger(denominator.mag);
 
         // compute initial value of significand
         if (floor.signum == 1) { // non-zero integer part
@@ -2218,13 +2334,19 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns the decimal String representation of this Rational:
-     * <i>numerator</i>/<i>denominator</i>.
+     * Returns the String representation of this {@code Rational}, compound as follows:
+     * <ul>
+     * <li> If {@code this >= 0}:
+     * <p>
+     * <i>this.absFloor()</i> + <i>this.numerator()</i> / <i>this.denominator()</i>;
+     * <li> If {@code this < 0}:
+     * <p>
+     * -<i>this.absFloor()</i> - <i>this.numerator()</i> / <i>this.denominator()</i>.
+     * </ul>
      *
-     * The digit-to-character mapping provided by {@code Character.forDigit} is
-     * used, and a minus sign is prepended if appropriate. (This representation is
-     * compatible with the {@link #Rational(String) (String)} constructor, and
-     * allows for String concatenation with Java's + operator.)
+     * <p>
+     * The digit-to-character mapping provided by {@code Character.forDigit}. (This
+     * representation allows for String concatenation with Java's + operator.)
      *
      * @return decimal String representation of this Rational.
      * @see Character#forDigit
@@ -2232,6 +2354,9 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public String toString() {
+        if (stringCache != null)
+            return stringCache;
+        
         final int radix = 10;
         int capacity = floor.numChars(radix);
         capacity += numerator.numChars(radix);
@@ -2243,7 +2368,7 @@ public class Rational extends Number implements Comparable<Rational> {
             b.append('-');
 
         b.append(floor).append(signum == -1 ? '-' : '+').append(numerator).append('/').append(denominator);
-        return b.toString();
+        return stringCache = b.toString();
     }
 
     // Hash Function

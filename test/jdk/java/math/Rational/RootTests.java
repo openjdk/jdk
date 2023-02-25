@@ -284,7 +284,7 @@ public class RootTests {
 
         BigDecimal near10sq = near10.multiply(near10);
 
-        Rational near10sq_ulp = new Rational(near10sq.add(near10sq.ulp()));
+        Rational near10sq_ulp = valueOf(near10sq.add(near10sq.ulp()));
         // Square root truncated to 23 digits
         Rational highPrecisionRoot = new Rational("9.9999999999999999999900");
 
@@ -306,7 +306,7 @@ public class RootTests {
 
         BigDecimal near1 = new BigDecimal(".999999999999999999999");
         BigDecimal near1sq = near1.multiply(near1);
-        Rational near1sq_ulp = new Rational(near1sq.add(near1sq.ulp()));
+        Rational near1sq_ulp = valueOf(near1sq.add(near1sq.ulp()));
         // Square root truncated to 43 digits
         Rational highPrecisionRoot = new Rational("0.9999999999999999999990000000000000000000005");
 
@@ -337,7 +337,7 @@ public class RootTests {
         for (BigDecimal halfWayCase : halfWayCases) {
             // Round result to next-to-last place
             int precision = halfWayCase.precision() - 1;
-            Rational halfWayCaseR = new Rational(halfWayCase);
+            Rational halfWayCaseR = valueOf(halfWayCase);
             Rational square = halfWayCaseR.multiply(halfWayCaseR);
 
             for (RoundingMode rm : List.of(RoundingMode.HALF_EVEN, RoundingMode.HALF_UP, RoundingMode.HALF_DOWN)) {

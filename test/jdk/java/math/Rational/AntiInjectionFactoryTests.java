@@ -42,7 +42,7 @@ public class AntiInjectionFactoryTests {
         TestBigDecimal tbd = new TestBigDecimal(BigDecimal.ONE);
         // Create Rational's using each of the factory methods
         // with guards on the class of the arguments
-        values = new Rational[] { new Rational(tbd), Rational.valueOf(tbd, tbd) };
+        values = new Rational[] { Rational.valueOf(tbd), Rational.valueOf(tbd, tbd) };
 
         for (var r : values) {
             BigInteger floor = r.absFloor();

@@ -68,7 +68,7 @@ public class SerializationTests {
         var values = List.of(Rational.ZERO, Rational.ONE, Rational.TEN, new Rational(0), new Rational(1),
                 new Rational(10), new Rational(Integer.MAX_VALUE), new Rational(Long.MAX_VALUE - 1),
                 new Rational("0.1"), new Rational("100e-50"),
-                new Rational(new BigDecimal(new BigIntegerSub(BigInteger.ONE), 2)));
+                Rational.valueOf(new BigDecimal(new BigIntegerSub(BigInteger.ONE), 2)));
 
         for (Rational value : values) {
             checkSerialForm(value);
