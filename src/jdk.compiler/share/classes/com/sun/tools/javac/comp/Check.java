@@ -2725,6 +2725,13 @@ public class Check {
         // Build the predicate that determines if site is responsible for an ambiguity
         BiPredicate<MethodSymbol, MethodSymbol> responsible = buildResponsiblePredicate(site, methodGroups);
 
+        // Now remove overridden methods from each group, leaving only site's actual members
+        methodGroups.forEach(list -> removePreempted(list, (m1, m2) -> m1.overrides(m2, site.tsym, types, false)));
+
+        // Allow site's own declared methods (only) to apply @SuppressWarnings("overloads")
+        methodGroups.forEach(list -> list.removeIf(
+            m -> m.owner == site.tsym && !lint.augment(m).isEnabled(LintCategory.OVERLOADS)));
+
         // Warn about ambiguous overload method pairs for which site is responsible
         methodGroups.forEach(list -> compareAndRemove(list, (m1, m2) -> {
 
@@ -2763,7 +2770,7 @@ public class Check {
      *  any other methods; in this case the class is definitely responsible.
      */
     BiPredicate<MethodSymbol, MethodSymbol> buildResponsiblePredicate(Type site,
-        List<? extends java.util.List<MethodSymbol>> methodGroups) {
+        List<? extends Collection<MethodSymbol>> methodGroups) {
 
         // Define the "overrides" predicate
         BiPredicate<MethodSymbol, MethodSymbol> overrides = (m1, m2) -> m1.overrides(m2, site.tsym, types, false);
@@ -2789,13 +2796,6 @@ public class Check {
                 overriddenMethodsMap.put(m, overriddenMethods);
             }
         });
-
-        // Now remove overridden methods from each group, leaving only site's actual members
-        methodGroups.forEach(list -> removePreempted(list, overrides));
-
-        // Allow site's own declared methods (only) to apply @SuppressWarnings("overloads")
-        methodGroups.forEach(list -> list.removeIf(
-            m -> m.owner == site.tsym && !lint.augment(m).isEnabled(LintCategory.OVERLOADS)));
 
         // Build the predicate
         return (m1, m2) -> {
