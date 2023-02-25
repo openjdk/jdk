@@ -1297,8 +1297,8 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
-  product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
-          "Try to enable system memory barrier")                            \
+  product(bool, UseSystemMemoryBarrier, true, DIAGNOSTIC,                   \
+          "Try to enable system memory barrier if supported by OS")         \
                                                                             \
   product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \

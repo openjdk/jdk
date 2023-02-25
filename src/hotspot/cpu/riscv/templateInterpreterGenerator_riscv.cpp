@@ -1146,7 +1146,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {

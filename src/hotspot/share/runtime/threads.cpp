@@ -62,6 +62,7 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -554,10 +555,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (UseSystemMemoryBarrier) {
     if (!SystemMemoryBarrier::initialize()) {
-      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
-      return JNI_EINVAL;
+      if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
+        warning("UseSystemMemoryBarrier specified, but not supported on this OS.");
+      }
+      FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
     }
-    log_debug(os)("Using experimental system memory barrier synchronization");
   }
 
   // Initialize Java-Level synchronization subsystem

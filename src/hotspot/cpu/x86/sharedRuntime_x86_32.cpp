@@ -1768,9 +1768,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
 
   // Force this write out before the read below
-  __ membar(Assembler::Membar_mask_bits(
-            Assembler::LoadLoad | Assembler::LoadStore |
-            Assembler::StoreLoad | Assembler::StoreStore));
+  if (!UseSystemMemoryBarrier) {
+    __ membar(Assembler::Membar_mask_bits(
+              Assembler::LoadLoad | Assembler::LoadStore |
+              Assembler::StoreLoad | Assembler::StoreStore));
+  }
 
   if (AlwaysRestoreFPU) {
     // Make sure the control word is correct.
