@@ -64,7 +64,7 @@ void* NMTPreInitAllocation::operator new(size_t count) {
 }
 
 void NMTPreInitAllocation::operator delete(void* p) {
-  return raw_free(p);
+  raw_free(p);
 }
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
