@@ -2719,9 +2719,6 @@ public class Check {
         List<java.util.List<MethodSymbol>> methodGroups = methodsGroupedByName(site,
             new PotentiallyAmbiguousFilter(site), ArrayList::new);
 
-        // Reverse all the lists, which seems to help with warning ordering
-        methodGroups.forEach(Collections::reverse);
-
         // Build the predicate that determines if site is responsible for an ambiguity
         BiPredicate<MethodSymbol, MethodSymbol> responsible = buildResponsiblePredicate(site, methodGroups);
 
