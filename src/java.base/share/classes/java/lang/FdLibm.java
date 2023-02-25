@@ -597,7 +597,7 @@ class FdLibm {
             ix1 = __LO(x);  // low word of x
 
             // take care of Inf and NaN
-            if((ix0 & 0x7ff0_0000) == 0x7ff0_0000) {
+            if ((ix0 & 0x7ff0_0000) == 0x7ff0_0000) {
                 return x*x + x; // sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN
             }
             // take care of zero
@@ -636,9 +636,9 @@ class FdLibm {
             q = q1 = s0 = s1 = 0;   // [q,q1] = sqrt(x)
             r = 0x0020_0000;        // r = moving bit from right to left
 
-            while(r != 0) {
+            while (r != 0) {
                 t = s0 + r;
-                if(t <= ix0) {
+                if (t <= ix0) {
                     s0   = t + r;
                     ix0 -= t;
                     q   += r;
@@ -652,9 +652,9 @@ class FdLibm {
             while (r != 0) {
                 t1 = s1 + r;
                 t  = s0;
-                if((t < ix0) ||
-                   ((t == ix0) && (Integer.compareUnsigned(t1, ix1) <= 0 ))) { // t1 <= ix1
-                    s1  = t1 + r;
+                if ((t < ix0) ||
+                    ((t == ix0) && (Integer.compareUnsigned(t1, ix1) <= 0 ))) { // t1 <= ix1
+                    s1 = t1 + r;
                     if (((t1 & sign) == sign) && (s1 & sign) == 0) {
                         s0 += 1;
                     }
