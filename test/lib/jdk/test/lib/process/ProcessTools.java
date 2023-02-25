@@ -216,21 +216,25 @@ public final class ProcessTools {
 
         try {
             if (timeout > -1) {
-                if (timeout == 0) {
-                    while (!latch.await(1, TimeUnit.SECONDS)) {
-                        if (!p.isAlive()) {
-                            //Fail if process finished before printed expected string
-                            latch.countDown();
-                            throw new RuntimeException("Started process is not alive.");
-                        }
+                // Every second check if process is still alive
+                boolean succeeded = Utils.waitForCondition(() -> {
+                    //Fail if process finished before printed expected string
+                    if (!p.isAlive()) {
+                        latch.countDown();
+                        throw new RuntimeException("Started process " + name + " is not alive.");
                     }
-                } else {
-                    if (!latch.await(Utils.adjustTimeout(timeout), unit)) {
-                        throw new TimeoutException();
+                    try {
+                       return latch.await(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
+                }, unit.toMillis(Utils.adjustTimeout(timeout)), 0);
+
+                if (!succeeded) {
+                    throw new TimeoutException();
                 }
             }
-        } catch (TimeoutException | InterruptedException | RuntimeException e) {
+        } catch (TimeoutException | RuntimeException e) {
             System.err.println("Failed to start a process (thread dump follows)");
             for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
