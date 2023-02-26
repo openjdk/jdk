@@ -56,8 +56,13 @@ public class ByteBuffer {
      *  of given size.
      */
     public ByteBuffer(int initialSize) {
-        elems = new byte[initialSize];
-        length = 0;
+        this(new byte[initialSize]);
+    }
+
+    /** Create a new byte buffer using the given array for storage.
+     */
+    public ByteBuffer(byte[] elems) {
+        this.elems = elems;
     }
 
     /** Append byte to this buffer.
@@ -287,6 +292,15 @@ public class ByteBuffer {
             throw new IllegalArgumentException("off=" + off + ", len=" + len);
         if (off + len < 0 || off + len > length)
             throw new UnderflowException(length);
+    }
+
+    /** Create a {@link java.nio.ByteBuffer} view of this instance.
+     *
+     *  <p>
+     *  If this instance is modified, the returned buffer may no longer reflect it.
+     */
+    public java.nio.ByteBuffer asByteBuffer() {
+        return java.nio.ByteBuffer.wrap(elems, 0, length);
     }
 
 // UnderflowException
