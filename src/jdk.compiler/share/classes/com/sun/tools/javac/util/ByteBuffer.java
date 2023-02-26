@@ -147,30 +147,28 @@ public class ByteBuffer {
         appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
-     /** Append the content of a given input stream, and then close the stream.
+     /** Append the content of the given input stream.
      */
-    public void appendStream(InputStream is) throws IOException {
-        try (InputStream input = is) {
-            while (true) {
+    public void appendStream(InputStream input) throws IOException {
+        while (true) {
 
-                // Read another chunk of data, using size hint from available().
-                // If available() is accurate, the array size should be just right.
-                int amountToRead = Math.max(input.available(), 64);
-                elems = ArrayUtils.ensureCapacity(elems, length + amountToRead);
-                int amountRead = input.read(elems, length, amountToRead);
-                if (amountRead == -1)
+            // Read another chunk of data, using size hint from available().
+            // If available() is accurate, the array size should be just right.
+            int amountToRead = Math.max(input.available(), 64);
+            elems = ArrayUtils.ensureCapacity(elems, length + amountToRead);
+            int amountRead = input.read(elems, length, amountToRead);
+            if (amountRead == -1)
+                break;
+            length += amountRead;
+
+            // Check for the common case where input.available() returned the
+            // entire remaining input; in that case, avoid an extra array extension.
+            // Note we are guaranteed that elems.length >= length + 1 at this point.
+            if (amountRead == amountToRead) {
+                int byt = input.read();
+                if (byt == -1)
                     break;
-                length += amountRead;
-
-                // Check for the common case where input.available() returned the
-                // entire remaining input; in that case, avoid an extra array extension.
-                // Note we are guaranteed that elems.length >= length + 1 at this point.
-                if (amountRead == amountToRead) {
-                    int byt = input.read();
-                    if (byt == -1)
-                        break;
-                    elems[length++] = (byte)byt;
-                }
+                elems[length++] = (byte)byt;
             }
         }
     }
