@@ -86,7 +86,6 @@ class MarkSweep : AllStatic {
   //
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
-  friend class VM_MarkSweep;
 
   //
   // Vars

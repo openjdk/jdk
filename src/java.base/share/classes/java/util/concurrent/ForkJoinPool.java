@@ -2844,9 +2844,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         this.saturate = saturate;
         this.config = asyncMode ? FIFO : 0;
         this.keepAlive = Math.max(unit.toMillis(keepAliveTime), TIMEOUT_SLOP);
-        int corep = Math.min(Math.max(corePoolSize, p), MAX_CAP);
-        int maxSpares = Math.max(0, Math.min(maximumPoolSize - p, MAX_CAP));
-        int minAvail = Math.max(0, Math.min(minimumRunnable, MAX_CAP));
+        int corep = Math.clamp(corePoolSize, p, MAX_CAP);
+        int maxSpares = Math.clamp(maximumPoolSize - p, 0, MAX_CAP);
+        int minAvail = Math.clamp(minimumRunnable, 0, MAX_CAP);
         this.bounds = (long)(minAvail & SMASK) | (long)(maxSpares << SWIDTH) |
             ((long)corep << 32);
         int size = 1 << (33 - Integer.numberOfLeadingZeros(p - 1));
@@ -2877,7 +2877,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             String ms = System.getProperty
                 ("java.util.concurrent.ForkJoinPool.common.maximumSpares");
             if (ms != null)
-                maxSpares = Math.max(0, Math.min(MAX_CAP, Integer.parseInt(ms)));
+                maxSpares = Math.clamp(Integer.parseInt(ms), 0, MAX_CAP);
             String sf = System.getProperty
                 ("java.util.concurrent.ForkJoinPool.common.threadFactory");
             String sh = System.getProperty

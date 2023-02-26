@@ -2956,9 +2956,9 @@ public class Check {
 
     /** Check the type annotations.
      */
-    public void validateTypeAnnotations(List<JCAnnotation> annotations, boolean isTypeParameter) {
+    public void validateTypeAnnotations(List<JCAnnotation> annotations, Symbol s, boolean isTypeParameter) {
         for (JCAnnotation a : annotations)
-            validateTypeAnnotation(a, isTypeParameter);
+            validateTypeAnnotation(a, s, isTypeParameter);
     }
 
     /** Check an annotation of a symbol.
@@ -3127,8 +3127,10 @@ public class Check {
         }
     }
 
-    public void validateTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
+    public void validateTypeAnnotation(JCAnnotation a, Symbol s, boolean isTypeParameter) {
         Assert.checkNonNull(a.type);
+        // we just want to validate that the anotation doesn't have any wrong target
+        if (s != null) getApplicableTargets(a, s);
         validateAnnotationTree(a);
 
         if (a.hasTag(TYPE_ANNOTATION) &&
@@ -3457,9 +3459,10 @@ public class Check {
             } else if (target == names.MODULE) {
                 if (s.kind == MDL)
                     applicableTargets.add(names.MODULE);
-            } else
-                return Optional.empty(); // Unknown ElementType. This should be an error at declaration site,
-                                         // assume applicable.
+            } else {
+                log.error(a, Errors.AnnotationUnrecognizedAttributeName(a.type, target));
+                return Optional.empty(); // Unknown ElementType
+            }
         }
         return Optional.of(applicableTargets);
     }
@@ -4065,7 +4068,7 @@ public class Check {
         for (final JCImport imp : toplevel.getImports()) {
             if (!imp.staticImport || !imp.qualid.hasTag(SELECT))
                 continue;
-            final JCFieldAccess select = (JCFieldAccess) imp.qualid;
+            final JCFieldAccess select = imp.qualid;
             final Symbol origin;
             if (select.name == names.asterisk || (origin = TreeInfo.symbol(select.selected)) == null || origin.kind != TYP)
                 continue;
@@ -4088,7 +4091,7 @@ public class Check {
     public void checkImportedPackagesObservable(final JCCompilationUnit toplevel) {
         OUTER: for (JCImport imp : toplevel.getImports()) {
             if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
-                TypeSymbol tsym = ((JCFieldAccess)imp.qualid).selected.type.tsym;
+                TypeSymbol tsym = imp.qualid.selected.type.tsym;
                 if (tsym.kind == PCK && tsym.members().isEmpty() &&
                     !(Feature.IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES.allowedInSource(source) && tsym.exists())) {
                     log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));

@@ -148,7 +148,7 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCImport Import(JCTree qualid, boolean importStatic) {
+    public JCImport Import(JCFieldAccess qualid, boolean importStatic) {
         JCImport tree = new JCImport(qualid, importStatic);
         tree.pos = pos;
         return tree;
@@ -723,8 +723,8 @@ public class TreeMaker implements JCTree.Factory {
     /** Create a selection node from a qualifier tree and a symbol.
      *  @param base   The qualifier tree.
      */
-    public JCExpression Select(JCExpression base, Symbol sym) {
-        return new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
+    public JCFieldAccess Select(JCExpression base, Symbol sym) {
+        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
