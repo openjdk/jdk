@@ -30,6 +30,7 @@
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
 #include "gc/noop/noopBarrierSet.hpp"
+#include "gc/shared/markBitMap.hpp"
 
 class NoopHeap: public CollectedHeap {
     friend class VMStructs;
@@ -45,6 +46,8 @@ private:
     int64_t _decay_time_ns;
     volatile size_t _last_counter_update;
     volatile size_t _last_heap_print;
+    MarkBitMap _mark_bitmap;
+    MemRegion _bitmap_region;
 
 public:
     static NoopHeap* heap();

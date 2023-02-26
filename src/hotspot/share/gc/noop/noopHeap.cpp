@@ -38,6 +38,7 @@
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "gc/shared/markBitMap.hpp"
 
 NoopHeap* NoopHeap::heap() {
     return named_heap<NoopHeap>(CollectedHeap::Noop);
@@ -48,9 +49,9 @@ jint NoopHeap::initialize() {
     size_t init_byte_size = align_up(InitialHeapSize, align);
     size_t max_byte_size  = align_up(MaxHeapSize, align);
 
-    // Initialize backing storage
+    // Initialize backing storage(maximum size)
     ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, align);
-    _virtual_space.initialize(heap_rs, init_byte_size);
+    _virtual_space.initialize(heap_rs, max_byte_size);
 
     MemRegion committed_region((HeapWord*)_virtual_space.low(),          (HeapWord*)_virtual_space.high());
 
@@ -60,6 +61,16 @@ jint NoopHeap::initialize() {
     _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
     _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
+
+    // Mark bitmap reserve and initialization(No large page)
+    size_t heap_size = heap_rs.size();
+    size_t bitmap_size = MarkBitMap::compute_size(heap_size);
+    ReservedSpace bitmap_space(bitmap_size);
+
+    _bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
+			bitmap_space.size() / HeapWordSize);
+
+    _mark_bitmap.initialize(committed_region, _bitmap_region);
 
     // Install barrier set
     BarrierSet::set_barrier_set(new NoopBarrierSet());
