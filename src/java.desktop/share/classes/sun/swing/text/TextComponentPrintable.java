@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -324,6 +323,7 @@ public class TextComponentPrintable implements CountingPrintable {
             }
         }
     }
+
     @SuppressWarnings("serial") // anonymous class inside
     private JTextComponent createPrintShellOnEDT(final JTextComponent textComponent) {
         assert SwingUtilities.isEventDispatchThread();
@@ -339,6 +339,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
                         return (frc == null)
                             ? super.getFontMetrics(font)
                             : FontDesignMetrics.getMetrics(font, frc);
@@ -353,6 +354,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
                         return (frc == null)
                             ? super.getFontMetrics(font)
                             : FontDesignMetrics.getMetrics(font, frc);
@@ -369,6 +371,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
                         return (frc == null)
                             ? super.getFontMetrics(font)
                             : FontDesignMetrics.getMetrics(font, frc);
@@ -379,6 +382,7 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JTextPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
                         return (frc == null)
                             ? super.getFontMetrics(font)
                             : FontDesignMetrics.getMetrics(font, frc);
@@ -397,6 +401,7 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JEditorPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
                         return (frc == null)
                             ? super.getFontMetrics(font)
                             : FontDesignMetrics.getMetrics(font, frc);
