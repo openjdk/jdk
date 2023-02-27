@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ package com.sun.tools.example.debug.tty;
 
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
-import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
@@ -470,8 +469,6 @@ class VMConnection {
 
         ThreadStartRequest tsr = erm.createThreadStartRequest();
         ThreadDeathRequest tdr = erm.createThreadDeathRequest();
-        tsr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
-        tdr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
         if (!trackVthreads) {
             tsr.addPlatformThreadsOnlyFilter();
             tdr.addPlatformThreadsOnlyFilter();

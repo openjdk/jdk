@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,11 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
 
 #define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
                                        FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
 #define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::MANAGEMENT))
+
+// FLAG_SET_ERGO must be always be called with a valid value. If an invalid value
+// is detected then the VM will exit.
+#define FLAG_SET_ERGO(name, value)     (void)(FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

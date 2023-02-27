@@ -137,7 +137,13 @@ endif
 ifeq ($(ASAN_ENABLED), true)
   # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
   # default ASan options.
-  BUILD_JDK_JTREG_EXTRA_FILES := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.c
+endif
+
+ifeq ($(LSAN_ENABLED), true)
+  # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
+  # default LSan options.
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
 endif
 
 # This evaluation is expensive and should only be done if this target was

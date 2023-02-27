@@ -39,8 +39,8 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class DefNewYoungerGenClosure;
-class DefNewScanClosure;
+class OldGenScanClosure;
+class YoungGenScanClosure;
 class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
@@ -100,12 +100,6 @@ protected:
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
 
-  // Promotion failure handling
-  OopIterateClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
-    _promo_failure_scan_stack_closure = scan_stack_closure;
-  }
-
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
   bool _promo_failure_drain_in_progress;
@@ -158,36 +152,6 @@ protected:
     size_t n = gen_size / (SurvivorRatio + 2);
     return n > alignment ? align_down(n, alignment) : alignment;
   }
-
- public:  // was "protected" but caused compile error on win32
-  class IsAliveClosure: public BoolObjectClosure {
-    Generation* _young_gen;
-  public:
-    IsAliveClosure(Generation* young_gen);
-    bool do_object_b(oop p);
-  };
-
-  class FastKeepAliveClosure: public OopClosure {
-    ScanWeakRefClosure* _cl;
-    CardTableRS* _rs;
-    HeapWord* _boundary;
-    template <class T> void do_oop_work(T* p);
-  public:
-    FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
-  class FastEvacuateFollowersClosure: public VoidClosure {
-    SerialHeap* _heap;
-    DefNewScanClosure* _scan_cur_or_nonheap;
-    DefNewYoungerGenClosure* _scan_older;
-  public:
-    FastEvacuateFollowersClosure(SerialHeap* heap,
-                                 DefNewScanClosure* cur,
-                                 DefNewYoungerGenClosure* older);
-    void do_void();
-  };
 
  public:
   DefNewGeneration(ReservedSpace rs,

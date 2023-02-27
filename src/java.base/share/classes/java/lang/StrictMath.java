@@ -164,7 +164,9 @@ public final class StrictMath {
      * @param   a   the value whose arc sine is to be returned.
      * @return  the arc sine of the argument.
      */
-    public static native double asin(double a);
+    public static double asin(double a) {
+        return FdLibm.Asin.compute(a);
+    }
 
     /**
      * Returns the arc cosine of a value; the returned angle is in the
@@ -177,7 +179,9 @@ public final class StrictMath {
      * @param   a   the value whose arc cosine is to be returned.
      * @return  the arc cosine of the argument.
      */
-    public static native double acos(double a);
+    public static double acos(double a) {
+        return FdLibm.Acos.compute(a);
+    }
 
     /**
      * Returns the arc tangent of a value; the returned angle is in the
@@ -193,7 +197,9 @@ public final class StrictMath {
      * @param   a   the value whose arc tangent is to be returned.
      * @return  the arc tangent of the argument.
      */
-    public static native double atan(double a);
+    public static double atan(double a) {
+        return FdLibm.Atan.compute(a);
+    }
 
     /**
      * Converts an angle measured in degrees to an approximately
@@ -259,7 +265,9 @@ public final class StrictMath {
      * @return  the value ln&nbsp;{@code a}, the natural logarithm of
      *          {@code a}.
      */
-    public static native double log(double a);
+    public static double log(double a) {
+        return FdLibm.Log.compute(a);
+    }
 
     /**
      * Returns the base 10 logarithm of a {@code double} value.
@@ -539,7 +547,9 @@ public final class StrictMath {
      *          in polar coordinates that corresponds to the point
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
-    public static native double atan2(double y, double x);
+    public static double atan2(double y, double x) {
+        return FdLibm.Atan2.compute(y, x);
+    }
 
     /**
      * Returns the value of the first argument raised to the power of the
@@ -1758,6 +1768,95 @@ public final class StrictMath {
     }
 
     /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned.
+     * <p>
+     * While the original value of type long may not fit into the int type,
+     * the bounds have the int type, so the result always fits the int type.
+     * This allows to use method to safely cast long value to int with
+     * saturation.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if {@code min > max}
+     *
+     * @since 21
+     */
+    public static int clamp(long value, int min, int max) {
+        return Math.clamp(value, min, max);
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if {@code min > max}
+     *
+     * @since 21
+     */
+    public static long clamp(long value, long min, long max) {
+        return Math.clamp(value, min, max);
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned. If value is NaN, the result is also NaN.
+     * <p>
+     * Unlike the numerical comparison operators, this method considers
+     * negative zero to be strictly smaller than positive zero.
+     * E.g., {@code clamp(-0.0, 0.0, 1.0)} returns 0.0.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if either of {@code min} and {@code max}
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0, and
+     * {@code max} is -0.0.
+     *
+     * @since 21
+     */
+    public static double clamp(double value, double min, double max) {
+        return Math.clamp(value, min, max);
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned. If value is NaN, the result is also NaN.
+     * <p>
+     * Unlike the numerical comparison operators, this method considers
+     * negative zero to be strictly smaller than positive zero.
+     * E.g., {@code clamp(-0.0f, 0.0f, 1.0f)} returns 0.0f.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if either of {@code min} and {@code max}
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0f, and
+     * {@code max} is -0.0f.
+     *
+     * @since 21
+     */
+    public static float clamp(float value, float min, float max) {
+        return Math.clamp(value, min, max);
+    }
+
+    /**
      * Returns the fused multiply add of the three arguments; that is,
      * returns the exact product of the first two arguments summed
      * with the third argument and then rounded once to the nearest
@@ -1984,7 +2083,9 @@ public final class StrictMath {
      * @return  The hyperbolic sine of {@code x}.
      * @since 1.5
      */
-    public static native double sinh(double x);
+    public static double sinh(double x) {
+        return FdLibm.Sinh.compute(x);
+    }
 
     /**
      * Returns the hyperbolic cosine of a {@code double} value.
@@ -2008,7 +2109,9 @@ public final class StrictMath {
      * @return  The hyperbolic cosine of {@code x}.
      * @since 1.5
      */
-    public static native double cosh(double x);
+    public static double cosh(double x) {
+        return FdLibm.Cosh.compute(x);
+    }
 
     /**
      * Returns the hyperbolic tangent of a {@code double} value.
@@ -2039,7 +2142,9 @@ public final class StrictMath {
      * @return  The hyperbolic tangent of {@code x}.
      * @since 1.5
      */
-    public static native double tanh(double x);
+    public static double tanh(double x) {
+        return FdLibm.Tanh.compute(x);
+    }
 
     /**
      * Returns sqrt(<i>x</i><sup>2</sup>&nbsp;+<i>y</i><sup>2</sup>)
@@ -2093,7 +2198,9 @@ public final class StrictMath {
      * @return  the value <i>e</i><sup>{@code x}</sup>&nbsp;-&nbsp;1.
      * @since 1.5
      */
-    public static native double expm1(double x);
+    public static double expm1(double x) {
+        return FdLibm.Expm1.compute(x);
+    }
 
     /**
      * Returns the natural logarithm of the sum of the argument and 1.
@@ -2124,7 +2231,9 @@ public final class StrictMath {
      * log of {@code x}&nbsp;+&nbsp;1
      * @since 1.5
      */
-    public static native double log1p(double x);
+    public static double log1p(double x) {
+        return FdLibm.Log1p.compute(x);
+    }
 
     /**
      * Returns the first floating-point argument with the sign of the

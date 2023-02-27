@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,30 +135,59 @@ class CharacterDataLatin1 extends CharacterData {
     }
 
     int toLowerCase(int ch) {
-        int mapChar = ch;
-        int val = getProperties(ch);
-
-        if (((val & $$maskLowerCase) != 0) && 
-                ((val & $$maskCaseOffset) != $$maskCaseOffset)) { 
-            int offset = val << $$shiftCaseOffsetSign >> ($$shiftCaseOffsetSign+$$shiftCaseOffset);
-            mapChar = ch + offset;
+        if (ch < 'A') { // Fast path for low code points
+            return ch;
         }
-        return mapChar;
+        // ASCII and Latin-1 were designed to optimize case-twiddling operations
+        int lower = ch | 0x20;
+        if (lower <= 'z' // In range a-z
+                || (lower >= 0xE0 && lower <= 0xFE && lower != 0xF7)) { // ..or agrave-thorn, excluding division
+            return lower;
+        }
+        return ch;
     }
 
     int toUpperCase(int ch) {
-        int mapChar = ch;
-        int val = getProperties(ch);
-
-        if ((val & $$maskUpperCase) != 0) {
-            if ((val & $$maskCaseOffset) != $$maskCaseOffset) {
-                int offset = val  << $$shiftCaseOffsetSign >> ($$shiftCaseOffsetSign+$$shiftCaseOffset);
-                mapChar =  ch - offset;
-            } else if (ch == 0x00B5) {
-                mapChar = 0x039C;
-            }
+        if (ch < 'a') { // Fast path for low code points
+            return ch;
         }
-        return mapChar;
+        // ASCII and Latin-1 were designed to optimize case-twiddling operations
+        int upper = ch & 0xDF;
+        if (upper <= 'Z' // In range A-Z
+                || (upper >= 0xC0 && upper <= 0xDE && upper != 0xD7)) { // ..or Agrave-Thorn, not multiplication
+            return upper;
+        }
+
+        // Special-case for 'y with Diaeresis' which uppercases out of latin1
+        if (ch == 0xFF) {
+            return 0x178; // Capital Letter Y with Diaeresis
+        }
+        // Special-case for 'Micro Sign' which uppercases out of latin1
+        if (ch == 0xB5) {
+            return 0x39C; // Greek Capital Letter Mu
+        }
+        return ch;
+    }
+
+    /**
+     * Compares two latin1 code points, ignoring case considerations
+     *
+     * @param b1 byte representing a latin1 code point
+     * @param b2 another byte representing a latin1 code point
+     * @return true if the two bytes are considered equals ignoring case in latin1
+     */
+     static boolean equalsIgnoreCase(byte b1, byte b2) {
+         if (b1 == b2) {
+             return true;
+         }
+         // ASCII and Latin-1 were designed to optimize case-twiddling operations
+         int upper = b1 & 0xDF;
+         if (upper < 'A') {
+             return false;  // Low ASCII
+         }
+         return (upper <= 'Z' // In range A-Z
+                 || (upper >= 0xC0 && upper <= 0XDE && upper != 0xD7)) // ..or A-grave-Thorn, not multiplication
+                 && upper == (b2 & 0xDF); // b2 has same uppercase
     }
 
     int toTitleCase(int ch) {
