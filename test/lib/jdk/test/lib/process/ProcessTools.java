@@ -222,13 +222,17 @@ public final class ProcessTools {
 
                 if (latch.getCount() != 0) {
                     if (!p.isAlive()) {
-                        throw new RuntimeException("Started process " + name + " is not alive.");
+                        // Give some extra time for the StreamPumper to run after the process completed
+                        Thread.sleep(1000);
+                        if (latch.getCount() > 0) {
+                            throw new RuntimeException("Started process " + name + " is not alive.");
+                        }
                     } else {
                         throw new TimeoutException();
                     }
                 }
             }
-        } catch (TimeoutException | RuntimeException e) {
+        } catch (TimeoutException | RuntimeException | InterruptedException e) {
             System.err.println("Failed to start a process (thread dump follows)");
             for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
