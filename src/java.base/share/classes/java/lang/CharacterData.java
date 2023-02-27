@@ -85,15 +85,15 @@ abstract class CharacterData {
     }
 
     /**
-     * There are a few Unicode code points which case folds into the latin1
-     * range. This method returns that latin 1 lowercase fold,
-     * or -1 if the code point does not fold into latin1.
+     * This method returns the case fold (the lowercase of the uppercase) of the
+     * given Unicode code point if this case fold is in the latin1 range (<=0xFF).
+     * If the case fold is outside the latin1 range, -1 is returned.
      *
      * This method is equivalent to the following code:
      *
      * {@snippet :
-     *   int folded = Character.toLowerCase(Character.toUpperCase(c));
-     *   return folded <= 0XFF ? folded : -1;
+     *   int fold = Character.toLowerCase(Character.toUpperCase(c));
+     *   return folded <= 0XFF ? fold : -1;
      * }
      *
      * For performance reasons, the implementation compares to a set of known
