@@ -25,7 +25,9 @@ package jdk.jfr.event.runtime;
 
 import static jdk.test.lib.Asserts.assertGreaterThan;
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertEquals;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -132,6 +134,12 @@ public class TestNativeMemoryUsageEvents {
         for (String type : UsageEventTypes) {
             assertTrue(uniqueEventTypes.contains(type), "Events should include: " + type);
         }
+        // Verify that events only have two timestamps
+        List<Instant> timestamps = events.stream()
+                .map(e -> e.getStartTime())
+                .distinct()
+                .toList();
+        assertEquals(timestamps.size(), 2, "Expected two timestamps: " + timestamps);
     }
 
     private static void verifyHeapGrowth(List<RecordedEvent> events) throws Exception {

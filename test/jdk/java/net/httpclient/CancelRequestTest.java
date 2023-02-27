@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786 8297075 8297149 8298340
+ * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635
  * @summary Tests cancelling the request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @key randomness

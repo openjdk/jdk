@@ -62,7 +62,6 @@ public:
   }
 
   void verify();
-  void initialize() override;
 
   void clear_into_younger(Generation* old_gen);
 
