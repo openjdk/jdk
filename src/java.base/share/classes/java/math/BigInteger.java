@@ -702,9 +702,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             this.signum = 0;
         } else {
             this.signum = 1;
-        }
-        if (mag.length >= MAX_MAG_LENGTH) {
-            checkRange();
+            if (mag.length >= MAX_MAG_LENGTH)
+                checkRange();
         }
     }
 
