@@ -377,8 +377,6 @@ public interface RandomGenerator {
      * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
      * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
      * is the smallest number for which all these multiples are exact {@code double}s.
-     * The generated {@code double}s are thus equidistant, as close as possible,
-     * and with the largest possible extension.
      *
      * @param origin the least value (inclusive) that can be produced
      * @param bound the upper bound (exclusive) for each value produced
@@ -411,8 +409,6 @@ public interface RandomGenerator {
      * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
      * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
      * is the smallest number for which all these multiples are exact {@code double}s.
-     * The generated {@code double}s are thus equidistant, as close as possible,
-     * and with the largest possible extension.
      *
      * @param origin the least value (inclusive) that can be produced
      * @param bound the upper bound (inclusive) for each value produced
@@ -445,8 +441,6 @@ public interface RandomGenerator {
      * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
      * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
      * is the smallest number for which all these multiples are exact {@code double}s.
-     * The generated {@code double}s are thus equidistant, as close as possible,
-     * and with the largest possible extension.
      *
      * @param origin the least value (exclusive) that can be produced
      * @param bound the upper bound (exclusive) for each value produced
@@ -479,8 +473,6 @@ public interface RandomGenerator {
      * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
      * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
      * is the smallest number for which all these multiples are exact {@code double}s.
-     * The generated {@code double}s are thus equidistant, as close as possible,
-     * and with the largest possible extension.
      *
      * @param origin the least value (exclusive) that can be produced
      * @param bound the upper bound (inclusive) for each value produced
