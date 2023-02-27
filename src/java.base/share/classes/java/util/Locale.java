@@ -1212,8 +1212,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a stream of installed locales}
-     *
+     * Returns a stream of all installed locales.
      * The returned stream represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
@@ -1223,6 +1222,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @implNote Unlike {@code getAvailableLocales()}, this method does
      * not create a defensive copy of the Locale array.
+     * @return A stream of installed locales.
      * @since 21
      */
     public static Stream<Locale> availableLocales() {
