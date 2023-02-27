@@ -40,8 +40,8 @@ import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.instruction.*;
 
 /**
- * CodeStackTracker is a {@link jdk.internal.classfile.CodeTransform} synchronously tracking
- * stack content and calculating max stack size.
+ * {@link CodeStackTracker} is a {@link CodeTransform} tracking stack content
+ * and calculating max stack size.
  * <p>
  * Sample use:
  * <p>
@@ -50,7 +50,7 @@ import jdk.internal.classfile.instruction.*;
  *     codeBuilder.transforming(stackTracker, trackedBuilder -> {
  *         trackedBuilder.aload(0);
  *         trackedBuilder.lconst_0();
- *         trackedBuilder.ifThen(...
+ *         trackedBuilder.ifThen(...);
  *         ...
  *         var stack = stackTracker.stack().get();
  *         int maxStack = stackTracker.maxStackSize().get();
@@ -60,9 +60,9 @@ import jdk.internal.classfile.instruction.*;
 public sealed interface CodeStackTracker extends CodeTransform {
 
     /**
-     * Creates new instance of CodeStackTracker initialized with provided stack items
+     * Creates new instance of {@link CodeStackTracker} initialized with provided stack items
      * @param initialStack initial stack content
-     * @return new instance of CodeStackTracker
+     * @return new instance of {@link CodeStackTracker}
      */
     static CodeStackTracker of(TypeKind... initialStack) {
         return new CodeStackTrackerImpl(initialStack);

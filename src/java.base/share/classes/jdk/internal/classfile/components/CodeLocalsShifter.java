@@ -40,7 +40,7 @@ import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.instruction.LocalVariableType;
 
 /**
- * CodeLocalsShifter is a {@link jdk.internal.classfile.CodeTransform} shifting locals to
+ * {@link CodeLocalsShifter} is a {@link CodeTransform} shifting locals to
  * newly allocated positions to avoid conflicts during code injection.
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
@@ -48,11 +48,11 @@ import jdk.internal.classfile.instruction.LocalVariableType;
 public sealed interface CodeLocalsShifter extends CodeTransform {
 
     /**
-     * Creates a new instance of CodeLocalsShifter
+     * Creates a new instance of {@link CodeLocalsShifter}
      * with fixed local slots calculated from provided method information
-     * @param methodFlags flags of the method to construct CodeLocalsShifter for
-     * @param methodDescriptor descriptor of the method to construct CodeLocalsShifter for
-     * @return new instance of CodeLocalsShifter
+     * @param methodFlags flags of the method to construct {@link CodeLocalsShifter} for
+     * @param methodDescriptor descriptor of the method to construct {@link CodeLocalsShifter} for
+     * @return new instance of {@link CodeLocalsShifter}
      */
     static CodeLocalsShifter of(AccessFlags methodFlags, MethodTypeDesc methodDescriptor) {
         int fixed = methodFlags.has(AccessFlag.STATIC) ? 0 : 1;
