@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
      int cpCacheIndex = index();
      if (cpCache == null) {
         return cpCacheIndex;
+     } else if (code() == Bytecodes._invokedynamic) {
+      return cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
      } else {
       return cpCache.getEntryAt((int) (0xFFFF & cpCacheIndex)).getConstantPoolIndex();
      }

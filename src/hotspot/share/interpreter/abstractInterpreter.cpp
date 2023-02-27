@@ -217,8 +217,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
     switch (code) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
-        int method_index = invoke_bc.get_index_u4(code);
-        return cpool->invokedynamic_cp_cache_entry_at(method_index)->is_f1_null();
+        int method_index = cpool->decode_invokedynamic_index(invoke_bc.get_index_u4(code));
+        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through
@@ -339,7 +339,8 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
+        int indy_index = method->constants()->decode_invokedynamic_index(index);
+        method->constants()->resolved_indy_entry_at(indy_index)->set_num_parameters(callee_parameters);
       }
       break;
     }

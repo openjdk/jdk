@@ -256,25 +256,11 @@ class ConstantPool : public Metadata {
   static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
   static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
 
-
-  // The invokedynamic points at a CP cache entry.  This entry points back
-  // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
-  // in the resolved_references array (which provides the appendix argument).
-  int invokedynamic_cp_cache_index(int indy_index) const {
-    assert(is_invokedynamic_index(indy_index), "should be a invokedynamic index");
-    int cache_index = decode_invokedynamic_index(indy_index);
-    return cache_index;
-  }
-  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry_at(int indy_index) const {
-    // decode index that invokedynamic points to.
-    int cp_cache_index = invokedynamic_cp_cache_index(indy_index);
-    return cache()->entry_at(cp_cache_index);
-  }
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
   int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return invokedynamic_cp_cache_entry_at(indy_index)->constant_pool_index();
+    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
   }
 
   // Assembly code support
@@ -927,6 +913,17 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
+
+  // ResolvedIndyEntry getters
+  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
+    return cache()->resolved_indy_entry_at(index);
+  }
+  int resolved_indy_entries_length() {
+    return cache()->resolved_indy_entries_length();
+  }
+  oop resolved_reference_from_indy(int index) {
+    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
+  }
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

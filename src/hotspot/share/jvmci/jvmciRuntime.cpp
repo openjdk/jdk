@@ -1874,13 +1874,9 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
                                                int index, Bytecodes::Code bc,
                                                InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
-    bool is_resolved = !cpce->is_f1_null();
-    if (is_resolved) {
-      // Get the invoker Method* from the constant pool.
-      // (The appendix argument, if any, will be noted in the method's signature.)
-      Method* adapter = cpce->f1_as_method();
-      return adapter;
+    int indy_index = cpool->decode_invokedynamic_index(index);
+    if (cpool->resolved_indy_entry_at(indy_index)->is_resolved()) {
+      return cpool->resolved_indy_entry_at(indy_index)->method();
     }
 
     return nullptr;

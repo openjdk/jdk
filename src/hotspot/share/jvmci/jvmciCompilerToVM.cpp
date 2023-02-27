@@ -633,8 +633,16 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   if (!(is_condy || is_indy)) {
     JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
   }
+  // Get the indy entry based on CP index
+  int indy_index = -1;
+  for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
+    tty->print_cr("Index: %d", cp->resolved_indy_entry_at(i)->constant_pool_index());
+    if (cp->resolved_indy_entry_at(i)->constant_pool_index() == index) {
+      indy_index = i;
+    }
+  }
   // Resolve the bootstrap specifier, its name, type, and static arguments
-  BootstrapInfo bootstrap_specifier(cp, index);
+  BootstrapInfo bootstrap_specifier(cp, index, indy_index);
   Handle bsm = bootstrap_specifier.resolve_bsm(CHECK_NULL);
 
   // call java.lang.invoke.MethodHandle::asFixedArity() -> MethodHandle
@@ -1462,8 +1470,7 @@ C2V_VMENTRY(void, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
   LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokedynamic, CHECK);
-  ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(cp, callInfo);
+  cp->cache()->set_dynamic_call(callInfo, index); // Index already decoded
 C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -1511,6 +1518,11 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     }
 
     return Bytecodes::_invokevirtual;
+  }
+  if (cp->is_invokedynamic_index(index)) {
+    if (cp->resolved_indy_entry_at(cp->decode_cpcache_index(index))->is_resolved()) {
+      return Bytecodes::_invokedynamic;
+    }
   }
   if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
     return Bytecodes::_invokedynamic;

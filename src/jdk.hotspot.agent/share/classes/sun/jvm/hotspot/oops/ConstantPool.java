@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     if (!uncached && getCache() != null) {
       if (isInvokedynamicIndex(which)) {
         // Invokedynamic index is index into resolved_references
-        int poolIndex = invokedynamicCPCacheEntryAt(which).getConstantPoolIndex();
+        int poolIndex = getCache().getIndyEntryAt(which).getConstantPoolIndex();
         poolIndex = invokeDynamicNameAndTypeRefIndexAt(poolIndex);
         Assert.that(getTagAt(poolIndex).isNameAndType(), "");
         return poolIndex;

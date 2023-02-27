@@ -28,6 +28,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
@@ -159,7 +160,7 @@ Method* Bytecode_invoke::static_target(TRAPS) {
 
 int Bytecode_member_ref::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
-  // at the same time it allocates per-call-site CP cache entries.
+  // at the same time it allocates per-call-site resolved indy entries.
   Bytecodes::Code rawc = code();
   if (has_index_u4(rawc))
     return get_index_u4(rawc);
@@ -168,12 +169,23 @@ int Bytecode_member_ref::index() const {
 }
 
 int Bytecode_member_ref::pool_index() const {
-  return cpcache_entry()->constant_pool_index();
+  if (invoke_code() == Bytecodes::_invokedynamic) {
+    return resolved_indy_entry()->constant_pool_index();
+  } else {
+    return cpcache_entry()->constant_pool_index();
+  }
 }
 
 ConstantPoolCacheEntry* Bytecode_member_ref::cpcache_entry() const {
   int index = this->index();
+  assert(invoke_code() != Bytecodes::_invokedynamic, "should not call this");
   return cpcache()->entry_at(ConstantPool::decode_cpcache_index(index, true));
+}
+
+ResolvedIndyEntry* Bytecode_member_ref::resolved_indy_entry() const {
+  int index = this->index();
+  assert(invoke_code() == Bytecodes::_invokedynamic, "should not call this");
+  return cpcache()->resolved_indy_entry_at(ConstantPool::decode_invokedynamic_index(index));
 }
 
 // Implementation of Bytecode_field
