@@ -191,22 +191,22 @@ public class Rational extends Number implements Comparable<Rational> {
     private final int signum;
 
     /**
-     * The integer part of the absolute value of this {@code Rational}.
+     * The integer part of the magnitude of this {@code Rational}.
      */
     private final BigInteger floor;
 
     /**
      * The least non-negative numerator necessary to represent the fractional part
-     * of this Rational.
+     * of the magnitude of this {@code Rational}.
      */
     private final BigInteger numerator;
 
     /**
      * The least positive denominator necessary to represent the fractional part of
-     * this Rational.
+     * the magnitude of this {@code Rational}.
      */
     private final BigInteger denominator;
-    
+
     /**
      * Used to store the canonical string representation, if computed.
      */
@@ -302,7 +302,6 @@ public class Rational extends Number implements Comparable<Rational> {
             this.denominator = BigInteger.ONE;
         } else {
             this.signum = sign;
-            
             if (exponent < 0) {
                 // Simplify even significands
                 int shift = Math.min(-exponent, Long.numberOfTrailingZeros(significand));
@@ -510,7 +509,7 @@ public class Rational extends Number implements Comparable<Rational> {
                             rem = true;
                         }
                     } while (!rem && nDivs3 < maxDivs3);
-                    
+
                     // compute the prefix according to removed powers of 3
                     final String prefix;
                     switch (nDivs3) {
@@ -539,7 +538,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 // multiply the denominator by (2^twoExp * 5^fiveExp)
                 den = den.shiftLeft(twoExp).multiply(bigFiveToThe(fiveExp.intValue()));
                 // now the fraction is simplified
-                
+
                 // handle 0.999... case, 0.(9) == 1
                 if (den.equals(BigInteger.ONE)) { // the fraction part is equal to 1, since num != 0
                     fl = fl.add(1);
@@ -560,7 +559,7 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         }
 
-        // set fields values
+        // set the fields values
         this.signum = fl.signum == 0 && num.signum == 0 ? 0 : (isneg ? -1 : 1);
         if (exp == 0) {
             this.floor = fl;
@@ -848,7 +847,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns the integer part of the absolute value of this {@code Rational}.
+     * Returns the integer part of the magnitude of this {@code Rational}.
      *
      * @return {@code floor(abs(this))}.
      */
@@ -857,7 +856,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns the difference between the absolute value of this {@code Rational}
+     * Returns the difference between the magnitude of this {@code Rational}
      * and {@code absFloor(this)}.
      *
      * @return {@code abs(this) - absFloor(this)}
@@ -868,7 +867,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Returns the least non-negative numerator necessary to represent the
-     * fractional part of this {@code Rational}.
+     * fractional part of the magnitude of this {@code Rational}.
      *
      * @return {@code min n == d * absFraction()} that is a
      *         non-negative integer, for some positive integer {@code d}.
@@ -881,7 +880,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Returns the least positive denominator necessary to represent the fractional
-     * part of this {@code Rational}.
+     * part of the magnitude of this {@code Rational}.
      *
      * @return {@code min d == n / absFraction()} that is a positive
      *         integer, for some non-negative integer {@code n}.
@@ -908,7 +907,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // carry propagation
         BigInteger remainder = resNum.subtract(resDen);
         if (remainder.signum >= 0) { // decimal part >= 1
-            resFloor = resFloor.add(BigInteger.ONE);
+            resFloor = resFloor.add(1);
             resNum = remainder;
         }
 
@@ -949,7 +948,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // borrow propagation
             if (resNum.signum == -1) { // decimal part < 0
                 // correct because abs(floor - augend.floor) >= 1
-                resFloor = resFloor.subtract(BigInteger.ONE);
+                resFloor = resFloor.add(-1);
                 resNum = resNum.add(resDen);
             }
         }
@@ -958,6 +957,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     // Arithmetic Operations
+
     /**
      * Returns a {@code Rational} whose value is {@code (this +
      * augend)}.
@@ -2409,7 +2409,7 @@ public class Rational extends Number implements Comparable<Rational> {
     public String toString() {
         if (stringCache != null)
             return stringCache;
-        
+
         final int radix = 10;
         int capacity = floor.numChars(radix);
         capacity += numerator.numChars(radix);
