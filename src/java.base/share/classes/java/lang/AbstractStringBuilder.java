@@ -1890,7 +1890,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             cs = "null";
         }
         int length = cs.length();
-        if (length == 1) {
+        if (length == 0) {
+            return this;
+        } else if (length == 1) {
             return repeat(cs.charAt(0), count);
         }
         int offset = this.count;
