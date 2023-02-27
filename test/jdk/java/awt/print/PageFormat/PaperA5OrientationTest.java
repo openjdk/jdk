@@ -183,7 +183,7 @@ public class PaperA5OrientationTest {
         g.fillOval(arrX + NN / 2 - r, y + h / 3 - r - 5, 2 * r, 2 * r);
 
         g.setColor(Color.RED);
-        g.setFont(g.getFont().deriveFont(Font.BOLD, 12.0f));
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 16.0f));
 
         int textX = x + w / 18;
         int textY = y + h / 3;
