@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
-  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + CollectedHeap::lab_alignment_reserve();
+  return align_object_size(MAX2(MinTLABSize / HeapWordSize, heap_word_size(oopDesc::base_offset_in_bytes()))) + CollectedHeap::lab_alignment_reserve();
 }
 
 size_t PLAB::max_size() {
@@ -54,8 +54,8 @@ void PLAB::startup_initialization() {
 }
 
 PLAB::PLAB(size_t desired_plab_sz_) :
-  _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
-  _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0), _undo_wasted(0)
+  _word_sz(desired_plab_sz_), _bottom(nullptr), _top(nullptr),
+  _end(nullptr), _hard_end(nullptr), _allocated(0), _wasted(0), _undo_wasted(0)
 {
   assert(min_size() > CollectedHeap::lab_alignment_reserve(),
          "Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "

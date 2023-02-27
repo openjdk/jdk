@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,11 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
+extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
 extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools.
-extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) parallel GC ops.
 extern Monitor* ConcurrentGCBreakpoints_lock;    // Protects concurrent GC breakpoint management
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
@@ -126,6 +126,7 @@ extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t 
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
+extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -194,7 +195,7 @@ class MutexLocker: public StackObj {
   MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -206,7 +207,7 @@ class MutexLocker: public StackObj {
   MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {
@@ -216,7 +217,7 @@ class MutexLocker: public StackObj {
   }
 
   ~MutexLocker() {
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       assert_lock_strong(_mutex);
       _mutex->unlock();
     }
@@ -227,7 +228,7 @@ class MutexLocker: public StackObj {
 
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
-// It also disallows NULL.
+// It also disallows null.
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
@@ -241,13 +242,13 @@ class MonitorLocker: public MutexLocker {
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != nullptr, "null monitor not allowed");
   }
 
   MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(thread, monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != nullptr, "null monitor not allowed");
   }
 
   bool wait(int64_t timeout = 0) {

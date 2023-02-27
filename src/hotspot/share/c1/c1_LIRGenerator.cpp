@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,7 +651,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
-                       oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
+                       heap_word_size(instanceOopDesc::base_offset_in_bytes()), instance_size, klass_reg, !klass->is_initialized(), slow_path);
   } else {
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, Runtime1::new_instance_id);
     __ branch(lir_cond_always, slow_path);
@@ -1714,7 +1714,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     null_check_info = new CodeEmitInfo(range_check_info);
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (use_length) {
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
       __ branch(lir_cond_belowEqual, new RangeCheckStub(range_check_info, index.result(), array.result()));
@@ -2003,7 +2003,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (StressLoopInvariantCodeMotion && range_check_info->deoptimize_on_exception()) {
       __ branch(lir_cond_always, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else if (use_length) {

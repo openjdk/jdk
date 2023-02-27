@@ -38,7 +38,7 @@ bool LocationPrinter::is_valid_obj(void* obj) {
   }
 
   // We need at least the mark and the klass word in the committed region.
-  if (!os::is_readable_range(obj, (HeapWord*)obj + oopDesc::header_size())) {
+  if (!os::is_readable_range(obj, (char*)obj + oopDesc::base_offset_in_bytes())) {
     return false;
   }
   if (!Universe::heap()->is_in(obj)) {

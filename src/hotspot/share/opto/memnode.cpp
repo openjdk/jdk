@@ -187,6 +187,8 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
           break;
         }
         result = proj_in->in(TypeFunc::Memory);
+      } else if (proj_in->is_top()) {
+        break; // dead code
       } else {
         assert(false, "unexpected projection");
       }
@@ -2093,7 +2095,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       // Note:  When interfaces are reliable, we can narrow the interface
       // test to (klass != Serializable && klass != Cloneable).
       assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
-      jint min_size = Klass::instance_layout_helper(oopDesc::header_size(), false);
+      jint min_size = Klass::instance_layout_helper(heap_word_size(instanceOopDesc::base_offset_in_bytes()), false);
       // The key property of this type is that it folds up tests
       // for array-ness, since it proves that the layout_helper is positive.
       // Thus, a generic value like the basic object layout helper works fine.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,8 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andr(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 0b11);
+  __ andr(obj, obj, ~JNIHandles::tag_mask);
   __ ldr(obj, Address(obj, 0));             // *obj
 }
 
@@ -299,3 +299,18 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bind(method_live);
 }
 
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andr(tmp1, obj, tmp2);
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+
+  // Compare tmp1 and tmp2.  We don't use a compare
+  // instruction here because the flags register is live.
+  __ eor(tmp1, tmp1, tmp2);
+  __ cbnz(tmp1, error);
+
+  // make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj); // get klass
+  __ cbz(obj, error);      // if klass is NULL it is broken
+}

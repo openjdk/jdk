@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,7 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   if (pointer_delta(end(), obj) >= size) {
     // successful thread-local allocation
 #ifdef ASSERT
-    // Skip mangling the space corresponding to the object header to
-    // ensure that the returned space is not considered parsable by
-    // any concurrent GC thread.
-    size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(obj + hdr_size, size - hdr_size, badHeapWordVal);
+    Copy::fill_to_words(obj, size, badHeapWordVal);
 #endif // ASSERT
     // This addition is safe because we know that top is
     // at least size below end, so the add can't wrap.
@@ -54,7 +50,7 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
     invariants();
     return obj;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {

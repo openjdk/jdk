@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   subptr(hdr, rsp);
-  andptr(hdr, aligned_mask - os::vm_page_size());
+  andptr(hdr, aligned_mask - (int)os::vm_page_size());
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
   movptr(Address(disp_hdr, 0), hdr);

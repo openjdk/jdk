@@ -107,12 +107,12 @@ class arrayOopDesc : public oopDesc {
 
   template <typename T>
   static T* obj_offset_to_raw(arrayOop obj, size_t offset_in_bytes, T* raw) {
-    if (obj != NULL) {
-      assert(raw == NULL, "either raw or in-heap");
+    if (obj != nullptr) {
+      assert(raw == nullptr, "either raw or in-heap");
       char* base = reinterpret_cast<char*>((void*) obj);
       raw = reinterpret_cast<T*>(base + offset_in_bytes);
     } else {
-      assert(raw != NULL, "either raw or in-heap");
+      assert(raw != nullptr, "either raw or in-heap");
     }
     return raw;
   }

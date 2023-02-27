@@ -108,7 +108,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // significant 2 bits cleared and page_size is a power of 2
   mov(rscratch1, sp);
   sub(hdr, hdr, rscratch1);
-  ands(hdr, hdr, aligned_mask - os::vm_page_size());
+  ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
   str(hdr, Address(disp_hdr, 0));
@@ -229,7 +229,8 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
+  // TODO: Initialization code should deal with int-aligned header size, and skip the klass-gap clearing.
+  const int hdr_size_in_bytes = align_up(instanceOopDesc::base_offset_in_bytes(), HeapWordSize);
 
   initialize_header(obj, klass, noreg, t1, t2);
 

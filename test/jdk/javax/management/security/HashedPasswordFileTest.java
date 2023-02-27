@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,12 @@ public class HashedPasswordFileTest {
         return cs.getAddress();
     }
 
+    private void stopServerSide() throws IOException {
+        if (cs != null) {
+            cs.stop();
+        }
+    }
+
     @Test
     public void testClearTextPasswordFile() throws IOException {
         Boolean[] bvals = new Boolean[]{true, false};
@@ -217,7 +223,7 @@ public class HashedPasswordFileTest {
                 }
                 Assert.assertEquals(isPasswordFileHashed(), bval);
             } finally {
-                cs.stop();
+                stopServerSide();
             }
         }
     }
@@ -241,7 +247,7 @@ public class HashedPasswordFileTest {
                 }
                 Assert.assertEquals(isPasswordFileHashed(), false);
             } finally {
-                cs.stop();
+                stopServerSide();
             }
         }
     }
@@ -263,7 +269,7 @@ public class HashedPasswordFileTest {
                     }
                 }
             } finally {
-                cs.stop();
+                stopServerSide();
             }
         }
     }
@@ -400,7 +406,7 @@ public class HashedPasswordFileTest {
                 }
             }
         } finally {
-            cs.stop();
+            stopServerSide();
         }
     }
 

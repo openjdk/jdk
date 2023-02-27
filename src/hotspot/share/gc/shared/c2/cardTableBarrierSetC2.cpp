@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
   // Get base of card map
   CardTable::CardValue* card_table_base = ci_card_table_address();
-   if (card_table_base != NULL) {
+   if (card_table_base != nullptr) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base));
    } else {
      return kit->null();
@@ -58,8 +58,8 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
                                          Node* val,
                                          BasicType bt,
                                          bool use_precise) const {
-  // No store check needed if we're storing a NULL.
-  if (val != NULL && val->is_Con()) {
+  // No store check needed if we're storing a null.
+  if (val != nullptr && val->is_Con()) {
     const Type* t = val->bottom_type();
     if (t == TypePtr::NULL_PTR || t == Type::TOP) {
       return;
@@ -83,7 +83,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // Else it's an array (or unknown), and we want more precise card marks.
   }
 
-  assert(adr != NULL, "");
+  assert(adr != nullptr, "");
 
   IdealKit ideal(kit, true);
 
@@ -136,8 +136,8 @@ void CardTableBarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* siz
     // Put in store barrier for any and all oops we are sticking
     // into this object.  (We could avoid this if we could prove
     // that the object type contains no oop fields at all.)
-    Node* no_particular_value = NULL;
-    Node* no_particular_field = NULL;
+    Node* no_particular_value = nullptr;
+    Node* no_particular_field = nullptr;
     int raw_adr_idx = Compile::AliasIdxRaw;
     post_barrier(kit, kit->control(),
                  kit->memory(raw_adr_type),

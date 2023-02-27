@@ -67,7 +67,7 @@ protected:
   virtual oop initialize(HeapWord* mem) const = 0;
 
   // This function clears the memory of the object.
-  void mem_clear(HeapWord* mem) const;
+  void mem_clear(HeapWord* mem, size_t header_size_bytes) const;
 
   // This finish constructing an oop by installing the mark word and the Klass* pointer
   // last. At the point when the Klass pointer is initialized, this is a constructed object
@@ -78,7 +78,7 @@ protected:
   // back to calling CollectedHeap::mem_allocate().
   HeapWord* mem_allocate(Allocation& allocation) const;
 
-  virtual MemRegion obj_memory_range(oop obj) const {
+  MemRegion obj_memory_range(oop obj) const {
     return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
   }
 
@@ -99,8 +99,6 @@ class ObjArrayAllocator: public MemAllocator {
 protected:
   const int  _length;
   const bool _do_zero;
-
-  virtual MemRegion obj_memory_range(oop obj) const;
 
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
