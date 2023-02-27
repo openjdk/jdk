@@ -80,9 +80,9 @@ public class ExhaustingTests {
             new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh,  DEFAULT_SHIFT),
             new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh,  DEFAULT_SHIFT),
 
-         // new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
-         // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
-         // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
+            new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
+            // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
+            // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
 
             new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
             new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
