@@ -1021,6 +1021,22 @@ JVM_ENTRY(jint, jmm_GetLongAttributes(JNIEnv *env,
   return num_atts;
 JVM_END
 
+// returns true if the JavaThread's Java object is a platform thread
+static bool is_platform_thread(JavaThread* jt) {
+  if (jt != nullptr) {
+    oop thread_obj = jt->threadObj();
+    return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
+  } else {
+    return false;
+  }
+}
+
+// returns true if the ThreadSnapshot's Java object is a platform thread
+static bool is_platform_thread(ThreadSnapshot* ts) {
+  oop thread_obj = ts->threadObj();
+  return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
+}
+
 // Helper function to do thread dump for a specific list of threads
 static void do_thread_dump(ThreadDumpResult* dump_result,
                            typeArrayHandle ids_ah,  // array of thread ID (long[])
@@ -1044,7 +1060,7 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);
       JavaThread* jt = tlh.list()->find_JavaThread_from_java_tid(tid);
-      oop thread_obj = (jt != nullptr ? jt->threadObj() : (oop)nullptr);
+      oop thread_obj = is_platform_thread(jt) ? jt->threadObj() : (oop)nullptr;
       instanceHandle threadObj_h(THREAD, (instanceOop) thread_obj);
       thread_handle_array->append(threadObj_h);
     }
@@ -1145,8 +1161,8 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
     // For each thread, create an java/lang/management/ThreadInfo object
     // and fill with the thread information
 
-    if (ts->threadObj() == nullptr) {
-     // if the thread does not exist or now it is terminated, set threadinfo to null
+    if (!is_platform_thread(ts)) {
+      // if the thread does not exist, has terminated, or is a virtual thread, then set threadinfo to null
       infoArray_h->obj_at_put(index, nullptr);
       continue;
     }
@@ -1211,8 +1227,8 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
 
   int index = 0;
   for (ThreadSnapshot* ts = dump_result.snapshots(); ts != nullptr; ts = ts->next(), index++) {
-    if (ts->threadObj() == nullptr) {
-     // if the thread does not exist or now it is terminated, set threadinfo to null
+    if (!is_platform_thread(ts)) {
+      // if the thread does not exist, has terminated, or is a virtual thread, then set threadinfo to null
       result_h->obj_at_put(index, nullptr);
       continue;
     }
@@ -1408,7 +1424,7 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTime(JNIEnv *env, jlong thread_id))
   } else {
     ThreadsListHandle tlh;
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
-    if (java_thread != nullptr) {
+    if (is_platform_thread(java_thread)) {
       return os::thread_cpu_time((Thread*) java_thread);
     }
   }
@@ -2101,8 +2117,7 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
 
   ThreadsListHandle tlh;
   JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
-
-  if (java_thread != nullptr) {
+  if (is_platform_thread(java_thread)) {
     return java_thread->cooked_allocated_bytes();
   }
   return -1;
@@ -2141,7 +2156,7 @@ JVM_ENTRY(void, jmm_GetThreadAllocatedMemory(JNIEnv *env, jlongArray ids,
   ThreadsListHandle tlh;
   for (int i = 0; i < num_threads; i++) {
     JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(ids_ah->long_at(i));
-    if (java_thread != nullptr) {
+    if (is_platform_thread(java_thread)) {
       sizeArray_h->long_at_put(i, java_thread->cooked_allocated_bytes());
     }
   }
@@ -2169,11 +2184,8 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
   } else {
     ThreadsListHandle tlh;
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
-    if (java_thread != nullptr) {
-      oop thread_obj = java_thread->threadObj();
-      if (thread_obj != nullptr && !thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-        return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
-      }
+    if (is_platform_thread(java_thread)) {
+      return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
     }
   }
   return -1;
@@ -2215,7 +2227,7 @@ JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
   ThreadsListHandle tlh;
   for (int i = 0; i < num_threads; i++) {
     JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(ids_ah->long_at(i));
-    if (java_thread != nullptr) {
+    if (is_platform_thread(java_thread)) {
       timeArray_h->long_at_put(i, os::thread_cpu_time((Thread*)java_thread,
                                                       user_sys_cpu_time != 0));
     }

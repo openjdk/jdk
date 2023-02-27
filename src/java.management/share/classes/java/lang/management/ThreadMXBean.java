@@ -526,10 +526,11 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Tests if the Java virtual machine implementation supports CPU time
-     * measurement for any thread.
+     * measurement for any platform thread.
      * A Java virtual machine implementation that supports CPU time
-     * measurement for any thread will also support CPU time
-     * measurement for the current thread.
+     * measurement for any platform thread will also support CPU time
+     * measurement for the current thread, when the current thread is a
+     * platform thread.
      *
      * @return
      *   {@code true}
@@ -543,7 +544,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Tests if the Java virtual machine supports CPU time
      * measurement for the current thread.
      * This method returns {@code true} if {@link #isThreadCpuTimeSupported}
-     * returns {@code true}.
+     * returns {@code true} and the current thread is a platform thread.
      *
      * @return
      *   {@code true}
