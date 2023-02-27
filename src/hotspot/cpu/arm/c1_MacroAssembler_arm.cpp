@@ -163,7 +163,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
 
 void C1_MacroAssembler::allocate_array(Register obj, Register len,
                                        Register tmp1, Register tmp2, Register tmp3,
-                                       int header_size_in_bytes, int element_size,
+                                       int base_offset_in_bytes, int element_size,
                                        Register klass, Label& slow_case) {
   assert_different_registers(obj, len, tmp1, tmp2, tmp3, klass, Rtemp);
   const int scale_shift = exact_log2(element_size);
@@ -172,11 +172,11 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len,
   cmp_32(len, max_array_allocation_length);
   b(slow_case, hs);
 
-  bool align_header = ((header_size_in_bytes | element_size) & MinObjAlignmentInBytesMask) != 0;
-  assert(align_header || ((header_size_in_bytes & MinObjAlignmentInBytesMask) == 0), "must be");
+  bool align_header = ((base_offset_in_bytes | element_size) & MinObjAlignmentInBytesMask) != 0;
+  assert(align_header || ((base_offset_in_bytes & MinObjAlignmentInBytesMask) == 0), "must be");
   assert(align_header || ((element_size & MinObjAlignmentInBytesMask) == 0), "must be");
 
-  mov(obj_size, header_size_in_bytes + (align_header ? (MinObjAlignmentInBytes - 1) : 0));
+  mov(obj_size, base_offset_in_bytes + (align_header ? (MinObjAlignmentInBytes - 1) : 0));
   add_ptr_scaled_int32(obj_size, obj_size, len, scale_shift);
 
   if (align_header) {
@@ -184,7 +184,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len,
   }
 
   try_allocate(obj, tmp1, tmp2, tmp3, obj_size, slow_case);
-  initialize_object(obj, tmp1, klass, len, tmp2, tmp3, header_size_in_bytes, -1, /* is_tlab_allocated */ UseTLAB);
+  initialize_object(obj, tmp1, klass, len, tmp2, tmp3, base_offset_in_bytes, -1, /* is_tlab_allocated */ UseTLAB);
 }
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {

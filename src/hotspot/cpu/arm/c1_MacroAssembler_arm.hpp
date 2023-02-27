@@ -52,7 +52,7 @@
 
   void allocate_array(Register obj, Register len,
                       Register tmp1, Register tmp2, Register tmp3,
-                      int header_size, int element_size,
+                      int base_offset_in_bytes, int element_size,
                       Register klass, Label& slow_case);
 
   enum {
