@@ -2432,9 +2432,8 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_default_vtable_indices);
   }
 
-  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
-  // it->push(&_fields, MetaspaceClosure::_writable);
-  it->push(&_fieldinfo_stream, MetaspaceClosure::_writable);
+  it->push(&_fieldinfo_stream);
+  // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {

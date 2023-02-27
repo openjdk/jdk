@@ -26,9 +26,6 @@ package sun.jvm.hotspot.oops;
 
 import java.io.*;
 import java.util.*;
-
-import javax.swing.plaf.basic.BasicBorders.FieldBorder;
-
 import sun.jvm.hotspot.classfile.ClassLoaderData;
 import sun.jvm.hotspot.code.CompressedReadStream;
 import sun.jvm.hotspot.debugger.*;
@@ -38,7 +35,6 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
-
 
 // An InstanceKlass is the VM level representation of a Java class.
 
@@ -50,17 +46,6 @@ public class InstanceKlass extends Klass {
         }
       });
   }
-
-  // field offset constants
-  private static int ACCESS_FLAGS_OFFSET;
-  private static int NAME_INDEX_OFFSET;
-  private static int SIGNATURE_INDEX_OFFSET;
-  private static int INITVAL_INDEX_OFFSET;
-  private static int LOW_OFFSET;
-  private static int HIGH_OFFSET;
-  private static int FIELD_SLOTS;
-  private static short FIELDINFO_TAG_SIZE;
-  private static short FIELDINFO_TAG_OFFSET;
 
   // internal field flags constants
   static int FIELD_FLAG_IS_INITIALIZED;
@@ -150,7 +135,7 @@ public class InstanceKlass extends Klass {
   private static AddressField  methodOrdering;
   private static AddressField  localInterfaces;
   private static AddressField  transitiveInterfaces;
-  private static AddressField fieldinfoStream;
+  private static AddressField  fieldinfoStream;
   private static MetadataField constants;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
@@ -273,7 +258,7 @@ public class InstanceKlass extends Klass {
 
   private Field[] fieldCache;
 
-  private Field getField(int index) {
+  Field getField(int index) {
     if (fieldCache == null) {
       fieldCache = Field.getFields(this);
     }
@@ -602,7 +587,6 @@ public class InstanceKlass extends Klass {
   }
 
   public Field[] getStaticFields() {
-    // U2Array fields = getFields();
     int length = getJavaFieldsCount();
     ArrayList<Field> result = new ArrayList<>();
     for (int index = 0; index < length; index++) {

@@ -42,7 +42,21 @@ public class Field {
   /** Constructor for fields that are named in an InstanceKlass's
       fields array (i.e., named, non-VM fields) */
   Field(InstanceKlass holder, int fieldIndex) {
-    this(holder, fieldIndex, getFieldInfoValues(new CompressedReadStream(holder.getFieldInfoStream().getDataStart()), fieldIndex));
+    Field field = holder.getField(fieldIndex);
+    this.holder = holder;
+    this.fieldIndex = fieldIndex;
+    this.values = field.values;
+    offset = values.offset;
+
+    name = holder.getSymbolFromIndex(values.nameIndex, isInjected());
+    signature = holder.getSymbolFromIndex(values.signatureIndex, isInjected());
+    id          = new NamedFieldIdentifier(name.asString());
+    fieldType   = new FieldType(signature);
+    accessFlags = new AccessFlags(values.accessFlags);
+
+    if (isGeneric()) {
+      genericSignature = holder.getSymbolFromIndex(values.genericSignatureIndex, isInjected());
+    }
   }
 
   private Field(InstanceKlass holder, int fieldIndex, FieldInfoValues values) {
@@ -53,7 +67,6 @@ public class Field {
 
     name = holder.getSymbolFromIndex(values.nameIndex, isInjected());
     signature = holder.getSymbolFromIndex(values.signatureIndex, isInjected());
-    offset = values.offset;
     id          = new NamedFieldIdentifier(name.asString());
     fieldType   = new FieldType(signature);
     accessFlags = new AccessFlags(values.accessFlags);

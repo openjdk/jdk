@@ -1682,22 +1682,28 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.h3("Fields");
          buf.beginList();
          for (int f = 0; f < numFields; f++) {
+           sun.jvm.hotspot.oops.Field field = fields[f];
+           String f_name = field.getName().asString();
+           Symbol f_sig = field.getSignature();
+           Symbol f_genSig = field.getGenericSignature();
+           AccessFlags acc = field.getAccessFlagsObj();
+
            buf.beginListItem();
-           buf.append(genFieldModifierString(fields[f].getAccessFlagsObj()));
+           buf.append(genFieldModifierString(acc));
            buf.append(' ');
            Formatter sigBuf = new Formatter(genHTML);
-           new SignatureConverter(fields[f].getSignature(), sigBuf.getBuffer()).dispatchField();
+           new SignatureConverter(f_sig, sigBuf.getBuffer()).dispatchField();
            buf.append(sigBuf.toString().replace('/', '.'));
            buf.append(' ');
-           buf.append(fields[f].getName().asString());
+           buf.append(f_name);
            buf.append(';');
            // is it generic?
-           if (fields[f].isGeneric()) {
+           if (field.isGeneric()) {
               buf.append(" [signature ");
-              buf.append(escapeHTMLSpecialChars(fields[f].getGenericSignature().asString()));
+              buf.append(escapeHTMLSpecialChars(f_genSig.asString()));
               buf.append("] ");
            }
-           buf.append(" (offset = " + fields[f].getOffset() + ")");
+           buf.append(" (offset = " + field.getOffset() + ")");
            buf.endListItem();
          }
          buf.endList();

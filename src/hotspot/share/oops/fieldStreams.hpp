@@ -49,7 +49,8 @@ class FieldStreamBase : public StackObj {
   fieldDescriptor     _fd_buf;
 
   FieldInfo const * field() const {
-    return &_fi_buf;  // do we need to check if _fi_buf is valid?
+    assert(!done(), "no more fields");
+    return &_fi_buf;
   }
 
   inline FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit);
