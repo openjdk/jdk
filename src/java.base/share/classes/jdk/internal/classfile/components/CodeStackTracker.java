@@ -74,7 +74,7 @@ public sealed interface CodeStackTracker extends CodeTransform {
       * (right after {@code xRETURN, ATHROW, GOTO, GOTO_W, LOOKUPSWITCH, TABLESWITCH} instructions).
       *
       * Temporary unknown stack content can be recovered by binding of a {@linkplain Label} used as
-      * target of a branch instruction from existing code with known Stack (forward branch target),
+      * target of a branch instruction from existing code with known stack (forward branch target),
       * or by binding of a {@linkplain Label} defining an exception handler (exception handler code start).
       *
       * @return actual stack content, or an empty {@linkplain Optional} if unknown
