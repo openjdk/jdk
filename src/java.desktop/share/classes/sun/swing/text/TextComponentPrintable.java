@@ -47,7 +47,15 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.CellRendererPane;
+import javax.swing.JEditorPane;
+import javax.swing.JPasswordField;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.BadLocationException;
