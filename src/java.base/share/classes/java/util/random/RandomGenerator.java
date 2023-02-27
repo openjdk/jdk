@@ -253,7 +253,7 @@ public interface RandomGenerator {
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
 
-    private DoubleStream equiSpatialDoubles(double left, double right,
+    private DoubleStream equiDoubles(double left, double right,
             boolean isLeftClosed, boolean isRightOpen) {
         /*
          * Inspired by
@@ -395,7 +395,7 @@ public interface RandomGenerator {
                 bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("the interval must not be empty");
         }
-        return equiSpatialDoubles(origin, bound, true, true);
+        return equiDoubles(origin, bound, true, true);
     }
 
     /**
@@ -427,7 +427,7 @@ public interface RandomGenerator {
                 bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("the interval must not be empty");
         }
-        return equiSpatialDoubles(origin, bound, true, false);
+        return equiDoubles(origin, bound, true, false);
     }
 
     /**
@@ -459,7 +459,7 @@ public interface RandomGenerator {
                 bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("the interval must not be empty");
         }
-        return equiSpatialDoubles(origin, bound, false, true);
+        return equiDoubles(origin, bound, false, true);
     }
 
     /**
@@ -491,7 +491,7 @@ public interface RandomGenerator {
                 bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("the interval must not be empty");
         }
-        return equiSpatialDoubles(origin, bound, false, false);
+        return equiDoubles(origin, bound, false, false);
     }
 
     /**
