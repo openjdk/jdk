@@ -177,9 +177,7 @@ class CharacterDataLatin1 extends CharacterData {
      * @return true if the two bytes are considered equals ignoring case in latin1
      */
      static boolean equalsIgnoreCase(byte b1, byte b2) {
-         if (b1 == b2) {
-             return true;
-         }
+         assert b1 != b2; // Checked by callers
          // ASCII and Latin-1 were designed to optimize case-twiddling operations
          int upper = b1 & 0xDF;
          if (upper < 'A') {

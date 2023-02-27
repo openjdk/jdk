@@ -386,7 +386,7 @@ final class StringLatin1 {
         while (toffset < last) {
             byte b1 = value[toffset++];
             byte b2 = other[ooffset++];
-            if (CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
+            if (b1 == b2 || CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
                 continue;
             }
             return false;
@@ -398,14 +398,12 @@ final class StringLatin1 {
                                                 byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
-            int lat = value[toffset++] & 0xff;
+            byte latb = value[toffset++];
             int utf = StringUTF16.getChar(other, ooffset++);
-            if (lat == utf) {
-                continue;
-            }
             // Fast path if both code points are latin1
             if (utf <= 0xFF) {
-                if (CharacterDataLatin1.equalsIgnoreCase((byte) lat, (byte) utf)) {
+                byte utfb = (byte) utf;
+                if (latb == utfb || CharacterDataLatin1.equalsIgnoreCase(latb, utfb)) {
                     continue; // Equals ignoring case
                 } else {
                     return false;
@@ -414,7 +412,7 @@ final class StringLatin1 {
             // If utf case folds into latin1, we compare lowercases
             int lat1CaseFold = CharacterData.latin1CaseFold(utf);
             if (lat1CaseFold != -1) {
-                int latLow = CharacterDataLatin1.instance.toLowerCase(lat);
+                int latLow = CharacterDataLatin1.instance.toLowerCase(latb);
                 if (latLow == lat1CaseFold) {
                     continue; // Equals ignoring case
                 } else {
