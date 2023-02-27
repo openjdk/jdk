@@ -646,6 +646,7 @@ public final class DirectCodeBuilder
         else if (context instanceof CodeAttribute parent) {
             if (parentMap == null)
                 parentMap = new IdentityHashMap<>();
+            //critical JDK bootstrap path, cannot use lambda here
             int[] table = parentMap.computeIfAbsent(parent, new Function<CodeAttribute, int[]>() {
                 @Override
                 public int[] apply(CodeAttribute x) {
