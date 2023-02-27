@@ -5109,11 +5109,6 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
   resolve_oop_handle(mirror, tmp);
 }
 
-void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
-  load_method_holder(rresult, rmethod);
-  movptr(rresult, Address(rresult, InstanceKlass::class_loader_data_offset()));
-}
-
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   movptr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   movptr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*

@@ -4241,11 +4241,6 @@ void MacroAssembler::cmpoop(Register obj1, Register obj2) {
   cmp(obj1, obj2);
 }
 
-void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
-  load_method_holder(rresult, rmethod);
-  ldr(rresult, Address(rresult, InstanceKlass::class_loader_data_offset()));
-}
-
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*

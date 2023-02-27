@@ -3264,11 +3264,6 @@ void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   beq(src1, t0, equal);
 }
 
-void MacroAssembler::load_method_holder_cld(Register result, Register method) {
-  load_method_holder(result, method);
-  ld(result, Address(result, InstanceKlass::class_loader_data_offset()));
-}
-
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*

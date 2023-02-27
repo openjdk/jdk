@@ -838,7 +838,6 @@ public:
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
 
-  void load_method_holder_cld(Register rresult, Register rmethod);
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
