@@ -38,13 +38,11 @@ import java.io.File;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
@@ -144,26 +142,32 @@ public class SSLSocketParametersTest implements Serializable {
                 throw new RuntimeException("Test completed without throwing an expected exception.");
             }
 
-        } catch (IOException | IllegalArgumentException exc) {
+        } catch (IOException exc) {
             if (!expectException) {
                 throw new RuntimeException("An error occurred during test execution", exc);
             } else {
                 System.out.println("Caught expected exception: " + exc);
             }
 
-        } finally {
-            if (server != null) {
-                try {
-                    UnicastRemoteObject.unexportObject(server, true);
-                } catch (NoSuchObjectException e) {
-                    throw new RuntimeException("Could not un-export the server object",
-                            e);
-                }
+        }
+    }
+
+    private static void testServerFactory(String[] cipherSuites, String[] protocol, String expectedMessage) throws Exception {
+        try {
+            new ServerFactory(SSLContext.getDefault(),
+                    cipherSuites, protocol, false);
+            throw new RuntimeException(
+                    "The expected exception for "+ expectedMessage + " was not thrown.");
+        } catch (IllegalArgumentException exc) {
+            // expecting an exception with a specific message
+            // anything else is an error
+            if (!exc.getMessage().toLowerCase().contains(expectedMessage)) {
+                throw exc;
             }
         }
     }
 
-    public void runTest(int testNumber) {
+    public void runTest(int testNumber) throws Exception {
         System.out.println("Running test " + testNumber);
 
         switch (testNumber) {
@@ -203,23 +207,6 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    private static void testServerFactory(String[] cipherSuites, String[] protocol, String expectedMessage) {
-        try {
-            new ServerFactory(SSLContext.getDefault(),
-                    cipherSuites, protocol, false);
-            throw new RuntimeException(
-                    "The expected exception for "+ expectedMessage + " was not thrown.");
-        } catch (NoSuchAlgorithmException exc) {
-            throw new RuntimeException("Could not create SSLContext.", exc);
-        } catch (IllegalArgumentException exc) {
-            // expecting the exception for unsupported ciphersuite,
-            // anything else is an error
-            if (!exc.getMessage().toLowerCase().contains(expectedMessage)) {
-                throw exc;
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         // Set keystore properties (server-side)
         //
@@ -237,15 +224,7 @@ public class SSLSocketParametersTest implements Serializable {
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.trustStorePassword", "trustword");
 
-        try {
-            SSLSocketParametersTest test = new SSLSocketParametersTest();
-            test.runTest(Integer.parseInt(args[0]));
-        } catch (Exception exc) {
-            // an exception may be thrown trying to unexport RMI object
-            // in which case we want to explicitly call System.exit to
-            // make sure the JVM exits.
-            exc.printStackTrace(System.err);
-            System.exit(1);
-        }
+        SSLSocketParametersTest test = new SSLSocketParametersTest();
+        test.runTest(Integer.parseInt(args[0]));
     }
 }
