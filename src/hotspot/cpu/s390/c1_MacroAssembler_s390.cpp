@@ -300,7 +300,7 @@ void C1_MacroAssembler::allocate_array(
     default: ShouldNotReachHere();
   }
   add2reg(arr_size, base_offset_in_bytes + MinObjAlignmentInBytesMask); // Add space for header & alignment.
-  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);            // Align array size.
+  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);             // Align array size.
 
   try_allocate(obj, arr_size, 0, t1, slow_case);
 
