@@ -47,7 +47,7 @@ class G1FullGCResetMetadataTask : public G1FullGCTask {
     G1ResetMetadataClosure(G1FullCollector* collector);
 
     bool do_heap_region(HeapRegion* hr);
-  };  
+  };
 
 public:
   G1FullGCResetMetadataTask(G1FullCollector* collector) :
