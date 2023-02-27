@@ -3533,14 +3533,10 @@ static void hook_memory_on_init(GraphKit& kit, int alias_idx,
   init_in_merge->set_memory_at(alias_idx, prevmem);
   kit.set_memory(init_out_raw, alias_idx);
 }
-
-//---------------------------set_output_for_allocation-------------------------
-Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
+Node* GraphKit::set_output_for_allocation_common(AllocateNode* alloc,
                                           const TypeOopPtr* oop_type,
                                           bool deoptimize_on_exception) {
   int rawidx = Compile::AliasIdxRaw;
-  alloc->set_req( TypeFunc::FramePtr, frameptr() );
-  add_safepoint_edges(alloc);
   Node* allocx = _gvn.transform(alloc);
   set_control( _gvn.transform(new ProjNode(allocx, TypeFunc::Control) ) );
   // create memory projection for i_o
@@ -3619,6 +3615,43 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   return javaoop;
 }
 
+//---------------------------set_output_for_allocation-------------------------
+Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
+                                          const TypeOopPtr* oop_type,
+                                          bool deoptimize_on_exception) {
+  alloc->set_req( TypeFunc::FramePtr, frameptr() );
+  add_safepoint_edges(alloc);
+  return set_output_for_allocation_common(alloc, oop_type, deoptimize_on_exception);
+}
+
+
+Node* GraphKit::materialize_object(AllocateNode* alloc, const TypeOopPtr* oop_type) {
+  Node *mem = reset_memory();
+  set_all_memory(mem); // Create new memory state
+  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), control(), mem, i_o(),
+                                           alloc->in(AllocateNode::AllocSize),
+                                           alloc->in(AllocateNode::KlassNode),
+                                           alloc->in(AllocateNode::InitialTest));
+
+  allocx->set_req(TypeFunc::FramePtr, frameptr());
+
+  JVMState* out_jvms = alloc->jvms()->clone_deep(C);
+  allocx->set_jvms(out_jvms);
+  // same safepoint as original alloc
+  for (uint i=allocx->req(); i < alloc->req(); ++i) {
+    allocx->add_req(alloc->in(i));
+  }
+
+  while (out_jvms != nullptr) {
+    out_jvms->set_map(allocx);
+    out_jvms = out_jvms->caller();
+  }
+  int saved_bci = bci();
+  set_bci(alloc->jvms()->bci()); // reset to bytecode new because uncommon_trap checks bc() and sp
+  Node* objx = set_output_for_allocation_common(allocx, oop_type, true /*deoptimize_on_ex*/);
+  set_bci(saved_bci);
+  return objx;
+}
 //---------------------------new_instance--------------------------------------
 // This routine takes a klass_node which may be constant (for a static type)
 // or may be non-constant (for reflective code).  It will work equally well

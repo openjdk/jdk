@@ -850,10 +850,17 @@ class GraphKit : public Phase {
   Node* subtype_check_receiver(Node* receiver, ciKlass* klass,
                                Node** casted_receiver);
 
+  Node* set_output_for_allocation_common(AllocateNode* alloc,
+                                  const TypeOopPtr* oop_type,
+                                  bool deoptimize_on_exception);
+
   // implementation of object creation
   Node* set_output_for_allocation(AllocateNode* alloc,
                                   const TypeOopPtr* oop_type,
                                   bool deoptimize_on_exception=false);
+
+  Node* materialize_object(AllocateNode* alloc, const TypeOopPtr* oop_type);
+
   Node* get_layout_helper(Node* klass_node, jint& constant_value);
   Node* new_instance(Node* klass_node,
                      Node* slow_test = NULL,

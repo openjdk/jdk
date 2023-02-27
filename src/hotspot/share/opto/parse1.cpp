@@ -1781,7 +1781,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     // Update all the non-control inputs to map:
     assert(TypeFunc::Parms == newin->jvms()->locoff(), "parser map should contain only youngest jvms");
     bool check_elide_phi = target->is_SEL_backedge(save_block);
-    // from right to left, we update I_O and memory last because PEA materialization may change them.
+    // from right to left, we update ctrl, I_O and memory til the last minute
+    // because PEA materialization may change them.
     for (uint j = newin->req()-1; j >= 1; --j) {
       Node* m = map()->in(j);   // Current state of target.
       Node* n = newin->in(j);   // Incoming change to target state.
@@ -1829,10 +1830,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                     if (!pred_os->is_virtual()) {
                       // materialize 'm' because it has been materialized in save_block.
                       assert(pred_os->get_materialized_value() == n, "sanity: materialized value in save_block is n");
-                      SafePointNode* map = block()->from_block()->start_map();
-                      // object materialization takes place in from_block. It is the initial block that the current block(target) merged.
-                      // from block isn't save_block! see Block::record_state().
-                      Node* mv = ensure_object_materialized(m, map->jvms()->alloc_state(), map, r, block()->init_pnum());
+                      as.add_alias(id, m);
+                      Node* mv = ensure_object_materialized(m, as, map(), r, block()->init_pnum());
                       phi->replace_edge(m, mv);
                       as.update(id, new EscapedState(phi));
                     } else {
@@ -2174,16 +2173,50 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
   return phi;
 }
 
+// Passive Materialization
+// ------------------------
+// C2 has to materialize a virtual object at the merging point because the object has been materialized in
+// any other predecessor. For instance:
+//
+// obj(virtual)     obj(materialized)
+//              \      /
+// Reion(,c1,c2) |    |
+//      \        |    |
+//       \c      |    |
+//   o3 = Phi   (o1, o2)
+//
+// Node* var is o1;
+// r[pnum] is c1;
+//
+// There are 2 cases:
+// 1) materialize m from map().
+// 2) materialize n from newin.
+// so from_map is either from current map or newin of merge_common().
+// for case 1, the control of from_map is Region, so we need to adjust it to c1.
+//
+// Regarding compile-time state, We also need to consider ABIO(in(1)) and Memory(in(2)) of from_map.
+// we reverse the iteration order in merge_common(). For the time being, we haven't merged ABIO and Memory yet.
+// I.e. we use (Ctrl, ABIO, Memory) of from_map before merging.
+//
 Node* Parse::ensure_object_materialized(Node* var, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
-  assert(map() != from_map, "should be different");
-
   GraphKit kit(from_map->jvms());
-  kit.set_control(r->in(pnum));
-  EscapedState* es = state.materialize(&kit, var, from_map);
-  add_exception_states_from(kit.transfer_exceptions_into_jvms());
+  bool update_ctrl = from_map == map();
+
+  if (update_ctrl) {
+    assert(kit.control() == r, "sanity");
+    kit.set_control(r->in(pnum));
+  } else {
+    assert(kit.control() == r->in(pnum), "sanity");
+  }
+
+  EscapedState* es = state.materialize(&kit, var);
   Node* mv = es->get_materialized_value();
+  assert(kit.control() == mv->in(0), "sanity");
   r->set_req(pnum, mv->in(0));
-  do_exceptions();
+
+  if (update_ctrl) {
+    kit.set_control(r);
+  }
   return mv;
 }
 

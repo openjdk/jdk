@@ -456,7 +456,7 @@ static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
   }
 }
 
-EscapedState* PEAState::materialize(GraphKit* kit, Node* var, SafePointNode* map) {
+EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   ObjID alloc = is_alias(var);
   assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
@@ -464,31 +464,9 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var, SafePointNode* map
     tty->print_cr("PEA materializes a virtual object: %d", alloc->_idx);
   }
 #endif
-
-  if (map == nullptr) {
-    JVMState* jvms = kit->sync_jvms();
-    map = kit->map();
-
-    kit->kill_dead_locals();
-    kit->clean_stack(jvms->sp());
-    jvms->set_should_reexecute(false);
-  }
-
   Compile* C = kit->C;
-  // The entire memory state is needed for slow path of the allocation
-  // since GC and deoptimization can happened.
-  Node *mem = kit->reset_memory();
-  kit->set_all_memory(mem); // Create new memory state
-
-  // clean up map/jvms before we clone a new AllocateNode.
-  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), mem, map->i_o(),
-                                           alloc->in(AllocateNode::AllocSize),
-                                           alloc->in(AllocateNode::KlassNode),
-                                           alloc->in(AllocateNode::InitialTest));
-
   const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();
-  Node* objx = kit->set_output_for_allocation(allocx, oop_type);
-  allocx->jvms()->set_bci(alloc->jvms()->bci());
+  Node* objx = kit->materialize_object(alloc, oop_type);
   VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
 
   if (oop_type->isa_instptr()) {
