@@ -104,6 +104,7 @@ public class EqualsIgnoreCase extends CompactString {
             }
         }
     }
+
     /**
      * This guards that CharacterData.latin1LowerCase is in sync with
      * Character.toUpperCase and Character.toLowerCase
