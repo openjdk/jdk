@@ -54,10 +54,11 @@ BOOL(WINAPI * pfnGetDiskSpaceInformation)(LPCWSTR, LPVOID) = NULL;
 // sizes[2]  free space:   number of free bytes in the volume
 // sizes[3]  usable space: number of bytes available to the caller
 //
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_GetXSpace_getSpace0
     (JNIEnv *env, jclass cls, jstring root, jlongArray sizes)
 {
+    jboolean totalSpaceIsEstimated = JNI_FALSE;
     jlong array[4];
     const jchar* chars = (*env)->GetStringChars(env, root, NULL);
     if (chars == NULL) {
@@ -84,7 +85,7 @@ Java_GetXSpace_getSpace0
         if (FAILED(hres)) {
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskSpaceInformationW");
-            return;
+            return totalSpaceIsEstimated;
         }
 
         ULONGLONG bytesPerAllocationUnit =
@@ -98,6 +99,8 @@ Java_GetXSpace_getSpace0
         array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
                            bytesPerAllocationUnit);
     } else {
+        totalSpaceIsEstimated = JNI_TRUE;
+
         // if GetDiskSpaceInformationW is unavailable ("The specified
         // procedure could not be found"), fall back to GetDiskFreeSpaceExW
         ULARGE_INTEGER freeBytesAvailable;
@@ -108,7 +111,7 @@ Java_GetXSpace_getSpace0
             &totalNumberOfFreeBytes) == 0) {
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskFreeSpaceExW");
-            return;
+            return totalSpaceIsEstimated;
         }
 
         // If quotas are in effect, it is impossible to obtain the volume size,
@@ -126,7 +129,7 @@ Java_GetXSpace_getSpace0
     if (result < 0) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      strerror(errno));
-        return;
+        return totalSpaceIsEstimated;
     }
 
     array[0] = (jlong)(buf.f_blocks*buf.f_bsize);
@@ -135,6 +138,7 @@ Java_GetXSpace_getSpace0
     array[3] = (jlong)(buf.f_bavail*buf.f_bsize);
 #endif
     (*env)->SetLongArrayRegion(env, sizes, 0, 4, array);
+    return totalSpaceIsEstimated;
 }
 #ifdef __cplusplus
 }

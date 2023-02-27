@@ -109,7 +109,8 @@ public class GetXSpace {
         Space(String name) {
             this.name = name;
             long[] sizes = new long[4];
-            getSpace0(name, sizes);
+            if (getSpace0(name, sizes))
+                System.err.println("WARNING: total space is estimated");
             this.size = sizes[0];
             this.total = sizes[1];
             this.free = sizes[2];
@@ -492,5 +493,5 @@ public class GetXSpace {
     // size[2]  free space:   number of free bytes in the volume
     // size[3]  usable space: number of bytes available to the caller
     //
-    private static native void getSpace0(String root, long[] space);
+    private static native boolean getSpace0(String root, long[] space);
 }
