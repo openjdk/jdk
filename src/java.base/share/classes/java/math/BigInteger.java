@@ -695,20 +695,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public BigInteger(int numBits, Random rnd) {
         int[] magnitude = randomBits(numBits, rnd);
 
-        try {
-            // trustedStripLeadingZeroInts() returns a zero length array if len == 0
-            this.mag = trustedStripLeadingZeroInts(magnitude);
+        // trustedStripLeadingZeroInts() returns a zero length array if len == 0
+        this.mag = trustedStripLeadingZeroInts(magnitude);
 
-            if (this.mag.length == 0) {
-                this.signum = 0;
-            } else {
-                this.signum = 1;
-            }
-            if (mag.length >= MAX_MAG_LENGTH) {
-                checkRange();
-            }
-        } finally {
-            Arrays.fill(magnitude, 0);
+        if (this.mag.length == 0) {
+            this.signum = 0;
+        } else {
+            this.signum = 1;
+        }
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
         }
     }
 
