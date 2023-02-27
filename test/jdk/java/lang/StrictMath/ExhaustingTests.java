@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301833 8302026 8301444
+ * @bug 8301833 8302026 8301444 8302028
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
@@ -130,7 +130,7 @@ public class ExhaustingTests {
         // probes).
         BinaryTestCase[] testCases = {
             new BinaryTestCase("hypot", FdlibmTranslit::hypot, StrictMath::hypot, 20, 20),
-         // new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2, 20, 20),
+            new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2, 20, 20),
         };
 
         for (var testCase : testCases) {
