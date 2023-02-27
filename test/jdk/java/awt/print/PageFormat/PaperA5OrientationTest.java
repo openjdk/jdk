@@ -56,9 +56,9 @@ import javax.print.attribute.standard.MediaSizeName;
 public class PaperA5OrientationTest {
 
     private static final String DESCRIPTION =
-            " 1. To run the test either setup the printer to use paper size A5" +
-                    " and put A5 paper into the paper tray" +
-                    " or use a virtual PDF printer.\n" +
+
+            " 1. To run the test it is required to have a virtual PDF printer" +
+                    " or any other printer supporting A4 paper size.\n" +
                     " 2. Press Print button to print 4 rectangles.\n" +
                     "    - rectangle with paper width is less than height, orientation portrait\n" +
                     "    - rectangle with paper width is less than height, orientation landscape\n" +
@@ -79,8 +79,8 @@ public class PaperA5OrientationTest {
     private static final double DOC_HEIGHT;
 
     static {
-        MediaSize isoSize = MediaSize.getMediaSizeForName(MediaSizeName.ISO_A5);
-        float[] size = isoSize.getSize(Size2DSyntax.INCH);
+        MediaSize isoA4Size = MediaSize.getMediaSizeForName(MediaSizeName.ISO_A4);
+        float[] size = isoA4Size.getSize(Size2DSyntax.INCH);
 
         DOC_WIDTH = size[0] * 72.0;
         DOC_HEIGHT = size[1] * 72.0;
