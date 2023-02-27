@@ -392,6 +392,7 @@ public abstract class SSLContextTemplate {
 
         CA_RSA_512( // for DisabledShortRSAKeys test
                 "RSA",
+                // md5WithRSAEncryption, 1024 bits
                 // Validity
                 //      Not Before: Aug 19 01:52:19 2011 GMT
                 //      Not After : Jul 29 01:52:19 2032 GMT
@@ -721,6 +722,7 @@ public abstract class SSLContextTemplate {
 
         EE_RSA_512(
                 "RSA",
+                // md5WithRSAEncryption, 512 bits
                 // Validity
                 //      Not Before: Nov  7 13:55:52 2011 GMT
                 //      Not After : Jul 25 13:55:52 2031 GMT
@@ -881,6 +883,10 @@ public abstract class SSLContextTemplate {
 
         EE_RSASSA_PSS(
                 "RSASSA-PSS",
+                // Signature Algorithm: rsassaPss
+                // Hash Algorithm: sha256
+                // Mask Algorithm: mgf1 with sha256
+                //
                 // Validity
                 //      Not Before: Jun  6 07:11:00 2018 GMT
                 //      Not After : Jun  1 07:11:00 2038 GMT
@@ -906,7 +912,7 @@ public abstract class SSLContextTemplate {
                 "Ug8VE9ACpBxxI3qChMahFZGHlXCCSjSmxpQa6UO4SQl8q5tPNnqdzWwvAW8qkCy4\n" +
                 "6barRQ4sMcGayhHh/uSTx7bcl0FMJpcI1ygbw7/Pc03zKtw0gMTBMns7q4yXjb/u\n" +
                 "ef47nW0t+LRAAg==\n" +
-                "-----END CERTIFICATE-----\n",
+                "-----END CERTIFICATE-----",
                 "MIIEuwIBADALBgkqhkiG9w0BAQoEggSnMIIEowIBAAKCAQEApfK+EK4NuwWFDv9V\n" +
                 "WtiMfEDxszf5b85irz+RX9uqLzVuL0VMevB8wIYYlrXJfj8C0myaia3hJE5ZXuz5\n" +
                 "0QMqW8t3zu2QCtGN2Ih6rmgYO3fu2BYYR8L/IBtJWXMgNAZFxSR6nau+qmq9MRwu\n" +
