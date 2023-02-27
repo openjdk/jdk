@@ -24,9 +24,7 @@
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
  // key: compiler.err.unclosed.str.lit
- // key: compiler.err.unclosed.string.template
- // key: compiler.err.expected
- // key: compiler.err.premature.eof
+ // key: compiler.err.string.template.is.not.well.formed
  // options: --enable-preview -source 21
 
 import java.lang.template.*;

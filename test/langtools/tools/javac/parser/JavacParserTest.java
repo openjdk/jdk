@@ -2078,15 +2078,16 @@ public class JavacParserTest extends TestCase {
             try {
                 CompilationUnitTree cut = task.parse().iterator().next();
                 String result = cut.toString().replaceAll("\\R", "\n");
+                System.out.println("RESULT\n" + result);
                 assertEquals("incorrect AST",
                              result,
                              """
                              package t;
-
+                             \n\
                              class Test {
                                  \n\
                                  void test(Object o) {
-                                     String s = [STR]"\\{}"(o.<error>);
+                                     String s = STR.<error>;
                                  }
                              }""");
                 return null;

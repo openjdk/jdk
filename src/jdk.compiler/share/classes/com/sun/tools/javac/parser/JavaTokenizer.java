@@ -145,6 +145,11 @@ public class JavaTokenizer extends UnicodeReader {
     protected boolean isStringTemplate;
 
     /**
+     * true if errors are pending from embedded expressions.
+     */
+    protected boolean hasStringTemplateErrors;
+
+    /**
      * The set of lint options currently in effect. It is initialized
      * from the context, and then is set/reset as needed by Attr as it
      * visits all the various parts of the trees during attribution.
@@ -380,6 +385,18 @@ public class JavaTokenizer extends UnicodeReader {
             token = tokenizer.readToken();
             tokens = tokens.append(token);
 
+            // Intercept errors
+            if (token.kind == TokenKind.ERROR) {
+                // Track start of next fragment.
+                if (isTextBlock) {
+                    reset(length());
+                } else {
+                    skipToEOLN();
+                }
+                hasStringTemplateErrors = true;
+                return;
+            }
+
             if (token.kind == TokenKind.RBRACE) {
                 // Potential closing brace.
                 if (braceCount == 0) {
@@ -401,10 +418,11 @@ public class JavaTokenizer extends UnicodeReader {
         // If no closing brace will be picked up as an unterminated string.
 
         // Set main tokenizer to continue at next position.
-        reset(tokenizer.position());
+        int position = tokenizer.position();
+        reset(position);
 
         // Track start of next fragment.
-        fragmentRanges = fragmentRanges.append(position());
+        fragmentRanges = fragmentRanges.append(position);
 
         // Pend the expression tokens after the STRINGFRAGMENT.
         pendingTokens = pendingTokens.appendList(tokens);
@@ -472,6 +490,9 @@ public class JavaTokenizer extends UnicodeReader {
 
                 case '{':
                     scanEmbeddedExpression(pos, backslash);
+                    if (hasStringTemplateErrors) {
+                        return;
+                    }
                     break;
 
                 default:
@@ -513,7 +534,9 @@ public class JavaTokenizer extends UnicodeReader {
 
             // While characters are available.
             while (isAvailable()) {
-                if (accept("\"\"\"")) {
+                if (hasStringTemplateErrors) {
+                    break;
+                } else if (accept("\"\"\"")) {
                     if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
                         tk = TokenKind.STRINGFRAGMENT;
                     }
@@ -541,7 +564,9 @@ public class JavaTokenizer extends UnicodeReader {
 
             // While characters are available.
             while (isAvailable()) {
-                if (accept('\"')) {
+                if (hasStringTemplateErrors) {
+                    break;
+                } else if (accept('\"')) {
                     if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
                         tk = TokenKind.STRINGFRAGMENT;
                     }
@@ -559,20 +584,18 @@ public class JavaTokenizer extends UnicodeReader {
             }
         }
 
-        // String ended without close delimiter sequence.
+        // String ended without close delimiter sequence or has embedded expression errors.
         if (isStringTemplate) {
-            TokenKind prevTK = tk;
-            lexError(pos, isTextBlock ? Errors.UnclosedTextBlockTemplate
-                                      : Errors.UnclosedStringTemplate);
-            if (prevTK == TokenKind.STRINGLITERAL) {
-                tk = TokenKind.STRINGFRAGMENT;
-            }
+            lexError(pos, isTextBlock ? Errors.TextBlockTemplateIsNotWellFormed
+                                      : Errors.StringTemplateIsNotWellFormed);
+            fragmentRanges = List.nil();
+            pendingTokens = List.nil();
         } else {
             lexError(pos, isTextBlock ? Errors.UnclosedTextBlock
                                       : Errors.UnclosedStrLit);
         }
 
-        if (firstEOLN  != NOT_FOUND) {
+        if (!hasStringTemplateErrors && firstEOLN  != NOT_FOUND) {
             // Reset recovery position to point after text block open delimiter sequence.
             reset(firstEOLN);
         }
@@ -905,6 +928,7 @@ public class JavaTokenizer extends UnicodeReader {
         isTextBlock = false;
         hasEscapeSequences = false;
         isStringTemplate = false;
+        hasStringTemplateErrors = false;
         fragmentRanges = List.nil();
 
         int pos;

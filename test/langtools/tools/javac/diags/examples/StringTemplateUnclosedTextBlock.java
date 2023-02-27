@@ -24,10 +24,7 @@
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
  // key: compiler.err.unclosed.text.block
- // key: compiler.err.unclosed.text.block.template
- // key: compiler.err.not.stmt
- // key: compiler.err.expected
- // key: compiler.err.illegal.char
+ // key: compiler.err.text.block.template.is.not.well.formed
  // key: compiler.err.premature.eof
  // options: --enable-preview -source 21
 
