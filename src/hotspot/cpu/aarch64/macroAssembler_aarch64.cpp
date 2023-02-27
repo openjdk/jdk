@@ -5953,106 +5953,74 @@ void MacroAssembler::poly1305_multiply(const RegPair u[], Register s[], Register
   wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
 }
 
-void MacroAssembler::assert_zero(Register r) {
-#ifdef ASSERT
-  Label L;
-  cbz(r, L);
-  stop("Overflow in poly1305 reduction");
-  BIND(L);
-#endif
-}
-
-// Partial reduction mod 2**130 - 5
 void MacroAssembler::poly1305_reduce(const RegPair u[]) {
+  // Partial reduction mod 2**130 - 5
 
+  // Add the high part of u1 to u2
+  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+  adds(u[2]._lo, u[2]._lo, rscratch1);
+  NOT_DEBUG(adc(u[2]._hi, u[2]._hi, zr);)
 #ifdef ASSERT
-  lsr(rscratch1, u[0]._hi, 52);
-  assert_zero(rscratch1);
-#endif
-
+  adcs(u[2]._hi, u[2]._hi, zr);
   {
-    // Multiply the high 64-bit part of u2 by 5 and add it to u1
-    int lsb = (52+26) % 64;
-    ubfx(rscratch1, u[2]._hi, lsb, 64-lsb);
-    bfc(u[2]._hi, lsb, 64-lsb);
-    add(rscratch1, rscratch1, rscratch1, LSL, 2);
-    add(u[1]._lo, u[1]._lo, rscratch1);
-    adc(u[1]._hi, u[1]._hi, zr);
-
-    // Multiply the middle part of u2 by 5 and add it to u0
-    extr(rscratch1, u[2]._hi, u[2]._lo, 26);
-    add(rscratch1, rscratch1, rscratch1, LSL, 2);
-    adds(u[0]._lo, u[0]._lo, rscratch1);
-    adc(u[0]._hi, u[0]._hi, zr);
-    bfc(u[2]._lo, 26, 64-26);
-#ifdef ASSERT
-    bfc(u[2]._hi, 0, 64-26);
-#endif
-
-    // u2 has no bits set above Bit 26
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
   }
-
-#ifdef ASSERT
-  lsr(rscratch1, u[0]._hi, 52);
-  assert_zero(rscratch1);
 #endif
+  bfc(u[1]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
 
+  // Then multiply the high part of u2 by 5 and add it back to u1:u0
+  extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+  ubfx(rscratch1, rscratch1, 0, 52);
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  adds(u[0]._lo, u[0]._lo, rscratch1);
+  adc(u[0]._hi, u[0]._hi, zr);
+  bfc(u[2]._lo, 26, 64-26);
+
+  // Multiply the highest part of u2 by 5 and add it back to u1
+  ubfx(rscratch1, u[2]._hi, 14, 50);
+// #ifdef ASSERT
+//   {
+//     Label L;
+//     bfc(u[2]._hi, 0, 50);
+//     cbz(u[2]._hi, L);
+//     stop("Overflow in poly1305 reduction");
+//     BIND(L);
+//   }
+// #endif
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  add(u[1]._lo, u[1]._lo, rscratch1);
+
+  // Propagate carries through u2:u1:u0
+  extr(rscratch1, u[0]._hi, u[0]._lo, 52);
+  bfc(u[0]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[0]._hi, 0, 52));
+  adds(u[1]._lo, u[1]._lo, rscratch1);
+#ifdef ASSERT
   {
-    // Add the high 64-bit part of u1 to u2
-    extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-    adds(u[2]._lo, u[2]._lo, rscratch1);
-    bfc(u[1]._lo, 52, 64-52);
-#ifdef ASSERT
-    bfc(u[1]._hi, 0, 52);
-    adc(u[2]._hi, u[2]._hi, zr);
-    assert_zero(u[1]._hi);
-    assert_zero(u[2]._hi);
-#endif
-    // u1 has no bits set above Bit 52
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
   }
+#endif
 
+  // Add the high part of u1 to u2
+  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+  adds(u[2]._lo, u[2]._lo, rscratch1);
+#ifdef ASSERT
   {
-#ifdef ASSERT
-    lsr(rscratch1, u[0]._hi, 52);
-    assert_zero(rscratch1);
-#endif
-    // Add the high 64-bit part of u0 to u2:u1
-    extr(rscratch1, u[0]._hi, u[0]._lo, 52);
-    bfc(u[0]._lo, 52, 64-52);
-
-    // Extract the highest part and add it into u2
-    lsr(rscratch2, rscratch1, 52);
-    bfc(rscratch1, 52, 64-52);
-    add(u[2]._lo, u[2]._lo, rscratch2);
-
-    adds(u[1]._lo, u[1]._lo, rscratch1);
-#ifdef ASSERT
-    bfc(u[0]._hi, 0, 52);
-    assert_zero(u[0]._hi);
-    adc(u[1]._hi, u[1]._hi, zr);
-    assert_zero(u[1]._hi);
-#endif
-#ifdef ASSERT
-    lsr(rscratch1, u[1]._lo, 56);
-    assert_zero(rscratch1);
-#endif
-    // u0 has no bits set above Bit 52
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
   }
-
-  {
-    // Multiply the middle part of u2 by 5 and add it to u0
-    ubfx(rscratch1, u[2]._lo, 26, 64-26);
-    bfc(u[2]._lo, 26, 64-26);
-    add(rscratch1, rscratch1, rscratch1, LSL, 2);
-    add(u[0]._lo, u[0]._lo, rscratch1);
-    // u2 has no bits set above Bit 26
-  }
-
-#ifdef ASSERT
-  assert_zero(u[0]._hi);
-  assert_zero(u[1]._hi);
-  assert_zero(u[2]._hi);
 #endif
+  bfc(u[1]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
 }
 
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
