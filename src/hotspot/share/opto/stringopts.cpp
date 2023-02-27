@@ -1160,7 +1160,7 @@ bool StringConcat::validate_control_flow() {
   return !fail;
 }
 
-// Mirror of Integer.stringSize, return the count of digits in integer,
+// Mirror of Integer.stringSize() method, return the count of digits in integer,
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   if (arg->is_Con()) {
     // Constant integer. Compute constant length
