@@ -59,6 +59,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   assert(ShenandoahLoadRefBarrier, "should be enabled");
   shenandoah_assert_in_cset(load_addr, obj);
 
+  //Atomic::inc(&total_slow_paths);
+
   oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
     assert(_heap->is_evacuation_in_progress(),
@@ -67,7 +69,12 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
     ShenandoahEvacOOMScope scope(t);
     fwd = _heap->evacuate_object(obj, t);
   }
-
+  // else Atomic::inc(&simple_slow_paths);
+  /*
+  if ((total_slow_paths % 1000) == 0) {
+    tty->print_cr("total slow paths: %d, simple slow_paths: %d, ratio: %f", total_slow_paths, simple_slow_paths,  (float) simple_slow_paths / (float)total_slow_paths);
+  }
+  */
   if (load_addr != nullptr && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);

@@ -41,6 +41,10 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
+volatile int ShenandoahBarrierSet::total_slow_paths = 0;
+volatile int ShenandoahBarrierSet::simple_slow_paths = 0;
+
+
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),

@@ -37,6 +37,9 @@ private:
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
+  static volatile int total_slow_paths;
+  static volatile int simple_slow_paths;
+
 public:
   ShenandoahBarrierSet(ShenandoahHeap* heap);
 

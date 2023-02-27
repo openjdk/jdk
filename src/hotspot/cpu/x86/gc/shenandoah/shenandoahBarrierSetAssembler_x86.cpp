@@ -379,6 +379,15 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ movbool(tmp1, Address(tmp1, tmp2, Address::times_1));
     __ testbool(tmp1);
     __ jcc(Assembler::zero, not_cset);
+
+    __ movptr(tmp1, dst); // Preserve original obj
+    __ movptr(dst, Address(dst, oopDesc::mark_offset_in_bytes()));
+    __ xorptr(dst, markWord::lock_mask_in_place);
+    __ testb(dst, markWord::lock_mask_in_place);
+    // TODO: Implement self-fixing here.
+    __ jcc(Assembler::zero, not_cset);
+    __ movptr(dst, tmp1);
+
   }
 
   save_machine_state(masm, /* handle_gpr = */ false, /* handle_fp = */ true);
@@ -897,6 +906,14 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ testptr(tmp2, 0xFF);
 #endif
     __ jcc(Assembler::zero, *stub->continuation());
+
+    __ movptr(tmp1, res); // Preserve original obj
+    __ movptr(res, Address(res, oopDesc::mark_offset_in_bytes()));
+    __ xorptr(res, markWord::lock_mask_in_place);
+    __ testb(res, markWord::lock_mask_in_place);
+    // TODO: Implement self-fixing here.
+    __ jcc(Assembler::zero, *stub->continuation());
+    __ movptr(res, tmp1);
   }
 
   __ bind(slow_path);

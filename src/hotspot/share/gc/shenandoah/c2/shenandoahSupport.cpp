@@ -966,7 +966,7 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_new_node(cset_bool,      old_ctrl);
 }
 
-void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
+void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem,
                                                DecoratorSet decorators, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr();
@@ -1016,6 +1016,8 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   phase->register_control(call, loop, ctrl);
   ctrl = new ProjNode(call, TypeFunc::Control);
   phase->register_control(ctrl, loop, call);
+  result_mem = new ProjNode(call, TypeFunc::Memory);
+  phase->register_new_node(result_mem, call);
   val = new ProjNode(call, TypeFunc::Parms);
   phase->register_new_node(val, call);
   val = new CheckCastPPNode(ctrl, val, obj_type);
@@ -1347,9 +1349,10 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     assert(val->bottom_type()->make_oopptr(), "need oop");
     assert(val->bottom_type()->make_oopptr()->const_oop() == nullptr, "expect non-constant");
 
-    enum { _heap_stable = 1, _evac_path, _not_cset, PATH_LIMIT };
+    enum { _heap_stable = 1, _evac_path, _fwded, _not_cset, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
     Node* val_phi = new PhiNode(region, val->bottom_type()->is_oopptr());
+    Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
     int flags = ShenandoahHeap::HAS_FORWARDED;
@@ -1362,6 +1365,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // Heap stable case
     region->init_req(_heap_stable, heap_stable_ctrl);
     val_phi->init_req(_heap_stable, val);
+    raw_mem_phi->init_req(_heap_stable, raw_mem);
 
     // Test for in-cset, unless it's a native-LRB. Native LRBs need to return null
     // even for non-cset objects to prevent resurrection of such objects.
@@ -1373,9 +1377,11 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     if (not_cset_ctrl != nullptr) {
       region->init_req(_not_cset, not_cset_ctrl);
       val_phi->init_req(_not_cset, val);
+      raw_mem_phi->init_req(_not_cset, raw_mem);
     } else {
       region->del_req(_not_cset);
       val_phi->del_req(_not_cset);
+      raw_mem_phi->del_req(_not_cset);
     }
 
     // Resolve object when orig-value is in cset.
@@ -1416,13 +1422,71 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
-    call_lrb_stub(ctrl, val, addr, lrb->decorators(), phase);
+
+    // Test if object is already forwarded and resolve here.
+    // Load object's mark-word.
+    if (ShenandoahBarrierSet::is_strong_access(lrb->decorators())) {
+      Node* mark_addr = new AddPNode(val, val, phase->igvn().MakeConX(oopDesc::mark_offset_in_bytes()));
+      phase->register_new_node(mark_addr, ctrl);
+      Node* markword = new LoadXNode(ctrl, raw_mem, mark_addr, TypeRawPtr::BOTTOM, TypeX_X, MemNode::unordered);
+      phase->register_new_node(markword, ctrl);
+
+      // Test if object is forwarded. This is the case if lowest two bits are set.
+      Node* flipped = new XorXNode(markword, phase->igvn().MakeConX(markWord::lock_mask_in_place));
+      phase->register_new_node(flipped, ctrl);
+      Node* masked = new AndXNode(flipped, phase->igvn().MakeConX(markWord::lock_mask_in_place));
+      phase->register_new_node(masked, ctrl);
+      Node* cmp = new CmpXNode(masked, phase->igvn().MakeConX(0));
+      phase->register_new_node(cmp, ctrl);
+
+      // Only branch to LRB stub if object is not forwarded; otherwise reply with fwd ptr
+      Node* bol = new BoolNode(cmp, BoolTest::eq); // Equals 0 means it's forwarded
+      phase->register_new_node(bol, ctrl);
+
+      IfNode* iff = new IfNode(ctrl, bol, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+      phase->register_control(iff, loop, ctrl);
+      Node* if_fwd = new IfTrueNode(iff);
+      phase->register_control(if_fwd, loop, iff);
+      Node* if_not_fwd = new IfFalseNode(iff);
+      phase->register_control(if_not_fwd, loop, iff);
+
+      Node* fwdraw = new CastX2PNode(flipped);
+      fwdraw->init_req(0, if_fwd);
+      phase->register_new_node(fwdraw, if_fwd);
+      Node* fwd = new CheckCastPPNode(NULL, fwdraw, val->bottom_type());
+      phase->register_new_node(fwd, if_fwd);
+
+      // TODO: Implement self-fixing here.
+      Node* raw_mem_out = raw_mem;
+      if (addr->Opcode() == Op_AddP) {
+        Node* sfx = new CompareAndExchangePNode(if_fwd, raw_mem, addr, fwd, val, TypeRawPtr::BOTTOM, val->bottom_type(), MemNode::release);
+        phase->register_new_node(sfx, if_fwd);
+        Node* cas_proj = new SCMemProjNode(sfx);
+        phase->register_new_node(cas_proj, if_fwd);
+        raw_mem_out = cas_proj;
+      }
+      // Wire up forwarded path in slots 3.
+      region->init_req(_fwded, if_fwd);
+      val_phi->init_req(_fwded, fwd);
+      raw_mem_phi->init_req(_fwded, raw_mem_out);
+      // raw_mem_phi->init_req(_fwded, raw_mem);
+
+      ctrl = if_not_fwd;
+    } else {
+      region->del_req(_fwded);
+      val_phi->del_req(_fwded);
+      raw_mem_phi->del_req(_fwded);
+    }
+
+    call_lrb_stub(ctrl, val, addr, result_mem, lrb->decorators(), phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, val);
+    raw_mem_phi->init_req(_evac_path, result_mem);
 
     phase->register_control(region, loop, heap_stable_iff);
     Node* out_val = val_phi;
     phase->register_new_node(val_phi, region);
+    phase->register_new_node(raw_mem_phi, region);
 
     fix_ctrl(lrb, region, fixer, uses, uses_to_ignore, last, phase);
 
@@ -1439,7 +1503,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       phase->set_ctrl(n, region);
       follow_barrier_uses(n, ctrl, uses, phase);
     }
-    fixer.record_new_ctrl(ctrl, region, raw_mem, raw_mem_for_ctrl);
+    //fixer.record_new_ctrl(ctrl, region, raw_mem, raw_mem_for_ctrl);
+    fixer.fix_mem(ctrl, region, raw_mem, raw_mem_for_ctrl, raw_mem_phi, uses);
   }
   // Done expanding load-reference-barriers.
   assert(ShenandoahBarrierSetC2::bsc2()->state()->load_reference_barriers_count() == 0, "all load reference barrier nodes should have been replaced");
