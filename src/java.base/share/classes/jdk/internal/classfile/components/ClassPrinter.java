@@ -46,6 +46,15 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  * more exactly into a tree of {@link MapNode}, {@link ListNode}, and {@link LeafNode} instances.
  * <p>
  * Level of details to print or to export is driven by {@link Verbosity} option.
+ * <p>
+ * The most frequent use case is to simply print a class:
+ * {@snippet lang="java" class="PackageSnippets" region="printClass"}
+ * <p>
+ * {@link ClassPrinter} allows to traverse tree of simple printable nodes to hook custom printer:
+ * {@snippet lang="java" class="PackageSnippets" region="customPrint"}
+ * <p>
+ * Another use case for {@link ClassPrinter} is to simplify writing of automated tests:
+ * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
  */
 public final class ClassPrinter {
 
@@ -90,19 +99,19 @@ public final class ClassPrinter {
          * Printable name of the node.
          * @return name of the node
          */
-        public ConstantDesc name();
+        ConstantDesc name();
 
         /**
          * Walks through the underlying tree.
          * @return ordered stream of nodes
          */
-        public Stream<Node> walk();
+        Stream<Node> walk();
 
         /**
          * Prints the node and its sub-tree into JSON format.
          * @param out consumer of the printed fragments
          */
-        default public void toJson(Consumer<String> out) {
+        default void toJson(Consumer<String> out) {
             ClassPrinterImpl.toJson(this, out);
         }
 
@@ -110,7 +119,7 @@ public final class ClassPrinter {
          * Prints the node and its sub-tree into XML format.
          * @param out consumer of the printed fragments
          */
-        default public void toXml(Consumer<String> out) {
+        default void toXml(Consumer<String> out) {
             ClassPrinterImpl.toXml(this, out);
         }
 
@@ -118,7 +127,7 @@ public final class ClassPrinter {
          * Prints the node and its sub-tree into YAML format.
          * @param out consumer of the printed fragments
          */
-        default public void toYaml(Consumer<String> out) {
+        default void toYaml(Consumer<String> out) {
             ClassPrinterImpl.toYaml(this, out);
         }
     }
@@ -133,7 +142,7 @@ public final class ClassPrinter {
          * Printable node value
          * @return node value
          */
-        public ConstantDesc value();
+        ConstantDesc value();
     }
 
     /**
