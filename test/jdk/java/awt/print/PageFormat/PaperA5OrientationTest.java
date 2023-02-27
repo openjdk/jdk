@@ -60,10 +60,11 @@ public class PaperA5OrientationTest {
                     " and put A5 paper into the paper tray" +
                     " or use a virtual PDF printer.\n" +
                     " 2. Press Print button to print 4 rectangles.\n" +
-                    "    - rectangle with width is less than height, orientation portrait\n" +
-                    "    - rectangle with width is less than height, orientation landscape\n" +
-                    "    - rectangle with width is greater than height, orientation portrait\n" +
-                    "    - rectangle with width is greater than height, orientation landscape\n" +
+                    "    - rectangle with paper width is less than height, orientation portrait\n" +
+                    "    - rectangle with paper width is less than height, orientation landscape\n" +
+                    "    - rectangle with paper width is greater than height, orientation portrait\n" +
+                    "    - rectangle with paper width is greater than height, orientation landscape\n" +
+                    "  Note: PageFormat size returns transformed Paper size according to the set orientation value.\n" +
                     " 3. Check that 4 printed rectangles have fully drawn 8 vertical areas labeled from 1 to 8.\n" +
                     " 4. If so, press PASS button, otherwise press FAIL button.\n";
 
@@ -86,7 +87,7 @@ public class PaperA5OrientationTest {
     }
 
     private static void paintImage(Graphics2D g, PageFormat page, int pageIndex) {
-        BufferedImage img = createImage((int) page.getWidth(), (int) page.getHeight(), page.getOrientation(), pageIndex);
+        BufferedImage img = createImage(page, pageIndex);
         g.drawImage(img, 0, 0, null);
     }
 
@@ -136,13 +137,10 @@ public class PaperA5OrientationTest {
         }
     }
 
-    private static String getLabel(int width, int height, int orientation) {
-        return String.format("%dx%d %s", width, height, getOrientation(orientation));
-    }
+    private static BufferedImage createImage(PageFormat page, int pageIndex) {
 
-    private static BufferedImage createImage(int w, int h, int orientation, int pageIndex) {
-
-        System.out.printf("create image size: [%d, %d], orientation: %s%n", w, h, getOrientation(orientation));
+        int w = (int) page.getWidth();
+        int h = (int) page.getHeight();
 
         int x = 0;
         int y = 0;
@@ -161,7 +159,7 @@ public class PaperA5OrientationTest {
         g.drawLine(x, y, x + w, y + h);
         g.drawLine(x, y + h, x + w, y);
 
-        g.setFont(g.getFont().deriveFont(10.0f));
+        g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
         int N = 8;
         int dx = w / N;
@@ -185,12 +183,26 @@ public class PaperA5OrientationTest {
         g.fillOval(arrX + NN / 2 - r, y + h / 3 - r - 5, 2 * r, 2 * r);
 
         g.setColor(Color.RED);
-        String label = getLabel(w, h, orientation);
-        int strW = g.getFontMetrics().stringWidth(label);
-        g.drawString(label, x + (w - strW) / 2, y + h / 5);
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 12.0f));
+
+        int textX = x + w / 18;
+        int textY = y + h / 3;
+        int textDelta = h / 16;
+
+        Paper paper = page.getPaper();
+        String paperSize = String.format("Paper      size: %dx%d",
+                (int) paper.getWidth(), (int) paper.getHeight());
+        g.drawString(paperSize, textX, textY);
+
+        String pageFormatSize = String.format("PageFormat size: %dx%d", w, h);
+        g.drawString(pageFormatSize, textX, textY + textDelta);
+
+        String orientation = String.format("Orientation: %s",
+                getOrientation(page.getOrientation()));
+        g.drawString(orientation, textX, textY + 2 * textDelta);
 
         g.setColor(Color.BLACK);
-        g.setFont(g.getFont().deriveFont(24.0f));
+        g.setFont(g.getFont().deriveFont(28.0f));
         g.drawString(String.format("P:%d", pageIndex + 1), x + w / 2, y + 2 * h / 3);
 
         g.dispose();
