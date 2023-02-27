@@ -85,9 +85,9 @@ abstract class CharacterData {
     }
 
     /**
-     * This method returns the case fold (the lowercase of the uppercase) of the
-     * given Unicode code point if this case fold is in the latin1 range (<=0xFF).
-     * If the case fold is outside the latin1 range, -1 is returned.
+     * Unicode has a few non-latin1 code points which case fold into the latin1
+     * range. If the given code point folds to latin1, this method returns
+     * the corresponding latin1 lowercase code point. Otherwise, the method returns -1.
      *
      * This method is equivalent to the following code:
      *
