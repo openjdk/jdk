@@ -9160,6 +9160,25 @@ instruct cmpL_reg_imm0_branch(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
   ins_short_branch(1);
 %}
 
+instruct cmpL_reg_imm0_loop(cmpOp cmp, iRegL op1, immL0 zero, label lbl)
+%{
+  // Same match rule as `far_cmpL_reg_imm0_loop'.
+  match(CountedLoopEnd cmp (CmpL op1 zero));
+
+  effect(USE op1, USE lbl);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "b$cmp  $op1, zr, $lbl\t#@cmpL_reg_imm0_loop" %}
+
+  ins_encode %{
+    __ cmp_branch($cmp$$cmpcode, as_Register($op1$$reg), zr, *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmpz_branch);
+  ins_short_branch(1);
+%}
+
 // Compare unsigned long with zero and branch near instructions
 instruct cmpULEqNeLeGt_reg_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 zero, label lbl)
 %{
