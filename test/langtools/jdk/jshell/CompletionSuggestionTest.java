@@ -721,7 +721,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @BeforeMethod
     public void setUp() {
-        super.setUp();
+        setUp(builder -> builder.executionEngine("local"));
 
         Path srcZip = Paths.get("src.zip");
 
