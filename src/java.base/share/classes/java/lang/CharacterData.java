@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,55 +82,5 @@ abstract class CharacterData {
                 default -> CharacterDataUndefined.instance;
             };
         }
-    }
-
-    /**
-     * Unicode has a few non-latin1 code points which case fold into the latin1
-     * range. If the given code point folds to latin1, this method returns
-     * the corresponding latin1 lowercase code point. Otherwise, the method returns -1.
-     *
-     * This method is equivalent to the following code:
-     *
-     * {@snippet :
-     *   int fold = Character.toLowerCase(Character.toUpperCase(c));
-     *   return folded <= 0XFF ? fold : -1;
-     * }
-     *
-     * For performance reasons, the implementation compares to a set of known
-     * code points instead. These code points were found using an exhaustive
-     * search over all non-latin1 code points:
-     *
-     * {@snippet :
-     *   for (int c = 256; c <= 0x3FFFF; c++) {
-     *       int folded = Character.toLowerCase(Character.toUpperCase(c));
-     *       if (folded <= 0XFF) {
-     *           System.out.printf("0x%x folds to 0x%x%n", c, folded);
-     *       }
-     *   }
-     * }
-     *
-     * To catch regressions caused by future changes in Unicode, an exhaustive
-     * test verifies that the constants in this method is always
-     * up to date. (See EqualsIgnoreCase.guardUnicodeFoldingToLatin1)
-     */
-    static int latin1CaseFold(int c) {
-        return switch (c) {
-            // Capital I with dot above: Small i
-            case 0x130  -> 'i';
-            // Small dotless i: Small i
-            case 0x131  -> 'i';
-            // Capital Y with diaeresis: Small y with Diaeresis
-            case 0x178  -> 0xFF;
-            // Small long s: Small s
-            case 0x17f  -> 's';
-            // Capital sharp S: Small sharp s
-            case 0x1e9e -> 0xDF;
-            // Kelvin sign: Small k
-            case 0x212a -> 'k';
-            // Angstrom sign: Small a with overring
-            case 0x212b -> 0xE5;
-            // c does not fold into latin1
-            default     -> -1;
-        };
     }
 }
