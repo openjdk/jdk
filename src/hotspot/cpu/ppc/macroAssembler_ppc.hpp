@@ -738,8 +738,6 @@ class MacroAssembler: public Assembler {
 
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2,
                           MacroAssembler::PreservationLevel preservation_level);
-  void resolve_weak_handle(Register result, Register tmp1, Register tmp2,
-                           MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
   static int instr_size_for_decode_klass_not_null();

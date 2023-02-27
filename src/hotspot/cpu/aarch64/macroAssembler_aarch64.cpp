@@ -4267,21 +4267,6 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register
   access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp1, tmp2);
 }
 
-// ((WeakHandle)result).resolve();
-void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2) {
-  assert_different_registers(result, tmp1, tmp2);
-  Label resolved;
-
-  // A null weak handle resolves to null.
-  cbz(result, resolved);
-
-  // Only 64 bit platforms support GCs that require a tmp register
-  // WeakHandle::resolve is an indirection like jweak.
-  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 result, Address(result), tmp1, tmp2);
-  bind(resolved);
-}
-
 void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, Register tmp2) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));

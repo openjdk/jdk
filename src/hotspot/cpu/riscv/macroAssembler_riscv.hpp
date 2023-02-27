@@ -178,7 +178,6 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);

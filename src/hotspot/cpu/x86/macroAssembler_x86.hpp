@@ -341,7 +341,6 @@ class MacroAssembler: public Assembler {
   void testbool(Register dst);
 
   void resolve_oop_handle(Register result, Register tmp);
-  void resolve_weak_handle(Register result, Register tmp);
   void load_mirror(Register mirror, Register method, Register tmp);
 
   void load_method_holder(Register holder, Register method);
