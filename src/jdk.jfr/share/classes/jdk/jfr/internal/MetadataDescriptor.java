@@ -266,7 +266,7 @@ public final class MetadataDescriptor {
         if (tz.inDaylightTime(new Date())) {
             m.dst = tz.getDSTSavings();
         } else {
-           m.dst = 0;
+            m.dst = 0;
         }
         m.types.addAll(types);
         MetadataWriter w = new MetadataWriter(m);
