@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1692,7 +1692,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
       __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - os::vm_page_size());
+      __ andi(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
 
       // Save the test result, for recursive case, the result is zero
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
@@ -2142,7 +2142,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ mv(t0, -1);
     __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
 
-    __ mv(xcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mv(xcpool, Deoptimization::Unpack_reexecute);
     __ mv(c_rarg0, xthread);
     __ orrw(c_rarg2, zr, xcpool); // exec mode
     RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
@@ -2483,7 +2483,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // n.b. 3 gp args, 0 fp args, integral return type
 
   __ mv(c_rarg0, xthread);
-  __ mv(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ mv(c_rarg2, Deoptimization::Unpack_uncommon_trap);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
   __ relocate(target.rspec(), [&] {
     int32_t offset;
@@ -2610,7 +2610,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // sp should already be aligned
   __ mv(c_rarg0, xthread);
-  __ mv(c_rarg1, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ mv(c_rarg1, Deoptimization::Unpack_uncommon_trap);
   target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
   __ relocate(target.rspec(), [&] {
     int32_t offset;

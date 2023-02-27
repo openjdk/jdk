@@ -557,7 +557,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         client.subscribers.forEach(s -> s.onError(t));
     }
 
-    public void registerSubscriber(HttpBodySubscriberWrapper<?> subscriber) {
+    /**
+     * Adds the given subscriber to the subscribers list, or call
+     * its {@linkplain HttpBodySubscriberWrapper#onError onError}
+     * method if the client is shutting down.
+     * @param subscriber the subscriber
+     * @return true if the subscriber was added to the list.
+     */
+    public boolean registerSubscriber(HttpBodySubscriberWrapper<?> subscriber) {
         if (!selmgr.isClosed()) {
             synchronized (selmgr) {
                 if (!selmgr.isClosed()) {
@@ -567,20 +574,28 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                             debug.log("body subscriber registered: " + count);
                         }
                     }
-                    return;
+                    return true;
                 }
             }
         }
         subscriber.onError(selmgr.selectorClosedException());
+        return false;
     }
 
-    public void unregisterSubscriber(HttpBodySubscriberWrapper<?> subscriber) {
+    /**
+     * Remove the given subscriber from the subscribers list.
+     * @param subscriber the subscriber
+     * @return true if the subscriber was found and removed from the list.
+     */
+    public boolean unregisterSubscriber(HttpBodySubscriberWrapper<?> subscriber) {
         if (subscribers.remove(subscriber)) {
             long count = pendingSubscribersCount.decrementAndGet();
             if (debug.on()) {
                 debug.log("body subscriber unregistered: " + count);
             }
+            return true;
         }
+        return false;
     }
 
     private void closeConnection(HttpConnection conn) {

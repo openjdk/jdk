@@ -308,8 +308,8 @@ public class ObjectInputStream
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.max(0, Math.min(65535, GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535)));
+        static final int PROXY_INTERFACE_LIMIT = Math.clamp(GetIntegerAction
+                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
     }
 
     /*

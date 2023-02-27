@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ void G1FullCollector::complete_collection() {
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
-  _heap->prepare_heap_for_mutators();
+  _heap->prepare_for_mutator_after_full_collection();
 
   _heap->resize_all_tlabs();
 
@@ -327,7 +327,7 @@ void G1FullCollector::phase2_prepare_compaction() {
   // Try to avoid OOM immediately after Full GC in case there are no free regions
   // left after determining the result locations (i.e. this phase). Prepare to
   // maximally compact the tail regions of the compaction queues serially.
-  if (!has_free_compaction_targets) {
+  if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
     phase2c_prepare_serial_compaction();
   }
 }
@@ -348,37 +348,67 @@ bool G1FullCollector::phase2b_forward_oops() {
   return task.has_free_compaction_targets();
 }
 
-void G1FullCollector::phase2c_prepare_serial_compaction() {
-  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
-  // At this point we know that after parallel compaction there will be no
-  // completely free regions. That means that the last region of
-  // all compaction queues still have data in them. We try to compact
-  // these regions in serial to avoid a premature OOM when the mutator wants
-  // to allocate the first eden region after gc.
+uint G1FullCollector::truncate_parallel_cps() {
+  uint lowest_current = (uint)-1;
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
     if (cp->has_regions()) {
-      serial_compaction_point()->add(cp->remove_last());
+      lowest_current = MIN2(lowest_current, cp->current_region()->hrm_index());
     }
   }
 
-  // Update the forwarding information for the regions in the serial
-  // compaction point.
-  G1FullGCCompactionPoint* cp = serial_compaction_point();
-  for (GrowableArrayIterator<HeapRegion*> it = cp->regions()->begin(); it != cp->regions()->end(); ++it) {
-    HeapRegion* current = *it;
-    if (!cp->is_initialized()) {
-      // Initialize the compaction point. Nothing more is needed for the first heap region
-      // since it is already prepared for compaction.
-      cp->initialize(current);
-    } else {
-      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
-      G1SerialRePrepareClosure re_prepare(cp, current);
+  if (lowest_current == (uint)-1) {
+    // worker compaction points are empty
+    return lowest_current;
+  }
+
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      cp->remove_at_or_above(lowest_current);
+    }
+  }
+  return lowest_current;
+}
+
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+  // At this point, we know that after parallel compaction there will be regions that
+  // are partially compacted into. Thus, the last compaction region of all
+  // compaction queues still have space in them. We try to re-compact these regions
+  // in serial to avoid a premature OOM when the mutator wants to allocate the first
+  // eden region after gc.
+
+  // For maximum compaction, we need to re-prepare all objects above the lowest
+  // region among the current regions for all thread compaction points. It may
+  // happen that due to the uneven distribution of objects to parallel threads, holes
+  // have been created as threads compact to different target regions between the
+  // lowest and the highest region in the tails of the compaction points.
+
+  uint start_serial = truncate_parallel_cps();
+  if (start_serial >= _heap->max_reserved_regions()) {
+    return;
+  }
+
+  G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
+  assert(!serial_cp->is_initialized(), "sanity!");
+
+  HeapRegion* start_hr = _heap->region_at(start_serial);
+  serial_cp->add(start_hr);
+  serial_cp->initialize(start_hr);
+
+  HeapWord* dense_prefix_top = compaction_top(start_hr);
+  G1SerialRePrepareClosure re_prepare(serial_cp, dense_prefix_top);
+
+  for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
+    if (is_compaction_target(i)) {
+      HeapRegion* current = _heap->region_at(i);
       set_compaction_top(current, current->bottom());
+      serial_cp->add(current);
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }
-  cp->update();
+  serial_cp->update();
 }
 
 void G1FullCollector::phase3_adjust_pointers() {

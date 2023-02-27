@@ -48,11 +48,10 @@ public class JcmdSummaryClass {
 
         // Run 'jcmd <pid> VM.native_memory baseline=true'
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory"});
-        pb.start().waitFor();
+        output = new OutputAnalyzer(pb.start());
 
         String classes_line = "classes #\\d+";
         String instance_array_classes_line = "instance classes #\\d+, array classes #\\d+";
-        output = new OutputAnalyzer(pb.start());
         output.shouldMatch(classes_line);
         output.shouldMatch(instance_array_classes_line);
     }

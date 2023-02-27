@@ -1299,8 +1299,34 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+#ifdef __APPLE__
+static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, char* buf, size_t size) {
+  if (sysctlbyname(sysctlkey, buf, &size, nullptr, 0) >= 0) {
+    st->print_cr("%s:%s", sysctlkey, buf);
+  }
+}
+
+static void print_sysctl_info_uint64(const char* sysctlkey, outputStream* st) {
+  uint64_t val;
+  size_t size=sizeof(uint64_t);
+  if (sysctlbyname(sysctlkey, &val, &size, nullptr, 0) >= 0) {
+    st->print_cr("%s:%llu", sysctlkey, val);
+  }
+}
+#endif
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+#ifdef __APPLE__
+  print_sysctl_info_string("machdep.cpu.brand_string", st, buf, buflen);
+  print_sysctl_info_uint64("hw.cpufrequency", st);
+  print_sysctl_info_uint64("hw.cpufrequency_min", st);
+  print_sysctl_info_uint64("hw.cpufrequency_max", st);
+  print_sysctl_info_uint64("hw.cachelinesize", st);
+  print_sysctl_info_uint64("hw.l1icachesize", st);
+  print_sysctl_info_uint64("hw.l1dcachesize", st);
+  print_sysctl_info_uint64("hw.l2cachesize", st);
+  print_sysctl_info_uint64("hw.l3cachesize", st);
+#endif
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
@@ -1345,7 +1371,7 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
@@ -1910,10 +1936,10 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  int page_size = getpagesize();
+  size_t page_size = (size_t)getpagesize();
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
-  if (os::vm_page_size() <= 0) {
+  if (os::vm_page_size() == 0) {
     fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
   _page_sizes.add(os::vm_page_size());
