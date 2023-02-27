@@ -11,4 +11,4 @@ ARGS=(
     --with-hsdis=binutils --with-binutils-src=/workspace/binutils --enable-hsdis-bundling
 )
 
-/sysroot/run-in.sh /sysroot/$DIST-amd64 bash configure ${ARGS[@]} $*
+bash configure ${ARGS[@]} $*
