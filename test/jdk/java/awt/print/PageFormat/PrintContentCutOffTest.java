@@ -26,7 +26,7 @@
  * @test
  * @bug 8295737
  * @summary macOS: Print content cut off when width > height with portrait orientation
- * @run main/othervm/manual PaperA5OrientationTest
+ * @run main/othervm/manual PrintContentCutOffTest
  */
 
 import javax.swing.*;
@@ -53,7 +53,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 
 
-public class PaperA5OrientationTest {
+public class PrintContentCutOffTest {
 
     private static final String DESCRIPTION =
 
