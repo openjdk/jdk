@@ -135,7 +135,7 @@ void HeapRegion::hr_clear(bool clear_space) {
 
 void HeapRegion::clear_cardtable() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
-  ct->clear(MemRegion(bottom(), end()));
+  ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
 void HeapRegion::calc_gc_efficiency() {
