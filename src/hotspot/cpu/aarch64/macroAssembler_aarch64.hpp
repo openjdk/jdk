@@ -479,6 +479,8 @@ private:
 
   void mov(Register dst, Address a);
 
+  void assert_zero(Register r);
+
 public:
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
