@@ -67,12 +67,16 @@ import jdk.internal.classfile.MethodTransform;
 import jdk.internal.classfile.Signature;
 import jdk.internal.classfile.Superclass;
 import jdk.internal.classfile.TypeAnnotation;
+import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
 import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.classfile.attribute.InnerClassInfo;
 import jdk.internal.classfile.attribute.InnerClassesAttribute;
 import jdk.internal.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.attribute.ModuleProvideInfo;
+import jdk.internal.classfile.attribute.NestHostAttribute;
+import jdk.internal.classfile.attribute.NestMembersAttribute;
+import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
 import jdk.internal.classfile.attribute.RecordAttribute;
 import jdk.internal.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
@@ -90,36 +94,39 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
 
 /**
- * ClassRemapper is a {@link jdk.internal.classfile.ClassTransform}, {@link jdk.internal.classfile.FieldTransform},
- * {@link jdk.internal.classfile.MethodTransform} and {@link jdk.internal.classfile.CodeTransform}
- * deeply re-mapping all class references in any form, according to given map or map function.
+ * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
+ * {@link MethodTransform} and {@link CodeTransform}
+ * deeply re-mapping all class references in any form, according to given map or
+ * map function.
  * <p>
- * The re-mapping is applied to superclass, interfaces, all kinds of descriptors and signatures,
- * all attributes referencing classes in any form (including all types of annotations),
- * and to all instructions referencing to classes.
+ * The re-mapping is applied to superclass, interfaces, all kinds of descriptors
+ * and signatures, all attributes referencing classes in any form (including all
+ * types of annotations), and to all instructions referencing to classes.
  * <p>
- * Primitive types and arrays are never subjects of mapping and are not allowed targets of mapping.
+ * Primitive types and arrays are never subjects of mapping and are not allowed
+ * targets of mapping.
  * <p>
- * Arrays of reference types are always decomposed, mapped as the base reference types and composed back to arrays.
+ * Arrays of reference types are always decomposed, mapped as the base reference
+ * types and composed back to arrays.
  */
 public sealed interface ClassRemapper extends ClassTransform {
 
     /**
-     * Creates new instance of ClassRemapper instructed with a class map.
+     * Creates new instance of {@code ClassRemapper} instructed with a class map.
      * Map may contain only re-mapping entries, identity mapping is applied by default.
      * @param classMap class map
-     * @return new instance of ClassRemapper
+     * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
     /**
-     * Creates new instance of ClassRemapper instructed with a map function.
+     * Creates new instance of {@code ClassRemapper} instructed with a map function.
      * Map function must return valid {@link java.lang.constant.ClassDesc} of an interface
      * or a class, even for identity mappings.
      * @param mapFunction class map function
-     * @return new instance of ClassRemapper
+     * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
         return new ClassRemapperImpl(mapFunction);
@@ -133,20 +140,20 @@ public sealed interface ClassRemapper extends ClassTransform {
     ClassDesc map(ClassDesc desc);
 
     /**
-     * Returns this ClassRemapper as {@link jdk.internal.classfile.FieldTransform} instance
-     * @return this ClassRemapper as {@link jdk.internal.classfile.FieldTransform} instance
+     * Returns this {@code ClassRemapper} as {@link FieldTransform} instance
+     * @return this {@code ClassRemapper} as {@link FieldTransform} instance
      */
     FieldTransform asFieldTransform();
 
     /**
-     * Returns this ClassRemapper as {@link jdk.internal.classfile.MethodTransform} instance
-     * @return this ClassRemapper as {@link jdk.internal.classfile.MethodTransform} instance
+     * Returns this {@code ClassRemapper} as {@link MethodTransform} instance
+     * @return this {@code ClassRemapper} as {@link MethodTransform} instance
      */
     MethodTransform asMethodTransform();
 
     /**
-     * Returns this ClassRemapper as {@link jdk.internal.classfile.CodeTransform} instance
-     * @return this ClassRemapper as {@link jdk.internal.classfile.CodeTransform} instance
+     * Returns this {@code ClassRemapper} as {@link CodeTransform} instance
+     * @return this {@code ClassRemapper} as {@link CodeTransform} instance
      */
     CodeTransform asCodeTransform();
 
@@ -166,13 +173,18 @@ public sealed interface ClassRemapper extends ClassTransform {
         public void accept(ClassBuilder clb, ClassElement cle) {
             switch (cle) {
                 case FieldModel fm ->
-                    clb.withField(fm.fieldName().stringValue(), map(fm.fieldTypeSymbol()), fb -> fm.forEachElement(asFieldTransform().resolve(fb).consumer()));
+                    clb.withField(fm.fieldName().stringValue(), map(
+                            fm.fieldTypeSymbol()), fb ->
+                                    fm.forEachElement(asFieldTransform().resolve(fb).consumer()));
                 case MethodModel mm ->
-                    clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(mm.methodTypeSymbol()), mm.flags().flagsMask(), mb -> mm.forEachElement(asMethodTransform().resolve(mb).consumer()));
+                    clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(
+                            mm.methodTypeSymbol()), mm.flags().flagsMask(), mb ->
+                                    mm.forEachElement(asMethodTransform().resolve(mb).consumer()));
                 case Superclass sc ->
                     clb.withSuperclass(map(sc.superclassEntry().asSymbol()));
                 case Interfaces ins ->
-                    clb.withInterfaceSymbols(Util.mappedList(ins.interfaces(), in -> map(in.asSymbol())));
+                    clb.withInterfaceSymbols(Util.mappedList(ins.interfaces(), in ->
+                            map(in.asSymbol())));
                 case SignatureAttribute sa ->
                     clb.with(SignatureAttribute.of(mapClassSignature(sa.asClassSignature())));
                 case InnerClassesAttribute ica ->
@@ -186,21 +198,39 @@ public sealed interface ClassRemapper extends ClassTransform {
                             ema.enclosingMethodName().map(Utf8Entry::stringValue),
                             ema.enclosingMethodTypeSymbol().map(this::mapMethodDesc)));
                 case RecordAttribute ra ->
-                    clb.with(RecordAttribute.of(ra.components().stream().map(this::mapRecordComponent).toList()));
+                    clb.with(RecordAttribute.of(ra.components().stream()
+                            .map(this::mapRecordComponent).toList()));
                 case ModuleAttribute ma ->
-                    clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(), ma.moduleVersion().orElse(null),
+                    clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(),
+                            ma.moduleVersion().orElse(null),
                             ma.requires(), ma.exports(), ma.opens(),
-                            ma.uses().stream().map(ce -> clb.constantPool().classEntry(map(ce.asSymbol()))).toList(),
-                            ma.provides().stream().map(mp -> ModuleProvideInfo.of(map(mp.provides().asSymbol()),
-                                    mp.providesWith().stream().map(pw -> map(pw.asSymbol())).toList())).toList()));
+                            ma.uses().stream().map(ce ->
+                                    clb.constantPool().classEntry(map(ce.asSymbol()))).toList(),
+                            ma.provides().stream().map(mp ->
+                                    ModuleProvideInfo.of(map(mp.provides().asSymbol()),
+                                            mp.providesWith().stream().map(pw ->
+                                                    map(pw.asSymbol())).toList())).toList()));
+                case NestHostAttribute nha ->
+                    clb.with(NestHostAttribute.of(map(nha.nestHost().asSymbol())));
+                case NestMembersAttribute nma ->
+                    clb.with(NestMembersAttribute.ofSymbols(nma.nestMembers().stream()
+                            .map(nm -> map(nm.asSymbol())).toList()));
+                case PermittedSubclassesAttribute psa ->
+                    clb.with(PermittedSubclassesAttribute.ofSymbols(
+                            psa.permittedSubclasses().stream().map(ps ->
+                                    map(ps.asSymbol())).toList()));
                 case RuntimeVisibleAnnotationsAttribute aa ->
-                    clb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                            mapAnnotations(aa.annotations())));
                 case RuntimeInvisibleAnnotationsAttribute aa ->
-                    clb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    clb.with(RuntimeInvisibleAnnotationsAttribute.of(
+                            mapAnnotations(aa.annotations())));
                 case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                    clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(
+                            mapTypeAnnotations(aa.annotations())));
                 case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                    clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
+                            mapTypeAnnotations(aa.annotations())));
                 default ->
                     clb.with(cle);
             }
@@ -211,15 +241,20 @@ public sealed interface ClassRemapper extends ClassTransform {
             return (FieldBuilder fb, FieldElement fe) -> {
                 switch (fe) {
                     case SignatureAttribute sa ->
-                        fb.with(SignatureAttribute.of(mapSignature(sa.asTypeSignature())));
+                        fb.with(SignatureAttribute.of(
+                                mapSignature(sa.asTypeSignature())));
                     case RuntimeVisibleAnnotationsAttribute aa ->
-                        fb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                        fb.with(RuntimeVisibleAnnotationsAttribute.of(
+                                mapAnnotations(aa.annotations())));
                     case RuntimeInvisibleAnnotationsAttribute aa ->
-                        fb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                        fb.with(RuntimeInvisibleAnnotationsAttribute.of(
+                                mapAnnotations(aa.annotations())));
                     case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                        fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                        fb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        fb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     default ->
                         fb.with(fe);
                 }
@@ -230,24 +265,38 @@ public sealed interface ClassRemapper extends ClassTransform {
         public MethodTransform asMethodTransform() {
             return (MethodBuilder mb, MethodElement me) -> {
                 switch (me) {
+                    case AnnotationDefaultAttribute ada ->
+                        mb.with(AnnotationDefaultAttribute.of(
+                                mapAnnotationValue(ada.defaultValue())));
                     case CodeModel com ->
                         mb.transformCode(com, asCodeTransform());
                     case ExceptionsAttribute ea ->
-                        mb.with(ExceptionsAttribute.ofSymbols(ea.exceptions().stream().map(ce -> map(ce.asSymbol())).toList()));
+                        mb.with(ExceptionsAttribute.ofSymbols(
+                                ea.exceptions().stream().map(ce ->
+                                        map(ce.asSymbol())).toList()));
                     case SignatureAttribute sa ->
-                        mb.with(SignatureAttribute.of(mapMethodSignature(sa.asMethodSignature())));
+                        mb.with(SignatureAttribute.of(
+                                mapMethodSignature(sa.asMethodSignature())));
                     case RuntimeVisibleAnnotationsAttribute aa ->
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(
+                                mapAnnotations(aa.annotations())));
                     case RuntimeInvisibleAnnotationsAttribute aa ->
-                        mb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                        mb.with(RuntimeInvisibleAnnotationsAttribute.of(
+                                mapAnnotations(aa.annotations())));
                     case RuntimeVisibleParameterAnnotationsAttribute paa ->
-                        mb.with(RuntimeVisibleParameterAnnotationsAttribute.of(paa.parameterAnnotations().stream().map(this::mapAnnotations).toList()));
+                        mb.with(RuntimeVisibleParameterAnnotationsAttribute.of(
+                                paa.parameterAnnotations().stream()
+                                        .map(this::mapAnnotations).toList()));
                     case RuntimeInvisibleParameterAnnotationsAttribute paa ->
-                        mb.with(RuntimeInvisibleParameterAnnotationsAttribute.of(paa.parameterAnnotations().stream().map(this::mapAnnotations).toList()));
+                        mb.with(RuntimeInvisibleParameterAnnotationsAttribute.of(
+                                paa.parameterAnnotations().stream()
+                                        .map(this::mapAnnotations).toList()));
                     case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                        mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                        mb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        mb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     default ->
                         mb.with(me);
                 }
@@ -259,11 +308,16 @@ public sealed interface ClassRemapper extends ClassTransform {
             return (CodeBuilder cob, CodeElement coe) -> {
                 switch (coe) {
                     case FieldInstruction fai ->
-                        cob.fieldInstruction(fai.opcode(), map(fai.owner().asSymbol()), fai.name().stringValue(), map(fai.typeSymbol()));
+                        cob.fieldInstruction(fai.opcode(), map(fai.owner().asSymbol()),
+                                fai.name().stringValue(), map(fai.typeSymbol()));
                     case InvokeInstruction ii ->
-                        cob.invokeInstruction(ii.opcode(), map(ii.owner().asSymbol()), ii.name().stringValue(), mapMethodDesc(ii.typeSymbol()), ii.isInterface());
+                        cob.invokeInstruction(ii.opcode(), map(ii.owner().asSymbol()),
+                                ii.name().stringValue(), mapMethodDesc(ii.typeSymbol()),
+                                ii.isInterface());
                     case InvokeDynamicInstruction idi ->
-                        cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(idi.bootstrapMethod(), idi.name().stringValue(), mapMethodDesc(idi.typeSymbol())));
+                        cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
+                                idi.bootstrapMethod(), idi.name().stringValue(),
+                                mapMethodDesc(idi.typeSymbol())));
                     case NewObjectInstruction c ->
                         cob.newObjectInstruction(map(c.className().asSymbol()));
                     case NewReferenceArrayInstruction c ->
@@ -273,17 +327,23 @@ public sealed interface ClassRemapper extends ClassTransform {
                     case TypeCheckInstruction c ->
                         cob.typeCheckInstruction(c.opcode(), map(c.type().asSymbol()));
                     case ExceptionCatch c ->
-                        cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(), c.catchType().map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
+                        cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(),c.catchType()
+                                .map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
                     case LocalVariable c ->
-                        cob.localVariable(c.slot(), c.name().stringValue(), map(c.typeSymbol()), c.startScope(), c.endScope());
+                        cob.localVariable(c.slot(), c.name().stringValue(), map(c.typeSymbol()),
+                                c.startScope(), c.endScope());
                     case LocalVariableType c ->
-                        cob.localVariableType(c.slot(), c.name().stringValue(), mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
+                        cob.localVariableType(c.slot(), c.name().stringValue(),
+                                mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
                     case LoadConstantInstruction ldc ->
-                        cob.constantInstruction(ldc.opcode(), mapConstantValue(ldc.constantValue()));
+                        cob.constantInstruction(ldc.opcode(),
+                                mapConstantValue(ldc.constantValue()));
                     case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                        cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                        cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                        cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
+                                mapTypeAnnotations(aa.annotations())));
                     default ->
                         cob.with(coe);
                 }
@@ -299,36 +359,45 @@ public sealed interface ClassRemapper extends ClassTransform {
         }
 
         MethodTypeDesc mapMethodDesc(MethodTypeDesc desc) {
-            return MethodTypeDesc.of(map(desc.returnType()), desc.parameterList().stream().map(this::map).toArray(ClassDesc[]::new));
+            return MethodTypeDesc.of(map(desc.returnType()),
+                    desc.parameterList().stream().map(this::map).toArray(ClassDesc[]::new));
         }
 
         ClassSignature mapClassSignature(ClassSignature signature) {
-            return ClassSignature.of(signature.typeParameters(),
+            return ClassSignature.of(mapTypeParams(signature.typeParameters()),
                     mapSignature(signature.superclassSignature()),
-                    signature.superinterfaceSignatures().stream().map(this::mapSignature).toArray(Signature.RefTypeSig[]::new));
+                    signature.superinterfaceSignatures().stream()
+                            .map(this::mapSignature).toArray(Signature.RefTypeSig[]::new));
         }
 
         MethodSignature mapMethodSignature(MethodSignature signature) {
-            return MethodSignature.of(signature.typeParameters(),
+            return MethodSignature.of(mapTypeParams(signature.typeParameters()),
                     signature.throwableSignatures().stream().map(this::mapSignature).toList(),
                     mapSignature(signature.result()),
-                    signature.arguments().stream().map(this::mapSignature).toArray(Signature[]::new));
+                    signature.arguments().stream()
+                            .map(this::mapSignature).toArray(Signature[]::new));
         }
 
         RecordComponentInfo mapRecordComponent(RecordComponentInfo component) {
-            return RecordComponentInfo.of(component.name().stringValue(), map(component.descriptorSymbol()),
+            return RecordComponentInfo.of(component.name().stringValue(),
+                    map(component.descriptorSymbol()),
                     component.attributes().stream().map(atr ->
                         switch (atr) {
                             case SignatureAttribute sa ->
-                                SignatureAttribute.of(mapSignature(sa.asTypeSignature()));
+                                SignatureAttribute.of(
+                                        mapSignature(sa.asTypeSignature()));
                             case RuntimeVisibleAnnotationsAttribute aa ->
-                                RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations()));
+                                RuntimeVisibleAnnotationsAttribute.of(
+                                        mapAnnotations(aa.annotations()));
                             case RuntimeInvisibleAnnotationsAttribute aa ->
-                                RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations()));
+                                RuntimeInvisibleAnnotationsAttribute.of(
+                                        mapAnnotations(aa.annotations()));
                             case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                                RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations()));
+                                RuntimeVisibleTypeAnnotationsAttribute.of(
+                                        mapTypeAnnotations(aa.annotations()));
                             case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                                RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations()));
+                                RuntimeInvisibleTypeAnnotationsAttribute.of(
+                                        mapTypeAnnotations(aa.annotations()));
                             default -> atr;
                         }).toList());
         }
@@ -336,9 +405,13 @@ public sealed interface ClassRemapper extends ClassTransform {
         DirectMethodHandleDesc mapDirectMethodHandle(DirectMethodHandleDesc dmhd) {
             return switch (dmhd.kind()) {
                 case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER ->
-                    MethodHandleDesc.ofField(dmhd.kind(), map(dmhd.owner()), dmhd.methodName(), map(ClassDesc.ofDescriptor(dmhd.lookupDescriptor())));
+                    MethodHandleDesc.ofField(dmhd.kind(), map(dmhd.owner()),
+                            dmhd.methodName(),
+                            map(ClassDesc.ofDescriptor(dmhd.lookupDescriptor())));
                 default ->
-                    MethodHandleDesc.ofMethod(dmhd.kind(), map(dmhd.owner()), dmhd.methodName(), mapMethodDesc(MethodTypeDesc.ofDescriptor(dmhd.lookupDescriptor())));
+                    MethodHandleDesc.ofMethod(dmhd.kind(), map(dmhd.owner()),
+                            dmhd.methodName(),
+                            mapMethodDesc(MethodTypeDesc.ofDescriptor(dmhd.lookupDescriptor())));
             };
         }
 
@@ -370,7 +443,8 @@ public sealed interface ClassRemapper extends ClassTransform {
                     Signature.ArrayTypeSig.of(mapSignature(ats.componentSignature()));
                 case Signature.ClassTypeSig cts ->
                     Signature.ClassTypeSig.of(cts.outerType().map(this::mapSignature).orElse(null),
-                            map(cts.classDesc()), cts.typeArgs().stream().map(this::mapSignature).toArray(Signature[]::new));
+                            map(cts.classDesc()), cts.typeArgs().stream()
+                                    .map(this::mapSignature).toArray(Signature[]::new));
                 default -> signature;
             };
         }
@@ -380,22 +454,36 @@ public sealed interface ClassRemapper extends ClassTransform {
         }
 
         Annotation mapAnnotation(Annotation a) {
-            return Annotation.of(map(a.classSymbol()), a.elements().stream().map(el -> AnnotationElement.of(el.name(), mapAnnotationValue(el.value()))).toList());
+            return Annotation.of(map(a.classSymbol()), a.elements().stream().map(el ->
+                    AnnotationElement.of(el.name(), mapAnnotationValue(el.value()))).toList());
         }
 
         AnnotationValue mapAnnotationValue(AnnotationValue val) {
             return switch (val) {
-                case AnnotationValue.OfAnnotation oa -> AnnotationValue.ofAnnotation(mapAnnotation(oa.annotation()));
-                case AnnotationValue.OfArray oa -> AnnotationValue.ofArray(oa.values().stream().map(this::mapAnnotationValue).toList());
+                case AnnotationValue.OfAnnotation oa ->
+                    AnnotationValue.ofAnnotation(mapAnnotation(oa.annotation()));
+                case AnnotationValue.OfArray oa ->
+                    AnnotationValue.ofArray(oa.values().stream().map(this::mapAnnotationValue).toList());
                 case AnnotationValue.OfConstant oc -> oc;
-                case AnnotationValue.OfClass oc -> AnnotationValue.ofClass(map(oc.classSymbol()));
-                case AnnotationValue.OfEnum oe -> AnnotationValue.ofEnum(map(oe.classSymbol()), oe.constantName().stringValue());
+                case AnnotationValue.OfClass oc ->
+                    AnnotationValue.ofClass(map(oc.classSymbol()));
+                case AnnotationValue.OfEnum oe ->
+                    AnnotationValue.ofEnum(map(oe.classSymbol()), oe.constantName().stringValue());
             };
         }
 
         List<TypeAnnotation> mapTypeAnnotations(List<TypeAnnotation> typeAnnotations) {
-            return typeAnnotations.stream().map(a -> TypeAnnotation.of(a.targetInfo(), a.targetPath(), map(a.classSymbol()),
-                    a.elements().stream().map(el -> AnnotationElement.of(el.name(), mapAnnotationValue(el.value()))).toList())).toList();
+            return typeAnnotations.stream().map(a -> TypeAnnotation.of(a.targetInfo(),
+                    a.targetPath(), map(a.classSymbol()),
+                    a.elements().stream().map(el -> AnnotationElement.of(el.name(),
+                            mapAnnotationValue(el.value()))).toList())).toList();
+        }
+
+        List<Signature.TypeParam> mapTypeParams(List<Signature.TypeParam> typeParams) {
+            return typeParams.stream().map(tp -> Signature.TypeParam.of(tp.identifier(),
+                    tp.classBound().map(this::mapSignature),
+                    tp.interfaceBounds().stream()
+                            .map(this::mapSignature).toArray(Signature.RefTypeSig[]::new))).toList();
         }
     }
 }
