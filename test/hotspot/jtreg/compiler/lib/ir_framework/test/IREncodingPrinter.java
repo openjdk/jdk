@@ -55,6 +55,31 @@ public class IREncodingPrinter {
     private Method method;
     private int ruleIndex;
 
+    // Please verify new CPU features before adding them. If we allow non-existent features
+    // on this list, we will ignore tests and never execute them. Consult CPU_FEATURE_FLAGS
+    // in corresponding vm_version_.hpp file to find correct cpu feature's name.
+    private static final List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
+        // x86
+        "fma",
+        // Intel SSE
+        "sse",
+        "sse2",
+        "sse3",
+        "ssse3",
+        "sse4.1",
+        // Intel AVX
+        "avx",
+        "avx2",
+        "avx512",
+        "avx512dq",
+        "avx512vl",
+        "avx512f",
+        // AArch64
+        "sha3",
+        "asimd",
+        "sve"
+    ));
+
     public IREncodingPrinter() {
         output.append(START).append(System.lineSeparator());
         output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
@@ -236,6 +261,11 @@ public class IREncodingPrinter {
         }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for feature " + feature + failAt());
+            return false;
+        }
+
+        if (!verifiedCPUFeatures.contains(feature)) {
+            TestFormat.failNoThrow("Provided CPU feature is not in verified list: " + feature + failAt());
             return false;
         }
 
