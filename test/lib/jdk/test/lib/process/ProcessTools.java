@@ -225,7 +225,7 @@ public final class ProcessTools {
                         // Give some extra time for the StreamPumper to run after the process completed
                         Thread.sleep(1000);
                         if (latch.getCount() > 0) {
-                            throw new RuntimeException("Started process " + name + " is not alive.");
+                            throw new RuntimeException("Started process " + name + " terminated before producing the expected output.");
                         }
                     } else {
                         throw new TimeoutException();
