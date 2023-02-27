@@ -64,7 +64,10 @@ public class Test8299817 {
 
     public static void main(String[] args) throws Exception {
         if (!DEBUG_MODE) {
-            if (!Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "com.sun.crypto.provider.CounterMode", "implCrypt", byte[].class, int.class, int.class, byte[].class, int.class)) {
+            if (!Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION,
+                                               "com.sun.crypto.provider.CounterMode", "implCrypt",
+                                                byte[].class, int.class, int.class, byte[].class, int.class)
+               ) {
                 throw new SkippedException("AES-CTR intrinsic is not available");
             }
         }
@@ -141,7 +144,8 @@ public class Test8299817 {
                             failed = true;
                             System.out.println("-------------------");
                         }
-                        System.out.println("Decrypt failure (warmup, update): LEN(" + LEN_MAX + "), iteration (" + i + "), k = " + k);
+                        System.out.println("Decrypt failure (warmup, update): LEN(" +
+                                           LEN_MAX + "), iteration (" + i + "), k = " + k);
                     }
                 }
                 int len2 = (varlen[2*j+1] & 0x0f) + 1;
@@ -152,7 +156,8 @@ public class Test8299817 {
                             failed = true;
                             System.out.println("-------------------");
                         }
-                        System.out.println("Decrypt failure (warmup, update): LEN(" + LEN_MAX + "), iteration (" + i + "), k = " + k);
+                        System.out.println("Decrypt failure (warmup, update): LEN(" +
+                                           LEN_MAX + "), iteration (" + i + "), k = " + k);
                     }
                 }
                 decryptCipher.doFinal(work_encrypted, len1+len2, LEN_MAX-len1-len2, work_decrypted, len1+len2);
@@ -162,7 +167,8 @@ public class Test8299817 {
                             failed = true;
                             System.out.println("-------------------");
                         }
-                        System.out.println("Decrypt failure (warmup, doFinal): LEN(" + LEN_MAX + "), iteration (" + i + "), k = " + k);
+                        System.out.println("Decrypt failure (warmup, doFinal): LEN(" +
+                                           LEN_MAX + "), iteration (" + i + "), k = " + k);
                     }
                 }
             }
@@ -196,7 +202,8 @@ public class Test8299817 {
                                 failed = true;
                                 System.out.println("-------------------");
                             }
-                            System.out.println("Decrypt failure (update): LEN(" + LEN + "), iteration " + i + ", SEG(" + SEG + "), SEG_INC(" + SEG_INC + "), k = " + k);
+                            System.out.println("Decrypt failure (update): LEN(" + LEN + "), iteration " +
+                                               i + ", SEG(" + SEG + "), SEG_INC(" + SEG_INC + "), k = " + k);
                         }
                     }
                     ix += SEG_INC;
@@ -208,8 +215,10 @@ public class Test8299817 {
                         failed = true;
                         System.out.println("-------------------");
                     }
-                    System.out.println("While decrypting the remaining " + (LEN - ix) + "(" + LEN + ") bytes of CT, iteration " + i);
-                    System.out.println("Decrypt failure (doFinal): LEN(" + LEN + "), SEG_INC(" + SEG_INC + "), SEG_MAX(" + SEG_MAX + ")");
+                    System.out.println("While decrypting the remaining " + (LEN - ix) +
+                                       "(" + LEN + ") bytes of CT, iteration " + i);
+                    System.out.println("Decrypt failure (doFinal): LEN(" + LEN +
+                                       "), SEG_INC(" + SEG_INC + "), SEG_MAX(" + SEG_MAX + ")");
                     showArray(work_encrypted, work_encrypted.length, "encrypted:");
                     compareArrays(work_decrypted, original, true);
                     if (!DEBUG_MODE) {
@@ -235,7 +244,8 @@ public class Test8299817 {
             equal &= b[i] == exp[i];
             if (!equal) {
                 if (print) {
-                    System.out.format("encrypt/decrypt error at index %d: got %02x, expected %02x\n", i, b[i] & 0xff, exp[i] & 0xff);
+                    System.out.format("encrypt/decrypt error at index %d: got %02x, expected %02x\n",
+                                      i, b[i] & 0xff, exp[i] & 0xff);
                     showArray(b,   len, "result:   ");
                     showArray(exp, len, "expected: ");
                 }
