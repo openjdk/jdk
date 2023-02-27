@@ -411,7 +411,7 @@ final class StringLatin1 {
                     return false;
                 }
             }
-            // If utf case folds into latin1, we compare lowercases
+            // If utf folds into latin1, compare lowercases
             int lat1CaseFold = CharacterData.latin1CaseFold(utf);
             if (lat1CaseFold != -1) {
                 int latLow = CharacterDataLatin1.instance.toLowerCase(lat);
@@ -421,7 +421,7 @@ final class StringLatin1 {
                     return false;
                 }
             }
-            // Non-latin1 Unicode which does not fold into latin1
+            // Does not fold into latin1
             return false;
         }
         return true;
