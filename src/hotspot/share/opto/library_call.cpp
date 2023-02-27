@@ -5138,8 +5138,8 @@ bool LibraryCallKit::inline_arraycopy() {
   JVMState* saved_jvms_before_guards = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
   // See arraycopy_restore_alloc_state() comment
   // if alloc == null we don't have to worry about a tightly coupled allocation so we can emit all needed guards
-  // if saved_jvms_before_guards != nullptr (then alloc != nullptr) then we can handle guards and a tightly coupled allocation
-  // if saved_jvms_before_guards == nullptr and alloc != nullptr, we can't emit any guards
+  // if saved_jvms_before_guards is not null (then alloc is not null) then we can handle guards and a tightly coupled allocation
+  // if saved_jvms_before_guards is null and alloc is not null, we can't emit any guards
   bool can_emit_guards = (alloc == nullptr || saved_jvms_before_guards != nullptr);
 
   // The following tests must be performed
@@ -5161,7 +5161,7 @@ bool LibraryCallKit::inline_arraycopy() {
   dest = null_check(dest, T_ARRAY);
 
   if (!can_emit_guards) {
-    // if saved_jvms_before_guards == nullptr and alloc != nullptr, we don't emit any
+    // if saved_jvms_before_guards is null and alloc is not null, we don't emit any
     // guards but the arraycopy node could still take advantage of a
     // tightly allocated allocation. tightly_coupled_allocation() is
     // called again to make sure it takes the null check above into

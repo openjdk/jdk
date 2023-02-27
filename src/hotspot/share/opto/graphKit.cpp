@@ -3061,7 +3061,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
     return obj;
   }
 
-  // type == null if profiling tells us this object is always null
+  // type is null if profiling tells us this object is always null
   if (type != nullptr) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
@@ -3514,7 +3514,7 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 //-------------------------------get_layout_helper-----------------------------
 // If the given klass is a constant or known to be an array,
 // fetch the constant layout helper value into constant_value
-// and return (Node*)null.  Otherwise, load the non-constant
+// and return null.  Otherwise, load the non-constant
 // layout helper value, and return the node which represents it.
 // This two-faced routine is useful because allocation sites
 // almost always feature constant types.

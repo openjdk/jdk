@@ -70,15 +70,16 @@ public:
 // Simple pointer constants
 class ConPNode : public ConNode {
 public:
-  ConPNode( const TypePtr *t ) : ConNode(t) {}
+  ConPNode(const TypePtr *t) : ConNode(t) {}
   virtual int Opcode() const;
 
   // Factory methods:
   static ConPNode* make(address con) {
-    if (con == nullptr)
-      return new ConPNode( TypePtr::NULL_PTR ) ;
-    else
-      return new ConPNode( TypeRawPtr::make(con) );
+    if (con == nullptr) {
+      return new ConPNode(TypePtr::NULL_PTR);
+    } else {
+      return new ConPNode(TypeRawPtr::make(con));
+    }
   }
 };
 

@@ -4649,7 +4649,7 @@ void SWPointer::Tracer::offset_plus_k_4(Node* n) {
 void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
   if(_slp->is_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
-    print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: _invar != nullptr: ", _invar->_idx); _invar->dump();
+    print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: _invar is not null: ", _invar->_idx); _invar->dump();
   }
 }
 

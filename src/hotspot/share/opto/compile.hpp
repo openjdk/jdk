@@ -216,7 +216,7 @@ class Compile : public Phase {
     AliasIdxRaw = 3   // hard-wired index for TypeRawPtr::BOTTOM
   };
 
-  // Variant of TraceTime(null, &_t_accumulator, CITime);
+  // Variant of TraceTime(nullptr, &_t_accumulator, CITime);
   // Integrated with logging.  If logging is turned on, and CITimeVerbose is true,
   // then brackets are put into the log, with time stamps and node counts.
   // (The time collection itself is always conditionalized on CITime.)

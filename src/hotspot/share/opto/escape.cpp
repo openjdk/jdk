@@ -56,7 +56,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   // Add unknown java object.
   add_java_object(C->top(), PointsToNode::GlobalEscape);
   phantom_obj = ptnode_adr(C->top()->_idx)->as_JavaObject();
-  // Add ConP(#null) and ConN(#null) nodes.
+  // Add ConP and ConN null oop nodes
   Node* oop_null = igvn->zerocon(T_OBJECT);
   assert(oop_null->_idx < nodes_size(), "should be created already");
   add_java_object(oop_null, PointsToNode::NoEscape);
@@ -95,7 +95,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
-  // Add ConP#null and ConN#null nodes before ConnectionGraph construction
+  // Add ConP and ConN null oop nodes before ConnectionGraph construction
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);

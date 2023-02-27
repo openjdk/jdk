@@ -2684,7 +2684,7 @@ const Type *TypePtr::xmeet(const Type *t) const {
 
   const TypePtr* res_ptr = res->is_ptr();
   if (res_ptr->speculative() != nullptr) {
-    // type->speculative() == null means that speculation is no better
+    // type->speculative() is null means that speculation is no better
     // than type, i.e. type->speculative() == type. So there are 2
     // ways to represent the fact that we have no useful speculative
     // data and we should use a single one to be able to test for

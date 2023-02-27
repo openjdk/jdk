@@ -1774,12 +1774,12 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    // counter.  If they use the PRE-incremented counter, then the counter has
   //    // to be incremented in a private block on a loop backedge.
   //    if( du && du->cnt(this) && du->out(this)[0]->Opcode() == Op_CountedLoopEnd )
-  //      return null;
+  //      return nullptr;
   //  #ifndef PRODUCT
   //    // Do not do this in a wash GVN pass during verification.
   //    // Gets triggered by too many simple optimizations to be bothered with
   //    // re-trying it again and again.
-  //    if( !phase->allow_progress() ) return null;
+  //    if( !phase->allow_progress() ) return nullptr;
   //  #endif
   //    // Not valid for unsigned compare because of corner cases in involving zero.
   //    // For example, replacing "X-1 <u Y" with "X <=u Y" fails to throw an

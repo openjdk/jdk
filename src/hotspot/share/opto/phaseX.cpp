@@ -2220,7 +2220,7 @@ Node *PhaseCCP::transform( Node *n ) {
     uint cnt = clone->req();
     for( uint i = 0; i < cnt; i++ ) {          // For all inputs do
       Node *input = clone->in(i);
-      if( input != nullptr ) {                    // Ignore nulls
+      if( input != nullptr ) {                 // Ignore nulls
         Node *new_input = _nodes[input->_idx]; // Check for cloned input node
         if( new_input == nullptr ) {
           new_input = transform_once(input);   // Check for constant

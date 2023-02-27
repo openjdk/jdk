@@ -901,7 +901,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 // So we insert a RethrowCall and all the logic that goes with it.
 void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   // Caller is responsible for saving away the map for normal control flow!
-  assert(stopped(), "call set_map(null) first");
+  assert(stopped(), "call set_map(nullptr) first");
   assert(method()->has_exception_handlers(), "don't come here w/o work to do");
 
   Node* ex_node = saved_ex_oop(ex_map);

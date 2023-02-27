@@ -346,7 +346,7 @@ public:
   // Helper for get_base_and_disp: find the base and index input nodes.
   // Returns the MachOper as determined by memory_operand(), for use, if
   // needed by the caller. If (MachOper *)-1 is returned, base and index
-  // are set to NodeSentinel. If (MachOper *) null is returned, base and
+  // are set to NodeSentinel. If null is returned, base and
   // index are set to null.
   const MachOper* memory_inputs(Node* &base, Node* &index) const;
 
