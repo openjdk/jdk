@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "sysShmem.h"
 #include "shmemBase.h"
 #include "jdwpTransport.h"  /* for Packet, TransportCallback */
-
-#include <inttypes.h>
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
