@@ -848,7 +848,7 @@ containing `lib/jtreg.jar` etc.
 
 The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
 recent builds of jtreg [here](
-https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
+https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
