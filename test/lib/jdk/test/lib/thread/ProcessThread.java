@@ -150,8 +150,6 @@ public class ProcessThread extends TestThread {
          */
         @Override
         public void xrun() throws Throwable {
-            String name = Thread.currentThread().getName();
-
             try {
                 this.process = ProcessTools.startProcess(name, processBuilder, waitfor);
             } catch (Throwable t) {

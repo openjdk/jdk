@@ -216,22 +216,16 @@ public final class ProcessTools {
 
         try {
             if (timeout > -1) {
-                // Every second check if process is still alive
-                boolean succeeded = Utils.waitForCondition(() -> {
-                    //Fail if process finished before printed expected string
-                    if (!p.isAlive()) {
-                        latch.countDown();
-                        throw new RuntimeException("Started process " + name + " is not alive.");
-                    }
-                    try {
-                       return latch.await(1, TimeUnit.SECONDS);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, unit.toMillis(Utils.adjustTimeout(timeout)), 0);
+                // Every second check if line is printed and if process is still alive
+                Utils.waitForCondition(() -> latch.getCount() == 0 || !p.isAlive(),
+                        unit.toMillis(Utils.adjustTimeout(timeout)), 1000);
 
-                if (!succeeded) {
-                    throw new TimeoutException();
+                if (latch.getCount() != 0) {
+                    if (!p.isAlive()) {
+                        throw new RuntimeException("Started process " + name + " is not alive.");
+                    } else {
+                        throw new TimeoutException();
+                    }
                 }
             }
         } catch (TimeoutException | RuntimeException e) {
