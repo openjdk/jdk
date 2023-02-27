@@ -126,9 +126,7 @@ endif
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
-  # This option forces gcc to generate position independent code, so
-  # that any cleanup of code related to AWT will not change the
-  # generated code and cause performance issues in J2DBench
+  # This option improves performance of FillRect/FillOval in Java2D by 15% for some gcc
   LIBAWT_CFLAGS += -fpic
 endif
 
