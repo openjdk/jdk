@@ -276,8 +276,7 @@ private:
   void process_non_strong_references();
   void relocate_start();
   void relocate();
-  void remap_roots();
-  void remap_remembered_sets();
+  void remap_young_roots();
 
   void concurrent_mark();
   bool pause_mark_end();
@@ -289,7 +288,7 @@ private:
   void concurrent_select_relocation_set();
   void pause_relocate_start();
   void concurrent_relocate();
-  void concurrent_remap_roots();
+  void concurrent_remap_young_roots();
 
 public:
   ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator);

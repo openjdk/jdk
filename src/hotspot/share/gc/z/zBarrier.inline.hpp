@@ -320,7 +320,6 @@ inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
   return remap(ZPointer::uncolor_unsafe(o), remap_generation(o));
 }
 
-
 inline void z_assert_is_barrier_safe() {
   assert(!Thread::current()->is_ConcurrentGC_thread() ||          /* Need extra checks for ConcurrentGCThreads */
          Thread::current()->is_suspendible_thread() ||            /* Thread prevents safepoints */
