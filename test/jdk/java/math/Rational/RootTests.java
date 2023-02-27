@@ -1,6 +1,6 @@
 /*
  * @test
- * @summary Tests of Rational.sqrt().
+ * @summary Tests of Rational.root(n).
  */
 
 import java.math.*;
