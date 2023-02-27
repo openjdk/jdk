@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,7 +675,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         private final int signatureIndex;
         private final int offset;
         private final int accessFlags;
-        private final int internalFlags;
+        private final int fieldFlags;
         private final int initializerIndex;
 
         /**
@@ -685,15 +685,15 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          * @param signatureIndex index of field's signature in the constant pool
          * @param offset field's offset
          * @param accessFlags field's access flags (from the class file)
-         * @param internalFlags field's internal flags (from the VM)
+         * @param fieldFlags field's internal flags (from the VM)
          * @param initializerIndex field's initial value index in the constant pool
          */
-        FieldInfo(int nameIndex, int signatureIndex, int offset, int accessFlags, int internalFalgs, int initializerIndex) {
+        FieldInfo(int nameIndex, int signatureIndex, int offset, int accessFlags, int fieldFlags, int initializerIndex) {
             this.nameIndex = nameIndex;
             this.signatureIndex = signatureIndex;
             this.offset = offset;
             this.accessFlags = accessFlags;
-            this.internalFlags = internalFalgs;
+            this.fieldFlags = fieldFlags;
             this.initializerIndex = initializerIndex;
         }
 
@@ -701,8 +701,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             return accessFlags;
         }
 
-        private int getInternalFlags() {
-            return internalFlags;
+        private int getFieldFlags() {
+            return fieldFlags;
         }
 
         private int getNameIndex() {
@@ -757,7 +757,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
 
         private boolean isInternal() {
-            return (getInternalFlags() & (1 << config().jvmFieldFlagInternalShift)) != 0;
+            return (getFieldFlags() & (1 << config().jvmFieldFlagInternalShift)) != 0;
         }
 
         public boolean isStatic() {
@@ -855,7 +855,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             FieldInfo field = getFieldInfo(i);
             if (field.isStatic() == retrieveStaticFields) {
                 int offset = field.getOffset();
-                HotSpotResolvedJavaField resolvedJavaField = createField(field.getType(this), offset, field.getAccessFlags(), field.getInternalFlags(), i);
+                HotSpotResolvedJavaField resolvedJavaField = createField(field.getType(this), offset, field.getAccessFlags(), field.getFieldFlags(), i);
                 result[resultIndex++] = resolvedJavaField;
             }
         }

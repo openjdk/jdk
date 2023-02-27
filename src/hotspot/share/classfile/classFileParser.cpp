@@ -2012,7 +2012,7 @@ void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   // Setting the contended group also set the contended bit in field flags
     f->set_contended_group(contended_group());
   if (is_stable())
-    (f->internal_flags_addr())->update_stable(true);
+    (f->field_flags_addr())->update_stable(true);
 }
 
 ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {

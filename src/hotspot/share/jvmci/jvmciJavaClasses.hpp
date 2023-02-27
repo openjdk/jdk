@@ -81,7 +81,7 @@
     int_field(FieldInfo, signatureIndex)                                                                      \
     int_field(FieldInfo, offset)                                                                              \
     int_field(FieldInfo, accessFlags)                                                                         \
-    int_field(FieldInfo, internalFlags)                                                                       \
+    int_field(FieldInfo, fieldFlags)                                                                          \
     int_field(FieldInfo, initializerIndex)                                                                    \
   end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \

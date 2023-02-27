@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public class Field {
   // The format of the stream, after decompression, is a series of
   // integers organized like this:
   //
-  //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
-  //   Field := name sig offset access internal Optionals(internal)
+  //   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+  //   Field := name sig offset access flags Optionals(flags)
   //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
   //                   gsig?[i&is_generic]     // signature attr
   //                   group?[i&is_contended]  // Contended anno (group)
@@ -91,7 +91,7 @@ public class Field {
     fieldInfoValues.signatureIndex = crs.readInt(); // read signature index
     fieldInfoValues.offset = crs.readInt(); // read offset
     fieldInfoValues.accessFlags = crs.readInt(); // read access flags
-    fieldInfoValues.fieldFlags = crs.readInt();  // read internal field flags
+    fieldInfoValues.fieldFlags = crs.readInt();  // read field flags
     // Optional reads
     if (fieldIsInitialized(fieldInfoValues.fieldFlags)) fieldInfoValues.initialValueIndex = crs.readInt(); // read initial value index
     if (fieldIsGeneric(fieldInfoValues.fieldFlags))     fieldInfoValues.genericSignatureIndex = crs.readInt(); // read generic signature index
@@ -213,7 +213,7 @@ public class Field {
   public boolean isInjected()                { return fieldIsInjected(values.fieldFlags); }
   public boolean isGeneric()                 { return fieldIsGeneric(values.fieldFlags); }
   public boolean isStable()                  { return fieldIsStable(values.fieldFlags); }
-  public boolean isContended(int internalFlags) { return fieldIsContended(values.fieldFlags); }
+  public boolean isContended()               { return fieldIsContended(values.fieldFlags); }
 
   public boolean equals(Object obj) {
      if (obj == null) {

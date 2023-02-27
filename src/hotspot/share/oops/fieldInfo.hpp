@@ -132,7 +132,7 @@ class FieldInfo {
   u2 _signature_index;          // index in CP of descriptor
   u4 _offset;                   // offset in object layout
   AccessFlags _access_flags;    // access flags (JVM spec)
-  FieldFlags _internal_flags;   // internal flags (not JVM spec)
+  FieldFlags _field_flags;      // VM defined flags (not JVM spec)
   u2 _initializer_index;        // index from ConstantValue attr (or 0)
   u2 _generic_signature_index;  // index from GenericSignature attr (or 0)
   u2 _contention_group;         // index from @Contended group item (or 0)
@@ -143,7 +143,7 @@ class FieldInfo {
                 _signature_index(0),
                 _offset(0),
                 _access_flags(AccessFlags(0)),
-                _internal_flags(FieldFlags(0)),
+                _field_flags(FieldFlags(0)),
                 _initializer_index(0),
                 _generic_signature_index(0),
                 _contention_group(0) { }
@@ -153,12 +153,12 @@ class FieldInfo {
             _signature_index(signature_index),
             _offset(0),
             _access_flags(access_flags),
-            _internal_flags(fflags),
+            _field_flags(fflags),
             _initializer_index(initval_index),
             _generic_signature_index(0),
             _contention_group(0) {
               if (initval_index != 0) {
-                _internal_flags.update_initialized(true);
+                _field_flags.update_initialized(true);
               }
             }
 
@@ -171,8 +171,8 @@ class FieldInfo {
   u4 offset() const { return _offset; }
   void set_offset(u4 offset) { _offset = offset; }
   AccessFlags access_flags() const { return _access_flags; }
-  FieldFlags field_flags() const { return _internal_flags; }
-  FieldInfo::FieldFlags* internal_flags_addr() { return &_internal_flags; }
+  FieldFlags field_flags() const { return _field_flags; }
+  FieldInfo::FieldFlags* field_flags_addr() { return &_field_flags; }
   u2 initializer_index() const { return _initializer_index; }
   void set_initializer_index(u2 index) { _initializer_index = index; }
   u2 generic_signature_index() const { return _generic_signature_index; }
@@ -180,7 +180,7 @@ class FieldInfo {
   u2 contention_group() const { return _contention_group; }
 
   bool is_contended() const {
-    return _internal_flags.is_contended();
+    return _field_flags.is_contended();
   }
 
   u2 contended_group() const {
@@ -189,7 +189,7 @@ class FieldInfo {
   }
 
   void set_contended_group(u2 group) {
-    _internal_flags.update_contended(true);
+    _field_flags.update_contended(true);
     _contention_group = group;
   }
 
@@ -199,7 +199,7 @@ class FieldInfo {
 
   Symbol* name(ConstantPool* cp) const {
     int index = _name_index;
-    if (_internal_flags.is_injected()) {
+    if (_field_flags.is_injected()) {
       return lookup_symbol(index);
     }
     return cp->symbol_at(index);
@@ -207,14 +207,14 @@ class FieldInfo {
 
   Symbol* signature(ConstantPool* cp) const {
     int index = _signature_index;
-    if (_internal_flags.is_injected()) {
+    if (_field_flags.is_injected()) {
       return lookup_symbol(index);
     }
     return cp->symbol_at(index);
   }
 
   Symbol* lookup_symbol(int symbol_index) const {
-    assert(_internal_flags.is_injected(), "only injected fields");
+    assert(_field_flags.is_injected(), "only injected fields");
     return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
   }
 
@@ -274,8 +274,8 @@ public:
 // The format of the stream, after decompression, is a series of
 // integers organized like this:
 //
-//   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
-//   Field := name sig offset access internal Optionals(internal)
+//   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+//   Field := name sig offset access flags Optionals(flags)
 //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
 //                   gsig?[i&is_generic]     // signature attr
 //                   group?[i&is_contended]  // Contended anno (group)

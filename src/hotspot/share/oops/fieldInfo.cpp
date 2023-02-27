@@ -35,7 +35,7 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 access_flags().as_int(),
                 field_flags().as_uint(),
                 initializer_index(),
-                generic_signature_index(), _internal_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
+                generic_signature_index(), _field_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
                 contended_group());
 }
 
@@ -48,8 +48,8 @@ void FieldInfo::print_from_growable_array(GrowableArray<FieldInfo>* array, outpu
 Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS) {
   // The stream format described in fieldInfo.hpp is:
-  //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
-  //   Field := name sig offset access internal Optionals(internal)
+  //   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+  //   Field := name sig offset access flags Optionals(flags)
   //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
   //                   gsig?[i&is_generic]     // signature attr
   //                   group?[i&is_contended]  // Contended anno (group)

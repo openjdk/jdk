@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -822,8 +822,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             final int flags = info[0];
             final int offset = info[1];
             final int fieldIndex = info[2];
-            final int internalFlags = info[3];
-            HotSpotResolvedJavaField result = resolvedHolder.createField(type, offset, flags, internalFlags, fieldIndex);
+            final int fieldFlags = info[3];
+            HotSpotResolvedJavaField result = resolvedHolder.createField(type, offset, flags, fieldFlags, fieldIndex);
             return result;
         } else {
             return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type);

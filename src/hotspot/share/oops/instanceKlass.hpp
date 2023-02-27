@@ -386,7 +386,7 @@ class InstanceKlass: public Klass {
  public:
   int     field_offset      (int index) const { return field(index).offset(); }
   int     field_access_flags(int index) const { return field(index).access_flags().as_int(); }
-  FieldInfo::FieldFlags field_internal_flags(int index) const { return field(index).field_flags(); }
+  FieldInfo::FieldFlags field_flags(int index) const { return field(index).field_flags(); }
   FieldStatus field_status(int index)   const { return fields_status()->at(index); }
   Symbol* field_name        (int index) const { return field(index).name(constants()); }
   Symbol* field_signature   (int index) const { return field(index).signature(constants()); }
