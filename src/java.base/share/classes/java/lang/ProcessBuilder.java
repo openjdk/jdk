@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,12 +190,19 @@ import sun.security.action.GetPropertyAction;
 
 public final class ProcessBuilder
 {
+    // Initialize the java.lang.ProcessBuilder logger, non-null if configured for level DEBUG
+    private static final System.Logger LOGGER = initLogger();
+
     private List<String> command;
     private File directory;
     private Map<String,String> environment;
     private boolean redirectErrorStream;
     private Redirect[] redirects;
 
+    private static System.Logger initLogger() {
+        System.Logger logger = System.getLogger("java.lang.ProcessBuilder");
+        return logger.isLoggable(System.Logger.Level.DEBUG) ? logger : null;
+    }
     /**
      * Constructs a process builder with the specified operating
      * system program and arguments.  This constructor does <i>not</i>
@@ -1119,6 +1126,20 @@ public final class ProcessBuilder
                 event.command = String.join(" ", cmdarray);
                 event.pid = process.pid();
                 event.commit();
+            }
+            try {
+                if (LOGGER != null) {
+                    RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
+                    LOGGER.log(System.Logger.Level.DEBUG, "ProcessBuilder.start(): " +
+                                    Arrays.toString(cmdarray) + ", pid: " + process.pid(),
+                                    stackTraceEx);
+                }
+            } catch (Throwable logEx) {
+                try {
+                    System.err.println("Logging failed: " + logEx.getMessage() +
+                            ", ProcessBuilder.start(): " + Arrays.toString(cmdarray) +
+                            ", pid: " + process.pid());
+                } catch (Throwable thEx) {/* ignore */}
             }
             return process;
         } catch (IOException | IllegalArgumentException e) {
