@@ -39,6 +39,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -1458,13 +1459,23 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
       // TODO: Implement self-fixing here.
       Node* raw_mem_out = raw_mem;
-      if (addr->Opcode() == Op_AddP) {
-        Node* sfx = new CompareAndExchangePNode(if_fwd, raw_mem, addr, fwd, val, TypeRawPtr::BOTTOM, val->bottom_type(), MemNode::release);
+      if (!addr->is_Con()) {
+        Node* sfx;;
+        if (UseCompressedOops) {
+          Node* expected = new EncodePNode(val, val->bottom_type()->make_narrowoop());
+          phase->register_new_node(expected, if_fwd);
+          Node* update_val = new EncodePNode(fwd, val->bottom_type()->make_narrowoop());
+          phase->register_new_node(update_val, if_fwd);
+          sfx = new CompareAndExchangeNNode(if_fwd, raw_mem, addr, update_val, expected, TypeRawPtr::BOTTOM, val->bottom_type()->make_narrowoop(), MemNode::release);
+        } else {
+          sfx = new CompareAndExchangePNode(if_fwd, raw_mem, addr, fwd, val, TypeRawPtr::BOTTOM, val->bottom_type(), MemNode::release);
+        }
         phase->register_new_node(sfx, if_fwd);
         Node* cas_proj = new SCMemProjNode(sfx);
         phase->register_new_node(cas_proj, if_fwd);
         raw_mem_out = cas_proj;
       }
+
       // Wire up forwarded path in slots 3.
       region->init_req(_fwded, if_fwd);
       val_phi->init_req(_fwded, fwd);
