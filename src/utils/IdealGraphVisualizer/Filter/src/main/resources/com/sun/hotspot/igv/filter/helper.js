@@ -59,6 +59,15 @@ function split(property, regexp, propertyName) {
     f.apply(graph);
 }
 
+function combine(first, second, propertyNames) {
+    if (propertyNames == undefined) {
+        propertyNames = [];
+    }
+    var f = new CombineFilter("");
+    f.addRule(new CombineFilter.CombineRule(first, second, false, propertyNames));
+    f.apply(graph);
+}
+
 function removeInputs(property, regexp, from, to) {
     var f = new RemoveInputsFilter("");
     if(from == undefined && to == undefined) {

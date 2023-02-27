@@ -23,8 +23,6 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,11 +49,11 @@ public class CombineFilter extends AbstractFilter {
     @Override
     public void apply(Diagram diagram) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(diagram.getFigures());
         for (CombineRule r : rules) {
 
-            List<Figure> list = selector.selectMultiple(r.getFirstMatcher());
-            for (Figure f : list) {
+            List<Figure> first = r.getFirstSelector().selected(diagram);
+            List<Figure> second = r.getSecondSelector().selected(diagram);
+            for (Figure f : first) {
 
                 List<Figure> successors = new ArrayList<>(f.getSuccessors());
                 if (r.isReversed()) {
@@ -105,8 +103,7 @@ public class CombineFilter extends AbstractFilter {
 
                     for (Figure succ : successors) {
                         if (succ.getPredecessors().size() == 1) {
-                            if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() <= 1) {
-
+                            if (second.contains(succ) && succ.getOutputSlots().size() <= 1) {
 
                                 OutputSlot oldSlot = null;
                                 for (OutputSlot s : f.getOutputSlots()) {
@@ -181,17 +178,12 @@ public class CombineFilter extends AbstractFilter {
 
     public static class CombineRule {
 
-        private PropertyMatcher first;
-        private PropertyMatcher second;
+        private Selector first;
+        private Selector second;
         private boolean reversed;
         private String[] propertyNames;
 
-        public CombineRule(PropertyMatcher first, PropertyMatcher second) {
-            this(first, second, false);
-
-        }
-
-        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed, String... propertyNames) {
+        public CombineRule(Selector first, Selector second, boolean reversed, String[] propertyNames) {
             this.first = first;
             this.second = second;
             this.reversed = reversed;
@@ -202,11 +194,11 @@ public class CombineFilter extends AbstractFilter {
             return reversed;
         }
 
-        public PropertyMatcher getFirstMatcher() {
+        public Selector getFirstSelector() {
             return first;
         }
 
-        public PropertyMatcher getSecondMatcher() {
+        public Selector getSecondSelector() {
             return second;
         }
 
