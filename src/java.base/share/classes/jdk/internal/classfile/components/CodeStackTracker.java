@@ -83,7 +83,7 @@ public sealed interface CodeStackTracker extends CodeTransform {
 
     /**
       * Returns tracked max stack size.
-      * Returns an empty {@linkplain Optional} when Max stack size tracking has been lost.
+      * Returns an empty {@linkplain Optional} when max stack size tracking has been lost.
       *
       * Max stack size tracking is permanently lost when a stack instruction appears
       * and the actual stack content is unknown.
