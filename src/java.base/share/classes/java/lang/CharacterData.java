@@ -115,9 +115,9 @@ abstract class CharacterData {
      */
     static int latin1CaseFold(int c) {
         return switch (c) {
-            // Capital I with dot above: i
+            // Capital I with dot above: Small i
             case 0x130  -> 'i';
-            // Small dotless i: i
+            // Small dotless i: Small i
             case 0x131  -> 'i';
             // Capital Y with diaeresis: Small y with Diaeresis
             case 0x178  -> 0xFF;
@@ -125,7 +125,7 @@ abstract class CharacterData {
             case 0x17f  -> 's';
             // Capital sharp S: Small sharp s
             case 0x1e9e -> 0xDF;
-            // Kelvin sign: k
+            // Kelvin sign: Small k
             case 0x212a -> 'k';
             // Angstrom sign: Small a with overring
             case 0x212b -> 0xE5;
