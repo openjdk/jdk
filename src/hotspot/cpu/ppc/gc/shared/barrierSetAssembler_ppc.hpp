@@ -68,7 +68,6 @@ public:
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);
-  virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
 };

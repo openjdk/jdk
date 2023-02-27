@@ -321,52 +321,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
 }
 #endif
 
-void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
-    return;
-  }
-
-  Label bad_call;
-  __ cmpptr(rbx, 0); // rbx contains the incoming method for c2i adapters.
-  __ jcc(Assembler::equal, bad_call);
-
-  Register tmp1 = LP64_ONLY( rscratch1 ) NOT_LP64( rax );
-  Register tmp2 = LP64_ONLY( rscratch2 ) NOT_LP64( rcx );
-#ifndef _LP64
-  __ push(tmp1);
-  __ push(tmp2);
-#endif // !_LP64
-
-  // Pointer chase to the method holder to find out if the method is concurrently unloading.
-  Label method_live;
-  __ load_method_holder_cld(tmp1, rbx);
-
-   // Is it a strong CLD?
-  __ cmpl(Address(tmp1, ClassLoaderData::keep_alive_offset()), 0);
-  __ jcc(Assembler::greater, method_live);
-
-   // Is it a weak but alive CLD?
-  __ movptr(tmp1, Address(tmp1, ClassLoaderData::holder_offset()));
-  __ resolve_weak_handle(tmp1, tmp2);
-  __ cmpptr(tmp1, 0);
-  __ jcc(Assembler::notEqual, method_live);
-
-#ifndef _LP64
-  __ pop(tmp2);
-  __ pop(tmp1);
-#endif
-
-  __ bind(bad_call);
-  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-  __ bind(method_live);
-
-#ifndef _LP64
-  __ pop(tmp2);
-  __ pop(tmp1);
-#endif
-}
-
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);

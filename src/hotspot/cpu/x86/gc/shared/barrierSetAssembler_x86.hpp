@@ -63,7 +63,6 @@ public:
   virtual void barrier_stubs_init() {}
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
-  virtual void c2i_entry_barrier(MacroAssembler* masm);
 
   virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };

@@ -212,50 +212,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
-void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
-  assert_different_registers(tmp1, tmp2, tmp3);
-
-  __ block_comment("c2i_entry_barrier (c2i_entry_barrier) {");
-
-  Register tmp1_class_loader_data = tmp1;
-
-  Label bad_call, skip_barrier;
-
-  // Fast path: If no method is given, the call is definitely bad.
-  __ cmpdi(CCR0, R19_method, 0);
-  __ beq(CCR0, bad_call);
-
-  // Load class loader data to determine whether the method's holder is concurrently unloading.
-  __ load_method_holder(tmp1, R19_method);
-  __ ld(tmp1_class_loader_data, in_bytes(InstanceKlass::class_loader_data_offset()), tmp1);
-
-  // Fast path: If class loader is strong, the holder cannot be unloaded.
-  __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
-  __ cmpdi(CCR0, tmp2, 0);
-  __ bne(CCR0, skip_barrier);
-
-  // Class loader is weak. Determine whether the holder is still alive.
-  __ ld(tmp2, in_bytes(ClassLoaderData::holder_offset()), tmp1_class_loader_data);
-  __ resolve_weak_handle(tmp2, tmp1, tmp3, MacroAssembler::PreservationLevel::PRESERVATION_FRAME_LR_GP_FP_REGS);
-  __ cmpdi(CCR0, tmp2, 0);
-  __ bne(CCR0, skip_barrier);
-
-  __ bind(bad_call);
-
-  __ calculate_address_from_global_toc(tmp1, SharedRuntime::get_handle_wrong_method_stub(), true, true, false);
-  __ mtctr(tmp1);
-  __ bctr();
-
-  __ bind(skip_barrier);
-
-  __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
-}
-
 void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
   __ verify_oop(oop, msg);
 }

@@ -267,38 +267,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   __ bind(skip_barrier);
 }
 
-void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
-    return;
-  }
-
-  Label bad_call;
-  __ cbz(rmethod, bad_call);
-
-  // Pointer chase to the method holder to find out if the method is concurrently unloading.
-  Label method_live;
-  __ load_method_holder_cld(rscratch1, rmethod);
-
-  // Is it a strong CLD?
-  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_offset()));
-  __ cbnz(rscratch2, method_live);
-
-  // Is it a weak but alive CLD?
-  __ push(RegSet::of(r10), sp);
-  __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
-
-  __ resolve_weak_handle(r10, rscratch1, rscratch2);
-  __ mov(rscratch1, r10);
-  __ pop(RegSet::of(r10), sp);
-  __ cbnz(rscratch1, method_live);
-
-  __ bind(bad_call);
-
-  __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-  __ bind(method_live);
-}
-
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // Check if the oop is in the right area of memory
   __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
