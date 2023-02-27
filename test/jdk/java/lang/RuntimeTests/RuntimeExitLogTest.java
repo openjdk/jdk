@@ -26,7 +26,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
 import java.util.stream.Stream;
 
 
@@ -47,12 +49,17 @@ public class RuntimeExitLogTest {
     private static final String TEST_JDK = System.getProperty("test.jdk");
     private static final String TEST_SRC = System.getProperty("test.src");
 
+    private static Object HOLD_LOGGER;
+
     /**
      * Call System.exit() with the parameter (or zero if not supplied).
      * @param args zero or 1 argument, an exit status
      */
     public static void main(String[] args) throws InterruptedException {
         int status = args.length > 0 ? Integer.parseInt(args[0]) : 0;
+        if (System.getProperty("ThrowingHandler") != null) {
+            HOLD_LOGGER = ThrowingHandler.installHandler();
+        }
         System.exit(status);
     }
 
@@ -64,27 +71,35 @@ public class RuntimeExitLogTest {
         return Stream.of(
                 // Logging enabled with level DEBUG
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 1, true),
+                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 1,
+                        "Runtime.exit() called with status: 1"),
                 // Logging disabled due to level
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                        Path.of(TEST_SRC, "ExitLogging-INFO.properties").toString()), 2, false),
+                        Path.of(TEST_SRC, "ExitLogging-INFO.properties").toString()), 2,
+                        ""),
                 // Console logger
                 Arguments.of(List.of("--limit-modules", "java.base",
-                        "-Djdk.system.logger.level=DEBUG"), 3, true),
+                        "-Djdk.system.logger.level=DEBUG"), 3,
+                        "Runtime.exit() called with status: 3"),
                 // Console logger
-                Arguments.of(List.of(), 4, false)
-        );
+                Arguments.of(List.of(), 4, ""),
+                // Throwing Handler
+                Arguments.of(List.of("-DThrowingHandler",
+                        "-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 5,
+                        "Runtime.exit() logging failed: Exception in publish")
+                );
     }
 
     /**
      * Check that the logger output of a launched process contains the expected message.
      * @param logProps The name of the log.properties file to set on the command line
      * @param status the expected exit status of the process
-     * @param shouldLog true if the log should contain the message expected from Runtime.exit(status)
+     * @param expectMessage log should contain the message
      */
     @ParameterizedTest
     @MethodSource("logParamProvider")
-    public void checkLogger(List<String> logProps, int status, boolean shouldLog) {
+    public void checkLogger(List<String> logProps, int status, String expectMessage) {
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
 
@@ -98,12 +113,15 @@ public class RuntimeExitLogTest {
             Process process = pb.start();
             try (BufferedReader reader = process.inputReader()) {
                 List<String> lines = reader.lines().toList();
-                final String expected = "Runtime.exit() called with status: " + status;
-                Optional<String> found = lines.stream().filter(s -> s.contains(expected)).findFirst();
-                if (found.isPresent() != shouldLog) {
-                    System.err.println("---- Process output begin");
+                boolean match = (expectMessage.isEmpty())
+                        ? lines.size() == 0
+                        : lines.stream().filter(s -> s.contains(expectMessage)).findFirst().isPresent();
+                if (!match) {
+                    // Output lines for debug
+                    System.err.println("Expected: \"" + expectMessage + "\"");
+                    System.err.println("---- Actual output begin");
                     lines.forEach(l -> System.err.println(l));
-                    System.err.println("---- Process output end");
+                    System.err.println("---- Actual output end");
                     fail("Unexpected log contents");
                 }
             }
@@ -111,6 +129,25 @@ public class RuntimeExitLogTest {
             assertEquals(status, result, "Exit status");
         } catch (IOException | InterruptedException ex) {
             fail(ex);
+        }
+    }
+
+    /**
+     * A LoggingHandler that throws an Exception.
+     */
+    public static class ThrowingHandler extends StreamHandler {
+
+        // Install this handler for java.lang.Runtime
+        public static Logger installHandler() {
+            Logger logger = Logger.getLogger("java.lang.Runtime");
+            logger.addHandler(new ThrowingHandler());
+            return logger;
+        }
+
+        @Override
+        public synchronized void publish(LogRecord record) {
+            super.publish(record);
+            throw new RuntimeException("Exception in publish");
         }
     }
 }
