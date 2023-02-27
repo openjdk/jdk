@@ -220,7 +220,7 @@ public final class ProcessTools {
                 Utils.waitForCondition(() -> latch.getCount() == 0 || !p.isAlive(),
                         unit.toMillis(Utils.adjustTimeout(timeout)), 1000);
 
-                if (latch.getCount() != 0) {
+                if (latch.getCount() > 0) {
                     if (!p.isAlive()) {
                         // Give some extra time for the StreamPumper to run after the process completed
                         Thread.sleep(1000);
