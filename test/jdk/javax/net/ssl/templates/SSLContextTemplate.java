@@ -392,6 +392,13 @@ public abstract class SSLContextTemplate {
 
         CA_RSA_512( // for DisabledShortRSAKeys test
                 "RSA",
+                // Validity
+                //      Not Before: Aug 19 01:52:19 2011 GMT
+                //      Not After : Jul 29 01:52:19 2032 GMT
+                // X509v3 Authority Key Identifier:
+                //      keyid:B9:7C:D5:D9:DF:A7:4C:03:AE:FD:0E:27:5B:31:95:6C:C7:F3:75:E1
+                //      DirName:/C=US/O=Java/OU=SunJSSE Test Serivce
+                //      serial:00
                 "-----BEGIN CERTIFICATE-----\n" +
                 "MIICkjCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADA7MQswCQYDVQQGEwJVUzEN\n" +
                 "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
@@ -714,6 +721,11 @@ public abstract class SSLContextTemplate {
 
         EE_RSA_512(
                 "RSA",
+                // Validity
+                //      Not Before: Nov  7 13:55:52 2011 GMT
+                //      Not After : Jul 25 13:55:52 2031 GMT
+                // X509v3 Authority Key Identifier:
+                //      B9:7C:D5:D9:DF:A7:4C:03:AE:FD:0E:27:5B:31:95:6C:C7:F3:75:E1
                 "-----BEGIN CERTIFICATE-----\n" +
                 "MIICNDCCAZ2gAwIBAgIBDDANBgkqhkiG9w0BAQQFADA7MQswCQYDVQQGEwJVUzEN\n" +
                 "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
@@ -869,6 +881,11 @@ public abstract class SSLContextTemplate {
 
         EE_RSASSA_PSS(
                 "RSASSA-PSS",
+                // Validity
+                //      Not Before: Jun  6 07:11:00 2018 GMT
+                //      Not After : Jun  1 07:11:00 2038 GMT
+                // X509v3 Authority Key Identifier:
+                //      1F:16:2B:79:8A:55:89:99:98:02:5F:84:18:D0:7B:1A:23:D8:88:0C
                 "-----BEGIN CERTIFICATE-----\n" +
                 "MIIDZjCCAh2gAwIBAgIUHxwPs3eAgJ057nJwiLgWZWeNqdgwPgYJKoZIhvcNAQEK\n" +
                 "MDGgDTALBglghkgBZQMEAgGhGjAYBgkqhkiG9w0BAQgwCwYJYIZIAWUDBAIBogQC\n" +

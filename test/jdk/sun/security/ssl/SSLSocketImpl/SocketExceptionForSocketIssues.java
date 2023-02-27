@@ -71,7 +71,6 @@ public class SocketExceptionForSocketIssues extends SSLSocketTemplate {
             os.newLine();
             os.flush();
             throw new RuntimeException("The expected SocketException was not thrown.");
-
         } catch (SocketException se) {
             // the expected exception, ignore it
             System.out.println("Caught expected SocketException: " + se);
@@ -105,6 +104,10 @@ public class SocketExceptionForSocketIssues extends SSLSocketTemplate {
             System.out.println("Received Data from server: " + data);
 
             throw new RuntimeException("The expected client exception was not thrown.");
+
+        } catch (SSLProtocolException | SSLHandshakeException sslhe) {
+            System.err.println("Client had unexpected SSL exception: " + sslhe);
+            throw sslhe;
 
         } catch (SSLException | SocketTimeoutException ssle) {
             // the expected exception, ignore it
