@@ -450,6 +450,22 @@ static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
   }
 }
 
+// Returns true if the JavaThread's Java object is a platform thread
+static bool is_platform_thread(JavaThread* jt) {
+  if (jt != nullptr) {
+    oop thread_obj = jt->threadObj();
+    return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
+  } else {
+    return false;
+  }
+}
+
+// Returns true if the ThreadSnapshot's Java object is a platform thread
+static bool is_platform_thread(ThreadSnapshot* ts) {
+  oop thread_obj = ts->threadObj();
+  return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
+}
+
 #if INCLUDE_MANAGEMENT
 
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
@@ -1020,22 +1036,6 @@ JVM_ENTRY(jint, jmm_GetLongAttributes(JNIEnv *env,
   }
   return num_atts;
 JVM_END
-
-// returns true if the JavaThread's Java object is a platform thread
-static bool is_platform_thread(JavaThread* jt) {
-  if (jt != nullptr) {
-    oop thread_obj = jt->threadObj();
-    return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
-  } else {
-    return false;
-  }
-}
-
-// returns true if the ThreadSnapshot's Java object is a platform thread
-static bool is_platform_thread(ThreadSnapshot* ts) {
-  oop thread_obj = ts->threadObj();
-  return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
-}
 
 // Helper function to do thread dump for a specific list of threads
 static void do_thread_dump(ThreadDumpResult* dump_result,
