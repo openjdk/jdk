@@ -663,7 +663,7 @@ delay, type `regedit` in the Search and then select Registry Editor; navigate
 to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure
 the `ForegroundLockTimeout` value is set to 0.
 
-Additional information about Client UI tests configuration for vrious operating
+Additional information about Client UI tests configuration for various operating
 systems can be obtained at [Automated client GUI testing system set up
 requirements] (https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
