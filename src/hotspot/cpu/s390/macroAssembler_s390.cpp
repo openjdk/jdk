@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5321,55 +5321,13 @@ void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, 
   bind(ok);
 #endif // ASSERT
 }
+
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
 void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
 #ifdef ASSERT
   asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
-//   Label ok;
-//   if (check_equal) {
-//     z_bre(ok);
-//   } else {
-//     z_brne(ok);
-//   }
-//   stop(msg, id);
-//   bind(ok);
 #endif // ASSERT
 }
-
-// Assert if CC indicates "low".
-// void MacroAssembler::asm_assert_low(const char *msg, int id) {
-// #ifdef ASSERT
-//   asm_assert(bcondNotLow, msg, id);
-// //  Label ok;
-// //  z_brnl(ok);
-// //  stop(msg, id);
-// //  bind(ok);
-// #endif // ASSERT
-// }
-
-// Assert if CC indicates "high".
-// void MacroAssembler::asm_assert_high(const char *msg, int id) {
-// #ifdef ASSERT
-//   asm_assert(bcondNotHigh, msg, id);
-// //  Label ok;
-// //  z_brnh(ok);
-// //  stop(msg, id);
-// //  bind(ok);
-// #endif // ASSERT
-// }
-
-// Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false) TODO:remove 
-// generate non-relocatable code.
-// void MacroAssembler::asm_assert_static(bool check_equal, const char *msg, int id) {
-// #ifdef ASSERT
-//   asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, true);
-// //  Label ok;
-// //  if (check_equal) { z_bre(ok); }
-// //  else             { z_brne(ok); }
-// //  stop_static(msg, id);
-// //  bind(ok);
-// #endif // ASSERT
-// }
 
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {

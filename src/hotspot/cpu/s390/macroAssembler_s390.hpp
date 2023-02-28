@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -866,12 +866,6 @@ class MacroAssembler: public Assembler {
   // Assert on CC (condition code in CPU state).
   void asm_assert(branch_condition cond, const char* msg, int id, bool is_static=true);
   void asm_assert(bool check_equal, const char* msg, int id);
-  //void asm_assert_low(const char *msg, int id); TODO remove
-  //void asm_assert_high(const char *msg, int id); Todo remove
-  //void asm_assert_eq(const char* msg, int id) { asm_assert(bcondEqual, msg, id); } TODO remove
-  //void asm_assert_ne(const char* msg, int id) { asm_assert(bcondNotEqual, msg, id); }TODO remove
-
-  // void asm_assert_static(bool check_equal, const char* msg, int id); // TODO remove
 
  private:
   // Emit assertions.
