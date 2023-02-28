@@ -2993,7 +2993,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ load_klass(tmp1, tmp1);
       metadata2reg(exact_klass->constant_encoding(), tmp2);
       __ z_cgr(tmp1, tmp2);
-      __ asm_assert_eq("exact klass and actual klass differ", __LINE__);
+      __ asm_assert(Assembler::bcondEqual, "exact klass and actual klass differ", __LINE__);
     }
 #endif
 

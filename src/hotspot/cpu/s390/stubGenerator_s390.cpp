@@ -735,7 +735,7 @@ class StubGenerator: public StubCodeGenerator {
   void assert_positive_int(Register count) {
 #ifdef ASSERT
     __ z_srag(Z_R0, count, 31);  // Just leave the sign (must be zero) in Z_R0.
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
+    __ asm_assert(Assembler::bcondEqual, "missing zero extend", 0xAFFE);
 #endif
   }
 

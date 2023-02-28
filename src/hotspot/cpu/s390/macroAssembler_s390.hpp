@@ -868,10 +868,10 @@ class MacroAssembler: public Assembler {
   void asm_assert(bool check_equal, const char* msg, int id);
   void asm_assert_low(const char *msg, int id);
   void asm_assert_high(const char *msg, int id);
-  void asm_assert_eq(const char* msg, int id) { asm_assert(bcondEqual, msg, id); }
+  //void asm_assert_eq(const char* msg, int id) { asm_assert(bcondEqual, msg, id); } TODO remove
   void asm_assert_ne(const char* msg, int id) { asm_assert(bcondNotEqual, msg, id); }
 
-  void asm_assert_static(bool check_equal, const char* msg, int id);
+  // void asm_assert_static(bool check_equal, const char* msg, int id); // TODO remove
 
  private:
   // Emit assertions.
