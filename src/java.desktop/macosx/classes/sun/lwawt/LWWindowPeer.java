@@ -61,7 +61,6 @@ import java.util.List;
 
 import java.util.Objects;
 import javax.swing.JComponent;
-import javax.swing.plaf.FontUIResource;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
@@ -135,7 +134,7 @@ public class LWWindowPeer
 
     private volatile boolean isOpaque = true;
 
-    private static final Font DEFAULT_FONT = new FontUIResource("Lucida Grande", Font.PLAIN, 13);
+    private static final Font DEFAULT_FONT = new Font("Lucida Grande", Font.PLAIN, 13);
 
     private static LWWindowPeer grabbingWindow;
 

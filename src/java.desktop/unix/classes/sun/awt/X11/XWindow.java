@@ -62,8 +62,6 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.util.logging.PlatformLogger;
 
-import javax.swing.plaf.FontUIResource;
-
 class XWindow extends XBaseWindow implements X11ComponentPeer {
     private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWindow");
     private static PlatformLogger insLog = PlatformLogger.getLogger("sun.awt.X11.insets.XWindow");
@@ -125,7 +123,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     static synchronized Font getDefaultFont() {
         if (null == defaultFont) {
-            defaultFont = new FontUIResource(Font.DIALOG, Font.PLAIN, 12);
+            defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
         }
         return defaultFont;
     }
