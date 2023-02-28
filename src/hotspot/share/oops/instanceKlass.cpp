@@ -1387,6 +1387,18 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   return i;
 }
 
+instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
+  Klass* k = java_lang_Class::as_Klass(java_class);
+  if (k == nullptr) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
+  }
+  InstanceKlass* ik = cast(k);
+  ik->check_valid_for_instantiation(false, CHECK_NULL);
+  ik->initialize(CHECK_NULL);
+  return ik->allocate_instance(THREAD);
+}
+
 instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
   return instanceHandle(THREAD, allocate_instance(THREAD));
 }
