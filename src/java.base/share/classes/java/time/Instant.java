@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,7 +425,6 @@ public final class Instant
      * @param nanos  the nanoseconds within the second, must be positive
      */
     private Instant(long epochSecond, int nanos) {
-        super();
         this.seconds = epochSecond;
         this.nanos = nanos;
     }
@@ -878,7 +877,11 @@ public final class Instant
      * @throws ArithmeticException if numeric overflow occurs
      */
     public Instant plusSeconds(long secondsToAdd) {
-        return plus(secondsToAdd, 0);
+        if (secondsToAdd == 0) {
+            return this;
+        }
+        long epochSec = Math.addExact(seconds, secondsToAdd);
+        return create(epochSec, nanos);
     }
 
     /**

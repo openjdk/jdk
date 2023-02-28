@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,10 @@ public class PopupMenuLeakTest {
     static final AtomicReference<WeakReference<PopupMenu>> popupWeakReference = new AtomicReference<>();
     static ExtendedRobot robot;
     public static void main(String[] args) throws Exception {
+        if (!SystemTray.isSupported()) {
+            System.out.println("SystemTray not supported. Skipping the test.");
+            return;
+        }
         robot = new ExtendedRobot();
         SwingUtilities.invokeAndWait(PopupMenuLeakTest::createSystemTrayIcon);
         sleep();

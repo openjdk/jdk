@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class ASMifier extends Printer {
     /** The help message shown when command line arguments are incorrect. */
     private static final String USAGE =
             "Prints the ASM code to generate the given class.\n"
-                    + "Usage: ASMifier [-debug] <fully qualified class name or class file name>";
+                    + "Usage: ASMifier [-nodebug] <fully qualified class name or class file name>";
 
     /** A pseudo access flag used to distinguish class access flags. */
     private static final int ACCESS_CLASS = 0x40000;
@@ -136,6 +137,10 @@ public class ASMifier extends Printer {
         classVersions.put(Opcodes.V13, "V13");
         classVersions.put(Opcodes.V14, "V14");
         classVersions.put(Opcodes.V15, "V15");
+        classVersions.put(Opcodes.V16, "V16");
+        classVersions.put(Opcodes.V17, "V17");
+        classVersions.put(Opcodes.V18, "V18");
+        classVersions.put(Opcodes.V19, "V19");
         CLASS_VERSIONS = Collections.unmodifiableMap(classVersions);
     }
 
@@ -155,7 +160,7 @@ public class ASMifier extends Printer {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public ASMifier() {
-        this(/* latest api = */ Opcodes.ASM8, "classWriter", 0);
+        this(/* latest api = */ Opcodes.ASM9, "classWriter", 0);
         if (getClass() != ASMifier.class) {
             throw new IllegalStateException();
         }
@@ -164,8 +169,8 @@ public class ASMifier extends Printer {
     /**
       * Constructs a new {@link ASMifier}.
       *
-      * @param api the ASM API version implemented by this class. Must be one of {@link Opcodes#ASM4},
-      *     {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this class. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param visitorVariableName the name of the visitor variable in the produced code.
       * @param annotationVisitorId identifier of the annotation visitor variable in the produced code.
       */
@@ -179,7 +184,7 @@ public class ASMifier extends Printer {
     /**
       * Prints the ASM source code to generate the given class to the standard output.
       *
-      * <p>Usage: ASMifier [-debug] &lt;binary class name or class file name&gt;
+      * <p>Usage: ASMifier [-nodebug] &lt;binary class name or class file name&gt;
       *
       * @param args the command line arguments.
       * @throws IOException if the class cannot be found, or if an IOException occurs.
@@ -191,7 +196,7 @@ public class ASMifier extends Printer {
     /**
       * Prints the ASM source code to generate the given class to the given output.
       *
-      * <p>Usage: ASMifier [-debug] &lt;binary class name or class file name&gt;
+      * <p>Usage: ASMifier [-nodebug] &lt;binary class name or class file name&gt;
       *
       * @param args the command line arguments.
       * @param output where to print the result.
@@ -293,6 +298,7 @@ public class ASMifier extends Printer {
     @Override
     public Printer visitModule(final String name, final int flags, final String version) {
         stringBuilder.setLength(0);
+        stringBuilder.append("{\n");
         stringBuilder.append("ModuleVisitor moduleVisitor = classWriter.visitModule(");
         appendConstant(name);
         stringBuilder.append(", ");
@@ -354,17 +360,10 @@ public class ASMifier extends Printer {
         text.add(stringBuilder.toString());
     }
 
-    /**
-      * <b>Experimental, use at your own risk.</b>.
-      *
-      * @param permittedSubclass the internal name of a permitted subclass.
-      * @deprecated this API is experimental.
-      */
     @Override
-    @Deprecated
-    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
+    public void visitPermittedSubclass(final String permittedSubclass) {
         stringBuilder.setLength(0);
-        stringBuilder.append("classWriter.visitPermittedSubclassExperimental(");
+        stringBuilder.append("classWriter.visitPermittedSubclass(");
         appendConstant(permittedSubclass);
         stringBuilder.append(END_PARAMETERS);
         text.add(stringBuilder.toString());
@@ -664,9 +663,7 @@ public class ASMifier extends Printer {
 
     @Override
     public void visitRecordComponentEnd() {
-        stringBuilder.setLength(0);
-        stringBuilder.append(name).append(VISIT_END);
-        text.add(stringBuilder.toString());
+        visitMemberEnd();
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -691,9 +688,7 @@ public class ASMifier extends Printer {
 
     @Override
     public void visitFieldEnd() {
-        stringBuilder.setLength(0);
-        stringBuilder.append(name).append(VISIT_END);
-        text.add(stringBuilder.toString());
+        visitMemberEnd();
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -860,14 +855,14 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(name)
                 .append(".visitVarInsn(")
                 .append(OPCODES[opcode])
                 .append(", ")
-                .append(var)
+                .append(varIndex)
                 .append(");\n");
         text.add(stringBuilder.toString());
     }
@@ -973,12 +968,12 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
+    public void visitIincInsn(final int varIndex, final int increment) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(name)
                 .append(".visitIincInsn(")
-                .append(var)
+                .append(varIndex)
                 .append(", ")
                 .append(increment)
                 .append(");\n");
@@ -1166,9 +1161,7 @@ public class ASMifier extends Printer {
 
     @Override
     public void visitMethodEnd() {
-        stringBuilder.setLength(0);
-        stringBuilder.append(name).append(VISIT_END);
-        text.add(stringBuilder.toString());
+        visitMemberEnd();
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -1240,9 +1233,9 @@ public class ASMifier extends Printer {
                 .append("{\n")
                 .append(ANNOTATION_VISITOR0)
                 .append(name)
-                .append(".")
+                .append('.')
                 .append(method)
-                .append("(")
+                .append('(')
                 .append(typeRef);
         if (typePath == null) {
             stringBuilder.append(", null, ");
@@ -1275,6 +1268,13 @@ public class ASMifier extends Printer {
             stringBuilder.append(name).append(".visitAttribute(attribute);\n");
             stringBuilder.append("}\n");
         }
+        text.add(stringBuilder.toString());
+    }
+
+    /** Visits the end of a field, record component or method. */
+    private void visitMemberEnd() {
+        stringBuilder.setLength(0);
+        stringBuilder.append(name).append(VISIT_END);
         text.add(stringBuilder.toString());
     }
 
@@ -1318,11 +1318,7 @@ public class ASMifier extends Printer {
             if (!isEmpty) {
                 stringBuilder.append(" | ");
             }
-            if ((accessFlags & ACCESS_MODULE) == 0) {
-                stringBuilder.append("ACC_FINAL");
-            } else {
-                stringBuilder.append("ACC_TRANSITIVE");
-            }
+            stringBuilder.append("ACC_FINAL");
             isEmpty = false;
         }
         if ((accessFlags & Opcodes.ACC_STATIC) != 0) {
@@ -1484,7 +1480,7 @@ public class ASMifier extends Printer {
             stringBuilder.append(handle.getOwner()).append(COMMA);
             stringBuilder.append(handle.getName()).append(COMMA);
             stringBuilder.append(handle.getDesc()).append("\", ");
-            stringBuilder.append(handle.isInterface()).append(")");
+            stringBuilder.append(handle.isInterface()).append(')');
         } else if (value instanceof ConstantDynamic) {
             stringBuilder.append("new ConstantDynamic(\"");
             ConstantDynamic constantDynamic = (ConstantDynamic) value;
@@ -1645,3 +1641,4 @@ public class ASMifier extends Printer {
         stringBuilder.append(labelNames.get(label));
     }
 }
+

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ CT_MODULES := $(DOCS_MODULES)
 # Get the complete module source path:
 CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
+CT_DATA_DESCRIPTION += $(MODULE_SRC)/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.javac=java.compiler.interim,jdk.compiler.interim \
@@ -65,7 +65,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
 
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym: \
     $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(TOPDIR)/make/data/symbols/*) \
+    $(wildcard $(MODULE_SRC)/share/data/symbols/*) \
     $(MODULE_INFOS)
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)

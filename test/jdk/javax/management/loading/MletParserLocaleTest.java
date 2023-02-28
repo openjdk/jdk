@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.loading.MLet;
 
+@SuppressWarnings("removal")
 public class MletParserLocaleTest {
 
     public static void main(String[] args) throws Exception {
@@ -81,7 +82,7 @@ public class MletParserLocaleTest {
         System.out.println("MLet File = " + mletFile);
         try {
             // Change default Locale to Turkish
-            Locale.setDefault(new Locale("tr", "TR"));
+            Locale.setDefault(Locale.of("tr", "TR"));
             mlet.getMBeansFromURL(mletFile);
             System.out.println("Test Passes");
         } catch (Exception e) {

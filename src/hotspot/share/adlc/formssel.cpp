@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 // FORMS.CPP - Definitions for ADL Parser Forms Classes
 #include "adlc.hpp"
+
+#define remaining_buflen(buffer, position) (sizeof(buffer) - ((position) - (buffer)))
 
 //==============================Instructions===================================
 //------------------------------InstructForm-----------------------------------
@@ -65,7 +67,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
     _effects(instr->_effects),
-    _is_mach_constant(false),
+    _is_mach_constant(instr->_is_mach_constant),
     _needs_constant_base(false),
     _has_call(false)
 {
@@ -421,8 +423,6 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
   idx = 0;
-  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
-  idx = 0;
 
   return Form::invalid_type;
 }
@@ -605,15 +605,16 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String.(compareTo/equals/indexOf) and Arrays.equals use many memorys edges,
-  // but writes none
+  // String.(compareTo/equals/indexOf/hashCode) and Arrays.(equals/hashCode)
+  // use many memorys edges, but writes none
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"HasNegatives" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
+        strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -896,15 +897,16 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 
   if( _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrCompressedCopy" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar")==0 ||
-        strcmp(_matrule->_rChild->_opType,"HasNegatives")==0 ||
+        strcmp(_matrule->_rChild->_opType,"CountPositives")==0 ||
         strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
-        // String.(compareTo/equals/indexOf) and Arrays.equals
+        // String.(compareTo/equals/indexOf/hashCode) and Arrays.equals
         // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
         // take 1 control and 1 memory edges.
         // Also String.(compressedCopy/inflatedCopy).
@@ -1143,9 +1145,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
   }
-  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
-    return "MachCallNativeNode";
-  }
   else if (is_ideal_return()) {
     return "MachReturnNode";
   }
@@ -1303,7 +1302,7 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
 void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   // Handle special constant table variables.
   if (strcmp(rep_var, "constanttablebase") == 0) {
-    fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg);\n");
+    fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg, sizeof(reg));\n");
     fprintf(fp, "    st->print(\"%%s\", reg);\n");
     return;
   }
@@ -1354,7 +1353,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   }
 }
 
-// Seach through operands to determine parameters unique positions.
+// Search through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
   uint  nopnds = num_opnds();
@@ -1366,7 +1365,7 @@ void InstructForm::set_unique_opnds() {
     // component back to an index and any DEF always goes at 0 so the
     // length of the array has to be the number of components + 1.
     _uniq_idx_length = _components.count() + 1;
-    uniq_idx = (uint*) AllocateHeap(sizeof(uint) * _uniq_idx_length);
+    uniq_idx = (uint*) AdlAllocateHeap(sizeof(uint) * _uniq_idx_length);
     for (i = 0; i < _uniq_idx_length; i++) {
       uniq_idx[i] = i;
     }
@@ -1538,7 +1537,7 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      sprintf(s,"/*%s*/(",(char*)i._key);
+      snprintf_checked(s, remaining_buflen(buf, s), "/*%s*/(",(char*)i._key);
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
@@ -2281,6 +2280,7 @@ bool OperandForm::is_bound_register() const {
   if (strcmp(name, "RegD") == 0) size = 2;
   if (strcmp(name, "RegL") == 0) size = 2;
   if (strcmp(name, "RegN") == 0) size = 1;
+  if (strcmp(name, "RegVectMask") == 0) size = globalAD->get_preproc_def("AARCH64") ? 1 : 2;
   if (strcmp(name, "VecX") == 0) size = 4;
   if (strcmp(name, "VecY") == 0) size = 8;
   if (strcmp(name, "VecZ") == 0) size = 16;
@@ -2501,7 +2501,7 @@ void  OperandForm::int_format(FILE *fp, FormDict &globals, uint index) {
                    strcmp(ideal_type(globalAD->globalNames()), "RegFlags") == 0)) {
     // !!!!! !!!!!
     fprintf(fp,"  { char reg_str[128];\n");
-    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str, sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
@@ -2509,7 +2509,7 @@ void  OperandForm::int_format(FILE *fp, FormDict &globals, uint index) {
   } else if (ideal_to_sReg_type(_ident) != Form::none) {
     // Special format for Stack Slot Register
     fprintf(fp,"  { char reg_str[128];\n");
-    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str, sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else {
@@ -2530,7 +2530,7 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
     fprintf(fp,"  { char reg_str[128];\n");
     fprintf(fp,"    ra->dump_register(node->in(idx");
     if ( index != 0 ) fprintf(fp,              "+%d",index);
-    fprintf(fp,                                      "),reg_str);\n");
+    fprintf(fp,                                      "),reg_str,sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
@@ -2540,7 +2540,7 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
     fprintf(fp,"  { char reg_str[128];\n");
     fprintf(fp,"    ra->dump_register(node->in(idx");
     if ( index != 0 ) fprintf(fp,                  "+%d",index);
-    fprintf(fp,                                       "),reg_str);\n");
+    fprintf(fp,                                       "),reg_str,sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else {
@@ -3475,8 +3475,8 @@ void MatchNode::build_internalop( ) {
   rstr = (_rChild) ? ((_rChild->_internalop) ?
                        _rChild->_internalop : _rChild->_opType) : "";
   len += (int)strlen(lstr) + (int)strlen(rstr);
-  subtree = (char *)AllocateHeap(len);
-  sprintf(subtree,"_%s_%s_%s", _opType, lstr, rstr);
+  subtree = (char *)AdlAllocateHeap(len);
+  snprintf_checked(subtree, len, "_%s_%s_%s", _opType, lstr, rstr);
   // Hash the subtree string in _internalOps; if a name exists, use it
   iop = (char *)_AD._internalOps[subtree];
   // Else create a unique name, and add it to the hash table
@@ -3514,10 +3514,9 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter", "LoadVectorMasked", "StoreVectorMasked",
+    "StoreVector", "LoadVector", "LoadVectorMasked", "StoreVectorMasked",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
-    "LoadPLocked",
-    "StorePConditional", "StoreIConditional", "StoreLConditional",
     "CompareAndSwapB", "CompareAndSwapS", "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "WeakCompareAndSwapB", "WeakCompareAndSwapS", "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
     "CompareAndExchangeB", "CompareAndExchangeS", "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
@@ -3818,51 +3817,77 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
   return true;
 }
 
-//-------------------------- has_commutative_op -------------------------------
+//-------------------------- count_commutative_op -------------------------------
 // Recursively check for commutative operations with subtree operands
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "AndI","AndL",
-    "AndV",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MaxV", "MinV",
     "MulI","MulL","MulF","MulD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
     "OrI","OrL",
-    "OrV",
-    "XorI","XorL",
-    "XorV"
+    "XorI","XorL"
   };
-  int cnt = sizeof(commut_op_list)/sizeof(char*);
 
-  if( _lChild && _rChild && (_lChild->_lChild || _rChild->_lChild) ) {
+  static const char *commut_vector_op_list[] = {
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AndV", "OrV", "XorV",
+    "MaxV", "MinV"
+  };
+
+  if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
     // Don't swap if right operand is an immediate constant.
     bool is_const = false;
-    if( _rChild->_lChild == NULL && _rChild->_rChild == NULL ) {
+    if (_rChild->_lChild == NULL && _rChild->_rChild == NULL) {
       FormDict &globals = _AD.globalNames();
       const Form *form = globals[_rChild->_opType];
-      if ( form ) {
-        OperandForm  *oper = form->is_operand();
-        if( oper && oper->interface_type(globals) == Form::constant_interface )
+      if (form) {
+        OperandForm *oper = form->is_operand();
+        if (oper && oper->interface_type(globals) == Form::constant_interface)
           is_const = true;
       }
     }
-    if( !is_const ) {
-      for( int i=0; i<cnt; i++ ) {
-        if( strcmp(_opType, commut_op_list[i]) == 0 ) {
-          count++;
-          _commutative_id = count; // id should be > 0
+
+    if (!is_const) {
+      int scalar_cnt = sizeof(commut_op_list)/sizeof(char*);
+      int vector_cnt = sizeof(commut_vector_op_list)/sizeof(char*);
+      bool matched = false;
+
+      // Check the commutative vector op first. It's noncommutative if
+      // the current node is a masked vector op, since a mask value
+      // is added to the original vector node's input list and the original
+      // first two inputs are packed into one BinaryNode. So don't swap
+      // if one of the operands is a BinaryNode.
+      for (int i = 0; i < vector_cnt; i++) {
+        if (strcmp(_opType, commut_vector_op_list[i]) == 0) {
+          if (strcmp(_lChild->_opType, "Binary") != 0 &&
+              strcmp(_rChild->_opType, "Binary") != 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+          }
+          matched = true;
           break;
+        }
+      }
+
+      // Then check the scalar op if the current op is not in
+      // the commut_vector_op_list.
+      if (!matched) {
+        for (int i = 0; i < scalar_cnt; i++) {
+          if (strcmp(_opType, commut_op_list[i]) == 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+            break;
+          }
         }
       }
     }
   }
-  if( _lChild )
+  if (_lChild)
     _lChild->count_commutative_op(count);
-  if( _rChild )
+  if (_rChild)
     _rChild->count_commutative_op(count);
 }
 
@@ -3898,8 +3923,9 @@ void MatchRule::matchrule_swap_commutative_op(const char* instr_ident, int count
   MatchRule* clone = new MatchRule(_AD, this);
   // Swap operands of commutative operation
   ((MatchNode*)clone)->swap_commutative_op(true, count);
-  char* buf = (char*) AllocateHeap(strlen(instr_ident) + 4);
-  sprintf(buf, "%s_%d", instr_ident, match_rules_cnt++);
+  const size_t buf_size = strlen(instr_ident) + 4;
+  char* buf = (char*) AdlAllocateHeap(buf_size);
+  snprintf_checked(buf, buf_size, "%s_%d", instr_ident, match_rules_cnt++);
   clone->_result = buf;
 
   clone->_next = this->_next;
@@ -4069,12 +4095,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
+        strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
@@ -4088,8 +4109,10 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"AndReductionV")==0 ||
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
-        0 /* 0 to line up columns nicely */ )
+        strcmp(opType,"MaskAll")==0 ||
+        0 /* 0 to line up columns nicely */ ) {
       return 1;
+    }
   }
   return 0;
 }
@@ -4117,6 +4140,7 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"MemBarReleaseLock") ||
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
+    !strcmp(_opType,"StoreStoreFence") ||
     !strcmp(_opType,"MemBarVolatile") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
@@ -4182,10 +4206,11 @@ bool MatchRule::is_vector() const {
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI",
+    "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
+    "CompressV", "ExpandV", "CompressM",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
     "MulReductionVI", "MulReductionVL",
@@ -4197,19 +4222,23 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
-    "LoadVectorGather", "StoreVectorScatter",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
-    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
-    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD", "FmaVF","PopCountVI",
+    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
+    "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
+    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
+    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
+    // Next are vector mask ops.
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
-    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD",
-    "VectorMaskCast"
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
   };
   int cnt = sizeof(vector_list)/sizeof(char*);
   if (_rChild) {

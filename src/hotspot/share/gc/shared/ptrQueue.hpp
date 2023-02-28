@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_PTRQUEUE_HPP
 #define SHARE_GC_SHARED_PTRQUEUE_HPP
 
+#include "gc/shared/freeListAllocator.hpp"
 #include "memory/padded.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -122,7 +123,7 @@ class BufferNode {
   BufferNode* volatile _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
-  BufferNode() : _index(0), _next(NULL) { }
+  BufferNode() : _index(0), _next(nullptr) { }
   ~BufferNode() { }
 
   NONCOPYABLE(BufferNode);
@@ -130,12 +131,6 @@ class BufferNode {
   static size_t buffer_offset() {
     return offset_of(BufferNode, _buffer);
   }
-
-  // Allocate a new BufferNode with the "buffer" having size elements.
-  static BufferNode* allocate(size_t size);
-
-  // Free a BufferNode.
-  static void deallocate(BufferNode* node);
 
 public:
   static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
@@ -162,54 +157,43 @@ public:
       reinterpret_cast<char*>(node) + buffer_offset());
   }
 
+  class AllocatorConfig;
   class Allocator;              // Free-list based allocator.
   class TestSupport;            // Unit test support.
 };
 
-// Allocation is based on a lock-free free list of nodes, linked through
-// BufferNode::_next (see BufferNode::Stack).  To solve the ABA problem,
-// popping a node from the free list is performed within a GlobalCounter
-// critical section, and pushing nodes onto the free list is done after
-// a GlobalCounter synchronization associated with the nodes to be pushed.
-// This is documented behavior so that other parts of the node life-cycle
-// can depend on and make use of it too.
+// We use BufferNode::AllocatorConfig to set the allocation options for the
+// FreeListAllocator.
+class BufferNode::AllocatorConfig : public FreeListConfig {
+  const size_t _buffer_size;
+public:
+  explicit AllocatorConfig(size_t size);
+
+  ~AllocatorConfig() = default;
+
+  void* allocate() override;
+
+  void deallocate(void* node) override;
+
+  size_t buffer_size() const { return _buffer_size; }
+};
+
 class BufferNode::Allocator {
   friend class TestSupport;
 
-  // Since we don't expect many instances, and measured >15% speedup
-  // on stress gtest, padding seems like a good tradeoff here.
-#define DECLARE_PADDED_MEMBER(Id, Type, Name) \
-  Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_CACHE_LINE_SIZE, sizeof(Type))
-
-  const size_t _buffer_size;
-  char _name[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)]; // Use name as padding.
-  DECLARE_PADDED_MEMBER(1, Stack, _pending_list);
-  DECLARE_PADDED_MEMBER(2, Stack, _free_list);
-  DECLARE_PADDED_MEMBER(3, volatile size_t, _pending_count);
-  DECLARE_PADDED_MEMBER(4, volatile size_t, _free_count);
-  DECLARE_PADDED_MEMBER(5, volatile bool, _transfer_lock);
-
-#undef DECLARE_PADDED_MEMBER
-
-  void delete_list(BufferNode* list);
-  bool try_transfer_pending();
+  AllocatorConfig _config;
+  FreeListAllocator _free_list;
 
   NONCOPYABLE(Allocator);
 
 public:
   Allocator(const char* name, size_t buffer_size);
-  ~Allocator();
+  ~Allocator() = default;
 
-  const char* name() const { return _name; }
-  size_t buffer_size() const { return _buffer_size; }
+  size_t buffer_size() const { return _config.buffer_size(); }
   size_t free_count() const;
   BufferNode* allocate();
   void release(BufferNode* node);
-
-  // Deallocate some of the available buffers.  remove_goal is the target
-  // number to remove.  Returns the number actually deallocated, which may
-  // be less than the goal if there were fewer available.
-  size_t reduce_free_list(size_t remove_goal);
 };
 
 // A PtrQueueSet represents resources common to a set of pointer queues.

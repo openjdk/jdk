@@ -42,7 +42,7 @@ import java.beans.PropertyChangeEvent;
 public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     private SynthStyle style;
     /*
-     * I would prefer to use UIResource instad of this.
+     * I would prefer to use UIResource instead of this.
      * Unfortunately Boolean is a final class
      */
     private Boolean localTrue = Boolean.TRUE;
@@ -198,7 +198,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
      */
     @Override
     protected void paintBackground(Graphics g) {
-        // Overriden to do nothing, all our painting is done from update/paint.
+        // Overridden to do nothing, all our painting is done from update/paint.
     }
 
     void paintBackground(SynthContext context, Graphics g, JComponent c) {

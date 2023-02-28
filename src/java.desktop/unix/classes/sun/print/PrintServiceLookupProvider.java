@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
 package sun.print;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.security.AccessController;
@@ -53,6 +52,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
+
+import sun.awt.util.ThreadGroupUtils;
 
 /*
  * Remind: This class uses solaris commands. We also need a linux
@@ -204,14 +205,18 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return BSD_LPD;
     }
 
-
+    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            Thread thr = new Thread(null, new PrinterChangeListener(),
-                                    "PrinterListener", 0, false);
-            thr.setDaemon(true);
-            thr.start();
+            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                        new PrinterChangeListener(),
+                                        "PrinterListener", 0, false);
+                thr.setContextClassLoader(null);
+                thr.setDaemon(true);
+                return thr;
+            }).start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");
         }
     }
@@ -471,7 +476,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         if (CUPSPrinter.isCupsRunning()) {
             try {
                 return new IPPPrintService(name,
-                                           new URL("http://"+
+                                           newURL("http://"+
                                                    CUPSPrinter.getServer()+":"+
                                                    CUPSPrinter.getPort()+"/"+
                                                    name));
@@ -683,7 +688,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                                                         psuri, true);
                     } else {
                         defaultPS = new IPPPrintService(defaultPrinter,
-                                            new URL("http://"+
+                                            newURL("http://"+
                                                     CUPSPrinter.getServer()+":"+
                                                     CUPSPrinter.getPort()+"/"+
                                                     defaultPrinter));
@@ -964,5 +969,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 }
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

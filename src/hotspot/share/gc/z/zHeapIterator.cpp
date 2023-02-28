@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -190,6 +190,10 @@ public:
     NativeAccessClosure cl(_context);
     cld->oops_do(&cl, ClassLoaderData::_claim_other);
   }
+
+  // Don't follow loom stack metadata; it's already followed in other ways through CLDs
+  virtual void do_nmethod(nmethod* nm) {}
+  virtual void do_method(Method* m) {}
 };
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
@@ -232,6 +236,9 @@ ZHeapIterator::~ZHeapIterator() {
   for (uint i = 0; i < _queues.size(); i++) {
     delete _queues.queue(i);
   }
+
+  // Clear claimed CLD bits
+  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
 }
 
 static size_t object_index_max() {

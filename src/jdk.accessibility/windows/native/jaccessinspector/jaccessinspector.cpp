@@ -205,7 +205,7 @@ void displayJavaEvent(long vmID, AccessibleContext ac, char *announcement) {
  * Display Accessible propertyChange event info
  */
 void displayAccessiblePropertyChange(long vmID, AccessibleContext ac,
-                                     char *announcement) {
+                                     const char *announcement) {
     char buffer[HUGE_BUFSIZE];
     char *bufOffset;
 
@@ -668,7 +668,7 @@ void HandlePropertyActiveDescendentChange( long vmID, PropertyChangeEvent event,
                            (int)(sizeof(buffer) - strlen(buffer)) );
         strncat(buffer, "\r\n\r\n", sizeof(buffer));
     }
-#endif _notdef
+#endif // _notdef
 
     if (newActiveDescendent != (AccessibleContext) 0) {
         displayAccessiblePropertyChange(vmID, newActiveDescendent, buffer);

@@ -36,6 +36,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4498848
  * @summary Sound causes crashes on Linux (part 3)
  */

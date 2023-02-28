@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4490068 8075778
+ * @bug      4490068 8075778 8283041
  * @summary  General tests for inline or block at-return tag
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestReturnTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestReturnTag tester = new TestReturnTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestReturnTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();
@@ -265,15 +265,29 @@ public class TestReturnTag extends JavadocTester {
                          */
                         public int m() { return 0; }
                     }
+                    """,
+                """
+                    /** Comment. */
+                    public class X {
+                        /**
+                         * @author Jim
+                         * {@return the result}
+                         */
+                        public int m() { return 0; }
+                    }
                     """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
-                src.resolve("C.java").toString());
+                src.resolve("C.java").toString(),
+                src.resolve("X.java").toString());
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true,
                 "C.java:4: warning: {@return} not at beginning of description");
+
+        checkOutput(Output.OUT, true,
+                "X.java:5: warning: {@return} not at beginning of description");
 
         checkOutput("C.html", true,
                 """
@@ -379,7 +393,7 @@ public class TestReturnTag extends JavadocTester {
 
         checkOutput("C.html", true,
                 """
-                    <div class="block"><span class="descfrm-type-label">Description copied from class:&nbsp;<code>Super</code></span></div>
+                    <div class="block"><span class="description-from-type-label">Description copied from class:&nbsp;<code>Super</code></span></div>
                     <div class="block">Returns the result.</div>
                     <dl class="notes">
                     <dt>Overrides:</dt>

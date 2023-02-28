@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   mov(result, 1, eq);
   b(Ldone, eq);
 
-  // word by word compare, dont't need alignment check
+  // word by word compare, don't need alignment check
   bind(Lvector);
 
   // Shift ary1 and ary2 to the end of the arrays, negate limit
@@ -141,7 +141,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   Label done;
 
   ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  // If hdr is NULL, we've got recursive locking and there's nothing more to do
+  // If hdr is null, we've got recursive locking and there's nothing more to do
   cmp(Rmark, 0);
   b(done, eq);
 

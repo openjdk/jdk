@@ -29,8 +29,6 @@ import java.awt.event.*;
 import java.beans.*;
 import java.io.*;
 import java.util.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -53,7 +51,7 @@ import sun.swing.*;
  * these classes, developers cannot depend on their availability in
  * non-Sun implementations. Additionally this API may change in
  * incompatible ways between releases. While this class is public, it
- * shoud be considered an implementation detail, and subject to change.
+ * should be considered an implementation detail, and subject to change.
  *
  * @author Leif Samuelsson
  * @author Jeff Dinkins
@@ -697,7 +695,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
     static final int space = 10;
-    class IndentIcon implements Icon {
+    static class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1068,7 +1066,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class AlignedLabel extends JLabel {
+    private static class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;
 

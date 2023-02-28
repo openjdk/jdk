@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @test
  * @bug 8262891
  * @summary Verify pattern switches work properly when the set of enum constant changes.
- * @compile --enable-preview -source ${jdk.version} EnumTypeChanges.java
- * @compile --enable-preview -source ${jdk.version} EnumTypeChanges2.java
- * @run main/othervm --enable-preview EnumTypeChanges
+ * @enablePreview
+ * @compile EnumTypeChanges.java
+ * @compile EnumTypeChanges2.java
+ * @run main EnumTypeChanges
  */
 
 import java.util.function.Function;
@@ -42,6 +43,8 @@ public class EnumTypeChanges {
     void run() throws Exception {
         doRun(this::statementEnum);
         doRun(this::expressionEnum);
+        doRunExhaustive(this::expressionEnumExhaustive);
+        doRunExhaustive(this::statementEnumExhaustive);
     }
 
     void doRun(Function<EnumTypeChangesEnum, String> c) throws Exception {
@@ -49,11 +52,20 @@ public class EnumTypeChanges {
         assertEquals("D", c.apply(EnumTypeChangesEnum.valueOf("C")));
     }
 
+    void doRunExhaustive(Function<EnumTypeChangesEnum, String> c) throws Exception {
+        try {
+            c.apply(EnumTypeChangesEnum.valueOf("C"));
+            throw new AssertionError();
+        } catch (MatchException e) {
+            //expected
+        }
+    }
+
     String statementEnum(EnumTypeChangesEnum e) {
         switch (e) {
             case A -> { return "A"; }
-            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             case B -> { return "B"; }
+            case EnumTypeChangesEnum e1 when e1 == null -> throw new AssertionError();
             default -> { return "D"; }
         }
     }
@@ -61,9 +73,25 @@ public class EnumTypeChanges {
     String expressionEnum(EnumTypeChangesEnum e) {
         return switch (e) {
             case A -> "A";
-            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             case B -> "B";
+            case EnumTypeChangesEnum e1 when e1 == null -> throw new AssertionError();
             default -> "D";
+        };
+    }
+
+    String statementEnumExhaustive(EnumTypeChangesEnum e) {
+        switch (e) {
+            case A -> { return "A"; }
+            case B -> { return "B"; }
+            case EnumTypeChangesEnum x when e == EnumTypeChangesEnum.A -> throw new AssertionError();
+        }
+    }
+
+    String expressionEnumExhaustive(EnumTypeChangesEnum e) {
+        return switch (e) {
+            case A -> "A";
+            case B -> "B";
+            case EnumTypeChangesEnum x when e == EnumTypeChangesEnum.A -> throw new AssertionError();
         };
     }
 

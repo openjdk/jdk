@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public final class Demand {
      */
     public boolean increase(long n) {
         if (n <= 0) {
-            throw new IllegalArgumentException("non-positive subscription request: " + String.valueOf(n));
+            throw new IllegalArgumentException("non-positive subscription request: " + n);
         }
         long prev = val.getAndAccumulate(n, (p, i) -> p + i < 0 ? Long.MAX_VALUE : p + i);
         return prev == 0;

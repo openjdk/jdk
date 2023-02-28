@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
@@ -131,7 +125,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         byte contentType = packet.get();                   // pos: 0
         byte majorVersion = packet.get();                  // pos: 1
         byte minorVersion = packet.get();                  // pos: 2
-        byte[] recordEnS = new byte[8];                    // epoch + seqence
+        byte[] recordEnS = new byte[8];                    // epoch + sequence
         packet.get(recordEnS);
         int recordEpoch = ((recordEnS[0] & 0xFF) << 8) |
                            (recordEnS[1] & 0xFF);          // pos: 3, 4
@@ -520,8 +514,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
         @Override
         public int compareTo(RecordFragment o) {
-            if (o instanceof HandshakeFragment) {
-                HandshakeFragment other = (HandshakeFragment)o;
+            if (o instanceof HandshakeFragment other) {
                 if (this.messageSeq != other.messageSeq) {
                     // keep the insertion order of handshake messages
                     return this.messageSeq - other.messageSeq;
@@ -567,6 +560,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
         HashMap<Byte, List<HoleDescriptor>> holesMap;
 
+        // A map used to check duplicated handshake messages.
+        HashMap<Byte, Integer> messageSeqMap;
+
         HandshakeFlight() {
             this.handshakeType = HF_UNKNOWN;
             this.flightEpoch = 0;
@@ -577,6 +573,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             this.maxRecordSeq = -1;
 
             this.holesMap = new HashMap<>(5);
+            this.messageSeqMap = new HashMap<>(5);
         }
 
         boolean isRetransmitOf(HandshakeFlight hs) {
@@ -598,6 +595,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             hf.maxRecordSeq = this.maxRecordSeq;
 
             hf.holesMap = new HashMap<>(this.holesMap);
+            hf.messageSeqMap = new HashMap<>(this.messageSeqMap);
 
             return hf;
         }
@@ -640,7 +638,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         }
 
         // Queue up a handshake message.
-        void queueUpHandshake(HandshakeFragment hsf) {
+        void queueUpHandshake(HandshakeFragment hsf) throws SSLProtocolException {
             if (!isDesirable(hsf)) {
                 // Not a dedired record, discard it.
                 return;
@@ -690,12 +688,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 }   // Otherwise, it is unlikely to happen.
             }
 
-            boolean fragmented = false;
-            if ((hsf.fragmentOffset) != 0 ||
-                (hsf.fragmentLength != hsf.messageLength)) {
-
-                fragmented = true;
-            }
+            boolean fragmented = (hsf.fragmentOffset) != 0 ||
+                    (hsf.fragmentLength != hsf.messageLength);
 
             List<HoleDescriptor> holes =
                     handshakeFlight.holesMap.get(hsf.handshakeType);
@@ -703,10 +697,11 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 if (!fragmented) {
                     holes = Collections.emptyList();
                 } else {
-                    holes = new LinkedList<HoleDescriptor>();
+                    holes = new LinkedList<>();
                     holes.add(new HoleDescriptor(0, hsf.messageLength));
                 }
                 handshakeFlight.holesMap.put(hsf.handshakeType, holes);
+                handshakeFlight.messageSeqMap.put(hsf.handshakeType, hsf.messageSeq);
             } else if (holes.isEmpty()) {
                 // Have got the full handshake message.  This record may be
                 // a handshake message retransmission.  Discard this record.
@@ -733,10 +728,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     }
 
                     // The ranges SHOULD NOT overlap.
-                    if (((hole.offset > hsf.fragmentOffset) &&
-                         (hole.offset < fragmentLimit)) ||
-                        ((hole.limit > hsf.fragmentOffset) &&
-                         (hole.limit < fragmentLimit))) {
+                    if (hole.offset > hsf.fragmentOffset || hole.limit < fragmentLimit) {
 
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                             SSLLogger.fine("Discard invalid record: " +
@@ -778,7 +770,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         }
 
         // Queue up a ChangeCipherSpec message
-        void queueUpChangeCipherSpec(RecordFragment rf) {
+        void queueUpChangeCipherSpec(RecordFragment rf)
+                throws SSLProtocolException {
             if (!isDesirable(rf)) {
                 // Not a dedired record, discard it.
                 return;
@@ -807,7 +800,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // Queue up a ciphertext message.
         //
         // Note: not yet be able to decrypt the message.
-        void queueUpFragment(RecordFragment rf) {
+        void queueUpFragment(RecordFragment rf) throws SSLProtocolException {
             if (!isDesirable(rf)) {
                 // Not a dedired record, discard it.
                 return;
@@ -840,8 +833,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 if (precedingFlight.flightEpoch < rf.recordEpoch) {
                     isNewFlight = true;
                 } else {
-                    if (rf instanceof HandshakeFragment) {
-                        HandshakeFragment hsf = (HandshakeFragment)rf;
+                    if (rf instanceof HandshakeFragment hsf) {
                         if (precedingFlight.maxMessageSeq  < hsf.messageSeq) {
                             isNewFlight = true;
                         }
@@ -875,8 +867,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     }
                 }
 
-                if (!isOld && (frag instanceof HandshakeFragment)) {
-                    HandshakeFragment hsf = (HandshakeFragment)frag;
+                if (!isOld && (frag instanceof HandshakeFragment hsf)) {
                     isOld = (hsf.messageSeq <= precedingFlight.maxMessageSeq);
                 }
 
@@ -895,9 +886,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // Is a desired record?
         //
         // Check for retransmission and lost records.
-        private boolean isDesirable(RecordFragment rf) {
+        private boolean isDesirable(RecordFragment rf) throws SSLProtocolException {
             //
-            // Discard records old than the previous epoch.
+            // Discard records older than the previous epoch.
             //
             int previousEpoch = nextRecordEpoch - 1;
             if (rf.recordEpoch < previousEpoch) {
@@ -926,8 +917,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 if (precedingFlight == null) {
                     isDesired = false;
                 } else {
-                    if (rf instanceof HandshakeFragment) {
-                        HandshakeFragment hsf = (HandshakeFragment)rf;
+                    if (rf instanceof HandshakeFragment hsf) {
                         if (precedingFlight.minMessageSeq > hsf.messageSeq) {
                             isDesired = false;
                         }
@@ -961,13 +951,32 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 // Previously disordered record for the current epoch.
                 //
-                // Should has been retransmitted. Discard this record.
+                // Should have been retransmitted. Discard this record.
                 if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                     SSLLogger.fine(
                             "Lagging behind record (sequence), discard it.");
                 }
 
                 return false;
+            }
+
+            // Unexpected duplicated handshake messages.
+            if (rf.recordEpoch == handshakeEpoch &&
+                    // For handshake messages only.
+                    rf instanceof HandshakeFragment hsf &&
+                    // Check on the received handshake messages.
+                    handshakeFlight.holesMap.containsKey(hsf.handshakeType)) {
+                Integer cachedMsgSeq = handshakeFlight.messageSeqMap.get(
+                        hsf.handshakeType);
+                if (cachedMsgSeq != null && cachedMsgSeq != hsf.messageSeq) {
+                    // Handshake messages of the same type but with different
+                    // message sequence numbers are not allowed.
+                    throw new SSLProtocolException(
+                            "Two message sequence numbers are used for the "
+                          + "same handshake message ("
+                          + SSLHandshake.nameOf(hsf.handshakeType)
+                          + ")");
+                }
             }
 
             return true;
@@ -988,7 +997,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             }
 
             if (!flightIsReady && needToCheckFlight) {
-                // check the fligth status
+                // check the flight status
                 flightIsReady = flightIsReady();
 
                 // Reset if this flight is ready.
@@ -1030,7 +1039,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 // Reset the handshake flight.
                 if (bufferedFragments.isEmpty()) {
-                    // Need not to backup the holes map.  Clear up it at first.
+                    // Need not backup the holes map.  Clear up it at first.
                     handshakeFlight.holesMap.clear();   // cleanup holes map
 
                     // Update the preceding flight.
@@ -1086,6 +1095,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             // cleanup holes map
             handshakeFlight.holesMap.clear();
 
+            // cleanup handshake message sequence numbers map
+            handshakeFlight.messageSeqMap.clear();
+
             // Ready to accept new input record.
             flightIsReady = false;
             needToCheckFlight = false;
@@ -1133,8 +1145,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 return null;
             }
 
-            // The ciphtext handshake message can only be Finished (the
-            // end of this flight), ClinetHello or HelloRequest (the
+            // The ciphertext handshake message can only be Finished (the
+            // end of this flight), ClientHello or HelloRequest (the
             // beginning of the next flight) message.  Need not to check
             // any ChangeCipherSpec message.
             if (rFrag.contentType == ContentType.HANDSHAKE.id) {
@@ -1387,7 +1399,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             //
             // Note: need to consider more messages in this flight if
             //       ht_supplemental_data and ht_certificate_url are
-            //       suppported in the future.
+            //       supported in the future.
             //
             if ((flightType == SSLHandshake.CERTIFICATE.id) ||
                 (flightType == SSLHandshake.CLIENT_KEY_EXCHANGE.id)) {
@@ -1481,7 +1493,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 }
             }
 
-            return hasFin && hasCCS;
+            return false;
         }
 
         // Is client CertificateVerify a mandatory message?

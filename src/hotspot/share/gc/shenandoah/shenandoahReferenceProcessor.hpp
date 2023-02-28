@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@
 #include "memory/allocation.hpp"
 
 class ShenandoahMarkRefsSuperClosure;
-class WorkGang;
+class WorkerThreads;
 
 static const size_t reference_type_count = REF_PHANTOM + 1;
 typedef size_t Counters[reference_type_count];
@@ -72,7 +72,7 @@ typedef size_t Counters[reference_type_count];
  *   be processed (e.g. enqueued in its ReferenceQueue) by the Java ReferenceHandler thread.
  *
  * In order to prevent resurrection by Java threads calling Reference.get() concurrently while we are clearing
- * referents, we employ a special barrier, the native LRB, which returns NULL when the referent is unreachable.
+ * referents, we employ a special barrier, the native LRB, which returns nullptr when the referent is unreachable.
  */
 
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
@@ -179,7 +179,7 @@ public:
 
   bool discover_reference(oop obj, ReferenceType type) override;
 
-  void process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent);
+  void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
   const ReferenceProcessorStats& reference_process_stats() { return _stats; }
 

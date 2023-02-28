@@ -1,0 +1,192 @@
+<!--
+Copyright © 2003-2010 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+-->
+
+<!--  OpenOffice.org Specific elements                         -->
+<!-- ######################################################### -->
+
+<!-- Begin OpenOffice specific elements -->
+
+<!ENTITY % UNOModule 'openOffice:unoid CDATA #IMPLIED'>
+<!ENTITY % RefLocale 'openOffice:ref CDATA #IMPLIED'>
+
+<!ATTLIST special xmlns:openOffice CDATA #IMPLIED>
+<!ATTLIST special openOffice:formatindex NMTOKEN #IMPLIED >
+<!ATTLIST special openOffice:msgtype NMTOKEN #IMPLIED >
+<!ATTLIST special openOffice:usage  (FIXED_NUMBER|FRACTION_NUMBER|PERCENT_NUMBER|SCIENTIFIC_NUMBER|CURRENCY|DATE|TIME|DATE_TIME) #IMPLIED >
+<!ATTLIST special openOffice:default (true|false) #IMPLIED>
+<!ATTLIST special openOffice:type  (short|medium|long) #IMPLIED>
+<!ATTLIST special openOffice:unoid NMTOKEN #IMPLIED>
+<!ATTLIST special %RefLocale; >
+
+
+<!ELEMENT openOffice:forbiddenCharacters
+(openOffice:forbiddenLineBeginCharacters?,
+openOffice:forbiddenLineEndCharacters?) >
+<!ATTLIST openOffice:forbiddenCharacters %RefLocale; >
+<!ELEMENT openOffice:forbiddenLineBeginCharacters (#PCDATA) >
+<!ELEMENT openOffice:forbiddenLineEndCharacters (#PCDATA) >
+
+<!ELEMENT openOffice:transliterations (openOffice:transliteration*) >
+<!ATTLIST openOffice:transliterations %RefLocale; >
+<!ELEMENT openOffice:transliteration EMPTY >
+<!ATTLIST openOffice:transliteration %UNOModule; >
+
+<!ELEMENT openOffice:reservedWords  (openOffice:trueWord?,
+openOffice:falseWord?, openOffice:quarter1Word?, openOffice:quarter2Word?,
+openOffice:quarter3Word?, openOffice:quarter4Word?, openOffice:aboveWord?,
+openOffice:belowWord?, openOffice:quarter1Abbreviation?,
+openOffice:quarter2Abbreviation?, openOffice:quarter3Abbreviation?,
+openOffice:quarter4Abbreviation?)>
+<!ATTLIST openOffice:reservedWords %RefLocale; >
+<!-- order is significant! -->
+<!ELEMENT openOffice:trueWord (#PCDATA)>
+<!ELEMENT openOffice:falseWord (#PCDATA)>
+
+<!-- START_DEPRECATED -->
+<!ELEMENT openOffice:quarter1Word (#PCDATA)>
+<!ELEMENT openOffice:quarter2Word (#PCDATA)>
+<!ELEMENT openOffice:quarter3Word (#PCDATA)>
+<!ELEMENT openOffice:quarter4Word (#PCDATA)>
+<!-- END_DEPRECATED -->
+
+<!ELEMENT openOffice:aboveWord (#PCDATA)>
+<!ELEMENT openOffice:belowWord (#PCDATA)>
+
+<!-- START_DEPRECATED -->
+<!ELEMENT openOffice:quarter1Abbreviation (#PCDATA)>   
+<!ELEMENT openOffice:quarter2Abbreviation (#PCDATA)>
+<!ELEMENT openOffice:quarter3Abbreviation (#PCDATA)>
+<!ELEMENT openOffice:quarter4Abbreviation (#PCDATA)>
+<!-- END_DEPRECATED -->
+
+<!ELEMENT openOffice:collations (openOffice:collator*,
+openOffice:collationOptions?) >
+<!ATTLIST openOffice:collations %RefLocale; >
+<!ELEMENT openOffice:collator EMPTY >
+<!ATTLIST openOffice:collator %UNOModule; >
+<!ATTLIST openOffice:collator openOffice:default (true|false) #REQUIRED >
+<!ELEMENT openOffice:collationOptions (openOffice:transliterationModules+)
+>
+<!ELEMENT openOffice:transliterationModules (#PCDATA) >
+
+<!ELEMENT openOffice:search (openOffice:searchOptions?) >
+<!ATTLIST openOffice:search %RefLocale; >
+<!ELEMENT openOffice:searchOptions (openOffice:transliterationModules+) >
+
+<!ELEMENT openOffice:currency (openOffice:currencyId)>
+<!ATTLIST openOffice:currency openOffice:default (true|false) #REQUIRED>
+<!ATTLIST openOffice:currency openOffice:usedInCompatibleFormatCodes (true|false) #REQUIRED>
+<!ATTLIST openOffice:currency openOffice:legacyOnly (true|false) #IMPLIED >
+<!ELEMENT openOffice:currencyId  (#PCDATA)>
+
+<!-- separators are not always defined in OO.org data so make optional -->
+<!ELEMENT openOffice:separators ( openOffice:dateSeparator?,
+openOffice:timeSeparator?, openOffice:longDateDayOfWeekSeparator?,
+openOffice:longDateDaySeparator?, openOffice:longDateMonthSeparator?,
+openOffice:longDateYearSeparator?, openOffice:time100SecSeparator?) >
+<!ELEMENT openOffice:dateSeparator (#PCDATA)>
+<!ELEMENT openOffice:timeSeparator (#PCDATA)>
+<!ELEMENT openOffice:longDateDayOfWeekSeparator (#PCDATA)>
+<!ELEMENT openOffice:longDateDaySeparator (#PCDATA)>
+<!ELEMENT openOffice:longDateMonthSeparator (#PCDATA)>
+<!ELEMENT openOffice:longDateYearSeparator (#PCDATA)>
+<!ELEMENT openOffice:time100SecSeparator (#PCDATA)>
+
+<!--
+the parameter numType can have one of the following values:
+0 = CHARS_UPPER_LETTER   EX: A, B, C, ....
+1 = CHARS_LOWER_LETTER   EX: a, b, c, ....
+2 = ROMAN_UPPER          EX: I, II, III, ....
+3 = ROMAN_LOWER          EX: i, ii, iii, ....
+4 = ARABIC               EX: 1, 2, 3, 4, .....
+5 = NUMBER_ONE     numbering is invisible
+6 = CHAR_SPECIAL   use a character from specified font
+7 = PAGE_DESCRIPTOR  numbering is specified in page style
+8 = BITMAP                numbering is displayed in bitmap graphic
+9 = CHARS_UPPER_LETTER_N  EX: A, B, ...., AA, BB
+10 = CHARS_LOWER_LETTER_N EX: a, b, ..., aa, bb, cc
+11 = Transliteration, numbering is generated by transliteration service
+12 = NatNum, numbering is generated by nativenumbersupplier service
+13 = Numbering for fullwidth Arabic number
+14 = Bullet for Circle Number
+15 = Numbering for Chinese lower case number
+16 = Numbering for Chinese upper case number
+17 = Numbering for Traditional Chinese upper case number
+18 = Bullet for Chinese Tian Gan
+19 = Bullet for Chinese Di Zi
+20 = Numbering for Japanese traditional number
+21 = Bullet for Japanese AIU fullwidth
+22 = Bullet for Japanese AIU halfwidth
+23 = Bullet for Japanese IROHA fullwidth
+24 = Bullet for Japanese IROHA halfwidth
+25 = Numbering for Korean upper case number
+26 = Numbering for Korean hangul number
+27 = Bullet for Korean Hangul Jamo
+28 = Bullet for Korean Hangul Syllable
+29 = Bullet for Korean Hangul Circled Jamo
+30 = Bullet for Korean Hangul Circled Syllable
+-->
+
+<!ELEMENT openOffice:numberingLevels (openOffice:numberingLevel*) >
+<!ATTLIST openOffice:numberingLevels %RefLocale; >
+<!ELEMENT openOffice:numberingLevel ( #PCDATA) >
+<!ATTLIST openOffice:numberingLevel openOffice:prefix CDATA #REQUIRED>
+<!ATTLIST openOffice:numberingLevel openOffice:numType NMTOKEN #REQUIRED>
+<!ATTLIST openOffice:numberingLevel openOffice:suffix CDATA #REQUIRED>
+<!ATTLIST openOffice:numberingLevel openOffice:transliteration CDATA #IMPLIED>
+<!ATTLIST openOffice:numberingLevel openOffice:natNum CDATA #IMPLIED >
+
+<!ELEMENT openOffice:outLineNumberingLevels (openOffice:outlineStyle* ) >
+<!ATTLIST openOffice:outLineNumberingLevels %RefLocale; >
+<!ELEMENT openOffice:outlineStyle (openOffice:outLineNumberingLevel+) >
+<!ELEMENT openOffice:outLineNumberingLevel ( #PCDATA) >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:prefix CDATA #REQUIRED>
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:numType CDATA #REQUIRED>
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:suffix CDATA #REQUIRED>
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:bulletChar CDATA #REQUIRED>
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:bulletFontName CDATA #REQUIRED >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:parentNumbering CDATA #REQUIRED >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:leftMargin CDATA #REQUIRED>
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:symbolTextDistance CDATA #REQUIRED >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:firstLineOffset CDATA #REQUIRED >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:transliteration CDATA #IMPLIED >
+<!ATTLIST openOffice:outLineNumberingLevel openOffice:natNum CDATA #IMPLIED>
+
+<!-- new fields -->
+
+<!ELEMENT openOffice:platformId ( #PCDATA)>
+
+<!ELEMENT openOffice:index    (openOffice:indexKey*,
+openOffice:unicodeScript*,
+openOffice:followPageWord*) >
+<!ATTLIST openOffice:index %RefLocale; >
+<!ELEMENT openOffice:indexKey (#PCDATA)>
+<!ATTLIST openOffice:indexKey  %UNOModule;>
+<!ATTLIST openOffice:indexKey  openOffice:default (true|false) #REQUIRED>
+<!ATTLIST openOffice:indexKey  openOffice:phonetic (true|false) #REQUIRED>
+<!ATTLIST openOffice:indexKey  openOffice:module CDATA #IMPLIED>
+<!ELEMENT openOffice:unicodeScript (#PCDATA)>
+<!ELEMENT openOffice:followPageWord (#PCDATA)>
+
+<!ELEMENT openOffice:format (#PCDATA)>
+<!ATTLIST openOffice:format %RefLocale; >
+<!ATTLIST openOffice:format openOffice:replaceFrom CDATA #IMPLIED>
+<!ATTLIST openOffice:format openOffice:replaceTo CDATA #IMPLIED>
+
+<!ELEMENT openOffice:defaultName (#PCDATA)>
+<!ATTLIST openOffice:defaultName openOffice:type CDATA #IMPLIED>
+
+<!-- locale element holds attributes of the Locale element in locale.dtd  -->
+<!ELEMENT openOffice:locale (#PCDATA)>
+<!ATTLIST openOffice:locale openOffice:versionDTD CDATA #REQUIRED>
+<!ATTLIST openOffice:locale openOffice:allowUpdateFromCLDR (yes|no) #REQUIRED>
+<!ATTLIST openOffice:locale openOffice:version CDATA #REQUIRED>
+
+<!-- ######################################################### -->

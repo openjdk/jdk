@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,8 @@ CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, boo
   , _oop_map(NULL)
   , _stack(stack)
   , _is_method_handle_invoke(false)
-  , _deoptimize_on_exception(deoptimize_on_exception) {
+  , _deoptimize_on_exception(deoptimize_on_exception)
+  , _force_reexecute(false) {
   assert(_stack != NULL, "must be non null");
 }
 
@@ -203,7 +204,8 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
   , _oop_map(NULL)
   , _stack(stack == NULL ? info->_stack : stack)
   , _is_method_handle_invoke(info->_is_method_handle_invoke)
-  , _deoptimize_on_exception(info->_deoptimize_on_exception) {
+  , _deoptimize_on_exception(info->_deoptimize_on_exception)
+  , _force_reexecute(info->_force_reexecute) {
 
   // deep copy of exception handlers
   if (info->_exception_handlers != NULL) {
@@ -215,7 +217,8 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
 void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
-  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/, _is_method_handle_invoke);
+  bool reexecute = _force_reexecute || _scope_debug_info->should_reexecute();
+  _scope_debug_info->record_debug_info(recorder, pc_offset, reexecute, _is_method_handle_invoke);
   recorder->end_safepoint(pc_offset);
 }
 
@@ -461,7 +464,7 @@ class ComputeLinearScanOrder : public StackObj {
 
   ResourceBitMap _visited_blocks;   // used for recursive processing of blocks
   ResourceBitMap _active_blocks;    // used for recursive processing of blocks
-  ResourceBitMap _dominator_blocks; // temproary BitMap used for computation of dominator
+  ResourceBitMap _dominator_blocks; // temporary BitMap used for computation of dominator
   intArray       _forward_branches; // number of incoming forward branches for each block
   BlockList      _loop_end_blocks;  // list of all loop end blocks collected during count_edges
   BitMap2D       _loop_map;         // two-dimensional bit set: a bit is set if a block is contained in a loop
@@ -686,7 +689,7 @@ void ComputeLinearScanOrder::mark_loops() {
 
 
 // check for non-natural loops (loops where the loop header does not dominate
-// all other loop blocks = loops with mulitple entries).
+// all other loop blocks = loops with multiple entries).
 // such loops are ignored
 void ComputeLinearScanOrder::clear_non_natural_loops(BlockBegin* start_block) {
   for (int i = _num_loops - 1; i >= 0; i--) {
@@ -819,7 +822,7 @@ int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
   int cur_bit = 15;
   #define INC_WEIGHT_IF(condition) if ((condition)) { weight |= (1 << cur_bit); } cur_bit--;
 
-  // this is necessery for the (very rare) case that two successing blocks have
+  // this is necessary for the (very rare) case that two successive blocks have
   // the same loop depth, but a different loop index (can happen for endless loops
   // with exception handlers)
   INC_WEIGHT_IF(!cur->is_set(BlockBegin::linear_scan_loop_header_flag));
@@ -828,7 +831,7 @@ int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
   // after all other blocks of the loop.
   INC_WEIGHT_IF(!cur->is_set(BlockBegin::linear_scan_loop_end_flag));
 
-  // critical edge split blocks are prefered because than they have a bigger
+  // critical edge split blocks are preferred because than they have a bigger
   // proability to be completely empty
   INC_WEIGHT_IF(cur->is_set(BlockBegin::critical_edge_split_flag));
 
@@ -925,7 +928,7 @@ void ComputeLinearScanOrder::compute_order(BlockBegin* start_block) {
     // ignore the edge between the osr entry and its successor for processing
     // the osr entry block is added manually below
     assert(osr_entry->number_of_sux() == 1, "osr entry must have exactly one successor");
-    assert(osr_entry->sux_at(0)->number_of_preds() >= 2, "sucessor of osr entry must have two predecessors (otherwise it is not present in normal control flow");
+    assert(osr_entry->sux_at(0)->number_of_preds() >= 2, "successor of osr entry must have two predecessors (otherwise it is not present in normal control flow");
 
     sux_of_osr_entry = osr_entry->sux_at(0);
     dec_forward_branches(sux_of_osr_entry);
@@ -1133,7 +1136,7 @@ void ComputeLinearScanOrder::verify() {
         assert(cur->linear_scan_number() < sux->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == sux->loop_depth()) {
-        assert(cur->loop_index() == sux->loop_index() || sux->is_set(BlockBegin::linear_scan_loop_header_flag), "successing blocks with same loop depth must have same loop index");
+        assert(cur->loop_index() == sux->loop_index() || sux->is_set(BlockBegin::linear_scan_loop_header_flag), "successive blocks with same loop depth must have same loop index");
       }
     }
 
@@ -1145,7 +1148,7 @@ void ComputeLinearScanOrder::verify() {
         assert(cur->linear_scan_number() > pred->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == pred->loop_depth()) {
-        assert(cur->loop_index() == pred->loop_index() || cur->is_set(BlockBegin::linear_scan_loop_header_flag), "successing blocks with same loop depth must have same loop index");
+        assert(cur->loop_index() == pred->loop_index() || cur->is_set(BlockBegin::linear_scan_loop_header_flag), "successive blocks with same loop depth must have same loop index");
       }
 
       assert(cur->dominator()->linear_scan_number() <= cur->pred_at(j)->linear_scan_number(), "dominator must be before predecessors");
@@ -1260,13 +1263,38 @@ void IR::print(bool cfg_only, bool live_only) {
     tty->print_cr("invalid IR");
   }
 }
+#endif // PRODUCT
 
+#ifdef ASSERT
+class EndNotNullValidator : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    assert(block->end() != NULL, "Expect block end to exist.");
+  }
+};
+
+class XentryFlagValidator : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+    }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+    }
+  }
+};
 
 typedef GrowableArray<BlockList*> BlockListList;
 
-class PredecessorValidator : public BlockClosure {
+// Validation goals:
+// - code() length == blocks length
+// - code() contents == blocks content
+// - Each block's computed predecessors match sux lists (length)
+// - Each block's computed predecessors match sux lists (set content)
+class PredecessorAndCodeValidator : public BlockClosure {
  private:
-  BlockListList* _predecessors;
+  BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
   BlockList*     _blocks;
 
   static int cmp(BlockBegin** a, BlockBegin** b) {
@@ -1274,98 +1302,153 @@ class PredecessorValidator : public BlockClosure {
   }
 
  public:
-  PredecessorValidator(IR* hir) {
+  PredecessorAndCodeValidator(IR* hir) {
     ResourceMark rm;
     _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
-    _blocks = new BlockList();
+    _blocks = new BlockList(BlockBegin::number_of_blocks());
 
-    int i;
     hir->start()->iterate_preorder(this);
     if (hir->code() != NULL) {
       assert(hir->code()->length() == _blocks->length(), "must match");
-      for (i = 0; i < _blocks->length(); i++) {
+      for (int i = 0; i < _blocks->length(); i++) {
         assert(hir->code()->contains(_blocks->at(i)), "should be in both lists");
       }
     }
 
-    for (i = 0; i < _blocks->length(); i++) {
+    for (int i = 0; i < _blocks->length(); i++) {
       BlockBegin* block = _blocks->at(i);
-      BlockList* preds = _predecessors->at(block->block_id());
-      if (preds == NULL) {
-        assert(block->number_of_preds() == 0, "should be the same");
-        continue;
-      }
-
-      // clone the pred list so we can mutate it
-      BlockList* pred_copy = new BlockList();
-      int j;
-      for (j = 0; j < block->number_of_preds(); j++) {
-        pred_copy->append(block->pred_at(j));
-      }
-      // sort them in the same order
-      preds->sort(cmp);
-      pred_copy->sort(cmp);
-      int length = MIN2(preds->length(), block->number_of_preds());
-      for (j = 0; j < block->number_of_preds(); j++) {
-        assert(preds->at(j) == pred_copy->at(j), "must match");
-      }
-
-      assert(preds->length() == block->number_of_preds(), "should be the same");
+      verify_block_preds_against_collected_preds(block);
     }
   }
 
   virtual void block_do(BlockBegin* block) {
     _blocks->append(block);
-    BlockEnd* be = block->end();
-    int n = be->number_of_sux();
-    int i;
-    for (i = 0; i < n; i++) {
-      BlockBegin* sux = be->sux_at(i);
-      assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+    collect_predecessors(block);
+  }
 
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+ private:
+  void collect_predecessors(BlockBegin* block) {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      collect_predecessor(block, block->end()->sux_at(i));
     }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      collect_predecessor(block, block->exception_handler_at(i));
+    }
+  }
 
-    n = block->number_of_exception_handlers();
-    for (i = 0; i < n; i++) {
-      BlockBegin* sux = block->exception_handler_at(i);
-      assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+  void collect_predecessor(BlockBegin* const pred, const BlockBegin* sux) {
+    BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
+    if (preds == NULL) {
+      preds = new BlockList();
+      _predecessors->at_put(sux->block_id(), preds);
+    }
+    preds->append(pred);
+  }
 
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+  void verify_block_preds_against_collected_preds(const BlockBegin* block) const {
+    BlockList* preds = _predecessors->at(block->block_id());
+    if (preds == NULL) {
+      assert(block->number_of_preds() == 0, "should be the same");
+      return;
+    }
+    assert(preds->length() == block->number_of_preds(), "should be the same");
+
+    // clone the pred list so we can mutate it
+    BlockList* pred_copy = new BlockList();
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      pred_copy->append(block->pred_at(j));
+    }
+    // sort them in the same order
+    preds->sort(cmp);
+    pred_copy->sort(cmp);
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      assert(preds->at(j) == pred_copy->at(j), "must match");
     }
   }
 };
 
 class VerifyBlockBeginField : public BlockClosure {
-
 public:
-
-  virtual void block_do(BlockBegin *block) {
-    for ( Instruction *cur = block; cur != NULL; cur = cur->next()) {
+  virtual void block_do(BlockBegin* block) {
+    for (Instruction* cur = block; cur != NULL; cur = cur->next()) {
       assert(cur->block() == block, "Block begin is not correct");
     }
   }
 };
 
-void IR::verify() {
-#ifdef ASSERT
-  PredecessorValidator pv(this);
-  VerifyBlockBeginField verifier;
-  this->iterate_postorder(&verifier);
-#endif
+class ValidateEdgeMutuality : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(block->end()->sux_at(i)->is_predecessor(block), "Block's successor should have it as predecessor");
+    }
+
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_predecessor(block), "Block's exception handler should have it as predecessor");
+    }
+
+    for (int i = 0; i < block->number_of_preds(); i++) {
+      assert(block->pred_at(i) != NULL, "Predecessor must exist");
+      assert(block->pred_at(i)->end() != NULL, "Predecessor end must exist");
+      bool is_sux      = block->pred_at(i)->end()->is_sux(block);
+      bool is_xhandler = block->pred_at(i)->is_exception_handler(block);
+      assert(is_sux || is_xhandler, "Block's predecessor should have it as successor or xhandler");
+    }
+  }
+};
+
+void IR::expand_with_neighborhood(BlockList& blocks) {
+  int original_size = blocks.length();
+  for (int h = 0; h < original_size; h++) {
+    BlockBegin* block = blocks.at(h);
+
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      if (!blocks.contains(block->end()->sux_at(i))) {
+        blocks.append(block->end()->sux_at(i));
+      }
+    }
+
+    for (int i = 0; i < block->number_of_preds(); i++) {
+      if (!blocks.contains(block->pred_at(i))) {
+        blocks.append(block->pred_at(i));
+      }
+    }
+
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      if (!blocks.contains(block->exception_handler_at(i))) {
+        blocks.append(block->exception_handler_at(i));
+      }
+    }
+  }
 }
 
-#endif // PRODUCT
+void IR::verify_local(BlockList& blocks) {
+  EndNotNullValidator ennv;
+  blocks.iterate_forward(&ennv);
+
+  ValidateEdgeMutuality vem;
+  blocks.iterate_forward(&vem);
+
+  VerifyBlockBeginField verifier;
+  blocks.iterate_forward(&verifier);
+}
+
+void IR::verify() {
+  XentryFlagValidator xe;
+  iterate_postorder(&xe);
+
+  PredecessorAndCodeValidator pv(this);
+
+  EndNotNullValidator ennv;
+  iterate_postorder(&ennv);
+
+  ValidateEdgeMutuality vem;
+  iterate_postorder(&vem);
+
+  VerifyBlockBeginField verifier;
+  iterate_postorder(&verifier);
+}
+#endif // ASSERT
 
 void SubstitutionResolver::visit(Value* v) {
   Value v0 = *v;

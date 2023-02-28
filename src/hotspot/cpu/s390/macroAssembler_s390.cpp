@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1241,7 +1241,7 @@ bool MacroAssembler::is_compare_immediate_narrow_klass(address pos) {
 //  patch the load_constant
 //-----------------------------------
 
-// CPU-version dependend patching of load_const.
+// CPU-version dependent patching of load_const.
 void MacroAssembler::patch_const(address a, long x) {
   assert(is_load_const(a), "not a load of a constant");
   // Note: Right shift is only cleanly defined for unsigned types
@@ -1427,7 +1427,7 @@ int MacroAssembler::store_const(const Address &dest, long imm,
 //===       N O T   P A T CH A B L E   C O N S T A N T S          ===
 //===================================================================
 
-// Load constant x into register t with a fast instrcution sequence
+// Load constant x into register t with a fast instruction sequence
 // depending on the bits in x. Preserves CC under all circumstances.
 int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) {
   if (x == 0) {
@@ -2423,7 +2423,7 @@ bool MacroAssembler::is_call_far_patchable_variant2_at(address instruction_addr)
 //
 // A call_far_patchable comes in different flavors:
 //  - LARL(CP) / LG(CP) / BR (address in constant pool, access via CP register)
-//  - LGRL(CP) / BR          (address in constant pool, pc-relative accesss)
+//  - LGRL(CP) / BR          (address in constant pool, pc-relative access)
 //  - BRASL                  (relative address of call target coded in instruction)
 // All flavors occupy the same amount of space. Length differences are compensated
 // by leading nops, such that the instruction sequence always ends at the same
@@ -2844,7 +2844,7 @@ void MacroAssembler::lookup_virtual_method(Register           recv_klass,
 //   trapMarker   - Marking byte for the generated illtrap instructions (if any).
 //                  Any value except 0x00 is supported.
 //                  = 0x00 - do not generate illtrap instructions.
-//                         use nops to fill ununsed space.
+//                         use nops to fill unused space.
 //   requiredSize - required size of the generated code. If the actually
 //                  generated code is smaller, use padding instructions to fill up.
 //                  = 0 - no size requirement, no padding.
@@ -3009,7 +3009,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
                                                    Label* L_success,
                                                    Label* L_failure) {
   // Input registers must not overlap.
-  // Also check for R1 which is explicitely used here.
+  // Also check for R1 which is explicitly used here.
   assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
   NearLabel L_fallthrough;
   int label_nulls = 0;
@@ -3352,8 +3352,6 @@ void MacroAssembler::set_thread_state(JavaThreadState new_state) {
 }
 
 void MacroAssembler::get_vm_result(Register oop_result) {
-  verify_thread();
-
   z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
   clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
 
@@ -3361,8 +3359,6 @@ void MacroAssembler::get_vm_result(Register oop_result) {
 }
 
 void MacroAssembler::get_vm_result_2(Register result) {
-  verify_thread();
-
   z_lg(result, Address(Z_thread, JavaThread::vm_result_2_offset()));
   clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(void*));
 }
@@ -3417,7 +3413,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   z_tmll(current, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xee);
   z_illtrap(0xee);
@@ -3561,7 +3557,7 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd1);
   z_illtrap(0xd1);
@@ -3608,7 +3604,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd2);
   z_illtrap(0xd2);
@@ -3635,6 +3631,11 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   } else {
     z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
   }
+}
+
+void MacroAssembler::load_klass_check_null(Register klass, Register src_oop, Register tmp) {
+  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
+  load_klass(klass, src_oop);
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
@@ -3858,7 +3859,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type,
@@ -3877,7 +3878,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type,
@@ -4484,7 +4485,7 @@ intptr_t MacroAssembler::get_const_from_toc(address pc) {
   if (is_load_const_from_toc_pcrelative(pc)) {
     dataLoc = pc + offset;
   } else {
-    CodeBlob* cb = CodeCache::find_blob_unsafe(pc);   // Else we get assertion if nmethod is zombie.
+    CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb && cb->is_nmethod(), "sanity");
     nmethod* nm = (nmethod*)cb;
     dataLoc = nm->ctable_begin() + offset;
@@ -4664,6 +4665,22 @@ void MacroAssembler::kmc(Register dstBuff, Register srcBuff) {
   Label retry;
   bind(retry);
   Assembler::z_kmc(dstBuff, srcBuff);
+  Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
+}
+
+void MacroAssembler::kmctr(Register dstBuff, Register ctrBuff, Register srcBuff) {
+  // DstBuff and srcBuff are allowed to be the same register (encryption in-place).
+  // DstBuff and srcBuff storage must not overlap destructively, and neither must overlap the parameter block.
+  assert(srcBuff->encoding()     != 0, "src buffer address can't be in Z_R0");
+  assert(dstBuff->encoding()     != 0, "dst buffer address can't be in Z_R0");
+  assert(ctrBuff->encoding()     != 0, "ctr buffer address can't be in Z_R0");
+  assert(ctrBuff->encoding() % 2 == 0, "ctr buffer addr must be an even register");
+  assert(dstBuff->encoding() % 2 == 0, "dst buffer addr must be an even register");
+  assert(srcBuff->encoding() % 2 == 0, "src buffer addr/len must be an even/odd register pair");
+
+  Label retry;
+  bind(retry);
+  Assembler::z_kmctr(dstBuff, ctrBuff, srcBuff);
   Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
 }
 
@@ -5370,12 +5387,6 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
 }
 #endif // !PRODUCT
 
-void MacroAssembler::verify_thread() {
-  if (VerifyThread) {
-    unimplemented("", 117);
-  }
-}
-
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
   z_stmg(Z_R1, Z_R5, offset, dst); offset += 5 * BytesPerWord;
@@ -5493,7 +5504,7 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   push_frame_abi160(0);
   call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(); // Illegal instruction.
   z_illtrap(); // Illegal instruction.

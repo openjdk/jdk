@@ -25,7 +25,8 @@
 #include "precompiled.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/threadSMR.inline.hpp"
 
 static bool thread_inclusion_predicate(Thread* t) {
   assert(t != NULL, "invariant");
@@ -37,15 +38,10 @@ static bool java_thread_inclusion_predicate(JavaThread* jt, bool live_only) {
   if (live_only && jt->thread_state() == _thread_new) {
     return false;
   }
-  return thread_inclusion_predicate(jt);
-}
-
-static JavaThread* next_java_thread(JavaThreadIteratorWithHandle& iter, bool live_only) {
-  JavaThread* next = iter.next();
-  while (next != NULL && !java_thread_inclusion_predicate(next, live_only)) {
-    next = iter.next();
+  if (jt->is_attaching_via_jni()) {
+    return false;
   }
-  return next;
+  return thread_inclusion_predicate(jt);
 }
 
 static NonJavaThread* next_non_java_thread(NonJavaThread::Iterator& iter) {
@@ -60,15 +56,29 @@ static NonJavaThread* next_non_java_thread(NonJavaThread::Iterator& iter) {
   return NULL;
 }
 
-JfrJavaThreadIteratorAdapter::JfrJavaThreadIteratorAdapter(bool live_only /* true */) : _iter(),
-                                                                                        _next(next_java_thread(_iter, live_only)),
-                                                                                        _live_only(live_only) {}
+JfrJavaThreadIteratorAdapter::JfrJavaThreadIteratorAdapter(bool live_only /* true */) :
+  _tlist(),
+  _it(_tlist.begin()),
+  _end(_tlist.end()),
+  _live_only(live_only)
+{
+  skip_excluded();
+}
+
+bool JfrJavaThreadIteratorAdapter::has_next() const {
+  return _it != _end;
+}
+
+void JfrJavaThreadIteratorAdapter::skip_excluded() {
+  while (has_next() && !java_thread_inclusion_predicate(*_it, _live_only)) {
+    ++_it;
+  }
+}
 
 JavaThread* JfrJavaThreadIteratorAdapter::next() {
   assert(has_next(), "invariant");
-  Type* const temp = _next;
-  _next = next_java_thread(_iter, _live_only);
-  assert(temp != _next, "invariant");
+  Type* const temp = *_it++;
+  skip_excluded();
   return temp;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,21 +31,54 @@ import java.util.*;
  */
 public class InputGraph extends Properties.Entity implements FolderElement {
 
-    private Map<Integer, InputNode> nodes;
-    private List<InputEdge> edges;
+    private final Map<Integer, InputNode> nodes;
+    private final List<InputEdge> edges;
     private Folder parent;
     private Group parentGroup;
-    private Map<String, InputBlock> blocks;
-    private List<InputBlockEdge> blockEdges;
-    private Map<Integer, InputBlock> nodeToBlock;
+    private final Map<String, InputBlock> blocks;
+    private final List<InputBlockEdge> blockEdges;
+    private final Map<Integer, InputBlock> nodeToBlock;
+    private final boolean isDiffGraph;
+    private final InputGraph firstGraph;
+    private final InputGraph secondGraph;
+    private final ChangedEvent<InputGraph> displayNameChangedEvent = new ChangedEvent<>(this);
+
+    public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
+        this(firstGraph.getName() + " Δ " + secondGraph.getName(), firstGraph, secondGraph);
+        assert !firstGraph.isDiffGraph() && !secondGraph.isDiffGraph();
+
+    }
 
     public InputGraph(String name) {
+        this(name, null, null);
+    }
+
+    private InputGraph(String name, InputGraph firstGraph, InputGraph secondGraph) {
         setName(name);
         nodes = new LinkedHashMap<>();
         edges = new ArrayList<>();
         blocks = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
+        isDiffGraph = firstGraph != null && secondGraph != null;
+        this.firstGraph = firstGraph;
+        this.secondGraph = secondGraph;
+        if (isDiffGraph) {
+            this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+            this.secondGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+        }
+    }
+
+    public boolean isDiffGraph() {
+        return isDiffGraph;
+    }
+
+    public InputGraph getFirstGraph() {
+        return firstGraph;
+    }
+
+    public InputGraph getSecondGraph() {
+        return secondGraph;
     }
 
     @Override
@@ -54,11 +87,18 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         if (parent instanceof Group) {
             assert this.parentGroup == null;
             this.parentGroup = (Group) parent;
+            assert displayNameChangedEvent != null;
+            assert this.parentGroup.getDisplayNameChangedEvent() != null;
+            this.parentGroup.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
         }
     }
 
     public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right) {
-        InputBlockEdge edge = new InputBlockEdge(left, right);
+        return addBlockEdge(left, right, null);
+    }
+
+    public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right, String label) {
+        InputBlockEdge edge = new InputBlockEdge(left, right, label);
         blockEdges.add(edge);
         left.addSuccessor(right);
         return edge;
@@ -83,7 +123,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
         Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
         for(InputNode n : this.getNodes()) {
-            result.put(n, new ArrayList<InputEdge>());
+            result.put(n, new ArrayList<>());
         }
 
         for(InputEdge e : this.edges) {
@@ -140,17 +180,8 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void clearBlocks() {
         blocks.clear();
+        blockEdges.clear();
         nodeToBlock.clear();
-    }
-
-    public void setEdge(int fromIndex, int toIndex, int from, int to) {
-        assert fromIndex == ((char)fromIndex) : "Downcast must be safe";
-        assert toIndex == ((char)toIndex) : "Downcast must be safe";
-
-        InputEdge edge = new InputEdge((char)fromIndex, (char)toIndex, from, to);
-        if(!this.getEdges().contains(edge)) {
-            this.addEdge(edge);
-        }
     }
 
     public void ensureNodesInBlocks() {
@@ -168,7 +199,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             assert nodes.get(n.getId()) == n;
             if (!scheduledNodes.contains(n)) {
                 if (noBlock == null) {
-                    noBlock = this.addBlock("(no block)");
+                    noBlock = addArtificialBlock();
                 }
                 noBlock.addNode(n.getId());
             }
@@ -198,13 +229,38 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup.getPrev(this);
     }
 
-    private void setName(String name) {
-        this.getProperties().setProperty("name", name);
+    @Override
+    public ChangedEvent<InputGraph> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
+    @Override
+    public void setName(String name) {
+        getProperties().setProperty("name", name);
+        displayNameChangedEvent.fire();
     }
 
     @Override
     public String getName() {
         return getProperties().get("name");
+    }
+
+    @Override
+    public String getDisplayName() {
+        if (isDiffGraph) {
+            return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
+        } else {
+            return getIndex()+1 + ". " + getName();
+        }
+    }
+
+    public int getIndex() {
+        Group group = getGroup();
+        if (group != null) {
+            return group.getGraphs().indexOf(this);
+        } else {
+            return -1;
+        }
     }
 
     public Collection<InputNode> getNodes() {
@@ -268,6 +324,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         }
 
         return sb.toString();
+    }
+
+    public InputBlock addArtificialBlock() {
+        InputBlock b = addBlock("(no block)");
+        b.setArtificial();
+        return b;
     }
 
     public InputBlock addBlock(String name) {

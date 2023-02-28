@@ -31,8 +31,6 @@
  * @build jdk.test.lib.net.IPSupport
  * @run testng/othervm SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  */
 
 import jdk.test.lib.RandomFactory;

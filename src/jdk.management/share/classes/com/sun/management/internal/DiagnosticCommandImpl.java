@@ -335,10 +335,10 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         return new ImmutableDescriptor(map);
     }
 
-    private final static String notifName =
+    private static final String notifName =
         "javax.management.Notification";
 
-    private final static String[] diagFramNotifTypes = {
+    private static final String[] diagFramNotifTypes = {
         "jmx.mbean.info.changed"
     };
 

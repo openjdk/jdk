@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_UTILITIES_POPULATION_COUNT_HPP
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isSigned.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // Returns the population count of x, i.e., the number of bits set in x.
 //
@@ -47,12 +46,12 @@ template <typename T>
 inline unsigned population_count(T x) {
   STATIC_ASSERT(BitsPerWord <= 128);
   STATIC_ASSERT(BitsPerByte == 8);
-  STATIC_ASSERT(IsIntegral<T>::value);
-  STATIC_ASSERT(!IsSigned<T>::value);
+  STATIC_ASSERT(std::is_integral<T>::value);
+  STATIC_ASSERT(!std::is_signed<T>::value);
   // We need to take care with implicit integer promotion when dealing with
   // integers < 32-bit. We chose to do this by explicitly widening constants
   // to unsigned
-  typedef typename Conditional<(sizeof(T) < sizeof(unsigned)), unsigned, T>::type P;
+  using P = std::conditional_t<(sizeof(T) < sizeof(unsigned)), unsigned, T>;
   const T all = ~T(0);           // 0xFF..FF
   const P fives = all/3;         // 0x55..55
   const P threes = (all/15) * 3; // 0x33..33
@@ -62,7 +61,7 @@ inline unsigned population_count(T x) {
   r -= ((r >> 1) & fives);
   r = (r & threes) + ((r >> 2) & threes);
   r = ((r + (r >> 4)) & z_effs) * z_ones;
-  // The preceeding multiply by z_ones is the only place where the intermediate
+  // The preceding multiply by z_ones is the only place where the intermediate
   // calculations can exceed the range of T. We need to discard any such excess
   // before the right-shift, hence the conversion back to T.
   return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));

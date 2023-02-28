@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,22 @@
 
 inline oop ClassLoaderData::class_loader() const {
   assert(!_unloading, "This oop is not available to unloading class loader data");
-  assert(_holder.is_null() || holder_no_keepalive() != NULL , "This class loader data holder must be alive");
+  assert(_holder.is_null() || holder_no_keepalive() != nullptr , "This class loader data holder must be alive");
   return _class_loader.resolve();
 }
 
+inline oop ClassLoaderData::class_loader_no_keepalive() const {
+  assert(!_unloading, "This oop is not available to unloading class loader data");
+  assert(_holder.is_null() || holder_no_keepalive() != nullptr , "This class loader data holder must be alive");
+  return _class_loader.peek();
+}
+
 inline bool ClassLoaderData::is_boot_class_loader_data() const {
-  return this == _the_null_class_loader_data || class_loader() == NULL;
+  return this == _the_null_class_loader_data || class_loader() == nullptr;
 }
 
 inline ClassLoaderData* ClassLoaderData::class_loader_data_or_null(oop loader) {
-  if (loader == NULL) {
+  if (loader == nullptr) {
     return ClassLoaderData::the_null_class_loader_data();
   }
   return java_lang_ClassLoader::loader_data_acquire(loader);
@@ -52,7 +58,7 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data_or_null(oop loader) {
 
 inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
   ClassLoaderData* loader_data = class_loader_data_or_null(loader);
-  assert(loader_data != NULL, "Must be");
+  assert(loader_data != nullptr, "Must be");
   return loader_data;
 }
 

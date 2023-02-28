@@ -70,9 +70,6 @@ class MethodHandles: AllStatic {
   static oop init_MemberName(Handle mname_h, Handle target_h, TRAPS); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
   static oop init_method_MemberName(Handle mname_h, CallInfo& info);
-  static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
-                              int mflags, Klass* caller,
-                              int skip, objArrayHandle results, TRAPS);
   static Handle resolve_MemberName_type(Handle mname, Klass* caller, TRAPS);
 
   // bit values for suppress argument to expand_MemberName:
@@ -80,7 +77,6 @@ class MethodHandles: AllStatic {
 
   // CallSite support
   static void add_dependent_nmethod(oop call_site, nmethod* nm);
-  static void remove_dependent_nmethod(oop call_site, nmethod* nm);
   static void clean_dependency_context(oop call_site);
 
   static void flush_dependent_nmethods(Handle call_site, Handle target);

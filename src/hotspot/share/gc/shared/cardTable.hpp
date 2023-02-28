@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,6 @@ protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
   const MemRegion _whole_heap;       // the region covered by the card table
-  size_t          _guard_index;      // index of very last element in the card
-                                     // table; it is set to a guard value
-                                     // (last_card) and should never be modified
-  size_t          _last_valid_index; // index of the last valid element
   const size_t    _page_size;        // page size used when mapping _byte_map
   size_t          _byte_map_size;    // in bytes
   CardValue*      _byte_map;         // the card marking array
@@ -65,12 +61,10 @@ protected:
   // actually extend onto the card-table space for the next covered region.
   MemRegion* _committed;
 
-  // The last card is a guard card, and we commit the page for it so
-  // we can use the card for verification purposes. We make sure we never
-  // uncommit the MemRegion for that page.
+  // The last card is a guard card; never committed.
   MemRegion _guard_region;
 
-  inline size_t compute_byte_map_size();
+  inline size_t compute_byte_map_size(size_t num_bytes);
 
   // Finds and return the index of the region, if any, to which the given
   // region would be contiguous.  If none exists, assign a new region and
@@ -78,12 +72,8 @@ protected:
   // covered regions defined in the constructor are ever in use.
   int find_covering_region_by_base(HeapWord* base);
 
-  // Same as above, but finds the region containing the given address
-  // instead of starting at a given base address.
-  int find_covering_region_containing(HeapWord* addr);
-
   // Returns the leftmost end of a committed region corresponding to a
-  // covered region before covered region "ind", or else "NULL" if "ind" is
+  // covered region before covered region "ind", or else "null" if "ind" is
   // the first covered region.
   HeapWord* largest_prev_committed_end(int ind) const;
 
@@ -104,37 +94,32 @@ protected:
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    last_card                   =  1,
-    CT_MR_BS_last_reserved      =  2
+    CT_MR_BS_last_reserved      =  1
   };
 
   // a word's worth (row) of clean card values
   static const intptr_t clean_card_row = (intptr_t)(-1);
 
+  // CardTable entry size
+  static uint _card_shift;
+  static uint _card_size;
+  static uint _card_size_in_words;
+
+  size_t last_valid_index() const {
+    return cards_required(_whole_heap.word_size()) - 1;
+  }
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
   virtual void initialize();
 
-  // The kinds of precision a CardTable may offer.
-  enum PrecisionStyle {
-    Precise,
-    ObjHeadPreciseArray
-  };
-
-  // Tells what style of precision this card table offers.
-  PrecisionStyle precision() {
-    return ObjHeadPreciseArray; // Only one supported for now.
-  }
-
   // *** Barrier set functions.
 
   // Initialization utilities; covered_words is the size of the covered region
   // in, um, words.
-  inline size_t cards_required(size_t covered_words) {
-    // Add one for a guard card, used to detect errors.
-    const size_t words = align_up(covered_words, card_size_in_words);
-    return words / card_size_in_words + 1;
+  inline size_t cards_required(size_t covered_words) const {
+    assert(is_aligned(covered_words, _card_size_in_words), "precondition");
+    return covered_words / _card_size_in_words;
   }
 
   // Dirty the bytes corresponding to "mr" (not all of which must be
@@ -157,7 +142,7 @@ public:
            "Attempt to access p = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
-    CardValue* result = &_byte_map_base[uintptr_t(p) >> card_shift];
+    CardValue* result = &_byte_map_base[uintptr_t(p) >> _card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
     return result;
@@ -172,7 +157,6 @@ public:
 
   virtual void invalidate(MemRegion mr);
   void clear(MemRegion mr);
-  void dirty(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -188,8 +172,10 @@ public:
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    size_t delta = pointer_delta(p, _byte_map_base, sizeof(CardValue));
-    HeapWord* result = (HeapWord*) (delta << card_shift);
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -217,27 +203,24 @@ public:
 
   static uintx ct_max_alignment_constraint();
 
-  // Apply closure "cl" to the dirty cards containing some part of
-  // MemRegion "mr".
-  void dirty_card_iterate(MemRegion mr, MemRegionClosure* cl);
+  static uint card_shift() {
+    return _card_shift;
+  }
 
-  // Return the MemRegion corresponding to the first maximal run
-  // of dirty cards lying completely within MemRegion mr.
-  // If reset is "true", then sets those card table entries to the given
-  // value.
-  MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
-                                         int reset_val);
+  static uint card_size() {
+    return _card_size;
+  }
 
-  // Constants
-  enum SomePublicConstants {
-    card_shift                  = 9,
-    card_size                   = 1 << card_shift,
-    card_size_in_words          = card_size / sizeof(HeapWord)
-  };
+  static uint card_size_in_words() {
+    return _card_size_in_words;
+  }
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
+
+  // Initialize card size
+  static void initialize_card_size();
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.
@@ -245,13 +228,10 @@ public:
   // before the beginning of the actual _byte_map.
   CardValue* byte_map_base() const { return _byte_map_base; }
 
-  virtual bool is_in_young(oop obj) const = 0;
+  virtual bool is_in_young(const void* p) const = 0;
 
   // Print a description of the memory for the card table
   virtual void print_on(outputStream* st) const;
-
-  void verify();
-  void verify_guard();
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val

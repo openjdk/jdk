@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public final class JmxMBeanServer
 
         final MBeanInstantiator fInstantiator = instantiator;
         this.secureClr = new
-            SecureClassLoaderRepository(AccessController.doPrivileged(new PrivilegedAction<ClassLoaderRepository>() {
+            SecureClassLoaderRepository(AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public ClassLoaderRepository run() {
                     return fInstantiator.getClassLoaderRepository();
@@ -1222,7 +1222,7 @@ public final class JmxMBeanServer
 
         // Registers the MBeanServer identification MBean
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 public Object run() throws Exception {
                     mbsInterceptor.registerMBean(
                             mBeanServerDelegateObject,
@@ -1251,7 +1251,7 @@ public final class JmxMBeanServer
            class loader.  The ClassLoaderRepository knows how
            to handle that case.  */
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
-        final ModifiableClassLoaderRepository loaders = AccessController.doPrivileged(new PrivilegedAction<ModifiableClassLoaderRepository>() {
+        final ModifiableClassLoaderRepository loaders = AccessController.doPrivileged(new PrivilegedAction<>() {
 
             @Override
             public ModifiableClassLoaderRepository run() {
@@ -1429,7 +1429,7 @@ public final class JmxMBeanServer
 
         // This constructor happens to disregard the value of the interceptors
         // flag - that is, it always uses the default value - false.
-        // This is admitedly a bug, but we chose not to fix it for now
+        // This is admittedly a bug, but we chose not to fix it for now
         // since we would rather not have anybody depending on the Sun private
         // interceptor APIs - which is most probably going to be removed and
         // replaced by a public (javax) feature in the future.

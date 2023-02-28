@@ -73,7 +73,7 @@ public class Annotation {
     /**
      * See JVMS, section 4.8.16.1.
      */
-    public static abstract class element_value {
+    public abstract static class element_value {
         public static element_value read(ClassReader cr)
                 throws IOException, InvalidAnnotation {
             int tag = cr.readUnsignedByte();

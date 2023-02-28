@@ -30,8 +30,9 @@ import javax.sound.midi.Track;
 
 /**
  * @test
+ * @key sound
  * @bug 4493775
- * @summary Sequncer method, setTickPosition(long) doesnot set the Tick position
+ * @summary Sequencer method, setTickPosition(long) does not set the Tick position
  */
 public class SetTickPosition {
         private static boolean testPassed = true;

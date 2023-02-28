@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Describes the {@link Local}s for a Java method.
  *
- * @see "https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.13"
+ * @jvms 4.7.13
  */
 public class LocalVariableTable {
 

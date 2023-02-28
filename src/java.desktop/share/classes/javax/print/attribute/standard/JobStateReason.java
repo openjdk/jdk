@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class JobStateReason extends EnumSyntax implements Attribute {
     /**
      * The printer could not access one or more documents passed by reference
      * (i.e., the print data representation object is a {@code URL}). This
-     * reason is intended to cover any file access problem,including file does
+     * reason is intended to cover any file access problem, including file does
      * not exist and access denied because of an access control problem. Whether
      * the printer aborts the job and moves the job to the {@code ABORTED} job
      * state or prints all documents that are accessible and moves the job to

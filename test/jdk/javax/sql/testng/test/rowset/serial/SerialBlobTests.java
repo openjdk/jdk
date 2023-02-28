@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,5 +395,79 @@ public class SerialBlobTests extends BaseTest {
         SerialBlob sb = new SerialBlob(new StubBlob());
         long pos = sb.position(pattern, 2);
         assertEquals(pos, expectedPos);
+    }
+
+    /*
+     * Validate that setBytes will properly write a set of bytes to the
+     * specified location in the SerialBlob and the correct count is returned
+     * for bytes written (writePos - 1 + diff.length > sb.length() &&
+     * writePos - 1 + bytesToWrite <= sb.length())
+     */
+    @Test
+    public void test31() throws Exception {
+        int writePos = 5;
+        int bytesToWrite = 1;
+        byte[] diff = new byte[]{7, 8, 9};
+        byte[] expected = new byte[]{1, 2, 3, 4, 7};
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(writePos, diff, 0, bytesToWrite);
+        assertEquals(written, bytesToWrite);
+        assertEquals(sb.getBytes(1, (int) sb.length()), expected);
+    }
+
+    /*
+     * Validate that setBytes will properly write a set of bytes to the
+     * specified location in the SerialBlob and the correct count is returned
+     * for bytes written (writePos - 1 + bytesToWrite > sb.length())
+     */
+    @Test
+    public void test32() throws Exception {
+        int writePos = 5;
+        int bytesToWrite = 2;
+        byte[] diff = new byte[]{7, 8, 9, 0};
+        byte[] expected = new byte[]{1, 2, 3, 4, 8, 9};
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(writePos, diff, 1, bytesToWrite);
+        assertEquals(written, bytesToWrite);
+        assertEquals(sb.getBytes(1, (int) sb.length()), expected);
+    }
+
+    /*
+     * Validate that setBytes will properly write a set of bytes to the
+     * specified location in the SerialBlob and the correct count is returned
+     * for bytes written (writePos == sb.length() + 1)
+     */
+    @Test
+    public void test33() throws Exception {
+        int writePos = 6;
+        int bytesToWrite = 3;
+        byte[] diff = new byte[]{7, 8, 9, 0};
+        byte[] expected = new byte[]{1, 2, 3, 4, 5, 8, 9, 0};
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(writePos, diff, 1, bytesToWrite);
+        assertEquals(written, bytesToWrite);
+        assertEquals(sb.getBytes(1, (int) sb.length()), expected);
+    }
+
+    /*
+     * Validate a SerialException is thrown if length < 0 for setBytes
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test34() throws Exception {
+        int length = -1;
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(1, new byte[]{1}, 1, length);
+    }
+
+    /*
+     * Validate a SerialException is thrown if length + offset >
+     * Integer.MAX_VALUE for setBytes
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test35() throws Exception {
+        int offset = 1;
+        int length = Integer.MAX_VALUE;
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(1, new byte[]{1, 2, 3}, offset, length);
     }
 }

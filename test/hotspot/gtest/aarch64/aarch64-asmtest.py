@@ -7,6 +7,55 @@ AARCH64_AS = "as"
 AARCH64_OBJDUMP = "objdump"
 AARCH64_OBJCOPY = "objcopy"
 
+# These tables are legal immediate logical operands
+immediates8 \
+     = [0x1, 0x0c, 0x3e, 0x60, 0x7c, 0x80, 0x83,
+        0xe1, 0xbf, 0xef, 0xf3, 0xfe]
+
+immediates16 \
+     = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
+        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
+        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
+        0xff03, 0xfffe]
+
+immediates32 \
+     = [0x1, 0x3f, 0x1f0, 0x7e0,
+        0x1c00, 0x3ff0, 0x8000, 0x1e000,
+        0x3e000, 0x78000, 0xe0000, 0x100000,
+        0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
+        0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
+        0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
+        0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
+        0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
+        0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
+        0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
+        0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
+        0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
+        0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
+        0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
+        0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
+        0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
+        0xffffffbf, 0xfffffffd]
+
+immediates64 \
+     = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
+        0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
+        0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
+        0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
+        0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
+        0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
+        0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
+        0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
+        0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
+        0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
+        0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
+        0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
+        0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
+        0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
+        0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
+        0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
+
 class Operand(object):
 
      def generate(self):
@@ -160,15 +209,17 @@ class Instruction(object):
         self._name = name
         self.isWord = name.endswith("w") | name.endswith("wi")
         self.asmRegPrefix = ["x", "w"][self.isWord]
+        self.isPostfixException = False
 
     def aname(self):
-        if (self._name.endswith("wi")):
+        if self.isPostfixException:
+            return self._name
+        elif (self._name.endswith("wi")):
             return self._name[:len(self._name)-2]
+        elif (self._name.endswith("i") | self._name.endswith("w")):
+            return self._name[:len(self._name)-1]
         else:
-            if (self._name.endswith("i") | self._name.endswith("w")):
-                return self._name[:len(self._name)-1]
-            else:
-                return self._name
+            return self._name
 
     def emit(self) :
         pass
@@ -299,6 +350,73 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class SystemRegOp(Instruction):
+    def __init__(self, args):
+        name, self.system_reg = args
+        Instruction.__init__(self, name)
+        if self.system_reg == 'fpsr':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0100
+            self.op2 = 0b001
+        elif self.system_reg == 'dczid_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b111
+        elif self.system_reg == 'ctr_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b001
+        elif self.system_reg == 'nzcv':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0010
+            self.op2 = 0b000
+
+    def generate(self):
+        self.reg = [GeneralRegister().generate()]
+        return self
+
+class SystemOneRegOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(SystemOneRegOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(SystemOneRegOp, self).astr()
+                + '%s' % self.system_reg
+                + ', %s' % self.reg[0].astr(prefix))
+
+class OneRegSystemOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(OneRegSystemOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(OneRegSystemOp, self).astr()
+                + '%s' % self.reg[0].astr(prefix)
+                + ', %s' % self.system_reg)
+
+class PostfixExceptionOneRegOp(OneRegOp):
+
+    def __init__(self, op):
+        OneRegOp.__init__(self, op)
+        self.isPostfixException=True
+
 class ArithOp(ThreeRegInstruction):
 
     def generate(self):
@@ -351,51 +469,12 @@ class AddSubImmOp(TwoRegImmedInstruction):
          return super(AddSubImmOp, self).cstr() + ");"
 
 class LogicalImmOp(AddSubImmOp):
-
-     # These tables are legal immediate logical operands
-     immediates32 \
-         = [0x1, 0x3f, 0x1f0, 0x7e0,
-            0x1c00, 0x3ff0, 0x8000, 0x1e000,
-            0x3e000, 0x78000, 0xe0000, 0x100000,
-            0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
-            0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
-            0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
-            0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
-            0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
-            0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
-            0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
-            0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
-            0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
-            0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
-            0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
-            0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
-            0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
-            0xffffffbf, 0xfffffffd]
-
-     immediates \
-         = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
-            0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
-            0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
-            0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
-            0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
-            0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
-            0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
-            0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
-            0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
-            0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
-            0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
-            0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
-            0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
-            0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
-            0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
-            0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
-
      def generate(self):
           AddSubImmOp.generate(self)
           self.immed = \
-              self.immediates32[random.randint(0, len(self.immediates32)-1)] \
+              immediates32[random.randint(0, len(immediates32)-1)] \
               if self.isWord else \
-              self.immediates[random.randint(0, len(self.immediates)-1)]
+              immediates64[random.randint(0, len(immediates64)-1)]
 
           return self
 
@@ -405,6 +484,67 @@ class LogicalImmOp(AddSubImmOp):
 
      def cstr(self):
           return super(AddSubImmOp, self).cstr() + "ll);"
+
+class SVEBinaryImmOp(Instruction):
+    def __init__(self, name):
+        reg = SVEVectorRegister().generate()
+        self.reg = [reg, reg]
+        self.numRegs = len(self.reg)
+        self._width = RegVariant(0, 3)
+        self._isLogical = False
+        if name in ["and", "eor", "orr"]:
+            self._isLogical = True
+        Instruction.__init__(self, name)
+
+    def generate(self):
+        Instruction.generate(self)
+        self.immed = random.randint(0, (1<<8)-1)
+        if self._isLogical:
+            vectype = self._width.cstr()
+            if vectype == "__ B":
+                self.immed = immediates8[random.randint(0, len(immediates8)-1)]
+            elif vectype == "__ H":
+                self.immed = immediates16[random.randint(0, len(immediates16)-1)]
+            elif vectype == "__ S":
+                self.immed = immediates32[random.randint(0, len(immediates32)-1)]
+            elif vectype == "__ D":
+                self.immed = immediates64[random.randint(0, len(immediates64)-1)]
+        return self
+
+    def cstr(self):
+        formatStr = "%s%s, %s, %su);"
+        return (formatStr
+                % tuple(["__ sve_" + self._name + "("] +
+                        [str(self.reg[0]), self._width.cstr(), self.immed]))
+
+    def astr(self):
+        formatStr = "%s%s, %s, #0x%x"
+        Regs = [str(self.reg[i]) + self._width.astr() for i in range(0, self.numRegs)]
+        return (formatStr
+                % tuple([Instruction.astr(self)] + Regs + [self.immed]))
+
+class SVEComparisonWithZero(Instruction):
+     def __init__(self, arg):
+          Instruction.__init__(self, "fcm")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(2, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+     def generate(self):
+          return Instruction.generate(self)
+
+     def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, 0.0);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg)))
+
+     def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #0.0"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr()))
+          return val
 
 class MultiOp():
 
@@ -548,6 +688,13 @@ class Op(Instruction):
         return Instruction.cstr(self) + ");"
     def astr(self):
         return self.aname();
+
+
+class PostfixExceptionOp(Op):
+
+    def __init__(self, op):
+        Op.__init__(self, op)
+        self.isPostfixException=True
 
 class SystemOp(Instruction):
 
@@ -871,7 +1018,9 @@ class LoadStorePairOp(InstructionWithModes):
 class FloatInstruction(Instruction):
 
     def aname(self):
-        if (self._name.endswith("s") | self._name.endswith("d")):
+        if (self._name in ["fcvtsh", "fcvths"]):
+            return self._name[:len(self._name)-2]
+        elif (self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -923,9 +1072,11 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -950,7 +1101,8 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
+        firstArg = 0 if self._name == "eor3" else 1
+        formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
             dnReg = [str(self.reg[0]) + self._width.astr()]
@@ -960,7 +1112,7 @@ class SVEVectorOp(Instruction):
         if self._isPredicated:
             restRegs = [str(self.reg[1]) + self._merge] + dnReg + [str(self.reg[i]) + self._width.astr() for i in range(2, self.numRegs)]
         else:
-            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
+            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(firstArg, self.numRegs)]
         return (formatStr
                 % tuple([Instruction.astr(self)] +
                         [str(self.reg[0]) + self._width.astr()] +
@@ -1287,14 +1439,32 @@ generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "
 generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
                ])
 
-generate (Op, ["nop", "eret", "drps", "isb"])
+generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
+               "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
+               "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
+               "eret", "drps", "isb",])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
 barriers = ["OSHLD", "OSHST", "OSH", "NSHLD", "NSHST", "NSH",
             "ISHLD", "ISHST", "ISH", "LD", "ST", "SY"]
 
 generate (SystemOp, [["dsb", barriers], ["dmb", barriers]])
 
-generate (OneRegOp, ["br", "blr"])
+generate (OneRegOp, ["br", "blr",
+                     "paciza", "pacizb", "pacdza", "pacdzb",
+                     "autiza", "autizb", "autdza", "autdzb", "xpacd",
+                     "braaz", "brabz", "blraaz", "blrabz"])
+
+for system_reg in ["fpsr", "nzcv"]:
+    generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+    generate (OneRegSystemOp, [ ["mrs", system_reg] ])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOneRegOp, ["xpaci"])
 
 for mode in 'xwhb':
     generate (LoadStoreExclusiveOp, [["stxr", mode, 3], ["stlxr", mode, 3],
@@ -1339,7 +1509,10 @@ generate(ConditionalSelectOp,
 
 generate(TwoRegOp,
          ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit",
-          "rev16", "rev32", "rev", "clz", "cls"])
+          "rev16", "rev32", "rev", "clz", "cls",
+          "pacia",  "pacib", "pacda", "pacdb", "autia", "autib", "autda", "autdb",
+          "braa", "brab", "blraa", "blrab"])
+
 generate(ThreeRegOp,
          ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv",
           "lslv", "lsrv", "asrv", "rorv", "umulh", "smulh"])
@@ -1357,7 +1530,7 @@ generate(FourRegFloatOp,
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
-          ["fcvts", "ds"],
+          ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
           ["fcvtd", "sd"],
           ])
@@ -1366,6 +1539,8 @@ generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"
                           ["fcvtzdw", "fcvtzs", "wd"], ["fcvtzd", "fcvtzs", "xd"],
                           ["scvtfws", "scvtf", "sw"], ["scvtfs", "scvtf", "sx"],
                           ["scvtfwd", "scvtf", "dw"], ["scvtfd", "scvtf", "dx"],
+                          ["fcvtassw", "fcvtas", "ws"], ["fcvtasd", "fcvtas", "xd"],
+                          ["fcvtmssw", "fcvtms", "ws"], ["fcvtmsd", "fcvtms", "xd"],
                           ["fmovs", "fmov", "ws"], ["fmovd", "fmov", "xd"],
                           ["fmovs", "fmov", "sw"], ["fmovd", "fmov", "dx"]])
 
@@ -1456,6 +1631,8 @@ generate(ThreeRegNEONOp,
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
           ["fabd", "fabd", "2D"],
+          ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
+          ["faddp", "faddp", "2D"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
           ["fmul", "fmul", "2D"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
@@ -1510,7 +1687,11 @@ generate(ThreeRegNEONOp,
           ["cmge", "cmge", "2D"],
           ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
           ["fcmge", "fcmge", "2D"],
+          ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
+          ["facgt", "facgt", "2D"],
           ])
+
+generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
 
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
@@ -1522,10 +1703,11 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["stxp",   "__ stxp(r4, zr, zr, r5);",                           "stxp\tw4, xzr, xzr, [x5]"],
                         ["stxpw",  "__ stxpw(r6, zr, zr, sp);",                          "stxp\tw6, wzr, wzr, [sp]"],
                         ["dup",    "__ dup(v0, __ T16B, zr);",                           "dup\tv0.16b, wzr"],
-                        ["mov",    "__ mov(v1, __ T1D, 0, zr);",                         "mov\tv1.d[0], xzr"],
-                        ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
-                        ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
-                        ["mov",    "__ mov(v1, __ T8B, 3, zr);",                         "mov\tv1.b[3], wzr"],
+                        ["dup",    "__ dup(v0, __ S, v1);",                              "dup\ts0, v1.s[0]"],
+                        ["mov",    "__ mov(v1, __ D, 0, zr);",                           "mov\tv1.d[0], xzr"],
+                        ["mov",    "__ mov(v1, __ S, 1, zr);",                           "mov\tv1.s[1], wzr"],
+                        ["mov",    "__ mov(v1, __ H, 2, zr);",                           "mov\tv1.h[2], wzr"],
+                        ["mov",    "__ mov(v1, __ B, 3, zr);",                           "mov\tv1.b[3], wzr"],
                         ["smov",   "__ smov(r0, v1, __ S, 0);",                          "smov\tx0, v1.s[0]"],
                         ["smov",   "__ smov(r0, v1, __ H, 1);",                          "smov\tx0, v1.h[1]"],
                         ["smov",   "__ smov(r0, v1, __ B, 2);",                          "smov\tx0, v1.b[2]"],
@@ -1534,119 +1716,201 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ H, 2);",                          "umov\tw0, v1.h[2]"],
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
+                        ["fmov",   "__ fmovs(v9, __ T2S, 0.5f);",                        "fmov\tv9.2s, 0.5"],
+                        ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
                         # SVE instructions
-                        ["cpy",     "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
-                        ["cpy",     "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
-                        ["cpy",     "__ sve_cpy(z1, __ H, p0, -128, true);",              "mov\tz1.h, p0/m, -128"],
-                        ["cpy",     "__ sve_cpy(z2, __ S, p0, 32512, true);",             "mov\tz2.s, p0/m, 32512"],
-                        ["cpy",     "__ sve_cpy(z5, __ D, p0, -32768, false);",           "mov\tz5.d, p0/z, -32768"],
-                        ["cpy",     "__ sve_cpy(z10, __ B, p0, -1, false);",              "mov\tz10.b, p0/z, -1"],
-                        ["cpy",     "__ sve_cpy(z11, __ S, p0, -1, false);",              "mov\tz11.s, p0/z, -1"],
-                        ["inc",     "__ sve_inc(r0, __ S);",                              "incw\tx0"],
-                        ["dec",     "__ sve_dec(r1, __ H);",                              "dech\tx1"],
-                        ["lsl",     "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
-                        ["lsl",     "__ sve_lsl(z21, __ H, z1, 15);",                     "lsl\tz21.h, z1.h, #15"],
-                        ["lsl",     "__ sve_lsl(z0, __ S, z1, 31);",                      "lsl\tz0.s, z1.s, #31"],
-                        ["lsl",     "__ sve_lsl(z0, __ D, z1, 63);",                      "lsl\tz0.d, z1.d, #63"],
-                        ["lsr",     "__ sve_lsr(z0, __ B, z1, 7);",                       "lsr\tz0.b, z1.b, #7"],
-                        ["asr",     "__ sve_asr(z0, __ H, z11, 15);",                     "asr\tz0.h, z11.h, #15"],
-                        ["lsr",     "__ sve_lsr(z30, __ S, z1, 31);",                     "lsr\tz30.s, z1.s, #31"],
-                        ["asr",     "__ sve_asr(z0, __ D, z1, 63);",                      "asr\tz0.d, z1.d, #63"],
-                        ["addvl",   "__ sve_addvl(sp, r0, 31);",                          "addvl\tsp, x0, #31"],
-                        ["addpl",   "__ sve_addpl(r1, sp, -32);",                         "addpl\tx1, sp, -32"],
-                        ["cntp",    "__ sve_cntp(r8, __ B, p0, p1);",                     "cntp\tx8, p0, p1.b"],
-                        ["dup",     "__ sve_dup(z0, __ B, 127);",                         "dup\tz0.b, 127"],
-                        ["dup",     "__ sve_dup(z1, __ H, -128);",                        "dup\tz1.h, -128"],
-                        ["dup",     "__ sve_dup(z2, __ S, 32512);",                       "dup\tz2.s, 32512"],
-                        ["dup",     "__ sve_dup(z7, __ D, -32768);",                      "dup\tz7.d, -32768"],
-                        ["dup",     "__ sve_dup(z10, __ B, -1);",                         "dup\tz10.b, -1"],
-                        ["dup",     "__ sve_dup(z11, __ S, -1);",                         "dup\tz11.s, -1"],
-                        ["ld1b",    "__ sve_ld1b(z0, __ B, p0, Address(sp));",            "ld1b\t{z0.b}, p0/z, [sp]"],
-                        ["ld1b",    "__ sve_ld1b(z0, __ H, p1, Address(sp));",            "ld1b\t{z0.h}, p1/z, [sp]"],
-                        ["ld1b",    "__ sve_ld1b(z0, __ S, p2, Address(sp, r8));",        "ld1b\t{z0.s}, p2/z, [sp, x8]"],
-                        ["ld1b",    "__ sve_ld1b(z0, __ D, p3, Address(sp, 7));",         "ld1b\t{z0.d}, p3/z, [sp, #7, MUL VL]"],
-                        ["ld1h",    "__ sve_ld1h(z10, __ H, p1, Address(sp, -8));",       "ld1h\t{z10.h}, p1/z, [sp, #-8, MUL VL]"],
-                        ["ld1w",    "__ sve_ld1w(z20, __ S, p2, Address(r0, 7));",        "ld1w\t{z20.s}, p2/z, [x0, #7, MUL VL]"],
-                        ["ld1b",    "__ sve_ld1b(z30, __ B, p3, Address(sp, r8));",       "ld1b\t{z30.b}, p3/z, [sp, x8]"],
-                        ["ld1w",    "__ sve_ld1w(z0, __ S, p4, Address(sp, r28));",       "ld1w\t{z0.s}, p4/z, [sp, x28, LSL #2]"],
-                        ["ld1d",    "__ sve_ld1d(z11, __ D, p5, Address(r0, r1));",       "ld1d\t{z11.d}, p5/z, [x0, x1, LSL #3]"],
-                        ["st1b",    "__ sve_st1b(z22, __ B, p6, Address(sp));",           "st1b\t{z22.b}, p6, [sp]"],
-                        ["st1b",    "__ sve_st1b(z31, __ B, p7, Address(sp, -8));",       "st1b\t{z31.b}, p7, [sp, #-8, MUL VL]"],
-                        ["st1b",    "__ sve_st1b(z0, __ H, p1, Address(sp));",            "st1b\t{z0.h}, p1, [sp]"],
-                        ["st1b",    "__ sve_st1b(z0, __ S, p2, Address(sp, r8));",        "st1b\t{z0.s}, p2, [sp, x8]"],
-                        ["st1b",    "__ sve_st1b(z0, __ D, p3, Address(sp));",            "st1b\t{z0.d}, p3, [sp]"],
-                        ["st1w",    "__ sve_st1w(z0, __ S, p1, Address(r0, 7));",         "st1w\t{z0.s}, p1, [x0, #7, MUL VL]"],
-                        ["st1b",    "__ sve_st1b(z0, __ B, p2, Address(sp, r1));",        "st1b\t{z0.b}, p2, [sp, x1]"],
-                        ["st1h",    "__ sve_st1h(z0, __ H, p3, Address(sp, r8));",        "st1h\t{z0.h}, p3, [sp, x8, LSL #1]"],
-                        ["st1d",    "__ sve_st1d(z0, __ D, p4, Address(r0, r17));",       "st1d\t{z0.d}, p4, [x0, x17, LSL #3]"],
-                        ["ldr",     "__ sve_ldr(z0, Address(sp));",                       "ldr\tz0, [sp]"],
-                        ["ldr",     "__ sve_ldr(z31, Address(sp, -256));",                "ldr\tz31, [sp, #-256, MUL VL]"],
-                        ["str",     "__ sve_str(z8, Address(r8, 255));",                  "str\tz8, [x8, #255, MUL VL]"],
-                        ["cntb",    "__ sve_cntb(r9);",                                   "cntb\tx9"],
-                        ["cnth",    "__ sve_cnth(r10);",                                  "cnth\tx10"],
-                        ["cntw",    "__ sve_cntw(r11);",                                  "cntw\tx11"],
-                        ["cntd",    "__ sve_cntd(r12);",                                  "cntd\tx12"],
-                        ["brka",    "__ sve_brka(p2, p0, p2, false);",                    "brka\tp2.b, p0/z, p2.b"],
-                        ["brka",    "__ sve_brka(p1, p2, p3, true);",                     "brka\tp1.b, p2/m, p3.b"],
-                        ["brkb",    "__ sve_brkb(p1, p2, p3, false);",                    "brkb\tp1.b, p2/z, p3.b"],
-                        ["brkb",    "__ sve_brkb(p2, p3, p4, true);",                     "brkb\tp2.b, p3/m, p4.b"],
-                        ["rev",     "__ sve_rev(p0, __ B, p1);",                          "rev\tp0.b, p1.b"],
-                        ["rev",     "__ sve_rev(p1, __ H, p2);",                          "rev\tp1.h, p2.h"],
-                        ["rev",     "__ sve_rev(p2, __ S, p3);",                          "rev\tp2.s, p3.s"],
-                        ["rev",     "__ sve_rev(p3, __ D, p4);",                          "rev\tp3.d, p4.d"],
-                        ["incp",    "__ sve_incp(r0, __ B, p2);",                         "incp\tx0, p2.b"],
-                        ["whilelt", "__ sve_whilelt(p0, __ B, r1, r28);",                 "whilelt\tp0.b, x1, x28"],
-                        ["whilele", "__ sve_whilele(p2, __ H, r11, r8);",                 "whilele\tp2.h, x11, x8"],
-                        ["whilelo", "__ sve_whilelo(p3, __ S, r7, r2);",                  "whilelo\tp3.s, x7, x2"],
-                        ["whilels", "__ sve_whilels(p4, __ D, r17, r10);",                "whilels\tp4.d, x17, x10"],
-                        ["sel",     "__ sve_sel(z0, __ B, p0, z1, z2);",                  "sel\tz0.b, p0, z1.b, z2.b"],
-                        ["sel",     "__ sve_sel(z4, __ D, p0, z5, z6);",                  "sel\tz4.d, p0, z5.d, z6.d"],
-                        ["cmpeq",   "__ sve_cmp(Assembler::EQ, p1, __ B, p0, z0, z1);",   "cmpeq\tp1.b, p0/z, z0.b, z1.b"],
-                        ["cmpne",   "__ sve_cmp(Assembler::NE, p1, __ H, p0, z2, z3);",   "cmpne\tp1.h, p0/z, z2.h, z3.h"],
-                        ["cmpge",   "__ sve_cmp(Assembler::GE, p1, __ S, p2, z4, z5);",   "cmpge\tp1.s, p2/z, z4.s, z5.s"],
-                        ["cmpgt",   "__ sve_cmp(Assembler::GT, p1, __ D, p3, z6, z7);",   "cmpgt\tp1.d, p3/z, z6.d, z7.d"],
-                        ["cmphi",   "__ sve_cmp(Assembler::HI, p1, __ S, p2, z4, z5);",   "cmphi\tp1.s, p2/z, z4.s, z5.s"],
-                        ["cmphs",   "__ sve_cmp(Assembler::HS, p1, __ D, p3, z6, z7);",   "cmphs\tp1.d, p3/z, z6.d, z7.d"],
-                        ["cmpeq",   "__ sve_cmp(Assembler::EQ, p1, __ B, p4, z0, 15);",   "cmpeq\tp1.b, p4/z, z0.b, #15"],
-                        ["cmpne",   "__ sve_cmp(Assembler::NE, p1, __ H, p0, z2, -16);",  "cmpne\tp1.h, p0/z, z2.h, #-16"],
-                        ["cmple",   "__ sve_cmp(Assembler::LE, p1, __ S, p1, z4, 0);",    "cmple\tp1.s, p1/z, z4.s, #0"],
-                        ["cmplt",   "__ sve_cmp(Assembler::LT, p1, __ D, p2, z6, -1);",   "cmplt\tp1.d, p2/z, z6.d, #-1"],
-                        ["cmpge",   "__ sve_cmp(Assembler::GE, p1, __ S, p3, z4, 5);",    "cmpge\tp1.s, p3/z, z4.s, #5"],
-                        ["cmpgt",   "__ sve_cmp(Assembler::GT, p1, __ B, p4, z6, -2);",   "cmpgt\tp1.b, p4/z, z6.b, #-2"],
-                        ["fcmeq",   "__ sve_fcm(Assembler::EQ, p1, __ S, p0, z0, z1);",   "fcmeq\tp1.s, p0/z, z0.s, z1.s"],
-                        ["fcmne",   "__ sve_fcm(Assembler::NE, p1, __ D, p0, z2, z3);",   "fcmne\tp1.d, p0/z, z2.d, z3.d"],
-                        ["fcmgt",   "__ sve_fcm(Assembler::GT, p1, __ S, p2, z4, z5);",   "fcmgt\tp1.s, p2/z, z4.s, z5.s"],
-                        ["fcmge",   "__ sve_fcm(Assembler::GE, p1, __ D, p3, z6, z7);",   "fcmge\tp1.d, p3/z, z6.d, z7.d"],
-                        ["uunpkhi", "__ sve_uunpkhi(z0, __ H, z1);",                      "uunpkhi\tz0.h, z1.b"],
-                        ["uunpklo", "__ sve_uunpklo(z4, __ S, z5);",                      "uunpklo\tz4.s, z5.h"],
-                        ["sunpkhi", "__ sve_sunpkhi(z6, __ D, z7);",                      "sunpkhi\tz6.d, z7.s"],
-                        ["sunpklo", "__ sve_sunpklo(z10, __ H, z11);",                    "sunpklo\tz10.h, z11.b"],
-                        ["scvtf",   "__ sve_scvtf(z1, __ D, p0, z0, __ S);",              "scvtf\tz1.d, p0/m, z0.s"],
-                        ["scvtf",   "__ sve_scvtf(z3, __ D, p1, z2, __ D);",              "scvtf\tz3.d, p1/m, z2.d"],
-                        ["scvtf",   "__ sve_scvtf(z6, __ S, p2, z1, __ D);",              "scvtf\tz6.s, p2/m, z1.d"],
-                        ["scvtf",   "__ sve_scvtf(z6, __ S, p3, z1, __ S);",              "scvtf\tz6.s, p3/m, z1.s"],
-                        ["scvtf",   "__ sve_scvtf(z6, __ H, p3, z1, __ S);",              "scvtf\tz6.h, p3/m, z1.s"],
-                        ["scvtf",   "__ sve_scvtf(z6, __ H, p3, z1, __ D);",              "scvtf\tz6.h, p3/m, z1.d"],
-                        ["scvtf",   "__ sve_scvtf(z6, __ H, p3, z1, __ H);",              "scvtf\tz6.h, p3/m, z1.h"],
-                        ["fcvt",    "__ sve_fcvt(z5, __ D, p3, z4, __ S);",               "fcvt\tz5.d, p3/m, z4.s"],
-                        ["fcvt",    "__ sve_fcvt(z1, __ S, p3, z0, __ D);",               "fcvt\tz1.s, p3/m, z0.d"],
-                        ["fcvtzs",  "__ sve_fcvtzs(z19, __ D, p2, z1, __ D);",            "fcvtzs\tz19.d, p2/m, z1.d"],
-                        ["fcvtzs",  "__ sve_fcvtzs(z9, __ S, p1, z8, __ S);",             "fcvtzs\tz9.s, p1/m, z8.s"],
-                        ["fcvtzs",  "__ sve_fcvtzs(z1, __ S, p2, z0, __ D);",             "fcvtzs\tz1.s, p2/m, z0.d"],
-                        ["fcvtzs",  "__ sve_fcvtzs(z1, __ D, p3, z0, __ S);",             "fcvtzs\tz1.d, p3/m, z0.s"],
-                        ["fcvtzs",  "__ sve_fcvtzs(z1, __ S, p4, z18, __ H);",            "fcvtzs\tz1.s, p4/m, z18.h"],
-                        ["lasta",   "__ sve_lasta(r0, __ B, p0, z15);",                   "lasta\tw0, p0, z15.b"],
-                        ["lastb",   "__ sve_lastb(r1, __ B, p1, z16);",                   "lastb\tw1, p1, z16.b"],
-                        ["lasta",   "__ sve_lasta(v0, __ B, p0, z15);",                   "lasta\tb0, p0, z15.b"],
-                        ["lastb",   "__ sve_lastb(v1, __ B, p1, z16);",                   "lastb\tb1, p1, z16.b"],
-                        ["index",   "__ sve_index(z6, __ S, 1, 1);",                      "index\tz6.s, #1, #1"],
-                        ["cpy",     "__ sve_cpy(z7, __ H, p3, r5);",                      "cpy\tz7.h, p3/m, w5"],
-                        ["tbl",     "__ sve_tbl(z16, __ S, z17, z18);",                   "tbl\tz16.s, {z17.s}, z18.s"],
-                        ["ld1w",    "__ sve_ld1w_gather(z15, p0, r5, z16);",              "ld1w\t{z15.s}, p0/z, [x5, z16.s, uxtw #2]"],
-                        ["ld1d",    "__ sve_ld1d_gather(z15, p0, r5, z16);",              "ld1d\t{z15.d}, p0/z, [x5, z16.d, uxtw #3]"],
-                        ["st1w",    "__ sve_st1w_scatter(z15, p0, r5, z16);",             "st1w\t{z15.s}, p0, [x5, z16.s, uxtw #2]"],
-                        ["st1d",    "__ sve_st1d_scatter(z15, p0, r5, z16);",             "st1d\t{z15.d}, p0, [x5, z16.d, uxtw #3]"],
+                        ["cpy",      "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
+                        ["cpy",      "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
+                        ["cpy",      "__ sve_cpy(z1, __ H, p0, -128, true);",              "mov\tz1.h, p0/m, -128"],
+                        ["cpy",      "__ sve_cpy(z2, __ S, p0, 32512, true);",             "mov\tz2.s, p0/m, 32512"],
+                        ["cpy",      "__ sve_cpy(z5, __ D, p0, -32768, false);",           "mov\tz5.d, p0/z, -32768"],
+                        ["cpy",      "__ sve_cpy(z10, __ B, p0, -1, false);",              "mov\tz10.b, p0/z, -1"],
+                        ["cpy",      "__ sve_cpy(z11, __ S, p0, -1, false);",              "mov\tz11.s, p0/z, -1"],
+                        ["inc",      "__ sve_inc(r0, __ S);",                              "incw\tx0"],
+                        ["dec",      "__ sve_dec(r1, __ H);",                              "dech\tx1"],
+                        ["lsl",      "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
+                        ["lsl",      "__ sve_lsl(z21, __ H, z1, 15);",                     "lsl\tz21.h, z1.h, #15"],
+                        ["lsl",      "__ sve_lsl(z0, __ S, z1, 31);",                      "lsl\tz0.s, z1.s, #31"],
+                        ["lsl",      "__ sve_lsl(z0, __ D, z1, 63);",                      "lsl\tz0.d, z1.d, #63"],
+                        ["lsr",      "__ sve_lsr(z0, __ B, z1, 7);",                       "lsr\tz0.b, z1.b, #7"],
+                        ["asr",      "__ sve_asr(z0, __ H, z11, 15);",                     "asr\tz0.h, z11.h, #15"],
+                        ["lsr",      "__ sve_lsr(z30, __ S, z1, 31);",                     "lsr\tz30.s, z1.s, #31"],
+                        ["asr",      "__ sve_asr(z0, __ D, z1, 63);",                      "asr\tz0.d, z1.d, #63"],
+                        ["lsl",      "__ sve_lsl(z0, __ B, p0, 0);",                       "lsl\tz0.b, p0/m, z0.b, #0"],
+                        ["lsl",      "__ sve_lsl(z0, __ B, p0, 5);",                       "lsl\tz0.b, p0/m, z0.b, #5"],
+                        ["lsl",      "__ sve_lsl(z1, __ H, p1, 15);",                      "lsl\tz1.h, p1/m, z1.h, #15"],
+                        ["lsl",      "__ sve_lsl(z2, __ S, p2, 31);",                      "lsl\tz2.s, p2/m, z2.s, #31"],
+                        ["lsl",      "__ sve_lsl(z3, __ D, p3, 63);",                      "lsl\tz3.d, p3/m, z3.d, #63"],
+                        ["lsr",      "__ sve_lsr(z0, __ B, p0, 1);",                       "lsr\tz0.b, p0/m, z0.b, #1"],
+                        ["lsr",      "__ sve_lsr(z0, __ B, p0, 8);",                       "lsr\tz0.b, p0/m, z0.b, #8"],
+                        ["lsr",      "__ sve_lsr(z1, __ H, p1, 15);",                      "lsr\tz1.h, p1/m, z1.h, #15"],
+                        ["lsr",      "__ sve_lsr(z2, __ S, p2, 7);",                       "lsr\tz2.s, p2/m, z2.s, #7"],
+                        ["lsr",      "__ sve_lsr(z2, __ S, p2, 31);",                      "lsr\tz2.s, p2/m, z2.s, #31"],
+                        ["lsr",      "__ sve_lsr(z3, __ D, p3, 63);",                      "lsr\tz3.d, p3/m, z3.d, #63"],
+                        ["asr",      "__ sve_asr(z0, __ B, p0, 1);",                       "asr\tz0.b, p0/m, z0.b, #1"],
+                        ["asr",      "__ sve_asr(z0, __ B, p0, 7);",                       "asr\tz0.b, p0/m, z0.b, #7"],
+                        ["asr",      "__ sve_asr(z1, __ H, p1, 5);",                       "asr\tz1.h, p1/m, z1.h, #5"],
+                        ["asr",      "__ sve_asr(z1, __ H, p1, 15);",                      "asr\tz1.h, p1/m, z1.h, #15"],
+                        ["asr",      "__ sve_asr(z2, __ S, p2, 31);",                      "asr\tz2.s, p2/m, z2.s, #31"],
+                        ["asr",      "__ sve_asr(z3, __ D, p3, 63);",                      "asr\tz3.d, p3/m, z3.d, #63"],
+                        ["addvl",    "__ sve_addvl(sp, r0, 31);",                          "addvl\tsp, x0, #31"],
+                        ["addpl",    "__ sve_addpl(r1, sp, -32);",                         "addpl\tx1, sp, -32"],
+                        ["cntp",     "__ sve_cntp(r8, __ B, p0, p1);",                     "cntp\tx8, p0, p1.b"],
+                        ["dup",      "__ sve_dup(z0, __ B, 127);",                         "dup\tz0.b, 127"],
+                        ["dup",      "__ sve_dup(z1, __ H, -128);",                        "dup\tz1.h, -128"],
+                        ["dup",      "__ sve_dup(z2, __ S, 32512);",                       "dup\tz2.s, 32512"],
+                        ["dup",      "__ sve_dup(z7, __ D, -32768);",                      "dup\tz7.d, -32768"],
+                        ["dup",      "__ sve_dup(z10, __ B, -1);",                         "dup\tz10.b, -1"],
+                        ["dup",      "__ sve_dup(z11, __ S, -1);",                         "dup\tz11.s, -1"],
+                        ["ld1b",     "__ sve_ld1b(z0, __ B, p0, Address(sp));",            "ld1b\t{z0.b}, p0/z, [sp]"],
+                        ["ld1b",     "__ sve_ld1b(z0, __ H, p1, Address(sp));",            "ld1b\t{z0.h}, p1/z, [sp]"],
+                        ["ld1b",     "__ sve_ld1b(z0, __ S, p2, Address(sp, r8));",        "ld1b\t{z0.s}, p2/z, [sp, x8]"],
+                        ["ld1b",     "__ sve_ld1b(z0, __ D, p3, Address(sp, 7));",         "ld1b\t{z0.d}, p3/z, [sp, #7, MUL VL]"],
+                        ["ld1h",     "__ sve_ld1h(z10, __ H, p1, Address(sp, -8));",       "ld1h\t{z10.h}, p1/z, [sp, #-8, MUL VL]"],
+                        ["ld1w",     "__ sve_ld1w(z20, __ S, p2, Address(r0, 7));",        "ld1w\t{z20.s}, p2/z, [x0, #7, MUL VL]"],
+                        ["ld1b",     "__ sve_ld1b(z30, __ B, p3, Address(sp, r8));",       "ld1b\t{z30.b}, p3/z, [sp, x8]"],
+                        ["ld1w",     "__ sve_ld1w(z0, __ S, p4, Address(sp, r28));",       "ld1w\t{z0.s}, p4/z, [sp, x28, LSL #2]"],
+                        ["ld1d",     "__ sve_ld1d(z11, __ D, p5, Address(r0, r1));",       "ld1d\t{z11.d}, p5/z, [x0, x1, LSL #3]"],
+                        ["st1b",     "__ sve_st1b(z22, __ B, p6, Address(sp));",           "st1b\t{z22.b}, p6, [sp]"],
+                        ["st1b",     "__ sve_st1b(z31, __ B, p7, Address(sp, -8));",       "st1b\t{z31.b}, p7, [sp, #-8, MUL VL]"],
+                        ["st1b",     "__ sve_st1b(z0, __ H, p1, Address(sp));",            "st1b\t{z0.h}, p1, [sp]"],
+                        ["st1b",     "__ sve_st1b(z0, __ S, p2, Address(sp, r8));",        "st1b\t{z0.s}, p2, [sp, x8]"],
+                        ["st1b",     "__ sve_st1b(z0, __ D, p3, Address(sp));",            "st1b\t{z0.d}, p3, [sp]"],
+                        ["st1w",     "__ sve_st1w(z0, __ S, p1, Address(r0, 7));",         "st1w\t{z0.s}, p1, [x0, #7, MUL VL]"],
+                        ["st1b",     "__ sve_st1b(z0, __ B, p2, Address(sp, r1));",        "st1b\t{z0.b}, p2, [sp, x1]"],
+                        ["st1h",     "__ sve_st1h(z0, __ H, p3, Address(sp, r8));",        "st1h\t{z0.h}, p3, [sp, x8, LSL #1]"],
+                        ["st1d",     "__ sve_st1d(z0, __ D, p4, Address(r0, r17));",       "st1d\t{z0.d}, p4, [x0, x17, LSL #3]"],
+                        ["ldr",      "__ sve_ldr(z0, Address(sp));",                       "ldr\tz0, [sp]"],
+                        ["ldr",      "__ sve_ldr(z31, Address(sp, -256));",                "ldr\tz31, [sp, #-256, MUL VL]"],
+                        ["str",      "__ sve_str(z8, Address(r8, 255));",                  "str\tz8, [x8, #255, MUL VL]"],
+                        ["cntb",     "__ sve_cntb(r9);",                                   "cntb\tx9"],
+                        ["cnth",     "__ sve_cnth(r10);",                                  "cnth\tx10"],
+                        ["cntw",     "__ sve_cntw(r11);",                                  "cntw\tx11"],
+                        ["cntd",     "__ sve_cntd(r12);",                                  "cntd\tx12"],
+                        ["brka",     "__ sve_brka(p2, p0, p2, false);",                    "brka\tp2.b, p0/z, p2.b"],
+                        ["brka",     "__ sve_brka(p1, p2, p3, true);",                     "brka\tp1.b, p2/m, p3.b"],
+                        ["brkb",     "__ sve_brkb(p1, p2, p3, false);",                    "brkb\tp1.b, p2/z, p3.b"],
+                        ["brkb",     "__ sve_brkb(p2, p3, p4, true);",                     "brkb\tp2.b, p3/m, p4.b"],
+                        ["rev",      "__ sve_rev(p0, __ B, p1);",                          "rev\tp0.b, p1.b"],
+                        ["rev",      "__ sve_rev(p1, __ H, p2);",                          "rev\tp1.h, p2.h"],
+                        ["rev",      "__ sve_rev(p2, __ S, p3);",                          "rev\tp2.s, p3.s"],
+                        ["rev",      "__ sve_rev(p3, __ D, p4);",                          "rev\tp3.d, p4.d"],
+                        ["incp",     "__ sve_incp(r0, __ B, p2);",                         "incp\tx0, p2.b"],
+                        ["whilelt",  "__ sve_whilelt(p0, __ B, r1, r28);",                 "whilelt\tp0.b, x1, x28"],
+                        ["whilele",  "__ sve_whilele(p2, __ H, r11, r8);",                 "whilele\tp2.h, x11, x8"],
+                        ["whilelo",  "__ sve_whilelo(p3, __ S, r7, r2);",                  "whilelo\tp3.s, x7, x2"],
+                        ["whilels",  "__ sve_whilels(p4, __ D, r17, r10);",                "whilels\tp4.d, x17, x10"],
+                        ["whileltw", "__ sve_whileltw(p1, __ B, r1, r28);",                "whilelt\tp1.b, w1, w28"],
+                        ["whilelew", "__ sve_whilelew(p2, __ H, r11, r8);",                "whilele\tp2.h, w11, w8"],
+                        ["whilelow", "__ sve_whilelow(p3, __ S, r7, r2);",                 "whilelo\tp3.s, w7, w2"],
+                        ["whilelsw", "__ sve_whilelsw(p4, __ D, r17, r10);",               "whilels\tp4.d, w17, w10"],
+                        ["sel",      "__ sve_sel(z0, __ B, p0, z1, z2);",                  "sel\tz0.b, p0, z1.b, z2.b"],
+                        ["sel",      "__ sve_sel(z4, __ D, p0, z5, z6);",                  "sel\tz4.d, p0, z5.d, z6.d"],
+                        ["cmpeq",    "__ sve_cmp(Assembler::EQ, p1, __ B, p0, z0, z1);",   "cmpeq\tp1.b, p0/z, z0.b, z1.b"],
+                        ["cmpne",    "__ sve_cmp(Assembler::NE, p1, __ H, p0, z2, z3);",   "cmpne\tp1.h, p0/z, z2.h, z3.h"],
+                        ["cmpge",    "__ sve_cmp(Assembler::GE, p1, __ S, p2, z4, z5);",   "cmpge\tp1.s, p2/z, z4.s, z5.s"],
+                        ["cmpgt",    "__ sve_cmp(Assembler::GT, p1, __ D, p3, z6, z7);",   "cmpgt\tp1.d, p3/z, z6.d, z7.d"],
+                        ["cmphi",    "__ sve_cmp(Assembler::HI, p1, __ S, p2, z4, z5);",   "cmphi\tp1.s, p2/z, z4.s, z5.s"],
+                        ["cmphs",    "__ sve_cmp(Assembler::HS, p1, __ D, p3, z6, z7);",   "cmphs\tp1.d, p3/z, z6.d, z7.d"],
+                        ["cmpeq",    "__ sve_cmp(Assembler::EQ, p1, __ B, p4, z0, 15);",   "cmpeq\tp1.b, p4/z, z0.b, #15"],
+                        ["cmpne",    "__ sve_cmp(Assembler::NE, p1, __ H, p0, z2, -16);",  "cmpne\tp1.h, p0/z, z2.h, #-16"],
+                        ["cmple",    "__ sve_cmp(Assembler::LE, p1, __ S, p1, z4, 0);",    "cmple\tp1.s, p1/z, z4.s, #0"],
+                        ["cmplt",    "__ sve_cmp(Assembler::LT, p1, __ D, p2, z6, -1);",   "cmplt\tp1.d, p2/z, z6.d, #-1"],
+                        ["cmpge",    "__ sve_cmp(Assembler::GE, p1, __ S, p3, z4, 5);",    "cmpge\tp1.s, p3/z, z4.s, #5"],
+                        ["cmpgt",    "__ sve_cmp(Assembler::GT, p1, __ B, p4, z6, -2);",   "cmpgt\tp1.b, p4/z, z6.b, #-2"],
+                        ["fcmeq",    "__ sve_fcm(Assembler::EQ, p1, __ S, p0, z0, z1);",   "fcmeq\tp1.s, p0/z, z0.s, z1.s"],
+                        ["fcmne",    "__ sve_fcm(Assembler::NE, p1, __ D, p0, z2, z3);",   "fcmne\tp1.d, p0/z, z2.d, z3.d"],
+                        ["fcmgt",    "__ sve_fcm(Assembler::GT, p1, __ S, p2, z4, z5);",   "fcmgt\tp1.s, p2/z, z4.s, z5.s"],
+                        ["fcmge",    "__ sve_fcm(Assembler::GE, p1, __ D, p3, z6, z7);",   "fcmge\tp1.d, p3/z, z6.d, z7.d"],
+                        ["uunpkhi",  "__ sve_uunpkhi(z0, __ H, z1);",                      "uunpkhi\tz0.h, z1.b"],
+                        ["uunpklo",  "__ sve_uunpklo(z4, __ S, z5);",                      "uunpklo\tz4.s, z5.h"],
+                        ["sunpkhi",  "__ sve_sunpkhi(z6, __ D, z7);",                      "sunpkhi\tz6.d, z7.s"],
+                        ["sunpklo",  "__ sve_sunpklo(z10, __ H, z11);",                    "sunpklo\tz10.h, z11.b"],
+                        ["scvtf",    "__ sve_scvtf(z1, __ D, p0, z0, __ S);",              "scvtf\tz1.d, p0/m, z0.s"],
+                        ["scvtf",    "__ sve_scvtf(z3, __ D, p1, z2, __ D);",              "scvtf\tz3.d, p1/m, z2.d"],
+                        ["scvtf",    "__ sve_scvtf(z6, __ S, p2, z1, __ D);",              "scvtf\tz6.s, p2/m, z1.d"],
+                        ["scvtf",    "__ sve_scvtf(z6, __ S, p3, z1, __ S);",              "scvtf\tz6.s, p3/m, z1.s"],
+                        ["scvtf",    "__ sve_scvtf(z6, __ H, p3, z1, __ S);",              "scvtf\tz6.h, p3/m, z1.s"],
+                        ["scvtf",    "__ sve_scvtf(z6, __ H, p3, z1, __ D);",              "scvtf\tz6.h, p3/m, z1.d"],
+                        ["scvtf",    "__ sve_scvtf(z6, __ H, p3, z1, __ H);",              "scvtf\tz6.h, p3/m, z1.h"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ S);",               "fcvt\tz5.d, p3/m, z4.s"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ S, p3, z0, __ D);",               "fcvt\tz1.s, p3/m, z0.d"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ S, p3, z4, __ H);",               "fcvt\tz5.s, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ S);",               "fcvt\tz1.h, p3/m, z0.s"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ H);",               "fcvt\tz5.d, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ D);",               "fcvt\tz1.h, p3/m, z0.d"],
+                        ["fcvtzs",   "__ sve_fcvtzs(z19, __ D, p2, z1, __ D);",            "fcvtzs\tz19.d, p2/m, z1.d"],
+                        ["fcvtzs",   "__ sve_fcvtzs(z9, __ S, p1, z8, __ S);",             "fcvtzs\tz9.s, p1/m, z8.s"],
+                        ["fcvtzs",   "__ sve_fcvtzs(z1, __ S, p2, z0, __ D);",             "fcvtzs\tz1.s, p2/m, z0.d"],
+                        ["fcvtzs",   "__ sve_fcvtzs(z1, __ D, p3, z0, __ S);",             "fcvtzs\tz1.d, p3/m, z0.s"],
+                        ["fcvtzs",   "__ sve_fcvtzs(z1, __ S, p4, z18, __ H);",            "fcvtzs\tz1.s, p4/m, z18.h"],
+                        ["lasta",    "__ sve_lasta(r0, __ B, p0, z15);",                   "lasta\tw0, p0, z15.b"],
+                        ["lastb",    "__ sve_lastb(r1, __ B, p1, z16);",                   "lastb\tw1, p1, z16.b"],
+                        ["lasta",    "__ sve_lasta(v0, __ B, p0, z15);",                   "lasta\tb0, p0, z15.b"],
+                        ["lastb",    "__ sve_lastb(v1, __ B, p1, z16);",                   "lastb\tb1, p1, z16.b"],
+                        ["index",    "__ sve_index(z6, __ S, 1, 1);",                      "index\tz6.s, #1, #1"],
+                        ["index",    "__ sve_index(z6, __ B, r5, 2);",                     "index\tz6.b, w5, #2"],
+                        ["index",    "__ sve_index(z6, __ H, r5, 3);",                     "index\tz6.h, w5, #3"],
+                        ["index",    "__ sve_index(z6, __ S, r5, 4);",                     "index\tz6.s, w5, #4"],
+                        ["index",    "__ sve_index(z7, __ D, r5, 5);",                     "index\tz7.d, x5, #5"],
+                        ["cpy",      "__ sve_cpy(z7, __ H, p3, r5);",                      "cpy\tz7.h, p3/m, w5"],
+                        ["tbl",      "__ sve_tbl(z16, __ S, z17, z18);",                   "tbl\tz16.s, {z17.s}, z18.s"],
+                        ["ld1w",     "__ sve_ld1w_gather(z15, p0, r5, z16);",              "ld1w\t{z15.s}, p0/z, [x5, z16.s, uxtw #2]"],
+                        ["ld1d",     "__ sve_ld1d_gather(z15, p0, r5, z16);",              "ld1d\t{z15.d}, p0/z, [x5, z16.d, uxtw #3]"],
+                        ["st1w",     "__ sve_st1w_scatter(z15, p0, r5, z16);",             "st1w\t{z15.s}, p0, [x5, z16.s, uxtw #2]"],
+                        ["st1d",     "__ sve_st1d_scatter(z15, p0, r5, z16);",             "st1d\t{z15.d}, p0, [x5, z16.d, uxtw #3]"],
+                        ["and",      "__ sve_and(p0, p1, p2, p3);",                        "and\tp0.b, p1/z, p2.b, p3.b"],
+                        ["ands",     "__ sve_ands(p4, p5, p6, p0);",                       "ands\tp4.b, p5/z, p6.b, p0.b"],
+                        ["eor",      "__ sve_eor(p0, p1, p2, p3);",                        "eor\tp0.b, p1/z, p2.b, p3.b"],
+                        ["eors",     "__ sve_eors(p5, p6, p0, p1);",                       "eors\tp5.b, p6/z, p0.b, p1.b"],
+                        ["orr",      "__ sve_orr(p0, p1, p2, p3);",                        "orr\tp0.b, p1/z, p2.b, p3.b"],
+                        ["orrs",     "__ sve_orrs(p9, p1, p4, p5);",                       "orrs\tp9.b, p1/z, p4.b, p5.b"],
+                        ["bic",      "__ sve_bic(p10, p7, p9, p11);",                      "bic\tp10.b, p7/z, p9.b, p11.b"],
+                        ["ptest",    "__ sve_ptest(p7, p1);",                              "ptest\tp7, p1.b"],
+                        ["ptrue",    "__ sve_ptrue(p1, __ B);",                            "ptrue\tp1.b"],
+                        ["ptrue",    "__ sve_ptrue(p1, __ B, 0b00001);",                   "ptrue\tp1.b, vl1"],
+                        ["ptrue",    "__ sve_ptrue(p1, __ B, 0b00101);",                   "ptrue\tp1.b, vl5"],
+                        ["ptrue",    "__ sve_ptrue(p1, __ B, 0b01001);",                   "ptrue\tp1.b, vl16"],
+                        ["ptrue",    "__ sve_ptrue(p1, __ B, 0b01101);",                   "ptrue\tp1.b, vl256"],
+                        ["ptrue",    "__ sve_ptrue(p2, __ H);",                            "ptrue\tp2.h"],
+                        ["ptrue",    "__ sve_ptrue(p2, __ H, 0b00010);",                   "ptrue\tp2.h, vl2"],
+                        ["ptrue",    "__ sve_ptrue(p2, __ H, 0b00110);",                   "ptrue\tp2.h, vl6"],
+                        ["ptrue",    "__ sve_ptrue(p2, __ H, 0b01010);",                   "ptrue\tp2.h, vl32"],
+                        ["ptrue",    "__ sve_ptrue(p3, __ S);",                            "ptrue\tp3.s"],
+                        ["ptrue",    "__ sve_ptrue(p3, __ S, 0b00011);",                   "ptrue\tp3.s, vl3"],
+                        ["ptrue",    "__ sve_ptrue(p3, __ S, 0b00111);",                   "ptrue\tp3.s, vl7"],
+                        ["ptrue",    "__ sve_ptrue(p3, __ S, 0b01011);",                   "ptrue\tp3.s, vl64"],
+                        ["ptrue",    "__ sve_ptrue(p4, __ D);",                            "ptrue\tp4.d"],
+                        ["ptrue",    "__ sve_ptrue(p4, __ D, 0b00100);",                   "ptrue\tp4.d, vl4"],
+                        ["ptrue",    "__ sve_ptrue(p4, __ D, 0b01000);",                   "ptrue\tp4.d, vl8"],
+                        ["ptrue",    "__ sve_ptrue(p4, __ D, 0b01100);",                   "ptrue\tp4.d, vl128"],
+                        ["pfalse",   "__ sve_pfalse(p7);",                                 "pfalse\tp7.b"],
+                        ["uzp1",     "__ sve_uzp1(p0, __ B, p0, p1);",                     "uzp1\tp0.b, p0.b, p1.b"],
+                        ["uzp1",     "__ sve_uzp1(p0, __ H, p0, p1);",                     "uzp1\tp0.h, p0.h, p1.h"],
+                        ["uzp1",     "__ sve_uzp1(p0, __ S, p0, p1);",                     "uzp1\tp0.s, p0.s, p1.s"],
+                        ["uzp1",     "__ sve_uzp1(p0, __ D, p0, p1);",                     "uzp1\tp0.d, p0.d, p1.d"],
+                        ["uzp2",     "__ sve_uzp2(p0, __ B, p0, p1);",                     "uzp2\tp0.b, p0.b, p1.b"],
+                        ["uzp2",     "__ sve_uzp2(p0, __ H, p0, p1);",                     "uzp2\tp0.h, p0.h, p1.h"],
+                        ["uzp2",     "__ sve_uzp2(p0, __ S, p0, p1);",                     "uzp2\tp0.s, p0.s, p1.s"],
+                        ["uzp2",     "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
+                        ["punpklo",  "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
+                        ["punpkhi",  "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
+                        ["compact",  "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
+                        ["compact",  "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
+                        ["ext",      "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ H, p2, z4, z5);",   "facgt\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ S, p2, z4, z5);",   "facgt\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ D, p2, z4, z5);",   "facgt\tp1.d, p2/z, z4.d, z5.d"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ H, p2, z4, z5);",   "facge\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ S, p2, z4, z5);",   "facge\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ D, p2, z4, z5);",   "facge\tp1.d, p2/z, z4.d, z5.d"],
+                        # SVE2 instructions
+                        ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
+                        ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -1677,6 +1941,9 @@ generate(SHA3SIMDOp, ["bcax", "eor3", "rax1", "xar"])
 
 generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
 
+for i in range(6):
+    generate(SVEBinaryImmOp, ["add", "sub", "and", "eor", "orr"])
+
 generate(SVEVectorOp, [["add", "ZZZ"],
                        ["sub", "ZZZ"],
                        ["fadd", "ZZZ"],
@@ -1684,13 +1951,20 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["fsub", "ZZZ"],
                        ["abs", "ZPZ", "m"],
                        ["add", "ZPZ", "m", "dn"],
+                       ["and", "ZPZ", "m", "dn"],
                        ["asr", "ZPZ", "m", "dn"],
+                       ["bic", "ZPZ", "m", "dn"],
+                       ["clz", "ZPZ", "m"],
                        ["cnt", "ZPZ", "m"],
+                       ["eor", "ZPZ", "m", "dn"],
                        ["lsl", "ZPZ", "m", "dn"],
                        ["lsr", "ZPZ", "m", "dn"],
                        ["mul", "ZPZ", "m", "dn"],
                        ["neg", "ZPZ", "m"],
                        ["not", "ZPZ", "m"],
+                       ["orr", "ZPZ", "m", "dn"],
+                       ["rbit", "ZPZ", "m"],
+                       ["revb", "ZPZ", "m"],
                        ["smax", "ZPZ", "m", "dn"],
                        ["smin", "ZPZ", "m", "dn"],
                        ["sub", "ZPZ", "m", "dn"],
@@ -1706,8 +1980,12 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["frintp", "ZPZ", "m"],
                        ["fsqrt", "ZPZ", "m"],
                        ["fsub", "ZPZ", "m", "dn"],
+                       ["fmad", "ZPZZ", "m"],
                        ["fmla", "ZPZZ", "m"],
                        ["fmls", "ZPZZ", "m"],
+                       ["fmsb", "ZPZZ", "m"],
+                       ["fnmad", "ZPZZ", "m"],
+                       ["fnmsb", "ZPZZ", "m"],
                        ["fnmla", "ZPZZ", "m"],
                        ["fnmls", "ZPZZ", "m"],
                        ["mla", "ZPZZ", "m"],
@@ -1718,6 +1996,11 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       ["fabd", "ZPZ", "m", "dn"],
+                       # SVE2 instructions
+                       ["bext", "ZZZ"],
+                       ["bdep", "ZZZ"],
+                       ["eor3", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
@@ -1728,8 +2011,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# armv9-a enables sve and sve2 by default.
+subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"
@@ -1750,7 +2034,8 @@ while i < len(bytes):
      i += 4
      if i%16 == 0:
           print
-print "\n  };"
+print
+print "  };"
 print "// END  Generated code -- do not edit"
 
 infile.close()

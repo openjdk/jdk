@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,30 +75,8 @@ final class StringConcatHelper {
      * @param value       value to mix in
      * @return            new length and coder
      */
-    static long mix(long lengthCoder, byte value) {
-        return mix(lengthCoder, (int)value);
-    }
-
-    /**
-     * Mix value length and coder into current length and coder.
-     * @param lengthCoder String length with coder packed into higher bits
-     *                    the upper word.
-     * @param value       value to mix in
-     * @return            new length and coder
-     */
     static long mix(long lengthCoder, char value) {
         return checkOverflow(lengthCoder + 1) | (StringLatin1.canEncode(value) ? 0 : UTF16);
-    }
-
-    /**
-     * Mix value length and coder into current length and coder.
-     * @param lengthCoder String length with coder packed into higher bits
-     *                    the upper word.
-     * @param value       value to mix in
-     * @return            new length and coder
-     */
-    static long mix(long lengthCoder, short value) {
-        return mix(lengthCoder, (int)value);
     }
 
     /**
@@ -199,23 +177,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param indexCoder final char index in the buffer, along with coder packed
-     *                   into higher bits.
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static long prepend(long indexCoder, byte[] buf, byte value, String prefix) {
-        indexCoder = prepend(indexCoder, buf, (int)value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
-        return indexCoder;
-    }
-
-    /**
      * Prepends the stringly representation of char value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
@@ -247,23 +208,6 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, char value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
-        return indexCoder;
-    }
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param indexCoder final char index in the buffer, along with coder packed
-     *                   into higher bits.
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static long prepend(long indexCoder, byte[] buf, short value, String prefix) {
-        indexCoder = prepend(indexCoder, buf, (int)value);
         if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
@@ -430,7 +374,7 @@ final class StringConcatHelper {
      * Produce a String from a concatenation of single argument, which we
      * end up using for trivial concatenations like {@code "" + arg}.
      *
-     * This will always create a new Object to comply with JLS 15.18.1:
+     * This will always create a new Object to comply with JLS {@jls 15.18.1}:
      * "The String object is newly created unless the expression is a
      * compile-time constant expression".
      *
@@ -490,8 +434,11 @@ final class StringConcatHelper {
     @ForceInline
     static byte[] newArray(long indexCoder) {
         byte coder = (byte)(indexCoder >> 32);
-        int index = (int)indexCoder;
-        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
+        int index = ((int)indexCoder) << coder;
+        if (index < 0) {
+            throw new OutOfMemoryError("Overflow: String length out of range");
+        }
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index);
     }
 
     /**

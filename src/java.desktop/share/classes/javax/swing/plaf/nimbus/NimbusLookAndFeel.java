@@ -495,7 +495,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     /**
      * Simple Symbolic Link style UIDefalts Property
      */
-    private class LinkProperty implements UIDefaults.ActiveValue, UIResource{
+    private static class LinkProperty implements UIDefaults.ActiveValue, UIResource{
         private String dstPropName;
 
         private LinkProperty(String dstPropName) {
@@ -510,7 +510,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
 
     /**
      * Nimbus Property that looks up Nimbus keys for standard key names. For
-     * example "Button.background" --> "Button[Enabled].backgound"
+     * example "Button.background" --> "Button[Enabled].background"
      */
     private class NimbusProperty implements UIDefaults.ActiveValue, UIResource {
         private String prefix;

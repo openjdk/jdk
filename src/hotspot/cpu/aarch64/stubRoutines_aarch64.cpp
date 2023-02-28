@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Implementation of the platform-specific part of StubRoutines - for
@@ -45,8 +45,8 @@ address StubRoutines::aarch64::_float_sign_flip = NULL;
 address StubRoutines::aarch64::_double_sign_mask = NULL;
 address StubRoutines::aarch64::_double_sign_flip = NULL;
 address StubRoutines::aarch64::_zero_blocks = NULL;
-address StubRoutines::aarch64::_has_negatives = NULL;
-address StubRoutines::aarch64::_has_negatives_long = NULL;
+address StubRoutines::aarch64::_count_positives = NULL;
+address StubRoutines::aarch64::_count_positives_long = NULL;
 address StubRoutines::aarch64::_large_array_equals = NULL;
 address StubRoutines::aarch64::_compare_long_string_LL = NULL;
 address StubRoutines::aarch64::_compare_long_string_UU = NULL;
@@ -57,6 +57,10 @@ address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
 address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
 address StubRoutines::aarch64::_method_entry_barrier = NULL;
+
+static void empty_spin_wait() { }
+address StubRoutines::aarch64::_spin_wait = CAST_FROM_FN_PTR(address, empty_spin_wait);
+
 bool StubRoutines::aarch64::_completed = false;
 
 /**
@@ -286,6 +290,18 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
     0xED78D502UL, 0x62EDAE7DUL,         // byte swap
     0x02D578EDUL, 0x7DAEED62UL,         // word swap
     0xD502ED78UL, 0xAE7D62EDUL,         // byte swap of word swap
+
+    // Constants for CRC-32 crypto pmull implementation
+    0xe88ef372UL, 0x00000001UL,
+    0x4a7fe880UL, 0x00000001UL,
+    0x54442bd4UL, 0x00000001UL,
+    0xc6e41596UL, 0x00000001UL,
+    0x3db1ecdcUL, 0x00000000UL,
+    0x74359406UL, 0x00000001UL,
+    0xf1da05aaUL, 0x00000000UL,
+    0x5a546366UL, 0x00000001UL,
+    0x751997d0UL, 0x00000001UL,
+    0xccaa009eUL, 0x00000000UL,
 };
 
 // Accumulation coefficients for adler32 upper 16 bits
@@ -296,7 +312,7 @@ ATTRIBUTE_ALIGNED(64) jubyte StubRoutines::aarch64::_adler_table[] = {
 ATTRIBUTE_ALIGNED(64) juint StubRoutines::aarch64::_npio2_hw[] = {
     // first, various coefficient values: 0.5, invpio2, pio2_1, pio2_1t, pio2_2,
     // pio2_2t, pio2_3, pio2_3t
-    // This is a small optimization wich keeping double[8] values in int[] table
+    // This is a small optimization which keeping double[8] values in int[] table
     // to have less address calculation instructions
     //
     // invpio2:  53 bits of 2/pi (enough for cases when trigonometric argument is small)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-G1FullGCCompactionPoint::G1FullGCCompactionPoint() :
-    _current_region(NULL),
-    _compaction_top(NULL) {
-  _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
+G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
+    _collector(collector),
+    _current_region(nullptr),
+    _compaction_top(nullptr) {
+  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 
@@ -41,15 +43,12 @@ G1FullGCCompactionPoint::~G1FullGCCompactionPoint() {
 
 void G1FullGCCompactionPoint::update() {
   if (is_initialized()) {
-    _current_region->set_compaction_top(_compaction_top);
+    _collector->set_compaction_top(_current_region, _compaction_top);
   }
 }
 
-void G1FullGCCompactionPoint::initialize_values(bool init_threshold) {
-  _compaction_top = _current_region->compaction_top();
-  if (init_threshold) {
-    _current_region->initialize_bot_threshold();
-  }
+void G1FullGCCompactionPoint::initialize_values() {
+  _compaction_top = _collector->compaction_top(_current_region);
 }
 
 bool G1FullGCCompactionPoint::has_regions() {
@@ -60,9 +59,9 @@ bool G1FullGCCompactionPoint::is_initialized() {
   return _current_region != NULL;
 }
 
-void G1FullGCCompactionPoint::initialize(HeapRegion* hr, bool init_threshold) {
+void G1FullGCCompactionPoint::initialize(HeapRegion* hr) {
   _current_region = hr;
-  initialize_values(init_threshold);
+  initialize_values();
 }
 
 HeapRegion* G1FullGCCompactionPoint::current_region() {
@@ -86,10 +85,10 @@ bool G1FullGCCompactionPoint::object_will_fit(size_t size) {
 
 void G1FullGCCompactionPoint::switch_region() {
   // Save compaction top in the region.
-  _current_region->set_compaction_top(_compaction_top);
+  _collector->set_compaction_top(_current_region, _compaction_top);
   // Get the next region and re-initialize the values.
   _current_region = next_region();
-  initialize_values(true);
+  initialize_values();
 }
 
 void G1FullGCCompactionPoint::forward(oop object, size_t size) {
@@ -103,32 +102,31 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
     object->forward_to(cast_to_oop(_compaction_top));
+    assert(object->is_forwarded(), "must be forwarded");
   } else {
-    if (object->forwardee() != NULL) {
-      // Object should not move but mark-word is used so it looks like the
-      // object is forwarded. Need to clear the mark and it's no problem
-      // since it will be restored by preserved marks.
-      object->init_mark();
-    } else {
-      // Make sure object has the correct mark-word set or that it will be
-      // fixed when restoring the preserved marks.
-      assert(object->mark() == markWord::prototype() || // Correct mark
-             object->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
-             "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
-             p2i(object), object->mark().value(), markWord::prototype().value());
-    }
-    assert(object->forwardee() == NULL, "should be forwarded to NULL");
+    assert(!object->is_forwarded(), "must not be forwarded");
   }
 
   // Update compaction values.
   _compaction_top += size;
-  _current_region->alloc_block_in_bot(_compaction_top - size, _compaction_top);
+  _current_region->update_bot_for_block(_compaction_top - size, _compaction_top);
 }
 
 void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-HeapRegion* G1FullGCCompactionPoint::remove_last() {
-  return _compaction_regions->pop();
+void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
+  HeapRegion* cur = current_region();
+  assert(cur->hrm_index() >= bottom, "Sanity!");
+
+  int start_index = 0;
+  for (HeapRegion* r : *_compaction_regions) {
+    if (r->hrm_index() < bottom) {
+      start_index++;
+    }
+  }
+
+  assert(start_index >= 0, "Should have at least one region");
+  _compaction_regions->trunc_to(start_index);
 }

@@ -88,7 +88,7 @@ public class SignatureProperties extends SignatureElementProxy {
 
     /**
      * Return the <i>i</i><sup>th</sup> SignatureProperty. Valid {@code i}
-     * values are 0 to {@code {link@ getSize}-1}.
+     * values are 0 to {@code {@link getSize}-1}.
      *
      * @param i Index of the requested {@link SignatureProperty}
      * @return the <i>i</i><sup>th</sup> SignatureProperty

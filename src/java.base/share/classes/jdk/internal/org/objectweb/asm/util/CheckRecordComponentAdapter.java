@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -86,7 +87,7 @@ public class CheckRecordComponentAdapter extends RecordComponentVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public CheckRecordComponentAdapter(final RecordComponentVisitor recordComponentVisitor) {
-        this(/* latest api =*/ Opcodes.ASM8, recordComponentVisitor);
+        this(/* latest api =*/ Opcodes.ASM9, recordComponentVisitor);
         if (getClass() != CheckRecordComponentAdapter.class) {
             throw new IllegalStateException();
         }
@@ -95,7 +96,8 @@ public class CheckRecordComponentAdapter extends RecordComponentVisitor {
     /**
       * Constructs a new {@link CheckRecordComponentAdapter}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be {@link Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link Opcodes#ASM8}
+      *     or {@link Opcodes#ASM9}.
       * @param recordComponentVisitor the record component visitor to which this adapter must delegate
       *     calls.
       */
@@ -149,3 +151,4 @@ public class CheckRecordComponentAdapter extends RecordComponentVisitor {
         }
     }
 }
+

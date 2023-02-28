@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
@@ -32,7 +33,7 @@
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
-#include "gc/g1/g1FullGCPrepareTask.hpp"
+#include "gc/g1/g1FullGCPrepareTask.inline.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -66,7 +67,7 @@ static void update_derived_pointers() {
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
-  return _heap->concurrent_mark()->next_mark_bitmap();
+  return _heap->concurrent_mark()->mark_bitmap();
 }
 
 ReferenceProcessor* G1FullCollector::reference_processor() {
@@ -75,7 +76,7 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
 
 uint G1FullCollector::calc_active_workers() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
-  uint max_worker_count = heap->workers()->total_workers();
+  uint max_worker_count = heap->workers()->max_workers();
   // Only calculate number of workers if UseDynamicNumberOfGCThreads
   // is enabled, otherwise use max.
   if (!UseDynamicNumberOfGCThreads) {
@@ -102,7 +103,7 @@ uint G1FullCollector::calc_active_workers() {
   log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
                       "adaptive workers: %u, used limited workers: %u)",
                       worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
-  worker_count = heap->workers()->update_active_workers(worker_count);
+  worker_count = heap->workers()->set_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
   return worker_count;
@@ -111,15 +112,16 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximum_compaction) :
+                                 bool do_maximal_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximum_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(),
-    _is_alive(this, heap->concurrent_mark()->next_mark_bitmap()),
+    _serial_compaction_point(this),
+    _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
@@ -131,13 +133,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
+    _compaction_tops[j] = nullptr;
   }
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint();
+    _compaction_points[i] = new G1FullGCCompactionPoint(this);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -151,6 +155,7 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -170,8 +175,13 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->abort_concurrent_cycle();
+  // Verification needs the bitmap, so we should clear the bitmap only later.
+  bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
+  if (in_concurrent_cycle) {
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
+    _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+  }
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
@@ -187,6 +197,8 @@ void G1FullCollector::prepare_collection() {
 }
 
 void G1FullCollector::collect() {
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive(false /* concurrent_mark_start */);
+
   phase1_mark_live_objects();
   verify_after_marking();
 
@@ -198,6 +210,8 @@ void G1FullCollector::collect() {
   phase3_adjust_pointers();
 
   phase4_do_compaction();
+
+  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 void G1FullCollector::complete_collection() {
@@ -208,11 +222,13 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  _heap->concurrent_mark()->swap_mark_bitmaps();
-  // Prepare the bitmap for the next (potentially concurrent) marking.
-  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+  // Need completely cleared claim bits for the next concurrent marking or full gc.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
-  _heap->prepare_heap_for_mutators();
+  // Prepare the bitmap for the next (potentially concurrent) marking.
+  _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+
+  _heap->prepare_for_mutator_after_full_collection();
 
   _heap->resize_all_tlabs();
 
@@ -288,23 +304,111 @@ void G1FullCollector::phase1_mark_live_objects() {
   // Class unloading and cleanup.
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
+    CodeCache::UnloadingScope unloading_scope(&_is_alive);
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(&_is_alive, purged_class);
+    _heap->complete_cleaning(purged_class);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
+#if TASKQUEUE_STATS
+  oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
+  array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+#endif
 }
 
 void G1FullCollector::phase2_prepare_compaction() {
-  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare for compaction", scope()->timer());
+  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare compaction", scope()->timer());
+
+  phase2a_determine_worklists();
+
+  bool has_free_compaction_targets = phase2b_forward_oops();
+
+  // Try to avoid OOM immediately after Full GC in case there are no free regions
+  // left after determining the result locations (i.e. this phase). Prepare to
+  // maximally compact the tail regions of the compaction queues serially.
+  if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
+    phase2c_prepare_serial_compaction();
+  }
+}
+
+void G1FullCollector::phase2a_determine_worklists() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Determine work lists", scope()->timer());
+
+  G1DetermineCompactionQueueClosure cl(this);
+  _heap->heap_region_iterate(&cl);
+}
+
+bool G1FullCollector::phase2b_forward_oops() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare parallel compaction", scope()->timer());
+
   G1FullGCPrepareTask task(this);
   run_task(&task);
 
-  // To avoid OOM when there is memory left.
-  if (!task.has_freed_regions()) {
-    task.prepare_serial_compaction();
+  return task.has_free_compaction_targets();
+}
+
+uint G1FullCollector::truncate_parallel_cps() {
+  uint lowest_current = (uint)-1;
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      lowest_current = MIN2(lowest_current, cp->current_region()->hrm_index());
+    }
   }
+
+  if (lowest_current == (uint)-1) {
+    // worker compaction points are empty
+    return lowest_current;
+  }
+
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      cp->remove_at_or_above(lowest_current);
+    }
+  }
+  return lowest_current;
+}
+
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+  // At this point, we know that after parallel compaction there will be regions that
+  // are partially compacted into. Thus, the last compaction region of all
+  // compaction queues still have space in them. We try to re-compact these regions
+  // in serial to avoid a premature OOM when the mutator wants to allocate the first
+  // eden region after gc.
+
+  // For maximum compaction, we need to re-prepare all objects above the lowest
+  // region among the current regions for all thread compaction points. It may
+  // happen that due to the uneven distribution of objects to parallel threads, holes
+  // have been created as threads compact to different target regions between the
+  // lowest and the highest region in the tails of the compaction points.
+
+  uint start_serial = truncate_parallel_cps();
+  if (start_serial >= _heap->max_reserved_regions()) {
+    return;
+  }
+
+  G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
+  assert(!serial_cp->is_initialized(), "sanity!");
+
+  HeapRegion* start_hr = _heap->region_at(start_serial);
+  serial_cp->add(start_hr);
+  serial_cp->initialize(start_hr);
+
+  HeapWord* dense_prefix_top = compaction_top(start_hr);
+  G1SerialRePrepareClosure re_prepare(serial_cp, dense_prefix_top);
+
+  for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
+    if (is_compaction_target(i)) {
+      HeapRegion* current = _heap->region_at(i);
+      set_compaction_top(current, current->bottom());
+      serial_cp->add(current);
+      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
+    }
+  }
+  serial_cp->update();
 }
 
 void G1FullCollector::phase3_adjust_pointers() {
@@ -332,7 +436,7 @@ void G1FullCollector::restore_marks() {
   _preserved_marks_set.reclaim();
 }
 
-void G1FullCollector::run_task(AbstractGangTask* task) {
+void G1FullCollector::run_task(WorkerTask* task) {
   _heap->workers()->run_task(task, _num_workers);
 }
 
@@ -357,5 +461,5 @@ void G1FullCollector::verify_after_marking() {
   // (including hash values) are restored to the appropriate
   // objects.
   GCTraceTime(Info, gc, verify) tm("Verifying During GC (full)");
-  _heap->verify(VerifyOption_G1UseFullMarking);
+  _heap->verify(VerifyOption::G1UseFullMarking);
 }

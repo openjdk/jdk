@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.NestingKind;
@@ -129,7 +127,9 @@ public class Main {
      */
     public static void main(String... args) throws Throwable {
         try {
-            new Main(System.err).run(VM.getRuntimeArguments(), args);
+            new Main(System.err)
+                    .checkSecurityManager()
+                    .run(VM.getRuntimeArguments(), args);
         } catch (Fault f) {
             System.err.println(f.getMessage());
             System.exit(1);
@@ -160,6 +160,19 @@ public class Main {
      */
     public Main(PrintWriter out) {
         this.out = out;
+    }
+
+    /**
+     * Checks if a security manager is present and throws an exception if so.
+     * @return this object
+     * @throws Fault if a security manager is present
+     */
+    @SuppressWarnings("removal")
+    private Main checkSecurityManager() throws Fault {
+        if (System.getSecurityManager() != null) {
+            throw new Fault(Errors.SecurityManager);
+        }
+        return this;
     }
 
     /**
@@ -352,7 +365,10 @@ public class Main {
         // add implicit options
         javacOpts.add("-proc:none");
         javacOpts.add("-Xdiags:verbose");
-
+        javacOpts.add("-Xlint:deprecation");
+        javacOpts.add("-Xlint:unchecked");
+        javacOpts.add("-Xlint:-options");
+        javacOpts.add("-XDsourceLauncher");
         return javacOpts;
     }
 
@@ -674,7 +690,9 @@ public class Main {
             }
 
             try {
-                return new URL(PROTOCOL, null, -1, name, handler);
+                @SuppressWarnings("deprecation")
+                var result = new URL(PROTOCOL, null, -1, name, handler);
+                return result;
             } catch (MalformedURLException e) {
                 return null;
             }

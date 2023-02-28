@@ -5,7 +5,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -30,9 +32,7 @@
 #import "OutlineAccessibility.h"
 #import "sun_lwawt_macosx_CAccessibility.h"
 
-static jclass sjc_CAccessible = NULL;
-#define GET_CACCESSIBLE_CLASS_RETURN(ret) \
-    GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
+static jclass sjc_CAccessibility = NULL;
 
 @implementation OutlineRowAccessibility
 
@@ -40,23 +40,11 @@ static jclass sjc_CAccessible = NULL;
 
 - (jobject)currentAccessibleWithENV:(JNIEnv *)env
 {
-    jobject jAxContext = getAxContext(env, fAccessible, fComponent);
-    if (jAxContext == NULL) return NULL;
-    jclass axContextClass = (*env)->GetObjectClass(env, jAxContext);
-    DECLARE_METHOD_RETURN(jm_getCurrentComponent, axContextClass, "getCurrentComponent", "()Ljava/awt/Component;", NULL);
-    jobject newComponent = (*env)->CallObjectMethod(env, jAxContext, jm_getCurrentComponent);
+    GET_CACCESSIBILITY_CLASS_RETURN(NULL);
+    DECLARE_STATIC_METHOD_RETURN(sjm_getAccessibleCurrentAccessible, sjc_CAccessibility, "getAccessibleCurrentAccessible", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/Accessible;", NULL);
+    jobject currentAccessible = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, sjm_getAccessibleCurrentAccessible, fAccessible, fComponent);
     CHECK_EXCEPTION();
-    (*env)->DeleteLocalRef(env, jAxContext);
-    if (newComponent != NULL) {
-        GET_CACCESSIBLE_CLASS_RETURN(NULL);
-        DECLARE_STATIC_METHOD_RETURN(sjm_getCAccessible, sjc_CAccessible, "getCAccessible", "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;", NULL);
-        jobject currentAccessible = (*env)->CallStaticObjectMethod(env, sjc_CAccessible, sjm_getCAccessible, newComponent);
-        CHECK_EXCEPTION();
-        (*env)->DeleteLocalRef(env, newComponent);
-        return currentAccessible;
-    } else {
-        return NULL;
-    }
+    return currentAccessible;
 }
 
 // NSAccessibilityElement protocol methods
@@ -72,14 +60,7 @@ static jclass sjc_CAccessible = NULL;
             return children;
         }
     }
-
-    return [NSArray arrayWithObject:[CommonComponentAccessibility createWithParent:self
-                                                                        accessible:self->fAccessible
-                                                                              role:self->fJavaRole
-                                                                             index:self->fIndex
-                                                                           withEnv:env
-                                                                          withView:self->fView
-                                                                         isWrapped:YES]];
+    return [super accessibilityChildren];
 }
 
 - (NSInteger)accessibilityDisclosureLevel
@@ -95,12 +76,12 @@ static jclass sjc_CAccessible = NULL;
 
 - (NSAccessibilitySubrole)accessibilitySubrole
 {
-    return NSAccessibilityOutlineRowSubrole;;
+    return NSAccessibilityOutlineRowSubrole;
 }
 
 - (NSAccessibilityRole)accessibilityRole
 {
-    return NSAccessibilityRowRole;;
+    return NSAccessibilityRowRole;
 }
 
 - (BOOL)isAccessibilitySelected

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,7 +44,7 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
 static bool cpu_has(const char* optional) {
   uint32_t val;
   size_t len = sizeof(val);
-  if (sysctlbyname(optional, &val, &len, NULL, 0)) {
+  if (sysctlbyname(optional, &val, &len, nullptr, 0)) {
     return false;
   }
   return val;
@@ -53,28 +53,54 @@ static bool cpu_has(const char* optional) {
 void VM_Version::get_os_cpu_info() {
   size_t sysctllen;
 
-  // hw.optional.floatingpoint always returns 1, see
-  // https://github.com/apple/darwin-xnu/blob/master/bsd/kern/kern_mib.c#L416.
-  // ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
-  assert(cpu_has("hw.optional.floatingpoint"), "should be");
-  assert(cpu_has("hw.optional.neon"), "should be");
+  // cpu_has() uses sysctlbyname function to check the existence of CPU
+  // features. References: Apple developer document [1] and XNU kernel [2].
+  // [1] https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
+  // [2] https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mib.c
+  //
+  // Note that for some features (e.g., LSE, SHA512 and SHA3) there are two
+  // parameters for sysctlbyname, which are invented at different times.
+  // Considering backward compatibility, we check both here.
+  //
+  // Floating-point and Advance SIMD features are standard in Apple processors
+  // beginning with M1 and A7, and don't need to be checked [1].
+  // 1) hw.optional.floatingpoint always returns 1 [2].
+  // 2) ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
+  //    See the Arm ARM, section "ID_AA64PFR0_EL1, AArch64 Processor Feature
+  //    Register 0".
   _features = CPU_FP | CPU_ASIMD;
 
-  // All Apple-darwin Arm processors have AES.
-  _features |= CPU_AES;
+  // All Apple-darwin Arm processors have AES, PMULL, SHA1 and SHA2.
+  // See https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/commpage/commpage.c#L412
+  // Note that we ought to add assertions to check sysctlbyname parameters for
+  // these four CPU features, e.g., "hw.optional.arm.FEAT_AES", but the
+  // corresponding string names are not available before xnu-8019 version.
+  // Hence, assertions are omitted considering backward compatibility.
+  _features |= CPU_AES | CPU_PMULL | CPU_SHA1 | CPU_SHA2;
 
-  // Only few features are available via sysctl, see line 614
-  // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html
-  if (cpu_has("hw.optional.armv8_crc32"))     _features |= CPU_CRC32;
-  if (cpu_has("hw.optional.armv8_1_atomics")) _features |= CPU_LSE;
+  if (cpu_has("hw.optional.armv8_crc32")) {
+    _features |= CPU_CRC32;
+  }
+  if (cpu_has("hw.optional.arm.FEAT_LSE") ||
+      cpu_has("hw.optional.armv8_1_atomics")) {
+    _features |= CPU_LSE;
+  }
+  if (cpu_has("hw.optional.arm.FEAT_SHA512") ||
+      cpu_has("hw.optional.armv8_2_sha512")) {
+    _features |= CPU_SHA512;
+  }
+  if (cpu_has("hw.optional.arm.FEAT_SHA3") ||
+      cpu_has("hw.optional.armv8_2_sha3")) {
+    _features |= CPU_SHA3;
+  }
 
   int cache_line_size;
   int hw_conf_cache_line[] = { CTL_HW, HW_CACHELINE };
   sysctllen = sizeof(cache_line_size);
-  if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
+  if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, nullptr, 0)) {
     cache_line_size = 16;
   }
-  _icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
+  _icache_line_size = 16; // minimal line length CCSIDR_EL1 can hold
   _dcache_line_size = cache_line_size;
 
   uint64_t dczid_el0;
@@ -88,7 +114,7 @@ void VM_Version::get_os_cpu_info() {
 
   int family;
   sysctllen = sizeof(family);
-  if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
+  if (sysctlbyname("hw.cpufamily", &family, &sysctllen, nullptr, 0)) {
     family = 0;
   }
 
@@ -97,7 +123,7 @@ void VM_Version::get_os_cpu_info() {
 }
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
-  assert(buf != NULL, "invalid argument");
+  assert(buf != nullptr, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   *buf = '\0';
 }

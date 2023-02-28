@@ -133,14 +133,14 @@ public class NativeFont extends PhysicalFont {
 
             String styleStr = null;
 
-            if (tmpWeight.indexOf("bold") >= 0 ||
-                tmpWeight.indexOf("demi") >= 0) {
+            if (tmpWeight.contains("bold") ||
+                tmpWeight.contains("demi")) {
                 style |= Font.BOLD;
                 styleStr = "Bold";
             }
 
             if (tmpSlant.equals("i") ||
-                tmpSlant.indexOf("italic") >= 0) {
+                tmpSlant.contains("italic")) {
                 style |= Font.ITALIC;
 
                 if (styleStr == null) {
@@ -150,7 +150,7 @@ public class NativeFont extends PhysicalFont {
                 }
             }
             else if (tmpSlant.equals("o") ||
-                tmpSlant.indexOf("oblique") >= 0) {
+                tmpSlant.contains("oblique")) {
                 style |= Font.ITALIC;
                 if (styleStr == null) {
                     styleStr = "Oblique";
@@ -169,10 +169,10 @@ public class NativeFont extends PhysicalFont {
             if (encoding.startsWith("-")) {
                 encoding = xlfd.substring(hPos[13]+1);
             }
-            if (encoding.indexOf("fontspecific") >= 0) {
-                if (tmpFamily.indexOf("dingbats") >= 0) {
+            if (encoding.contains("fontspecific")) {
+                if (tmpFamily.contains("dingbats")) {
                     encoding = "dingbats";
-                } else if (tmpFamily.indexOf("symbol") >= 0) {
+                } else if (tmpFamily.contains("symbol")) {
                     encoding = "symbol";
                 } else {
                     encoding = "iso8859-1";
@@ -189,13 +189,13 @@ public class NativeFont extends PhysicalFont {
 
     /* Wildcard all the size fields in the XLFD and retrieve a list of
      * XLFD's that match.
-     * We only look for scaleable fonts, so we can just replace the 0's
+     * We only look for scalable fonts, so we can just replace the 0's
      * with *'s and see what we get back
-     * No matches means even the scaleable version wasn't found. This is
+     * No matches means even the scalable version wasn't found. This is
      * means the X font path isn't set up for this font at all.
-     * One match means only the scaleable version we started with was found
+     * One match means only the scalable version we started with was found
      * -monotype-arial-bold-i-normal--0-0-0-0-p-0-iso8859-1
-     * Two matches apparently means as well as the above, a scaleable
+     * Two matches apparently means as well as the above, a scalable
      * specified for 72 dpi is found, not that there are bitmaps : eg
      * -monotype-arial-bold-i-normal--0-0-72-72-p-0-iso8859-1
      * So require at least 3 matches (no need to parse) to determine that
@@ -211,7 +211,7 @@ public class NativeFont extends PhysicalFont {
         while (pos >=0) {
             sb.replace(pos+1, pos+2, "*");
             pos = sb.indexOf("-0-", pos);
-        };
+        }
         String xlfd = sb.toString();
         return haveBitmapFonts(xlfd.getBytes(UTF_8));
     }

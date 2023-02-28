@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,6 +700,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     STRRET strret;
     OLECHAR olePath[MAX_PATH]; // wide-char version of path name
     LPWSTR wstr;
+    int ret;
 
     IShellFolder* pParent = (IShellFolder*)parentIShellFolder;
     if (pParent == NULL) {
@@ -719,12 +720,18 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     switch (strret.uType) {
       case STRRET_CSTR :
         // IShellFolder::ParseDisplayName requires the path name in Unicode.
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, strret.cStr, -1, olePath, MAX_PATH);
+        ret = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, strret.cStr, -1, olePath, MAX_PATH);
+        if (ret == 0) {
+            return NULL;
+        }
         wstr = olePath;
         break;
 
       case STRRET_OFFSET :
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, (CHAR *)pidl + strret.uOffset, -1, olePath, MAX_PATH);
+        ret = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, (CHAR *)pidl + strret.uOffset, -1, olePath, MAX_PATH);
+        if (ret == 0) {
+            return NULL;
+        }
         wstr = olePath;
         break;
 
@@ -967,7 +974,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         return 0;
     }
 
-    HICON hIcon = NULL;
+    HICON hIcon;
 
     HRESULT hres;
     IExtractIconW* pIcon;
@@ -980,13 +987,29 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
+            UINT iconSize;
+            HICON hIconSmall;
             if (size < 24) {
-                size = 16;
+                iconSize = (size << 16) + 32;
+            } else {
+                iconSize = (16 << 16) + size;
             }
-            hres = pIcon->Extract(szBuf, index, &hIcon, NULL, size);
+            hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, iconSize);
+            if (SUCCEEDED(hres)) {
+                if (size < 24) {
+                    fn_DestroyIcon((HICON)hIcon);
+                    hIcon = hIconSmall;
+                } else {
+                    fn_DestroyIcon((HICON)hIconSmall);
+                }
+            } else {
+                hIcon = NULL;
+            }
         } else if (hres == E_PENDING) {
             pIcon->Release();
-            return E_PENDING;
+            return (unsigned) E_PENDING;
+        } else {
+            hIcon = NULL;
         }
         pIcon->Release();
     }
@@ -1043,7 +1066,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             // limit iconSize to MAX_ICON_SIZE, so that the colorBits and maskBits
             // arrays are big enough.
             // (logic: rather show bad icons than overrun the array size)
-            iconSize = iconSize > MAX_ICON_SIZE ? MAX_ICON_SIZE : iconSize;
+            iconSize = (iconSize <= 0 || iconSize > MAX_ICON_SIZE) ? MAX_ICON_SIZE : iconSize;
 
             // Set up BITMAPINFO
             BITMAPINFO bmi;
@@ -1056,38 +1079,57 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             bmi.bmiHeader.biCompression = BI_RGB;
             // Extract the color bitmap
             int nBits = iconSize * iconSize;
-            long colorBits[MAX_ICON_SIZE * MAX_ICON_SIZE];
-            GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
-            // XP supports alpha in some icons, and depending on device.
-            // This should take precedence over the icon mask bits.
-            BOOL hasAlpha = FALSE;
-            if (IS_WINXP) {
-                for (int i = 0; i < nBits; i++) {
-                    if ((colorBits[i] & 0xff000000) != 0) {
-                        hasAlpha = TRUE;
-                        break;
+
+            long *colorBits = NULL;
+            long *maskBits = NULL;
+
+            try {
+                entry_point();
+                colorBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
+                // XP supports alpha in some icons, and depending on device.
+                // This should take precedence over the icon mask bits.
+                BOOL hasAlpha = FALSE;
+                if (IS_WINXP) {
+                    for (int i = 0; i < nBits; i++) {
+                        if ((colorBits[i] & 0xff000000) != 0) {
+                            hasAlpha = TRUE;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!hasAlpha) {
-                // Extract the mask bitmap
-                long maskBits[MAX_ICON_SIZE * MAX_ICON_SIZE];
-                GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
-                // Copy the mask alphas into the color bits
-                for (int i = 0; i < nBits; i++) {
-                    if (maskBits[i] == 0) {
-                        colorBits[i] |= 0xff000000;
+                if (!hasAlpha) {
+                    // Extract the mask bitmap
+                    maskBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                    GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
+                    // Copy the mask alphas into the color bits
+                    for (int i = 0; i < nBits; i++) {
+                        if (maskBits[i] == 0) {
+                            colorBits[i] |= 0xff000000;
+                        }
                     }
                 }
+                // Create java array
+                iconBits = env->NewIntArray(nBits);
+                if (!(env->ExceptionCheck())) {
+                    // Copy values to java array
+                    env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
+                }
+            } catch(std::bad_alloc&) {
+                handle_bad_alloc();
             }
+
             // Release DC
             ReleaseDC(NULL, dc);
-            // Create java array
-            iconBits = env->NewIntArray(nBits);
-            if (!(env->ExceptionCheck())) {
-            // Copy values to java array
-            env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
-        }
+
+            // Free bitmap buffers if they were allocated
+            if (colorBits != NULL) {
+                free(colorBits);
+            }
+
+            if (maskBits != NULL) {
+                free(maskBits);
+            }
         }
         // Fix 4745575 GDI Resource Leak
         // MSDN

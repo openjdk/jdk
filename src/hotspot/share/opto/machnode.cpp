@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -429,8 +431,8 @@ int MachNode::operand_index(Node* def) const {
 
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
-MachNode *MachNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {
-  return NULL;
+int MachNode::peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_) {
+  return -1;
 }
 
 //------------------------------add_case_label---------------------------------
@@ -474,14 +476,15 @@ bool MachNode::rematerialize() const {
   }
 
   // Stretching lots of inputs - don't do it.
-  if (req() > 2) {
+  // A MachContant has the last input being the constant base
+  if (req() > (is_MachConstant() ? 3U : 2U)) {
     return false;
   }
 
-  if (req() == 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
+  if (req() >= 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
     // In(1) will be rematerialized, too.
     // Stretching lots of inputs - don't do it.
-    if (in(1)->req() > 2) {
+    if (in(1)->req() > (in(1)->is_MachConstant() ? 3U : 2U)) {
       return false;
     }
   }
@@ -491,7 +494,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_bound(ideal_reg())) {
+    if (rm.is_NotEmpty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }
@@ -533,6 +536,11 @@ void MachTypeNode::dump_spec(outputStream *st) const {
     _bottom_type->dump_on(st);
   } else {
     st->print(" NULL");
+  }
+  if (barrier_data() != 0) {
+    st->print(" barrier(");
+    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
+    st->print(")");
   }
 }
 #endif
@@ -816,23 +824,6 @@ bool MachCallRuntimeNode::cmp( const Node &n ) const {
 #ifndef PRODUCT
 void MachCallRuntimeNode::dump_spec(outputStream *st) const {
   st->print("%s ",_name);
-  MachCallNode::dump_spec(st);
-}
-#endif
-//=============================================================================
-uint MachCallNativeNode::size_of() const { return sizeof(*this); }
-bool MachCallNativeNode::cmp( const Node &n ) const {
-  MachCallNativeNode &call = (MachCallNativeNode&)n;
-  return MachCallNode::cmp(call) && !strcmp(_name,call._name)
-    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
-}
-#ifndef PRODUCT
-void MachCallNativeNode::dump_spec(outputStream *st) const {
-  st->print("%s ",_name);
-  st->print("_arg_regs: ");
-  CallNativeNode::print_regs(_arg_regs, st);
-  st->print("_ret_regs: ");
-  CallNativeNode::print_regs(_ret_regs, st);
   MachCallNode::dump_spec(st);
 }
 #endif

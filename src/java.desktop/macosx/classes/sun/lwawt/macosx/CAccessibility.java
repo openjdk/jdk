@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.lwawt.macosx;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.IllegalComponentStateException;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Window;
@@ -65,6 +66,7 @@ import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
+import sun.swing.SwingAccessor;
 
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
@@ -468,7 +470,16 @@ class CAccessibility implements PropertyChangeListener {
     public static Accessible accessibilityHitTest(final Container parent, final float hitPointX, final float hitPointY) {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
-                final Point p = parent.getLocationOnScreen();
+                if (parent == null) {
+                    return null;
+                }
+
+                final Point p;
+                try {
+                    p = parent.getLocationOnScreen();
+                } catch (IllegalComponentStateException ice) {
+                    return null;
+                }
 
                 // Make it into local coords
                 final Point localPoint = new Point((int)(hitPointX - p.getX()), (int)(hitPointY - p.getY()));
@@ -506,6 +517,13 @@ class CAccessibility implements PropertyChangeListener {
                 return ac.getAccessibleAction();
             }
         }, c);
+    }
+
+    // This method is called from the native in CommonComponentAccessibility.m
+    private static int getAccessibleActionCount(final AccessibleAction aa, final Component c) {
+        if (aa == null) return 0;
+
+        return invokeAndWait(aa::getAccessibleActionCount, c);
     }
 
     public static boolean isEnabled(final Accessible a, final Component c) {
@@ -626,8 +644,8 @@ class CAccessibility implements PropertyChangeListener {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
                 Component c = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-                if (c == null || !(c instanceof Accessible)) return null;
-                return CAccessible.getCAccessible((Accessible)c);
+                if (!(c instanceof Accessible accessible)) return null;
+                return CAccessible.getCAccessible(accessible);
             }
         }, c);
     }
@@ -662,21 +680,29 @@ class CAccessibility implements PropertyChangeListener {
     @Native static final int JAVA_AX_SELECTED_CHILDREN = -2;
     @Native static final int JAVA_AX_VISIBLE_CHILDREN = -3;
 
+    private static Object[] getTableRowChildrenAndRoles(Accessible a, Component c, int whichChildren, boolean allowIgnored, int tableRowIndex) {
+        return invokeGetChildrenAndRoles(a, c, whichChildren, allowIgnored, ChildrenOperations.createForTableRow(tableRowIndex));
+    }
+
     // Each child takes up two entries in the array: one for itself and one for its role
-    public static Object[] getChildrenAndRoles(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored) {
+    private static Object[] getChildrenAndRoles(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored) {
+        return invokeGetChildrenAndRoles(a, c, whichChildren, allowIgnored, ChildrenOperations.COMMON);
+    }
+
+    private static Object[] invokeGetChildrenAndRoles(Accessible a, Component c, int whichChildren, boolean allowIgnored, ChildrenOperations ops) {
         if (a == null) return null;
         return invokeAndWait(new Callable<Object[]>() {
             public Object[] call() throws Exception {
-                return getChildrenAndRolesImpl(a, c, whichChildren, allowIgnored);
+                return getChildrenAndRolesImpl(a, c, whichChildren, allowIgnored, ops);
             }
         }, c);
     }
 
-    private static Object[] getChildrenAndRolesImpl(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored) {
+    private static Object[] getChildrenAndRolesImpl(Accessible a, Component c, int whichChildren, boolean allowIgnored, ChildrenOperations ops) {
         if (a == null) return null;
 
         ArrayList<Object> childrenAndRoles = new ArrayList<Object>();
-        _addChildren(a, whichChildren, allowIgnored, childrenAndRoles);
+        _addChildren(a, whichChildren, allowIgnored, childrenAndRoles, ops);
 
         /* In case of fetching a selection, we need to check if
 * the active descendant is at the beginning of the list, or
@@ -747,7 +773,7 @@ class CAccessibility implements PropertyChangeListener {
                 while (!parentStack.isEmpty()) {
                     Accessible p = parentStack.get(parentStack.size() - 1);
 
-                    currentLevelChildren.addAll(Arrays.asList(getChildrenAndRolesImpl(p, c, JAVA_AX_ALL_CHILDREN, allowIgnored)));
+                    currentLevelChildren.addAll(Arrays.asList(getChildrenAndRolesImpl(p, c, JAVA_AX_ALL_CHILDREN, allowIgnored, ChildrenOperations.COMMON)));
                     if ((currentLevelChildren.size() == 0) || (index >= currentLevelChildren.size())) {
                         if (!parentStack.isEmpty()) parentStack.remove(parentStack.size() - 1);
                         if (!indexses.isEmpty()) index = indexses.remove(indexses.size() - 1);
@@ -794,6 +820,38 @@ class CAccessibility implements PropertyChangeListener {
                 }
 
                 return allChildren.toArray();
+            }
+        }, c);
+    }
+
+    // This method is called from the native in OutlineRowAccessibility.m
+    private static Accessible getAccessibleCurrentAccessible(Accessible a, Component c) {
+        if (a == null) return null;
+        return invokeAndWait(() -> {
+            AccessibleContext ac = a.getAccessibleContext();
+            if (ac != null) {
+                return SwingAccessor.getAccessibleComponentAccessor().getCurrentAccessible(ac);
+            }
+            return null;
+        }, c);
+    }
+
+    // This method is called from the native in ComboBoxAccessibility.m
+    private static Accessible getAccessibleComboboxValue(Accessible a, Component c) {
+        if (a == null) return null;
+
+        return invokeAndWait(new Callable<Accessible>() {
+            @Override
+            public Accessible call() throws Exception {
+                AccessibleContext ac = a.getAccessibleContext();
+                if (ac != null) {
+                    AccessibleSelection as = ac.getAccessibleSelection();
+                    if (as != null) {
+                        return as.getAccessibleSelection(0);
+                    }
+                }
+
+                return null;
             }
         }, c);
     }
@@ -859,20 +917,70 @@ class CAccessibility implements PropertyChangeListener {
         return role;
     }
 
+    private interface ChildrenOperations {
+        boolean isContextValid(AccessibleContext accessibleContext);
+        int getChildrenCount(AccessibleContext accessibleContext);
+        Accessible getAccessibleChild(AccessibleContext accessibleContext, int childIndex);
+
+        static ChildrenOperations COMMON = createForCommon();
+
+        static ChildrenOperations createForCommon() {
+            return new ChildrenOperations() {
+                @Override
+                public boolean isContextValid(AccessibleContext accessibleContext) {
+                    return accessibleContext != null;
+                }
+
+                @Override
+                public int getChildrenCount(AccessibleContext accessibleContext) {
+                    assert isContextValid(accessibleContext);
+                    return accessibleContext.getAccessibleChildrenCount();
+                }
+
+                @Override
+                public Accessible getAccessibleChild(AccessibleContext accessibleContext, int childIndex) {
+                    assert isContextValid(accessibleContext);
+                    return accessibleContext.getAccessibleChild(childIndex);
+                }
+            };
+        }
+
+        static ChildrenOperations createForTableRow(int tableRowIndex) {
+            return new ChildrenOperations() {
+                @Override
+                public boolean isContextValid(AccessibleContext accessibleContext) {
+                    return accessibleContext instanceof AccessibleTable;
+                }
+
+                @Override
+                public int getChildrenCount(AccessibleContext accessibleContext) {
+                    assert isContextValid(accessibleContext);
+                    return ((AccessibleTable)accessibleContext).getAccessibleColumnCount();
+                }
+
+                @Override
+                public Accessible getAccessibleChild(AccessibleContext accessibleContext, int childIndex) {
+                    assert isContextValid(accessibleContext);
+                    return ((AccessibleTable)accessibleContext).getAccessibleAt(tableRowIndex, childIndex);
+                }
+            };
+        }
+    }
+
 
     // Either gets the immediate children of a, or recursively gets all unignored children of a
-    private static void _addChildren(final Accessible a, final int whichChildren, final boolean allowIgnored, final ArrayList<Object> childrenAndRoles) {
+    private static void _addChildren(Accessible a, int whichChildren, boolean allowIgnored, ArrayList<Object> childrenAndRoles, ChildrenOperations ops) {
         if (a == null) return;
 
         final AccessibleContext ac = a.getAccessibleContext();
-        if (ac == null) return;
+        if (!ops.isContextValid(ac)) return;
 
-        final int numChildren = ac.getAccessibleChildrenCount();
+        final int numChildren = ops.getChildrenCount(ac);
 
         // each child takes up two entries in the array: itself, and its role
         // so the array holds alternating Accessible and AccessibleRole objects
         for (int i = 0; i < numChildren; i++) {
-            final Accessible child = ac.getAccessibleChild(i);
+            final Accessible child = ops.getAccessibleChild(ac, i);
             if (child == null) continue;
 
             final AccessibleContext context = child.getAccessibleContext();
@@ -894,7 +1002,7 @@ class CAccessibility implements PropertyChangeListener {
                 final AccessibleRole role = context.getAccessibleRole();
                 if (role != null && ignoredRoles != null && ignoredRoles.contains(roleKey(role))) {
                     // Get the child's unignored children.
-                    _addChildren(child, whichChildren, false, childrenAndRoles);
+                    _addChildren(child, whichChildren, false, childrenAndRoles, ChildrenOperations.COMMON);
                 } else {
                     childrenAndRoles.add(child);
                     childrenAndRoles.add(getAccessibleRole(child));

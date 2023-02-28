@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public final class FilePermission extends Permission implements Serializable {
     private static final char WILD_CHAR = '*';
 
 //    public String toString() {
-//        StringBuffer sb = new StringBuffer();
+//        StringBuilder sb = new StringBuilder();
 //        sb.append("*** FilePermission on " + getName() + " ***");
 //        for (Field f : FilePermission.class.getDeclaredFields()) {
 //            if (!Modifier.isStatic(f.getModifiers())) {
@@ -1156,25 +1156,19 @@ final class FilePermissionCollection extends PermissionCollection
 
         // Add permission to map if it is absent, or replace with new
         // permission if applicable.
-        perms.merge(fp.getName(), fp,
-            new java.util.function.BiFunction<>() {
-                @Override
-                public Permission apply(Permission existingVal,
-                                        Permission newVal) {
-                    int oldMask = ((FilePermission)existingVal).getMask();
-                    int newMask = ((FilePermission)newVal).getMask();
-                    if (oldMask != newMask) {
-                        int effective = oldMask | newMask;
-                        if (effective == newMask) {
-                            return newVal;
-                        }
-                        if (effective != oldMask) {
-                            return ((FilePermission)newVal)
-                                    .withNewActions(effective);
-                        }
+        perms.merge(fp.getName(), fp, (existingVal, newVal) -> {
+                int oldMask = ((FilePermission)existingVal).getMask();
+                int newMask = ((FilePermission)newVal).getMask();
+                if (oldMask != newMask) {
+                    int effective = oldMask | newMask;
+                    if (effective == newMask) {
+                        return newVal;
                     }
-                    return existingVal;
+                    if (effective != oldMask) {
+                        return ((FilePermission)newVal).withNewActions(effective);
+                    }
                 }
+                return existingVal;
             }
         );
     }

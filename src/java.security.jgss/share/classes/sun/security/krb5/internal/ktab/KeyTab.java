@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Constructs a KeyTab object.
      *
-     * If there is any I/O error or format errot during the loading, the
+     * If there is any I/O error or format error during the loading, the
      * isValid flag is set to false, and all half-read entries are dismissed.
      * @param filename path name for the keytab file, must not be null
      */
@@ -123,7 +123,7 @@ public class KeyTab implements KeyTabConstants {
      * @param s file name of keytab, must not be null
      * @return the keytab object, can be invalid, but never null.
      */
-    private synchronized static KeyTab getInstance0(String s) {
+    private static synchronized KeyTab getInstance0(String s) {
         long lm = new File(s).lastModified();
         KeyTab old = map.get(s);
         if (old != null && old.isValid() && old.lastModified == lm) {
@@ -376,12 +376,33 @@ public class KeyTab implements KeyTabConstants {
         addEntry(service, service.getSalt(), psswd, kvno, append);
     }
 
-    // Called by KDC test
+    /**
+     * Adds a new entry in the key table.
+     * @param service the service which will have a new entry in the key table.
+     * @param salt specified non default salt, cannot be null
+     * @param psswd the password which generates the key.
+     * @param kvno the kvno to use, -1 means automatic increasing
+     * @param append false if entries with old kvno would be removed.
+     * Note: if kvno is not -1, entries with the same kvno are always removed
+     */
     public void addEntry(PrincipalName service, String salt, char[] psswd,
             int kvno, boolean append) throws KrbException {
 
         EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
-            psswd, salt);
+                psswd, salt);
+        addEntry(service, encKeys, kvno, append);
+    }
+
+    /**
+     * Adds a new entry in the key table.
+     * @param service the service which will have a new entry in the key table.
+     * @param encKeys the keys to be added
+     * @param kvno the kvno to use, -1 means automatic increasing
+     * @param append false if entries with old kvno would be removed.
+     * Note: if kvno is not -1, entries with the same kvno are always removed
+     */
+    public void addEntry(PrincipalName service, EncryptionKey[] encKeys,
+            int kvno, boolean append) throws KrbException {
 
         // There should be only one maximum KVNO value for all etypes, so that
         // all added keys can have the same KVNO.
@@ -429,7 +450,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create()
+    public static synchronized KeyTab create()
         throws IOException, RealmException {
         String dname = getDefaultTabName();
         return create(dname);
@@ -438,7 +459,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create(String name)
+    public static synchronized KeyTab create(String name)
         throws IOException, RealmException {
 
         try (KeyTabOutputStream kos =

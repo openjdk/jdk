@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,13 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * P11 AEAD Cipher implementation class. This class currently supports
@@ -54,6 +56,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
  * @since   13
  */
 final class P11AEADCipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // supported AEAD algorithms/transformations
     private enum Transformation {
@@ -97,7 +101,7 @@ final class P11AEADCipher extends CipherSpi {
     // flag indicating whether an operation is initialized
     private boolean initialized = false;
 
-    // falg indicating encrypt or decrypt mode
+    // flag indicating encrypt or decrypt mode
     private boolean encrypt = true;
 
     // parameters
@@ -106,9 +110,9 @@ final class P11AEADCipher extends CipherSpi {
     private SecureRandom random = JCAUtil.getSecureRandom();
 
     // dataBuffer is cleared upon doFinal calls
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
     // aadBuffer is cleared upon successful init calls
-    private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private boolean updateCalled = false;
 
     private boolean requireReinit = false;
@@ -140,7 +144,7 @@ final class P11AEADCipher extends CipherSpi {
             try {
                 engineSetPadding(algoParts[2]);
             } catch (NoSuchPaddingException e) {
-                throw new NoSuchAlgorithmException();
+                throw new NoSuchAlgorithmException(e);
             }
         } else if (algoParts[0].equals("ChaCha20-Poly1305")) {
             fixedKeySize = 32;
@@ -208,7 +212,7 @@ final class P11AEADCipher extends CipherSpi {
         String apAlgo;
         AlgorithmParameterSpec spec = null;
         switch (type) {
-            case AES_GCM:
+            case AES_GCM -> {
                 apAlgo = "GCM";
                 if (encrypt && iv == null && tagLen == -1) {
                     iv = new byte[type.defIvLen];
@@ -218,8 +222,8 @@ final class P11AEADCipher extends CipherSpi {
                 if (iv != null) {
                     spec = new GCMParameterSpec(tagLen << 3, iv);
                 }
-            break;
-            case CHACHA20_POLY1305:
+            }
+            case CHACHA20_POLY1305 -> {
                 if (encrypt && iv == null) {
                     iv = new byte[type.defIvLen];
                     random.nextBytes(iv);
@@ -228,9 +232,8 @@ final class P11AEADCipher extends CipherSpi {
                 if (iv != null) {
                     spec = new IvParameterSpec(iv);
                 }
-            break;
-            default:
-                throw new AssertionError("Unsupported type " + type);
+            }
+            default -> throw new AssertionError("Unsupported type " + type);
         }
         if (spec != null) {
             try {
@@ -311,18 +314,10 @@ final class P11AEADCipher extends CipherSpi {
         try {
             AlgorithmParameterSpec paramSpec = null;
             if (params != null) {
-                switch (type) {
-                    case AES_GCM:
-                        paramSpec =
-                            params.getParameterSpec(GCMParameterSpec.class);
-                        break;
-                    case CHACHA20_POLY1305:
-                        paramSpec =
-                            params.getParameterSpec(IvParameterSpec.class);
-                        break;
-                    default:
-                        throw new AssertionError("Unsupported type " + type);
-                }
+                paramSpec = switch (type) {
+                    case AES_GCM -> params.getParameterSpec(GCMParameterSpec.class);
+                    case CHACHA20_POLY1305 -> params.getParameterSpec(IvParameterSpec.class);
+                };
             }
             engineInit(opmode, key, paramSpec, sr);
         } catch (InvalidParameterSpecException ex) {
@@ -343,7 +338,7 @@ final class P11AEADCipher extends CipherSpi {
         P11Key newKey = P11SecretKeyFactory.convertKey(token, key,
                 type.keyAlgo);
         switch (opmode) {
-            case Cipher.ENCRYPT_MODE:
+            case Cipher.ENCRYPT_MODE -> {
                 encrypt = true;
                 requireReinit = Arrays.equals(iv, lastEncIv) &&
                         (newKey == lastEncKey);
@@ -351,18 +346,16 @@ final class P11AEADCipher extends CipherSpi {
                     throw new InvalidAlgorithmParameterException(
                             "Cannot reuse the same key and iv pair");
                 }
-                break;
-            case Cipher.DECRYPT_MODE:
+            }
+            case Cipher.DECRYPT_MODE -> {
                 encrypt = false;
                 requireReinit = false;
-                break;
-            case Cipher.WRAP_MODE:
-            case Cipher.UNWRAP_MODE:
-                throw new UnsupportedOperationException
-                        ("Unsupported mode: " + opmode);
-            default:
+            }
+            case Cipher.WRAP_MODE, Cipher.UNWRAP_MODE -> throw new UnsupportedOperationException
+                    ("Unsupported mode: " + opmode);
+            default ->
                 // should never happen; checked by Cipher.init()
-                throw new AssertionError("Unknown mode: " + opmode);
+                    throw new AssertionError("Unknown mode: " + opmode);
         }
 
         // decryption without parameters is checked in all engineInit() calls
@@ -372,20 +365,9 @@ final class P11AEADCipher extends CipherSpi {
 
         if (iv == null && tagLen == -1) {
             // generate default values
-            switch (type) {
-                case AES_GCM:
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                    break;
-                case CHACHA20_POLY1305:
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                    break;
-                default:
-                    throw new AssertionError("Unsupported type " + type);
-            }
+            iv = new byte[type.defIvLen];
+            this.random.nextBytes(iv);
+            tagLen = type.defTagLen;
         }
         this.iv = iv;
         this.tagLen = tagLen;
@@ -393,7 +375,7 @@ final class P11AEADCipher extends CipherSpi {
         try {
             initialize();
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_MECHANISM_PARAM_INVALID) {
+            if (e.match(CKR_MECHANISM_PARAM_INVALID)) {
                 throw new InvalidAlgorithmParameterException("Bad params", e);
             }
             throw new InvalidKeyException("Could not initialize cipher", e);
@@ -401,7 +383,13 @@ final class P11AEADCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
-        // cancel operation by finishing it; avoid killSession as some
+        token.ensureValid();
+        if (P11Util.trySessionCancel(token, session,
+                (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         int bufLen = doFinalLength(0);
         byte[] buffer = new byte[bufLen];
@@ -416,7 +404,7 @@ final class P11AEADCipher extends CipherSpi {
                         0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -453,23 +441,16 @@ final class P11AEADCipher extends CipherSpi {
 
         token.ensureValid();
 
-        byte[] aad = (aadBuffer.size() > 0? aadBuffer.toByteArray() : null);
+        byte[] aad = (aadBuffer.size() > 0 ? aadBuffer.toByteArray() : null);
 
         long p11KeyID = p11Key.getKeyID();
         try {
-            CK_MECHANISM mechWithParams;
-            switch (type) {
-                case AES_GCM:
-                    mechWithParams = new CK_MECHANISM(mechanism,
+            CK_MECHANISM mechWithParams = switch (type) {
+                case AES_GCM -> new CK_MECHANISM(mechanism,
                         new CK_GCM_PARAMS(tagLen << 3, iv, aad));
-                    break;
-                case CHACHA20_POLY1305:
-                    mechWithParams = new CK_MECHANISM(mechanism,
+                case CHACHA20_POLY1305 -> new CK_MECHANISM(mechanism,
                         new CK_SALSA20_CHACHA20_POLY1305_PARAMS(iv, aad));
-                    break;
-                default:
-                    throw new AssertionError("Unsupported type: " + type);
-            }
+            };
             if (session == null) {
                 session = token.getOpSession();
             }
@@ -507,7 +488,7 @@ final class P11AEADCipher extends CipherSpi {
                 result -= tagLen;
             }
         }
-        return (result > 0? result : 0);
+        return (Math.max(result, 0));
     }
 
     // reset the states to the pre-initialized values
@@ -728,101 +709,110 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
+        NIO_ACCESS.acquireSession(inBuffer);
         try {
-            ensureInitialized();
+            NIO_ACCESS.acquireSession(outBuffer);
+            try {
+                try {
+                    ensureInitialized();
 
-            long inAddr = 0;
-            byte[] in = null;
-            int inOfs = 0;
-            if (dataBuffer.size() > 0) {
-                if (inLen > 0) {
-                    byte[] temp = new byte[inLen];
-                    inBuffer.get(temp);
-                    dataBuffer.write(temp, 0, temp.length);
-                }
-                in = dataBuffer.toByteArray();
-                inOfs = 0;
-                inLen = in.length;
-            } else {
-                if (inBuffer instanceof DirectBuffer) {
-                    inAddr = ((DirectBuffer) inBuffer).address();
-                    inOfs = inBuffer.position();
-                } else {
-                    if (inBuffer.hasArray()) {
-                        in = inBuffer.array();
-                        inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                    long inAddr = 0;
+                    byte[] in = null;
+                    int inOfs = 0;
+                    if (dataBuffer.size() > 0) {
+                        if (inLen > 0) {
+                            byte[] temp = new byte[inLen];
+                            inBuffer.get(temp);
+                            dataBuffer.write(temp, 0, temp.length);
+                        }
+                        in = dataBuffer.toByteArray();
+                        inOfs = 0;
+                        inLen = in.length;
                     } else {
-                        in = new byte[inLen];
-                        inBuffer.get(in);
+                        if (inBuffer instanceof DirectBuffer dInBuffer) {
+                            inAddr = dInBuffer.address();
+                            inOfs = inBuffer.position();
+                        } else {
+                            if (inBuffer.hasArray()) {
+                                in = inBuffer.array();
+                                inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                            } else {
+                                in = new byte[inLen];
+                                inBuffer.get(in);
+                            }
+                        }
                     }
-                }
-            }
-            long outAddr = 0;
-            byte[] outArray = null;
-            int outOfs = 0;
-            if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
-                outOfs = outBuffer.position();
-            } else {
-                if (outBuffer.hasArray()) {
-                    outArray = outBuffer.array();
-                    outOfs = outBuffer.position() + outBuffer.arrayOffset();
-                } else {
-                    outArray = new byte[outLen];
-                }
-            }
+                    long outAddr = 0;
+                    byte[] outArray = null;
+                    int outOfs = 0;
+                    if (outBuffer instanceof DirectBuffer dOutBuffer) {
+                        outAddr = dOutBuffer.address();
+                        outOfs = outBuffer.position();
+                    } else {
+                        if (outBuffer.hasArray()) {
+                            outArray = outBuffer.array();
+                            outOfs = outBuffer.position() + outBuffer.arrayOffset();
+                        } else {
+                            outArray = new byte[outLen];
+                        }
+                    }
 
-            int k = 0;
-            if (encrypt) {
-                k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
-            } else {
-                // Special handling to match SunJCE provider behavior
-                if (inLen == 0) {
-                    return 0;
+                    int k = 0;
+                    if (encrypt) {
+                        k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    } else {
+                        // Special handling to match SunJCE provider behavior
+                        if (inLen == 0) {
+                            return 0;
+                        }
+                        k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    }
+                    inBuffer.position(inBuffer.limit());
+                    outBuffer.position(outBuffer.position() + k);
+                    return k;
+                } catch (PKCS11Exception e) {
+                    // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+                    // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+                    // successful calls to determine the output length. However,
+                    // these cases are not expected here because the output length
+                    // is checked in the OpenJDK side before making the PKCS#11 call.
+                    // Thus, doCancel can safely be 'false'.
+                    doCancel = false;
+                    handleException(e);
+                    throw new ProviderException("doFinal() failed", e);
+                } finally {
+                    if (encrypt) {
+                        lastEncKey = this.p11Key;
+                        lastEncIv = this.iv;
+                        requireReinit = true;
+                    }
+                    reset(doCancel);
                 }
-                k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
+            } finally {
+                NIO_ACCESS.releaseSession(outBuffer);
             }
-            inBuffer.position(inBuffer.limit());
-            outBuffer.position(outBuffer.position() + k);
-            return k;
-        } catch (PKCS11Exception e) {
-            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
-            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
-            // successful calls to determine the output length. However,
-            // these cases are not expected here because the output length
-            // is checked in the OpenJDK side before making the PKCS#11 call.
-            // Thus, doCancel can safely be 'false'.
-            doCancel = false;
-            handleException(e);
-            throw new ProviderException("doFinal() failed", e);
         } finally {
-            if (encrypt) {
-                lastEncKey = this.p11Key;
-                lastEncIv = this.iv;
-                requireReinit = true;
-            }
-            reset(doCancel);
+            NIO_ACCESS.releaseSession(inBuffer);
         }
     }
 
     private void handleException(PKCS11Exception e)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
-        long errorCode = e.getErrorCode();
-        if (errorCode == CKR_BUFFER_TOO_SMALL) {
+        if (e.match(CKR_BUFFER_TOO_SMALL)) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
-        } else if (errorCode == CKR_DATA_LEN_RANGE ||
-                   errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
+        } else if (e.match(CKR_DATA_LEN_RANGE) ||
+                e.match(CKR_ENCRYPTED_DATA_LEN_RANGE)) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
-        } else if (errorCode == CKR_ENCRYPTED_DATA_INVALID ||
-                // Solaris-specific
-                errorCode == CKR_GENERAL_ERROR) {
+        } else if (e.match(CKR_ENCRYPTED_DATA_INVALID) ||
+                e.match(CKR_GENERAL_ERROR)) {
+            // CKR_GENERAL_ERROR is Solaris-specific workaround
             throw (AEADBadTagException)
                     (new AEADBadTagException(e.toString()).initCause(e));
         }

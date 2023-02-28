@@ -30,7 +30,6 @@
 MethodCounters::MethodCounters(const methodHandle& mh) :
   _prev_time(0),
   _rate(0),
-  _nmethod_age(INT_MAX),
   _highest_comp_level(0),
   _highest_osr_comp_level(0)
 {
@@ -38,10 +37,6 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   JVMTI_ONLY(clear_number_of_breakpoints());
   invocation_counter()->init();
   backedge_counter()->init();
-
-  if (StressCodeAging) {
-    set_nmethod_age(HotMethodDetectionLimit);
-  }
 
   // Set per-method thresholds.
   double scale = 1.0;
@@ -65,7 +60,6 @@ void MethodCounters::clear_counters() {
   invocation_counter()->reset();
   backedge_counter()->reset();
   set_interpreter_throwout_count(0);
-  set_nmethod_age(INT_MAX);
   set_prev_time(0);
   set_prev_event_count(0);
   set_rate(0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  * @run main/othervm -ea -Diters=200   -Xint
  *      compiler.intrinsics.klass.TestIsPrimitive
- * @run main/othervm -ea -XX:-UseSharedSpaces -Diters=30000 -XX:TieredStopAtLevel=1
+ * @run main/othervm -ea -Xshare:off -Diters=30000 -XX:TieredStopAtLevel=1
  *      compiler.intrinsics.klass.TestIsPrimitive
  * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=4
  *      compiler.intrinsics.klass.TestIsPrimitive

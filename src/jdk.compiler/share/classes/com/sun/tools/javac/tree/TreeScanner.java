@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        scan(tree.var);
+        scan(tree.varOrRecordPattern);
         scan(tree.expr);
         scan(tree.body);
     }
@@ -312,14 +312,25 @@ public class TreeScanner extends Visitor {
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern that) {
-        scan(that.pattern);
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        scan(tree.expr);
     }
 
     @Override
-    public void visitGuardPattern(JCGuardPattern that) {
-        scan(that.patt);
-        scan(that.expr);
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        scan(tree.pat);
+        scan(tree.guard);
+    }
+
+    @Override
+    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
+        scan(tree.pattern);
+    }
+
+    @Override
+    public void visitRecordPattern(JCRecordPattern that) {
+        scan(that.deconstructor);
+        scan(that.nested);
     }
 
     public void visitIndexed(JCArrayAccess tree) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -876,7 +876,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * <li>{@code SwingConstants.LEADING}
      * <li>{@code SwingConstants.TRAILING} (the default)
      * </ul>
-     * @exception IllegalArgumentException if <code>textPosition</code>
+     * @throws IllegalArgumentException if <code>textPosition</code>
      *          is not one of the legal values listed above
      */
     @BeanProperty(visualUpdate = true, enumerationValues = {
@@ -953,7 +953,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
      * @return the {@code key} argument
-     * @exception IllegalArgumentException if key is not one of the legal
+     * @throws IllegalArgumentException if key is not one of the legal
      *            values listed above
      * @see #setHorizontalTextPosition
      * @see #setHorizontalAlignment
@@ -984,7 +984,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
      * @return the {@code key} argument
-     * @exception IllegalArgumentException if key is not one of the legal
+     * @throws IllegalArgumentException if key is not one of the legal
      *            values listed above
      */
     protected int checkVerticalKey(int key, String exception) {
@@ -1268,7 +1268,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     }
 
     /**
-     * Sets the seleted state of the button from the action.  This is defined
+     * Sets the selected state of the button from the action.  This is defined
      * here, but not wired up.  Subclasses like JToggleButton and
      * JCheckBoxMenuItem make use of it.
      *
@@ -1571,7 +1571,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @since 1.4
      * @param index Index into the String to underline
-     * @exception IllegalArgumentException will be thrown if <code>index</code>
+     * @throws IllegalArgumentException will be thrown if <code>index</code>
      *            is &gt;= length of the text, or &lt; -1
      * @see #getDisplayedMnemonicIndex
      */
@@ -1643,25 +1643,25 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * mouse press events for the button to generate the corresponding
      * action events.  After the initial mouse press occurs (and action
      * event generated) any subsequent mouse press events which occur
-     * on intervals less than the threshhold will be ignored and no
-     * corresponding action event generated.  By default the threshhold is 0,
+     * on intervals less than the threshold will be ignored and no
+     * corresponding action event generated.  By default the threshold is 0,
      * which means that for each mouse press, an action event will be
      * fired, no matter how quickly the mouse clicks occur.  In buttons
      * where this behavior is not desirable (for example, the "OK" button
-     * in a dialog), this threshhold should be set to an appropriate
+     * in a dialog), this threshold should be set to an appropriate
      * positive value.
      *
      * @see #getMultiClickThreshhold
-     * @param threshhold the amount of time required between mouse
+     * @param threshold the amount of time required between mouse
      *        press events to generate corresponding action events
-     * @exception   IllegalArgumentException if threshhold &lt; 0
+     * @throws   IllegalArgumentException if threshold &lt; 0
      * @since 1.4
      */
-    public void setMultiClickThreshhold(long threshhold) {
-        if (threshhold < 0) {
-            throw new IllegalArgumentException("threshhold must be >= 0");
+    public void setMultiClickThreshhold(long threshold) {
+        if (threshold < 0) {
+            throw new IllegalArgumentException("threshold must be >= 0");
         }
-        this.multiClickThreshhold = threshhold;
+        this.multiClickThreshhold = threshold;
     }
 
     /**
@@ -1791,10 +1791,10 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param     index the position in the container's list at which to
      *                 insert the component, where <code>-1</code>
      *                 means append to the end
-     * @exception IllegalArgumentException if <code>index</code> is invalid
-     * @exception IllegalArgumentException if adding the container's parent
+     * @throws IllegalArgumentException if <code>index</code> is invalid
+     * @throws IllegalArgumentException if adding the container's parent
      *                  to itself
-     * @exception IllegalArgumentException if adding a window to a container
+     * @throws IllegalArgumentException if adding a window to a container
      * @since 1.5
      */
     protected void addImpl(Component comp, Object constraints, int index) {
@@ -2146,11 +2146,12 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
 
 
     /**
-     * This is overridden to return false if the current <code>Icon</code>'s
-     * <code>Image</code> is not equal to the
-     * passed in <code>Image</code> <code>img</code>.
+     * If the button icon for the current button state is either {@code null}
+     * or not an {@code ImageIcon} with an {@code Image} equal to the
+     * passed in {@code Image}, return {@code false}; otherwise it
+     * will delegate to the super-class.
      *
-     * @param img  the <code>Image</code> to be compared
+     * @param img  the {@code Image} to be compared
      * @param infoflags flags used to repaint the button when the image
      *          is updated and which determine how much is to be painted
      * @param x  the x coordinate
@@ -2394,8 +2395,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             if (defaultIcon instanceof Accessible) {
                 AccessibleContext ac =
                     ((Accessible)defaultIcon).getAccessibleContext();
-                if (ac != null && ac instanceof AccessibleIcon) {
-                    return new AccessibleIcon[] { (AccessibleIcon)ac };
+                if (ac instanceof AccessibleIcon ai) {
+                    return new AccessibleIcon[] { ai };
                 }
             }
             return null;
@@ -2441,8 +2442,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             if (!relationSet.contains(AccessibleRelation.MEMBER_OF)) {
                 // get the members of the button group if one exists
                 ButtonModel model = getModel();
-                if (model != null && model instanceof DefaultButtonModel) {
-                    ButtonGroup group = ((DefaultButtonModel)model).getGroup();
+                if (model instanceof DefaultButtonModel defaultModel) {
+                    ButtonGroup group = defaultModel.getGroup();
                     if (group != null) {
                         // set the target of the MEMBER_OF relation to be
                         // the members of the button group.
@@ -2660,7 +2661,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         }
 
         /**
-         * Return the number of characters (valid indicies)
+         * Return the number of characters (valid indices)
          *
          * @return the number of characters
          * @since 1.3
@@ -3064,7 +3065,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
              *
              * @param i zero-based index of the key bindings
              * @return a javax.lang.Object which specifies the key binding
-             * @exception IllegalArgumentException if the index is
+             * @throws IllegalArgumentException if the index is
              * out of bounds
              * @see #getAccessibleKeyBindingCount
              */

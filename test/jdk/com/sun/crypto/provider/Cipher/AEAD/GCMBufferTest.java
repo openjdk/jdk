@@ -258,7 +258,7 @@ public class GCMBufferTest implements Cloneable {
             // If incrementalSegments is enabled, run through that test only
             if (incremental) {
                 if (ops.size() < 2) {
-                    throw new Exception("To do incrementalSegments you must" +
+                    throw new Exception("To do incrementalSegments you must " +
                         "have more that 1 dtype in the list");
                 }
                 sizes = new int[ops.size()];

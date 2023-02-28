@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -424,4 +420,22 @@ public class TCKChronology {
         chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
+    @DataProvider
+    Object[][]  data_isIsoBased() {
+        return new Object[][] {
+                {IsoChronology.INSTANCE, true},
+                {JapaneseChronology.INSTANCE, true},
+                {MinguoChronology.INSTANCE, true},
+                {ThaiBuddhistChronology.INSTANCE, true},
+                {HijrahChronology.INSTANCE, false},
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    // isIsoBased()
+    //-----------------------------------------------------------------------
+    @Test(dataProvider = "data_isIsoBased")
+    public void test_isIsoBased(Chronology chrono, boolean expected) {
+        assertEquals(chrono.isIsoBased(), expected);
+    }
 }

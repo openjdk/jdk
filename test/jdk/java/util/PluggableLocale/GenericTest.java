@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,8 @@ public class GenericTest {
      * are done in each xxxProviderTest test cases.
      */
     void localeFallbackTest() {
-        Locale xx = new Locale("xx");
-        Locale dispLocale = new Locale ("xx", "YY", "ZZ");
+        Locale xx = Locale.of("xx");
+        Locale dispLocale = Locale.of("xx", "YY", "ZZ");
 
         String xxname = xx.getDisplayLanguage(xx);
         String expected = localeNP.getDisplayLanguage(xx.getLanguage(), dispLocale);

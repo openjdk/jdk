@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,7 +1016,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     static final int WEEK_OF_YEAR_MASK  = (1 << WEEK_OF_YEAR);
     static final int WEEK_OF_MONTH_MASK = (1 << WEEK_OF_MONTH);
     static final int DAY_OF_MONTH_MASK  = (1 << DAY_OF_MONTH);
-    static final int DATE_MASK          = DAY_OF_MONTH_MASK;
     static final int DAY_OF_YEAR_MASK   = (1 << DAY_OF_YEAR);
     static final int DAY_OF_WEEK_MASK   = (1 << DAY_OF_WEEK);
     static final int DAY_OF_WEEK_IN_MONTH_MASK  = (1 << DAY_OF_WEEK_IN_MONTH);
@@ -1730,8 +1729,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Returns an array of all locales for which the {@code getInstance}
      * methods of this class can return localized instances.
-     * The array returned must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code Calendar} instances are available.
@@ -2639,14 +2639,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     private static class AvailableCalendarTypes {
-        private static final Set<String> SET;
-        static {
-            Set<String> set = new HashSet<>(3);
-            set.add("gregory");
-            set.add("buddhist");
-            set.add("japanese");
-            SET = Collections.unmodifiableSet(set);
-        }
+        private static final Set<String> SET = Set.of("gregory", "buddhist", "japanese");
         private AvailableCalendarTypes() {
         }
     }
@@ -3415,8 +3408,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     private int compareTo(long t) {
-        long thisTime = getMillisOf(this);
-        return (thisTime > t) ? 1 : (thisTime == t) ? 0 : -1;
+        return Long.compare(getMillisOf(this), t);
     }
 
     private static long getMillisOf(Calendar calendar) {

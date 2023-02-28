@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,59 @@
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
  *     TestNULLAddress
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.nio.charset.Charset;
+
+import static org.testng.Assert.*;
 
 public class TestNULLAddress {
 
-    static final CLinker LINKER = CLinker.getInstance();
+    static {
+        System.loadLibrary("Null");
+    }
+
+    static final Linker LINKER = Linker.nativeLinker();
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLLinking() {
         LINKER.downcallHandle(
-                MemoryAddress.NULL,
-                MethodType.methodType(void.class),
+                MemorySegment.NULL,
                 FunctionDescriptor.ofVoid());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLVirtual() throws Throwable {
         MethodHandle mh = LINKER.downcallHandle(
-                MethodType.methodType(void.class),
                 FunctionDescriptor.ofVoid());
-        mh.invokeExact((Addressable) MemoryAddress.NULL);
+        mh.invokeExact(MemorySegment.NULL);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNULLtoJavaString() {
-        CLinker.toJavaString(MemoryAddress.NULL);
+    @Test
+    public void testNULLReturn_unbounded() throws Throwable {
+        MethodHandle mh = LINKER.downcallHandle(SymbolLookup.loaderLookup().find("get_null").get(),
+                FunctionDescriptor.of(ValueLayout.ADDRESS.asUnbounded()));
+        MemorySegment ret = (MemorySegment)mh.invokeExact();
+        assertTrue(ret.equals(MemorySegment.NULL));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNULLfreeMemory() {
-        CLinker.freeMemory(MemoryAddress.NULL);
+    @Test
+    public void testNULLReturn_plain() throws Throwable {
+        MethodHandle mh = LINKER.downcallHandle(SymbolLookup.loaderLookup().find("get_null").get(),
+                FunctionDescriptor.of(ValueLayout.ADDRESS));
+        MemorySegment ret = (MemorySegment)mh.invokeExact();
+        assertTrue(ret.equals(MemorySegment.NULL));
     }
 }

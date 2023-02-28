@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,8 @@
 
    <!ELEMENT jthreadGroup EMPTY>
    <!ELEMENT jobject EMPTY>
+   <!ATTLIST jobject frame CDATA #IMPLIED>
+
    <!ELEMENT jvalue EMPTY>
    <!ELEMENT jchar EMPTY>
    <!ELEMENT jint EMPTY>
@@ -158,6 +160,7 @@
    <!ELEMENT outptr     ((struct|jmethodID|jfieldID|jframeID|jrawMonitorID|jclass|jthread|
                                    jthreadGroup|jobject|jvalue|enum|jchar|jint|jlong|jfloat|jdouble|
                                    jlocation|jboolean|char|uchar|size_t|void), nullok?)>
+   <!ATTLIST outptr impl CDATA #IMPLIED>
 
    <!ELEMENT allocbuf   ((struct|jmethodID|jfieldID|jframeID|jrawMonitorID|jclass|jthread|
                                    jthreadGroup|jobject|jvalue|enum|jint|jlong|jfloat|jdouble|
@@ -1128,6 +1131,16 @@ jvmtiEnv *jvmti;
 
   <category id="threadCategory" label="Thread">
     <intro>
+        These functions provide information about threads and allow an agent to
+        suspend and resume threads.
+        <p/>
+        The <code>jthread</code> specified to these functions can be a JNI
+        reference to a
+        <externallink id="../api/java.base/java/lang/Thread.html#platform-threads">platform thread</externallink>
+        or <externallink id="../api/java.base/java/lang/Thread.html#virtual-threads">virtual thread</externallink>.
+        Some functions are not supported on virtual threads and return
+        <code>JVMTI_ERROR_UNSUPPORTED_OPERATION</code> when called with a reference
+        to a virtual thread.
     </intro>
 
     <function id="GetThreadState" num="17">
@@ -1222,9 +1235,9 @@ jvmtiEnv *jvmti;
             Thread is runnable.
           </constant>
           <constant id="JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER" num="0x0400">
-            Thread is waiting to enter a synchronization block/method or,
+            Thread is waiting to enter a synchronized block/method or,
             after an <code>Object.wait()</code>, waiting to re-enter a
-            synchronization block/method.
+            synchronized block/method.
           </constant>
           <constant id="JVMTI_THREAD_STATE_WAITING" num="0x0080">
             Thread is waiting.
@@ -1238,7 +1251,7 @@ jvmtiEnv *jvmti;
             For example, <code>Object.wait(long)</code>.
           </constant>
           <constant id="JVMTI_THREAD_STATE_SLEEPING" num="0x0040">
-            Thread is sleeping -- <code>Thread.sleep(long)</code>.
+            Thread is sleeping -- <code>Thread.sleep</code>.
           </constant>
           <constant id="JVMTI_THREAD_STATE_IN_OBJECT_WAIT" num="0x0100">
             Thread is waiting on an object monitor -- <code>Object.wait</code>.
@@ -1246,14 +1259,14 @@ jvmtiEnv *jvmti;
           <constant id="JVMTI_THREAD_STATE_PARKED" num="0x0200">
             Thread is parked, for example: <code>LockSupport.park</code>,
             <code>LockSupport.parkUtil</code> and <code>LockSupport.parkNanos</code>.
+            A virtual thread that is sleeping, in <code>Thread.sleep</code>, may
+            have this state flag set instead of <code>JVMTI_THREAD_STATE_SLEEPING</code>.
           </constant>
           <constant id="JVMTI_THREAD_STATE_SUSPENDED" num="0x100000">
-            Thread suspended.
-            <code>java.lang.Thread.suspend()</code>
-            or a <jvmti/> suspend function
-            (such as <functionlink id="SuspendThread"></functionlink>)
-            has been called on the thread. If this bit
-            is set, the other bits refer to the thread state before suspension.
+            Thread is suspended by a suspend function
+            (such as <functionlink id="SuspendThread"></functionlink>).
+            If this bit is set, the other bits refer to the thread state before
+            suspension.
           </constant>
           <constant id="JVMTI_THREAD_STATE_INTERRUPTED" num="0x200000">
             Thread has been interrupted.
@@ -1513,16 +1526,15 @@ jvmtiEnv *jvmti;
     <function id="GetAllThreads" num="4">
       <synopsis>Get All Threads</synopsis>
       <description>
-        Get all live threads.
-        The threads are Java programming language threads;
-        that is, threads that are attached to the VM.
+        Get all live platform threads that are attached to the VM.
+        The list of threads includes
+        <internallink id="RunAgentThread">agent threads</internallink>.
+        It does not include virtual threads.
         A thread is live if <code>java.lang.Thread.isAlive()</code>
         would return <code>true</code>, that is, the thread has
-        been started and has not yet died.
+        been started and has not yet terminated.
         The universe of threads is determined by the context of the <jvmti/>
         environment, which typically is all threads attached to the VM.
-        Note that this includes <jvmti/> agent threads
-        (see <functionlink id="RunAgentThread"/>).
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -1531,14 +1543,14 @@ jvmtiEnv *jvmti;
         <param id="threads_count_ptr">
           <outptr><jint/></outptr>
           <description>
-            On return, points to the number of running threads.
+            On return, points to the number of threads.
           </description>
         </param>
         <param id="threads_ptr">
           <allocbuf outcount="threads_count_ptr"><jthread/></allocbuf>
             <description>
               On return, points to an array of references, one
-              for each running thread.
+              for each thread.
             </description>
         </param>
       </parameters>
@@ -1561,7 +1573,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to suspend.
             </description>
@@ -1594,7 +1606,7 @@ jvmtiEnv *jvmti;
         Java programming language threads.
         A thread is live if <code>java.lang.Thread.isAlive()</code>
         would return <code>true</code>, that is, the thread has
-        been started and has not yet died.
+        been started and has not yet terminated.
         The universe of threads is determined
         by the context of the <jvmti/>
         environment, which, typically, is all threads attached to the VM,
@@ -1712,6 +1724,53 @@ jvmtiEnv *jvmti;
       </errors>
     </function>
 
+    <function id="SuspendAllVirtualThreads" num="118" since="19">
+      <synopsis>Suspend All Virtual Threads</synopsis>
+      <description>
+        <b> SuspendAllVirtualThreads is a preview API of the Java platform. </b>
+        <i>Preview features may be removed in a future release, or upgraded to
+        permanent features of the Java platform.</i>
+        <p/>
+        Suspend all virtual threads except those in the exception list.
+        Virtual threads that are currently suspended do not change state.
+        Virtual threads may be resumed with
+        <functionlink id="ResumeAllVirtualThreads"></functionlink> or
+        <functionlink id="ResumeThreadList"></functionlink> or
+        <functionlink id="ResumeThread"></functionlink>.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+        <required id="can_suspend"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
+      </capabilities>
+      <parameters>
+        <param id="except_count">
+          <jint min="0"/>
+          <description>
+            The number of threads in the list of threads not to be suspended.
+          </description>
+        </param>
+        <param id="except_list">
+            <inbuf incount="except_count">
+              <jthread/>
+              <nullok>not an error if <code>except_count == 0</code></nullok>
+            </inbuf>
+            <description>
+              The list of threads not to be suspended.
+            </description>
+        </param>
+      </parameters>
+      <errors>
+        <error id="JVMTI_ERROR_INVALID_THREAD">
+          A thread in <paramlink id="except_list"></paramlink> was invalid.
+        </error>
+        <error id="JVMTI_ERROR_NULL_POINTER">
+          Both <paramlink id="except_list"></paramlink> was <code>NULL</code>
+          and <paramlink id="except_count"></paramlink> was non-zero.
+        </error>
+      </errors>
+    </function>
+
     <function id="ResumeThread" num="6">
       <synopsis>Resume Thread</synopsis>
       <description>
@@ -1719,7 +1778,6 @@ jvmtiEnv *jvmti;
         Any threads currently suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThread"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution;
         all other threads are unaffected.
       </description>
@@ -1729,7 +1787,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread/>
+          <jthread impl="noconvert"/>
             <description>
               The thread to resume.
             </description>
@@ -1754,7 +1812,6 @@ jvmtiEnv *jvmti;
         Any thread suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThreadList"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution.
       </description>
       <origin>jvmdi</origin>
@@ -1793,13 +1850,57 @@ jvmtiEnv *jvmti;
       </errors>
     </function>
 
+   <function id="ResumeAllVirtualThreads" num="119" since="19">
+      <synopsis>Resume All Virtual Threads</synopsis>
+      <description>
+        <b> ResumeAllVirtualThreads is a preview API of the Java platform. </b>
+        <i>Preview features may be removed in a future release, or upgraded to
+        permanent features of the Java platform.</i>
+        <p/>
+        Resume all virtual threads except those in the exception list.
+        Virtual threads that are currently resumed do not change state.
+        Virtual threads may be suspended with
+        <functionlink id="SuspendAllVirtualThreads"></functionlink> or
+        <functionlink id="SuspendThreadList"></functionlink> or
+        <functionlink id="SuspendThread"></functionlink>.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+        <required id="can_suspend"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
+      </capabilities>
+      <parameters>
+        <param id="except_count">
+          <jint min="0"/>
+          <description>
+            The number of threads in the list of threads not to be resumed.
+          </description>
+        </param>
+        <param id="except_list">
+            <inbuf incount="except_count">
+              <jthread/>
+              <nullok>not an error if <code>except_count == 0</code></nullok>
+            </inbuf>
+            <description>
+              The list of threads not to be resumed.
+            </description>
+        </param>
+      </parameters>
+      <errors>
+        <error id="JVMTI_ERROR_INVALID_THREAD">
+          A thread in <paramlink id="except_list"></paramlink> was invalid.
+        </error>
+        <error id="JVMTI_ERROR_NULL_POINTER">
+          Both <paramlink id="except_list"></paramlink> was <code>NULL</code>
+          and <paramlink id="except_count"></paramlink> was non-zero.
+        </error>
+      </errors>
+    </function>
+
     <function id="StopThread" num="7">
       <synopsis>Stop Thread</synopsis>
       <description>
-        Send the specified asynchronous exception to the specified thread.
-        Normally, this function is used to kill the specified thread with an
-        instance of the exception <code>ThreadDeath</code>, similar to
-        <code>java.lang.Thread.stop</code>.
+        Send the specified asynchronous exception to the specified platform thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -1807,10 +1908,12 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread/>
+          <jthread impl="noconvert"/>
             <description>
               The thread to stop.
-            </description>
+              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
+              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
+             </description>
         </param>
         <param id="exception">
           <jobject/>
@@ -1820,6 +1923,9 @@ jvmtiEnv *jvmti;
         </param>
       </parameters>
       <errors>
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
+          <paramlink id="thread"/> is a virtual thread.
+        </error>
       </errors>
     </function>
 
@@ -1859,20 +1965,22 @@ jvmtiEnv *jvmti;
           <jint/>
           <description>
             The thread priority.  See the thread priority constants:
-            <datalink id="jvmtiThreadPriority"></datalink>.
+            <datalink id="jvmtiThreadPriority"></datalink>. The priority of a
+            virtual thread is always <code>JVMTI_THREAD_NORM_PRIORITY</code>.
           </description>
         </field>
         <field id="is_daemon">
           <jboolean/>
           <description>
-            Is this a daemon thread?
+            Is this a daemon thread? The daemon status of a virtual thread is
+            always <code>JNI_TRUE</code>.
           </description>
         </field>
         <field id="thread_group">
           <jthreadGroup/>
           <description>
             The thread group to which this thread belongs.
-            <code>NULL</code> if the thread has died.
+            <code>NULL</code> if the thread has terminated.
           </description>
         </field>
         <field id="context_class_loader">
@@ -1919,7 +2027,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
             </description>
@@ -1973,7 +2081,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
             </description>
@@ -2009,7 +2117,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
             </description>
@@ -2099,7 +2207,7 @@ jvmtiEnv *jvmti;
         If enabled, a <eventlink id="ThreadStart"/> event will be sent.
         <p/>
         Since the thread has been started, the thread will be live when this function
-        returns, unless the thread has died immediately.
+        returns, unless the thread terminated immediately.
         <p/>
         The thread group of the thread is ignored -- specifically, the thread is not
         added to the thread group and the thread is not seen on queries of the thread
@@ -2123,7 +2231,9 @@ jvmtiEnv *jvmti;
           <jthread impl="noconvert" started="no"/>
             <description>
               The thread to run.
-            </description>
+              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
+              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
+             </description>
         </param>
         <param id="proc">
           <ptrtype>
@@ -2158,6 +2268,9 @@ jvmtiEnv *jvmti;
               or greater than
             <datalink id="JVMTI_THREAD_MAX_PRIORITY"/>
         </error>
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
+          <paramlink id="thread"/> is a virtual thread.
+        </error>
       </errors>
     </function>
 
@@ -2182,7 +2295,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               Store to this thread.
             </description>
@@ -2323,7 +2436,8 @@ jvmtiEnv *jvmti;
     <function id="GetThreadGroupChildren" num="15">
       <synopsis>Get Thread Group Children</synopsis>
       <description>
-        Get the live threads and active subgroups in this thread group.
+        Get the live platform threads and the child thread groups in this
+        thread group. Virtual threads are not returned by this function.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -2350,13 +2464,13 @@ jvmtiEnv *jvmti;
         <param id="group_count_ptr">
           <outptr><jint/></outptr>
           <description>
-            On return, points to the number of active child thread groups
+            On return, points to the number of child thread groups
           </description>
         </param>
         <param id="groups_ptr">
           <allocbuf outcount="group_count_ptr"><jthreadGroup/></allocbuf>
             <description>
-              On return, points to an array of the active child thread groups.
+              On return, points to an array of the child thread groups.
             </description>
         </param>
       </parameters>
@@ -2484,7 +2598,7 @@ if (err == JVMTI_ERROR_NONE &amp;&amp; count &gt;= 1) {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               Fetch the stack trace of this thread.
             </description>
@@ -2543,8 +2657,11 @@ if (err == JVMTI_ERROR_NONE &amp;&amp; count &gt;= 1) {
     <function id="GetAllStackTraces" num="100">
       <synopsis>Get All Stack Traces</synopsis>
       <description>
-        Get information about the stacks of all live threads
-        (including <internallink id="RunAgentThread">agent threads</internallink>).
+        Get the stack traces of all live platform threads attached to the VM.
+        The list includes the stack traces of
+        <internallink id="RunAgentThread">agent threads</internallink>.
+        It does not include the stack traces of virtual threads.
+        <p/>
         If <paramlink id="max_frame_count"/> is less than the depth of a stack,
         the <paramlink id="max_frame_count"/> topmost frames are returned for that thread,
         otherwise the entire stack is returned.
@@ -2768,7 +2885,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
             </description>
@@ -2840,7 +2957,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread/>
+          <jthread impl="noconvert"/>
             <description>
               The thread whose current frame is to be popped.
             </description>
@@ -2850,6 +2967,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Called or calling method is a native method.
           The implementation is unable to pop this frame.
+        </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation is unable
+          to pop this frame.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -2872,7 +2993,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame to query.
           </description>
@@ -2921,7 +3042,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="depth"/>
+          <jthread null="current" frame="depth" impl="noconvert"/>
           <description>
             The thread of the frame for which the frame pop event will be generated.
           </description>
@@ -2996,7 +3117,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3013,6 +3134,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
         </error>
@@ -3047,7 +3170,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3063,6 +3186,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
         </error>
@@ -3093,7 +3218,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3109,6 +3234,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
         </error>
@@ -3136,7 +3263,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3152,6 +3279,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
         </error>
@@ -3179,7 +3308,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3193,8 +3322,12 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame corresponding to a native method.
-          Or the implementation is unable to provide this functionality on this frame.
+          Attempted to return early from a frame
+          corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
+          Or the implementation is unable to provide
+          this functionality on this frame.
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not <code>double</code>.
@@ -3220,7 +3353,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
           <description>
             The thread whose current frame is to return early.
           </description>
@@ -3230,6 +3363,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
+          The thread is a virtual thread and the implementation is
+          unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
         </error>
@@ -4963,9 +5098,9 @@ class C2 extends C1 implements I2 {
     <intro>
       <b>
         These functions and data types were introduced in the original
-        <jvmti/> version 1.0. They are deprecated and will be changed 
+        <jvmti/> version 1.0. They are deprecated and will be changed
         to return an error in a future release. They were superseded in
-        <jvmti/> version 1.2 (Java SE 6) by more 
+        <jvmti/> version 1.2 (Java SE 6) by more
       </b>
       <internallink id="Heap"><b>powerful and flexible versions</b></internallink>
       <b>
@@ -5682,6 +5817,13 @@ class C2 extends C1 implements I2 {
       The mapping of variables to
       slot numbers can be obtained with the function
       <functionlink id="GetLocalVariableTable"></functionlink>.
+      <p/>
+      The <code>GetLocalXXX</code> functions may be used to retrieve the value of
+      a local variable contained in the frame of a virtual thread.
+      The <code>SetLocalXXX</code> functions may be used to set the value of a
+      local variable in the topmost frame of a virtual thread suspended at a
+      breakpoint or single step event. An implementation may support setting locals
+      in other cases.
     </intro>
 
     <function id="GetLocalObject" num="21">
@@ -5689,6 +5831,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5696,7 +5840,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5731,6 +5875,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5742,6 +5889,8 @@ class C2 extends C1 implements I2 {
         frames.  This function can retrieve the "<code>this</code>" object from
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -5749,7 +5898,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5771,6 +5920,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_INVALID_SLOT">
           If the specified frame is a static method frame.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
     <function id="GetLocalInt" num="22">
@@ -5780,6 +5932,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5787,7 +5941,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5824,6 +5978,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5832,6 +5989,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5839,7 +5998,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5873,6 +6032,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5881,6 +6043,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5888,7 +6052,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5922,6 +6086,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5930,6 +6097,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5937,7 +6106,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -5971,6 +6140,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5979,6 +6151,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5986,7 +6160,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -6025,6 +6199,14 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation does not support
+          setting the value of locals in the frame of the given depth.
+          See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6035,6 +6217,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6042,7 +6226,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -6079,6 +6263,14 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation does not support
+          setting the value of locals in the frame of the given depth.
+          See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6087,6 +6279,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6094,7 +6288,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -6128,6 +6322,14 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation does not support
+          setting the value of locals in the frame of the given depth.
+          See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6136,6 +6338,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6143,7 +6347,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -6177,6 +6381,14 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation does not support
+          setting the value of locals in the frame of the given depth.
+          See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6185,6 +6397,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>double</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6192,7 +6406,7 @@ class C2 extends C1 implements I2 {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" frame="frame"/>
+          <jthread null="current" frame="frame" impl="noconvert"/>
           <description>
             The thread of the frame containing the variable's value.
           </description>
@@ -6225,6 +6439,14 @@ class C2 extends C1 implements I2 {
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
+        </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a virtual thread and the implementation does not support
+          setting the value of locals in the frame of the given depth.
+          See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
         </error>
       </errors>
     </function>
@@ -6861,7 +7083,7 @@ class C2 extends C1 implements I2 {
         <ul>
         <li>By loading and deriving a class from a <code>class</code> file representation
             using a class loader (see <vmspec chapter="5.3"/>).</li>
-        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
+        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
             that creates a hidden class or interface from a <code>class</code> file representation.</li>
         <li>By invoking methods in certain Java SE Platform APIs such as reflection.</li>
          </ul>
@@ -6923,7 +7145,7 @@ class C2 extends C1 implements I2 {
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
         <p/>
-        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
+        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6973,7 +7195,7 @@ class C2 extends C1 implements I2 {
           <code>"L" + N + "." +  S + ";"</code>
           where <code>N</code> is the binary name encoded in internal form (JVMS 4.2.1)
           indicated by the <code>class</code> file passed to
-          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
+          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
           and <code>S</code> is an unqualified name.
           The returned name is not a type descriptor and does not conform to JVMS 4.3.2.
           For example, com.foo.Foo/AnySuffix is "Lcom/foo/Foo.AnySuffix;"
@@ -9348,7 +9570,7 @@ myInit() {
         As a result, all future JNI calls are directed to the specified functions.
         Use <functionlink id="GetJNIFunctionTable"></functionlink> to get the
         function table to pass to this function.
-        For this function to take effect the the updated table entries must be
+        For this function to take effect the updated table entries must be
         used by the JNI clients.
         Since the table is defined <code>const</code> some compilers may optimize
         away the access to the table, thus preventing this function from taking
@@ -9534,7 +9756,8 @@ myInit() {
           <paramlink id="event_thread"/> is non-<code>NULL</code> and is not a valid thread.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_ALIVE">
-          <paramlink id="event_thread"/> is non-<code>NULL</code> and is not live (has not been started or is now dead).
+          <paramlink id="event_thread"/> is non-<code>NULL</code> and is not alive
+          (has not been started or has terminated).
         </error>
         <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
           thread level control was attempted on events which do not
@@ -10427,6 +10650,21 @@ myInit() {
           called and <eventlink id="SampledObjectAlloc"></eventlink> events can be generated.
         </description>
       </capabilityfield>
+      <capabilityfield id="can_support_virtual_threads" since="19">
+        <description>
+          <b> can_support_virtual_threads is a preview API of the Java platform. </b>
+          <i>Preview features may be removed in a future release, or upgraded to
+          permanent features of the Java platform.</i>
+          <p/>
+          Can support virtual threads.
+          If this capability is enabled then the following functions can be called:
+          <functionlink id="SuspendAllVirtualThreads"></functionlink>,
+          <functionlink id="ResumeAllVirtualThreads"></functionlink>,
+          and the following events can be enabled:
+          <eventlink id="VirtualThreadStart"></eventlink>,
+          <eventlink id="VirtualThreadEnd"></eventlink>.
+        </description>
+      </capabilityfield>
     </capabilitiestypedef>
 
     <function id="GetPotentialCapabilities" jkernel="yes" phase="onload" num="140">
@@ -10784,6 +11022,8 @@ myInit() {
             the current thread (see
             <functionlink id="GetCurrentThreadCpuTimerInfo"/> vs
             <functionlink id="GetThreadCpuTimerInfo"/>).
+            The current thread may not be a virtual thread. Otherwise, the error code
+            <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
             On many platforms this call will be equivalent to:
 <example>
   GetThreadCpuTime(env, NULL, nanos_ptr)
@@ -10817,6 +11057,10 @@ myInit() {
         </param>
       </parameters>
       <errors>
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
+          The current thread is a virtual thread and the implementation does not support
+          getting the current thread CPU time when the current thread is a virtual thread.
+        </error>
       </errors>
     </function>
 
@@ -10878,13 +11122,15 @@ myInit() {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
-            </description>
+              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
+               <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
+             </description>
         </param>
         <param id="nanos_ptr">
-          <outptr><jlong/></outptr>
+          <outptr impl="nonullcheck"><jlong/></outptr>
           <description>
             On return, points to the CPU time used by the specified thread
             in nanoseconds.
@@ -10894,6 +11140,10 @@ myInit() {
         </param>
       </parameters>
       <errors>
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
+          <paramlink id="thread"/> is a virtual thread and the implementation does not
+          support getting the thread CPU time of a virtual thread.
+        </error>
       </errors>
     </function>
 
@@ -11725,7 +11975,7 @@ myInit() {
     </errorid>
     <errorid id="JVMTI_ERROR_THREAD_NOT_ALIVE" num="15">
       This operation requires the thread to be alive--that is,
-      it must be started and not yet have died.
+      it must be started and not yet terminated.
     </errorid>
     <errorid id="JVMTI_ERROR_CLASS_NOT_PREPARED" num="22">
       The class has been loaded but not yet prepared.
@@ -11862,6 +12112,9 @@ myInit() {
     </errorid>
     <errorid id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED" num="72">
       A new class version has unsupported differences in class attributes.
+    </errorid>
+    <errorid id="JVMTI_ERROR_UNSUPPORTED_OPERATION" num="73">
+      Functionality is unsupported in this implementation.
     </errorid>
   </errorcategory>
 </errorsection>
@@ -12691,10 +12944,22 @@ myInit() {
   <event label="Thread Start"
          id="ThreadStart" const="JVMTI_EVENT_THREAD_START" num="52" phase="start">
     <description>
-      Thread start events are generated by a new thread before its initial
+      A thread start event is generated by a new thread before its initial
       method executes.
       <p/>
-      A thread may be listed in the array returned by
+      This event is generated by platform threads. It is also generated by
+      virtual threads when the capability
+      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
+      <code>can_support_virtual_threads</code></internallink> is not enabled.
+      Agents without support for virtual threads that enable this event will
+      therefore be notified by all newly started threads.
+      <p/>
+      If the capability <code>can_support_virtual_threads</code> is enabled then
+      this event is not generated by virtual threads. Agents with support for
+      virtual threads can enable <eventlink id="VirtualThreadStart"></eventlink>
+      to be notified by newly started virtual threads.
+      <p/>
+      A platform thread may be listed in the array returned by
       <functionlink id="GetAllThreads"></functionlink>
       before its thread start event is generated.
       It is possible for other events to be generated
@@ -12726,16 +12991,28 @@ myInit() {
   <event label="Thread End"
          id="ThreadEnd" const="JVMTI_EVENT_THREAD_END" filtered="thread" num="53" phase="start">
     <description>
-      Thread end events are generated by a terminating thread
-      after its initial method has finished execution.
+      A thread end event is generated by a terminating thread after its
+      initial method has finished execution.
       <p/>
-      A thread may be listed in the array returned by
+      This event is generated by platform threads. It is also generated by
+      virtual threads when the capability
+      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
+      <code>can_support_virtual_threads</code></internallink> is not enabled.
+      Agents without support for virtual threads that enable this event for
+      all threads will therefore be notified by all terminating threads.
+      <p/>
+      If the capability <code>can_support_virtual_threads</code> is enabled then
+      this event is not generated by virtual threads. Agents with support for
+      virtual threads can enable <eventlink id="VirtualThreadEnd"></eventlink>
+      to be notified by terminating virtual threads.
+      <p/>
+      A platform thread may be listed in the array returned by
       <functionlink id="GetAllThreads"></functionlink>
       after its thread end event is generated.
       No events are generated on a thread
       after its thread end event.
       <p/>
-      The event is sent on the dying <paramlink id="thread"></paramlink>.
+      The event is sent on the terminating <paramlink id="thread"></paramlink>.
     </description>
     <origin>jvmdi</origin>
     <capabilities>
@@ -12757,6 +13034,134 @@ myInit() {
       </param>
     </parameters>
   </event>
+
+ <event label="Virtual Thread Start"
+         id="VirtualThreadStart" const="JVMTI_EVENT_VIRTUAL_THREAD_START" filtered="thread" num="87" phase="start" since="19">
+    <description>
+      <b> VirtualThreadStart is a preview API of the Java platform. </b>
+      <i>Preview features may be removed in a future release, or upgraded to
+      permanent features of the Java platform.</i>
+      <p/>
+      A virtual thread start event is generated before its initial method executes.
+      <p/>
+      The event is sent on the newly started <paramlink id="virtual_thread"></paramlink>.
+    </description>
+    <origin>new</origin>
+    <capabilities>
+      <required id="can_support_virtual_threads">Can support virtual threads</required>
+    </capabilities>
+    <parameters>
+      <param id="jni_env">
+        <outptr>
+          <struct>JNIEnv</struct>
+        </outptr>
+          <description>
+            The JNI environment of the event (current) thread.
+          </description>
+      </param>
+      <param id="virtual_thread">
+        <jthread/>
+          <description>
+            Virtual thread started for execution.
+          </description>
+      </param>
+    </parameters>
+  </event>
+
+  <event label="Virtual Thread End"
+         id="VirtualThreadEnd" const="JVMTI_EVENT_VIRTUAL_THREAD_END" filtered="thread" num="88" phase="start" since="19">
+    <description>
+      <b> VirtualThreadEnd is a preview API of the Java platform. </b>
+      <i>Preview features may be removed in a future release, or upgraded to
+      permanent features of the Java platform.</i>
+      <p/>
+      A virtual thread end event is generated after its initial method has finished execution.
+      <p/>
+      The event is sent on the terminating <paramlink id="virtual_thread"></paramlink>.
+    </description>
+    <origin>new</origin>
+    <capabilities>
+      <required id="can_support_virtual_threads">Can support virtual threads</required>
+    </capabilities>
+    <parameters>
+      <param id="jni_env">
+        <outptr>
+          <struct>JNIEnv</struct>
+        </outptr>
+          <description>
+            The JNI environment of the event (current) thread.
+          </description>
+      </param>
+      <param id="virtual_thread">
+        <jthread/>
+          <description>
+            Virtual thread being ended.
+          </description>
+      </param>
+    </parameters>
+  </event>
+
+  <elide>
+  <event label="Virtual Thread Mount"
+         id="VirtualThreadMount" const="JVMTI_EVENT_VIRTUAL_THREAD_MOUNT" filtered="thread" num="89" phase="start" since="99">
+    <description>
+      A virtual thread mount event is generated before its method continue to execute on the mounted thread.
+      <p/>
+      The event is sent on the <paramlink id="thread"></paramlink> the virtual thread is mounted to.
+    </description>
+    <origin>new</origin>
+    <capabilities>
+      <required id="can_support_virtual_threads">Can support virtual threads</required>
+    </capabilities>
+    <parameters>
+      <param id="jni_env">
+        <outptr>
+          <struct>JNIEnv</struct>
+        </outptr>
+          <description>
+            The JNI environment of the event (current) thread.
+          </description>
+      </param>
+      <param id="virtual_thread">
+        <jthread/>
+          <description>
+            Virtual thread that is mounted.
+          </description>
+      </param>
+    </parameters>
+  </event>
+  </elide>
+
+  <elide>
+  <event label="Virtual Thread Unmount"
+         id="VirtualThreadUnmount" const="JVMTI_EVENT_VIRTUAL_THREAD_UNMOUNT" filtered="thread" num="90" phase="start" since="99">
+    <description>
+      A virtual thread unmount event is generated when the virtual thread is about to be unmounted from the carrier thread.
+      <p/>
+      The event is sent on the <paramlink id="thread"></paramlink> the virtual thread is unmounted from.
+    </description>
+    <origin>new</origin>
+    <capabilities>
+      <required id="can_support_virtual_threads">Can support virtual threads</required>
+    </capabilities>
+    <parameters>
+      <param id="jni_env">
+        <outptr>
+          <struct>JNIEnv</struct>
+        </outptr>
+          <description>
+            The JNI environment of the event (current) thread.
+          </description>
+      </param>
+      <param id="virtual_thread">
+        <jthread/>
+          <description>
+            Virtual thread that is unmounted.
+          </description>
+      </param>
+    </parameters>
+  </event>
+  </elide>
 
   <event label="Class Load"
          id="ClassLoad" const="JVMTI_EVENT_CLASS_LOAD" filtered="thread" phase="start" num="55">
@@ -14378,7 +14783,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Remove frame arg from events.
   </change>
   <change date="9 Apr 2003" version="v55">
-      Remove GetObjectWithAnnotation since tests show bufferred approach more efficient.
+      Remove GetObjectWithAnnotation since tests show buffered approach more efficient.
       Add missing annotation_count to GetObjectsWithAnnotations
   </change>
   <change date="10 Apr 2003" version="v56">
@@ -14659,30 +15064,30 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Clarified definition of class_tag and referrer_index
       parameters to heap callbacks.
   </change>
-  <change date="16 Febuary 2004" version="0.2.103">
+  <change date="16 February 2004" version="0.2.103">
       Document JAVA_TOOL_OPTIONS.
   </change>
-  <change date="17 Febuary 2004" version="0.2.105">
+  <change date="17 February 2004" version="0.2.105">
       Divide start phase into primordial and start.
       Add VMStart event
       Change phase associations of functions and events.
   </change>
-  <change date="18 Febuary 2004" version="0.3.6">
+  <change date="18 February 2004" version="0.3.6">
       Elide deprecated GetThreadStatus.
       Bump minor version, subtract 100 from micro version
   </change>
-  <change date="18 Febuary 2004" version="0.3.7">
+  <change date="18 February 2004" version="0.3.7">
       Document that timer nanosecond values are unsigned.
       Clarify text having to do with native methods.
   </change>
-  <change date="19 Febuary 2004" version="0.3.8">
+  <change date="19 February 2004" version="0.3.8">
       Fix typos.
       Remove elided deprecated GetThreadStatus.
   </change>
-  <change date="23 Febuary 2004" version="0.3.9">
+  <change date="23 February 2004" version="0.3.9">
       Require NotifyFramePop to act on suspended threads.
   </change>
-  <change date="24 Febuary 2004" version="0.3.10">
+  <change date="24 February 2004" version="0.3.10">
       Add capabilities
         (<internallink id="jvmtiCapabilities.can_redefine_any_class"
          ><code>can_redefine_any_class</code></internallink>
@@ -14692,7 +15097,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       and an error (<errorlink id="JVMTI_ERROR_UNMODIFIABLE_CLASS"></errorlink>)
       which allow some classes to be unmodifiable.
   </change>
-  <change date="28 Febuary 2004" version="0.3.11">
+  <change date="28 February 2004" version="0.3.11">
       Add JVMTI_ERROR_MUST_POSSESS_CAPABILITY to SetEventNotificationMode.
   </change>
   <change date="8 March 2004" version="0.3.12">
@@ -15015,6 +15420,15 @@ typedef void (JNICALL *jvmtiEventVMInit)
         - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
           that can be returned by RedefineClasses and RetransformClasses.
   </change>
+  <change date="15 June 2018" version="11.0.0">
+      Support for Low Overhead Heap Sampling:
+       - Add new capability:
+         - can_generate_sampled_object_alloc_events
+       - Add new function:
+         - SetHeapSamplingInterval
+       - Add new event type:
+         - JVMTI_EVENT_SAMPLED_OBJECT_ALLOC
+  </change>
   <change date="20 May 2019" version="13.0.0">
       Minor spec update for the capability "can_redefine_any_class".
       It now says:
@@ -15039,10 +15453,23 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="15 January 2021" version="17.0.0">
       Minor clarification in the section "Agent Shutdown" that says the
       implementation may choose to not call the Agent_OnUnload function
-      if the Agent_OnAttach/Agent_OnAttach_L function reported an error. 
+      if the Agent_OnAttach/Agent_OnAttach_L function reported an error.
   </change>
   <change date="8 June 2021" version="17.0.0">
       Minor update to deprecate Heap functions 1.0.
+  </change>
+  <change date="27 April 2022" version="19.0.0">
+      Support for virtual threads:
+       - Add new capability:
+         - can_support_virtual_threads
+       - Add new functions:
+         - SuspendAllVirtualThreads
+         - ResumeAllVirtualThreads
+       - Add new event types:
+         - JVMTI_EVENT_VIRTUAL_THREAD_START
+         - JVMTI_EVENT_VIRTUAL_THREAD_END
+       - Add new error code:
+         - JVMTI_ERROR_UNSUPPORTED_OPERATION
   </change>
 </changehistory>
 

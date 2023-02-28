@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public interface DeclHandler
      * string "ANY", or a parenthesised group, optionally followed
      * by an occurrence indicator.  The model will be normalized so
      * that all parameter entities are fully resolved and all whitespace
-     * is removed,and will include the enclosing parentheses.  Other
+     * is removed, and will include the enclosing parentheses.  Other
      * normalization (such as removing redundant parentheses or
      * simplifying occurrence indicators) is at the discretion of the
      * parser.</p>

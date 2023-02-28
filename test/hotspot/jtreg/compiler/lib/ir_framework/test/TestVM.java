@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -74,8 +74,18 @@ public class TestVM {
     public static final int WARMUP_ITERATIONS = Integer.parseInt(System.getProperty("Warmup", "2000"));
 
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
-    private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL = CompLevel.forValue(((Long)WHITE_BOX.getVMFlag("TieredStopAtLevel")).intValue());
-    public static final boolean TEST_C1 = TIERED_COMPILATION && TIERED_COMPILATION_STOP_AT_LEVEL.getValue() < CompLevel.C2.getValue();
+    private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL;
+    private static final boolean CLIENT_VM = Platform.isClient();
+
+    static {
+        CompLevel level = CompLevel.forValue(((Long)WHITE_BOX.getVMFlag("TieredStopAtLevel")).intValue());
+        if (CLIENT_VM && level == CompLevel.C2) {
+            // No C2 available, use C1 level without profiling.
+            level = CompLevel.C1_SIMPLE;
+        }
+        TIERED_COMPILATION_STOP_AT_LEVEL = level;
+    }
+    public static final boolean TEST_C1 = (TIERED_COMPILATION && TIERED_COMPILATION_STOP_AT_LEVEL.getValue() < CompLevel.C2.getValue()) || CLIENT_VM;
 
     static final boolean XCOMP = Platform.isComp();
     static final boolean VERBOSE = Boolean.getBoolean("Verbose");
@@ -257,7 +267,7 @@ public class TestVM {
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter.emit();
         }
-        TestFormat.reportIfAnyFailures();
+        TestFormat.throwIfAnyFailures();
         declaredTests.clear();
         testMethodMap.clear();
     }
@@ -353,7 +363,9 @@ public class TestVM {
             TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
                                     "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
                                     + "@ForceCompileClassInitializer without providing a static class initialization? "
-                                    + "Make sure to provide any form of static initialization or remove the annotation.");
+                                    + "Make sure to provide any form of static initialization or remove the annotation. "
+                                    + "For debugging purposes, -DIgnoreCompilerControls=true can be used to temporarly "
+                                    + "ignore @ForceCompileClassInitializer annotations.");
         }
     }
 
@@ -493,7 +505,8 @@ public class TestVM {
                 if (testAnno != null) {
                     addDeclaredTest(m);
                 } else {
-                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class), "Found @IR annotation on non-@Test method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class) && !m.isAnnotationPresent(IRs.class),
+                                            "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
                 }
@@ -562,10 +575,13 @@ public class TestVM {
             // Use highest available compilation level by default (usually C2).
             compLevel = TIERED_COMPILATION_STOP_AT_LEVEL;
         }
-        if (!TIERED_COMPILATION && compLevel.getValue() < CompLevel.C2.getValue()) {
+        if (TEST_C1 && compLevel == CompLevel.C2) {
             return CompLevel.SKIP;
         }
-        if (TIERED_COMPILATION && compLevel.getValue() > TIERED_COMPILATION_STOP_AT_LEVEL.getValue()) {
+        if ((!TIERED_COMPILATION && !CLIENT_VM) && compLevel.getValue() < CompLevel.C2.getValue()) {
+            return CompLevel.SKIP;
+        }
+        if ((TIERED_COMPILATION || CLIENT_VM) && compLevel.getValue() > TIERED_COMPILATION_STOP_AT_LEVEL.getValue()) {
             return CompLevel.SKIP;
         }
         return compLevel;
@@ -619,13 +635,16 @@ public class TestVM {
         DeclaredTest test = declaredTests.get(testMethod);
         checkCheckedTest(m, checkAnno, runAnno, testMethod, test);
         test.setAttachedMethod(m);
+        TestFormat.check(getAnnotation(testMethod, Arguments.class) != null || testMethod.getParameterCount() == 0,
+                         "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
+                         + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
         dontCompileAndDontInlineMethod(m);
         CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod.getName()));
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
-            irMatchRulePrinter.emitRuleEncoding(m, checkedTest.isSkipped());
+            irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
         }
     }
 

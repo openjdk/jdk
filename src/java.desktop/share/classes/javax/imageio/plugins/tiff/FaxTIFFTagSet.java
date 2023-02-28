@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * A class representing the extra tags found in a
- * <a href="http://tools.ietf.org/html/rfc2306.html">TIFF-F</a> (RFC 2036) file.
+ * <a href="https://tools.ietf.org/html/rfc2306.html">TIFF-F</a> (RFC 2036) file.
  *
  * @since 9
  */
@@ -135,7 +135,7 @@ public final class FaxTIFFTagSet extends TIFFTagSet {
      *
      * @return a {@code FaxTIFFTagSet} instance.
      */
-    public synchronized static FaxTIFFTagSet getInstance() {
+    public static synchronized FaxTIFFTagSet getInstance() {
         if (theInstance == null) {
             initTags();
             theInstance = new FaxTIFFTagSet();

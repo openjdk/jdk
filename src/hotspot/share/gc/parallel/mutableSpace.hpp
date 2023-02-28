@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class WorkGang;
+class WorkerThreads;
 
 // A MutableSpace supports the concept of allocation. This includes the
 // concepts that a space may be only partially full, and the query methods
@@ -62,7 +62,7 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
-  void numa_setup_pages(MemRegion mr, bool clear_space);
+  void numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space);
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
@@ -89,7 +89,6 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   size_t capacity_in_bytes() const { return capacity_in_words() * HeapWordSize; }
   size_t capacity_in_words() const { return pointer_delta(end(), bottom()); }
-  virtual size_t capacity_in_words(Thread*) const { return capacity_in_words(); }
 
   // Returns a subregion containing all objects in this space.
   MemRegion used_region() { return MemRegion(bottom(), top()); }
@@ -102,7 +101,7 @@ class MutableSpace: public CHeapObj<mtGC> {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkGang* pretouch_gang = NULL);
+                          WorkerThreads* pretouch_workers = nullptr);
 
   virtual void clear(bool mangle_space);
   virtual void update() { }
@@ -138,14 +137,14 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);
   // Return true if this space needs to be expanded in order to satisfy an
   // allocation request of the indicated size.  Concurrent allocations and
   // resizes may change the result of a later call.  Used by oldgen allocator.
-  // precondition: holding ExpandHeap_lock
+  // precondition: holding PSOldGenExpand_lock
   bool needs_expand(size_t word_size) const;
 
   // Iteration.

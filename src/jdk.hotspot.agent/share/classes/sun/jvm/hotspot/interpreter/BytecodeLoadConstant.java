@@ -147,13 +147,13 @@ public class BytecodeLoadConstant extends Bytecode {
     int cpIndex = poolIndex();
     ConstantTag ctag = cpool.getTagAt(cpIndex);
     if (ctag.isInt()) {
-       return "<int " + Integer.toString(cpool.getIntAt(cpIndex)) +">";
+       return "<int " + cpool.getIntAt(cpIndex) +">";
     } else if (ctag.isLong()) {
-       return "<long " + Long.toString(cpool.getLongAt(cpIndex)) + "L>";
+       return "<long " + cpool.getLongAt(cpIndex) + "L>";
     } else if (ctag.isFloat()) {
-       return "<float " + Float.toString(cpool.getFloatAt(cpIndex)) + "F>";
+       return "<float " + cpool.getFloatAt(cpIndex) + "F>";
     } else if (ctag.isDouble()) {
-       return "<double " + Double.toString(cpool.getDoubleAt(cpIndex)) + "D>";
+       return "<double " + cpool.getDoubleAt(cpIndex) + "D>";
     } else if (ctag.isString()) {
        // tag change from 'unresolved' to 'string' does not happen atomically.
        // We just look at the object at the corresponding index and
@@ -178,8 +178,8 @@ public class BytecodeLoadConstant extends Bytecode {
        Oop x = getCachedConstant();
        int refidx = cpool.getMethodHandleIndexAt(cpIndex);
        int refkind = cpool.getMethodHandleRefKindAt(cpIndex);
-       return "<MethodHandle kind=" + Integer.toString(refkind) +
-           " ref=" + Integer.toString(refidx)
+       return "<MethodHandle kind=" + refkind +
+           " ref=" + refidx
            + (x == null ? "" : " @" + x.getHandle()) + ">";
     } else if (ctag.isMethodType()) {
        Oop x = getCachedConstant();

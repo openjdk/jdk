@@ -67,15 +67,17 @@ JVM_CFLAGS_TARGET_DEFINES += \
     #
 
 ifeq ($(DEBUG_LEVEL), release)
+  # release builds disable uses of assert macro from <assert.h>.
+  JVM_CFLAGS_DEBUGLEVEL := -DNDEBUG
   # For hotspot, release builds differ internally between "optimized" and "product"
   # in that "optimize" does not define PRODUCT.
   ifneq ($(HOTSPOT_DEBUG_LEVEL), optimized)
-    JVM_CFLAGS_DEBUGLEVEL := -DPRODUCT
+    JVM_CFLAGS_DEBUGLEVEL += -DPRODUCT
   endif
 else ifeq ($(DEBUG_LEVEL), fastdebug)
   JVM_CFLAGS_DEBUGLEVEL := -DASSERT
-  ifeq ($(call isTargetOs, windows aix), false)
-    # NOTE: Old build did not define CHECK_UNHANDLED_OOPS on Windows and AIX.
+  ifeq ($(call isTargetOs, aix), false)
+    # NOTE: Old build did not define CHECK_UNHANDLED_OOPS on AIX.
     JVM_CFLAGS_DEBUGLEVEL += -DCHECK_UNHANDLED_OOPS
   endif
 else ifeq ($(DEBUG_LEVEL), slowdebug)

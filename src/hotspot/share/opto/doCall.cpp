@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,10 @@
 #include "opto/subnode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
@@ -58,7 +62,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
     stringStream ss;
     prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.as_string());
+    out->print("%s", ss.freeze());
     out->cr();
   }
 }
@@ -67,13 +71,17 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor, ciKlass* speculative_receiver_type,
                                        bool allow_intrinsics) {
-  ciMethod*       caller   = jvms->method();
-  int             bci      = jvms->bci();
-  Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
-  guarantee(callee != NULL, "failed method resolution");
+  assert(callee != NULL, "failed method resolution");
+
+  ciMethod*       caller      = jvms->method();
+  int             bci         = jvms->bci();
+  Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
+  ciMethod*       orig_callee = caller->get_method_at_bci(bci);
 
   const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
-                                       (bytecode == Bytecodes::_invokeinterface);
+                                       (bytecode == Bytecodes::_invokeinterface) ||
+                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual) ||
+                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -164,7 +172,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      bool should_delay = false;
+      bool should_delay = AlwaysIncrementalInline;
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
         // For optimized virtual calls assert at runtime that receiver object
@@ -189,7 +197,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
-          } else if ((should_delay || AlwaysIncrementalInline)) {
+          } else if (should_delay) {
             return CallGenerator::for_late_inline(callee, cg);
           } else {
             return cg;
@@ -328,8 +336,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
               Deoptimization::Reason_class_check, Deoptimization::Action_none);
 
-          CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
+          ciKlass* constraint = (holder->is_subclass_of(singleton) ? holder : singleton); // avoid upcasts
+          CallGenerator* cg = CallGenerator::for_guarded_call(constraint, miss_cg, hit_cg);
           if (hit_cg != NULL && cg != NULL) {
+            dependencies()->assert_unique_implementor(declared_interface, singleton);
             dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
             return cg;
           }
@@ -505,6 +515,7 @@ void Parse::do_call() {
   ciKlass*         holder       = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != NULL, "cannot be null");
+  JFR_ONLY(Jfr::on_resolution(this, holder, orig_callee);)
 
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
@@ -586,7 +597,7 @@ void Parse::do_call() {
 
   if (receiver_constraint != NULL) {
     Node* receiver_node = stack(sp() - nargs);
-    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint));
+    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = NULL;
     Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
     if (bad_type_ctrl != NULL) {
@@ -848,7 +859,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
         method()->print_name(); tty->cr();
       } else if (PrintOpto && (Verbose || WizardMode)) {
         tty->print("Bailing out on unloaded exception type ");
-        extype->klass()->print_name();
+        extype->instance_klass()->print_name();
         tty->print(" at bci:%d in ", bci());
         method()->print_name(); tty->cr();
       }
@@ -858,7 +869,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
       push_ex_oop(ex_oop);
       uncommon_trap(Deoptimization::Reason_unloaded,
                     Deoptimization::Action_reinterpret,
-                    extype->klass(), "!loaded exception");
+                    extype->instance_klass(), "!loaded exception");
       set_bci(iter().cur_bci()); // put it back
       continue;
     }
@@ -883,7 +894,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.
 // Case 2: we have some handlers, with loaded exception klasses that have
-// no subklasses.  We do a Deutsch-Shiffman style type-check on the incoming
+// no subklasses.  We do a Deutsch-Schiffman style type-check on the incoming
 // exception oop and branch to the handler directly.
 // Case 3: We have some handlers with subklasses or are not loaded at
 // compile-time.  We have to call the runtime to resolve the exception.
@@ -905,7 +916,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
   // determine potential exception handlers
   ciExceptionHandlerStream handlers(method(), bci(),
-                                    ex_type->klass()->as_instance_klass(),
+                                    ex_type->instance_klass(),
                                     ex_type->klass_is_exact());
 
   // Start executing from the given throw state.  (Keep its stack, for now.)
@@ -937,8 +948,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
         Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
-      _gvn.set_type(ex_klass_node, TypeInstKlassPtr::OBJECT);
-
+      ex_klass_node = _gvn.transform(ex_klass_node);
     }
   }
 
@@ -1127,7 +1137,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     return NULL;
   }
 
-  ciInstanceKlass* receiver_klass = receiver_type->klass()->as_instance_klass();
+  ciInstanceKlass* receiver_klass = receiver_type->is_instptr()->instance_klass();
   if (receiver_klass->is_loaded() && receiver_klass->is_initialized() && !receiver_klass->is_interface() &&
       (receiver_klass == actual_receiver || receiver_klass->is_subtype_of(actual_receiver))) {
     // ikl is a same or better type than the original actual_receiver,

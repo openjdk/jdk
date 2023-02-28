@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,11 +200,17 @@ final class ZipPath implements Path {
             return new URI("jar",
                            decodeUri(zfs.getZipFile().toUri().toString()) +
                            "!" +
-                           zfs.getString(toAbsolutePath().path),
+                           getRealPath(),
                            null);
         } catch (Exception ex) {
             throw new AssertionError(ex);
         }
+    }
+
+    private String getRealPath() {
+        byte[] resolvedPath = getResolvedPath();
+        byte[] realPath = zfs.lookupPath(resolvedPath);
+        return zfs.getString(realPath != null ? realPath : resolvedPath);
     }
 
     private boolean equalsNameAt(ZipPath other, int index) {
@@ -323,9 +329,8 @@ final class ZipPath implements Path {
     @Override
     public boolean startsWith(Path other) {
         Objects.requireNonNull(other, "other");
-        if (!(other instanceof ZipPath))
+        if (!(other instanceof final ZipPath o))
             return false;
-        final ZipPath o = (ZipPath)other;
         if (o.isAbsolute() != this.isAbsolute() ||
             o.path.length > this.path.length)
             return false;
@@ -343,9 +348,8 @@ final class ZipPath implements Path {
     @Override
     public boolean endsWith(Path other) {
         Objects.requireNonNull(other, "other");
-        if (!(other instanceof ZipPath))
+        if (!(other instanceof final ZipPath o))
             return false;
-        final ZipPath o = (ZipPath)other;
         int olast = o.path.length - 1;
         if (olast > 0 && o.path[olast] == '/')
             olast--;
@@ -376,17 +380,17 @@ final class ZipPath implements Path {
     }
 
     @Override
-    public final Path resolveSibling(String other) {
+    public Path resolveSibling(String other) {
         return resolveSibling(zfs.getPath(other));
     }
 
     @Override
-    public final boolean startsWith(String other) {
+    public boolean startsWith(String other) {
         return startsWith(zfs.getPath(other));
     }
 
     @Override
-    public final boolean endsWith(String other) {
+    public boolean endsWith(String other) {
         return endsWith(zfs.getPath(other));
     }
 
@@ -461,7 +465,7 @@ final class ZipPath implements Path {
         return resolved;
     }
 
-    // removes redundant slashs, replace "\" to zip separator "/"
+    // removes redundant slashes, replace "\" to zip separator "/"
     // and check for invalid characters
     private byte[] normalize(byte[] path) {
         int len = path.length;
@@ -665,7 +669,7 @@ final class ZipPath implements Path {
     }
 
     @Override
-    public final File toFile() {
+    public File toFile() {
         throw new UnsupportedOperationException();
     }
 
@@ -740,11 +744,9 @@ final class ZipPath implements Path {
 
     InputStream newInputStream(OpenOption... options) throws IOException
     {
-        if (options.length > 0) {
-            for (OpenOption opt : options) {
-                if (opt != READ)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
+        for (OpenOption opt : options) {
+            if (opt != READ)
+                throw new UnsupportedOperationException("'" + opt + "' not allowed");
         }
         return zfs.newInputStream(getResolvedPath());
     }
@@ -838,6 +840,10 @@ final class ZipPath implements Path {
         return getFileAttributeView(view).readAttributes(attrs);
     }
 
+    ZipFileAttributes readAttributesIfExists() throws IOException {
+        return zfs.getFileAttributes(getResolvedPath());
+    }
+
     FileStore getFileStore() throws IOException {
         // each ZipFileSystem only has one root (as requested for now)
         if (exists())
@@ -895,7 +901,7 @@ final class ZipPath implements Path {
         }
     }
 
-    private boolean exists() {
+    boolean exists() {
         return zfs.exists(getResolvedPath());
     }
 

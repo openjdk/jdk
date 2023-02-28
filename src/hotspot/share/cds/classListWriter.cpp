@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -33,13 +34,13 @@
 #include "oops/instanceKlass.hpp"
 #include "runtime/mutexLocker.hpp"
 
-fileStream* ClassListWriter::_classlist_file = NULL;
+fileStream* ClassListWriter::_classlist_file = nullptr;
 
 void ClassListWriter::init() {
   // For -XX:DumpLoadedClassList=<file> option
-  if (DumpLoadedClassList != NULL) {
-    const char* list_name = make_log_name(DumpLoadedClassList, NULL);
-    _classlist_file = new(ResourceObj::C_HEAP, mtInternal)
+  if (DumpLoadedClassList != nullptr) {
+    const char* list_name = make_log_name(DumpLoadedClassList, nullptr);
+    _classlist_file = new(mtInternal)
                          fileStream(list_name);
     _classlist_file->print_cr("# NOTE: Do not modify this file.");
     _classlist_file->print_cr("#");
@@ -55,7 +56,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
 
   if (!ClassLoader::has_jrt_entry()) {
     warning("DumpLoadedClassList and CDS are not supported in exploded build");
-    DumpLoadedClassList = NULL;
+    DumpLoadedClassList = nullptr;
     return;
   }
 
@@ -66,15 +67,15 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
 class ClassListWriter::IDTable : public ResourceHashtable<
   const InstanceKlass*, int,
   15889, // prime number
-  ResourceObj::C_HEAP> {};
+  AnyObj::C_HEAP> {};
 
-ClassListWriter::IDTable* ClassListWriter::_id_table = NULL;
+ClassListWriter::IDTable* ClassListWriter::_id_table = nullptr;
 int ClassListWriter::_total_ids = 0;
 
 int ClassListWriter::get_id(const InstanceKlass* k) {
   assert_locked();
-  if (_id_table == NULL) {
-    _id_table = new (ResourceObj::C_HEAP, mtClass)IDTable();
+  if (_id_table == nullptr) {
+    _id_table = new (mtClass)IDTable();
   }
   bool created;
   int* v = _id_table->put_if_absent(k, &created);
@@ -86,8 +87,8 @@ int ClassListWriter::get_id(const InstanceKlass* k) {
 
 bool ClassListWriter::has_id(const InstanceKlass* k) {
   assert_locked();
-  if (_id_table != NULL) {
-    return _id_table->get(k) != NULL;
+  if (_id_table != nullptr) {
+    return _id_table->get(k) != nullptr;
   } else {
     return false;
   }
@@ -95,17 +96,28 @@ bool ClassListWriter::has_id(const InstanceKlass* k) {
 
 void ClassListWriter::handle_class_unloading(const InstanceKlass* klass) {
   assert_locked();
-  if (_id_table != NULL) {
+  if (_id_table != nullptr) {
     _id_table->remove(klass);
   }
 }
 
 void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs) {
   assert_locked();
-  ClassLoaderData* loader_data = k->class_loader_data();
 
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
-    if (cfs == NULL || strncmp(cfs->source(), "file:", 5) != 0) {
+  ClassLoaderData* loader_data = k->class_loader_data();
+  bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
+  if (!is_builtin_loader) {
+    // class may be loaded from shared archive
+    if (!k->is_shared()) {
+      if (cfs == nullptr || cfs->source() == nullptr) {
+        // CDS static dump only handles unregistered class with known source.
+        return;
+      }
+      if (strncmp(cfs->source(), "file:", 5) != 0) {
+        return;
+      }
+    } else {
+      // Shared unregistered classes are skipped since their real source are not recorded in shared space.
       return;
     }
     if (!SystemDictionaryShared::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
@@ -113,10 +125,14 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
     }
   }
 
+  // filter out java/lang/invoke/BoundMethodHandle$Species...
+  if (cfs != nullptr && cfs->source() != nullptr && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
+    return;
+  }
 
   {
     InstanceKlass* super = k->java_super();
-    if (super != NULL && !has_id(super)) {
+    if (super != nullptr && !has_id(super)) {
       return;
     }
 
@@ -140,9 +156,9 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
 
   ResourceMark rm;
   stream->print("%s id: %d", k->name()->as_C_string(), get_id(k));
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
+  if (!is_builtin_loader) {
     InstanceKlass* super = k->java_super();
-    assert(super != NULL, "must be");
+    assert(super != nullptr, "must be");
     stream->print(" super: %d", get_id(super));
 
     Array<InstanceKlass*>* interfaces = k->local_interfaces();
@@ -169,7 +185,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
 }
 
 void ClassListWriter::delete_classlist() {
-  if (_classlist_file != NULL) {
+  if (_classlist_file != nullptr) {
     delete _classlist_file;
   }
 }

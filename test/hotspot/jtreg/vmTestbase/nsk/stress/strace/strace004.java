@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,43 +40,6 @@
  *       method.
  *     This test is almost the same as nsk.stress.strace.strace003 except for
  *     checking is performed for java.lang.Thread.getAllStackTraces() method.
- * COMMENTS
- * java.lang.Thread.getAllStackTraces() is too slow method. So it is not successed
- * to catch an alive thread during execution of this method for the first snapshot
- * and it is needed to check on a promoted build due to the below assertion.
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- * waiting for all threads started ...
- * >>> snapshot 1
- * waiting for threads finished
- * # To suppress the following error report, specify this argument
- * # after -XX: or in .hotspotrc:  SuppressErrorAt=/jniHandles.hpp:157
- * #
- * # HotSpot Virtual Machine Error, assertion failure
- * # Please report this error at
- * # http://java.sun.com/cgi-bin/bugreport.cgi
- * #
- * # Java VM: Java HotSpot(TM) Client VM (1.4.1-internal-debug mixed mode)
- * #
- * # assert(result != ((oop)::badJNIHandleVal), "Pointing to zapped jni handle area")
- * #
- * # Error ID: src/share/vm/runtime/jniHandles.hpp, 157 [ Patched ]
- * #
- * # Problematic Thread: prio=5 tid=0x001976e0 nid=0x96 runnable
- * #
- * Heap at VM Abort:
- * Heap
- *  def new generation   total 2112K, used 455K [0xf1800000, 0xf1a20000, 0xf1f10000)
- *   eden space 2048K,  22% used [0xf1800000, 0xf1871f60, 0xf1a00000)
- *   from space 64K,   0% used [0xf1a00000, 0xf1a00000, 0xf1a10000)
- *   to   space 64K,   0% used [0xf1a10000, 0xf1a10000, 0xf1a20000)
- *  tenured generation   total 1408K, used 0K [0xf1f10000, 0xf2070000, 0xf5800000)
- *    the space 1408K,   0% used [0xf1f10000, 0xf1f10000, 0xf1f10200, 0xf2070000)
- *  compacting perm gen  total 4096K, used 1025K [0xf5800000, 0xf5c00000, 0xf9800000)
- *    the space 4096K,  25% used [0xf5800000, 0xf5900660, 0xf5900800, 0xf5c00000)
- * Dumping core....
- * Abort
- * Finished at: Fri Apr 25 18:01:37 NSK 2003
- *
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native nsk.stress.strace.strace004
@@ -96,26 +59,13 @@ import java.util.Map;
  * <p>
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace004Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>EXPECTED_METHODS</code> array.</p>
- * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
+ * correct stack frames. </p>
  */
-public class strace004 {
+public class strace004 extends StraceBase {
 
     static final int DEPTH = 100;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.ThreadGroup.remove",
-            "java.lang.ThreadGroup.threadTerminated",
-            "nsk.stress.strace.strace004Thread.run",
-            "nsk.stress.strace.strace004Thread.recursiveMethod"
-    };
-
 
     static volatile boolean isLocked = false;
     static PrintStream out;
@@ -255,15 +205,6 @@ public class strace004 {
             }
         }
         return res;
-    }
-
-    boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
-                return true;
-        }
-        return false;
     }
 
     void finishThreads() {

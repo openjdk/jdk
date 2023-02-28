@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7119644
  * @summary Increase superword's vector size up to 256 bits
- *
+ * @library /test/lib
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *    -XX:-TieredCompilation -XX:-OptimizeFill
  *    compiler.codegen.TestLongFloatVect
  */
 
 package compiler.codegen;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestLongFloatVect {
   private static final int ARRLEN = 997;
@@ -40,6 +44,40 @@ public class TestLongFloatVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+
+  private static float[] fspecial = {
+    1.0f,
+    -1.0f,
+    0.0f,
+    -0.0f,
+    Float.MAX_VALUE,
+    Float.MIN_VALUE,
+    -Float.MAX_VALUE,
+    -Float.MIN_VALUE,
+    Float.NaN,
+    Float.POSITIVE_INFINITY,
+    Float.NEGATIVE_INFINITY,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    Long.MAX_VALUE,
+    Long.MIN_VALUE,
+    -Long.MAX_VALUE,
+    -Long.MIN_VALUE
+  };
+
+  private static long[] lspecial = {
+    0,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    Long.MAX_VALUE,
+    Long.MIN_VALUE,
+    -Long.MAX_VALUE,
+    -Long.MIN_VALUE
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Long + Float vectors");
@@ -75,6 +113,8 @@ public class TestLongFloatVect {
       test_vi_unaln(a1, b1, (long)123, 103.f);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_l2f(a1, b1);
+      test_conv_f2l(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +378,41 @@ public class TestLongFloatVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (long)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (float)v);
       }
+      for (int j = 0; j < lspecial.length; j++) {
+        long longValue = lspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = longValue;
+        }
+        test_conv_l2f(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_l2f: b1", i, b1[i], (float)longValue);
+        }
+      }
+      for (int j = 0; j < fspecial.length; j++) {
+        float floatValue = fspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          b1[i] = floatValue;
+        }
+        test_conv_f2l(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_f2l: a1", i, a1[i], (long)floatValue);
+        }
+      }
+      Random r = Utils.getRandomInstance();
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = r.nextLong();
+      }
+      test_conv_l2f(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_l2f: b1", i, b1[i], (float)a1[i]);
+      }
+      for (int i = 0; i < ARRLEN; i++) {
+        b1[i] = r.nextFloat();
+      }
+      test_conv_f2l(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_f2l: a1", i, a1[i], (long)b1[i]);
+      }
 
     }
 
@@ -448,6 +523,18 @@ public class TestLongFloatVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_f2l(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_f2l: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_l2f(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_l2f: " + (end - start));
     return errn;
   }
 
@@ -556,6 +643,16 @@ public class TestLongFloatVect {
       c[i] = d[i+UNALIGN_OFF];
     }
   }
+  static void test_conv_l2f(long[] a, float[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (float)a[i];
+    }
+  }
+  static void test_conv_f2l(long[] a, float[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (long)b[i];
+    }
+  }
 
   static int verify(String text, int i, long elem, long val) {
     if (elem != val) {
@@ -565,7 +662,7 @@ public class TestLongFloatVect {
     return 0;
   }
   static int verify(String text, int i, float elem, float val) {
-    if (elem != val) {
+    if (elem != val && !(Float.isNaN(elem) && Float.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,7 @@ static JLI_List expandArgFile(const char *arg) {
     struct stat st;
     FILE *fptr = fopen(arg, "r");
 
-    /* arg file cannot be openned */
+    /* arg file cannot be opened */
     if (fptr == NULL || fstat(fileno(fptr), &st) != 0) {
         JLI_ReportMessage(CFG_ERROR6, arg);
         exit(1);
@@ -379,7 +379,7 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* error occurred reading the file */
     if (rv == NULL) {
-        JLI_ReportMessage(DLL_ERROR4, arg);
+        JLI_ReportMessage(ARG_ERROR18, arg);
         exit(1);
     }
     fclose(fptr);

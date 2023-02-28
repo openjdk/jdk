@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
     ULONG len;
     int try;
 
+    *adapters = NULL;
+
     adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
     if (adapterInfo == NULL) {
         JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
@@ -110,27 +112,29 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
 
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
-        if (ret == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_INSUFFICIENT_BUFFER");
-        } else if (ret == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_ADDRESS_NOT_ASSOCIATED");
-        } else {
-            char error_msg_buf[100];
-            int _sr;
-            _sr = _snprintf_s(error_msg_buf, sizeof(error_msg_buf),
-                _TRUNCATE, "IP Helper Library GetAdaptersAddresses "
-                            "function failed with error == %d", ret);
-            if (_sr != -1) {
-                JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
-            } else {
-                JNU_ThrowByName(env, "java/lang/Error",
-                    "IP Helper Library GetAdaptersAddresses function failure");
-            }
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "invalid parameter");
+                break;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                JNU_ThrowOutOfMemoryError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "not enough memory");
+                break;
+            case ERROR_NO_DATA:
+                // not an error
+                *adapters = NULL;
+                return ERROR_SUCCESS;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetAdaptersAddresses function failed");
+                break;
         }
+
         return -1;
     }
     *adapters = adapterInfo;
@@ -179,26 +183,26 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
 
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
-        if (val == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_INSUFFICIENT_BUFFER");
-        } else if (val == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_ADDRESS_NOT_ASSOCIATED");
-        } else {
-            char error_msg_buf[100];
-            int _sr;
-            _sr = _snprintf_s(error_msg_buf, sizeof(error_msg_buf),
-                _TRUNCATE, "IP Helper Library GetAdaptersAddresses function failed "
-                           "with error == %d", val);
-            if (_sr != -1) {
-                JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
-            } else {
-                JNU_ThrowByName(env, "java/lang/Error",
-                    "IP Helper Library GetAdaptersAddresses function failure");
-            }
+        switch (val) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "invalid parameter");
+                break;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                JNU_ThrowOutOfMemoryError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "not enough memory");
+                break;
+            case ERROR_NO_DATA:
+                // not an error
+                break;
+            default:
+                SetLastError(val);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetAdaptersAddresses function failed");
+                break;
         }
         return NULL;
     }
@@ -231,32 +235,25 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     return ret;
 }
 
-static int ipinflen = 2048;
-
 /*
  */
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
-    DWORD ret, flags;
+    int ret, flags;
     MIB_IPADDRTABLE *tableP;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
-    ULONG len=ipinflen, count=0;
+    ULONG count=0;
     netif *nif=NULL, *dup_nif, *last=NULL, *loopif=NULL, *curr;
     int tun=0, net=0;
 
-    *netifPP = NULL;
    /*
     * Get the IPv4 interfaces. This information is the same
     * as what previous JDK versions would return.
     */
 
     ret = enumInterfaces(env, netifPP);
-    if (ret == -1) {
+    if (ret < 0) {
         return -1;
-    } else if( ret == -2){
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
     } else {
         count = ret;
     }
@@ -272,20 +269,23 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     // Retrieve IPv4 addresses with the IP Helper API
     curr = *netifPP;
     ret = lookupIPAddrTable(env, &tableP);
-    if (ret < 0) {
+    if (ret == -1) {
+      free_netif(*netifPP);
       return -1;
+    } else if (ret == -2) {
+        // Clear the exception and continue.
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        tableP = NULL;
     }
     while (curr != NULL) {
         netaddr *netaddrP;
         ret = enumAddresses_win_ipaddrtable(env, curr, &netaddrP, tableP);
-        if (ret == -1) {
+        if (ret < 0) {
+            free_netif(*netifPP);
             free(tableP);
             return -1;
-        } else if (ret == -2) {
-            if ((*env)->ExceptionCheck(env)) {
-                (*env)->ExceptionClear(env);
-            }
-            break;
         } else{
             curr->addrs = netaddrP;
             curr->naddrs += ret;
@@ -299,7 +299,8 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = getAdapters (env, flags, &adapters);
     if (ret != ERROR_SUCCESS) {
-        goto err;
+        free_netif(*netifPP);
+        return -1;
     }
 
     /* Now get the IPv6 information. This includes:
@@ -338,6 +339,9 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                          */
                         nif->ipv6Index = ptr->Ipv6IfIndex;
                         c = getAddrsFromAdapter(ptr, &nif->addrs);
+                        if (c == -1) {
+                            goto err;
+                        }
                         nif->naddrs += c;
                         break;
                     }
@@ -376,6 +380,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                         nif->name = malloc (strlen(newname)+1);
                         nif->displayName = malloc (wcslen(ptr->FriendlyName)*2+2);
                         if (nif->name == 0 || nif->displayName == 0) {
+                                free(nif);
                                 goto err;
                         }
                         strcpy (nif->name, newname);
@@ -388,7 +393,11 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                         nif->ipv6Index = ptr->Ipv6IfIndex;
                         nif->hasIpv6Address = TRUE;
 
-                        last->next = nif;
+                        if (last) {
+                                last->next = nif;
+                        } else {
+                                *netifPP = nif;
+                        }
                         last = nif;
                         count++;
                         c = getAddrsFromAdapter(ptr, &nif->addrs);
@@ -567,7 +576,9 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
         return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_nameID, name);
+    (*env)->DeleteLocalRef(env, name);
     (*env)->SetObjectField(env, netifObj, ni_displayNameID, displayName);
+    (*env)->DeleteLocalRef(env, displayName);
     (*env)->SetIntField(env, netifObj, ni_indexID, ifs->index);
     /*
      * Get the IP addresses for this interface if necessary
@@ -583,6 +594,8 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionClear(env);
             }
+            netaddrCount = 0;
+            netaddrPToFree = NULL;
         }
         netaddrP = netaddrPToFree;
     }
@@ -635,8 +648,10 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
                 return NULL;
             }
             (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
+            (*env)->DeleteLocalRef(env, ia2Obj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+            (*env)->DeleteLocalRef(env, ibObj);
         } else /* AF_INET6 */ {
             int scope;
             jboolean ret;
@@ -663,13 +678,17 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+            (*env)->DeleteLocalRef(env, ibObj);
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
+        (*env)->DeleteLocalRef(env, iaObj);
         addrs = addrs->next;
         addr_index++;
     }
     (*env)->SetObjectField(env, netifObj, ni_addrsID, addrArr);
+    (*env)->DeleteLocalRef(env, addrArr);
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
+    (*env)->DeleteLocalRef(env, bindsArr);
 
     free_netaddr(netaddrPToFree);
 
@@ -682,6 +701,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
       return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_childsID, childArr);
+    (*env)->DeleteLocalRef(env, childArr);
 
     /* return the NetworkInterface */
     return netifObj;
@@ -824,7 +844,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll_XP
     (JNIEnv *env, jclass cls)
 {
     int count;
-    netif *ifList = NULL, *curr;
+    netif *ifList, *curr;
     jobjectArray netIFArr;
     jint arr_index;
 
@@ -860,6 +880,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll_XP
 
         /* put the NetworkInterface into the array */
         (*env)->SetObjectArrayElement(env, netIFArr, arr_index++, netifObj);
+        (*env)->DeleteLocalRef(env, netifObj);
         curr = curr->next;
     }
 

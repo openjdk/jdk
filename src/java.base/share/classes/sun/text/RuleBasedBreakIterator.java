@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import sun.text.SupplementaryCharacterData;
  * expression defines a set of characters (the &quot;<em>ignore characters</em>&quot;) that
  * will be transparent to the BreakIterator.&nbsp; A sequence of characters will break the
  * same way it would if any ignore characters it contains are taken out.&nbsp; Break
- * positions never occur befoer ignore characters.</p>
+ * positions never occur before ignore characters.</p>
  *
  * <p>A regular expression uses a subset of the normal Unix regular-expression syntax, and
  * defines a sequence of characters to be kept together. With one significant exception, the
@@ -151,7 +151,7 @@ import sun.text.SupplementaryCharacterData;
  *       <td width="94%">If ! appears at the beginning of a regular expression, it tells the regexp
  *       parser that this expression specifies the backwards-iteration behavior of the iterator,
  *       and not its normal iteration behavior.&nbsp; This is generally only used in situations
- *       where the automatically-generated backwards-iteration brhavior doesn't produce
+ *       where the automatically-generated backwards-iteration behavior doesn't produce
  *       satisfactory results and must be supplemented with extra client-specified rules.</td>
  *     </tr>
  *     <tr>

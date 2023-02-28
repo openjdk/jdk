@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.jvm.hotspot.utilities;
 import java.io.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.shared.OopStorage;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
@@ -127,7 +126,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         }
     }
 
-    abstract protected int calculateOopDumpRecordSize(Oop oop) throws IOException;
+    protected abstract int calculateOopDumpRecordSize(Oop oop) throws IOException;
 
     protected void writeJavaThreads() throws IOException {
         Threads threads = VM.getVM().getThreads();
@@ -431,14 +430,14 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
     // HeapVisitor, OopVisitor methods can't throw any non-runtime
     // exception. But, derived class write methods (which are called
     // from visitor callbacks) may throw IOException. Hence, we throw
-    // RuntimeException with origianal IOException as cause from the
+    // RuntimeException with original IOException as cause from the
     // visitor methods. This method gets back the original IOException
     // (if any) and re-throws the same.
     protected void handleRuntimeException(RuntimeException re)
         throws IOException {
         Throwable cause = re.getCause();
-        if (cause != null && cause instanceof IOException) {
-            throw (IOException) cause;
+        if (cause instanceof IOException io) {
+            throw io;
         } else {
             // some other RuntimeException, just re-throw
             throw re;

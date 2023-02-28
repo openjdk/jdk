@@ -45,7 +45,7 @@ public class AnsiWriter extends FilterWriter {
         super(out);
     }
 
-    private final static int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
+    private static final int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
     private final char[] buffer = new char[MAX_ESCAPE_SEQUENCE_LENGTH];
     private int pos = 0;
     private int startOfValue;

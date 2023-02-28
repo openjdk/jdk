@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
 
-import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.util.HashSet;
@@ -51,6 +50,9 @@ import java.util.Set;
  * @author Josh Bloch
  */
 public final class StackTraceElement implements java.io.Serializable {
+
+    private static final String NATIVE_METHOD = "Native Method";
+    private static final String UNKNOWN_SOURCE = "Unknown Source";
 
     // For Throwables and StackWalker, the VM initially sets this field to a
     // reference to the declaring Class.  The Class reference is used to
@@ -355,27 +357,50 @@ public final class StackTraceElement implements java.io.Serializable {
      * @revised 9
      * @see    Throwable#printStackTrace()
      */
+    @Override
     public String toString() {
-        String s = "";
-        if (!dropClassLoaderName() && classLoaderName != null &&
-                !classLoaderName.isEmpty()) {
-            s += classLoaderName + "/";
-        }
-        if (moduleName != null && !moduleName.isEmpty()) {
-            s += moduleName;
+        int estimatedLength = length(classLoaderName) + 1
+                + length(moduleName) + 1
+                + length(moduleVersion) + 1
+                + declaringClass.length() + 1
+                + methodName.length() + 1
+                + Math.max(UNKNOWN_SOURCE.length(), length(fileName)) + 1
+                + 12;
 
-            if (!dropModuleVersion() && moduleVersion != null &&
-                    !moduleVersion.isEmpty()) {
-                s += "@" + moduleVersion;
+        StringBuilder sb = new StringBuilder(estimatedLength);
+        if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
+            sb.append(classLoaderName).append('/');
+        }
+
+        if (moduleName != null && !moduleName.isEmpty()) {
+            sb.append(moduleName);
+            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
+                sb.append('@').append(moduleVersion);
             }
         }
-        s = s.isEmpty() ? declaringClass : s + "/" + declaringClass;
 
-        return s + "." + methodName + "(" +
-             (isNativeMethod() ? "Native Method)" :
-              (fileName != null && lineNumber >= 0 ?
-               fileName + ":" + lineNumber + ")" :
-                (fileName != null ?  ""+fileName+")" : "Unknown Source)")));
+        if (sb.length() > 0) {
+            sb.append('/');
+        }
+
+        sb.append(declaringClass).append('.').append(methodName).append('(');
+        if (isNativeMethod()) {
+            sb.append(NATIVE_METHOD);
+        } else if (fileName == null) {
+            sb.append(UNKNOWN_SOURCE);
+        } else {
+            sb.append(fileName);
+            if (lineNumber >= 0) {
+                sb.append(':').append(lineNumber);
+            }
+        }
+        sb.append(')');
+
+        return sb.toString();
+    }
+
+    private static int length(String s) {
+        return (s == null) ? 0 : s.length();
     }
 
     /**
@@ -443,7 +468,7 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     private synchronized void computeFormat() {
         try {
-            Class<?> cls = (Class<?>) declaringClassObject;
+            Class<?> cls = declaringClassObject;
             ClassLoader loader = cls.getClassLoader0();
             Module m = cls.getModule();
             byte bits = 0;
@@ -529,22 +554,17 @@ public final class StackTraceElement implements java.io.Serializable {
 
     /*
      * Returns an array of StackTraceElements of the given depth
-     * filled from the backtrace of a given Throwable.
+     * filled from the given backtrace.
      */
-    static StackTraceElement[] of(Throwable x, int depth) {
+    static StackTraceElement[] of(Object x, int depth) {
         StackTraceElement[] stackTrace = new StackTraceElement[depth];
         for (int i = 0; i < depth; i++) {
             stackTrace[i] = new StackTraceElement();
         }
 
         // VM to fill in StackTraceElement
-        initStackTraceElements(stackTrace, x);
-
-        // ensure the proper StackTraceElement initialization
-        for (StackTraceElement ste : stackTrace) {
-            ste.computeFormat();
-        }
-        return stackTrace;
+        initStackTraceElements(stackTrace, x, depth);
+        return of(stackTrace);
     }
 
     /*
@@ -558,12 +578,20 @@ public final class StackTraceElement implements java.io.Serializable {
         return ste;
     }
 
+    static StackTraceElement[] of(StackTraceElement[] stackTrace) {
+        // ensure the proper StackTraceElement initialization
+        for (StackTraceElement ste : stackTrace) {
+            ste.computeFormat();
+        }
+        return stackTrace;
+    }
+
     /*
      * Sets the given stack trace elements with the backtrace
      * of the given Throwable.
      */
     private static native void initStackTraceElements(StackTraceElement[] elements,
-                                                      Throwable x);
+                                                      Object x, int depth);
     /*
      * Sets the given stack trace element with the given StackFrameInfo
      */

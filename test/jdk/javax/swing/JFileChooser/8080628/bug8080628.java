@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,17 @@ public class bug8080628 {
     };
 
     public static final Locale[] LOCALES = new Locale[] {
-            new Locale("en"),
-            new Locale("de"),
-            new Locale("es"),
-            new Locale("fr"),
-            new Locale("it"),
-            new Locale("ja"),
-            new Locale("ko"),
-            new Locale("pt", "BR"),
-            new Locale("sv"),
-            new Locale("zh", "CN"),
-            new Locale("zh", "TW")
+            Locale.of("en"),
+            Locale.of("de"),
+            Locale.of("es"),
+            Locale.of("fr"),
+            Locale.of("it"),
+            Locale.of("ja"),
+            Locale.of("ko"),
+            Locale.of("pt", "BR"),
+            Locale.of("sv"),
+            Locale.of("zh", "CN"),
+            Locale.of("zh", "TW")
     };
 
     private static volatile Exception exception;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.Extension;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
@@ -46,7 +45,6 @@ import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
 import sun.security.util.IOUtils;
-import sun.security.validator.Validator;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.GeneralName;
@@ -59,10 +57,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is a class that checks the revocation status of a certificate(s) using
- * OCSP. It is not a PKIXCertPathChecker and therefore can be used outside of
+ * OCSP. It is not a PKIXCertPathChecker and therefore can be used outside
  * the CertPathValidator framework. It is useful when you want to
  * just check the revocation status of a certificate, and you don't want to
- * incur the overhead of validating all of the certificates in the
+ * incur the overhead of validating all the certificates in the
  * associated certificate chain.
  *
  * @author Sean Mullan
@@ -130,7 +128,7 @@ public final class OCSP {
             }
         }
 
-        OCSPResponse ocspResponse = null;
+        OCSPResponse ocspResponse;
         try {
             byte[] response = getOCSPBytes(certIds, responderURI, extensions);
             ocspResponse = new OCSPResponse(response);
@@ -166,22 +164,27 @@ public final class OCSP {
             List<Extension> extensions) throws IOException {
         OCSPRequest request = new OCSPRequest(certIds, extensions);
         byte[] bytes = request.encodeBytes();
+        String responder = responderURI.toString();
 
         if (debug != null) {
-            debug.println("connecting to OCSP service at: " + responderURI);
+            debug.println("connecting to OCSP service at: " + responder);
         }
         Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check",
-                responderURI.toString());
+                responder);
 
         URL url;
         HttpURLConnection con = null;
         try {
-            String encodedGetReq = responderURI.toString() + "/" +
-                    URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
-                                      UTF_8);
+            StringBuilder encodedGetReq = new StringBuilder(responder);
+            if (!responder.endsWith("/")) {
+                encodedGetReq.append("/");
+            }
+            encodedGetReq.append(URLEncoder.encode(
+                    Base64.getEncoder().encodeToString(bytes), UTF_8));
 
             if (encodedGetReq.length() <= 255) {
-                url = new URL(encodedGetReq);
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL(encodedGetReq.toString());
                 con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);
@@ -203,20 +206,23 @@ public final class OCSP {
                 out.flush();
             }
 
-            // Check the response
-            if (debug != null &&
-                con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                debug.println("Received HTTP error: " + con.getResponseCode()
-                    + " - " + con.getResponseMessage());
+            // Check the response.  Non-200 codes will generate an exception
+            // but path validation may complete successfully if revocation info
+            // can be obtained elsewhere (e.g. CRL).
+            int respCode = con.getResponseCode();
+            if (respCode != HttpURLConnection.HTTP_OK) {
+                String msg = "Received HTTP error: " + respCode + " - " +
+                        con.getResponseMessage();
+                if (debug != null) {
+                    debug.println(msg);
+                }
+                throw new IOException(msg);
             }
 
             int contentLength = con.getContentLength();
-            if (contentLength == -1) {
-                contentLength = Integer.MAX_VALUE;
-            }
-
-            return IOUtils.readExactlyNBytes(con.getInputStream(),
-                    contentLength);
+            return (contentLength == -1) ? con.getInputStream().readAllBytes() :
+                    IOUtils.readExactlyNBytes(con.getInputStream(),
+                            contentLength);
         } finally {
             if (con != null) {
                 con.disconnect();
@@ -269,8 +275,8 @@ public final class OCSP {
     /**
      * The Revocation Status of a certificate.
      */
-    public static interface RevocationStatus {
-        public enum CertStatus { GOOD, REVOKED, UNKNOWN };
+    public interface RevocationStatus {
+        enum CertStatus { GOOD, REVOKED, UNKNOWN }
 
         /**
          * Returns the revocation status.

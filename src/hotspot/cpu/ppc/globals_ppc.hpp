@@ -54,6 +54,8 @@ define_pd_global(intx, StackRedPages,         DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages,      DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 
+define_pd_global(bool,  VMContinuations, AIX_ONLY(false) NOT_AIX(true));
+
 // Use large code-entry alignment.
 define_pd_global(uintx, CodeCacheSegmentSize,  128);
 define_pd_global(intx,  CodeEntryAlignment,    128);

@@ -210,7 +210,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Initialize
 (JNIEnv *env, jobject obj, jobject jInitArgs)
 {
     /*
-     * Initalize Cryptoki
+     * Initialize Cryptoki
      */
     CK_C_INITIALIZE_ARGS_PTR ckpInitArgs;
     CK_RV rv;

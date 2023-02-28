@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * phantom reference always returns {@code null}.
  * The {@link #refersTo(Object) refersTo} method can be used to test
  * whether some object is the referent of a phantom reference.
+ * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
  * @since    1.2
  */
 
-public class PhantomReference<T> extends Reference<T> {
+public non-sealed class PhantomReference<T> extends Reference<T> {
 
     /**
      * Returns this reference object's referent.  Because the referent of a

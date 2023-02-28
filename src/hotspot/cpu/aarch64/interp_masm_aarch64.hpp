@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 typedef ByteSize (*OffsetFunction)(uint);
 
@@ -76,11 +76,37 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ldr(rlocals, Address(rfp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(rlocals, Address(rfp, rlocals, Address::lsl(3)));
   }
 
   void restore_constant_pool_cache() {
     ldr(rcpool, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
   }
+
+  void restore_sp_after_call() {
+    Label L;
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+#ifdef ASSERT
+    cbnz(rscratch1, L);
+    stop("SP is null");
+#endif
+    bind(L);
+    mov(sp, rscratch1);
+  }
+
+  void check_extended_sp(const char* msg = "check extended SP") {
+#ifdef ASSERT
+    Label L;
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    cmp(sp, rscratch1);
+    br(EQ, L);
+    stop(msg);
+    bind(L);
+#endif
+  }
+
+#define check_extended_sp()                                             \
+  check_extended_sp("SP does not match extended SP in frame at " __FILE__ ":" XSTR(__LINE__))
 
   void get_dispatch();
 
@@ -277,7 +303,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Debugging
   // only if +VerifyOops && state == atos
-  void verify_oop(Register reg, TosState state = atos);
+#define interp_verify_oop(reg, state) _interp_verify_oop(reg, state, __FILE__, __LINE__);
+  void _interp_verify_oop(Register reg, TosState state, const char* file, int line);
   // only if +VerifyFPU  && (state == ftos || state == dtos)
   void verify_FPU(int stack_depth, TosState state = ftos);
 

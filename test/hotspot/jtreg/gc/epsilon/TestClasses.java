@@ -40,11 +40,6 @@ package gc.epsilon;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
-import java.util.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.file.*;
-
 public class TestClasses {
 
   static final int CLASSES = 1024;

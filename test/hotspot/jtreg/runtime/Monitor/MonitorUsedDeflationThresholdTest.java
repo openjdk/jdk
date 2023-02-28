@@ -81,6 +81,11 @@ public class MonitorUsedDeflationThresholdTest {
                 // of monitors for threads that call Object.wait().
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:AvgMonitorsPerThreadEstimate=1",
+                // MonitorUsedDeflationThreshold == 10 means we'll request
+                // deflations when 10% of monitors are used rather than the
+                // default 90%. This should allow the test to tolerate a burst
+                // of used monitors by threads not under this test's control.
+                "-XX:MonitorUsedDeflationThreshold=10",
                 // Enable monitorinflation logging so we can see that
                 // MonitorUsedDeflationThreshold and
                 // NoAsyncDeflationProgressMaxoption are working.
@@ -89,8 +94,9 @@ public class MonitorUsedDeflationThresholdTest {
                 "-Xlog:safepoint+cleanup=info",
                 "-Xlog:safepoint+stats=debug",
                 // Run the test with inflate_count == 33 since that
-                // reproduced the bug with JDK13. Anything above the
-                // in_use_list_ceiling will do the trick.
+                // reproduced the bug with JDK13. With inflate_count == 33, an
+                // initial ceiling == 12 and MonitorUsedDeflationThreshold == 10,
+                // we should hit NoAsyncDeflationProgressMax at least 3 times.
                 "MonitorUsedDeflationThresholdTest", "33");
 
             OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
@@ -111,6 +117,8 @@ public class MonitorUsedDeflationThresholdTest {
                 throw new RuntimeException("Did not find too_many string in output.\n");
             }
             System.out.println("too_many='" + too_many + "'");
+            // Uncomment the following line for dumping test output in passing runs:
+            // output_detail.reportDiagnosticSummary();
 
             System.out.println("PASSED.");
             return;

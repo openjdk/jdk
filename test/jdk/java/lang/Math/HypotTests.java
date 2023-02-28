@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @run main HypotTests
  * @bug 4851638 4939441 8078672 8240632
  * @summary Tests for {Math, StrictMath}.hypot (use -Dseed=X to set PRNG seed)
- * @author Joseph D. Darcy
  * @key randomness
  */
 
@@ -50,7 +49,6 @@ public class HypotTests {
         long M = m;
         long N = n;
         long result[] = new long[3];
-
 
         result[0] = Math.abs(M*M - N*N);
         result[1] = Math.abs(2*M*N);
@@ -188,12 +186,10 @@ public class HypotTests {
                                           pcNeighborsStrictHypot[j+1] );
                     }
 
-
                 }
 
             }
         }
-
 
         return failures;
     }
@@ -221,26 +217,22 @@ public class HypotTests {
         // each input negated singly, and both inputs negated.  Also
         // test inputs in reversed order.
 
-        for(int i = -1; i <= 1; i+=2) {
-            for(int j = -1; j <= 1; j+=2) {
+        for(int i = -1; i <= 1; i += 2) {
+            for(int j = -1; j <= 1; j += 2) {
                 double x = i * input1;
                 double y = j * input2;
-                failures += Tests.testUlpDiff("Math.hypot", x, y,
-                                              Math.hypot(x, y), expected, ulps);
-                failures += Tests.testUlpDiff("Math.hypot", y, x,
-                                              Math.hypot(y, x ), expected, ulps);
+                failures += Tests.testUlpDiff("Math.hypot",       x, y, Math::hypot,       expected, ulps);
+                failures += Tests.testUlpDiff("Math.hypot",       y, x, Math::hypot,       expected, ulps);
 
-                failures += Tests.testUlpDiff("StrictMath.hypot", x, y,
-                                              StrictMath.hypot(x, y), expected, ulps);
-                failures += Tests.testUlpDiff("StrictMath.hypot", y, x,
-                                              StrictMath.hypot(y, x), expected, ulps);
+                failures += Tests.testUlpDiff("StrictMath.hypot", x, y, StrictMath::hypot, expected, ulps);
+                failures += Tests.testUlpDiff("StrictMath.hypot", y, x, StrictMath::hypot, expected, ulps);
             }
         }
 
         return failures;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testHypot();
@@ -252,5 +244,4 @@ public class HypotTests {
             throw new RuntimeException();
         }
     }
-
 }

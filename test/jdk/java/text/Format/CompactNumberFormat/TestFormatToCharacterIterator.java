@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
 public class TestFormatToCharacterIterator {
 
     private static final NumberFormat FORMAT_DZ = NumberFormat
-            .getCompactNumberInstance(new Locale("dz"),
+            .getCompactNumberInstance(Locale.of("dz"),
                     NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_EN_US = NumberFormat
@@ -51,7 +51,7 @@ public class TestFormatToCharacterIterator {
                     NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_EN_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("en"),
+            .getCompactNumberInstance(Locale.ENGLISH,
                     NumberFormat.Style.LONG);
 
     @DataProvider(name = "fieldPositions")

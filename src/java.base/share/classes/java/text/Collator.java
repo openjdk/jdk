@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,14 +72,15 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * The following example shows how to compare two strings using
  * the {@code Collator} for the default locale.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * // Compare two strings in the default locale
  * Collator myCollator = Collator.getInstance();
- * if( myCollator.compare("abc", "ABC") < 0 )
+ * if (myCollator.compare("abc", "ABC") < 0) {
  *     System.out.println("abc is less than ABC");
- * else
+ * } else {
  *     System.out.println("abc is greater than or equal to ABC");
- * }</pre>
+ * }
+ * }
  * </blockquote>
  *
  * <p>
@@ -94,14 +95,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * The following shows how both case and accents could be ignored for
  * US English.
  * <blockquote>
- * <pre>
- * //Get the Collator for US English and set its strength to PRIMARY
+ * {@snippet lang=java :
+ * // Get the Collator for US English and set its strength to PRIMARY
  * Collator usCollator = Collator.getInstance(Locale.US);
  * usCollator.setStrength(Collator.PRIMARY);
- * if( usCollator.compare("abc", "ABC") == 0 ) {
+ * if (usCollator.compare("abc", "ABC") == 0) {
  *     System.out.println("Strings are equivalent");
  * }
- * </pre>
+ * }
  * </blockquote>
  * <p>
  * For comparing {@code String}s exactly once, the {@code compare}
@@ -421,8 +422,9 @@ public abstract class Collator
      * The returned array represents the union of locales supported
      * by the Java runtime and by installed
      * {@link java.text.spi.CollatorProvider CollatorProvider} implementations.
-     * It must contain at least a Locale instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code Collator} instances are available.

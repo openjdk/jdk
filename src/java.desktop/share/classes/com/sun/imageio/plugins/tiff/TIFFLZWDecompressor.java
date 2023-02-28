@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.imageio.plugins.tiff;
 import java.io.IOException;
 import javax.imageio.IIOException;
 import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 class TIFFLZWDecompressor extends TIFFDecompressor {
 
@@ -95,9 +96,8 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
         }
 
         stream.seek(offset);
-
-        byte[] sdata = new byte[byteCount];
-        stream.readFully(sdata);
+        byte[] sdata = ReaderUtil.
+            staggeredReadByteStream(stream, byteCount);
 
         if (flipBits) {
             for (int i = 0; i < byteCount; i++) {

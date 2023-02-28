@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,13 +50,14 @@ import jdk.test.lib.Platform;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
+@SuppressWarnings("removal")
 public class GetXSpace {
 
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
                                               new DenyRead() };
 
     // FileSystem Total Used Available Use% MountedOn
-    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
+    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
 
     private static int fail = 0;
     private static int pass = 0;
@@ -103,27 +103,50 @@ public class GetXSpace {
         private static final long KSIZE = 1024;
         private final String name;
         private final long total;
-        private final long free;
+        private final long used;
+        private final long available;
 
-        Space(String total, String free, String name) {
+        Space(String name, String total, String used, String available) {
+            this.name = name;
             try {
-                this.total = Long.valueOf(total) * KSIZE;
-                this.free = Long.valueOf(free) * KSIZE;
+                this.total = Long.parseLong(total) * KSIZE;
+                this.used = Long.parseLong(used) * KSIZE;
+                this.available = Long.parseLong(available) * KSIZE;
             } catch (NumberFormatException x) {
                 throw new RuntimeException("the regex should have caught this", x);
             }
-            this.name = name;
         }
 
         String name() { return name; }
         long total() { return total; }
-        long free() { return free; }
+        long used() { return used; }
+        long available() { return available; }
+        long free() { return total - used; }
         boolean woomFree(long freeSpace) {
-            return ((freeSpace >= (free / 10)) && (freeSpace <= (free * 10)));
+            return ((freeSpace >= (available / 10)) &&
+                    (freeSpace <= (available * 10)));
         }
         public String toString() {
-            return String.format("%s (%d/%d)", name, free, total);
+            return String.format("%s (%d/%d/%d)", name, total, used, available);
         }
+    }
+
+    private static void diskFree() throws IOException {
+        ArrayList<Space> al = new ArrayList<>();
+
+        String cmd = "fsutil volume diskFree C:\\";
+        StringBuilder sb = new StringBuilder();
+        Process p = Runtime.getRuntime().exec(cmd);
+        try (BufferedReader in = p.inputReader()) {
+            String s;
+            int i = 0;
+            while ((s = in.readLine()) != null) {
+                // skip header
+                if (i++ == 0) continue;
+                sb.append(s).append("\n");
+            }
+        }
+        out.println(sb);
     }
 
     private static ArrayList<Space> space(String f) throws IOException {
@@ -152,11 +175,11 @@ public class GetXSpace {
                     String name = f;
                     if (name == null) {
                         // cygwin's df lists windows path as FileSystem (1st group)
-                        name = Platform.isWindows() ? m.group(1) : m.group(4);
+                        name = Platform.isWindows() ? m.group(1) : m.group(5);
                     }
-                    al.add(new Space(m.group(2), m.group(3), name));;
+                    al.add(new Space(name, m.group(2), m.group(3), m.group(4)));
                 }
-                j = m.end() + 1;
+                j = m.end();
             } else {
                 throw new RuntimeException("unrecognized df output format: "
                                            + "charAt(" + j + ") = '"
@@ -167,7 +190,7 @@ public class GetXSpace {
         if (al.size() == 0) {
             // df did not produce output
             String name = (f == null ? "" : f);
-            al.add(new Space("0", "0", name));
+            al.add(new Space(name, "0", "0", "0"));
         }
         return al;
     }
@@ -209,12 +232,13 @@ public class GetXSpace {
         long us = f.getUsableSpace();
 
         out.format("%s:%n", s.name());
-        String fmt = "  %-4s total= %12d free = %12d usable = %12d%n";
-        out.format(fmt, "df", s.total(), 0, s.free());
+        String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
+        out.format(fmt, "df", s.total(), s.free(), s.available());
         out.format(fmt, "getX", ts, fs, us);
 
-        // if the file system can dynamically change size, this check will fail
-        if (ts != s.total()) {
+        // If the file system can dynamically change size, this check will fail.
+        // This can happen on macOS for the /dev files system.
+        if (ts != s.total() && (!Platform.isOSX() || !s.name().equals("/dev"))) {
             long blockSize = 1;
             long numBlocks = 0;
             try {
@@ -225,20 +249,32 @@ public class GetXSpace {
                 // On Linux, ignore the NSFE if the path is one of the
                 // /run/user/$UID mounts created by pam_systemd(8) as it
                 // might be deleted during the test
-                if (!Platform.isLinux() || s.name().indexOf("/run/user") == -1)
+                if (!Platform.isLinux() || !s.name().contains("/run/user"))
                     throw new RuntimeException(nsfe);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-
             // On macOS, the number of 1024 byte blocks might be incorrectly
             // calculated by 'df' using integer division by 2 of the number of
             // 512 byte blocks, resulting in a size smaller than the actual
             // value when the number of blocks is odd.
-            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0
-                || ts - s.total() != 512) {
-                fail(s.name(), s.total(), "!=", ts);
+            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0 ||
+                ts - s.total() != 512) {
+                if (Platform.isWindows()) {
+                    //
+                    // In Cygwin, 'df' has been observed to account for quotas
+                    // when reporting the total disk size, but the total size
+                    // reported by GetDiskFreeSpaceExW() has been observed not
+                    // to account for the quota in which case the latter value
+                    // should be larger.
+                    //
+                    if (s.total() > ts) {
+                        fail(s.name() + " total space", s.total(), ">", ts);
+                    }
+                } else {
+                    fail(s.name() + " total space", s.total(), "!=", ts);
+                }
             }
         } else {
             pass();
@@ -247,7 +283,7 @@ public class GetXSpace {
         // unix df returns statvfs.f_bavail
         long tsp = (!Platform.isWindows() ? us : fs);
         if (!s.woomFree(tsp)) {
-            fail(s.name(), s.free(), "??", tsp);
+            fail(s.name(), s.available(), "??", tsp);
         } else {
             pass();
         }
@@ -380,6 +416,9 @@ public class GetXSpace {
         ArrayList<Space> l;
         try {
             l = space(null);
+            if (Platform.isWindows()) {
+                diskFree();
+            }
         } catch (IOException x) {
             throw new RuntimeException("can't get file system information", x);
         }

@@ -26,13 +26,10 @@
 #define SHARE_GC_G1_G1CARDSET_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/padded.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "memory/memRegion.hpp"
 #include "utilities/concurrentHashTable.hpp"
-#include "utilities/lockFreeStack.hpp"
 
 class G1CardSetAllocOptions;
-class G1CardSetBufferList;
 class G1CardSetHashTable;
 class G1CardSetHashTableValue;
 class G1CardSetMemoryManager;
@@ -51,14 +48,27 @@ class G1CardSetConfiguration {
   // regions covered by this card set.
   uint _inline_ptr_bits_per_card;
 
-  uint _num_cards_in_array;
-  uint _num_cards_in_howl_bitmap;
+  uint _max_cards_in_array;
   uint _num_buckets_in_howl;
   uint _max_cards_in_card_set;
   uint _cards_in_howl_threshold;
+  uint _max_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
-  uint _log2_num_cards_in_howl_bitmap;
+  uint _log2_max_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
+  uint _log2_card_regions_per_heap_region;
+  uint _log2_cards_per_card_region;
+
+  G1CardSetAllocOptions* _card_set_alloc_options;
+
+  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
+                         uint max_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
+                         uint num_buckets_in_howl,
+                         double cards_in_howl_threshold_percent,
+                         uint max_cards_in_card_set,
+                         uint log2_card_regions_per_heap_region);
+  void init_card_set_alloc_options();
 
   void log_configuration();
 public:
@@ -66,30 +76,31 @@ public:
   // Initialize card set configuration from globals.
   G1CardSetConfiguration();
   // Initialize card set configuration from parameters.
-  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
-                         uint num_cards_in_array,
-                         double cards_in_bitmap_threshold,
+  // Testing only.
+  G1CardSetConfiguration(uint max_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
-                         double cards_in_howl_threshold,
-                         uint max_cards_in_cardset);
+                         double cards_in_howl_threshold_percent,
+                         uint max_cards_in_cardset,
+                         uint log2_card_region_per_region);
+
+  ~G1CardSetConfiguration();
 
   // Inline pointer configuration
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
-  uint num_cards_in_inline_ptr() const;
-  static uint num_cards_in_inline_ptr(uint bits_per_card);
+  uint max_cards_in_inline_ptr() const;
+  static uint max_cards_in_inline_ptr(uint bits_per_card);
 
   // Array of Cards configuration
-  bool use_cards_in_array() const { return _num_cards_in_array != 0; } // Unused for now
-  // Number of cards in "Array of Cards" set; 0 to disable.
+  // Maximum number of cards in "Array of Cards" set; 0 to disable.
   // Always coarsen to next level if full, so no specific threshold.
-  uint num_cards_in_array() const { return _num_cards_in_array; }
+  uint max_cards_in_array() const { return _max_cards_in_array; }
 
   // Bitmap within Howl card set container configuration
-  bool use_cards_in_howl_bitmap() const { return _num_cards_in_howl_bitmap != 0; } // Unused for now
-  uint num_cards_in_howl_bitmap() const { return _num_cards_in_howl_bitmap; }
+  uint max_cards_in_howl_bitmap() const { return _max_cards_in_howl_bitmap; }
   // (Approximate) Number of cards in bitmap to coarsen Howl Bitmap to Howl Full.
   uint cards_in_howl_bitmap_threshold() const { return _cards_in_howl_bitmap_threshold; }
-  uint log2_num_cards_in_howl_bitmap() const {return _log2_num_cards_in_howl_bitmap;}
+  uint log2_max_cards_in_howl_bitmap() const {return _log2_max_cards_in_howl_bitmap;}
 
   // Howl card set container configuration
   uint num_buckets_in_howl() const { return _num_buckets_in_howl; }
@@ -97,20 +108,33 @@ public:
   uint cards_in_howl_threshold() const { return _cards_in_howl_threshold; }
   uint howl_bitmap_offset(uint card_idx) const { return card_idx & _bitmap_hash_mask; }
   // Given a card index, return the bucket in the array of card sets.
-  uint howl_bucket_index(uint card_idx) { return card_idx >> _log2_num_cards_in_howl_bitmap; }
+  uint howl_bucket_index(uint card_idx) { return card_idx >> _log2_max_cards_in_howl_bitmap; }
 
   // Full card configuration
-  // Maximum number of cards in a non-full card set for a single region. Card sets
+  // Maximum number of cards in a non-full card set for a single card region. Card sets
   // with more entries per region are coarsened to Full.
   uint max_cards_in_region() const { return _max_cards_in_card_set; }
+
+  // Heap region virtualization: there are some limitations to how many cards the
+  // containers can cover to save memory for the common case. Heap region virtualization
+  // allows to use multiple entries in the G1CardSet hash table per area covered
+  // by the remembered set (e.g. heap region); each such entry is called "card_region".
+  //
+  // The next two members give information about how many card regions are there
+  // per area (heap region) and how many cards each card region has.
+
+  // The log2 of the number of card regions per heap region configured.
+  uint log2_card_regions_per_heap_region() const { return _log2_card_regions_per_heap_region; }
+  // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
+  // and above.
+  uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }
 
   // Memory object types configuration
   // Number of distinctly sized memory objects on the card set heap.
   // Currently contains CHT-Nodes, ArrayOfCards, BitMaps, Howl
   static constexpr uint num_mem_object_types() { return 4; }
-  // Returns the memory allocation options for the memory objects on the card set heap. The returned
-  // array must be freed by the caller.
-  G1CardSetAllocOptions* mem_object_alloc_options();
+  // Returns the memory allocation options for the memory objects on the card set heap.
+  const G1CardSetAllocOptions* mem_object_alloc_options(uint idx);
 
   // For a given memory object, get a descriptive name.
   static const char* mem_object_type_name_str(uint index);
@@ -121,10 +145,10 @@ public:
 class G1CardSetCoarsenStats {
 public:
   // Number of entries in the statistics tables: since we index with the source
-  // cardset of the coarsening, this is the total number of combinations of
-  // card sets - 1.
+  // container of the coarsening, this is the total number of combinations of
+  // card set containers - 1.
   static constexpr size_t NumCoarsenCategories = 7;
-  // Coarsening statistics for the possible CardSetPtr in the Howl card set
+  // Coarsening statistics for the possible ContainerPtr in the Howl card set
   // start from this offset.
   static constexpr size_t CoarsenHowlOffset = 4;
 
@@ -138,6 +162,8 @@ public:
 
   void reset();
 
+  void set(G1CardSetCoarsenStats& other);
+
   void subtract_from(G1CardSetCoarsenStats& other);
 
   // Record a coarsening for the given tag/category. Collision should be true if
@@ -147,70 +173,95 @@ public:
   void print_on(outputStream* out);
 };
 
-// Sparse set of card indexes comprising a remembered set on the Java heap. Card
+// Set of card indexes comprising a remembered set on the Java heap. Card
 // size is assumed to be card table card size.
 //
 // Technically it is implemented using a ConcurrentHashTable that stores a card
 // set container for every region containing at least one card.
 //
 // There are in total five different containers, encoded in the ConcurrentHashTable
-// node as CardSetPtr. A CardSetPtr may cover the whole region or just a part of
+// node as ContainerPtr. A ContainerPtr may cover the whole region or just a part of
 // it.
 // See its description below for more information.
 class G1CardSet : public CHeapObj<mtGCCardSet> {
   friend class G1CardSetTest;
   friend class G1CardSetMtTestTask;
-
-  template <typename Closure, template <typename> class CardorRanges>
-  friend class G1CardSetMergeCardIterator;
+  friend class G1CheckCardClosure;
 
   friend class G1TransferCard;
 
   friend class G1ReleaseCardsets;
 
-  static G1CardSetCoarsenStats _coarsen_stats; // Coarsening statistics since VM start.
-  static G1CardSetCoarsenStats _last_coarsen_stats; // Coarsening statistics at last GC.
-public:
-  // Two lower bits are used to encode the card storage types
-  static const uintptr_t CardSetPtrHeaderSize = 2;
+  // When splitting addresses into region and card within that region, the logical
+  // shift value to get the region.
+  static uint _split_card_shift;
+  // When splitting addresses into region and card within that region, the mask
+  // to get the offset within the region.
+  static size_t _split_card_mask;
 
-  // CardSetPtr represents the card storage type of a given covered area. It encodes
-  // a type in the LSBs, in addition to having a few significant values.
+  static G1CardSetCoarsenStats _coarsen_stats; // Coarsening statistics since VM start.
+  static G1CardSetCoarsenStats _last_coarsen_stats; // Coarsening statistics before last GC.
+public:
+  // Two lower bits are used to encode the card set container types
+  static const uintptr_t ContainerPtrHeaderSize = 2;
+
+  // ContainerPtr represents the card set container  type of a given covered area.
+  // It encodes a type in the LSBs, in addition to having a few significant values.
   //
   // Possible encodings:
   //
-  // 0...00000 free               (Empty, should never happen)
-  // 1...11111 full               All card indexes in the whole area this CardSetPtr covers are part of this container.
-  // X...XXX00 inline-ptr-cards   A handful of card indexes covered by this CardSetPtr are encoded within the CardSetPtr.
+  // 0...00000 free               (Empty, should never happen on a top-level ContainerPtr)
+  // 1...11111 full               All card indexes in the whole area this ContainerPtr covers are part of this container.
+  // X...XXX00 inline-ptr-cards   A handful of card indexes covered by this ContainerPtr are encoded within the ContainerPtr.
   // X...XXX01 array of cards     The container is a contiguous array of card indexes.
   // X...XXX10 bitmap             The container uses a bitmap to determine whether a given index is part of this set.
-  // X...XXX11 howl               This is a card set container containing an array of CardSetPtr, with each CardSetPtr
+  // X...XXX11 howl               This is a card set container containing an array of ContainerPtr, with each ContainerPtr
   //                              limited to a sub-range of the original range. Currently only one level of this
   //                              container is supported.
-  typedef void* CardSetPtr;
+  //
+  // The container's pointer starts off with an inline container and is then subsequently
+  // coarsened as more cards are added.
+  //
   // Coarsening happens in the order below:
-  // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetHowl -> Full
-  // Corsening of containers inside the CardSetHowl happens in the order:
-  // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetBitMap -> Full
-  static const uintptr_t CardSetInlinePtr      = 0x0;
-  static const uintptr_t CardSetArrayOfCards   = 0x1;
-  static const uintptr_t CardSetBitMap         = 0x2;
-  static const uintptr_t CardSetHowl           = 0x3;
+  //   ContainerInlinePtr -> ContainerArrayOfCards -> ContainerHowl -> Full
+  //
+  // There is intentionally no bitmap based container that covers a full region; first,
+  // a whole region is covered very well (and more flexibly) using the howl container and
+  // even then the overhead of the ContainerPtr array with all-bitmaps vs. a single bitmap
+  // is negligible, and most importantly transferring such a Howl container to a
+  // "Full Region Bitmap" is fairly hard without missing entries that are added by
+  // concurrent threads.
+  //
+  // Howl containers are basically arrays of containers. An entry starts off with
+  // Free. Further corsening of containers inside the ContainerHowl happens in the order:
+  //
+  //   Free -> ContainerInlinePtr -> ContainerArrayOfCards -> ContainerBitMap -> Full
+  //
+  // Throughout the code it is assumed (and checked) that the last two bits of the encoding
+  // for Howl (0b11) is assumed to be the same as the last two bits for "FullCardSet"; this
+  // has been done in various places to not be required to check for a "FullCardSet" first
+  // all the time in iteration code (only if there is a Howl card set container, that is
+  // fairly uncommon).
+  using ContainerPtr = void*;
+  static const uintptr_t ContainerInlinePtr      = 0x0;
+  static const uintptr_t ContainerArrayOfCards   = 0x1;
+  static const uintptr_t ContainerBitMap         = 0x2;
+  static const uintptr_t ContainerHowl           = 0x3;
 
   // The special sentinel values
-  static constexpr CardSetPtr FreeCardSet = nullptr;
-  // Unfortunately we can't make (G1CardSet::CardSetPtr)-1 constexpr because
+  static constexpr ContainerPtr FreeCardSet = nullptr;
+  // Unfortunately we can't make (G1CardSet::ContainerPtr)-1 constexpr because
   // reinterpret_casts are forbidden in constexprs. Use a regular static instead.
-  static CardSetPtr FullCardSet;
+  static ContainerPtr FullCardSet;
 
-  static const uintptr_t CardSetPtrTypeMask    = ((uintptr_t)1 << CardSetPtrHeaderSize) - 1;
+  static const uintptr_t ContainerPtrTypeMask = ((uintptr_t)1 << ContainerPtrHeaderSize) - 1;
 
-  static CardSetPtr strip_card_set_type(CardSetPtr ptr) { return (CardSetPtr)((uintptr_t)ptr & ~CardSetPtrTypeMask); }
+  static ContainerPtr strip_container_type(ContainerPtr ptr) { return (ContainerPtr)((uintptr_t)ptr & ~ContainerPtrTypeMask); }
 
-  static uint card_set_type(CardSetPtr ptr) { return (uintptr_t)ptr & CardSetPtrTypeMask; }
+  static uint container_type(ContainerPtr ptr) { return (uintptr_t)ptr & ContainerPtrTypeMask; }
 
   template <class T>
-  static T* card_set_ptr(CardSetPtr ptr);
+  static T* container_ptr(ContainerPtr ptr);
 
 private:
   G1CardSetMemoryManager* _mm;
@@ -222,42 +273,42 @@ private:
   // be (slightly) more cards in the card set than this value in reality.
   size_t _num_occupied;
 
-  CardSetPtr make_card_set_ptr(void* value, uintptr_t type);
+  ContainerPtr make_container_ptr(void* value, uintptr_t type);
 
-  CardSetPtr acquire_card_set(CardSetPtr volatile* card_set_addr);
-  // Returns true if the card set should be released
-  bool release_card_set(CardSetPtr card_set);
+  ContainerPtr acquire_container(ContainerPtr volatile* container_addr);
+  // Returns true if the card set container should be released
+  bool release_container(ContainerPtr container);
   // Release card set and free if needed.
-  void release_and_maybe_free_card_set(CardSetPtr card_set);
+  void release_and_maybe_free_container(ContainerPtr container);
   // Release card set and free (and it must be freeable).
-  void release_and_must_free_card_set(CardSetPtr card_set);
+  void release_and_must_free_container(ContainerPtr container);
 
-  // Coarsens the CardSet cur_card_set to the next level; tries to replace the
-  // previous CardSet with a new one which includes the given card_in_region.
-  // coarsen_card_set does not transfer cards from cur_card_set
-  // to the new card_set. Transfer is achieved by transfer_cards.
-  // Returns true if this was the thread that coarsened the CardSet (and added the card).
-  bool coarsen_card_set(CardSetPtr volatile* card_set_addr,
-                        CardSetPtr cur_card_set,
-                        uint card_in_region, bool within_howl = false);
+  // Coarsens the card set container cur_container to the next level; tries to replace the
+  // previous ContainerPtr with a new one which includes the given card_in_region.
+  // coarsen_container does not transfer cards from cur_container
+  // to the new container. Transfer is achieved by transfer_cards.
+  // Returns true if this was the thread that coarsened the container (and added the card).
+  bool coarsen_container(ContainerPtr volatile* container_addr,
+                         ContainerPtr cur_container,
+                         uint card_in_region, bool within_howl = false);
 
-  CardSetPtr create_coarsened_array_of_cards(uint card_in_region, bool within_howl);
+  ContainerPtr create_coarsened_array_of_cards(uint card_in_region, bool within_howl);
 
   // Transfer entries from source_card_set to a recently installed coarser storage type
-  // We only need to transfer anything finer than CardSetBitMap. "Full" contains
+  // We only need to transfer anything finer than ContainerBitMap. "Full" contains
   // all elements anyway.
-  void transfer_cards(G1CardSetHashTableValue* table_entry, CardSetPtr source_card_set, uint card_region);
-  void transfer_cards_in_howl(CardSetPtr parent_card_set, CardSetPtr source_card_set, uint card_region);
+  void transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPtr source_container, uint card_region);
+  void transfer_cards_in_howl(ContainerPtr parent_container, ContainerPtr source_container, uint card_region);
 
-  G1AddCardResult add_to_card_set(CardSetPtr volatile* card_set_addr, CardSetPtr card_set, uint card_region, uint card, bool increment_total = true);
+  G1AddCardResult add_to_container(ContainerPtr volatile* container_addr, ContainerPtr container, uint card_region, uint card, bool increment_total = true);
 
-  G1AddCardResult add_to_inline_ptr(CardSetPtr volatile* card_set_addr, CardSetPtr card_set, uint card_in_region);
-  G1AddCardResult add_to_array(CardSetPtr card_set, uint card_in_region);
-  G1AddCardResult add_to_bitmap(CardSetPtr card_set, uint card_in_region);
-  G1AddCardResult add_to_howl(CardSetPtr parent_card_set, uint card_region, uint card_in_region, bool increment_total = true);
+  G1AddCardResult add_to_inline_ptr(ContainerPtr volatile* container_addr, ContainerPtr container, uint card_in_region);
+  G1AddCardResult add_to_array(ContainerPtr container, uint card_in_region);
+  G1AddCardResult add_to_bitmap(ContainerPtr container, uint card_in_region);
+  G1AddCardResult add_to_howl(ContainerPtr parent_container, uint card_region, uint card_in_region, bool increment_total = true);
 
-  G1CardSetHashTableValue* get_or_add_card_set(uint card_region, bool* should_grow_table);
-  G1CardSetHashTableValue* get_card_set(uint card_region);
+  G1CardSetHashTableValue* get_or_add_container(uint card_region, bool* should_grow_table);
+  G1CardSetHashTableValue* get_container(uint card_region);
 
   // Iterate over cards of a card set container during transfer of the cards from
   // one container to another. Executes
@@ -266,28 +317,25 @@ private:
   //
   // on the given class.
   template <class CardVisitor>
-  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found);
+  void iterate_cards_during_transfer(ContainerPtr const container, CardVisitor& vl);
 
-  // Iterate over the container, calling a method on every card or card range contained
-  // in the card container.
-  // For every container, first calls
-  //
-  //   void start_iterate(uint tag, uint region_idx);
-  //
-  // Then for every card or card range it calls
-  //
-  //   void do_card(uint card_idx);
-  //   void do_card_range(uint card_idx, uint length);
-  //
-  // where card_idx is the card index within that region_idx passed before in
-  // start_iterate().
-  //
-  template <class CardOrRangeVisitor>
-  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
-
-  uint card_set_type_to_mem_object_type(uintptr_t type) const;
+  uint container_type_to_mem_object_type(uintptr_t type) const;
   uint8_t* allocate_mem_object(uintptr_t type);
-  void free_mem_object(CardSetPtr card_set);
+  void free_mem_object(ContainerPtr container);
+
+  void split_card(uintptr_t card, uint& card_region, uint& card_within_region) const;
+
+  G1AddCardResult add_card(uint card_region, uint card_in_region, bool increment_total = true);
+
+  bool contains_card(uint card_region, uint card_in_region);
+
+  // Testing API
+  class CardClosure {
+  public:
+    virtual void do_card(uint region_idx, uint card_idx) = 0;
+  };
+
+  void iterate_cards(CardClosure& cl);
 
 public:
   G1CardSetConfiguration* config() const { return _config; }
@@ -296,13 +344,15 @@ public:
   G1CardSet(G1CardSetConfiguration* config, G1CardSetMemoryManager* mm);
   virtual ~G1CardSet();
 
-  // Adds the given card to this set, returning an appropriate result. If added,
-  // updates the total count.
-  G1AddCardResult add_card(uint card_region, uint card_in_region, bool increment_total = true);
+  static void initialize(MemRegion reserved);
 
-  bool contains_card(uint card_region, uint card_in_region);
+  // Adds the given card to this set, returning an appropriate result.
+  // If incremental_count is true and the card has been added, updates the total count.
+  G1AddCardResult add_card(uintptr_t card);
 
-  void print_info(outputStream* st, uint card_region, uint card_in_region);
+  bool contains_card(uintptr_t card);
+
+  void print_info(outputStream* st, uintptr_t card);
 
   // Returns whether this remembered set (and all sub-sets) have an occupancy
   // that is less or equal to the given occupancy.
@@ -321,59 +371,49 @@ public:
 
   // Returns size of the actual remembered set containers in bytes.
   size_t mem_size() const;
-  size_t wasted_mem_size() const;
+  size_t unused_mem_size() const;
   // Returns the size of static data in bytes.
   static size_t static_mem_size();
 
   // Clear the entire contents of this remembered set.
   void clear();
 
-  void print(outputStream* os);
+  void reset_table_scanner();
 
-  // Various iterators - should be made inlineable somehow.
-  class G1CardSetPtrIterator {
-  public:
-    virtual void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) = 0;
-  };
-
-  void iterate_containers(G1CardSetPtrIterator* iter, bool safepoint = false);
-
-  class G1CardSetCardIterator {
-  public:
-    virtual void do_card(uint region_idx, uint card_idx) = 0;
-  };
-
-  void iterate_cards(G1CardSetCardIterator& iter);
-
-  // Iterate all cards for card set merging. Must be a CardOrRangeVisitor as
-  // explained above.
+  // Iterate over the container, calling a method on every card or card range contained
+  // in the card container.
+  // For every container, first calls
+  //
+  //   void start_iterate(uint tag, uint region_idx);
+  //
+  // Then for every card or card range it calls
+  //
+  //   void do_card(uint card_idx);
+  //   void do_card_range(uint card_idx, uint length);
+  //
+  // where card_idx is the card index within that region_idx passed before in
+  // start_iterate().
+  //
   template <class CardOrRangeVisitor>
-  void iterate_for_merge(CardOrRangeVisitor& cl);
+  void iterate_cards_or_ranges_in_container(ContainerPtr const container, CardOrRangeVisitor& cl);
+
+  class ContainerPtrClosure {
+  public:
+    virtual void do_containerptr(uint card_region_idx, size_t num_occupied, ContainerPtr container) = 0;
+  };
+
+  void iterate_containers(ContainerPtrClosure* cl, bool safepoint = false);
 };
 
 class G1CardSetHashTableValue {
 public:
-  using CardSetPtr = G1CardSet::CardSetPtr;
+  using ContainerPtr = G1CardSet::ContainerPtr;
 
   const uint _region_idx;
   uint volatile _num_occupied;
-  CardSetPtr volatile _card_set;
+  ContainerPtr volatile _container;
 
-  G1CardSetHashTableValue(uint region_idx, CardSetPtr card_set) : _region_idx(region_idx), _num_occupied(0), _card_set(card_set) { }
+  G1CardSetHashTableValue(uint region_idx, ContainerPtr container) : _region_idx(region_idx), _num_occupied(0), _container(container) { }
 };
-
-class G1CardSetHashTableConfig : public StackObj {
-public:
-  using Value = G1CardSetHashTableValue;
-
-  static uintx get_hash(Value const& value, bool* is_dead) {
-    *is_dead = false;
-    return value._region_idx;
-  }
-  static void* allocate_node(void* context, size_t size, Value const& value);
-  static void free_node(void* context, void* memory, Value const& value);
-};
-
-typedef ConcurrentHashTable<G1CardSetHashTableConfig, mtGCCardSet> CardSetHash;
 
 #endif // SHARE_GC_G1_G1CARDSET_HPP

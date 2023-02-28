@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "sysShmem.h"
 #include "shmemBase.h"
 #include "jdwpTransport.h"  /* for Packet, TransportCallback */
-
-#if defined(_WIN32)
-  #define PRId64 "I64d"
-#endif
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
@@ -111,7 +108,7 @@ typedef struct SharedMemoryTransport {
 } SharedMemoryTransport;
 
 /*
- * Access must be syncronized.  Holds one shared
+ * Access must be synchronized.  Holds one shared
  * memory buffer and its state.
  */
 typedef struct SharedStream {
@@ -1257,14 +1254,14 @@ shmemBase_getlasterror(char *msg, jint size) {
 
 void
 exitTransportWithError(char *message, char *fileName,
-                       char *date, int lineNumber)
+                       int lineNumber)
 {
     JNIEnv *env;
     jint error;
     char buffer[500];
 
-    sprintf(buffer, "Shared Memory Transport \"%s\" (%s), line %d: %s\n",
-            fileName, date, lineNumber, message);
+    sprintf(buffer, "Shared Memory Transport \"%s\", line %d: %s\n",
+            fileName, lineNumber, message);
     error = (*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2);
     if (error != JNI_OK) {
         /*

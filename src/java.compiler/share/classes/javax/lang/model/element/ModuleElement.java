@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,25 @@ import javax.lang.model.type.TypeMirror;
  * Represents a module program element.  Provides access to
  * information about the module, its directives, and its members.
  *
+ * @apiNote
+ * The represented module may have an explicit {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output) or may be
+ * created from implicit information. The explicit and standalone
+ * source code construct for a module is typically a {@code
+ * module-info.java} file (JLS {@jls 7.7}). {@linkplain
+ * javax.lang.model.util.Elements#isAutomaticModule(ModuleElement)
+ * Automatic modules} (JLS {@jls 7.7.1}) are named modules that do
+ * <em>not</em> have a {@code module-info} file. Implicit information
+ * is used to model {@linkplain #isUnnamed unnamed modules}.
+ * <p>In the context of annotation processing, a module element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>{@linkplain javax.lang.model.util.Elements#getModuleElement(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
+ *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
  * @jls 7.7 Module Declarations
@@ -49,8 +68,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the fully qualified name of this module.  For an
-     * {@linkplain #isUnnamed() unnamed module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * {@linkplain #isUnnamed() unnamed module}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier, which is deemed to be
@@ -68,8 +87,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the simple name of this module.  For an {@linkplain
-     * #isUnnamed() unnamed module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * #isUnnamed() unnamed module}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier.  If the module name

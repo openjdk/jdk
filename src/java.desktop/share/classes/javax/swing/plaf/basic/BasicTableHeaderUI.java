@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,13 +535,11 @@ public class BasicTableHeaderUI extends TableHeaderUI {
      * to ensure that the newly selected column is visible.
      */
     private void scrollToColumn(int col) {
-        Container container;
         JTable table;
 
         //Test whether the header is in a scroll pane and has a table.
         if ((header.getParent() == null) ||
-            ((container = header.getParent().getParent()) == null) ||
-            !(container instanceof JScrollPane) ||
+            !(header.getParent().getParent() instanceof JScrollPane) ||
             ((table = header.getTable()) == null)) {
             return;
         }

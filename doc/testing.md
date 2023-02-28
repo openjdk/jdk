@@ -1,21 +1,26 @@
 % Testing the JDK
 
-## Using "make test" (the run-test framework)
+## Overview
 
-This new way of running tests is developer-centric. It assumes that you have
-built a JDK locally and want to test it. Running common test targets is simple,
-and more complex ad-hoc combination of tests is possible. The user interface is
-forgiving, and clearly report errors it cannot resolve.
+The bulk of JDK tests use [jtreg](https://openjdk.org/jtreg/), a regression
+test framework and test runner built for the JDK's specific needs. Other test
+frameworks are also used. The different test frameworks can be executed
+directly, but there is also a set of make targets intended to simplify the
+interface, and figure out how to run your tests for you.
 
-The main target `test` uses the jdk-image as the tested product. There is
-also an alternate target `exploded-test` that uses the exploded image
-instead. Not all tests will run successfully on the exploded image, but using
-this target can greatly improve rebuild times for certain workflows.
+## Running tests locally with `make test`
 
-Previously, `make test` was used to invoke an old system for running tests, and
-`make run-test` was used for the new test framework. For backward compatibility
-with scripts and muscle memory, `run-test` (and variants like
-`exploded-run-test` or `run-test-tier1`) are kept as aliases.
+This is the easiest way to get started. Assuming you've built the JDK locally,
+execute:
+
+    $ make test
+
+This will run a default set of tests against the JDK, and present you with the
+results. `make test` is part of a family of test-related make targets which
+simplify running tests, because they invoke the various test frameworks for
+you. The "make test framework" is simple to start with, but more complex
+ad-hoc combination of tests is also possible. You can always invoke the test
+frameworks directly if you want even more control.
 
 Some example command-lines:
 
@@ -27,6 +32,20 @@ Some example command-lines:
     $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
     $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
+
+"tier1" and "tier2" refer to tiered testing, see further down. "TEST" is a
+ test selection argument which the make test framework will use to try to
+ find the tests you want. It iterates over the available test frameworks, and
+ if the test isn't present in one, it tries the next one. The main target
+ `test` uses the jdk-image as the tested product. There is also an alternate
+ target `exploded-test` that uses the exploded image instead. Not all tests
+ will run successfully on the exploded image, but using this target can
+ greatly improve rebuild times for certain workflows.
+
+Previously, `make test` was used to invoke an old system for running tests,
+and `make run-test` was used for the new test framework. For backward
+compatibility with scripts and muscle memory, `run-test` and variants like
+`exploded-run-test` or `run-test-tier1` are kept as aliases.
 
 ### Configuration
 
@@ -42,6 +61,31 @@ JMH dependency. Use `--with-jmh=<path to JMH jars>` to point to a directory
 containing the core JMH and transitive dependencies. The recommended
 dependencies can be retrieved by running `sh make/devkit/createJMHBundle.sh`,
 after which `--with-jmh=build/jmh/jars` should work.
+
+When tests fail or timeout, jtreg runs its failure handler to capture necessary
+data from the system where the test was run. This data can then be used to
+analyze the test failures. Collecting this data involves running various commands
+(which are listed in files residing in `test/failure_handler/src/share/conf`)
+and some of these commands use `sudo`. If the system's `sudoers` file isn't
+configured to allow running these commands, then it can result in password being
+prompted during the failure handler execution. Typically, when running locally,
+collecting this additional data isn't always necessary. To disable running the
+failure handler, use `--enable-jtreg-failure-handler=no` when running `configure`.
+If, however, you want to let the failure handler to run and don't want to be
+prompted for sudo password, then you can configure your `sudoers` file
+appropriately. Please read the necessary documentation of your operating system
+to see how to do that; here we only show one possible way of doing that - edit
+the `/etc/sudoers.d/sudoers` file to include the following line:
+
+```
+johndoe ALL=(ALL) NOPASSWD: /sbin/dmesg
+```
+
+This line configures `sudo` to _not_ prompt for password for the `/sbin/dmesg`
+command (this is one of the commands that is listed in the files
+at `test/failure_handler/src/share/conf`), for the user `johndoe`. Here `johndoe`
+is the user account under which the jtreg tests are run. Replace the username
+with a relevant user account of your system.
 
 ## Test selection
 
@@ -66,54 +110,60 @@ if you want to shortcut the parser.
 
 ### Common Test Groups
 
-Ideally, all tests are run for every change but this may not be practical due to the limited
-testing resources, the scope of the change, etc.
+Ideally, all tests are run for every change but this may not be practical due
+to the limited testing resources, the scope of the change, etc.
 
-The source tree currently defines a few common test groups in the relevant `TEST.groups`
-files. There are test groups that cover a specific component, for example `hotspot_gc`.
-It is a good idea to look into `TEST.groups` files to get a sense what tests are relevant
-to a particular JDK component.
+The source tree currently defines a few common test groups in the relevant
+`TEST.groups` files. There are test groups that cover a specific component,
+for example `hotspot_gc`. It is a good idea to look into `TEST.groups` files
+to get a sense what tests are relevant to a particular JDK component.
 
-Component-specific tests may miss some unintended consequences of a change, so other
-tests should also be run. Again, it might be impractical to run all tests, and therefore
-_tiered_ test groups exist. Tiered test groups are not component-specific, but rather cover
-the significant parts of the entire JDK.
+Component-specific tests may miss some unintended consequences of a change, so
+other tests should also be run. Again, it might be impractical to run all
+tests, and therefore
+_tiered_ test groups exist. Tiered test groups are not component-specific, but
+ rather cover the significant parts of the entire JDK.
 
-Multiple tiers allow balancing test coverage and testing costs. Lower test tiers are supposed to
-contain the simpler, quicker and more stable tests. Higher tiers are supposed to contain
-progressively more thorough, slower, and sometimes less stable tests, or the tests that require
-special configuration.
+Multiple tiers allow balancing test coverage and testing costs. Lower test
+tiers are supposed to contain the simpler, quicker and more stable tests.
+Higher tiers are supposed to contain progressively more thorough, slower, and
+sometimes less stable tests, or the tests that require special
+configuration.
 
-Contributors are expected to run the tests for the areas that are changed, and the first N tiers
-they can afford to run, but at least tier1.
+Contributors are expected to run the tests for the areas that are changed, and
+the first N tiers they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
-- `tier1`: This is the lowest test tier. Multiple developers run these tests every day.
-Because of the widespread use, the tests in `tier1` are carefully selected and optimized to run
-fast, and to run in the most stable manner. The test failures in `tier1` are usually followed up
-on quickly, either with fixes, or adding relevant tests to problem list. GitHub Actions workflows,
-if enabled, run `tier1` tests.
+- `tier1`: This is the lowest test tier. Multiple developers run these tests
+  every day. Because of the widespread use, the tests in `tier1` are
+  carefully selected and optimized to run fast, and to run in the most stable
+  manner. The test failures in `tier1` are usually followed up on quickly,
+  either with fixes, or adding relevant tests to problem list. GitHub Actions
+  workflows, if enabled, run `tier1` tests.
 
-- `tier2`: This test group covers even more ground. These contain, among other things,
-tests that either run for too long to be at `tier1`, or may require special configuration,
-or tests that are less stable, or cover the broader range of non-core JVM and JDK features/components
-(for example, XML).
+- `tier2`: This test group covers even more ground. These contain, among other
+  things, tests that either run for too long to be at `tier1`, or may require
+  special configuration, or tests that are less stable, or cover the broader
+  range of non-core JVM and JDK features/components(for example, XML).
 
-- `tier3`: This test group includes more stressful tests, the tests for corner cases
-not covered by previous tiers, plus the tests that require GUIs. As such, this suite
-should either be run with low concurrency (`TEST_JOBS=1`), or without headful tests
-(`JTREG_KEYWORDS=\!headful`), or both.
+- `tier3`: This test group includes more stressful tests, the tests for corner
+  cases not covered by previous tiers, plus the tests that require GUIs. As
+  such, this suite should either be run with low concurrency
+  (`TEST_JOBS=1`), or without headful tests(`JTREG_KEYWORDS=\!headful`), or
+  both.
 
-- `tier4`: This test group includes every other test not covered by previous tiers. It includes,
-for example, `vmTestbase` suites for Hotspot, which run for many hours even on large
-machines. It also runs GUI tests, so the same `TEST_JOBS` and `JTREG_KEYWORDS` caveats
-apply.
+- `tier4`: This test group includes every other test not covered by previous
+  tiers. It includes, for example, `vmTestbase` suites for Hotspot, which run
+  for many hours even on large machines. It also runs GUI tests, so the same
+  `TEST_JOBS` and `JTREG_KEYWORDS` caveats apply.
 
 ### JTReg
 
 JTReg tests can be selected either by picking a JTReg test group, or a selection
-of files or directories containing JTReg tests.
+of files or directories containing JTReg tests. Documentation can be found at
+[https://openjdk.org/jtreg/](https://openjdk.org/jtreg/), note especially the
+extensive [FAQ](https://openjdk.org/jtreg/faq.html).
 
 JTReg test groups can be specified either without a test root, e.g. `:tier1`
 (or `tier1`, the initial colon is optional), or with, e.g. `hotspot:tier1`,
@@ -141,6 +191,11 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 `jtreg:test/hotspot/jtreg/native_sanity`.
 
 ### Gtest
+
+**Note:** To be able to run the Gtest suite, you need to configure your build to
+be able to find a proper version of the gtest source. For details, see the
+section ["Running Tests" in the build
+documentation](building.html#running-tests).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor
@@ -419,7 +474,20 @@ modules. If multiple modules are specified, they should be separated by space
 
 #### RETRY_COUNT
 
-Retry failed tests up to a set number of times. Defaults to 0.
+Retry failed tests up to a set number of times, until they pass.
+This allows to pass the tests with intermittent failures.
+Defaults to 0.
+
+#### REPEAT_COUNT
+
+Repeat the tests up to a set number of times, stopping at first failure.
+This helps to reproduce intermittent test failures.
+Defaults to 0.
+
+#### REPORT
+
+Use this report style when reporting test results (sent to JTReg as `-report`).
+Defaults to `files`.
 
 ### Gtest keywords
 
@@ -569,6 +637,12 @@ Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
 double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/testing.md` and
+then run `make update-build-docs` to generate the same changes in
+`doc/testing.html`.
 
 ---
 # Override some definitions in the global css file that are not optimal for

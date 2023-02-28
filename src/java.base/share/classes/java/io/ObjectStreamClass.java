@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,6 @@ package java.io;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -59,15 +55,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaSecurityAccess;
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
-import static java.io.ObjectStreamField.*;
 
 /**
  * Serialization's descriptor for classes.  It contains the name and
@@ -85,7 +80,7 @@ import static java.io.ObjectStreamField.*;
  *      <cite>Java Object Serialization Specification,</cite> Section 4, "Class Descriptors"</a>
  * @since   1.1
  */
-public class ObjectStreamClass implements Serializable {
+public final class ObjectStreamClass implements Serializable {
 
     /** serialPersistentFields value indicating no serializable fields */
     public static final ObjectStreamField[] NO_FIELDS =
@@ -108,19 +103,22 @@ public class ObjectStreamClass implements Serializable {
 
     private static class Caches {
         /** cache mapping local classes -> descriptors */
-        static final ConcurrentMap<WeakClassKey,Reference<?>> localDescs =
-            new ConcurrentHashMap<>();
+        static final ClassCache<ObjectStreamClass> localDescs =
+            new ClassCache<>() {
+                @Override
+                protected ObjectStreamClass computeValue(Class<?> type) {
+                    return new ObjectStreamClass(type);
+                }
+            };
 
         /** cache mapping field group/local desc pairs -> field reflectors */
-        static final ConcurrentMap<FieldReflectorKey,Reference<?>> reflectors =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to local classes */
-        private static final ReferenceQueue<Class<?>> localDescsQueue =
-            new ReferenceQueue<>();
-        /** queue for WeakReferences to field reflectors keys */
-        private static final ReferenceQueue<Class<?>> reflectorsQueue =
-            new ReferenceQueue<>();
+        static final ClassCache<Map<FieldReflectorKey, FieldReflector>> reflectors =
+            new ClassCache<>() {
+                @Override
+                protected Map<FieldReflectorKey, FieldReflector> computeValue(Class<?> type) {
+                    return new ConcurrentHashMap<>();
+                }
+            };
     }
 
     /** class associated with this descriptor (if any) */
@@ -362,136 +360,7 @@ public class ObjectStreamClass implements Serializable {
         if (!(all || Serializable.class.isAssignableFrom(cl))) {
             return null;
         }
-        processQueue(Caches.localDescsQueue, Caches.localDescs);
-        WeakClassKey key = new WeakClassKey(cl, Caches.localDescsQueue);
-        Reference<?> ref = Caches.localDescs.get(key);
-        Object entry = null;
-        if (ref != null) {
-            entry = ref.get();
-        }
-        EntryFuture future = null;
-        if (entry == null) {
-            EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<>(newEntry);
-            do {
-                if (ref != null) {
-                    Caches.localDescs.remove(key, ref);
-                }
-                ref = Caches.localDescs.putIfAbsent(key, newRef);
-                if (ref != null) {
-                    entry = ref.get();
-                }
-            } while (ref != null && entry == null);
-            if (entry == null) {
-                future = newEntry;
-            }
-        }
-
-        if (entry instanceof ObjectStreamClass) {  // check common case first
-            return (ObjectStreamClass) entry;
-        }
-        if (entry instanceof EntryFuture) {
-            future = (EntryFuture) entry;
-            if (future.getOwner() == Thread.currentThread()) {
-                /*
-                 * Handle nested call situation described by 4803747: waiting
-                 * for future value to be set by a lookup() call further up the
-                 * stack will result in deadlock, so calculate and set the
-                 * future value here instead.
-                 */
-                entry = null;
-            } else {
-                entry = future.get();
-            }
-        }
-        if (entry == null) {
-            try {
-                entry = new ObjectStreamClass(cl);
-            } catch (Throwable th) {
-                entry = th;
-            }
-            if (future.set(entry)) {
-                Caches.localDescs.put(key, new SoftReference<>(entry));
-            } else {
-                // nested lookup call already set future
-                entry = future.get();
-            }
-        }
-
-        if (entry instanceof ObjectStreamClass) {
-            return (ObjectStreamClass) entry;
-        } else if (entry instanceof RuntimeException) {
-            throw (RuntimeException) entry;
-        } else if (entry instanceof Error) {
-            throw (Error) entry;
-        } else {
-            throw new InternalError("unexpected entry: " + entry);
-        }
-    }
-
-    /**
-     * Placeholder used in class descriptor and field reflector lookup tables
-     * for an entry in the process of being initialized.  (Internal) callers
-     * which receive an EntryFuture belonging to another thread as the result
-     * of a lookup should call the get() method of the EntryFuture; this will
-     * return the actual entry once it is ready for use and has been set().  To
-     * conserve objects, EntryFutures synchronize on themselves.
-     */
-    private static class EntryFuture {
-
-        private static final Object unset = new Object();
-        private final Thread owner = Thread.currentThread();
-        private Object entry = unset;
-
-        /**
-         * Attempts to set the value contained by this EntryFuture.  If the
-         * EntryFuture's value has not been set already, then the value is
-         * saved, any callers blocked in the get() method are notified, and
-         * true is returned.  If the value has already been set, then no saving
-         * or notification occurs, and false is returned.
-         */
-        synchronized boolean set(Object entry) {
-            if (this.entry != unset) {
-                return false;
-            }
-            this.entry = entry;
-            notifyAll();
-            return true;
-        }
-
-        /**
-         * Returns the value contained by this EntryFuture, blocking if
-         * necessary until a value is set.
-         */
-        @SuppressWarnings("removal")
-        synchronized Object get() {
-            boolean interrupted = false;
-            while (entry == unset) {
-                try {
-                    wait();
-                } catch (InterruptedException ex) {
-                    interrupted = true;
-                }
-            }
-            if (interrupted) {
-                AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                        public Void run() {
-                            Thread.currentThread().interrupt();
-                            return null;
-                        }
-                    }
-                );
-            }
-            return entry;
-        }
-
-        /**
-         * Returns the thread that created this EntryFuture.
-         */
-        Thread getOwner() {
-            return owner;
-        }
+        return Caches.localDescs.get(cl);
     }
 
     /**
@@ -840,8 +709,9 @@ public class ObjectStreamClass implements Serializable {
             try {
                 fields[i] = new ObjectStreamField(fname, signature, false);
             } catch (RuntimeException e) {
-                throw (IOException) new InvalidClassException(name,
-                    "invalid descriptor for field " + fname).initCause(e);
+                throw new InvalidClassException(name,
+                                                "invalid descriptor for field " +
+                                                fname, e);
             }
         }
         computeFieldOffsets();
@@ -1694,10 +1564,10 @@ public class ObjectStreamClass implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         for (int i = 0; i < paramTypes.length; i++) {
-            appendClassSignature(sb, paramTypes[i]);
+            sb.append(paramTypes[i].descriptorString());
         }
         sb.append(')');
-        appendClassSignature(sb, retType);
+        sb.append(retType.descriptorString());
         return sb.toString();
     }
 
@@ -1712,9 +1582,7 @@ public class ObjectStreamClass implements Serializable {
         } else if (th instanceof Error) {
             throw (Error) th;
         } else {
-            IOException ex = new IOException("unexpected exception type");
-            ex.initCause(th);
-            throw ex;
+            throw new IOException("unexpected exception type", th);
         }
     }
 
@@ -1780,7 +1648,7 @@ public class ObjectStreamClass implements Serializable {
 
         ObjectStreamField[] boundFields =
             new ObjectStreamField[serialPersistentFields.length];
-        Set<String> fieldNames = new HashSet<>(serialPersistentFields.length);
+        Set<String> fieldNames = HashSet.newHashSet(serialPersistentFields.length);
 
         for (int i = 0; i < serialPersistentFields.length; i++) {
             ObjectStreamField spf = serialPersistentFields[i];
@@ -2004,7 +1872,7 @@ public class ObjectStreamClass implements Serializable {
      * Class for computing and caching field/constructor/method signatures
      * during serialVersionUID calculation.
      */
-    private static class MemberSignature {
+    private static final class MemberSignature {
 
         public final Member member;
         public final String name;
@@ -2013,7 +1881,7 @@ public class ObjectStreamClass implements Serializable {
         public MemberSignature(Field field) {
             member = field;
             name = field.getName();
-            signature = getClassSignature(field.getType());
+            signature = field.getType().descriptorString();
         }
 
         public MemberSignature(Constructor<?> cons) {
@@ -2035,10 +1903,10 @@ public class ObjectStreamClass implements Serializable {
      * Class for setting and retrieving serializable field values in batch.
      */
     // REMIND: dynamically generate these?
-    private static class FieldReflector {
+    private static final class FieldReflector {
 
         /** handle for performing unsafe operations */
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
         /** fields to operate on */
         private final ObjectStreamField[] fields;
@@ -2077,7 +1945,7 @@ public class ObjectStreamClass implements Serializable {
                 ObjectStreamField f = fields[i];
                 Field rf = f.getField();
                 long key = (rf != null) ?
-                    unsafe.objectFieldOffset(rf) : Unsafe.INVALID_FIELD_OFFSET;
+                    UNSAFE.objectFieldOffset(rf) : Unsafe.INVALID_FIELD_OFFSET;
                 readKeys[i] = key;
                 writeKeys[i] = usedKeys.add(key) ?
                     key : Unsafe.INVALID_FIELD_OFFSET;
@@ -2119,14 +1987,14 @@ public class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> Bits.putBoolean(buf, off, unsafe.getBoolean(obj, key));
-                    case 'B' -> buf[off] = unsafe.getByte(obj, key);
-                    case 'C' -> Bits.putChar(buf, off, unsafe.getChar(obj, key));
-                    case 'S' -> Bits.putShort(buf, off, unsafe.getShort(obj, key));
-                    case 'I' -> Bits.putInt(buf, off, unsafe.getInt(obj, key));
-                    case 'F' -> Bits.putFloat(buf, off, unsafe.getFloat(obj, key));
-                    case 'J' -> Bits.putLong(buf, off, unsafe.getLong(obj, key));
-                    case 'D' -> Bits.putDouble(buf, off, unsafe.getDouble(obj, key));
+                    case 'Z' -> ByteArray.setBoolean(buf, off, UNSAFE.getBoolean(obj, key));
+                    case 'B' -> buf[off] = UNSAFE.getByte(obj, key);
+                    case 'C' -> ByteArray.setChar(buf, off, UNSAFE.getChar(obj, key));
+                    case 'S' -> ByteArray.setShort(buf, off, UNSAFE.getShort(obj, key));
+                    case 'I' -> ByteArray.setInt(buf, off, UNSAFE.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloat(buf, off, UNSAFE.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLong(buf, off, UNSAFE.getLong(obj, key));
+                    case 'D' -> ByteArray.setDouble(buf, off, UNSAFE.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }
@@ -2148,14 +2016,14 @@ public class ObjectStreamClass implements Serializable {
                 }
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> unsafe.putBoolean(obj, key, Bits.getBoolean(buf, off));
-                    case 'B' -> unsafe.putByte(obj, key, buf[off]);
-                    case 'C' -> unsafe.putChar(obj, key, Bits.getChar(buf, off));
-                    case 'S' -> unsafe.putShort(obj, key, Bits.getShort(buf, off));
-                    case 'I' -> unsafe.putInt(obj, key, Bits.getInt(buf, off));
-                    case 'F' -> unsafe.putFloat(obj, key, Bits.getFloat(buf, off));
-                    case 'J' -> unsafe.putLong(obj, key, Bits.getLong(buf, off));
-                    case 'D' -> unsafe.putDouble(obj, key, Bits.getDouble(buf, off));
+                    case 'Z' -> UNSAFE.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
+                    case 'B' -> UNSAFE.putByte(obj, key, buf[off]);
+                    case 'C' -> UNSAFE.putChar(obj, key, ByteArray.getChar(buf, off));
+                    case 'S' -> UNSAFE.putShort(obj, key, ByteArray.getShort(buf, off));
+                    case 'I' -> UNSAFE.putInt(obj, key, ByteArray.getInt(buf, off));
+                    case 'F' -> UNSAFE.putFloat(obj, key, ByteArray.getFloat(buf, off));
+                    case 'J' -> UNSAFE.putLong(obj, key, ByteArray.getLong(buf, off));
+                    case 'D' -> UNSAFE.putDouble(obj, key, ByteArray.getDouble(buf, off));
                     default  -> throw new InternalError();
                 }
             }
@@ -2176,7 +2044,7 @@ public class ObjectStreamClass implements Serializable {
              */
             for (int i = numPrimFields; i < fields.length; i++) {
                 vals[offsets[i]] = switch (typeCodes[i]) {
-                    case 'L', '[' -> unsafe.getReference(obj, readKeys[i]);
+                    case 'L', '[' -> UNSAFE.getReference(obj, readKeys[i]);
                     default       -> throw new InternalError();
                 };
             }
@@ -2227,7 +2095,7 @@ public class ObjectStreamClass implements Serializable {
                                 obj.getClass().getName());
                         }
                         if (!dryRun)
-                            unsafe.putReference(obj, key, val);
+                            UNSAFE.putReference(obj, key, val);
                     }
                     default -> throw new InternalError();
                 }
@@ -2250,82 +2118,39 @@ public class ObjectStreamClass implements Serializable {
     {
         // class irrelevant if no fields
         Class<?> cl = (localDesc != null && fields.length > 0) ?
-            localDesc.cl : null;
-        processQueue(Caches.reflectorsQueue, Caches.reflectors);
-        FieldReflectorKey key = new FieldReflectorKey(cl, fields,
-                                                      Caches.reflectorsQueue);
-        Reference<?> ref = Caches.reflectors.get(key);
-        Object entry = null;
-        if (ref != null) {
-            entry = ref.get();
-        }
-        EntryFuture future = null;
-        if (entry == null) {
-            EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<>(newEntry);
-            do {
-                if (ref != null) {
-                    Caches.reflectors.remove(key, ref);
-                }
-                ref = Caches.reflectors.putIfAbsent(key, newRef);
-                if (ref != null) {
-                    entry = ref.get();
-                }
-            } while (ref != null && entry == null);
-            if (entry == null) {
-                future = newEntry;
+            localDesc.cl : Void.class;
+
+        var clReflectors = Caches.reflectors.get(cl);
+        var key = new FieldReflectorKey(fields);
+        var reflector = clReflectors.get(key);
+        if (reflector == null) {
+            reflector = new FieldReflector(matchFields(fields, localDesc));
+            var oldReflector = clReflectors.putIfAbsent(key, reflector);
+            if (oldReflector != null) {
+                reflector = oldReflector;
             }
         }
-
-        if (entry instanceof FieldReflector) {  // check common case first
-            return (FieldReflector) entry;
-        } else if (entry instanceof EntryFuture) {
-            entry = ((EntryFuture) entry).get();
-        } else if (entry == null) {
-            try {
-                entry = new FieldReflector(matchFields(fields, localDesc));
-            } catch (Throwable th) {
-                entry = th;
-            }
-            future.set(entry);
-            Caches.reflectors.put(key, new SoftReference<>(entry));
-        }
-
-        if (entry instanceof FieldReflector) {
-            return (FieldReflector) entry;
-        } else if (entry instanceof InvalidClassException) {
-            throw (InvalidClassException) entry;
-        } else if (entry instanceof RuntimeException) {
-            throw (RuntimeException) entry;
-        } else if (entry instanceof Error) {
-            throw (Error) entry;
-        } else {
-            throw new InternalError("unexpected entry: " + entry);
-        }
+        return reflector;
     }
 
     /**
      * FieldReflector cache lookup key.  Keys are considered equal if they
-     * refer to the same class and equivalent field formats.
+     * refer to equivalent field formats.
      */
-    private static class FieldReflectorKey extends WeakReference<Class<?>> {
+    private static class FieldReflectorKey {
 
         private final String[] sigs;
         private final int hash;
-        private final boolean nullClass;
 
-        FieldReflectorKey(Class<?> cl, ObjectStreamField[] fields,
-                          ReferenceQueue<Class<?>> queue)
+        FieldReflectorKey(ObjectStreamField[] fields)
         {
-            super(cl, queue);
-            nullClass = (cl == null);
             sigs = new String[2 * fields.length];
             for (int i = 0, j = 0; i < fields.length; i++) {
                 ObjectStreamField f = fields[i];
                 sigs[j++] = f.getName();
                 sigs[j++] = f.getSignature();
             }
-            hash = System.identityHashCode(cl) + Arrays.hashCode(sigs);
+            hash = Arrays.hashCode(sigs);
         }
 
         public int hashCode() {
@@ -2333,19 +2158,9 @@ public class ObjectStreamClass implements Serializable {
         }
 
         public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (obj instanceof FieldReflectorKey other) {
-                Class<?> referent;
-                return (nullClass ? other.nullClass
-                                  : ((referent = get()) != null) &&
-                                    (other.refersTo(referent))) &&
-                        Arrays.equals(sigs, other.sigs);
-            } else {
-                return false;
-            }
+            return obj == this ||
+                   obj instanceof FieldReflectorKey other &&
+                   Arrays.equals(sigs, other.sigs);
         }
     }
 
@@ -2410,68 +2225,6 @@ public class ObjectStreamClass implements Serializable {
     }
 
     /**
-     * Removes from the specified map any keys that have been enqueued
-     * on the specified reference queue.
-     */
-    static void processQueue(ReferenceQueue<Class<?>> queue,
-                             ConcurrentMap<? extends
-                             WeakReference<Class<?>>, ?> map)
-    {
-        Reference<? extends Class<?>> ref;
-        while((ref = queue.poll()) != null) {
-            map.remove(ref);
-        }
-    }
-
-    /**
-     *  Weak key for Class objects.
-     *
-     **/
-    static class WeakClassKey extends WeakReference<Class<?>> {
-        /**
-         * saved value of the referent's identity hash code, to maintain
-         * a consistent hash code after the referent has been cleared
-         */
-        private final int hash;
-
-        /**
-         * Create a new WeakClassKey to the given object, registered
-         * with a queue.
-         */
-        WeakClassKey(Class<?> cl, ReferenceQueue<Class<?>> refQueue) {
-            super(cl, refQueue);
-            hash = System.identityHashCode(cl);
-        }
-
-        /**
-         * Returns the identity hash code of the original referent.
-         */
-        public int hashCode() {
-            return hash;
-        }
-
-        /**
-         * Returns true if the given object is this identical
-         * WeakClassKey instance, or, if this object's referent has not
-         * been cleared, if the given object is another WeakClassKey
-         * instance with the identical non-null referent as this one.
-         */
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (obj instanceof WeakClassKey) {
-                Class<?> referent = get();
-                return (referent != null) &&
-                        (((WeakClassKey) obj).refersTo(referent));
-            } else {
-                return false;
-            }
-        }
-    }
-
-    /**
      * A LRA cache of record deserialization constructors.
      */
     @SuppressWarnings("serial")
@@ -2517,7 +2270,7 @@ public class ObjectStreamClass implements Serializable {
         }
 
         // a key composed of ObjectStreamField[] names and types
-        static abstract class Key {
+        abstract static class Key {
             abstract int length();
             abstract String fieldName(int i);
             abstract Class<?> fieldType(int i);
@@ -2721,16 +2474,16 @@ public class ObjectStreamClass implements Serializable {
             try {
                 PRIM_VALUE_EXTRACTORS = Map.of(
                     byte.class, MethodHandles.arrayElementGetter(byte[].class),
-                    short.class, lkp.findStatic(Bits.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
-                    int.class, lkp.findStatic(Bits.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
-                    long.class, lkp.findStatic(Bits.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
-                    float.class, lkp.findStatic(Bits.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
-                    double.class, lkp.findStatic(Bits.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
-                    char.class, lkp.findStatic(Bits.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
-                    boolean.class, lkp.findStatic(Bits.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
+                    short.class, lkp.findStatic(ByteArray.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
+                    int.class, lkp.findStatic(ByteArray.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
+                    long.class, lkp.findStatic(ByteArray.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
+                    float.class, lkp.findStatic(ByteArray.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
+                    double.class, lkp.findStatic(ByteArray.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
+                    char.class, lkp.findStatic(ByteArray.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
+                    boolean.class, lkp.findStatic(ByteArray.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
                 );
             } catch (NoSuchMethodException | IllegalAccessException e) {
-                throw new InternalError("Can't lookup Bits.getXXX", e);
+                throw new InternalError("Can't lookup " + ByteArray.class.getName() + ".getXXX", e);
             }
         }
     }

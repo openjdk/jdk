@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8273277
  *
  * @summary converted from VM Testbase jit/t/t105.
  * VM Testbase keywords: [jit, quick]
@@ -30,8 +31,9 @@
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm -XX:-OmitStackTraceInFastThrow jit.t.t105.t105
+ * @run main/othervm -XX:-OmitStackTraceInFastThrow -Xbatch -XX:Tier0BackedgeNotifyFreqLog=0 -XX:Tier2BackedgeNotifyFreqLog=0 -XX:Tier3BackedgeNotifyFreqLog=0 -XX:Tier2BackEdgeThreshold=1 -XX:Tier3BackEdgeThreshold=1 -XX:Tier4BackEdgeThreshold=1 jit.t.t105.t105
  *
- * This test must be run with ProfileTraps disabled to avoid preallocated
+ * This test must be run with OmitStackTraceInFastThrow disabled to avoid preallocated
  * exceptions. They don't have the detailed message that this test relies on.
  */
 

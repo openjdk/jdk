@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
 #define SHARE_UTILITIES_EVENTS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
-// This facility is extremly useful for post-mortem debugging. The eventlog
+// This facility is extremely useful for post-mortem debugging. The eventlog
 // often provides crucial information about events leading up to the crash.
 //
 // Abstractly the logs can record whatever they way but normally they
@@ -100,7 +100,7 @@ template <class T> class EventLogBase : public EventLog {
 
  public:
   EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
-    _mutex(Mutex::event, name, Mutex::_safepoint_check_never),
+    _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
     _length(length),
@@ -148,8 +148,8 @@ template <class T> class EventLogBase : public EventLog {
 
   void print(outputStream* out, EventRecord<T>& e) {
     out->print("Event: %.3f ", e.timestamp);
-    if (e.thread != NULL) {
-      out->print("Thread " INTPTR_FORMAT " ", p2i(e.thread));
+    if (e.thread != nullptr) {
+      out->print("Thread " PTR_FORMAT " ", p2i(e.thread));
     }
     print(out, e.data);
   }
@@ -230,11 +230,17 @@ class Events : AllStatic {
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
 
+  // dynamic lib related messages
+  static StringEventLog* _dll_messages;
+
   // Redefinition related messages
   static StringEventLog* _redefinitions;
 
   // Class unloading events
   static UnloadingEventLog* _class_unloading;
+
+  // Class loading events
+  static StringEventLog* _class_loading;
  public:
 
   // Print all event logs; limit number of events per event log to be printed with max
@@ -260,14 +266,18 @@ class Events : AllStatic {
 
   static void log_class_unloading(Thread* thread, InstanceKlass* ik);
 
+  static void log_class_loading(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_dll_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Register default loggers
   static void init();
 };
 
 inline void Events::log(Thread* thread, const char* format, ...) {
-  if (LogEvents && _messages != NULL) {
+  if (LogEvents && _messages != nullptr) {
     va_list ap;
     va_start(ap, format);
     _messages->logv(thread, format, ap);
@@ -276,7 +286,7 @@ inline void Events::log(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
-  if (LogEvents && _vm_operations != NULL) {
+  if (LogEvents && _vm_operations != nullptr) {
     va_list ap;
     va_start(ap, format);
     _vm_operations->logv(thread, format, ap);
@@ -285,7 +295,7 @@ inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_exception(Thread* thread, const char* format, ...) {
-  if (LogEvents && _exceptions != NULL) {
+  if (LogEvents && _exceptions != nullptr) {
     va_list ap;
     va_start(ap, format);
     _exceptions->logv(thread, format, ap);
@@ -294,13 +304,13 @@ inline void Events::log_exception(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
-  if (LogEvents && _exceptions != NULL) {
+  if (LogEvents && _exceptions != nullptr) {
     _exceptions->log(thread, h_exception, message, file, line);
   }
 }
 
 inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
-  if (LogEvents && _redefinitions != NULL) {
+  if (LogEvents && _redefinitions != nullptr) {
     va_list ap;
     va_start(ap, format);
     _redefinitions->logv(thread, format, ap);
@@ -309,16 +319,34 @@ inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_class_unloading(Thread* thread, InstanceKlass* ik) {
-  if (LogEvents && _class_unloading != NULL) {
+  if (LogEvents && _class_unloading != nullptr) {
     _class_unloading->log(thread, ik);
   }
 }
 
+inline void Events::log_class_loading(Thread* thread, const char* format, ...) {
+  if (LogEvents && _class_loading != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _class_loading->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
 inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
-  if (LogEvents && _deopt_messages != NULL) {
+  if (LogEvents && _deopt_messages != nullptr) {
     va_list ap;
     va_start(ap, format);
     _deopt_messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_dll_message(Thread* thread, const char* format, ...) {
+  if (LogEvents && _dll_messages != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _dll_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }
@@ -331,7 +359,7 @@ inline void EventLogBase<T>::print_log_on(outputStream* out, int max) {
     bool         _locked;
 
     MaybeLocker(Mutex* mutex) : _mutex(mutex), _proceed(false), _locked(false) {
-      if (Thread::current_or_null() == NULL) {
+      if (Thread::current_or_null() == nullptr) {
         _proceed = true;
       } else if (VMError::is_error_reported()) {
         if (_mutex->try_lock_without_rank_check()) {
@@ -472,5 +500,8 @@ typedef EventMarkWithLogFunction<Events::log> EventMark;
 
 // These end up in the vm_operation log.
 typedef EventMarkWithLogFunction<Events::log_vm_operation> EventMarkVMOperation;
+
+// These end up in the class loading log.
+typedef EventMarkWithLogFunction<Events::log_class_loading> EventMarkClassLoading;
 
 #endif // SHARE_UTILITIES_EVENTS_HPP

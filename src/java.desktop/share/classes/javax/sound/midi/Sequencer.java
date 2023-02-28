@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ public interface Sequencer extends MidiDevice {
     /**
      * Registers a meta-event listener to receive notification whenever a
      * meta-event is encountered in the sequence and processed by the sequencer.
-     * This method can fail if, for instance,this class of sequencer does not
+     * This method can fail if, for instance, this class of sequencer does not
      * support meta-event notification.
      *
      * @param  listener listener to add

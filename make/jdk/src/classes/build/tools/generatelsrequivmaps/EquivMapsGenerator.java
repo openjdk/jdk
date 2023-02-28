@@ -29,13 +29,15 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -51,17 +53,19 @@ import java.util.stream.Collectors;
 public class EquivMapsGenerator {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
+        if (args.length != 3) {
             System.err.println("Usage: java EquivMapsGenerator"
-                    + " language-subtag-registry.txt LocaleEquivalentMaps.java");
+                    + " language-subtag-registry.txt LocaleEquivalentMaps.java copyrightYear");
             System.exit(1);
         }
+        copyrightYear = Integer.parseInt(args[2]);
         readLSRfile(args[0]);
         generateEquivalentMap();
         generateSourceCode(args[1]);
     }
 
     private static String LSRrevisionDate;
+    private static int copyrightYear;
     private static Map<String, StringBuilder> initialLanguageMap =
         new TreeMap<>();
     private static Map<String, StringBuilder> initialRegionVariantMap =
@@ -244,9 +248,7 @@ public class EquivMapsGenerator {
         + "}";
 
     private static String getOpenJDKCopyright() {
-        int year = ZonedDateTime.now(ZoneId
-                .of("America/Los_Angeles")).getYear();
-        return String.format(Locale.US, COPYRIGHT, year);
+        return String.format(Locale.US, COPYRIGHT, copyrightYear);
     }
 
     /**

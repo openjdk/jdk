@@ -117,7 +117,7 @@ public class JPEG {
     /** Define Restart Interval */
     public static final int DRI = 0xDD;
 
-    /** Define Heirarchical progression */
+    /** Define Hierarchical progression */
     public static final int DHP = 0xDE;
 
     /** Expand reference image(s) */

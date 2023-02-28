@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1VMOperations.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
@@ -52,14 +53,12 @@ void VM_G1CollectFull::doit() {
   GCCauseSetter x(g1h, _gc_cause);
   _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
                                           false /* clear_all_soft_refs */,
-                                          false /* do_maximum_compaction */);
+                                          false /* do_maximal_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
-                                                   GCCause::Cause gc_cause,
-                                                   double target_pause_time_ms) :
+                                                   GCCause::Cause gc_cause) :
   VM_GC_Operation(gc_count_before, gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _transient_failure(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
@@ -105,7 +104,7 @@ void VM_G1TryInitiateConcMark::doit() {
     // request will be remembered for a later partial collection, even though
     // we've rejected this request.
     _whitebox_attached = true;
-  } else if (!g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
+  } else if (!g1h->do_collection_pause_at_safepoint()) {
     // Failure to perform the collection at all occurs because GCLocker is
     // active, and we have the bad luck to be the collection request that
     // makes a later _gc_locker collection needed.  (Else we would have hit
@@ -120,27 +119,14 @@ void VM_G1TryInitiateConcMark::doit() {
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
-                                                     GCCause::Cause gc_cause,
-                                                     double         target_pause_time_ms) :
+                                                     GCCause::Cause gc_cause) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false),
-  _target_pause_time_ms(target_pause_time_ms) {
-
-  guarantee(target_pause_time_ms > 0.0,
-            "target_pause_time_ms = %1.6lf should be positive",
-            target_pause_time_ms);
-  _gc_cause = gc_cause;
-}
-
-bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
-  // Don't allocate before a preventive GC.
-  return _gc_cause != GCCause::_g1_preventive_collection;
-}
+  _gc_succeeded(false) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (should_try_allocation_before_gc() && _word_size > 0) {
+  if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);
@@ -154,7 +140,7 @@ void VM_G1CollectForAllocation::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  _gc_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+  _gc_succeeded = g1h->do_collection_pause_at_safepoint();
 
   if (_gc_succeeded) {
     if (_word_size > 0) {
@@ -170,10 +156,10 @@ void VM_G1CollectForAllocation::doit() {
   }
 }
 
-void VM_G1Concurrent::doit() {
+void VM_G1PauseConcurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
-  GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  GCTraceCPUTime tcpu(g1h->concurrent_mark()->gc_tracer_cm());
 
   // GCTraceTime(...) only supports sub-phases, so a more verbose version
   // is needed when we report the top-level pause phase.
@@ -181,20 +167,31 @@ void VM_G1Concurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
+  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
-  _cl->do_void();
+
+  work();
 }
 
-bool VM_G1Concurrent::doit_prologue() {
+bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
-void VM_G1Concurrent::doit_epilogue() {
+void VM_G1PauseConcurrent::doit_epilogue() {
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
+}
+
+void VM_G1PauseRemark::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->remark();
+}
+
+void VM_G1PauseCleanup::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->cleanup();
 }

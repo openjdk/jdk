@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -261,6 +261,13 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS)
 
 ################################################################################
+# Help and user support
+
+$(eval $(call SetupTarget, doctor, \
+    MAKEFILE := Doctor, \
+))
+
+################################################################################
 # Generate libs and launcher targets for creating compile_commands.json fragments
 define DeclareCompileCommandsRecipe
   $1-compile-commands:
@@ -324,7 +331,7 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
 # aren't built until after libjava and libjvm are available to link to.
 $(eval $(call SetupTarget, demos-jdk, \
     MAKEFILE := CompileDemos, \
-    DEPS := java.base-libs exploded-image, \
+    DEPS := java.base-libs exploded-image buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, test-image-demos-jdk, \
@@ -383,12 +390,12 @@ bootcycle-images:
 
 $(eval $(call SetupTarget, zip-security, \
     MAKEFILE := ZipSecurity, \
-    DEPS := java.base-java java.security.jgss-java java.security.jgss-libs, \
+    DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs, \
 ))
 
 $(eval $(call SetupTarget, zip-source, \
     MAKEFILE := ZipSource, \
-    DEPS := gensrc, \
+    DEPS := buildtools-jdk gensrc, \
 ))
 
 $(eval $(call SetupTarget, jrtfs-jar, \
@@ -459,15 +466,15 @@ ALL_TARGETS += bootcycle-images
 # Docs targets
 
 # If building full docs, to complete docs-*-api we need both the javadoc and
-# modulegraph targets.
+# graphs targets.
 $(eval $(call SetupTarget, docs-jdk-api-javadoc, \
     MAKEFILE := Docs, \
     TARGET := docs-jdk-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-jdk-api-modulegraph, \
+$(eval $(call SetupTarget, docs-jdk-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-jdk-api-modulegraph, \
+    TARGET := docs-jdk-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -476,9 +483,9 @@ $(eval $(call SetupTarget, docs-javase-api-javadoc, \
     TARGET := docs-javase-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-javase-api-modulegraph, \
+$(eval $(call SetupTarget, docs-javase-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-javase-api-modulegraph, \
+    TARGET := docs-javase-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -487,9 +494,9 @@ $(eval $(call SetupTarget, docs-reference-api-javadoc, \
     TARGET := docs-reference-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-reference-api-modulegraph, \
+$(eval $(call SetupTarget, docs-reference-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-reference-api-modulegraph, \
+    TARGET := docs-reference-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -508,13 +515,13 @@ $(eval $(call SetupTarget, docs-jdk-index, \
 $(eval $(call SetupTarget, docs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-zip, \
-    DEPS :=  docs-jdk, \
+    DEPS :=  docs-jdk buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, docs-specs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-specs-zip, \
-    DEPS := docs-jdk-specs, \
+    DEPS := docs-jdk-specs buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, update-build-docs, \
@@ -525,6 +532,19 @@ $(eval $(call SetupTarget, update-x11wrappers, \
     MAKEFILE := UpdateX11Wrappers, \
     DEPS := java.base-copy buildtools-jdk, \
 ))
+
+ifneq ($(HSDIS_BACKEND), none)
+  $(eval $(call SetupTarget, build-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := build, \
+  ))
+
+  $(eval $(call SetupTarget, install-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := install, \
+      DEPS := jdk-image, \
+  ))
+endif
 
 ################################################################################
 # Cross compilation support
@@ -849,6 +869,10 @@ else
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
 
+  ifeq ($(ENABLE_HSDIS_BUNDLING), true)
+    java.base-copy: build-hsdis
+  endif
+
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs
 
@@ -1083,9 +1107,14 @@ docs-reference-api: docs-reference-api-javadoc
 # If we're building full docs, we must also generate the module graphs to
 # get non-broken api documentation.
 ifeq ($(ENABLE_FULL_DOCS), true)
-  docs-jdk-api: docs-jdk-api-modulegraph
-  docs-javase-api: docs-javase-api-modulegraph
-  docs-reference-api: docs-reference-api-modulegraph
+  docs-jdk-api: docs-jdk-api-graphs
+  docs-javase-api: docs-javase-api-graphs
+  docs-reference-api: docs-reference-api-graphs
+
+  # We must generate javadoc first so we know what graphs are needed
+  docs-jdk-api-graphs: docs-jdk-api-javadoc
+  docs-javase-api-graphs: docs-javase-api-javadoc
+  docs-reference-api-graphs: docs-reference-api-javadoc
 endif
 
 docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index

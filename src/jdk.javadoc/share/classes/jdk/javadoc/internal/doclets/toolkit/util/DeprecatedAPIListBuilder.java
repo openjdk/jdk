@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,37 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Build list of all the deprecated packages, classes, constructors, fields and methods.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
 
     private SortedSet<Element> forRemoval;
     public final List<String> releases;
+    private final Set<String> foundReleases;
 
     /**
      * Constructor.
      *
      * @param configuration the current configuration of the doclet
-     * @param releases list of releases
+     * @param since list of releases passed via <code>--since</code> option
      */
-    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> releases) {
+    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> since) {
         super(configuration, configuration.utils::isDeprecated);
-        this.releases = releases;
+        this.foundReleases = new HashSet<>();
         buildSummaryAPIInfo();
+        // The releases list is set to the intersection of releases defined via `--since` option
+        // and actually occurring values of `Deprecated.since` in documented deprecated elements.
+        // If there are `Deprecated.since` values not contained in the `--since` option list
+        // an empty string is added to the releases list which causes the writer to generate
+        // a checkbox for other (unlisted) releases.
+        List<String> releases = new ArrayList<>(since);
+        if (!releases.isEmpty()) {
+            releases.retainAll(foundReleases);
+            if (!releases.containsAll(foundReleases)) {
+                // Empty string is added for other releases, including the default value ""
+                releases.add("");
+            }
+        }
+        this.releases = Collections.unmodifiableList(releases);
     }
 
     public SortedSet<Element> getForRemoval() {
@@ -65,6 +75,7 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
 
     @Override
     protected void handleElement(Element e) {
+        foundReleases.add(utils.getDeprecatedSince(e));
         if (utils.isDeprecatedForRemoval(e)) {
             getForRemoval().add(e);
         }

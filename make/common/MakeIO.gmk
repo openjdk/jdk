@@ -37,7 +37,7 @@ endif
 
 ################################################################################
 # ListPathsSafely can be used to print command parameters to a file. This is
-# typically done if the command line lenght risk being too long for the
+# typically done if the command line length risk being too long for the
 # OS/shell. In later make versions, the file function can be used for this
 # purpose. For earlier versions, a more complex implementation is provided.
 #
@@ -257,7 +257,7 @@ ifeq ($(HAS_FILE_FUNCTION), true)
 else
   # Use printf to get consistent behavior on all platforms.
   WriteFile = \
-      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
 endif
 
 # Param 1 - Text to write
@@ -268,5 +268,5 @@ ifeq ($(HAS_FILE_FUNCTION), true)
 else
   # Use printf to get consistent behavior on all platforms.
   AppendFile = \
-      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) >> $2)
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
 endif

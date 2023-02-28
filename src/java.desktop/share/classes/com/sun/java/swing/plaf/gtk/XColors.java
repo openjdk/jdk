@@ -25,805 +25,529 @@
 
 package com.sun.java.swing.plaf.gtk;
 
-import java.awt.Color;
-import java.util.Arrays;
 import javax.swing.plaf.ColorUIResource;
 
 /**
- * @author  Shannon Hickey
+ * Utility class to convert color names to a color object.
  */
 class XColors {
 
-    private static class XColor implements Comparable<XColor> {
-        String name;
+    // No.
+    private XColors() {}
 
-        int red;
-        int green;
-        int blue;
+    /**
+     * Converts a color name to a {@link ColorUIResource}.
+     *
+     * @param name name of the color
+     * @return null, or a {@link java.awt.Color Color} object
+     */
+    static ColorUIResource lookupColor(String name) {
+        return switch (name.toLowerCase()) {
+            case "alice blue", "aliceblue" -> new ColorUIResource(240, 248, 255);
+            case "antique white", "antiquewhite" -> new ColorUIResource(250, 235, 215);
+            case "antiquewhite1" -> new ColorUIResource(255, 239, 219);
+            case "antiquewhite2" -> new ColorUIResource(238, 223, 204);
+            case "antiquewhite3" -> new ColorUIResource(205, 192, 176);
+            case "antiquewhite4" -> new ColorUIResource(139, 131, 120);
+            case "aquamarine", "aquamarine1" -> new ColorUIResource(127, 255, 212);
+            case "aquamarine2" -> new ColorUIResource(118, 238, 198);
+            case "aquamarine3", "medium aquamarine", "mediumaquamarine" -> new ColorUIResource(102, 205, 170);
+            case "aquamarine4" -> new ColorUIResource(69, 139, 116);
+            case "azure", "azure1" -> new ColorUIResource(240, 255, 255);
+            case "azure2" -> new ColorUIResource(224, 238, 238);
+            case "azure3" -> new ColorUIResource(193, 205, 205);
+            case "azure4" -> new ColorUIResource(131, 139, 139);
+            case "beige" -> new ColorUIResource(245, 245, 220);
+            case "bisque", "bisque1" -> new ColorUIResource(255, 228, 196);
+            case "bisque2" -> new ColorUIResource(238, 213, 183);
+            case "bisque3" -> new ColorUIResource(205, 183, 158);
+            case "bisque4" -> new ColorUIResource(139, 125, 107);
+            case "blanched almond", "blanchedalmond" -> new ColorUIResource(255, 235, 205);
+            case "blue", "blue1" -> new ColorUIResource(0, 0, 255);
+            case "blue2" -> new ColorUIResource(0, 0, 238);
+            case "blue3", "medium blue", "mediumblue" -> new ColorUIResource(0, 0, 205);
+            case "blue4", "dark blue", "darkblue" -> new ColorUIResource(0, 0, 139);
+            case "blue violet", "blueviolet" -> new ColorUIResource(138, 43, 226);
+            case "brown" -> new ColorUIResource(165, 42, 42);
+            case "brown1" -> new ColorUIResource(255, 64, 64);
+            case "brown2" -> new ColorUIResource(238, 59, 59);
+            case "brown3" -> new ColorUIResource(205, 51, 51);
+            case "brown4" -> new ColorUIResource(139, 35, 35);
+            case "burlywood" -> new ColorUIResource(222, 184, 135);
+            case "burlywood1" -> new ColorUIResource(255, 211, 155);
+            case "burlywood2" -> new ColorUIResource(238, 197, 145);
+            case "burlywood3" -> new ColorUIResource(205, 170, 125);
+            case "burlywood4" -> new ColorUIResource(139, 115, 85);
+            case "cadet blue", "cadetblue" -> new ColorUIResource(95, 158, 160);
+            case "cadetblue1" -> new ColorUIResource(152, 245, 255);
+            case "cadetblue2" -> new ColorUIResource(142, 229, 238);
+            case "cadetblue3" -> new ColorUIResource(122, 197, 205);
+            case "cadetblue4" -> new ColorUIResource(83, 134, 139);
+            case "chartreuse", "chartreuse1" -> new ColorUIResource(127, 255, 0);
+            case "chartreuse2" -> new ColorUIResource(118, 238, 0);
+            case "chartreuse3" -> new ColorUIResource(102, 205, 0);
+            case "chartreuse4" -> new ColorUIResource(69, 139, 0);
+            case "chocolate" -> new ColorUIResource(210, 105, 30);
+            case "chocolate1" -> new ColorUIResource(255, 127, 36);
+            case "chocolate2" -> new ColorUIResource(238, 118, 33);
+            case "chocolate3" -> new ColorUIResource(205, 102, 29);
+            case "chocolate4", "saddle brown", "saddlebrown" -> new ColorUIResource(139, 69, 19);
+            case "coral" -> new ColorUIResource(255, 127, 80);
+            case "coral1" -> new ColorUIResource(255, 114, 86);
+            case "coral2" -> new ColorUIResource(238, 106, 80);
+            case "coral3" -> new ColorUIResource(205, 91, 69);
+            case "coral4" -> new ColorUIResource(139, 62, 47);
+            case "cornflower blue", "cornflowerblue" -> new ColorUIResource(100, 149, 237);
+            case "cornsilk", "cornsilk1" -> new ColorUIResource(255, 248, 220);
+            case "cornsilk2" -> new ColorUIResource(238, 232, 205);
+            case "cornsilk3" -> new ColorUIResource(205, 200, 177);
+            case "cornsilk4" -> new ColorUIResource(139, 136, 120);
+            case "cyan", "cyan1" -> new ColorUIResource(0, 255, 255);
+            case "cyan2" -> new ColorUIResource(0, 238, 238);
+            case "cyan3" -> new ColorUIResource(0, 205, 205);
+            case "cyan4", "dark cyan", "darkcyan" -> new ColorUIResource(0, 139, 139);
+            case "dark goldenrod", "darkgoldenrod" -> new ColorUIResource(184, 134, 11);
+            case "darkgoldenrod1" -> new ColorUIResource(255, 185, 15);
+            case "darkgoldenrod2" -> new ColorUIResource(238, 173, 14);
+            case "darkgoldenrod3" -> new ColorUIResource(205, 149, 12);
+            case "darkgoldenrod4" -> new ColorUIResource(139, 101, 8);
+            case "dark gray", "darkgray", "dark grey", "darkgrey" -> new ColorUIResource(169, 169, 169);
+            case "dark green", "darkgreen" -> new ColorUIResource(0, 100, 0);
+            case "dark khaki", "darkkhaki" -> new ColorUIResource(189, 183, 107);
+            case "dark olive green", "darkolivegreen" -> new ColorUIResource(85, 107, 47);
+            case "darkolivegreen1" -> new ColorUIResource(202, 255, 112);
+            case "darkolivegreen2" -> new ColorUIResource(188, 238, 104);
+            case "darkolivegreen3" -> new ColorUIResource(162, 205, 90);
+            case "darkolivegreen4" -> new ColorUIResource(110, 139, 61);
+            case "dark orange", "darkorange" -> new ColorUIResource(255, 140, 0);
+            case "darkorange1" -> new ColorUIResource(255, 127, 0);
+            case "darkorange2" -> new ColorUIResource(238, 118, 0);
+            case "darkorange3" -> new ColorUIResource(205, 102, 0);
+            case "darkorange4" -> new ColorUIResource(139, 69, 0);
+            case "dark orchid", "darkorchid" -> new ColorUIResource(153, 50, 204);
+            case "darkorchid1" -> new ColorUIResource(191, 62, 255);
+            case "darkorchid2" -> new ColorUIResource(178, 58, 238);
+            case "darkorchid3" -> new ColorUIResource(154, 50, 205);
+            case "darkorchid4" -> new ColorUIResource(104, 34, 139);
+            case "dark salmon", "darksalmon" -> new ColorUIResource(233, 150, 122);
+            case "dark sea green", "darkseagreen" -> new ColorUIResource(143, 188, 143);
+            case "darkseagreen1" -> new ColorUIResource(193, 255, 193);
+            case "darkseagreen2" -> new ColorUIResource(180, 238, 180);
+            case "darkseagreen3" -> new ColorUIResource(155, 205, 155);
+            case "darkseagreen4" -> new ColorUIResource(105, 139, 105);
+            case "dark slate blue", "darkslateblue" -> new ColorUIResource(72, 61, 139);
+            case "dark slate gray", "dark slate grey", "darkslategray", "darkslategrey" -> new ColorUIResource(47, 79, 79);
+            case "darkslategray1" -> new ColorUIResource(151, 255, 255);
+            case "darkslategray2" -> new ColorUIResource(141, 238, 238);
+            case "darkslategray3" -> new ColorUIResource(121, 205, 205);
+            case "darkslategray4" -> new ColorUIResource(82, 139, 139);
+            case "dark turquoise", "darkturquoise" -> new ColorUIResource(0, 206, 209);
+            case "dark violet", "darkviolet" -> new ColorUIResource(148, 0, 211);
+            case "deep pink", "deeppink", "deeppink1" -> new ColorUIResource(255, 20, 147);
+            case "deeppink2" -> new ColorUIResource(238, 18, 137);
+            case "deeppink3" -> new ColorUIResource(205, 16, 118);
+            case "deeppink4" -> new ColorUIResource(139, 10, 80);
+            case "deep sky blue", "deepskyblue", "deepskyblue1" -> new ColorUIResource(0, 191, 255);
+            case "deepskyblue2" -> new ColorUIResource(0, 178, 238);
+            case "deepskyblue3" -> new ColorUIResource(0, 154, 205);
+            case "deepskyblue4" -> new ColorUIResource(0, 104, 139);
+            case "dodger blue", "dodgerblue", "dodgerblue1" -> new ColorUIResource(30, 144, 255);
+            case "dodgerblue2" -> new ColorUIResource(28, 134, 238);
+            case "dodgerblue3" -> new ColorUIResource(24, 116, 205);
+            case "dodgerblue4" -> new ColorUIResource(16, 78, 139);
+            case "firebrick" -> new ColorUIResource(178, 34, 34);
+            case "firebrick1" -> new ColorUIResource(255, 48, 48);
+            case "firebrick2" -> new ColorUIResource(238, 44, 44);
+            case "firebrick3" -> new ColorUIResource(205, 38, 38);
+            case "firebrick4" -> new ColorUIResource(139, 26, 26);
+            case "floral white", "floralwhite" -> new ColorUIResource(255, 250, 240);
+            case "forest green", "forestgreen" -> new ColorUIResource(34, 139, 34);
+            case "gainsboro" -> new ColorUIResource(220, 220, 220);
+            case "ghost white", "ghostwhite" -> new ColorUIResource(248, 248, 255);
+            case "gold", "gold1" -> new ColorUIResource(255, 215, 0);
+            case "gold2" -> new ColorUIResource(238, 201, 0);
+            case "gold3" -> new ColorUIResource(205, 173, 0);
+            case "gold4" -> new ColorUIResource(139, 117, 0);
+            case "goldenrod" -> new ColorUIResource(218, 165, 32);
+            case "goldenrod1" -> new ColorUIResource(255, 193, 37);
+            case "goldenrod2" -> new ColorUIResource(238, 180, 34);
+            case "goldenrod3" -> new ColorUIResource(205, 155, 29);
+            case "goldenrod4" -> new ColorUIResource(139, 105, 20);
+            case "gray", "grey" -> new ColorUIResource(190, 190, 190);
+            case "gray0", "grey0", "black" -> new ColorUIResource(0, 0, 0);
+            case "gray1", "grey1" -> new ColorUIResource(3, 3, 3);
+            case "gray2", "grey2" -> new ColorUIResource(5, 5, 5);
+            case "gray3", "grey3" -> new ColorUIResource(8, 8, 8);
+            case "gray4", "grey4" -> new ColorUIResource(10, 10, 10);
+            case "gray5", "grey5" -> new ColorUIResource(13, 13, 13);
+            case "gray6", "grey6" -> new ColorUIResource(15, 15, 15);
+            case "gray7", "grey7" -> new ColorUIResource(18, 18, 18);
+            case "gray8", "grey8" -> new ColorUIResource(20, 20, 20);
+            case "gray9", "grey9" -> new ColorUIResource(23, 23, 23);
+            case "gray10", "grey10" -> new ColorUIResource(26, 26, 26);
+            case "gray11", "grey11" -> new ColorUIResource(28, 28, 28);
+            case "gray12", "grey12" -> new ColorUIResource(31, 31, 31);
+            case "gray13", "grey13" -> new ColorUIResource(33, 33, 33);
+            case "gray14", "grey14" -> new ColorUIResource(36, 36, 36);
+            case "gray15", "grey15" -> new ColorUIResource(38, 38, 38);
+            case "gray16", "grey16" -> new ColorUIResource(41, 41, 41);
+            case "gray17", "grey17" -> new ColorUIResource(43, 43, 43);
+            case "gray18", "grey18" -> new ColorUIResource(46, 46, 46);
+            case "gray19", "grey19" -> new ColorUIResource(48, 48, 48);
+            case "gray20", "grey20" -> new ColorUIResource(51, 51, 51);
+            case "gray21", "grey21" -> new ColorUIResource(54, 54, 54);
+            case "gray22", "grey22" -> new ColorUIResource(56, 56, 56);
+            case "gray23", "grey23" -> new ColorUIResource(59, 59, 59);
+            case "gray24", "grey24" -> new ColorUIResource(61, 61, 61);
+            case "gray25", "grey25" -> new ColorUIResource(64, 64, 64);
+            case "gray26", "grey26" -> new ColorUIResource(66, 66, 66);
+            case "gray27", "grey27" -> new ColorUIResource(69, 69, 69);
+            case "gray28", "grey28" -> new ColorUIResource(71, 71, 71);
+            case "gray29", "grey29" -> new ColorUIResource(74, 74, 74);
+            case "gray30", "grey30" -> new ColorUIResource(77, 77, 77);
+            case "gray31", "grey31" -> new ColorUIResource(79, 79, 79);
+            case "gray32", "grey32" -> new ColorUIResource(82, 82, 82);
+            case "gray33", "grey33" -> new ColorUIResource(84, 84, 84);
+            case "gray34", "grey34" -> new ColorUIResource(87, 87, 87);
+            case "gray35", "grey35" -> new ColorUIResource(89, 89, 89);
+            case "gray36", "grey36" -> new ColorUIResource(92, 92, 92);
+            case "gray37", "grey37" -> new ColorUIResource(94, 94, 94);
+            case "gray38", "grey38" -> new ColorUIResource(97, 97, 97);
+            case "gray39", "grey39" -> new ColorUIResource(99, 99, 99);
+            case "gray40", "grey40" -> new ColorUIResource(102, 102, 102);
+            case "gray41", "grey41", "dim gray", "dim grey", "dimgray", "dimgrey" -> new ColorUIResource(105, 105, 105);
+            case "gray42", "grey42" -> new ColorUIResource(107, 107, 107);
+            case "gray43", "grey43" -> new ColorUIResource(110, 110, 110);
+            case "gray44", "grey44" -> new ColorUIResource(112, 112, 112);
+            case "gray45", "grey45" -> new ColorUIResource(115, 115, 115);
+            case "gray46", "grey46" -> new ColorUIResource(117, 117, 117);
+            case "gray47", "grey47" -> new ColorUIResource(120, 120, 120);
+            case "gray48", "grey48" -> new ColorUIResource(122, 122, 122);
+            case "gray49", "grey49" -> new ColorUIResource(125, 125, 125);
+            case "gray50", "grey50" -> new ColorUIResource(127, 127, 127);
+            case "gray51", "grey51" -> new ColorUIResource(130, 130, 130);
+            case "gray52", "grey52" -> new ColorUIResource(133, 133, 133);
+            case "gray53", "grey53" -> new ColorUIResource(135, 135, 135);
+            case "gray54", "grey54" -> new ColorUIResource(138, 138, 138);
+            case "gray55", "grey55" -> new ColorUIResource(140, 140, 140);
+            case "gray56", "grey56" -> new ColorUIResource(143, 143, 143);
+            case "gray57", "grey57" -> new ColorUIResource(145, 145, 145);
+            case "gray58", "grey58" -> new ColorUIResource(148, 148, 148);
+            case "gray59", "grey59" -> new ColorUIResource(150, 150, 150);
+            case "gray60", "grey60" -> new ColorUIResource(153, 153, 153);
+            case "gray61", "grey61" -> new ColorUIResource(156, 156, 156);
+            case "gray62", "grey62" -> new ColorUIResource(158, 158, 158);
+            case "gray63", "grey63" -> new ColorUIResource(161, 161, 161);
+            case "gray64", "grey64" -> new ColorUIResource(163, 163, 163);
+            case "gray65", "grey65" -> new ColorUIResource(166, 166, 166);
+            case "gray66", "grey66" -> new ColorUIResource(168, 168, 168);
+            case "gray67", "grey67" -> new ColorUIResource(171, 171, 171);
+            case "gray68", "grey68" -> new ColorUIResource(173, 173, 173);
+            case "gray69", "grey69" -> new ColorUIResource(176, 176, 176);
+            case "gray70", "grey70" -> new ColorUIResource(179, 179, 179);
+            case "gray71", "grey71" -> new ColorUIResource(181, 181, 181);
+            case "gray72", "grey72" -> new ColorUIResource(184, 184, 184);
+            case "gray73", "grey73" -> new ColorUIResource(186, 186, 186);
+            case "gray74", "grey74" -> new ColorUIResource(189, 189, 189);
+            case "gray75", "grey75" -> new ColorUIResource(191, 191, 191);
+            case "gray76", "grey76" -> new ColorUIResource(194, 194, 194);
+            case "gray77", "grey77" -> new ColorUIResource(196, 196, 196);
+            case "gray78", "grey78" -> new ColorUIResource(199, 199, 199);
+            case "gray79", "grey79" -> new ColorUIResource(201, 201, 201);
+            case "gray80", "grey80" -> new ColorUIResource(204, 204, 204);
+            case "gray81", "grey81" -> new ColorUIResource(207, 207, 207);
+            case "gray82", "grey82" -> new ColorUIResource(209, 209, 209);
+            case "gray83", "grey83" -> new ColorUIResource(212, 212, 212);
+            case "gray84", "grey84" -> new ColorUIResource(214, 214, 214);
+            case "gray85", "grey85" -> new ColorUIResource(217, 217, 217);
+            case "gray86", "grey86" -> new ColorUIResource(219, 219, 219);
+            case "gray87", "grey87" -> new ColorUIResource(222, 222, 222);
+            case "gray88", "grey88" -> new ColorUIResource(224, 224, 224);
+            case "gray89", "grey89" -> new ColorUIResource(227, 227, 227);
+            case "gray90", "grey90" -> new ColorUIResource(229, 229, 229);
+            case "gray91", "grey91" -> new ColorUIResource(232, 232, 232);
+            case "gray92", "grey92" -> new ColorUIResource(235, 235, 235);
+            case "gray93", "grey93" -> new ColorUIResource(237, 237, 237);
+            case "gray94", "grey94" -> new ColorUIResource(240, 240, 240);
+            case "gray95", "grey95" -> new ColorUIResource(242, 242, 242);
+            case "gray96", "grey96", "white smoke", "whitesmoke" -> new ColorUIResource(245, 245, 245);
+            case "gray97", "grey97" -> new ColorUIResource(247, 247, 247);
+            case "gray98", "grey98" -> new ColorUIResource(250, 250, 250);
+            case "gray99", "grey99" -> new ColorUIResource(252, 252, 252);
+            case "gray100", "grey100", "white" -> new ColorUIResource(255, 255, 255);
+            case "green yellow", "greenyellow" -> new ColorUIResource(173, 255, 47);
+            case "green", "green1" -> new ColorUIResource(0, 255, 0);
+            case "green2" -> new ColorUIResource(0, 238, 0);
+            case "green3" -> new ColorUIResource(0, 205, 0);
+            case "green4" -> new ColorUIResource(0, 139, 0);
+            case "honeydew", "honeydew1" -> new ColorUIResource(240, 255, 240);
+            case "honeydew2" -> new ColorUIResource(224, 238, 224);
+            case "honeydew3" -> new ColorUIResource(193, 205, 193);
+            case "honeydew4" -> new ColorUIResource(131, 139, 131);
+            case "hot pink", "hotpink" -> new ColorUIResource(255, 105, 180);
+            case "hotpink1" -> new ColorUIResource(255, 110, 180);
+            case "hotpink2" -> new ColorUIResource(238, 106, 167);
+            case "hotpink3" -> new ColorUIResource(205, 96, 144);
+            case "hotpink4" -> new ColorUIResource(139, 58, 98);
+            case "indian red", "indianred" -> new ColorUIResource(205, 92, 92);
+            case "indianred1" -> new ColorUIResource(255, 106, 106);
+            case "indianred2" -> new ColorUIResource(238, 99, 99);
+            case "indianred3" -> new ColorUIResource(205, 85, 85);
+            case "indianred4" -> new ColorUIResource(139, 58, 58);
+            case "ivory", "ivory1" -> new ColorUIResource(255, 255, 240);
+            case "ivory2" -> new ColorUIResource(238, 238, 224);
+            case "ivory3" -> new ColorUIResource(205, 205, 193);
+            case "ivory4" -> new ColorUIResource(139, 139, 131);
+            case "khaki" -> new ColorUIResource(240, 230, 140);
+            case "khaki1" -> new ColorUIResource(255, 246, 143);
+            case "khaki2" -> new ColorUIResource(238, 230, 133);
+            case "khaki3" -> new ColorUIResource(205, 198, 115);
+            case "khaki4" -> new ColorUIResource(139, 134, 78);
+            case "lavender" -> new ColorUIResource(230, 230, 250);
+            case "lavender blush", "lavenderblush", "lavenderblush1" -> new ColorUIResource(255, 240, 245);
+            case "lavenderblush2" -> new ColorUIResource(238, 224, 229);
+            case "lavenderblush3" -> new ColorUIResource(205, 193, 197);
+            case "lavenderblush4" -> new ColorUIResource(139, 131, 134);
+            case "lawn green", "lawngreen" -> new ColorUIResource(124, 252, 0);
+            case "lemon chiffon", "lemonchiffon", "lemonchiffon1" -> new ColorUIResource(255, 250, 205);
+            case "lemonchiffon2" -> new ColorUIResource(238, 233, 191);
+            case "lemonchiffon3" -> new ColorUIResource(205, 201, 165);
+            case "lemonchiffon4" -> new ColorUIResource(139, 137, 112);
+            case "light blue", "lightblue" -> new ColorUIResource(173, 216, 230);
+            case "lightblue1" -> new ColorUIResource(191, 239, 255);
+            case "lightblue2" -> new ColorUIResource(178, 223, 238);
+            case "lightblue3" -> new ColorUIResource(154, 192, 205);
+            case "lightblue4" -> new ColorUIResource(104, 131, 139);
+            case "light coral", "lightcoral" -> new ColorUIResource(240, 128, 128);
+            case "light cyan", "lightcyan", "lightcyan1" -> new ColorUIResource(224, 255, 255);
+            case "lightcyan2" -> new ColorUIResource(209, 238, 238);
+            case "lightcyan3" -> new ColorUIResource(180, 205, 205);
+            case "lightcyan4" -> new ColorUIResource(122, 139, 139);
+            case "light goldenrod", "lightgoldenrod" -> new ColorUIResource(238, 221, 130);
+            case "lightgoldenrod1" -> new ColorUIResource(255, 236, 139);
+            case "lightgoldenrod2" -> new ColorUIResource(238, 220, 130);
+            case "lightgoldenrod3" -> new ColorUIResource(205, 190, 112);
+            case "lightgoldenrod4" -> new ColorUIResource(139, 129, 76);
+            case "light goldenrod yellow", "lightgoldenrodyellow" -> new ColorUIResource(250, 250, 210);
+            case "light gray", "lightgray", "light grey", "lightgrey" -> new ColorUIResource(211, 211, 211);
+            case "light pink", "lightpink" -> new ColorUIResource(255, 182, 193);
+            case "lightpink1" -> new ColorUIResource(255, 174, 185);
+            case "lightpink2" -> new ColorUIResource(238, 162, 173);
+            case "lightpink3" -> new ColorUIResource(205, 140, 149);
+            case "lightpink4" -> new ColorUIResource(139, 95, 101);
+            case "light salmon", "lightsalmon", "lightsalmon1" -> new ColorUIResource(255, 160, 122);
+            case "lightsalmon2" -> new ColorUIResource(238, 149, 114);
+            case "lightsalmon3" -> new ColorUIResource(205, 129, 98);
+            case "lightsalmon4" -> new ColorUIResource(139, 87, 66);
+            case "light sea green", "lightseagreen" -> new ColorUIResource(32, 178, 170);
+            case "light sky blue", "lightskyblue" -> new ColorUIResource(135, 206, 250);
+            case "lightskyblue1" -> new ColorUIResource(176, 226, 255);
+            case "lightskyblue2" -> new ColorUIResource(164, 211, 238);
+            case "lightskyblue3" -> new ColorUIResource(141, 182, 205);
+            case "lightskyblue4" -> new ColorUIResource(96, 123, 139);
+            case "light slate blue", "lightslateblue" -> new ColorUIResource(132, 112, 255);
+            case "light slate gray", "light slate grey", "lightslategray", "lightslategrey" -> new ColorUIResource(119, 136, 153);
+            case "light steel blue", "lightsteelblue" -> new ColorUIResource(176, 196, 222);
+            case "lightsteelblue1" -> new ColorUIResource(202, 225, 255);
+            case "lightsteelblue2" -> new ColorUIResource(188, 210, 238);
+            case "lightsteelblue3" -> new ColorUIResource(162, 181, 205);
+            case "lightsteelblue4" -> new ColorUIResource(110, 123, 139);
+            case "light yellow", "lightyellow", "lightyellow1" -> new ColorUIResource(255, 255, 224);
+            case "lightyellow2" -> new ColorUIResource(238, 238, 209);
+            case "lightyellow3" -> new ColorUIResource(205, 205, 180);
+            case "lightyellow4" -> new ColorUIResource(139, 139, 122);
+            case "lime green", "limegreen" -> new ColorUIResource(50, 205, 50);
+            case "linen" -> new ColorUIResource(250, 240, 230);
+            case "magenta", "magenta1" -> new ColorUIResource(255, 0, 255);
+            case "magenta2" -> new ColorUIResource(238, 0, 238);
+            case "magenta3" -> new ColorUIResource(205, 0, 205);
+            case "magenta4", "dark magenta", "darkmagenta" -> new ColorUIResource(139, 0, 139);
+            case "maroon" -> new ColorUIResource(176, 48, 96);
+            case "maroon1" -> new ColorUIResource(255, 52, 179);
+            case "maroon2" -> new ColorUIResource(238, 48, 167);
+            case "maroon3" -> new ColorUIResource(205, 41, 144);
+            case "maroon4" -> new ColorUIResource(139, 28, 98);
+            case "medium orchid", "mediumorchid" -> new ColorUIResource(186, 85, 211);
+            case "mediumorchid1" -> new ColorUIResource(224, 102, 255);
+            case "mediumorchid2" -> new ColorUIResource(209, 95, 238);
+            case "mediumorchid3" -> new ColorUIResource(180, 82, 205);
+            case "mediumorchid4" -> new ColorUIResource(122, 55, 139);
+            case "medium purple", "mediumpurple" -> new ColorUIResource(147, 112, 219);
+            case "mediumpurple1" -> new ColorUIResource(171, 130, 255);
+            case "mediumpurple2" -> new ColorUIResource(159, 121, 238);
+            case "mediumpurple3" -> new ColorUIResource(137, 104, 205);
+            case "mediumpurple4" -> new ColorUIResource(93, 71, 139);
+            case "medium sea green", "mediumseagreen" -> new ColorUIResource(60, 179, 113);
+            case "medium slate blue", "mediumslateblue" -> new ColorUIResource(123, 104, 238);
+            case "medium spring green", "mediumspringgreen" -> new ColorUIResource(0, 250, 154);
+            case "medium turquoise", "mediumturquoise" -> new ColorUIResource(72, 209, 204);
+            case "medium violet red", "mediumvioletred" -> new ColorUIResource(199, 21, 133);
+            case "midnight blue", "midnightblue" -> new ColorUIResource(25, 25, 112);
+            case "mint cream", "mintcream" -> new ColorUIResource(245, 255, 250);
+            case "misty rose", "mistyrose", "mistyrose1" -> new ColorUIResource(255, 228, 225);
+            case "mistyrose2" -> new ColorUIResource(238, 213, 210);
+            case "mistyrose3" -> new ColorUIResource(205, 183, 181);
+            case "mistyrose4" -> new ColorUIResource(139, 125, 123);
+            case "moccasin" -> new ColorUIResource(255, 228, 181);
+            case "navajo white", "navajowhite", "navajowhite1" -> new ColorUIResource(255, 222, 173);
+            case "navajowhite2" -> new ColorUIResource(238, 207, 161);
+            case "navajowhite3" -> new ColorUIResource(205, 179, 139);
+            case "navajowhite4" -> new ColorUIResource(139, 121, 94);
+            case "navy", "navy blue", "navyblue" -> new ColorUIResource(0, 0, 128);
+            case "old lace", "oldlace" -> new ColorUIResource(253, 245, 230);
+            case "olive drab", "olivedrab" -> new ColorUIResource(107, 142, 35);
+            case "olivedrab1" -> new ColorUIResource(192, 255, 62);
+            case "olivedrab2" -> new ColorUIResource(179, 238, 58);
+            case "olivedrab3", "yellow green" -> new ColorUIResource(154, 205, 50);
+            case "olivedrab4" -> new ColorUIResource(105, 139, 34);
+            case "orange", "orange1" -> new ColorUIResource(255, 165, 0);
+            case "orange2" -> new ColorUIResource(238, 154, 0);
+            case "orange3" -> new ColorUIResource(205, 133, 0);
+            case "orange4" -> new ColorUIResource(139, 90, 0);
+            case "orange red", "orangered", "orangered1" -> new ColorUIResource(255, 69, 0);
+            case "orangered2" -> new ColorUIResource(238, 64, 0);
+            case "orangered3" -> new ColorUIResource(205, 55, 0);
+            case "orangered4" -> new ColorUIResource(139, 37, 0);
+            case "orchid" -> new ColorUIResource(218, 112, 214);
+            case "orchid1" -> new ColorUIResource(255, 131, 250);
+            case "orchid2" -> new ColorUIResource(238, 122, 233);
+            case "orchid3" -> new ColorUIResource(205, 105, 201);
+            case "orchid4" -> new ColorUIResource(139, 71, 137);
+            case "pale goldenrod", "palegoldenrod" -> new ColorUIResource(238, 232, 170);
+            case "pale green", "palegreen" -> new ColorUIResource(152, 251, 152);
+            case "palegreen1" -> new ColorUIResource(154, 255, 154);
+            case "palegreen2", "light green", "lightgreen" -> new ColorUIResource(144, 238, 144);
+            case "palegreen3" -> new ColorUIResource(124, 205, 124);
+            case "palegreen4" -> new ColorUIResource(84, 139, 84);
+            case "pale turquoise", "paleturquoise" -> new ColorUIResource(175, 238, 238);
+            case "paleturquoise1" -> new ColorUIResource(187, 255, 255);
+            case "paleturquoise2" -> new ColorUIResource(174, 238, 238);
+            case "paleturquoise3" -> new ColorUIResource(150, 205, 205);
+            case "paleturquoise4" -> new ColorUIResource(102, 139, 139);
+            case "pale violet red", "palevioletred" -> new ColorUIResource(219, 112, 147);
+            case "palevioletred1" -> new ColorUIResource(255, 130, 171);
+            case "palevioletred2" -> new ColorUIResource(238, 121, 159);
+            case "palevioletred3" -> new ColorUIResource(205, 104, 137);
+            case "palevioletred4" -> new ColorUIResource(139, 71, 93);
+            case "papaya whip", "papayawhip" -> new ColorUIResource(255, 239, 213);
+            case "peach puff", "peachpuff", "peachpuff1" -> new ColorUIResource(255, 218, 185);
+            case "peachpuff2" -> new ColorUIResource(238, 203, 173);
+            case "peachpuff3" -> new ColorUIResource(205, 175, 149);
+            case "peachpuff4" -> new ColorUIResource(139, 119, 101);
+            case "pink" -> new ColorUIResource(255, 192, 203);
+            case "pink1" -> new ColorUIResource(255, 181, 197);
+            case "pink2" -> new ColorUIResource(238, 169, 184);
+            case "pink3" -> new ColorUIResource(205, 145, 158);
+            case "pink4" -> new ColorUIResource(139, 99, 108);
+            case "plum" -> new ColorUIResource(221, 160, 221);
+            case "plum1" -> new ColorUIResource(255, 187, 255);
+            case "plum2" -> new ColorUIResource(238, 174, 238);
+            case "plum3" -> new ColorUIResource(205, 150, 205);
+            case "plum4" -> new ColorUIResource(139, 102, 139);
+            case "powder blue", "powderblue" -> new ColorUIResource(176, 224, 230);
+            case "purple" -> new ColorUIResource(160, 32, 240);
+            case "purple1" -> new ColorUIResource(155, 48, 255);
+            case "purple2" -> new ColorUIResource(145, 44, 238);
+            case "purple3" -> new ColorUIResource(125, 38, 205);
+            case "purple4" -> new ColorUIResource(85, 26, 139);
+            case "red", "red1" -> new ColorUIResource(255, 0, 0);
+            case "red2" -> new ColorUIResource(238, 0, 0);
+            case "red3" -> new ColorUIResource(205, 0, 0);
+            case "red4", "dark red", "darkred" -> new ColorUIResource(139, 0, 0);
+            case "rosy brown", "rosybrown" -> new ColorUIResource(188, 143, 143);
+            case "rosybrown1" -> new ColorUIResource(255, 193, 193);
+            case "rosybrown2" -> new ColorUIResource(238, 180, 180);
+            case "rosybrown3" -> new ColorUIResource(205, 155, 155);
+            case "rosybrown4" -> new ColorUIResource(139, 105, 105);
+            case "royal blue", "royalblue" -> new ColorUIResource(65, 105, 225);
+            case "royalblue1" -> new ColorUIResource(72, 118, 255);
+            case "royalblue2" -> new ColorUIResource(67, 110, 238);
+            case "royalblue3" -> new ColorUIResource(58, 95, 205);
+            case "royalblue4" -> new ColorUIResource(39, 64, 139);
+            case "salmon" -> new ColorUIResource(250, 128, 114);
+            case "salmon1" -> new ColorUIResource(255, 140, 105);
+            case "salmon2" -> new ColorUIResource(238, 130, 98);
+            case "salmon3" -> new ColorUIResource(205, 112, 84);
+            case "salmon4" -> new ColorUIResource(139, 76, 57);
+            case "sandy brown", "sandybrown" -> new ColorUIResource(244, 164, 96);
+            case "sea green", "seagreen", "seagreen4" -> new ColorUIResource(46, 139, 87);
+            case "seagreen1" -> new ColorUIResource(84, 255, 159);
+            case "seagreen2" -> new ColorUIResource(78, 238, 148);
+            case "seagreen3" -> new ColorUIResource(67, 205, 128);
+            case "seashell", "seashell1" -> new ColorUIResource(255, 245, 238);
+            case "seashell2" -> new ColorUIResource(238, 229, 222);
+            case "seashell3" -> new ColorUIResource(205, 197, 191);
+            case "seashell4" -> new ColorUIResource(139, 134, 130);
+            case "sienna" -> new ColorUIResource(160, 82, 45);
+            case "sienna1" -> new ColorUIResource(255, 130, 71);
+            case "sienna2" -> new ColorUIResource(238, 121, 66);
+            case "sienna3" -> new ColorUIResource(205, 104, 57);
+            case "sienna4" -> new ColorUIResource(139, 71, 38);
+            case "sky blue", "skyblue" -> new ColorUIResource(135, 206, 235);
+            case "skyblue1" -> new ColorUIResource(135, 206, 255);
+            case "skyblue2" -> new ColorUIResource(126, 192, 238);
+            case "skyblue3" -> new ColorUIResource(108, 166, 205);
+            case "skyblue4" -> new ColorUIResource(74, 112, 139);
+            case "slate blue", "slateblue" -> new ColorUIResource(106, 90, 205);
+            case "slateblue1" -> new ColorUIResource(131, 111, 255);
+            case "slateblue2" -> new ColorUIResource(122, 103, 238);
+            case "slateblue3" -> new ColorUIResource(105, 89, 205);
+            case "slateblue4" -> new ColorUIResource(71, 60, 139);
+            case "slategray", "slategrey", "slate gray", "slate grey" -> new ColorUIResource(112, 128, 144);
+            case "slategray1" -> new ColorUIResource(198, 226, 255);
+            case "slategray2" -> new ColorUIResource(185, 211, 238);
+            case "slategray3" -> new ColorUIResource(159, 182, 205);
+            case "slategray4" -> new ColorUIResource(108, 123, 139);
+            case "snow", "snow1" -> new ColorUIResource(255, 250, 250);
+            case "snow2" -> new ColorUIResource(238, 233, 233);
+            case "snow3" -> new ColorUIResource(205, 201, 201);
+            case "snow4" -> new ColorUIResource(139, 137, 137);
+            case "spring green", "springgreen", "springgreen1" -> new ColorUIResource(0, 255, 127);
+            case "springgreen2" -> new ColorUIResource(0, 238, 118);
+            case "springgreen3" -> new ColorUIResource(0, 205, 102);
+            case "springgreen4" -> new ColorUIResource(0, 139, 69);
+            case "steel blue", "steelblue" -> new ColorUIResource(70, 130, 180);
+            case "steelblue1" -> new ColorUIResource(99, 184, 255);
+            case "steelblue2" -> new ColorUIResource(92, 172, 238);
+            case "steelblue3" -> new ColorUIResource(79, 148, 205);
+            case "steelblue4" -> new ColorUIResource(54, 100, 139);
+            case "tan" -> new ColorUIResource(210, 180, 140);
+            case "tan1" -> new ColorUIResource(255, 165, 79);
+            case "tan2" -> new ColorUIResource(238, 154, 73);
+            case "tan3", "peru" -> new ColorUIResource(205, 133, 63);
+            case "tan4" -> new ColorUIResource(139, 90, 43);
+            case "thistle" -> new ColorUIResource(216, 191, 216);
+            case "thistle1" -> new ColorUIResource(255, 225, 255);
+            case "thistle2" -> new ColorUIResource(238, 210, 238);
+            case "thistle3" -> new ColorUIResource(205, 181, 205);
+            case "thistle4" -> new ColorUIResource(139, 123, 139);
+            case "tomato", "tomato1" -> new ColorUIResource(255, 99, 71);
+            case "tomato2" -> new ColorUIResource(238, 92, 66);
+            case "tomato3" -> new ColorUIResource(205, 79, 57);
+            case "tomato4" -> new ColorUIResource(139, 54, 38);
+            case "turquoise" -> new ColorUIResource(64, 224, 208);
+            case "turquoise1" -> new ColorUIResource(0, 245, 255);
+            case "turquoise2" -> new ColorUIResource(0, 229, 238);
+            case "turquoise3" -> new ColorUIResource(0, 197, 205);
+            case "turquoise4" -> new ColorUIResource(0, 134, 139);
+            case "violet" -> new ColorUIResource(238, 130, 238);
+            case "violet red", "violetred" -> new ColorUIResource(208, 32, 144);
+            case "violetred1" -> new ColorUIResource(255, 62, 150);
+            case "violetred2" -> new ColorUIResource(238, 58, 140);
+            case "violetred3" -> new ColorUIResource(205, 50, 120);
+            case "violetred4" -> new ColorUIResource(139, 34, 82);
+            case "wheat" -> new ColorUIResource(245, 222, 179);
+            case "wheat1" -> new ColorUIResource(255, 231, 186);
+            case "wheat2" -> new ColorUIResource(238, 216, 174);
+            case "wheat3" -> new ColorUIResource(205, 186, 150);
+            case "wheat4" -> new ColorUIResource(139, 126, 102);
+            case "yellow", "yellow1" -> new ColorUIResource(255, 255, 0);
+            case "yellow2" -> new ColorUIResource(238, 238, 0);
+            case "yellow3" -> new ColorUIResource(205, 205, 0);
+            case "yellow4" -> new ColorUIResource(139, 139, 0);
+            case "yellowgreen" -> new ColorUIResource(154, 205, 5);
 
-        XColor(String name, int red, int green, int blue) {
-            this.name = name;
-            this.red = red;
-            this.green = green;
-            this.blue = blue;
-        }
-
-        Color toColor() {
-            return new ColorUIResource(red, green, blue);
-        }
-
-        public int compareTo(XColor o) {
-            return name.compareTo(o.name);
-        }
+            default -> null;
+        };
     }
-
-    private static XColor key = new XColor("", -1, -1, -1);
-
-    static Color lookupColor(String name) {
-        key.name = name.toLowerCase();
-
-        int pos = Arrays.binarySearch(colors, key);
-
-        if (pos < 0) {
-            return null;
-        }
-
-        return colors[pos].toColor();
-    }
-
-    private static final XColor[] colors = {
-        new XColor("alice blue", 240, 248, 255),
-        new XColor("aliceblue", 240, 248, 255),
-        new XColor("antique white", 250, 235, 215),
-        new XColor("antiquewhite", 250, 235, 215),
-        new XColor("antiquewhite1", 255, 239, 219),
-        new XColor("antiquewhite2", 238, 223, 204),
-        new XColor("antiquewhite3", 205, 192, 176),
-        new XColor("antiquewhite4", 139, 131, 120),
-        new XColor("aquamarine", 127, 255, 212),
-        new XColor("aquamarine1", 127, 255, 212),
-        new XColor("aquamarine2", 118, 238, 198),
-        new XColor("aquamarine3", 102, 205, 170),
-        new XColor("aquamarine4", 69, 139, 116),
-        new XColor("azure", 240, 255, 255),
-        new XColor("azure1", 240, 255, 255),
-        new XColor("azure2", 224, 238, 238),
-        new XColor("azure3", 193, 205, 205),
-        new XColor("azure4", 131, 139, 139),
-        new XColor("beige", 245, 245, 220),
-        new XColor("bisque", 255, 228, 196),
-        new XColor("bisque1", 255, 228, 196),
-        new XColor("bisque2", 238, 213, 183),
-        new XColor("bisque3", 205, 183, 158),
-        new XColor("bisque4", 139, 125, 107),
-        new XColor("black", 0, 0, 0),
-        new XColor("blanched almond", 255, 235, 205),
-        new XColor("blanchedalmond", 255, 235, 205),
-        new XColor("blue", 0, 0, 255),
-        new XColor("blue violet", 138, 43, 226),
-        new XColor("blue1", 0, 0, 255),
-        new XColor("blue2", 0, 0, 238),
-        new XColor("blue3", 0, 0, 205),
-        new XColor("blue4", 0, 0, 139),
-        new XColor("blueviolet", 138, 43, 226),
-        new XColor("brown", 165, 42, 42),
-        new XColor("brown1", 255, 64, 64),
-        new XColor("brown2", 238, 59, 59),
-        new XColor("brown3", 205, 51, 51),
-        new XColor("brown4", 139, 35, 35),
-        new XColor("burlywood", 222, 184, 135),
-        new XColor("burlywood1", 255, 211, 155),
-        new XColor("burlywood2", 238, 197, 145),
-        new XColor("burlywood3", 205, 170, 125),
-        new XColor("burlywood4", 139, 115, 85),
-        new XColor("cadet blue", 95, 158, 160),
-        new XColor("cadetblue", 95, 158, 160),
-        new XColor("cadetblue1", 152, 245, 255),
-        new XColor("cadetblue2", 142, 229, 238),
-        new XColor("cadetblue3", 122, 197, 205),
-        new XColor("cadetblue4", 83, 134, 139),
-        new XColor("chartreuse", 127, 255, 0),
-        new XColor("chartreuse1", 127, 255, 0),
-        new XColor("chartreuse2", 118, 238, 0),
-        new XColor("chartreuse3", 102, 205, 0),
-        new XColor("chartreuse4", 69, 139, 0),
-        new XColor("chocolate", 210, 105, 30),
-        new XColor("chocolate1", 255, 127, 36),
-        new XColor("chocolate2", 238, 118, 33),
-        new XColor("chocolate3", 205, 102, 29),
-        new XColor("chocolate4", 139, 69, 19),
-        new XColor("coral", 255, 127, 80),
-        new XColor("coral1", 255, 114, 86),
-        new XColor("coral2", 238, 106, 80),
-        new XColor("coral3", 205, 91, 69),
-        new XColor("coral4", 139, 62, 47),
-        new XColor("cornflower blue", 100, 149, 237),
-        new XColor("cornflowerblue", 100, 149, 237),
-        new XColor("cornsilk", 255, 248, 220),
-        new XColor("cornsilk1", 255, 248, 220),
-        new XColor("cornsilk2", 238, 232, 205),
-        new XColor("cornsilk3", 205, 200, 177),
-        new XColor("cornsilk4", 139, 136, 120),
-        new XColor("cyan", 0, 255, 255),
-        new XColor("cyan1", 0, 255, 255),
-        new XColor("cyan2", 0, 238, 238),
-        new XColor("cyan3", 0, 205, 205),
-        new XColor("cyan4", 0, 139, 139),
-        new XColor("dark blue", 0, 0, 139),
-        new XColor("dark cyan", 0, 139, 139),
-        new XColor("dark goldenrod", 184, 134, 11),
-        new XColor("dark gray", 169, 169, 169),
-        new XColor("dark green", 0, 100, 0),
-        new XColor("dark grey", 169, 169, 169),
-        new XColor("dark khaki", 189, 183, 107),
-        new XColor("dark magenta", 139, 0, 139),
-        new XColor("dark olive green", 85, 107, 47),
-        new XColor("dark orange", 255, 140, 0),
-        new XColor("dark orchid", 153, 50, 204),
-        new XColor("dark red", 139, 0, 0),
-        new XColor("dark salmon", 233, 150, 122),
-        new XColor("dark sea green", 143, 188, 143),
-        new XColor("dark slate blue", 72, 61, 139),
-        new XColor("dark slate gray", 47, 79, 79),
-        new XColor("dark slate grey", 47, 79, 79),
-        new XColor("dark turquoise", 0, 206, 209),
-        new XColor("dark violet", 148, 0, 211),
-        new XColor("darkblue", 0, 0, 139),
-        new XColor("darkcyan", 0, 139, 139),
-        new XColor("darkgoldenrod", 184, 134, 11),
-        new XColor("darkgoldenrod1", 255, 185, 15),
-        new XColor("darkgoldenrod2", 238, 173, 14),
-        new XColor("darkgoldenrod3", 205, 149, 12),
-        new XColor("darkgoldenrod4", 139, 101, 8),
-        new XColor("darkgray", 169, 169, 169),
-        new XColor("darkgreen", 0, 100, 0),
-        new XColor("darkgrey", 169, 169, 169),
-        new XColor("darkkhaki", 189, 183, 107),
-        new XColor("darkmagenta", 139, 0, 139),
-        new XColor("darkolivegreen", 85, 107, 47),
-        new XColor("darkolivegreen1", 202, 255, 112),
-        new XColor("darkolivegreen2", 188, 238, 104),
-        new XColor("darkolivegreen3", 162, 205, 90),
-        new XColor("darkolivegreen4", 110, 139, 61),
-        new XColor("darkorange", 255, 140, 0),
-        new XColor("darkorange1", 255, 127, 0),
-        new XColor("darkorange2", 238, 118, 0),
-        new XColor("darkorange3", 205, 102, 0),
-        new XColor("darkorange4", 139, 69, 0),
-        new XColor("darkorchid", 153, 50, 204),
-        new XColor("darkorchid1", 191, 62, 255),
-        new XColor("darkorchid2", 178, 58, 238),
-        new XColor("darkorchid3", 154, 50, 205),
-        new XColor("darkorchid4", 104, 34, 139),
-        new XColor("darkred", 139, 0, 0),
-        new XColor("darksalmon", 233, 150, 122),
-        new XColor("darkseagreen", 143, 188, 143),
-        new XColor("darkseagreen1", 193, 255, 193),
-        new XColor("darkseagreen2", 180, 238, 180),
-        new XColor("darkseagreen3", 155, 205, 155),
-        new XColor("darkseagreen4", 105, 139, 105),
-        new XColor("darkslateblue", 72, 61, 139),
-        new XColor("darkslategray", 47, 79, 79),
-        new XColor("darkslategray1", 151, 255, 255),
-        new XColor("darkslategray2", 141, 238, 238),
-        new XColor("darkslategray3", 121, 205, 205),
-        new XColor("darkslategray4", 82, 139, 139),
-        new XColor("darkslategrey", 47, 79, 79),
-        new XColor("darkturquoise", 0, 206, 209),
-        new XColor("darkviolet", 148, 0, 211),
-        new XColor("deep pink", 255, 20, 147),
-        new XColor("deep sky blue", 0, 191, 255),
-        new XColor("deeppink", 255, 20, 147),
-        new XColor("deeppink1", 255, 20, 147),
-        new XColor("deeppink2", 238, 18, 137),
-        new XColor("deeppink3", 205, 16, 118),
-        new XColor("deeppink4", 139, 10, 80),
-        new XColor("deepskyblue", 0, 191, 255),
-        new XColor("deepskyblue1", 0, 191, 255),
-        new XColor("deepskyblue2", 0, 178, 238),
-        new XColor("deepskyblue3", 0, 154, 205),
-        new XColor("deepskyblue4", 0, 104, 139),
-        new XColor("dim gray", 105, 105, 105),
-        new XColor("dim grey", 105, 105, 105),
-        new XColor("dimgray", 105, 105, 105),
-        new XColor("dimgrey", 105, 105, 105),
-        new XColor("dodger blue", 30, 144, 255),
-        new XColor("dodgerblue", 30, 144, 255),
-        new XColor("dodgerblue1", 30, 144, 255),
-        new XColor("dodgerblue2", 28, 134, 238),
-        new XColor("dodgerblue3", 24, 116, 205),
-        new XColor("dodgerblue4", 16, 78, 139),
-        new XColor("firebrick", 178, 34, 34),
-        new XColor("firebrick1", 255, 48, 48),
-        new XColor("firebrick2", 238, 44, 44),
-        new XColor("firebrick3", 205, 38, 38),
-        new XColor("firebrick4", 139, 26, 26),
-        new XColor("floral white", 255, 250, 240),
-        new XColor("floralwhite", 255, 250, 240),
-        new XColor("forest green", 34, 139, 34),
-        new XColor("forestgreen", 34, 139, 34),
-        new XColor("gainsboro", 220, 220, 220),
-        new XColor("ghost white", 248, 248, 255),
-        new XColor("ghostwhite", 248, 248, 255),
-        new XColor("gold", 255, 215, 0),
-        new XColor("gold1", 255, 215, 0),
-        new XColor("gold2", 238, 201, 0),
-        new XColor("gold3", 205, 173, 0),
-        new XColor("gold4", 139, 117, 0),
-        new XColor("goldenrod", 218, 165, 32),
-        new XColor("goldenrod1", 255, 193, 37),
-        new XColor("goldenrod2", 238, 180, 34),
-        new XColor("goldenrod3", 205, 155, 29),
-        new XColor("goldenrod4", 139, 105, 20),
-        new XColor("gray", 190, 190, 190),
-        new XColor("gray0", 0, 0, 0),
-        new XColor("gray1", 3, 3, 3),
-        new XColor("gray10", 26, 26, 26),
-        new XColor("gray100", 255, 255, 255),
-        new XColor("gray11", 28, 28, 28),
-        new XColor("gray12", 31, 31, 31),
-        new XColor("gray13", 33, 33, 33),
-        new XColor("gray14", 36, 36, 36),
-        new XColor("gray15", 38, 38, 38),
-        new XColor("gray16", 41, 41, 41),
-        new XColor("gray17", 43, 43, 43),
-        new XColor("gray18", 46, 46, 46),
-        new XColor("gray19", 48, 48, 48),
-        new XColor("gray2", 5, 5, 5),
-        new XColor("gray20", 51, 51, 51),
-        new XColor("gray21", 54, 54, 54),
-        new XColor("gray22", 56, 56, 56),
-        new XColor("gray23", 59, 59, 59),
-        new XColor("gray24", 61, 61, 61),
-        new XColor("gray25", 64, 64, 64),
-        new XColor("gray26", 66, 66, 66),
-        new XColor("gray27", 69, 69, 69),
-        new XColor("gray28", 71, 71, 71),
-        new XColor("gray29", 74, 74, 74),
-        new XColor("gray3", 8, 8, 8),
-        new XColor("gray30", 77, 77, 77),
-        new XColor("gray31", 79, 79, 79),
-        new XColor("gray32", 82, 82, 82),
-        new XColor("gray33", 84, 84, 84),
-        new XColor("gray34", 87, 87, 87),
-        new XColor("gray35", 89, 89, 89),
-        new XColor("gray36", 92, 92, 92),
-        new XColor("gray37", 94, 94, 94),
-        new XColor("gray38", 97, 97, 97),
-        new XColor("gray39", 99, 99, 99),
-        new XColor("gray4", 10, 10, 10),
-        new XColor("gray40", 102, 102, 102),
-        new XColor("gray41", 105, 105, 105),
-        new XColor("gray42", 107, 107, 107),
-        new XColor("gray43", 110, 110, 110),
-        new XColor("gray44", 112, 112, 112),
-        new XColor("gray45", 115, 115, 115),
-        new XColor("gray46", 117, 117, 117),
-        new XColor("gray47", 120, 120, 120),
-        new XColor("gray48", 122, 122, 122),
-        new XColor("gray49", 125, 125, 125),
-        new XColor("gray5", 13, 13, 13),
-        new XColor("gray50", 127, 127, 127),
-        new XColor("gray51", 130, 130, 130),
-        new XColor("gray52", 133, 133, 133),
-        new XColor("gray53", 135, 135, 135),
-        new XColor("gray54", 138, 138, 138),
-        new XColor("gray55", 140, 140, 140),
-        new XColor("gray56", 143, 143, 143),
-        new XColor("gray57", 145, 145, 145),
-        new XColor("gray58", 148, 148, 148),
-        new XColor("gray59", 150, 150, 150),
-        new XColor("gray6", 15, 15, 15),
-        new XColor("gray60", 153, 153, 153),
-        new XColor("gray61", 156, 156, 156),
-        new XColor("gray62", 158, 158, 158),
-        new XColor("gray63", 161, 161, 161),
-        new XColor("gray64", 163, 163, 163),
-        new XColor("gray65", 166, 166, 166),
-        new XColor("gray66", 168, 168, 168),
-        new XColor("gray67", 171, 171, 171),
-        new XColor("gray68", 173, 173, 173),
-        new XColor("gray69", 176, 176, 176),
-        new XColor("gray7", 18, 18, 18),
-        new XColor("gray70", 179, 179, 179),
-        new XColor("gray71", 181, 181, 181),
-        new XColor("gray72", 184, 184, 184),
-        new XColor("gray73", 186, 186, 186),
-        new XColor("gray74", 189, 189, 189),
-        new XColor("gray75", 191, 191, 191),
-        new XColor("gray76", 194, 194, 194),
-        new XColor("gray77", 196, 196, 196),
-        new XColor("gray78", 199, 199, 199),
-        new XColor("gray79", 201, 201, 201),
-        new XColor("gray8", 20, 20, 20),
-        new XColor("gray80", 204, 204, 204),
-        new XColor("gray81", 207, 207, 207),
-        new XColor("gray82", 209, 209, 209),
-        new XColor("gray83", 212, 212, 212),
-        new XColor("gray84", 214, 214, 214),
-        new XColor("gray85", 217, 217, 217),
-        new XColor("gray86", 219, 219, 219),
-        new XColor("gray87", 222, 222, 222),
-        new XColor("gray88", 224, 224, 224),
-        new XColor("gray89", 227, 227, 227),
-        new XColor("gray9", 23, 23, 23),
-        new XColor("gray90", 229, 229, 229),
-        new XColor("gray91", 232, 232, 232),
-        new XColor("gray92", 235, 235, 235),
-        new XColor("gray93", 237, 237, 237),
-        new XColor("gray94", 240, 240, 240),
-        new XColor("gray95", 242, 242, 242),
-        new XColor("gray96", 245, 245, 245),
-        new XColor("gray97", 247, 247, 247),
-        new XColor("gray98", 250, 250, 250),
-        new XColor("gray99", 252, 252, 252),
-        new XColor("green", 0, 255, 0),
-        new XColor("green yellow", 173, 255, 47),
-        new XColor("green1", 0, 255, 0),
-        new XColor("green2", 0, 238, 0),
-        new XColor("green3", 0, 205, 0),
-        new XColor("green4", 0, 139, 0),
-        new XColor("greenyellow", 173, 255, 47),
-        new XColor("grey", 190, 190, 190),
-        new XColor("grey0", 0, 0, 0),
-        new XColor("grey1", 3, 3, 3),
-        new XColor("grey10", 26, 26, 26),
-        new XColor("grey100", 255, 255, 255),
-        new XColor("grey11", 28, 28, 28),
-        new XColor("grey12", 31, 31, 31),
-        new XColor("grey13", 33, 33, 33),
-        new XColor("grey14", 36, 36, 36),
-        new XColor("grey15", 38, 38, 38),
-        new XColor("grey16", 41, 41, 41),
-        new XColor("grey17", 43, 43, 43),
-        new XColor("grey18", 46, 46, 46),
-        new XColor("grey19", 48, 48, 48),
-        new XColor("grey2", 5, 5, 5),
-        new XColor("grey20", 51, 51, 51),
-        new XColor("grey21", 54, 54, 54),
-        new XColor("grey22", 56, 56, 56),
-        new XColor("grey23", 59, 59, 59),
-        new XColor("grey24", 61, 61, 61),
-        new XColor("grey25", 64, 64, 64),
-        new XColor("grey26", 66, 66, 66),
-        new XColor("grey27", 69, 69, 69),
-        new XColor("grey28", 71, 71, 71),
-        new XColor("grey29", 74, 74, 74),
-        new XColor("grey3", 8, 8, 8),
-        new XColor("grey30", 77, 77, 77),
-        new XColor("grey31", 79, 79, 79),
-        new XColor("grey32", 82, 82, 82),
-        new XColor("grey33", 84, 84, 84),
-        new XColor("grey34", 87, 87, 87),
-        new XColor("grey35", 89, 89, 89),
-        new XColor("grey36", 92, 92, 92),
-        new XColor("grey37", 94, 94, 94),
-        new XColor("grey38", 97, 97, 97),
-        new XColor("grey39", 99, 99, 99),
-        new XColor("grey4", 10, 10, 10),
-        new XColor("grey40", 102, 102, 102),
-        new XColor("grey41", 105, 105, 105),
-        new XColor("grey42", 107, 107, 107),
-        new XColor("grey43", 110, 110, 110),
-        new XColor("grey44", 112, 112, 112),
-        new XColor("grey45", 115, 115, 115),
-        new XColor("grey46", 117, 117, 117),
-        new XColor("grey47", 120, 120, 120),
-        new XColor("grey48", 122, 122, 122),
-        new XColor("grey49", 125, 125, 125),
-        new XColor("grey5", 13, 13, 13),
-        new XColor("grey50", 127, 127, 127),
-        new XColor("grey51", 130, 130, 130),
-        new XColor("grey52", 133, 133, 133),
-        new XColor("grey53", 135, 135, 135),
-        new XColor("grey54", 138, 138, 138),
-        new XColor("grey55", 140, 140, 140),
-        new XColor("grey56", 143, 143, 143),
-        new XColor("grey57", 145, 145, 145),
-        new XColor("grey58", 148, 148, 148),
-        new XColor("grey59", 150, 150, 150),
-        new XColor("grey6", 15, 15, 15),
-        new XColor("grey60", 153, 153, 153),
-        new XColor("grey61", 156, 156, 156),
-        new XColor("grey62", 158, 158, 158),
-        new XColor("grey63", 161, 161, 161),
-        new XColor("grey64", 163, 163, 163),
-        new XColor("grey65", 166, 166, 166),
-        new XColor("grey66", 168, 168, 168),
-        new XColor("grey67", 171, 171, 171),
-        new XColor("grey68", 173, 173, 173),
-        new XColor("grey69", 176, 176, 176),
-        new XColor("grey7", 18, 18, 18),
-        new XColor("grey70", 179, 179, 179),
-        new XColor("grey71", 181, 181, 181),
-        new XColor("grey72", 184, 184, 184),
-        new XColor("grey73", 186, 186, 186),
-        new XColor("grey74", 189, 189, 189),
-        new XColor("grey75", 191, 191, 191),
-        new XColor("grey76", 194, 194, 194),
-        new XColor("grey77", 196, 196, 196),
-        new XColor("grey78", 199, 199, 199),
-        new XColor("grey79", 201, 201, 201),
-        new XColor("grey8", 20, 20, 20),
-        new XColor("grey80", 204, 204, 204),
-        new XColor("grey81", 207, 207, 207),
-        new XColor("grey82", 209, 209, 209),
-        new XColor("grey83", 212, 212, 212),
-        new XColor("grey84", 214, 214, 214),
-        new XColor("grey85", 217, 217, 217),
-        new XColor("grey86", 219, 219, 219),
-        new XColor("grey87", 222, 222, 222),
-        new XColor("grey88", 224, 224, 224),
-        new XColor("grey89", 227, 227, 227),
-        new XColor("grey9", 23, 23, 23),
-        new XColor("grey90", 229, 229, 229),
-        new XColor("grey91", 232, 232, 232),
-        new XColor("grey92", 235, 235, 235),
-        new XColor("grey93", 237, 237, 237),
-        new XColor("grey94", 240, 240, 240),
-        new XColor("grey95", 242, 242, 242),
-        new XColor("grey96", 245, 245, 245),
-        new XColor("grey97", 247, 247, 247),
-        new XColor("grey98", 250, 250, 250),
-        new XColor("grey99", 252, 252, 252),
-        new XColor("honeydew", 240, 255, 240),
-        new XColor("honeydew1", 240, 255, 240),
-        new XColor("honeydew2", 224, 238, 224),
-        new XColor("honeydew3", 193, 205, 193),
-        new XColor("honeydew4", 131, 139, 131),
-        new XColor("hot pink", 255, 105, 180),
-        new XColor("hotpink", 255, 105, 180),
-        new XColor("hotpink1", 255, 110, 180),
-        new XColor("hotpink2", 238, 106, 167),
-        new XColor("hotpink3", 205, 96, 144),
-        new XColor("hotpink4", 139, 58, 98),
-        new XColor("indian red", 205, 92, 92),
-        new XColor("indianred", 205, 92, 92),
-        new XColor("indianred1", 255, 106, 106),
-        new XColor("indianred2", 238, 99, 99),
-        new XColor("indianred3", 205, 85, 85),
-        new XColor("indianred4", 139, 58, 58),
-        new XColor("ivory", 255, 255, 240),
-        new XColor("ivory1", 255, 255, 240),
-        new XColor("ivory2", 238, 238, 224),
-        new XColor("ivory3", 205, 205, 193),
-        new XColor("ivory4", 139, 139, 131),
-        new XColor("khaki", 240, 230, 140),
-        new XColor("khaki1", 255, 246, 143),
-        new XColor("khaki2", 238, 230, 133),
-        new XColor("khaki3", 205, 198, 115),
-        new XColor("khaki4", 139, 134, 78),
-        new XColor("lavender", 230, 230, 250),
-        new XColor("lavender blush", 255, 240, 245),
-        new XColor("lavenderblush", 255, 240, 245),
-        new XColor("lavenderblush1", 255, 240, 245),
-        new XColor("lavenderblush2", 238, 224, 229),
-        new XColor("lavenderblush3", 205, 193, 197),
-        new XColor("lavenderblush4", 139, 131, 134),
-        new XColor("lawn green", 124, 252, 0),
-        new XColor("lawngreen", 124, 252, 0),
-        new XColor("lemon chiffon", 255, 250, 205),
-        new XColor("lemonchiffon", 255, 250, 205),
-        new XColor("lemonchiffon1", 255, 250, 205),
-        new XColor("lemonchiffon2", 238, 233, 191),
-        new XColor("lemonchiffon3", 205, 201, 165),
-        new XColor("lemonchiffon4", 139, 137, 112),
-        new XColor("light blue", 173, 216, 230),
-        new XColor("light coral", 240, 128, 128),
-        new XColor("light cyan", 224, 255, 255),
-        new XColor("light goldenrod", 238, 221, 130),
-        new XColor("light goldenrod yellow", 250, 250, 210),
-        new XColor("light gray", 211, 211, 211),
-        new XColor("light green", 144, 238, 144),
-        new XColor("light grey", 211, 211, 211),
-        new XColor("light pink", 255, 182, 193),
-        new XColor("light salmon", 255, 160, 122),
-        new XColor("light sea green", 32, 178, 170),
-        new XColor("light sky blue", 135, 206, 250),
-        new XColor("light slate blue", 132, 112, 255),
-        new XColor("light slate gray", 119, 136, 153),
-        new XColor("light slate grey", 119, 136, 153),
-        new XColor("light steel blue", 176, 196, 222),
-        new XColor("light yellow", 255, 255, 224),
-        new XColor("lightblue", 173, 216, 230),
-        new XColor("lightblue1", 191, 239, 255),
-        new XColor("lightblue2", 178, 223, 238),
-        new XColor("lightblue3", 154, 192, 205),
-        new XColor("lightblue4", 104, 131, 139),
-        new XColor("lightcoral", 240, 128, 128),
-        new XColor("lightcyan", 224, 255, 255),
-        new XColor("lightcyan1", 224, 255, 255),
-        new XColor("lightcyan2", 209, 238, 238),
-        new XColor("lightcyan3", 180, 205, 205),
-        new XColor("lightcyan4", 122, 139, 139),
-        new XColor("lightgoldenrod", 238, 221, 130),
-        new XColor("lightgoldenrod1", 255, 236, 139),
-        new XColor("lightgoldenrod2", 238, 220, 130),
-        new XColor("lightgoldenrod3", 205, 190, 112),
-        new XColor("lightgoldenrod4", 139, 129, 76),
-        new XColor("lightgoldenrodyellow", 250, 250, 210),
-        new XColor("lightgray", 211, 211, 211),
-        new XColor("lightgreen", 144, 238, 144),
-        new XColor("lightgrey", 211, 211, 211),
-        new XColor("lightpink", 255, 182, 193),
-        new XColor("lightpink1", 255, 174, 185),
-        new XColor("lightpink2", 238, 162, 173),
-        new XColor("lightpink3", 205, 140, 149),
-        new XColor("lightpink4", 139, 95, 101),
-        new XColor("lightsalmon", 255, 160, 122),
-        new XColor("lightsalmon1", 255, 160, 122),
-        new XColor("lightsalmon2", 238, 149, 114),
-        new XColor("lightsalmon3", 205, 129, 98),
-        new XColor("lightsalmon4", 139, 87, 66),
-        new XColor("lightseagreen", 32, 178, 170),
-        new XColor("lightskyblue", 135, 206, 250),
-        new XColor("lightskyblue1", 176, 226, 255),
-        new XColor("lightskyblue2", 164, 211, 238),
-        new XColor("lightskyblue3", 141, 182, 205),
-        new XColor("lightskyblue4", 96, 123, 139),
-        new XColor("lightslateblue", 132, 112, 255),
-        new XColor("lightslategray", 119, 136, 153),
-        new XColor("lightslategrey", 119, 136, 153),
-        new XColor("lightsteelblue", 176, 196, 222),
-        new XColor("lightsteelblue1", 202, 225, 255),
-        new XColor("lightsteelblue2", 188, 210, 238),
-        new XColor("lightsteelblue3", 162, 181, 205),
-        new XColor("lightsteelblue4", 110, 123, 139),
-        new XColor("lightyellow", 255, 255, 224),
-        new XColor("lightyellow1", 255, 255, 224),
-        new XColor("lightyellow2", 238, 238, 209),
-        new XColor("lightyellow3", 205, 205, 180),
-        new XColor("lightyellow4", 139, 139, 122),
-        new XColor("lime green", 50, 205, 50),
-        new XColor("limegreen", 50, 205, 50),
-        new XColor("linen", 250, 240, 230),
-        new XColor("magenta", 255, 0, 255),
-        new XColor("magenta1", 255, 0, 255),
-        new XColor("magenta2", 238, 0, 238),
-        new XColor("magenta3", 205, 0, 205),
-        new XColor("magenta4", 139, 0, 139),
-        new XColor("maroon", 176, 48, 96),
-        new XColor("maroon1", 255, 52, 179),
-        new XColor("maroon2", 238, 48, 167),
-        new XColor("maroon3", 205, 41, 144),
-        new XColor("maroon4", 139, 28, 98),
-        new XColor("medium aquamarine", 102, 205, 170),
-        new XColor("medium blue", 0, 0, 205),
-        new XColor("medium orchid", 186, 85, 211),
-        new XColor("medium purple", 147, 112, 219),
-        new XColor("medium sea green", 60, 179, 113),
-        new XColor("medium slate blue", 123, 104, 238),
-        new XColor("medium spring green", 0, 250, 154),
-        new XColor("medium turquoise", 72, 209, 204),
-        new XColor("medium violet red", 199, 21, 133),
-        new XColor("mediumaquamarine", 102, 205, 170),
-        new XColor("mediumblue", 0, 0, 205),
-        new XColor("mediumorchid", 186, 85, 211),
-        new XColor("mediumorchid1", 224, 102, 255),
-        new XColor("mediumorchid2", 209, 95, 238),
-        new XColor("mediumorchid3", 180, 82, 205),
-        new XColor("mediumorchid4", 122, 55, 139),
-        new XColor("mediumpurple", 147, 112, 219),
-        new XColor("mediumpurple1", 171, 130, 255),
-        new XColor("mediumpurple2", 159, 121, 238),
-        new XColor("mediumpurple3", 137, 104, 205),
-        new XColor("mediumpurple4", 93, 71, 139),
-        new XColor("mediumseagreen", 60, 179, 113),
-        new XColor("mediumslateblue", 123, 104, 238),
-        new XColor("mediumspringgreen", 0, 250, 154),
-        new XColor("mediumturquoise", 72, 209, 204),
-        new XColor("mediumvioletred", 199, 21, 133),
-        new XColor("midnight blue", 25, 25, 112),
-        new XColor("midnightblue", 25, 25, 112),
-        new XColor("mint cream", 245, 255, 250),
-        new XColor("mintcream", 245, 255, 250),
-        new XColor("misty rose", 255, 228, 225),
-        new XColor("mistyrose", 255, 228, 225),
-        new XColor("mistyrose1", 255, 228, 225),
-        new XColor("mistyrose2", 238, 213, 210),
-        new XColor("mistyrose3", 205, 183, 181),
-        new XColor("mistyrose4", 139, 125, 123),
-        new XColor("moccasin", 255, 228, 181),
-        new XColor("navajo white", 255, 222, 173),
-        new XColor("navajowhite", 255, 222, 173),
-        new XColor("navajowhite1", 255, 222, 173),
-        new XColor("navajowhite2", 238, 207, 161),
-        new XColor("navajowhite3", 205, 179, 139),
-        new XColor("navajowhite4", 139, 121, 94),
-        new XColor("navy", 0, 0, 128),
-        new XColor("navy blue", 0, 0, 128),
-        new XColor("navyblue", 0, 0, 128),
-        new XColor("old lace", 253, 245, 230),
-        new XColor("oldlace", 253, 245, 230),
-        new XColor("olive drab", 107, 142, 35),
-        new XColor("olivedrab", 107, 142, 35),
-        new XColor("olivedrab1", 192, 255, 62),
-        new XColor("olivedrab2", 179, 238, 58),
-        new XColor("olivedrab3", 154, 205, 50),
-        new XColor("olivedrab4", 105, 139, 34),
-        new XColor("orange", 255, 165, 0),
-        new XColor("orange red", 255, 69, 0),
-        new XColor("orange1", 255, 165, 0),
-        new XColor("orange2", 238, 154, 0),
-        new XColor("orange3", 205, 133, 0),
-        new XColor("orange4", 139, 90, 0),
-        new XColor("orangered", 255, 69, 0),
-        new XColor("orangered1", 255, 69, 0),
-        new XColor("orangered2", 238, 64, 0),
-        new XColor("orangered3", 205, 55, 0),
-        new XColor("orangered4", 139, 37, 0),
-        new XColor("orchid", 218, 112, 214),
-        new XColor("orchid1", 255, 131, 250),
-        new XColor("orchid2", 238, 122, 233),
-        new XColor("orchid3", 205, 105, 201),
-        new XColor("orchid4", 139, 71, 137),
-        new XColor("pale goldenrod", 238, 232, 170),
-        new XColor("pale green", 152, 251, 152),
-        new XColor("pale turquoise", 175, 238, 238),
-        new XColor("pale violet red", 219, 112, 147),
-        new XColor("palegoldenrod", 238, 232, 170),
-        new XColor("palegreen", 152, 251, 152),
-        new XColor("palegreen1", 154, 255, 154),
-        new XColor("palegreen2", 144, 238, 144),
-        new XColor("palegreen3", 124, 205, 124),
-        new XColor("palegreen4", 84, 139, 84),
-        new XColor("paleturquoise", 175, 238, 238),
-        new XColor("paleturquoise1", 187, 255, 255),
-        new XColor("paleturquoise2", 174, 238, 238),
-        new XColor("paleturquoise3", 150, 205, 205),
-        new XColor("paleturquoise4", 102, 139, 139),
-        new XColor("palevioletred", 219, 112, 147),
-        new XColor("palevioletred1", 255, 130, 171),
-        new XColor("palevioletred2", 238, 121, 159),
-        new XColor("palevioletred3", 205, 104, 137),
-        new XColor("palevioletred4", 139, 71, 93),
-        new XColor("papaya whip", 255, 239, 213),
-        new XColor("papayawhip", 255, 239, 213),
-        new XColor("peach puff", 255, 218, 185),
-        new XColor("peachpuff", 255, 218, 185),
-        new XColor("peachpuff1", 255, 218, 185),
-        new XColor("peachpuff2", 238, 203, 173),
-        new XColor("peachpuff3", 205, 175, 149),
-        new XColor("peachpuff4", 139, 119, 101),
-        new XColor("peru", 205, 133, 63),
-        new XColor("pink", 255, 192, 203),
-        new XColor("pink1", 255, 181, 197),
-        new XColor("pink2", 238, 169, 184),
-        new XColor("pink3", 205, 145, 158),
-        new XColor("pink4", 139, 99, 108),
-        new XColor("plum", 221, 160, 221),
-        new XColor("plum1", 255, 187, 255),
-        new XColor("plum2", 238, 174, 238),
-        new XColor("plum3", 205, 150, 205),
-        new XColor("plum4", 139, 102, 139),
-        new XColor("powder blue", 176, 224, 230),
-        new XColor("powderblue", 176, 224, 230),
-        new XColor("purple", 160, 32, 240),
-        new XColor("purple1", 155, 48, 255),
-        new XColor("purple2", 145, 44, 238),
-        new XColor("purple3", 125, 38, 205),
-        new XColor("purple4", 85, 26, 139),
-        new XColor("red", 255, 0, 0),
-        new XColor("red1", 255, 0, 0),
-        new XColor("red2", 238, 0, 0),
-        new XColor("red3", 205, 0, 0),
-        new XColor("red4", 139, 0, 0),
-        new XColor("rosy brown", 188, 143, 143),
-        new XColor("rosybrown", 188, 143, 143),
-        new XColor("rosybrown1", 255, 193, 193),
-        new XColor("rosybrown2", 238, 180, 180),
-        new XColor("rosybrown3", 205, 155, 155),
-        new XColor("rosybrown4", 139, 105, 105),
-        new XColor("royal blue", 65, 105, 225),
-        new XColor("royalblue", 65, 105, 225),
-        new XColor("royalblue1", 72, 118, 255),
-        new XColor("royalblue2", 67, 110, 238),
-        new XColor("royalblue3", 58, 95, 205),
-        new XColor("royalblue4", 39, 64, 139),
-        new XColor("saddle brown", 139, 69, 19),
-        new XColor("saddlebrown", 139, 69, 19),
-        new XColor("salmon", 250, 128, 114),
-        new XColor("salmon1", 255, 140, 105),
-        new XColor("salmon2", 238, 130, 98),
-        new XColor("salmon3", 205, 112, 84),
-        new XColor("salmon4", 139, 76, 57),
-        new XColor("sandy brown", 244, 164, 96),
-        new XColor("sandybrown", 244, 164, 96),
-        new XColor("sea green", 46, 139, 87),
-        new XColor("seagreen", 46, 139, 87),
-        new XColor("seagreen1", 84, 255, 159),
-        new XColor("seagreen2", 78, 238, 148),
-        new XColor("seagreen3", 67, 205, 128),
-        new XColor("seagreen4", 46, 139, 87),
-        new XColor("seashell", 255, 245, 238),
-        new XColor("seashell1", 255, 245, 238),
-        new XColor("seashell2", 238, 229, 222),
-        new XColor("seashell3", 205, 197, 191),
-        new XColor("seashell4", 139, 134, 130),
-        new XColor("sienna", 160, 82, 45),
-        new XColor("sienna1", 255, 130, 71),
-        new XColor("sienna2", 238, 121, 66),
-        new XColor("sienna3", 205, 104, 57),
-        new XColor("sienna4", 139, 71, 38),
-        new XColor("sky blue", 135, 206, 235),
-        new XColor("skyblue", 135, 206, 235),
-        new XColor("skyblue1", 135, 206, 255),
-        new XColor("skyblue2", 126, 192, 238),
-        new XColor("skyblue3", 108, 166, 205),
-        new XColor("skyblue4", 74, 112, 139),
-        new XColor("slate blue", 106, 90, 205),
-        new XColor("slate gray", 112, 128, 144),
-        new XColor("slate grey", 112, 128, 144),
-        new XColor("slateblue", 106, 90, 205),
-        new XColor("slateblue1", 131, 111, 255),
-        new XColor("slateblue2", 122, 103, 238),
-        new XColor("slateblue3", 105, 89, 205),
-        new XColor("slateblue4", 71, 60, 139),
-        new XColor("slategray", 112, 128, 144),
-        new XColor("slategray1", 198, 226, 255),
-        new XColor("slategray2", 185, 211, 238),
-        new XColor("slategray3", 159, 182, 205),
-        new XColor("slategray4", 108, 123, 139),
-        new XColor("slategrey", 112, 128, 144),
-        new XColor("snow", 255, 250, 250),
-        new XColor("snow1", 255, 250, 250),
-        new XColor("snow2", 238, 233, 233),
-        new XColor("snow3", 205, 201, 201),
-        new XColor("snow4", 139, 137, 137),
-        new XColor("spring green", 0, 255, 127),
-        new XColor("springgreen", 0, 255, 127),
-        new XColor("springgreen1", 0, 255, 127),
-        new XColor("springgreen2", 0, 238, 118),
-        new XColor("springgreen3", 0, 205, 102),
-        new XColor("springgreen4", 0, 139, 69),
-        new XColor("steel blue", 70, 130, 180),
-        new XColor("steelblue", 70, 130, 180),
-        new XColor("steelblue1", 99, 184, 255),
-        new XColor("steelblue2", 92, 172, 238),
-        new XColor("steelblue3", 79, 148, 205),
-        new XColor("steelblue4", 54, 100, 139),
-        new XColor("tan", 210, 180, 140),
-        new XColor("tan1", 255, 165, 79),
-        new XColor("tan2", 238, 154, 73),
-        new XColor("tan3", 205, 133, 63),
-        new XColor("tan4", 139, 90, 43),
-        new XColor("thistle", 216, 191, 216),
-        new XColor("thistle1", 255, 225, 255),
-        new XColor("thistle2", 238, 210, 238),
-        new XColor("thistle3", 205, 181, 205),
-        new XColor("thistle4", 139, 123, 139),
-        new XColor("tomato", 255, 99, 71),
-        new XColor("tomato1", 255, 99, 71),
-        new XColor("tomato2", 238, 92, 66),
-        new XColor("tomato3", 205, 79, 57),
-        new XColor("tomato4", 139, 54, 38),
-        new XColor("turquoise", 64, 224, 208),
-        new XColor("turquoise1", 0, 245, 255),
-        new XColor("turquoise2", 0, 229, 238),
-        new XColor("turquoise3", 0, 197, 205),
-        new XColor("turquoise4", 0, 134, 139),
-        new XColor("violet", 238, 130, 238),
-        new XColor("violet red", 208, 32, 144),
-        new XColor("violetred", 208, 32, 144),
-        new XColor("violetred1", 255, 62, 150),
-        new XColor("violetred2", 238, 58, 140),
-        new XColor("violetred3", 205, 50, 120),
-        new XColor("violetred4", 139, 34, 82),
-        new XColor("wheat", 245, 222, 179),
-        new XColor("wheat1", 255, 231, 186),
-        new XColor("wheat2", 238, 216, 174),
-        new XColor("wheat3", 205, 186, 150),
-        new XColor("wheat4", 139, 126, 102),
-        new XColor("white", 255, 255, 255),
-        new XColor("white smoke", 245, 245, 245),
-        new XColor("whitesmoke", 245, 245, 245),
-        new XColor("yellow", 255, 255, 0),
-        new XColor("yellow green", 154, 205, 50),
-        new XColor("yellow1", 255, 255, 0),
-        new XColor("yellow2", 238, 238, 0),
-        new XColor("yellow3", 205, 205, 0),
-        new XColor("yellow4", 139, 139, 0),
-        new XColor("yellowgreen", 154, 205, 5)
-    };
-
 }

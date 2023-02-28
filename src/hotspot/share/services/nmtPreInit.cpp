@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,39 +31,52 @@
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if INCLUDE_NMT
-
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { return ::malloc(s); }
-static void* raw_realloc(void* old, size_t s)   { return ::realloc(old, s); }
-static void  raw_free(void* p)                  { ::free(p); }
+static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
+static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
 
 // We must ensure that the start of the payload area of the nmt lookup table nodes is malloc-aligned
 static const size_t malloc_alignment = 2 * sizeof(void*); // could we use max_align_t?
 STATIC_ASSERT(is_aligned(sizeof(NMTPreInitAllocation), malloc_alignment));
 
+// To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
+// is just used for pre-VM-initialization mallocs, none of which are optional, we don't
+// need a finer grained error handling.
+static void fail_oom(size_t size) {
+  vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "VM early initialization phase");
+}
+
 // --------- NMTPreInitAllocation --------------
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
   const size_t outer_size = sizeof(NMTPreInitAllocation) + payload_size;
+  guarantee(outer_size > payload_size, "Overflow");
   void* p = raw_malloc(outer_size);
+  if (p == nullptr) {
+    fail_oom(outer_size);
+  }
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(payload_size);
   return a;
 }
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* old, size_t new_payload_size) {
-  assert(old->next == NULL, "unhang from map first");
+  assert(old->next == nullptr, "unhang from map first");
   // We just reallocate the old block, header and all.
   const size_t new_outer_size = sizeof(NMTPreInitAllocation) + new_payload_size;
+  guarantee(new_outer_size > new_payload_size, "Overflow");
   void* p = raw_realloc(old, new_outer_size);
+  if (p == nullptr) {
+    fail_oom(new_outer_size);
+  }
   // re-stamp header with new size
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(new_payload_size);
   return a;
 }
 
 void NMTPreInitAllocation::do_free(NMTPreInitAllocation* p) {
-  assert(p->next == NULL, "unhang from map first");
+  assert(p->next == nullptr, "unhang from map first");
   raw_free(p);
 }
 
@@ -82,7 +95,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
   size_t sum_bytes = 0;
   for (int i = 0; i < table_size; i++) {
     int chain_len = 0;
-    for (NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
+    for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
       chain_len++;
       sum_bytes += a->size;
     }
@@ -102,7 +115,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
 void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   for (int i = 0; i < table_size; i++) {
     st->print("[%d]: ", i);
-    for (NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
+    for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
       st->print( PTR_FORMAT "(" SIZE_FORMAT ") ", p2i(a->payload()), a->size);
     }
     st->cr();
@@ -118,14 +131,14 @@ void NMTPreInitAllocationTable::verify() const {
   int num_chains_too_long = 0;
   for (index_t i = 0; i < table_size; i++) {
     int len = 0;
-    for (const NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
+    for (const NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
       index_t i2 = index_for_key(a->payload());
       assert(i2 == i, "wrong hash");
       assert(a->size > 0, "wrong size");
       len++;
       // very paranoid: search for dups
       bool found = false;
-      for (const NMTPreInitAllocation* a2 = _entries[i]; a2 != NULL; a2 = a2->next) {
+      for (const NMTPreInitAllocation* a2 = _entries[i]; a2 != nullptr; a2 = a2->next) {
         if (a == a2) {
           assert(!found, "dup!");
           found = true;
@@ -145,8 +158,7 @@ void NMTPreInitAllocationTable::verify() const {
 
 // --------- NMTPreinit --------------
 
-NMTPreInitAllocationTable* NMTPreInit::_table = NULL;
-bool NMTPreInit::_nmt_was_initialized = false;
+NMTPreInitAllocationTable* NMTPreInit::_table = nullptr;
 
 // Some statistics
 unsigned NMTPreInit::_num_mallocs_pre = 0;
@@ -154,27 +166,26 @@ unsigned NMTPreInit::_num_reallocs_pre = 0;
 unsigned NMTPreInit::_num_frees_pre = 0;
 
 void NMTPreInit::create_table() {
-  assert(_table == NULL, "just once");
+  assert(_table == nullptr, "just once");
   void* p = raw_malloc(sizeof(NMTPreInitAllocationTable));
   _table = new(p) NMTPreInitAllocationTable();
 }
 
 // Allocate with os::malloc (hidden to prevent having to include os.hpp)
-void* NMTPreInit::do_os_malloc(size_t size) {
-  return os::malloc(size, mtNMT);
+void* NMTPreInit::do_os_malloc(size_t size, MEMFLAGS memflags) {
+  return os::malloc(size, memflags);
 }
 
 // Switches from NMT pre-init state to NMT post-init state;
 //  in post-init, no modifications to the lookup table are possible.
 void NMTPreInit::pre_to_post() {
-  assert(_nmt_was_initialized == false, "just once");
-  _nmt_was_initialized = true;
+  assert(!MemTracker::is_initialized(), "just once");
   DEBUG_ONLY(verify();)
 }
 
 #ifdef ASSERT
 void NMTPreInit::verify() {
-  if (_table != NULL) {
+  if (_table != nullptr) {
     _table->verify();
   }
   assert(_num_reallocs_pre <= _num_mallocs_pre &&
@@ -183,12 +194,10 @@ void NMTPreInit::verify() {
 #endif // ASSERT
 
 void NMTPreInit::print_state(outputStream* st) {
-  if (_table != NULL) {
+  if (_table != nullptr) {
     _table->print_state(st);
     st->cr();
   }
   st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
                _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }
-
-#endif // INCLUDE_NMT

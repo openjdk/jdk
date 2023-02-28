@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,6 @@ import java.util.*;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-// These imports needed only as a workaround for a JavaDoc bug
-import java.lang.Integer;
-import java.lang.Long;
-import java.lang.Float;
-import java.lang.Double;
 
 /**
  * This class provides a skeletal implementation of the {@link Preferences}
@@ -323,7 +318,7 @@ public abstract class AbstractPreferences extends Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
-     * @throws NullPointerException {@inheritDoc}.
+     * @throws NullPointerException {@inheritDoc}
      */
     public void remove(String key) {
         Objects.requireNonNull(key, "Specified key cannot be null");
@@ -1498,13 +1493,13 @@ public abstract class AbstractPreferences extends Preferences {
      * eventQueue so the event dispatch thread knows whether to call
      * childAdded or childRemoved.
      */
-    private class NodeAddedEvent extends NodeChangeEvent {
+    private static class NodeAddedEvent extends NodeChangeEvent {
         private static final long serialVersionUID = -6743557530157328528L;
         NodeAddedEvent(Preferences parent, Preferences child) {
             super(parent, child);
         }
     }
-    private class NodeRemovedEvent extends NodeChangeEvent {
+    private static class NodeRemovedEvent extends NodeChangeEvent {
         private static final long serialVersionUID = 8735497392918824837L;
         NodeRemovedEvent(Preferences parent, Preferences child) {
             super(parent, child);

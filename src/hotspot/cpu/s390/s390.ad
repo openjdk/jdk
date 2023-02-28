@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 //    On more recent models (from z9 on), I-fetch is done on a Octoword
 //    (32 bytes at a time) basis. To avoid I-fetching unnecessary
 //    instructions, branch targets should be 32-byte aligend. If this
-//    exact alingment cannot be achieved, having the branch target in
+//    exact alignment cannot be achieved, having the branch target in
 //    the first doubleword still provides some benefit.
 //  - Avoid branch targets at the end of cache lines (> 64 bytes distance).
 //    Sequential instruction prefetching after the branch target starts
@@ -47,7 +47,7 @@
 //    branch target. When I-fetching crosses a cache line, there may be
 //    a small stall. The worst case: the branch target (at the end of
 //    a cache line) is a L1 I-cache miss and the next line as well.
-//    Then, the entire target line must be filled first (to contine at the
+//    Then, the entire target line must be filled first (to continue at the
 //    branch target). Only then can the next sequential line be filled.
 //  - Avoid multiple poorly predicted branches in a row.
 //
@@ -639,11 +639,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 // Compute padding required for nodes which need alignment
 //
 // The addresses of the call instructions needs to be 4-byte aligned to
@@ -697,27 +692,18 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 }
 
 static inline void z_emit16(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 16), "instruction too large");
-  *((unsigned short*)(cbuf.insts_end())) = (unsigned short)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned short));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 2);
 }
 
 static inline void z_emit32(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value < (1L << 32), "instruction too large");
-  *((unsigned int*)(cbuf.insts_end())) = (unsigned int)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned int));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 4);
 }
 
 static inline void z_emit48(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 48), "instruction too large");
-  value = value<<16;
-  memcpy(cbuf.insts_end(), (unsigned char*)&value, 6);
-  cbuf.set_insts_end(cbuf.insts_end() + 6);
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 6);
 }
 
 static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
@@ -726,19 +712,9 @@ static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
     value = (long)((unsigned long)((unsigned int)value));
   }
 
-  if (value < (1L << 16)) { // 2-byte instruction
-    z_emit16(cbuf, value);
-    return 2;
-  }
-
-  if (value < (1L << 32)) { // 4-byte instruction, might be unaligned store
-    z_emit32(cbuf, value);
-    return 4;
-  }
-
-  // 6-byte instruction, probably unaligned store.
-  z_emit48(cbuf, value);
-  return 6;
+  C2_MacroAssembler _masm(&cbuf);
+  int len = __ emit_instruction((unsigned long)value, 0);
+  return len;
 }
 
 // Check effective address (at runtime) for required alignment.
@@ -834,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -841,11 +819,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("\t");
   for (int i = 0; i < OptoPrologueNops; i++) {
     st->print_cr("NOP"); st->print("\t");
-  }
-
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
   }
 
   long framesize = C->output()->frame_size_in_bytes();
@@ -861,14 +834,16 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -914,6 +889,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -942,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();
@@ -1529,6 +1510,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
@@ -1536,11 +1521,19 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -3678,7 +3671,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format.  The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap
@@ -5055,6 +5048,7 @@ instruct membar_CPUOrder() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
   size(0);
   format %{ "MEMBAR-storestore (empty)" %}
@@ -5298,54 +5292,6 @@ instruct castVV(iRegL dst) %{
   size(0);
   format %{ "# castVV of $dst" %}
   ins_encode(/*empty*/);
-  ins_pipe(pipe_class_dummy);
-%}
-
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -10225,7 +10171,7 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, false);
+                       $tmp$$Register, false, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10268,14 +10214,13 @@ instruct string_inflate_const(Universe dummy, iRegP src, iRegP dst, iRegI tmp, i
 %}
 
 // StringCoding.java intrinsics
-instruct has_negatives(rarg5RegP ary1, iRegI len, iRegI result, roddRegI oddReg, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
-  match(Set result (HasNegatives ary1 len));
-  effect(TEMP_DEF result, USE_KILL ary1, TEMP oddReg, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+instruct count_positives(iRegP ary1, iRegI len, iRegI result, iRegI tmp, flagsReg cr) %{
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1($len) -> $result" %}
+  format %{ "count positives byte[] $ary1($len) -> $result" %}
   ins_encode %{
-    __ has_negatives($result$$Register, $ary1$$Register, $len$$Register,
-                     $oddReg$$Register, $evenReg$$Register, $tmp$$Register);
+    __ count_positives($result$$Register, $ary1$$Register, $len$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10286,10 +10231,24 @@ instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI t
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "Encode array $src->$dst($len) -> $result" %}
+  format %{ "Encode iso array $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, true);
+                       $tmp$$Register, true, false);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  ins_cost(300);
+  format %{ "Encode ascii array $src->$dst($len) -> $result" %}
+  ins_encode %{
+    __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
+                       $tmp$$Register, true, true);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10340,7 +10299,7 @@ instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI t
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch (incI_eReg movI);
 //   // require that the destination register of the increment
 //   // match the destination register of the move
@@ -10756,7 +10715,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 // returns the bit position of the leftmost 1 in the 64bit source register.
 // As the bits are numbered from left to right (0..63), the returned
 // position index is equivalent to the number of leading zeroes.
-// If no 1-bit is found (i.e. the regsiter contains zero), the instruction
+// If no 1-bit is found (i.e. the register contains zero), the instruction
 // returns position 64. That's exactly what we need.
 
 instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{

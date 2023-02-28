@@ -956,7 +956,7 @@ D3DShaderGen_GenerateAllShaders()
     // Generate LCD text shader
     D3DShaderGen_GenerateLCDTextShader();
 
-    // Genereate Shader to fill Antialiased parallelograms
+    // Generate Shader to fill Antialiased parallelograms
     D3DShaderGen_GenerateAAParallelogramShader();
 #else
     /*

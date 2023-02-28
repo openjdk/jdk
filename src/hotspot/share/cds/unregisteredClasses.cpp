@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
-#include "runtime/handles.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "services/threadService.hpp"
 
@@ -42,7 +43,7 @@
 // the "source:" in the class list file (see classListParser.cpp), and can be a directory or
 // a JAR file.
 InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, TRAPS) {
-  assert(name != NULL, "invariant");
+  assert(name != nullptr, "invariant");
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
 
   {
@@ -72,11 +73,11 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
 }
 
 class URLClassLoaderTable : public ResourceHashtable<
-  Symbol*, Handle,
+  Symbol*, OopHandle,
   137, // prime number
-  ResourceObj::C_HEAP> {};
+  AnyObj::C_HEAP> {};
 
-static URLClassLoaderTable* _url_classloader_table = NULL;
+static URLClassLoaderTable* _url_classloader_table = nullptr;
 
 Handle UnregisteredClasses::create_url_classloader(Symbol* path, TRAPS) {
   ResourceMark rm(THREAD);
@@ -100,15 +101,15 @@ Handle UnregisteredClasses::create_url_classloader(Symbol* path, TRAPS) {
 }
 
 Handle UnregisteredClasses::get_url_classloader(Symbol* path, TRAPS) {
-  if (_url_classloader_table == NULL) {
-    _url_classloader_table = new (ResourceObj::C_HEAP, mtClass)URLClassLoaderTable();
+  if (_url_classloader_table == nullptr) {
+    _url_classloader_table = new (mtClass)URLClassLoaderTable();
   }
-  Handle* url_classloader_ptr = _url_classloader_table->get(path);
-  if (url_classloader_ptr != NULL) {
-    return *url_classloader_ptr;
+  OopHandle* url_classloader_ptr = _url_classloader_table->get(path);
+  if (url_classloader_ptr != nullptr) {
+    return Handle(THREAD, (*url_classloader_ptr).resolve());
   } else {
     Handle url_classloader = create_url_classloader(path, CHECK_NH);
-    _url_classloader_table->put(path, url_classloader);
+    _url_classloader_table->put(path, OopHandle(Universe::vm_global(), url_classloader()));
     path->increment_refcount();
     return url_classloader;
   }

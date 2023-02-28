@@ -583,7 +583,7 @@ public final class XMLUtils {
         Node parent = null;
         Node sibling = null;
         final String namespaceNs = Constants.NamespaceSpecNS;
-        do {
+        do {    //NOPMD
             switch (node.getNodeType()) {
             case Node.ELEMENT_NODE :
                 Element element = (Element) node;

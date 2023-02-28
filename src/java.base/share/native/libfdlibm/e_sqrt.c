@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  *      If (2) is false, then q   = q ; otherwise q   = q  + 2      .
  *                             i+1   i             i+1   i
  *
- *      With some algebric manipulation, it is not difficult to see
+ *      With some algebraic manipulation, it is not difficult to see
  *      that (2) is equivalent to
  *                             -(i+1)
  *                      s  +  2       <= y                      (3)

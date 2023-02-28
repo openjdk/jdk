@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 
 /*
@@ -41,15 +43,22 @@ import java.util.Arrays;
 public class TestRunTests {
 
     public static void main(String[] args) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        PrintStream oldOut = System.out;
+        System.setOut(ps);
+
         TestFramework.run();
         try {
             TestFramework.run(BadStandalone.class);
-            Utils.shouldHaveThrownException();
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
+            System.setOut(oldOut);
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
             Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));
             Asserts.assertEQ(e.getExceptionInfo().split("STANDALONE mode", -1).length - 1, 2);
         }
+        System.setOut(oldOut);
         new TestFramework(SkipCompilation.class).addFlags("-XX:-UseCompiler").start();
         new TestFramework(SkipCompilation.class).addFlags("-Xint").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=1").start();

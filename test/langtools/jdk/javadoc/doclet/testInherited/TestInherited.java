@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import toolbox.ToolBox;
 public class TestInherited extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestInherited tester = new TestInherited();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestInherited();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();
@@ -69,11 +69,11 @@ public class TestInherited extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("BadParam.Base.html", true, """
                 <dt>Parameters:</dt>
-                <dd><code>i</code> - a &lt; b</dd>
+                <dd><code>i</code> - a <span class="invalid-tag">invalid input: '&lt;'</span> b</dd>
                 """);
         checkOutput("BadParam.Sub.html", true, """
                 <dt>Parameters:</dt>
-                <dd><code>i</code> - a &lt; b</dd>
+                <dd><code>i</code> - a <span class="invalid-tag">invalid input: '&lt;'</span> b</dd>
                 """);
     }
 
@@ -101,11 +101,11 @@ public class TestInherited extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("BadReturn.Base.html", true, """
                 <dt>Returns:</dt>
-                <dd>a &lt; b</dd>
+                <dd>a <span class="invalid-tag">invalid input: '&lt;'</span> b</dd>
                 """);
         checkOutput("BadReturn.Sub.html", true, """
                 <dt>Returns:</dt>
-                <dd>a &lt; b</dd>
+                <dd>a <span class="invalid-tag">invalid input: '&lt;'</span> b</dd>
                 """);
     }
 
@@ -147,16 +147,36 @@ public class TestInherited extends JavadocTester {
                 src.resolve("BadReference.java").toString());
         checkExit(Exit.OK);
         checkOutput("BadReference.Intf.html", true, """
-                <div class="block"><code>NonExistingClass</code></div>
+                <div class="block">
+                <details class="invalid-tag">
+                <summary>invalid @link</summary>
+                <pre><code>NonExistingClass</code></pre>
+                </details>
+                </div>
                 """);
         checkOutput("BadReference.Impl1.html", true, """
-                <div class="block"><code>NonExistingClass</code></div>
+                <div class="block">
+                <details class="invalid-tag">
+                <summary>invalid @link</summary>
+                <pre><code>NonExistingClass</code></pre>
+                </details>
+                </div>
                 """);
         checkOutput("BadReference.Impl2.html", true, """
-                <div class="block"><code>NonExistingClass</code></div>
+                <div class="block">
+                <details class="invalid-tag">
+                <summary>invalid @link</summary>
+                <pre><code>NonExistingClass</code></pre>
+                </details>
+                </div>
                 """);
         checkOutput("BadReference.Impl3.html", true, """
-                <div class="block"><code>NonExistingClass</code></div>
+                <div class="block">
+                <details class="invalid-tag">
+                <summary>invalid @link</summary>
+                <pre><code>NonExistingClass</code></pre>
+                </details>
+                </div>
                 """);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 package ir_framework.tests;
 
-import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 public class TestBadFormat {
 
     public static void main(String[] args) {
+        checkPreFlagVM();
         expectTestFormatException(BadNoTests.class);
         expectTestFormatException(BadArgumentsAnnotation.class);
         expectTestFormatException(BadOverloadedMethod.class);
@@ -56,10 +57,69 @@ public class TestBadFormat {
         expectTestFormatException(BadBaseTests.class);
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadCheckTest.class);
+        expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
+        expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
+        expectTestFormatException(BadIRNodeForPhase.class);
         expectTestFormatException(BadInnerClassTest.class);
         expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
                                   BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
+    }
+
+    /**
+     * Format failures before flag VM
+     */
+    private static void checkPreFlagVM() {
+        try {
+            new TestFramework().setDefaultWarmup(-1);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios((Scenario)null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios((Scenario[])null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios(new Scenario(1), null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios(new Scenario(1), new Scenario(1), new Scenario(1));
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 2);
+        }
+    }
+
+    private static void assertViolationCount(Exception e, int violationCount) {
+        assertTestFormatException(e);
+        getViolationCount(e.getMessage());
+        Asserts.assertEQ(violationCount, getViolationCount(e.getMessage()));
+    }
+
+    private static void assertTestFormatException(Exception e) {
+        if (!(e instanceof TestFormatException)) {
+            e.printStackTrace();
+            Asserts.fail("Unexpected exception", e);
+        }
+    }
+
+    private static int getViolationCount(String msg) {
+        Pattern pattern = Pattern.compile("Violations \\((\\d+)\\)");
+        Matcher matcher = pattern.matcher(msg);
+        Asserts.assertTrue(matcher.find(), "Could not find violations in" + System.lineSeparator() + msg);
+        return Integer.parseInt(matcher.group(1));
     }
 
     private static void expectTestFormatException(Class<?> clazz, Class<?>... helpers) {
@@ -70,23 +130,21 @@ public class TestBadFormat {
                 new TestFramework(clazz).addHelperClasses(helpers).start();
             }
         } catch (Exception e) {
-            if (!(e instanceof TestFormatException)) {
-                e.printStackTrace();
-                Asserts.fail("Unexpected exception", e);
-            }
-            String msg = e.getMessage();
-            Violations violations = getViolations(clazz, helpers);
-            violations.getFailedMethods().forEach(
-                    f -> Asserts.assertTrue(msg.contains(f),
-                                            "Could not find " + f + " in violations" + System.lineSeparator() + msg));
-            Pattern pattern = Pattern.compile("Violations \\((\\d+)\\)");
-            Matcher matcher = pattern.matcher(msg);
-            Asserts.assertTrue(matcher.find(), "Could not find violations in" + System.lineSeparator() + msg);
-            int violationCount = Integer.parseInt(matcher.group(1));
-            Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
+            checkException(clazz, e, helpers);
             return;
         }
         throw new RuntimeException("Should catch an exception");
+    }
+
+    private static void checkException(Class<?> clazz, Exception e, Class<?>[] helpers) {
+        assertTestFormatException(e);
+        String msg = e.getMessage();
+        Violations violations = getViolations(clazz, helpers);
+        violations.getFailedMethods().forEach(
+                m -> Asserts.assertTrue(msg.contains(m),
+                                        "Could not find method \"" + m + "\" in violations" + System.lineSeparator() + msg));
+        int violationCount = getViolationCount(msg);
+        Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
     }
 
     private static Violations getViolations(Class<?> clazz, Class<?>... helpers) {
@@ -138,6 +196,13 @@ class BadArgumentsAnnotation {
 
     @Test
     public void noArgAnnotation(int a) {}
+
+    @FailCount(0) // Combined with both checkNoArgAnnotation2() below
+    @Test
+    public void noArgAnnotation2(int a) {}
+
+    @Check(test = "noArgAnnotation2")
+    public void checkNoArgAnnotation2() {}
 
     @Test
     @Arguments(Argument.DEFAULT)
@@ -642,9 +707,21 @@ class BadCheckTest {
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
 
+
+class BadIRAnnotationBeforeFlagVM {
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {})
+    public void emptyCompilePhases() {}
+}
+
 class BadIRAnnotations {
     @IR(failOn = IRNode.CALL)
     public void noIRAtNonTest() {}
+
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtNonTest2() {}
 
     @NoFail
     @Test
@@ -658,9 +735,27 @@ class BadIRAnnotations {
     @Test
     public void test2() {}
 
-    @Check(test = "test2")
+    @Run(test = "test2")
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtRun2() {}
+
+    @NoFail
+    @Test
+    public void test3() {}
+
+    @Check(test = "test3")
     @IR(failOn = IRNode.CALL)
     public void noIRAtCheck() {}
+
+    @NoFail
+    @Test
+    public void test4() {}
+
+    @Check(test = "test4")
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtCheck2() {}
 
     @Test
     @IR
@@ -888,6 +983,149 @@ class BadIRAnnotations {
     public void anyValueForStringFlags() {}
 }
 
+class BadIRAnnotationsAfterTestVM {
+    @Test
+    @FailCount(4)
+    @IR(failOn = {IRNode.STORE_OF_CLASS, ""})
+    @IR(failOn = {IRNode.STORE_OF_CLASS, "", IRNode.LOAD_B_OF_CLASS, ""})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "", "3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "", "3", IRNode.LOAD_B_OF_CLASS, "", "3"})
+    public void emtpyUserProvidedPostfix() {}
+
+    @Test
+    @FailCount(2)
+    @IR(counts = {IRNode.STORE})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo"})
+    public void missingCountString() {}
+
+    @Test
+    @FailCount(45)
+    @IR(counts = {IRNode.STORE, IRNode.STORE})
+    @IR(counts = {IRNode.STORE, IRNode.STORE, IRNode.STORE, IRNode.STORE})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", IRNode.STORE})
+    @IR(counts = {IRNode.STORE, ""})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ""})
+    @IR(counts = {IRNode.STORE, "<"})
+    @IR(counts = {IRNode.STORE, "!"})
+    @IR(counts = {IRNode.STORE, "!3"})
+    @IR(counts = {IRNode.STORE, "=="})
+    @IR(counts = {IRNode.STORE, "-45"})
+    @IR(counts = {IRNode.STORE, "3.0"})
+    @IR(counts = {IRNode.STORE, "a3"})
+    @IR(counts = {IRNode.STORE, "0x1"})
+    @IR(counts = {IRNode.STORE, ">-45"})
+    @IR(counts = {IRNode.STORE, ">3.0"})
+    @IR(counts = {IRNode.STORE, ">a3"})
+    @IR(counts = {IRNode.STORE, ">0x1"})
+    @IR(counts = {IRNode.STORE, "> -45"})
+    @IR(counts = {IRNode.STORE, "> 3.0"})
+    @IR(counts = {IRNode.STORE, "> a3"})
+    @IR(counts = {IRNode.STORE, "> 0x1"})
+    @IR(counts = {IRNode.STORE, " > -45"})
+    @IR(counts = {IRNode.STORE, " > 3.0"})
+    @IR(counts = {IRNode.STORE, " > a3"})
+    @IR(counts = {IRNode.STORE, " > 0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "<"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "=="})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "-45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">-45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> -45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> 3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> 0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > -45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
+    public void wrongCountString() {}
+}
+
+class BadIRNodeForPhase {
+    @Test
+    @FailCount(5)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.OPTIMIZE_FINISHED)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_OPTO_ASSEMBLY) // works
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT}) // works
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
+    public void machNode() {}
+
+    @Test
+    @FailCount(2)
+    @IR(failOn = IRNode.STORE, phase = {CompilePhase.AFTER_PARSING, CompilePhase.AFTER_PARSING})
+    @IR(counts = {IRNode.STORE, "0"}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.DEFAULT, CompilePhase.AFTER_PARSING})
+    public void duplicatedPhase() {}
+
+    @Test
+    @FailCount(4)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+    public void alloc() {}
+
+    @Test
+    @FailCount(9)
+    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.LOOP, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.LOOP, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.LOOP, phase = CompilePhase.FINAL_CODE) // works
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = CompilePhase.FINAL_CODE) // works
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN, phase = CompilePhase.FINAL_CODE) // works
+    public void loops() {}
+
+    @Test
+    @FailCount(6)
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
+    public void vector() {}
+
+    @Test
+    @IR(failOn = "notAnIRNode")
+    public void noDefaultSpecified() {}
+
+    @Test
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = CompilePhase.BEFORE_REMOVEUSELESS)
+    public void noRegexSpecifiedForPhase() {}
+
+    @Test
+    @FailCount(2)
+    @IR(failOn = "_#asdf#_", phase = CompilePhase.BEFORE_REMOVEUSELESS)
+    @IR(failOn = "_#asdf#_")
+    public void noIRNodeMapping() {}
+
+}
+
 @ClassFail
 class BadInnerClassTest {
 
@@ -975,7 +1213,7 @@ class ClassNoDefaultConstructor {
 }
 
 // Class specific annotation:
-// All classes with such an annotation have exactly one violation with the clas name in it.
+// All classes with such an annotation have exactly one violation with the class name in it.
 @Retention(RetentionPolicy.RUNTIME)
 @interface ClassFail {}
 

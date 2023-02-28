@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,21 @@
 
 package sun.security.provider.certpath;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.cert.*;
-import javax.security.auth.x500.X500Principal;
 import java.util.*;
+import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
 import sun.security.util.Event;
-import sun.security.validator.Validator;
-import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.*;
+
+import static sun.security.x509.PKIXExtensions.IssuingDistributionPoint_Id;
 
 /**
  * Class to obtain CRLs via the CRLDistributionPoints extension.
@@ -99,7 +102,7 @@ public class DistributionPointFetcher {
                 return Collections.emptySet();
             }
             List<DistributionPoint> points =
-                    ext.get(CRLDistributionPointsExtension.POINTS);
+                    ext.getDistributionPoints();
             Set<X509CRL> results = new HashSet<>();
             for (Iterator<DistributionPoint> t = points.iterator();
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
@@ -113,7 +116,7 @@ public class DistributionPointFetcher {
                 debug.println("Returning " + results.size() + " CRLs");
             }
             return results;
-        } catch (CertificateException | IOException e) {
+        } catch (CertificateException e) {
             return Collections.emptySet();
         }
     }
@@ -219,7 +222,7 @@ public class DistributionPointFetcher {
         }
 
         Event.report(Event.ReporterCategory.CRLCHECK, "event.crl.check", uri.toString());
-        CertStore ucs = null;
+        CertStore ucs;
         try {
             ucs = URICertStore.getInstance(new URICertStoreParameters(uri));
         } catch (InvalidAlgorithmParameterException |
@@ -330,22 +333,19 @@ public class DistributionPointFetcher {
         GeneralNames pointCrlIssuers = point.getCRLIssuer();
         X500Name pointCrlIssuer = null;
         if (pointCrlIssuers != null) {
-            if (idpExt == null ||
-                ((Boolean) idpExt.get
-                    (IssuingDistributionPointExtension.INDIRECT_CRL)).equals
-                        (Boolean.FALSE)) {
+            if (idpExt == null || !idpExt.isIndirectCRL()) {
                 return false;
             }
             boolean match = false;
             for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
                  !match && t.hasNext(); ) {
                 GeneralNameInterface name = t.next().getName();
-                if (crlIssuer.equals(name) == true) {
+                if (crlIssuer.equals(name)) {
                     pointCrlIssuer = (X500Name) name;
                     match = true;
                 }
             }
-            if (match == false) {
+            if (!match) {
                 return false;
             }
 
@@ -357,7 +357,7 @@ public class DistributionPointFetcher {
             } else {
                 indirectCRL = true;
             }
-        } else if (crlIssuer.equals(certIssuer) == false) {
+        } else if (!crlIssuer.equals(certIssuer)) {
             if (debug != null) {
                 debug.println("crl issuer does not equal cert issuer.\n" +
                               "crl issuer: " + crlIssuer + "\n" +
@@ -396,8 +396,7 @@ public class DistributionPointFetcher {
         }
 
         if (idpExt != null) {
-            DistributionPointName idpPoint = (DistributionPointName)
-                idpExt.get(IssuingDistributionPointExtension.POINT);
+            DistributionPointName idpPoint = idpExt.getDistributionPoint();
             if (idpPoint != null) {
                 GeneralNames idpNames = idpPoint.getFullName();
                 if (idpNames == null) {
@@ -477,10 +476,10 @@ public class DistributionPointFetcher {
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
                     for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
-                         !match && t.hasNext(); ) {
+                            !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();
                         for (Iterator<GeneralName> i = idpNames.iterator();
-                             !match && i.hasNext(); ) {
+                                !match && i.hasNext(); ) {
                             GeneralNameInterface idpName = i.next().getName();
                             match = crlIssuerName.equals(idpName);
                         }
@@ -493,9 +492,8 @@ public class DistributionPointFetcher {
 
             // if the onlyContainsUserCerts boolean is asserted, verify that the
             // cert is not a CA cert
-            Boolean b = (Boolean)
-                idpExt.get(IssuingDistributionPointExtension.ONLY_USER_CERTS);
-            if (b.equals(Boolean.TRUE) && certImpl.getBasicConstraints() != -1) {
+            boolean b = idpExt.hasOnlyUserCerts();
+            if (b && certImpl.getBasicConstraints() != -1) {
                 if (debug != null) {
                     debug.println("cert must be a EE cert");
                 }
@@ -504,9 +502,8 @@ public class DistributionPointFetcher {
 
             // if the onlyContainsCACerts boolean is asserted, verify that the
             // cert is a CA cert
-            b = (Boolean)
-                idpExt.get(IssuingDistributionPointExtension.ONLY_CA_CERTS);
-            if (b.equals(Boolean.TRUE) && certImpl.getBasicConstraints() == -1) {
+            b = idpExt.hasOnlyCACerts();
+            if (b && certImpl.getBasicConstraints() == -1) {
                 if (debug != null) {
                     debug.println("cert must be a CA cert");
                 }
@@ -515,9 +512,8 @@ public class DistributionPointFetcher {
 
             // verify that the onlyContainsAttributeCerts boolean is not
             // asserted
-            b = (Boolean) idpExt.get
-                (IssuingDistributionPointExtension.ONLY_ATTRIBUTE_CERTS);
-            if (b.equals(Boolean.TRUE)) {
+            b = idpExt.hasOnlyAttributeCerts();
+            if (b) {
                 if (debug != null) {
                     debug.println("cert must not be an AA cert");
                 }
@@ -529,8 +525,7 @@ public class DistributionPointFetcher {
         boolean[] interimReasonsMask = new boolean[9];
         ReasonFlags reasons = null;
         if (idpExt != null) {
-            reasons = (ReasonFlags)
-                idpExt.get(IssuingDistributionPointExtension.REASONS);
+            reasons = idpExt.getRevocationReasons();
         }
 
         boolean[] pointReasonFlags = point.getReasonFlags();
@@ -550,7 +545,7 @@ public class DistributionPointFetcher {
                 // modify it)
                 interimReasonsMask = reasons.getFlags().clone();
             }
-        } else if (idpExt == null || reasons == null) {
+        } else {
             if (pointReasonFlags != null) {
                 // set interim reasons mask to the value of DP reasons
                 interimReasonsMask = pointReasonFlags.clone();
@@ -563,11 +558,11 @@ public class DistributionPointFetcher {
         // verify that interim reasons mask includes one or more reasons
         // not included in the reasons mask
         boolean oneOrMore = false;
-        for (int i = 0; i < interimReasonsMask.length && !oneOrMore; i++) {
+        for (int i = 0; i < interimReasonsMask.length; i++) {
             if (interimReasonsMask[i] &&
-                    !(i < reasonsMask.length && reasonsMask[i]))
-            {
+                    !(i < reasonsMask.length && reasonsMask[i])) {
                 oneOrMore = true;
+                break;
             }
         }
         if (!oneOrMore) {
@@ -583,7 +578,7 @@ public class DistributionPointFetcher {
             boolean[] crlSign = {false,false,false,false,false,false,true};
             certSel.setKeyUsage(crlSign);
 
-            // Currently by default, forward builder does not enable
+            // Currently, by default, forward builder does not enable
             // subject/authority key identifier identifying for target
             // certificate, instead, it only compares the CRL issuer and
             // the target certificate subject. If the certificate of the
@@ -601,8 +596,7 @@ public class DistributionPointFetcher {
                     certSel.setSubjectKeyIdentifier(kid);
                 }
 
-                SerialNumber asn = (SerialNumber)akidext.get(
-                        AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
+                SerialNumber asn = akidext.getSerialNumber();
                 if (asn != null) {
                     certSel.setSerialNumber(asn.getNumber());
                 }
@@ -632,7 +626,7 @@ public class DistributionPointFetcher {
                 newTrustAnchors.add(temporary);
             }
 
-            PKIXBuilderParameters params = null;
+            PKIXBuilderParameters params;
             try {
                 params = new PKIXBuilderParameters(newTrustAnchors, certSel);
             } catch (InvalidAlgorithmParameterException iape) {
@@ -653,7 +647,8 @@ public class DistributionPointFetcher {
 
         // check the crl signature algorithm
         try {
-            AlgorithmChecker.check(prevKey, crl, variant, anchor);
+            AlgorithmChecker.check(prevKey, crlImpl.getSigAlgId(),
+                                   variant, anchor);
         } catch (CertPathValidatorException cpve) {
             if (debug != null) {
                 debug.println("CRL signature algorithm check failed: " + cpve);
@@ -722,7 +717,7 @@ public class DistributionPointFetcher {
     private static boolean issues(X509CertImpl cert, X509CRLImpl crl,
                                   String provider) throws IOException
     {
-        boolean matched = false;
+        boolean matched;
 
         AdaptableX509CertSelector issuerSelector =
                                     new AdaptableX509CertSelector();
@@ -756,7 +751,6 @@ public class DistributionPointFetcher {
                 cert.getAuthorityKeyIdentifierExtension() == null)) {
             try {
                 crl.verify(cert.getPublicKey(), provider);
-                matched = true;
             } catch (GeneralSecurityException e) {
                 matched = false;
             }

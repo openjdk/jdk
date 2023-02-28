@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class GetInstance {
     /**
      * Return a List of all the available Services that implement
      * (type, algorithm). Note that the list is initialized lazily
-     * and Provider loading and lookup is only trigered when
+     * and Provider loading and lookup is only triggered when
      * necessary.
      */
     public static List<Service> getServices(String type, String algorithm) {
@@ -128,7 +128,7 @@ public class GetInstance {
 
     /**
      * Return a List of all the available Services that implement any of
-     * the specified algorithms. See getServices(String, String) for detals.
+     * the specified algorithms. See getServices(String, String) for details.
      */
     public static List<Service> getServices(List<ServiceId> ids) {
         ProviderList list = Providers.getProviderList();
@@ -254,7 +254,7 @@ public class GetInstance {
         if (superClass == null) {
             return;
         }
-        if (superClass.isAssignableFrom(subClass) == false) {
+        if (!superClass.isAssignableFrom(subClass)) {
             throw new NoSuchAlgorithmException
                 ("class configured for " + s.getType() + ": "
                 + s.getClassName() + " not a " + s.getType());

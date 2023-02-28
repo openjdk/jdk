@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,47 @@
 #ifndef SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
 #define SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
 
+#include "services/mallocLimit.hpp"
 #include "services/mallocTracker.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-#include "services/memTracker.hpp"
+// Returns true if allocating s bytes on f would trigger either global or the category limit
+inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
 
-inline void* MallocTracker::get_base(void* memblock){
-  return get_base(memblock, MemTracker::tracking_level());
+  // Note: checks are ordered to have as little impact as possible on the standard code path,
+  // when MallocLimit is unset, resp. it is set but we have reached no limit yet.
+  // Somewhat expensive are:
+  // - as_snapshot()->total(), total malloc load (requires iteration over arena types)
+  // - VMError::is_error_reported() is a load from a volatile.
+  if (MallocLimitHandler::have_limit()) {
+
+    // Global Limit ?
+    const malloclimit* l = MallocLimitHandler::global_limit();
+    if (l->sz > 0) {
+      size_t so_far = as_snapshot()->total();
+      if ((so_far + s) > l->sz) { // hit the limit
+        return total_limit_reached(s, so_far, l);
+      }
+    } else {
+      // Category Limit?
+      l = MallocLimitHandler::category_limit(f);
+      if (l->sz > 0) {
+        const MallocMemory* mm = as_snapshot()->by_type(f);
+        size_t so_far = mm->malloc_size() + mm->arena_size();
+        if ((so_far + s) > l->sz) {
+          return category_limit_reached(f, s, so_far, l);
+        }
+      }
+    }
+  }
+
+  return false;
 }
+
+inline bool MallocTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
+  return MallocMemorySummary::check_exceeds_limit(s, f);
+}
+
 
 #endif // SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP

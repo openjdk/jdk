@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ class SOFMarkerSegment extends MarkerSegment {
     /**
      * A component spec within an SOF marker segment.
      */
-    class ComponentSpec implements Cloneable {
+    static class ComponentSpec implements Cloneable {
         int componentId;
         int HsamplingFactor;
         int VsamplingFactor;

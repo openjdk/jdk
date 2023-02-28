@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,6 @@ void notify_jvmti_tagmaps() {
   // the tagmap's oopstorage notification handler to not care whether it's
   // invoked by STW or concurrent reference processing.
   JvmtiTagMap::set_needs_cleaning();
-
-  // Notify JVMTI tagmaps that a STW collection may have moved objects, so
-  // the tagmaps need rehashing.  This isn't the right place for this, but
-  // is convenient because all the STW collectors use WeakProcessor.  One
-  // problem is that the end of a G1 concurrent collection also comes here,
-  // possibly triggering unnecessary rehashes.
-  JvmtiTagMap::set_needs_rehashing();
 #endif // INCLUDE_JVMTI
 }
 
@@ -125,6 +118,6 @@ void WeakProcessor::Task::report_num_dead() {
   _storage_states.report_num_dead();
 }
 
-void WeakProcessor::GangTask::work(uint worker_id) {
+void WeakProcessor::WeakOopsDoTask::work(uint worker_id) {
   _erased_do_work(this, worker_id);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 #ifndef SHARE_INTERPRETER_BYTECODES_HPP
 #define SHARE_INTERPRETER_BYTECODES_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Bytecodes specifies all bytecodes used in the VM and
 // provides utility functions to get bytecode attributes.
@@ -364,12 +365,12 @@ class Bytecodes: AllStatic {
   // argument is used for conversion of breakpoints into the original
   // bytecode.  The CI uses these methods but guarantees that
   // breakpoints are hidden so the method argument should be passed as
-  // NULL since in that case the bcp and Method* are unrelated
+  // null since in that case the bcp and Method* are unrelated
   // memory.
   static Code       code_at(const Method* method, address bcp) {
-    assert(method == NULL || check_method(method, bcp), "bcp must point into method");
+    assert(method == nullptr || check_method(method, bcp), "bcp must point into method");
     Code code = cast(*bcp);
-    assert(code != _breakpoint || method != NULL, "need Method* to decode breakpoint");
+    assert(code != _breakpoint || method != nullptr, "need Method* to decode breakpoint");
     return (code != _breakpoint) ? code : non_breakpoint_code_at(method, bcp);
   }
   static Code       java_code_at(const Method* method, address bcp) {
@@ -403,8 +404,8 @@ class Bytecodes: AllStatic {
   static bool        uses_cp_cache  (Code code)    { check(code);      return has_all_flags(code, _fmt_has_j, false); }
   // if 'end' is provided, it indicates the end of the code buffer which
   // should not be read past when parsing.
-  static int         special_length_at(Bytecodes::Code code, address bcp, address end = NULL);
-  static int         raw_special_length_at(address bcp, address end = NULL);
+  static int         special_length_at(Bytecodes::Code code, address bcp, address end = nullptr);
+  static int         raw_special_length_at(address bcp, address end = nullptr);
   static int         length_for_code_at(Bytecodes::Code code, address bcp)  { int l = length_for(code); return l > 0 ? l : special_length_at(code, bcp); }
   static int         length_at      (Method* method, address bcp)  { return length_for_code_at(code_at(method, bcp), bcp); }
   static int         java_length_at (Method* method, address bcp)  { return length_for_code_at(java_code_at(method, bcp), bcp); }

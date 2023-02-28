@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public final class Utils {
     // used by caller.
 
     public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> !client.authenticator().isPresent() ||
+        return (k, v) -> client.authenticator().isEmpty() ||
                 (!k.equalsIgnoreCase("Authorization")
                         && !k.equalsIgnoreCase("Proxy-Authorization"));
     }
@@ -391,7 +391,6 @@ public final class Utils {
         return new URLPermission(urlString, actionStringBuilder.toString());
     }
 
-
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
     private static final boolean[] fieldvchar = new boolean[256];
@@ -411,7 +410,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-name.
+     * Validates an RFC 7230 field-name.
      */
     public static boolean isValidName(String token) {
         for (int i = 0; i < token.length(); i++) {
@@ -472,7 +471,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-value.
+     * Validates an RFC 7230 field-value.
      *
      * "Obsolete line folding" rule
      *
@@ -494,7 +493,6 @@ public final class Utils {
         }
         return true;
     }
-
 
     @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
@@ -660,6 +658,14 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
+        for (ByteBuffer buf : bufs) {
+            if (buf.hasRemaining())
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean hasRemaining(ByteBuffer[] bufs) {
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -873,7 +879,7 @@ public final class Utils {
         if (defaultPort) {
             return host;
         } else {
-            return host + ":" + Integer.toString(port);
+            return host + ":" + port;
         }
     }
 

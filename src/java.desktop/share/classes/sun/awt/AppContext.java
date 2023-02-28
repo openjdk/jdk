@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,9 @@ public final class AppContext {
        contained in another AppContext. It is implicitly created for
        standalone apps only (i.e. not applets)
      */
-    private static volatile AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext;
 
-    private static class GetAppContextLock {};
+    private static class GetAppContextLock {}
     private static final Object getAppContextLock = new GetAppContextLock();
 
     /*
@@ -193,7 +193,7 @@ public final class AppContext {
         VALID,
         BEING_DISPOSED,
         DISPOSED
-    };
+    }
 
     private volatile State state = State.VALID;
 
@@ -391,12 +391,19 @@ public final class AppContext {
      * This method must be called from a Thread which is not contained
      * within this AppContext.
      *
-     * @exception  IllegalThreadStateException  if the current thread is
+     * @throws  IllegalThreadStateException  if the current thread is
      *                                    contained within this AppContext
      * @since      1.2
      */
     @SuppressWarnings({"deprecation", "removal"})
     public void dispose() throws IllegalThreadStateException {
+        System.err.println(
+            """
+            WARNING: sun.awt.AppContext.dispose() no longer stops threads.
+            Additionally AppContext will be removed in a future release.
+            Remove all uses of this internal class as soon as possible.
+            There is no replacement.
+            """);
         // Check to be sure that the current Thread isn't in this AppContext
         if (this.threadGroup.parentOf(Thread.currentThread().getThreadGroup())) {
             throw new IllegalThreadStateException(
@@ -502,24 +509,6 @@ public final class AppContext {
             } catch (InterruptedException e) { }
         }
 
-        // Then, we stop any remaining Threads
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            threadGroup.stop();
-            return null;
-        });
-
-        // Next, we sleep 10ms at a time, waiting for all of the active
-        // Threads in the ThreadGroup to die.
-
-        startTime = System.currentTimeMillis();
-        endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
-        while ((this.threadGroup.activeCount() > 0) &&
-               (System.currentTimeMillis() < endTime)) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) { }
-        }
-
         // Next, we remove this and all subThreadGroups from threadGroup2appContext
         int numSubGroups = this.threadGroup.activeGroupCount();
         if (numSubGroups > 0) {
@@ -532,13 +521,6 @@ public final class AppContext {
         threadGroup2appContext.remove(this.threadGroup);
 
         threadAppContext.set(null);
-
-        // Finally, we destroy the ThreadGroup entirely.
-        try {
-            this.threadGroup.destroy();
-        } catch (IllegalThreadStateException e) {
-            // Fired if not all the Threads died, ignore it and proceed
-        }
 
         synchronized (table) {
             this.table.clear(); // Clear out the Hashtable to ease garbage collection
@@ -660,7 +642,7 @@ public final class AppContext {
      * @param      value   the value.
      * @return     the previous value of the specified key in this
      *             AppContext, or {@code null} if it did not have one.
-     * @exception  NullPointerException  if the key or value is
+     * @throws  NullPointerException  if the key or value is
      *               {@code null}.
      * @see     #get(Object)
      * @since   1.2

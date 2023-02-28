@@ -34,8 +34,7 @@ class MacroAssembler;
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
+class LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
 #endif // COMPILER1
@@ -62,7 +61,8 @@ public:
                         Address dst,
                         Register src,
                         Register tmp1,
-                        Register tmp2);
+                        Register tmp2,
+                        Register tmp3);
 #endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
@@ -96,6 +96,8 @@ public:
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
 #endif // COMPILER2
+
+  void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

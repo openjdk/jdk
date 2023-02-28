@@ -105,7 +105,7 @@ public abstract class Image {
      * Creates a graphics context for drawing to an off-screen image.
      * This method can only be called for off-screen images.
      * @return  a graphics context to draw to the off-screen image.
-     * @exception UnsupportedOperationException if called for a
+     * @throws UnsupportedOperationException if called for a
      *            non-off-screen image.
      * @see     java.awt.Graphics
      * @see     java.awt.Component#createImage(int, int)
@@ -162,7 +162,7 @@ public abstract class Image {
      * @param hints flags to indicate the type of algorithm to use
      * for image resampling.
      * @return     a scaled version of the image.
-     * @exception IllegalArgumentException if {@code width}
+     * @throws IllegalArgumentException if {@code width}
      *             or {@code height} is zero.
      * @see        java.awt.Image#SCALE_DEFAULT
      * @see        java.awt.Image#SCALE_FAST

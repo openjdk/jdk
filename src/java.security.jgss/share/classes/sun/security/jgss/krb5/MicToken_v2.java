@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class MicToken_v2 extends MessageToken_v2 {
     }
 
     public void verify(InputStream data) throws GSSException {
-        byte[] dataBytes = null;
+        byte[] dataBytes;
         try {
             dataBytes = new byte[data.available()];
             data.read(dataBytes);

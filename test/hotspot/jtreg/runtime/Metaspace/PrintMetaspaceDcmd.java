@@ -37,23 +37,13 @@ import jdk.test.lib.JDKToolFinder;
  */
 
 /*
- * @test id=test-64bit-ccs-noreclaim
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:MetaspaceReclaimPolicy=none PrintMetaspaceDcmd
- */
-
-/*
  * @test id=test-64bit-ccs-aggressivereclaim
  * @summary Test the VM.metaspace command
  * @requires vm.bits == "64"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:MetaspaceReclaimPolicy=aggressive PrintMetaspaceDcmd
+ * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=aggressive PrintMetaspaceDcmd
  */
 
 /*
@@ -167,6 +157,29 @@ public class PrintMetaspaceDcmd {
         output.shouldHaveExitValue(0);
         output.shouldContain("Virtual space list");
         output.shouldMatch("node.*reserved.*committed.*used.*");
+
+        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "chunkfreelist"});
+        // Output should look somewhat like this...
+        // vvvvvvvvvvvvvvvv
+        // Chunk freelist details:
+        // Non-Class:
+        // cm non-class-space: 5 chunks, total word size: 402944.
+        //         -- List[lv00]: empty
+        //         -- List[lv01]:  - <Chunk @0x00007f925c124090, state f, base 0x00007f9208600000, level lv01 (262144 words), used 0 words, committed 0 words.> - total : 1 chunks.
+        //         -- List[lv02]:  - <Chunk @0x00007f925c1240d8, state f, base 0x00007f9208500000, level lv02 (131072 words), used 0 words, committed 0 words.> - total : 1 chunks.
+        //         -- List[lv03]: empty
+        // .....
+        //
+        // total chunks: 5, total word size: 402944.
+        // ^^^^^^^^^^^^^^^^^
+        // .... but the actual number of chunks in the freelist is difficult to predict and may be low or zero since
+        //  no class unloading happened yet.
+        output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Chunk freelist details:");
+        // ... but we should see at least one one chunk somewhere, the list should never be empty.
+        output.shouldMatch(".*-- List\\[lv00\\].*");
+        output.shouldMatch(".*total chunks.*total word size.*");
 
         // Test with different scales
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "scale=G"});

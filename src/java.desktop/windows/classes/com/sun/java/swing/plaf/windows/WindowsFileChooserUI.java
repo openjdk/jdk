@@ -1054,7 +1054,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     static final int space = 10;
-    class IndentIcon implements Icon {
+    static class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1221,8 +1221,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-            if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter)value).getDescription());
+            if (value instanceof FileFilter fileFilter) {
+                setText(fileFilter.getDescription());
             }
 
             return this;

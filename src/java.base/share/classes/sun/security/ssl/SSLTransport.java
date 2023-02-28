@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ interface SSLTransport {
             // may be record sequence number overflow
             throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
         } catch (EOFException eofe) {
-            // rethrow EOFException, the call will handle it if neede.
+            // rethrow EOFException, the call will handle it if needed.
             throw eofe;
         } catch (InterruptedIOException | SocketException se) {
             // don't close the Socket in case of timeouts or interrupts or SocketException.
@@ -162,7 +162,7 @@ interface SSLTransport {
                     context.handshakeContext.sslConfig.enableRetransmissions &&
                     context.sslContext.isDTLS()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
-                        SSLLogger.finest("retransmited handshake flight");
+                        SSLLogger.finest("retransmitted handshake flight");
                     }
 
                     context.outputRecord.launchRetransmission();

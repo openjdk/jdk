@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -101,7 +101,7 @@ class VirtualSpaceNode;
 //  at the base of the payload (since that's where we allocate).
 //
 // The Metachunk keeps track of how much space is committed starting
-//  at the base of the payload - which is a performace optimization -
+//  at the base of the payload - which is a performance optimization -
 //  while underlying layers (VirtualSpaceNode->commitmask) keep track
 //  of the "real" commit state, aka which granules are committed,
 //  independent on what chunks reside above those granules.
@@ -167,7 +167,7 @@ class VirtualSpaceNode;
 
 class Metachunk {
 
-  // start of chunk memory; NULL if dead.
+  // start of chunk memory; null if dead.
   MetaWord* _base;
 
   // Used words.
@@ -224,25 +224,25 @@ class Metachunk {
 public:
 
   Metachunk() :
-    _base(NULL),
+    _base(nullptr),
     _used_words(0),
     _committed_words(0),
     _level(chunklevel::ROOT_CHUNK_LEVEL),
     _state(State::Free),
-    _vsnode(NULL),
-    _prev(NULL), _next(NULL),
-    _prev_in_vs(NULL),
-    _next_in_vs(NULL)
+    _vsnode(nullptr),
+    _prev(nullptr), _next(nullptr),
+    _prev_in_vs(nullptr),
+    _next_in_vs(nullptr)
   {}
 
   void clear() {
-    _base = NULL;
+    _base = nullptr;
     _used_words = 0; _committed_words = 0;
     _level = chunklevel::ROOT_CHUNK_LEVEL;
     _state = State::Free;
-    _vsnode = NULL;
-    _prev = NULL; _next = NULL;
-    _prev_in_vs = NULL; _next_in_vs = NULL;
+    _vsnode = nullptr;
+    _prev = nullptr; _next = nullptr;
+    _prev_in_vs = nullptr; _next_in_vs = nullptr;
   }
 
   size_t word_size() const        { return chunklevel::word_size_for_level(_level); }
@@ -258,7 +258,7 @@ public:
   void set_next(Metachunk* c)     { _next = c; }
   Metachunk* next() const         { return _next; }
 
-  DEBUG_ONLY(bool in_list() const { return _prev != NULL || _next != NULL; })
+  DEBUG_ONLY(bool in_list() const { return _prev != nullptr || _next != nullptr; })
 
   // Physical neighbors wiring
   void set_prev_in_vs(Metachunk* c) { DEBUG_ONLY(assert_have_expand_lock()); _prev_in_vs = c; }
@@ -347,7 +347,7 @@ public:
     return base() <= p && p < top();
   }
 
-  // Returns true if given pointer points into the commmitted payload area of this chunk.
+  // Returns true if given pointer points into the committed payload area of this chunk.
   bool is_valid_committed_pointer(const MetaWord* p) const {
     return base() <= p && p < committed_top();
   }

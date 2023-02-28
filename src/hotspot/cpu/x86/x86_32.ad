@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ reg_class_dynamic long_reg(long_reg_no_ebp, long_reg_with_ebp, %{ PreserveFrameP
 // Class of integer register pairs that aligns with calling convention
 reg_class eadx_reg( EAX,EDX );
 reg_class ebcx_reg( ECX,EBX );
+reg_class ebpd_reg( EBP,EDI );
 
 // Not AX or DX, used in divides
 reg_class nadx_reg_with_ebp(EBX, ECX, ESI, EDI, EBP);
@@ -254,23 +255,14 @@ source %{
 #define __ _masm.
 
 // How to find the high register of a Long pair, given the low register
-#define   HIGH_FROM_LOW(x) ((x)+2)
+#define   HIGH_FROM_LOW(x) (as_Register((x)->encoding()+2))
+#define   HIGH_FROM_LOW_ENC(x) ((x)+2)
 
 // These masks are used to provide 128-bit aligned bitmasks to the XMM
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
 // fast versions of NegF/NegD and AbsF/AbsD.
 
-void reg_mask_init() {
-  if (Matcher::has_predicated_vectors()) {
-    // Post-loop multi-versioning expects mask to be present in K1 register, till the time
-    // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
-    // curruption of value held in K1 register.
-    if (PostLoopMultiversioning) {
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
-    }
-  }
-}
+void reg_mask_init() {}
 
 // Note: 'double' and 'long long' have 32-bits alignment on x86.
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
@@ -321,11 +313,6 @@ static int sizeof_FFree_Float_Stack_All = -1;
 int MachCallRuntimeNode::ret_addr_offset() {
   assert(sizeof_FFree_Float_Stack_All != -1, "must have been emitted already");
   return 5 + pre_call_resets_size() + (_leaf_no_fp ? 0 : sizeof_FFree_Float_Stack_All);
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  ShouldNotCallThis();
-  return -1;
 }
 
 //
@@ -622,7 +609,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -670,8 +657,8 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
-              "JA       #safepoint_stub\t"
+    st->print("CMPL    rsp, poll_offset[thread]  \n\t"
+              "JA      #safepoint_stub\t"
               "# Safepoint: poll for GC");
   }
 }
@@ -721,7 +708,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, thread, true /* at_return */, true /* in_nmethod */);
@@ -755,6 +744,7 @@ static enum RC rc_class( OptoReg::Name reg ) {
     assert(UseSSE < 2, "shouldn't be used in SSE2+ mode");
     return rc_float;
   }
+  if (r->is_KRegister()) return rc_kreg;
   assert(r->is_XMMRegister(), "must be");
   return rc_xmm;
 }
@@ -1249,26 +1239,6 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     return size;
   }
 
-  assert( size > 0, "missed a case" );
-
-  // --------------------------------------------------------------------
-  // Check for second bits still needing moving.
-  if( src_second == dst_second )
-    return size;               // Self copy; no move
-  assert( src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad" );
-
-  // Check for second word int-int move
-  if( src_second_rc == rc_int && dst_second_rc == rc_int )
-    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
-
-  // Check for second word integer store
-  if( src_second_rc == rc_int && dst_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
-
-  // Check for second word integer load
-  if( dst_second_rc == rc_int && src_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
-
   // AVX-512 opmask specific spilling.
   if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
@@ -1305,6 +1275,26 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
     return 0;
   }
+
+  assert( size > 0, "missed a case" );
+
+  // --------------------------------------------------------------------
+  // Check for second bits still needing moving.
+  if( src_second == dst_second )
+    return size;               // Self copy; no move
+  assert( src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad" );
+
+  // Check for second word int-int move
+  if( src_second_rc == rc_int && dst_second_rc == rc_int )
+    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
+
+  // Check for second word integer store
+  if( src_second_rc == rc_int && dst_second_rc == rc_stack )
+    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
+
+  // Check for second word integer load
+  if( dst_second_rc == rc_int && src_second_rc == rc_stack )
+    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
 
   Unimplemented();
   return 0; // Mute compiler
@@ -1663,7 +1653,7 @@ encode %{
     int con = (int)($imm$$constant >> 32); // Throw away bottom bits
     emit_opcode(cbuf, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
     // Emit r/m byte with tertiary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $tertiary, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $tertiary, HIGH_FROM_LOW_ENC($dst$$reg));
     if ((con >= -128) && (con <= 127)) emit_d8 (cbuf,con);
     else                               emit_d32(cbuf,con);
   %}
@@ -1674,7 +1664,7 @@ encode %{
 
   enc_class bswap_long_bytes(eRegL dst) %{ // BSWAP
     int destlo = $dst$$reg;
-    int desthi = HIGH_FROM_LOW(destlo);
+    int desthi = HIGH_FROM_LOW_ENC(destlo);
     // bswap lo
     emit_opcode(cbuf, 0x0F);
     emit_cc(cbuf, 0xC8, destlo);
@@ -1753,11 +1743,13 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
     emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                 runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
 
     if (UseSSE >= 2) {
       MacroAssembler _masm(&cbuf);
@@ -1809,6 +1801,7 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
 
@@ -1816,17 +1809,26 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_IMM32);
+      __ post_call_nop();
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
-      // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      __ post_call_nop();
+      address mark = cbuf.insts_mark();
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
   %}
@@ -1834,6 +1836,7 @@ encode %{
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ post_call_nop();
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
@@ -1841,11 +1844,12 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
     emit_d8(cbuf, disp);             // Displacement
-
+    __ post_call_nop();
   %}
 
 //   Following encoding is no longer used, but may be restored if calling
@@ -1945,7 +1949,7 @@ encode %{
 
   enc_class RegReg_Hi(eRegL dst, eRegL src) %{    // RegReg(Many)
     $$$emit8$secondary;
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class RegReg_Lo2(eRegL dst, eRegL src) %{    // RegReg(Many)
@@ -1953,11 +1957,11 @@ encode %{
   %}
 
   enc_class RegReg_Hi2(eRegL dst, eRegL src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class RegReg_HiLo( eRegL src, rRegI dst ) %{
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class Con32 (immI src) %{    // Con32(storeImmI)
@@ -2082,7 +2086,7 @@ encode %{
   %}
 
   enc_class RegMem_Hi(eRegL ereg, memory mem) %{    // emit_reg_mem
-    int reg_encoding = HIGH_FROM_LOW($ereg$$reg);  // Hi register of pair, computed from lo
+    int reg_encoding = HIGH_FROM_LOW_ENC($ereg$$reg);  // Hi register of pair, computed from lo
     int base  = $mem$$base;
     int index = $mem$$index;
     int scale = $mem$$scale;
@@ -2093,8 +2097,8 @@ encode %{
 
   enc_class move_long_small_shift( eRegL dst, immI_1_31 cnt ) %{
     int r1, r2;
-    if( $tertiary == 0xA4 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
-    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
+    if( $tertiary == 0xA4 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW_ENC($dst$$reg); }
+    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW_ENC($dst$$reg); }
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,$tertiary);
     emit_rm(cbuf, 0x3, r1, r2);
@@ -2106,21 +2110,21 @@ encode %{
 
   enc_class move_long_big_shift_sign( eRegL dst, immI_32_63 cnt ) %{
     emit_opcode( cbuf, 0x8B ); // Move
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg));
     if( $cnt$$constant > 32 ) { // Shift, if not by zero
       emit_d8(cbuf,$primary);
       emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
       emit_d8(cbuf,$cnt$$constant-32);
     }
     emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_d8(cbuf,31);
   %}
 
   enc_class move_long_big_shift_clr( eRegL dst, immI_32_63 cnt ) %{
     int r1, r2;
-    if( $secondary == 0x5 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
-    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
+    if( $secondary == 0x5 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW_ENC($dst$$reg); }
+    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW_ENC($dst$$reg); }
 
     emit_opcode( cbuf, 0x8B ); // Move r1,r2
     emit_rm(cbuf, 0x3, r1, r2);
@@ -2264,7 +2268,7 @@ encode %{
     emit_d8(cbuf, 0x04);
     // MOV    $dst.hi,$dst.lo
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg );
     // CLR    $dst.lo
     emit_opcode(cbuf, 0x33);
     emit_rm(cbuf, 0x3, $dst$$reg, $dst$$reg);
@@ -2272,7 +2276,7 @@ encode %{
     // SHLD   $dst.hi,$dst.lo,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xA5);
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg));
     // SHL    $dst.lo,$shift"
     emit_opcode(cbuf,0xD3);
     emit_rm(cbuf, 0x3, 0x4, $dst$$reg );
@@ -2288,18 +2292,18 @@ encode %{
     emit_d8(cbuf, 0x04);
     // MOV    $dst.lo,$dst.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // CLR    $dst.hi
     emit_opcode(cbuf, 0x33);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($dst$$reg));
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg);
     // SHR    $dst.hi,$shift"
     emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x5, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 0x5, HIGH_FROM_LOW_ENC($dst$$reg) );
   %}
 
   enc_class shift_right_arith_long( eRegL dst, eCXRegI shift ) %{
@@ -2312,19 +2316,19 @@ encode %{
     emit_d8(cbuf, 0x05);
     // MOV    $dst.lo,$dst.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // SAR    $dst.hi,31
     emit_opcode(cbuf, 0xC1);
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW_ENC($dst$$reg) );
     emit_d8(cbuf, 0x1F );
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg);
     // SAR    $dst.hi,$shift"
     emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x7, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 0x7, HIGH_FROM_LOW_ENC($dst$$reg) );
   %}
 
 
@@ -2654,7 +2658,7 @@ encode %{
   enc_class cmpl_test( eRegL src1, eRegL src2 ) %{
     // CMP    $src1.hi,$src2.hi
     emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($src1$$reg), HIGH_FROM_LOW_ENC($src2$$reg) );
     // JNE,s  done
     emit_opcode(cbuf,0x75);
     emit_d8(cbuf, 2 );
@@ -2670,16 +2674,16 @@ encode %{
     int src_encoding = $src$$reg;
     encode_Copy( cbuf, dst_encoding  , src_encoding );
     // mov $dst.hi,$src
-    encode_Copy( cbuf, HIGH_FROM_LOW(dst_encoding), src_encoding );
+    encode_Copy( cbuf, HIGH_FROM_LOW_ENC(dst_encoding), src_encoding );
     // sar $dst.hi,31
     emit_opcode( cbuf, 0xC1 );
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW(dst_encoding) );
+    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW_ENC(dst_encoding) );
     emit_d8(cbuf, 0x1F );
   %}
 
   enc_class convert_long_double( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW_ENC($src$$reg));
     // push $src.lo
     emit_opcode(cbuf, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
@@ -2709,7 +2713,7 @@ encode %{
   // this version doesn't have add sp, 8
   enc_class convert_long_double2( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW_ENC($src$$reg));
     // push $src.lo
     emit_opcode(cbuf, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
@@ -2741,22 +2745,22 @@ encode %{
     // IMUL   $tmp,EDX
     emit_opcode( cbuf, 0x0F );
     emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // MOV    EDX,$src.hi
-    encode_Copy( cbuf, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg) );
+    encode_Copy( cbuf, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg) );
     // IMUL   EDX,EAX
     emit_opcode( cbuf, 0x0F );
     emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_rm( cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg );
     // ADD    $tmp,EDX
     emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // MUL   EDX:EAX,$src.lo
     emit_opcode( cbuf, 0xF7 );
     emit_rm( cbuf, 0x3, 0x4, $src$$reg );
     // ADD    EDX,ESI
     emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $tmp$$reg );
+    emit_rm( cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $tmp$$reg );
   %}
 
   enc_class long_multiply_con( eADXRegL dst, immL_127 src, rRegI tmp ) %{
@@ -2764,7 +2768,7 @@ encode %{
     //             hi(result) = hi(src * y_lo) + lo(src * y_hi)
     // IMUL   $tmp,EDX,$src
     emit_opcode( cbuf, 0x6B );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     emit_d8( cbuf, (int)$src$$constant );
     // MOV    EDX,$src
     emit_opcode(cbuf, 0xB8 + EDX_enc);
@@ -2779,17 +2783,19 @@ encode %{
 
   enc_class long_div( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src1$$reg) );
     // PUSH src1.lo
     emit_opcode(cbuf,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src2$$reg) );
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2798,17 +2804,19 @@ encode %{
 
   enc_class long_mod( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src1$$reg) );
     // PUSH src1.lo
     emit_opcode(cbuf,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src2$$reg) );
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2821,7 +2829,7 @@ encode %{
     emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg);
     // OR    $tmp,$src.hi
     emit_opcode(cbuf, 0x0B);
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class long_cmp_flags1( eRegL src1, eRegL src2 ) %{
@@ -2833,7 +2841,7 @@ encode %{
     emit_d8(cbuf,2);
     // CMP    $src1.hi,$src2.hi
     emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($src1$$reg), HIGH_FROM_LOW_ENC($src2$$reg) );
   %}
 
   enc_class long_cmp_flags2( eRegL src1, eRegL src2, rRegI tmp ) %{
@@ -2842,10 +2850,10 @@ encode %{
     emit_rm(cbuf, 0x3, $src1$$reg, $src2$$reg );
     // MOV    $tmp,$src1.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src1$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src1$$reg) );
     // SBB   $tmp,$src2.hi\t! Compute flags for long compare
     emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src2$$reg) );
   %}
 
   enc_class long_cmp_flags3( eRegL src, rRegI tmp ) %{
@@ -2857,17 +2865,17 @@ encode %{
     emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg );
     // SBB    $tmp,$src.hi
     emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src$$reg) );
   %}
 
  // Sniff, sniff... smells like Gnu Superoptimizer
   enc_class neg_long( eRegL dst ) %{
     emit_opcode(cbuf,0xF7);    // NEG hi
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_opcode(cbuf,0xF7);    // NEG lo
     emit_rm    (cbuf,0x3, 0x3,               $dst$$reg );
     emit_opcode(cbuf,0x83);    // SBB hi,0
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_d8    (cbuf,0 );
   %}
 
@@ -2876,10 +2884,12 @@ encode %{
   %}
 
   enc_class enc_rethrow() %{
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE9);        // jmp    entry
     emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
   %}
 
 
@@ -2925,9 +2935,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -2967,9 +2979,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -3103,10 +3117,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -3925,6 +3939,13 @@ operand eBCXRegL( eRegL reg ) %{
   interface(REG_INTER);
 %}
 
+operand eBDPRegL( eRegL reg ) %{
+  constraint(ALLOC_IN_RC(ebpd_reg));
+  match(reg);
+
+  format %{ "EBP:EDI" %}
+  interface(REG_INTER);
+%}
 // Special case for integer high multiply
 operand eADXRegL_low_only() %{
   constraint(ALLOC_IN_RC(eadx_reg));
@@ -4382,7 +4403,7 @@ operand stackSlotL(sRegL reg) %{
 // the flags (produced by the Cmp) specifies the coding of the comparison op
 // by matching a specific subtype of Bool operand below, such as cmpOpU.
 
-// Comparision Code
+// Comparison Code
 operand cmpOp() %{
   match(Bool);
 
@@ -6659,6 +6680,7 @@ instruct unnecessary_membar_volatile() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
@@ -7117,7 +7139,7 @@ instruct addI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AddI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "ADD    $dst,$src" %}
   opcode(0x03);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -7203,6 +7225,7 @@ instruct castLL( eRegL dst ) %{
 %}
 
 instruct castFF( regF dst ) %{
+  predicate(UseSSE >= 1);
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7211,6 +7234,7 @@ instruct castFF( regF dst ) %{
 %}
 
 instruct castDD( regD dst ) %{
+  predicate(UseSSE >= 2);
   match(Set dst (CastDD dst));
   format %{ "#castDD of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7218,59 +7242,22 @@ instruct castDD( regD dst ) %{
   ins_pipe( empty );
 %}
 
-// Load-locked - same as a regular pointer load when used with compare-swap
-instruct loadPLocked(eRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-
-  ins_cost(125);
-  format %{ "MOV    $dst,$mem\t# Load ptr. locked" %}
-  opcode(0x8B);
-  ins_encode( OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
+instruct castFF_PR( regFPR dst ) %{
+  predicate(UseSSE < 1);
+  match(Set dst (CastFF dst));
+  format %{ "#castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
 %}
 
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
-instruct storePConditional( memory heap_top_ptr, eAXRegP oldval, eRegP newval, eFlagsReg cr ) %{
-  match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-  // EAX is killed if there is contention, but then it's also unused.
-  // In the common case of no contention, EAX holds the new oop address.
-  format %{ "CMPXCHG $heap_top_ptr,$newval\t# If EAX==$heap_top_ptr Then store $newval into $heap_top_ptr" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval,heap_top_ptr) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of an int value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG on Intel.
-instruct storeIConditional( memory mem, eAXRegI oldval, rRegI newval, eFlagsReg cr ) %{
-  match(Set cr (StoreIConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "CMPXCHG $mem,$newval\t# If EAX==$mem Then store $newval into $mem" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval, mem) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of a long value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG8 on Intel.
-instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  match(Set cr (StoreLConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "XCHG   EBX,ECX\t# correct order for CMPXCHG8 instruction\n\t"
-            "CMPXCHG8 $mem,ECX:EBX\t# If EDX:EAX==$mem Then store ECX:EBX into $mem\n\t"
-            "XCHG   EBX,ECX"
-  %}
-  ins_encode %{
-    // Note: we need to swap rbx, and rcx before and after the
-    //       cmpxchg8 instruction because the instruction uses
-    //       rcx as the high order word of the new value to store but
-    //       our register encoding uses rbx.
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-    __ lock();
-    __ cmpxchg8($mem$$Address);
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-  %}
-  ins_pipe( pipe_cmpxchg );
+instruct castDD_PR( regDPR dst ) %{
+  predicate(UseSSE < 2);
+  match(Set dst (CastDD dst));
+  format %{ "#castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
 %}
 
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
@@ -7521,7 +7508,7 @@ instruct subI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (SubI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "SUB    $dst,$src" %}
   opcode(0x2B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -7803,9 +7790,9 @@ instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Divide Register Long
-instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (DivL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -7851,9 +7838,9 @@ instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Remainder Register Long
-instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (ModL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -8194,7 +8181,7 @@ instruct andI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AndI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "AND    $dst,$src" %}
   opcode(0x23);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8385,7 +8372,7 @@ instruct orI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (OrI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "OR     $dst,$src" %}
   opcode(0x0B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8592,7 +8579,7 @@ instruct xorI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (XorI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "XOR    $dst,$src" %}
   opcode(0x33);
   ins_encode( OpcP, RegMem(dst, src) );
@@ -10805,6 +10792,7 @@ instruct convD2I_reg_reg( eAXRegI dst, eDXRegI tmp, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10880,6 +10868,7 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10935,6 +10924,7 @@ instruct convF2I_reg(eAXRegI dst, eDXRegI tmp, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -11011,6 +11001,7 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -11479,6 +11470,95 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
   ins_pipe( pipe_slow );
 %}
 
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src mask));
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "compress_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    Label exit, partail_result;
+    // Parallely extract both upper and lower 32 bits of source into destination register pair.
+    // Merge the results of upper and lower destination registers such that upper destination
+    // results are contiguously laid out after the lower destination result.
+    __ pextl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pextl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // Skip merging if bit count of lower mask register is equal to 32 (register size).
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift left the contents of upper destination register by true bit count of lower mask register
+    // and merge with lower destination register.
+    __ shlxl($rtmp$$Register, HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ orl($dst$$Register, $rtmp$$Register);
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    // Zero out upper destination register if true bit count of lower 32 bit mask is zero
+    // since contents of upper destination have already been copied to lower destination
+    // register.
+    __ cmpl($rtmp$$Register, 0);
+    __ jccb(Assembler::greater, partail_result);
+    __ movl(HIGH_FROM_LOW($dst$$Register), 0);
+    __ jmp(exit);
+    __ bind(partail_result);
+    // Perform right shift over upper destination register to move out bits already copied
+    // to lower destination register.
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ shrxl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "expand_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    // Extraction operation sequentially reads the bits from source register starting from LSB
+    // and lays them out into destination register at bit locations corresponding to true bits
+    // in mask register. Thus number of source bits read are equal to combined true bit count
+    // of mask register pair.
+    Label exit, mask_clipping;
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // If true bit count of lower mask register is 32 then none of bit of lower source register
+    // will feed to upper destination register.
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift right the contents of lower source register to remove already consumed bits.
+    __ shrxl($rtmp$$Register, $src$$Register, $rtmp$$Register);
+    // Extract the bits from lower source register starting from LSB under the influence
+    // of upper mask register.
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register, HIGH_FROM_LOW($mask$$Register));
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ movdl($xtmp$$XMMRegister, $mask$$Register);
+    __ movl($mask$$Register, HIGH_FROM_LOW($mask$$Register));
+    // Clear the set bits in upper mask register which have been used to extract the contents
+    // from lower source register.
+    __ bind(mask_clipping);
+    __ blsrl($mask$$Register, $mask$$Register);
+    __ decrementl($rtmp$$Register, 1);
+    __ jccb(Assembler::greater, mask_clipping);
+    // Starting from LSB extract the bits from upper source register under the influence of
+    // remaining set bits in upper mask register.
+    __ pdepl($rtmp$$Register, HIGH_FROM_LOW($src$$Register), $mask$$Register);
+    // Merge the partial results extracted from lower and upper source register bits.
+    __ orl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ movdl($mask$$Register, $xtmp$$XMMRegister);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // =======================================================================
 // fast clearing of an array
@@ -12100,34 +12180,34 @@ instruct array_equalsC_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                      regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                         regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                           regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                              regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -12527,7 +12607,7 @@ instruct loopLimit_eReg(eAXRegI limit, nadxRegI init, immI stride, eDXRegI limit
       __ lneg($limit_hi$$Register, $limit$$Register);
       __ movl($tmp$$Register, -strd);
     }
-    // signed devision: (EAX:EDX) / pos_stride
+    // signed division: (EAX:EDX) / pos_stride
     __ idivl($tmp$$Register);
     if (strd < 0) {
       // restore sign
@@ -12551,7 +12631,7 @@ instruct jumpXtnd(rRegI switch_val) %{
   ins_encode %{
     // Jump to Address(table_base + switch_reg)
     Address index(noreg, $switch_val$$Register, Address::times_1);
-    __ jump(ArrayAddress($constantaddress, index));
+    __ jump(ArrayAddress($constantaddress, index), noreg);
   %}
   ins_pipe(pipe_jmp);
 %}
@@ -12588,7 +12668,6 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -12604,7 +12683,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12619,7 +12697,6 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12629,66 +12706,6 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// mask version
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cr);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop    $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
@@ -13108,6 +13125,24 @@ instruct cmovLL_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegL dst, load_lo
   ins_pipe( pipe_cmov_reg_long );
 %}
 
+instruct cmovLL_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, eRegL src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(400);
+  expand %{
+    cmovLL_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovLL_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, load_long_memory src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(500);
+  expand %{
+    cmovLL_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE ints.
 instruct cmovII_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, rRegI src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
@@ -13129,7 +13164,25 @@ instruct cmovII_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13138,6 +13191,16 @@ instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP s
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LTGE(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13292,7 +13355,25 @@ instruct cmovII_mem_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13301,6 +13382,16 @@ instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP s
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_EQNE(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13448,22 +13539,18 @@ instruct cmovLL_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL 
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(400);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegReg_Lo2( dst, src ), enc_cmov(cmp), RegReg_Hi2( dst, src ) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_reg_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 instruct cmovLL_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, load_long_memory src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(500);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi+4" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegMem(dst, src), enc_cmov(cmp), RegMem_Hi(dst, src) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_mem_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE ints.
@@ -13487,6 +13574,24 @@ instruct cmovII_mem_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, rRegI dst,
   ins_pipe( pipe_cmov_mem );
 %}
 
+instruct cmovII_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LEGT(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LEGT(cmp, flags, dst, src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
@@ -13496,6 +13601,16 @@ instruct cmovPP_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegP dst,
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LEGT(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13727,7 +13842,40 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct mask_all_evexL_LT32(kReg dst, eRegL src) %{
+  predicate(Matcher::vector_length(n) <= 32);
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexL_LE32 $dst, $src \t" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct mask_all_evexL_GT32(kReg dst, eRegL src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexL_GT32 $dst, $src \t! using $ktmp as TEMP " %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_all_evexI_GT32(kReg dst, rRegI src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexI_GT32 $dst, $src \t! using $ktmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // ============================================================================
 // Safepoint Instruction
@@ -13813,7 +13961,7 @@ instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

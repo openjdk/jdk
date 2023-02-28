@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSession;
 
 /**
- * Implementation of an non-blocking SSLEngine.
+ * Implementation of a non-blocking SSLEngine.
  *
  * @author Brad Wetmore
  */
@@ -270,7 +270,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             if (ciphertext == null && !conContext.isNegotiated &&
                     conContext.isInboundClosed() &&
                     hsStatus == HandshakeStatus.NEED_WRAP) {
-                // Even the outboud is open, no futher data could be wrapped as:
+                // Even the outbound is open, no further data could be wrapped as:
                 //     1. the outbound is empty
                 //     2. no negotiated connection
                 //     3. the inbound has closed, cannot complete the handshake
@@ -332,7 +332,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // after the last flight.  If the last flight get lost, the
             // application data may be discarded accordingly.  As could
             // be an issue for some applications.  This impact can be
-            // mitigated by sending the last fligth twice.
+            // mitigated by sending the last flight twice.
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
                 SSLLogger.finest("retransmit the last flight messages");
             }
@@ -461,7 +461,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             }
 
             /*
-             * Make sure the destination bufffers are writable.
+             * Make sure the destination buffers are writable.
              */
             if (dsts[i].isReadOnly()) {
                 throw new ReadOnlyBufferException();
@@ -789,17 +789,17 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // Is it ready to close inbound?
             //
             // No exception if the initial handshake is not started.
-            if (!conContext.isInputCloseNotified &&
-                (conContext.isNegotiated ||
-                    conContext.handshakeContext != null)) {
-
-                throw conContext.fatal(Alert.INTERNAL_ERROR,
+            if (!conContext.isInputCloseNotified && (conContext.isNegotiated
+                    || conContext.handshakeContext != null)) {
+                throw new SSLException(
                         "closing inbound before receiving peer's close_notify");
             }
-
-            conContext.closeInbound();
         } finally {
-            engineLock.unlock();
+            try {
+                conContext.closeInbound();
+            } finally {
+                engineLock.unlock();
+            }
         }
     }
 
@@ -1130,7 +1130,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     if (conContext.delegatedThrown == exc) {
                         // clear if/only if both are the same
                         conContext.delegatedThrown = null;
-                    } // otherwise report the hc delegatedThrown
+                    } // otherwise, report the hc delegatedThrown
                 } else {
                     // Nothing waiting in HandshakeContext, but one is in the
                     // TransportContext.
@@ -1167,17 +1167,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         if (taskThrown instanceof RuntimeException) {
             throw new RuntimeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLHandshakeException) {
-            return (SSLHandshakeException)
-                new SSLHandshakeException(msg).initCause(taskThrown);
+            return new SSLHandshakeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLKeyException) {
-            return (SSLKeyException)
-                new SSLKeyException(msg).initCause(taskThrown);
+            return new SSLKeyException(msg, taskThrown);
         } else if (taskThrown instanceof SSLPeerUnverifiedException) {
-            return (SSLPeerUnverifiedException)
-                new SSLPeerUnverifiedException(msg).initCause(taskThrown);
+            return new SSLPeerUnverifiedException(msg, taskThrown);
         } else if (taskThrown instanceof SSLProtocolException) {
-            return (SSLProtocolException)
-                new SSLProtocolException(msg).initCause(taskThrown);
+            return new SSLProtocolException(msg, taskThrown);
         } else if (taskThrown instanceof SSLException) {
             return (SSLException)taskThrown;
         } else {

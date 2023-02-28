@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,77 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /*
  * @test
- * @bug 6376058
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.XPathTest
+ * @bug 6376058 8276141
+ * @build xpath.XPathTest xpath.XPathFactoryDummyImpl
  * @run testng/othervm xpath.XPathTest
  * @summary Test XPath functions. See details for each test.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XPathTest {
+    /*
+     * DataProvider for testXPathFactory
+     */
+    @DataProvider(name = "xpath")
+    public Object[][] getXPathFactory() throws Exception {
+        return new Object[][]{
+            {null},
+            {"xpath.XPathFactoryDummyImpl"},
+        };
+    }
+
+    /*
+     * @bug 8276141
+     * Tests the setProperty/getProperty method for the XPathFactory.
+    */
+    @Test(dataProvider = "xpath")
+    public void testXPathFactory(String factoryName)
+            throws Exception {
+
+        XPathFactory xpf;
+        if (factoryName == null) {
+            xpf = XPathFactory.newInstance();
+        } else {
+            xpf = XPathFactory.newInstance(
+                XPathFactory.DEFAULT_OBJECT_MODEL_URI, factoryName, null);
+        }
+
+        // NPE
+        Assert.assertThrows(NullPointerException.class,
+                () -> setProperty(xpf, null, "value"));
+        Assert.assertThrows(NullPointerException.class,
+                () -> getProperty(xpf, null));
+
+        if (factoryName == null) {
+            // default factory impl
+            Assert.assertThrows(IllegalArgumentException.class,
+                    () -> setProperty(xpf, "unknown", "value"));
+            Assert.assertThrows(IllegalArgumentException.class,
+                    () -> getProperty(xpf, "unknown"));
+        } else {
+            // the DummyImpl does not implement the method
+            Assert.assertThrows(UnsupportedOperationException.class,
+                    () -> setProperty(xpf, "unknown", "value"));
+            Assert.assertThrows(UnsupportedOperationException.class,
+                    () -> getProperty(xpf, "unknown"));
+        }
+    }
+
+    private void setProperty(XPathFactory xpf, String name, String value)
+            throws Exception {
+        xpf.setProperty(name, value);
+    }
+
+    private void getProperty(XPathFactory xpf, String name)
+            throws Exception {
+        xpf.getProperty(name);
+    }
 
     /*
       @bug 6211561

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 
             // send up to the GestureHandler to recursively dispatch on the AWT event thread
             DECLARE_CLASS(jc_GestureHandler, "com/apple/eawt/event/GestureHandler");
-            DECLARE_METHOD(sjm_handleGestureFromNative, jc_GestureHandler,
+            DECLARE_STATIC_METHOD(sjm_handleGestureFromNative, jc_GestureHandler,
                             "handleGestureFromNative", "(Ljava/awt/Window;IDDDD)V");
             (*env)->CallStaticVoidMethod(env, jc_GestureHandler, sjm_handleGestureFromNative,
                                awtWindow, type, (jdouble)loc.x, (jdouble)loc.y, (jdouble)a, (jdouble)b);
@@ -213,20 +213,20 @@ AWT_NS_WINDOW_IMPLEMENTATION
     NSUInteger type = 0;
     if (IS(styleBits, DECORATED)) {
         type |= NSTitledWindowMask;
-        if (IS(styleBits, CLOSEABLE))            type |= NSClosableWindowMask;
-        if (IS(styleBits, RESIZABLE))            type |= NSResizableWindowMask;
-        if (IS(styleBits, FULL_WINDOW_CONTENT))  type |= NSFullSizeContentViewWindowMask;
+        if (IS(styleBits, CLOSEABLE))            type |= NSWindowStyleMaskClosable;
+        if (IS(styleBits, RESIZABLE))            type |= NSWindowStyleMaskResizable;
+        if (IS(styleBits, FULL_WINDOW_CONTENT))  type |= NSWindowStyleMaskFullSizeContentView;
     } else {
-        type |= NSBorderlessWindowMask;
+        type |= NSWindowStyleMaskBorderless;
     }
 
-    if (IS(styleBits, MINIMIZABLE))   type |= NSMiniaturizableWindowMask;
-    if (IS(styleBits, TEXTURED))      type |= NSTexturedBackgroundWindowMask;
-    if (IS(styleBits, UNIFIED))       type |= NSUnifiedTitleAndToolbarWindowMask;
-    if (IS(styleBits, UTILITY))       type |= NSUtilityWindowMask;
-    if (IS(styleBits, HUD))           type |= NSHUDWindowMask;
+    if (IS(styleBits, MINIMIZABLE))   type |= NSWindowStyleMaskMiniaturizable;
+    if (IS(styleBits, TEXTURED))      type |= NSWindowStyleMaskTexturedBackground;
+    if (IS(styleBits, UNIFIED))       type |= NSWindowStyleMaskUnifiedTitleAndToolbar;
+    if (IS(styleBits, UTILITY))       type |= NSWindowStyleMaskUtilityWindow;
+    if (IS(styleBits, HUD))           type |= NSWindowStyleMaskHUDWindow;
     if (IS(styleBits, SHEET))         type |= NSWindowStyleMaskDocModalWindow;
-    if (IS(styleBits, NONACTIVATING)) type |= NSNonactivatingPanelMask;
+    if (IS(styleBits, NONACTIVATING)) type |= NSWindowStyleMaskNonactivatingPanel;
 
     return type;
 }
@@ -269,7 +269,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 
     if (IS(mask, FULLSCREENABLE) && [self.nsWindow respondsToSelector:@selector(toggleFullScreen:)]) {
         if (IS(bits, FULLSCREENABLE)) {
-            [self.nsWindow setCollectionBehavior:(1 << 7) /*NSWindowCollectionBehaviorFullScreenPrimary*/];
+            [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
         } else {
             [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];
         }
@@ -343,7 +343,7 @@ AWT_ASSERT_APPKIT_THREAD;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
 
     if (IS(self.styleBits, IS_POPUP)) {
-        [self.nsWindow setCollectionBehavior:(1 << 8) /*NSWindowCollectionBehaviorFullScreenAuxiliary*/];
+        [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
     }
 
     if (IS(bits, SHEET) && owner != nil) {
@@ -549,7 +549,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return isVisible;
 }
 
-// Orders window's childs based on the current focus state
+// Orders window children based on the current focus state
 - (void) orderChildWindows:(BOOL)focus {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -685,7 +685,7 @@ AWT_ASSERT_APPKIT_THREAD;
                 : [self standardFrame];
 }
 
-// Hides/shows window's childs during iconify/de-iconify operation
+// Hides/shows window children during iconify/de-iconify operation
 - (void) iconifyChildWindows:(BOOL)iconify {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -1690,7 +1690,7 @@ JNI_COCOA_ENTER(env);
         if (CGDisplayCapture(aID) == kCGErrorSuccess) {
             // remove window decoration
             NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
-            [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSBorderlessWindowMask];
+            [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSWindowStyleMaskBorderless];
 
             int shieldLevel = CGShieldingWindowLevel();
             window.preFullScreenLevel = [nsWindow level];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 package java.util;
-import java.util.Map.Entry;
 
 /**
  * This class provides a skeletal implementation of the {@code Map}
@@ -493,9 +492,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
                         return false;
                 }
             }
-        } catch (ClassCastException unused) {
-            return false;
-        } catch (NullPointerException unused) {
+        } catch (ClassCastException | NullPointerException unused) {
             return false;
         }
 
@@ -593,13 +590,17 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An Entry maintaining a key and a value.  The value may be
      * changed using the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry-set view.
+     * this class are not associated with any map nor with any
+     * map's entry-set view.
      *
      * @apiNote
      * This class facilitates the process of building custom map
      * implementations. For example, it may be convenient to return
      * arrays of {@code SimpleEntry} instances in method
      * {@code Map.entrySet().toArray}.
+     *
+     * @param <K> the type of key
+     * @param <V> the type of the value
      *
      * @since 1.6
      */
@@ -730,7 +731,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An unmodifiable Entry maintaining a key and a value.  This class
      * does not support the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry-set view.
+     * this class are not associated with any map nor with any map's
+     * entry-set view.
      *
      * @apiNote
      * Instances of this class are not necessarily immutable, as the key
@@ -744,6 +746,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@link Map#entry Map::entry} and {@link Map.Entry#copyOf Map.Entry::copyOf}
      * methods.
      *
+     * @param <K> the type of the keys
+     * @param <V> the type of the value
      * @since 1.6
      */
     public static class SimpleImmutableEntry<K,V>

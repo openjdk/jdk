@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,23 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 #ifdef ASSERT
+#define assert_handle_mark_nesting()                                                     \
+  assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark"); \
+  assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");         \
+
+
 oop* HandleArea::allocate_handle(oop obj) {
-  assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
-  assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
+  assert_handle_mark_nesting();
   assert(oopDesc::is_oop(obj), "not an oop: " INTPTR_FORMAT, p2i(obj));
   return real_allocate_handle(obj);
+}
+
+oop* HandleArea::allocate_null_handle() {
+  assert_handle_mark_nesting();
+  return real_allocate_handle(nullptr);
 }
 #endif
 
@@ -44,9 +53,9 @@ oop* HandleArea::allocate_handle(oop obj) {
 #define DEF_METADATA_HANDLE_FN_NOINLINE(name, type) \
 name##Handle::name##Handle(const name##Handle &h) {                    \
   _value = h._value;                                                   \
-  if (_value != NULL) {                                                \
+  if (_value != nullptr) {                                             \
     assert(_value->is_valid(), "obj is valid");                        \
-    if (h._thread != NULL) {                                           \
+    if (h._thread != nullptr) {                                        \
       assert(h._thread == Thread::current(), "thread must be current");\
       _thread = h._thread;                                             \
     } else {                                                           \
@@ -55,15 +64,15 @@ name##Handle::name##Handle(const name##Handle &h) {                    \
     assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
-    _thread = NULL;                                                    \
+    _thread = nullptr;                                                 \
   }                                                                    \
 }                                                                      \
 name##Handle& name##Handle::operator=(const name##Handle &s) {         \
   remove();                                                            \
   _value = s._value;                                                   \
-  if (_value != NULL) {                                                \
+  if (_value != nullptr) {                                             \
     assert(_value->is_valid(), "obj is valid");                        \
-    if (s._thread != NULL) {                                           \
+    if (s._thread != nullptr) {                                        \
       assert(s._thread == Thread::current(), "thread must be current");\
       _thread = s._thread;                                             \
     } else {                                                           \
@@ -72,12 +81,12 @@ name##Handle& name##Handle::operator=(const name##Handle &s) {         \
     assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
-    _thread = NULL;                                                    \
+    _thread = nullptr;                                                 \
   }                                                                    \
   return *this;                                                        \
 }                                                                      \
 inline void name##Handle::remove() {                                   \
-  if (_value != NULL) {                                                \
+  if (_value != nullptr) {                                             \
     int i = _thread->metadata_handles()->find_from_end((Metadata*)_value); \
     assert(i!=-1, "not in metadata_handles list");                     \
     _thread->metadata_handles()->remove_at(i);                         \
@@ -113,7 +122,7 @@ void HandleArea::oops_do(OopClosure* f) {
     k = k->next();
   }
 
-  if (_prev != NULL) _prev->oops_do(f);
+  if (_prev != nullptr) _prev->oops_do(f);
 }
 
 void HandleMark::initialize(Thread* thread) {

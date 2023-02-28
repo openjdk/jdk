@@ -22,11 +22,12 @@
  */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.xml.transform.TransformerException;
 
-import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityRuntimeException;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
@@ -50,6 +51,9 @@ import org.w3c.dom.Node;
  *
  */
 public class TransformXPath extends TransformSpi {
+
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+            com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXPath.class);
 
     /**
      * {@inheritDoc}
@@ -102,7 +106,7 @@ public class TransformXPath extends TransformSpi {
             input.addNodeFilter(new XPathNodeFilter(xpathElement, xpathnode, str, xpathAPIInstance));
             input.setNodeSet(true);
             return input;
-        } catch (DOMException ex) {
+        } catch (XMLParserException | IOException | DOMException ex) {
             throw new TransformationException(ex);
         }
     }
@@ -144,11 +148,8 @@ public class TransformXPath extends TransformSpi {
                 }
                 return 0;
             } catch (TransformerException e) {
-                Object[] eArgs = {currentNode};
-                throw new XMLSecurityRuntimeException("signature.Transform.node", eArgs, e);
-            } catch (Exception e) {
-                Object[] eArgs = {currentNode, currentNode.getNodeType()};
-                throw new XMLSecurityRuntimeException("signature.Transform.nodeAndType",eArgs, e);
+                LOG.debug("Error evaluating XPath expression", e);
+                return 0;
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.net.ssl.SSLServerSocket;
  * the standard SSLServerSocketFactory API.
  *
  * <P> System security defaults prevent server sockets from accepting
- * connections if they the authentication context has not been given
+ * connections if the authentication context has not been given
  * a certificate chain and its matching private key.  If the clients
  * of your application support "anonymous" cipher suites, you may be
  * able to configure a server socket to accept those suites.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,16 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "utilities/nonblockingQueue.hpp"
 
-class G1ConcurrentRefineThread;
+class G1PrimaryConcurrentRefineThread;
 class G1DirtyCardQueueSet;
 class G1RedirtyCardsQueueSet;
 class Thread;
@@ -69,7 +69,7 @@ public:
 
 class G1DirtyCardQueueSet: public PtrQueueSet {
   // Head and tail of a list of BufferNodes, linked through their next()
-  // fields.  Similar to G1BufferNodeList, but without the _entry_count.
+  // fields.  Similar to BufferNodeList, but without the _entry_count.
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
@@ -95,10 +95,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   //
   // The paused buffers are conceptually an extension of the completed buffers
   // queue, and operations which need to deal with all of the queued buffers
-  // (such as concatenate_logs) also need to deal with any paused buffers.  In
-  // general, if a safepoint performs a GC then the paused buffers will be
-  // processed as part of it, and there won't be any paused buffers after a
-  // GC safepoint.
+  // (such as concatenating or abandoning logs) also need to deal with any
+  // paused buffers.  In general, if a safepoint performs a GC then the paused
+  // buffers will be processed as part of it, and there won't be any paused
+  // buffers after a GC safepoint.
   class PausedBuffers {
     class PausedList : public CHeapObj<mtGC> {
       BufferNode* volatile _head;
@@ -156,12 +156,13 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail take_all();
   };
 
-  // The primary refinement thread, for activation when the processing
-  // threshold is reached.  NULL if there aren't any refinement threads.
-  G1ConcurrentRefineThread* _primary_refinement_thread;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(G1ConcurrentRefineThread*));
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   // Upper bound on the number of cards in the completed and paused buffers.
   volatile size_t _num_cards;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  // If the queue contains more cards than configured here, the
+  // mutator must start doing some of the concurrent refinement work.
+  volatile size_t _mutator_refinement_threshold;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
   // NonblockingQueue has inner padding of one cache line.
@@ -174,15 +175,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   G1FreeIdSet _free_ids;
 
-  // Activation threshold for the primary refinement thread.
-  size_t _process_cards_threshold;
-
-  // If the queue contains more cards than configured here, the
-  // mutator must start doing some of the concurrent refinement work.
-  size_t _max_cards;
-  volatile size_t _padded_max_cards;
-  static const size_t MaxCardsUnlimited = SIZE_MAX;
-
+  G1ConcurrentRefineStats _concatenated_refinement_stats;
   G1ConcurrentRefineStats _detached_refinement_stats;
 
   // Verify _num_cards == sum of cards in the completed queue.
@@ -230,8 +223,8 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Enqueue the buffer, and optionally perform refinement by the mutator.
   // Mutator refinement is only done by Java threads, and only if there
-  // are more than max_cards (possibly padded) cards in the completed
-  // buffers.  Updates stats.
+  // are more than mutator_refinement_threshold cards in the completed buffers.
+  // Updates stats.
   //
   // Mutator refinement, if performed, stops processing a buffer if
   // SuspendibleThreadSet::should_yield(), recording the incompletely
@@ -242,10 +235,6 @@ public:
   G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
   ~G1DirtyCardQueueSet();
 
-  void set_primary_refinement_thread(G1ConcurrentRefineThread* thread) {
-    _primary_refinement_thread = thread;
-  }
-
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
   static uint num_par_ids();
@@ -254,28 +243,14 @@ public:
 
   virtual void enqueue_completed_buffer(BufferNode* node);
 
-  // Upper bound on the number of cards currently in in this queue set.
+  // Upper bound on the number of cards currently in this queue set.
   // Read without synchronization.  The value may be high because there
   // is a concurrent modification of the set of buffers.
-  size_t num_cards() const { return _num_cards; }
-
-  // Get/Set the number of cards that triggers log processing.
-  // Log processing should be done when the number of cards exceeds the
-  // threshold.
-  void set_process_cards_threshold(size_t sz) {
-    _process_cards_threshold = sz;
-  }
-  size_t process_cards_threshold() const {
-    return _process_cards_threshold;
-  }
-  static const size_t ProcessCardsThresholdNever = SIZE_MAX;
-
-  // Notify the consumer if the number of buffers crossed the threshold
-  void notify_if_necessary();
+  size_t num_cards() const;
 
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
-  G1BufferNodeList take_all_completed_buffers();
+  BufferNodeList take_all_completed_buffers();
 
   void flush_queue(G1DirtyCardQueue& queue);
 
@@ -293,33 +268,34 @@ public:
                                             size_t stop_at,
                                             G1ConcurrentRefineStats* stats);
 
-  // If a full collection is happening, reset partial logs, and release
-  // completed ones: the full collection will make them all irrelevant.
-  void abandon_logs();
+  // If a full collection is happening, reset per-thread refinement stats and
+  // partial logs, and release completed logs. The full collection will make
+  // them all irrelevant.
+  // precondition: at safepoint.
+  void abandon_logs_and_stats();
 
-  // If any threads have partial logs, add them to the global list of logs.
-  void concatenate_logs();
+  // Update global refinement statistics with the ones given and the ones from
+  // detached threads.
+  // precondition: at safepoint.
+  void update_refinement_stats(G1ConcurrentRefineStats& stats);
+  // Add the given thread's partial logs to the global list and return and reset
+  // its refinement stats.
+  // precondition: at safepoint.
+  G1ConcurrentRefineStats concatenate_log_and_stats(Thread* thread);
 
   // Return the total of mutator refinement stats for all threads.
-  // Also resets the stats for the threads.
   // precondition: at safepoint.
-  G1ConcurrentRefineStats get_and_reset_refinement_stats();
+  // precondition: only call after concatenate_logs_and_stats.
+  G1ConcurrentRefineStats concatenated_refinement_stats() const;
 
   // Accumulate refinement stats from threads that are detaching.
   void record_detached_refinement_stats(G1ConcurrentRefineStats* stats);
 
-  // Threshold for mutator threads to also do refinement when there
-  // are concurrent refinement threads.
-  size_t max_cards() const;
+  // Number of cards above which mutator threads should do refinement.
+  size_t mutator_refinement_threshold() const;
 
-  // Set threshold for mutator threads to also do refinement.
-  void set_max_cards(size_t value);
-
-  // Artificially increase mutator refinement threshold.
-  void set_max_cards_padding(size_t padding);
-
-  // Discard artificial increase of mutator refinement threshold.
-  void discard_max_cards_padding();
+  // Set number of cards above which mutator threads should do refinement.
+  void set_mutator_refinement_threshold(size_t value);
 };
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

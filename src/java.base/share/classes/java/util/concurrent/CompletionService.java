@@ -58,6 +58,8 @@ package java.util.concurrent;
  * actions taken by that task, which in turn <i>happen-before</i>
  * actions following a successful return from the corresponding {@code take()}.
  *
+ * @param <V> the type of values the tasks of this service produce and consume
+ *
  * @since 1.5
  */
 public interface CompletionService<V> {

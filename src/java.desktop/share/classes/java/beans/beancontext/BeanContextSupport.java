@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,13 +304,17 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * when the BeanContextSupport is serialized.
      */
 
+    /**
+     * A protected nested class containing per-child information
+     * in the {@code children} hashtable.
+     */
     protected class BCSChild implements Serializable {
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5815286101609939109L;
+        /**
+         * Use serialVersionUID from JDK 1.7 for interoperability.
+         */
+        @Serial
+        private static final long serialVersionUID = -5815286101609939109L;
 
         BCSChild(Object bcc, Object peer) {
             super();
@@ -1117,16 +1121,22 @@ public class      BeanContextSupport extends BeanContextChildSupport
         String propertyName = pce.getPropertyName();
         Object source       = pce.getSource();
 
-        synchronized(children) {
-            if ("beanContext".equals(propertyName) &&
-                containsKey(source)                    &&
-                children.get(source).isRemovePending()) {
-                BeanContext bc = getBeanContextPeer();
+        if ("beanContext".equals(propertyName)) {
+            synchronized (BeanContext.globalHierarchyLock) {
+                synchronized (children) {
+                    if (containsKey(source)
+                            && children.get(source).isRemovePending())
+                    {
+                        BeanContext bc = getBeanContextPeer();
 
-                if (bc.equals(pce.getOldValue()) && !bc.equals(pce.getNewValue())) {
-                    remove(source, false);
-                } else {
-                    children.get(source).setRemovePending(false);
+                        if (bc.equals(pce.getOldValue())
+                                && !bc.equals(pce.getNewValue()))
+                        {
+                            remove(source, false);
+                        } else {
+                            children.get(source).setRemovePending(false);
+                        }
+                    }
                 }
             }
         }
@@ -1323,7 +1333,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * property changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 
@@ -1337,7 +1347,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * vetoable changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 

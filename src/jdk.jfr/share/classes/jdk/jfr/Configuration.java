@@ -138,7 +138,7 @@ public final class Configuration {
      * @see java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public static Configuration create(Path path) throws IOException, ParseException {
-        Objects.requireNonNull(path);
+        Objects.requireNonNull(path, "path");
         JVMSupport.ensureWithIOException();
         try (Reader reader = Files.newBufferedReader(path)) {
             return JFC.create(JFC.nameFromPath(path), reader);
@@ -156,7 +156,7 @@ public final class Configuration {
      * @throws ParseException if the file can't be parsed
      */
     public static Configuration create(Reader reader) throws IOException, ParseException {
-        Objects.requireNonNull(reader);
+        Objects.requireNonNull(reader, "reader");
         JVMSupport.ensureWithIOException();
         return JFC.create(null, reader);
     }
@@ -177,6 +177,7 @@ public final class Configuration {
      * @throws ParseException if the configuration file can't be parsed
      */
     public static Configuration getConfiguration(String name) throws IOException, ParseException {
+        Objects.requireNonNull(name, "name");
         JVMSupport.ensureWithIOException();
         return JFC.getPredefined(name);
     }

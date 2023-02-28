@@ -36,8 +36,20 @@ import java.util.EventObject;
  * {@link java.awt.Desktop} instance of the current desktop context.
  *
  * @since 9
+ * @sealedGraph
  */
-public class AppEvent extends EventObject {
+public sealed class AppEvent extends EventObject
+    permits AboutEvent,
+            AppForegroundEvent,
+            AppHiddenEvent,
+            AppReopenedEvent,
+            FilesEvent,
+            OpenURIEvent,
+            PreferencesEvent,
+            QuitEvent,
+            ScreenSleepEvent,
+            SystemSleepEvent,
+            UserSessionEvent {
 
     /**
      * Use serialVersionUID from JDK 9 for interoperability.

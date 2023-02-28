@@ -594,12 +594,12 @@ public class BufferedImage extends java.awt.Image
      *                  the raster has been premultiplied with alpha.
      * @param properties {@code Hashtable} of
      *                  {@code String}/{@code Object} pairs.
-     * @exception RasterFormatException if the number and
+     * @throws RasterFormatException if the number and
      * types of bands in the {@code SampleModel} of the
      * {@code Raster} do not match the number and types required by
      * the {@code ColorModel} to represent its color and alpha
      * components.
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      *          {@code raster} is incompatible with {@code cm}
      * @see ColorModel
      * @see Raster
@@ -1195,7 +1195,7 @@ public class BufferedImage extends java.awt.Image
      * @param h the height of the specified rectangular region
      * @return a {@code BufferedImage} that is the subimage of this
      *          {@code BufferedImage}.
-     * @exception RasterFormatException if the specified
+     * @throws RasterFormatException if the specified
      * area is not contained within this {@code BufferedImage}.
      */
     public BufferedImage getSubimage (int x, int y, int w, int h) {
@@ -1391,7 +1391,7 @@ public class BufferedImage extends java.awt.Image
      * @param tileY the y index of the requested tile in the tile array
      * @return a {@code Raster} that is the tile defined by the
      *          arguments {@code tileX} and {@code tileY}.
-     * @exception ArrayIndexOutOfBoundsException if both
+     * @throws ArrayIndexOutOfBoundsException if both
      *          {@code tileX} and {@code tileY} are not
      *          equal to 0
      */
@@ -1561,7 +1561,7 @@ public class BufferedImage extends java.awt.Image
      * @return {@code true} if the tile specified by the specified
      *          indices is checked out for writing; {@code false}
      *          otherwise.
-     * @exception ArrayIndexOutOfBoundsException if both
+     * @throws ArrayIndexOutOfBoundsException if both
      *          {@code tileX} and {@code tileY} are not equal
      *          to 0
      */

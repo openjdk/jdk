@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.jca.JCAUtil;
 
 /**
  * The Digital Signature Standard (using the Digital Signature
- * Algorithm), as described in fips186-3 of the National Instute of
+ * Algorithm), as described in fips186-3 of the National Institute of
  * Standards and Technology (NIST), using SHA digest algorithms
  * from FIPS180-3.
  *
@@ -141,13 +141,10 @@ abstract class DSA extends SignatureSpi {
      */
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException {
-        if (!(privateKey instanceof java.security.interfaces.DSAPrivateKey)) {
+        if (!(privateKey instanceof java.security.interfaces.DSAPrivateKey priv)) {
             throw new InvalidKeyException("not a DSA private key: " +
                                           privateKey);
         }
-
-        java.security.interfaces.DSAPrivateKey priv =
-            (java.security.interfaces.DSAPrivateKey)privateKey;
 
         // check for algorithm specific constraints before doing initialization
         DSAParams params = priv.getParams();
@@ -179,12 +176,10 @@ abstract class DSA extends SignatureSpi {
      */
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
-        if (!(publicKey instanceof java.security.interfaces.DSAPublicKey)) {
+        if (!(publicKey instanceof java.security.interfaces.DSAPublicKey pub)) {
             throw new InvalidKeyException("not a DSA public key: " +
                                           publicKey);
         }
-        java.security.interfaces.DSAPublicKey pub =
-            (java.security.interfaces.DSAPublicKey)publicKey;
 
         // check for algorithm specific constraints before doing initialization
         DSAParams params = pub.getParams();
@@ -265,18 +260,13 @@ abstract class DSA extends SignatureSpi {
             return outseq;
         } else {
             // Return the DER-encoded ASN.1 form
-            try {
-                DerOutputStream outseq = new DerOutputStream(100);
-                outseq.putInteger(r);
-                outseq.putInteger(s);
-                DerValue result = new DerValue(DerValue.tag_Sequence,
-                        outseq.toByteArray());
+            DerOutputStream outseq = new DerOutputStream(100);
+            outseq.putInteger(r);
+            outseq.putInteger(s);
+            DerValue result = new DerValue(DerValue.tag_Sequence,
+                    outseq.toByteArray());
 
-                return result.toByteArray();
-
-            } catch (IOException e) {
-                throw new SignatureException("error encoding signature");
-            }
+            return result.toByteArray();
         }
     }
 
@@ -321,8 +311,8 @@ abstract class DSA extends SignatureSpi {
     protected boolean engineVerify(byte[] signature, int offset, int length)
             throws SignatureException {
 
-        BigInteger r = null;
-        BigInteger s = null;
+        BigInteger r;
+        BigInteger s;
 
         if (p1363Format) {
             if ((length & 1) == 1) {
@@ -362,7 +352,8 @@ abstract class DSA extends SignatureSpi {
             s = new BigInteger(1, s.toByteArray());
         }
 
-        if ((r.compareTo(presetQ) == -1) && (s.compareTo(presetQ) == -1)) {
+        if ((r.compareTo(presetQ) == -1) && (s.compareTo(presetQ) == -1)
+                && r.signum() > 0 && s.signum() > 0) {
             BigInteger w = generateW(presetP, presetQ, presetG, s);
             BigInteger v = generateV(presetY, presetP, presetQ, presetG, w, r);
             return v.equals(r);
@@ -489,7 +480,7 @@ abstract class DSA extends SignatureSpi {
     }
 
     /**
-     * Return a human readable rendition of the engine.
+     * Return a human-readable rendition of the engine.
      */
     public String toString() {
         String printable = "DSA Signature";
@@ -504,7 +495,7 @@ abstract class DSA extends SignatureSpi {
             printable += "\n\ty: " + Debug.toHexString(presetY);
         }
         if (presetY == null && presetX == null) {
-            printable += "\n\tUNINIIALIZED";
+            printable += "\n\tUNINITIALIZED";
         }
         return printable;
     }
@@ -708,7 +699,7 @@ abstract class DSA extends SignatureSpi {
                     ofs += len;
                 }
             }
-            protected final void engineUpdate(ByteBuffer input) {
+            protected void engineUpdate(ByteBuffer input) {
                 int inputLen = input.remaining();
                 if (inputLen > (digestBuffer.length - ofs)) {
                     ofs = Integer.MAX_VALUE;
@@ -743,12 +734,12 @@ abstract class DSA extends SignatureSpi {
             protected void engineReset() {
                 ofs = 0;
             }
-            protected final int engineGetDigestLength() {
+            protected int engineGetDigestLength() {
                 return digestBuffer.length;
             }
         }
 
-        private Raw(boolean p1363Format) throws NoSuchAlgorithmException {
+        private Raw(boolean p1363Format) {
             super(new NullDigest20(), p1363Format);
         }
 
@@ -758,7 +749,7 @@ abstract class DSA extends SignatureSpi {
      * Standard Raw DSA implementation.
      */
     public static final class RawDSA extends Raw {
-        public RawDSA() throws NoSuchAlgorithmException {
+        public RawDSA() {
             super(false);
         }
     }
@@ -767,7 +758,7 @@ abstract class DSA extends SignatureSpi {
      * Raw DSA implementation that uses the IEEE P1363 format.
      */
     public static final class RawDSAinP1363Format extends Raw {
-        public RawDSAinP1363Format() throws NoSuchAlgorithmException {
+        public RawDSAinP1363Format() {
             super(true);
         }
     }

@@ -1168,9 +1168,11 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
             // check 4.3.1.c1 error: fBase.length & (maxLength | minLength)
             if((fBase.fFacetsDefined & FACET_LENGTH) != 0 || (fFacetsDefined & FACET_LENGTH) != 0){
                 if ((fFacetsDefined & FACET_MINLENGTH) != 0){
-                    if (fBase.fLength < fMinLength) {
-                        // fBase.length, minLength and maxLength defined
+                    if ((fBase.fFacetsDefined & FACET_LENGTH) != 0 && fBase.fLength < fMinLength) {
                         reportError("length-minLength-maxLength.1.1", new Object[]{fTypeName, Integer.toString(fBase.fLength), Integer.toString(fMinLength)});
+                    }
+                    if ((fFacetsDefined & FACET_LENGTH) != 0 && fLength < fMinLength) {
+                        reportError("length-minLength-maxLength.1.1", new Object[]{fTypeName, Integer.toString(fLength), Integer.toString(fMinLength)});
                     }
                     if ((fBase.fFacetsDefined & FACET_MINLENGTH) == 0){
                         reportError("length-minLength-maxLength.1.2.a", new Object[]{fTypeName});
@@ -1180,9 +1182,11 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
                     }
                 }
                 if ((fFacetsDefined & FACET_MAXLENGTH) != 0){
-                    if (fBase.fLength > fMaxLength) {
-                        // fBase.length, minLength and maxLength defined
+                    if ((fBase.fFacetsDefined & FACET_LENGTH) != 0 && fBase.fLength > fMaxLength) {
                         reportError("length-minLength-maxLength.2.1", new Object[]{fTypeName, Integer.toString(fBase.fLength), Integer.toString(fMaxLength)});
+                    }
+                    if ((fFacetsDefined & FACET_LENGTH) != 0 && fLength > fMaxLength) {
+                        reportError("length-minLength-maxLength.2.1", new Object[]{fTypeName, Integer.toString(fLength), Integer.toString(fMaxLength)});
                     }
                     if ((fBase.fFacetsDefined & FACET_MAXLENGTH) == 0){
                         reportError("length-minLength-maxLength.2.2.a", new Object[]{fTypeName});

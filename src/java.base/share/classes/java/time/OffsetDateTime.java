@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1897,7 +1897,7 @@ public final class OffsetDateTime
     /**
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30+01:00}.
      * <p>
-     * The output will be one of the following ISO-8601 formats:
+     * The output will be one of the following formats:
      * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mmXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ssXXXXX}</li>
@@ -1906,7 +1906,8 @@ public final class OffsetDateTime
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX}</li>
      * </ul>
      * The format used will be the shortest that outputs the full value of
-     * the time where the omitted parts are implied to be zero.
+     * the time where the omitted parts are implied to be zero. The output
+     * is compatible with ISO 8601 if the seconds in the offset are zero.
      *
      * @return a string representation of this date-time, not null
      */

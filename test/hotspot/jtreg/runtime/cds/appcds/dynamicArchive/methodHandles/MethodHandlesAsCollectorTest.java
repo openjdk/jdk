@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,15 @@
  *        ../../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
  *        ../test-classes/TestMHApp.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesAsCollectorTest
  */
 
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Path;
 import jdk.test.lib.Platform;
 
 public class MethodHandlesAsCollectorTest extends DynamicArchiveTestBase {
@@ -61,6 +62,9 @@ public class MethodHandlesAsCollectorTest extends DynamicArchiveTestBase {
     private static final String ps = System.getProperty("path.separator");
     private static final String testPackageName = "test.java.lang.invoke";
     private static final String testClassName = "MethodHandlesAsCollectorTest";
+    private static final String loggingOpts = "-Xlog:cds,cds+dynamic=debug,class+load=trace";
+    private static final String lambdaLoadedFromArchive =
+        ".class.load. test.java.lang.invoke.MethodHandlesAsCollectorTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)";
 
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
@@ -70,17 +74,20 @@ public class MethodHandlesAsCollectorTest extends DynamicArchiveTestBase {
         String verifyOpt =
             Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
-        String[] classPaths = javaClassPath.split(File.pathSeparator);
-        String junitJar = null;
-        for (String path : classPaths) {
-            if (path.endsWith("junit.jar")) {
-                junitJar = path;
-                break;
-            }
-        }
+        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        String jars = appJar + ps + junitJar;
+        String className = testPackageName + "." + testClassName;
 
-        dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
-            "-cp", appJar + ps + junitJar, verifyOpt,
-            mainClass, testPackageName + "." + testClassName);
+        dump(topArchiveName, loggingOpts, "-cp", jars, verifyOpt, mainClass, className)
+            .assertNormalExit(output -> {
+                    output.shouldContain("Written dynamic archive 0x");
+                });
+
+        run(topArchiveName, loggingOpts, "-cp", jars, verifyOpt, mainClass, className)
+            .assertNormalExit(output -> {
+                    output.shouldMatch(lambdaLoadedFromArchive)
+                          .shouldHaveExitValue(0);
+                });
+
     }
 }

@@ -28,9 +28,12 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
@@ -99,14 +102,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   size_t* _obj_alloc_stat;
 
   // Per-thread evacuation failure data structures.
-#ifndef PRODUCT
-  size_t _evac_failure_inject_counter;
-#endif
+  EVAC_FAILURE_INJECTOR_ONLY(size_t _evac_failure_inject_counter;)
+
   PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
 
-  bool inject_evacuation_failure() PRODUCT_RETURN_( return false; );
+  bool inject_evacuation_failure(uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
@@ -134,7 +136,7 @@ public:
 
   // Apply the post barrier to the given reference field. Enqueues the card of p
   // if the barrier does not filter out the reference for some reason (e.g.
-  // p and q are in the same region, p is in survivor)
+  // p and q are in the same region, p is in survivor, p is in collection set)
   // To be called during GC if nothing particular about p and obj are known.
   template <class T> void write_ref_field_post(T* p, oop obj);
 
@@ -151,7 +153,7 @@ public:
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.
-  size_t flush(size_t* surviving_young_words);
+  size_t flush_stats(size_t* surviving_young_words, uint num_workers);
 
 private:
   void do_partial_array(PartialArrayScanTask task);
@@ -167,6 +169,8 @@ private:
                        HeapWord* obj_ptr,
                        size_t word_sz,
                        uint node_index);
+
+  void update_bot_after_copying(oop obj, size_t word_sz);
 
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
@@ -226,8 +230,8 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueueSet* _rdcqs;
-  PreservedMarksSet* _preserved_marks_set;
+  G1RedirtyCardsQueueSet _rdcqs;
+  PreservedMarksSet _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -238,18 +242,16 @@ class G1ParScanThreadStateSet : public StackObj {
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                          G1RedirtyCardsQueueSet* rdcqs,
-                          PreservedMarksSet* preserved_marks_set,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length,
                           G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
 
-  G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }
-  PreservedMarksSet* preserved_marks_set() { return _preserved_marks_set; }
+  G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
+  PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
 
-  void flush();
+  void flush_stats();
   void record_unused_optional_region(HeapRegion* hr);
 
   G1ParScanThreadState* state_for_worker(uint worker_id);

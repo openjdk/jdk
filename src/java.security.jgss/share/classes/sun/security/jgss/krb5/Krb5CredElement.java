@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package sun.security.jgss.krb5;
 
-import org.ietf.jgss.*;
-import sun.security.jgss.spi.*;
-import sun.security.krb5.*;
-import java.security.Provider;
+import sun.security.jgss.spi.GSSCredentialSpi;
 
 /**
  * Provides type safety for Krb5 credential elements.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,7 +374,7 @@ public interface DebugVC50SymbolIterator
   /** Segment portion of the procedure address. */
   public short getLGProcSegment();
 
-  /** Value defined by bitwise or of the the PROCFLAGS enumeration in
+  /** Value defined by bitwise or of the PROCFLAGS enumeration in
       {@link
       sun.jvm.hotspot.debugger.win32.coff.DebugVC50SymbolEnums}. */
   public byte getLGProcFlags();

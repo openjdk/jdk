@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,7 +599,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Grab the live range number
       uint lidx = lidxs.at(slidx);
       // Do not bother splitting or putting in Phis for single-def
-      // rematerialized live ranges.  This happens alot to constants
+      // rematerialized live ranges.  This happens a lot to constants
       // with long live ranges.
       if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() ) {
@@ -771,7 +771,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         if (defidx < _lrg_map.max_lrg_id()) {
           // Check for useless Phis.  These appear if we spill, then
           // coalesce away copies.  Dont touch Phis in spilling live
-          // ranges; they are busy getting modifed in this pass.
+          // ranges; they are busy getting modified in this pass.
           if( lrgs(defidx).reg() < LRG::SPILL_REG ) {
             uint i;
             Node *u = NULL;
@@ -810,7 +810,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               b->_fhrp_index >= b->end_idx() ||
               !b->get_node(b->_fhrp_index)->is_Proj(), "" );
 
-      // ********** Handle Crossing HRP Boundry **********
+      // ********** Handle Crossing HRP Boundary **********
       if( (insidx == b->_ihrp_index) || (insidx == b->_fhrp_index) ) {
         for( slidx = 0; slidx < spill_cnt; slidx++ ) {
           // Check for need to split at HRP boundary - split if UP
@@ -880,7 +880,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           }  // end if LRG is UP
         }  // end for all spilling live ranges
         assert( b->get_node(insidx) == n, "got insidx set incorrectly" );
-      }  // end if crossing HRP Boundry
+      }  // end if crossing HRP Boundary
 
       // If the LRG index is oob, then this is a new spillcopy, skip it.
       if (defidx >= _lrg_map.max_lrg_id()) {

@@ -65,7 +65,7 @@ endef
 #       SOURCE_DIRS)
 #   EXCLUDE_FILES exclude files matching these patterns (used only with
 #       SOURCE_DIRS)
-#   INCLUDES replace the occurances of a pattern with the contents of a file;
+#   INCLUDES replace the occurrences of a pattern with the contents of a file;
 #       one or more such include pattern, using the syntax:
 #       PLACEHOLDER => FILE_TO_INCLUDE ; ...
 #       Each PLACEHOLDER must be on a single, otherwise empty line (whitespace

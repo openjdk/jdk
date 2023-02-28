@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ assertEquals("Wilma, dear?", (String) worker2.invokeExact());
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class MutableCallSite extends CallSite {
+public non-sealed class MutableCallSite extends CallSite {
     /**
      * Creates a blank call site object with the given method type.
      * The initial target is set to a method handle of the given type

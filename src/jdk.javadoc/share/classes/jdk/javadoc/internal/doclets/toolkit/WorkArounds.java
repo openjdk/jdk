@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,14 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -46,7 +48,6 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -55,6 +56,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -75,12 +77,6 @@ import static javax.lang.model.element.ElementKind.*;
  * A quarantine class to isolate all the workarounds and bridges to
  * a locality. This class should eventually disappear once all the
  * standard APIs support the needed interfaces.
- *
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class WorkArounds {
 
@@ -201,31 +197,38 @@ public class WorkArounds {
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a <code>TypeElement</code> or a <code>TypeParameterElement</code>.
-     * @param method target
-     * @return a type
+    /*
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         if (utils.isStatic(method)) {
             return null;
         }
         MethodSymbol sym = (MethodSymbol) method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (com.sun.tools.javac.code.Type t = javacTypes.supertype(origin.type);
-                t.hasTag(TypeTag.CLASS);
-                t = javacTypes.supertype(t)) {
+        for (Type t = javacTypes.supertype(origin.type);
+             t.hasTag(TypeTag.CLASS);
+             t = javacTypes.supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
-            for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
+            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
                 if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
-                    if (sym2.type.hasTag(TypeTag.METHOD) &&
-                            utils.isSimpleOverride((MethodSymbol)sym2)) {
+                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
-                    return t;
+                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
+                    return (Type.ClassType) t;
                 }
             }
         }
@@ -498,22 +501,6 @@ public class WorkArounds {
         }
     }
 
-    // TODO: we need to eliminate this, as it is hacky.
-    /**
-     * Returns a representation of the package truncated to two levels.
-     * For instance if the given package represents foo.bar.baz will return
-     * a representation of foo.bar
-     * @param pkg the PackageElement
-     * @return an abbreviated PackageElement
-     */
-    public PackageElement getAbbreviatedPackageElement(PackageElement pkg) {
-        String parsedPackageName = utils.parsePackageName(pkg);
-        ModuleElement encl = (ModuleElement) pkg.getEnclosingElement();
-        return encl == null
-                ? utils.elementUtils.getPackageElement(parsedPackageName)
-                : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
-    }
-
     public boolean isPreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_API) != 0;
@@ -539,6 +526,30 @@ public class WorkArounds {
     public boolean accessInternalAPI() {
         Options compilerOptions = Options.instance(toolEnv.context);
         return compilerOptions.isSet("accessInternalAPI");
+    }
+
+    /**
+     * Returns a map containing {@code jdk.internal.javac.PreviewFeature.JEP} element values associated with the
+     * {@code jdk.internal.javac.PreviewFeature.Feature} enum constant identified by {@code feature}.
+     *
+     * This method uses internal javac features (although only reflectively).
+     *
+     * @param feature the name of the PreviewFeature.Feature enum value
+     * @return the map of PreviewFeature.JEP annotation element values, or an empty map
+     */
+    public Map<? extends ExecutableElement, ? extends AnnotationValue> getJepInfo(String feature) {
+        TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
+        var featureVar = featureType.getEnclosedElements().stream()
+                .filter(e -> feature.equals(e.getSimpleName().toString())).findFirst();
+        if (featureVar.isPresent()) {
+            for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
+                if (anno.getAnnotationType().asElement().equals(jepType)) {
+                    return anno.getElementValues();
+                }
+            }
+        }
+        return Map.of();
     }
 
 }

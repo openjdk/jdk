@@ -34,6 +34,7 @@ import javax.sound.sampled.SourceDataLine;
 
 /**
  * @test
+ * @key sound
  * @bug 4834461
  * @summary Applet hang when you load it during sound card is in use
  * @run main/manual PlaySine

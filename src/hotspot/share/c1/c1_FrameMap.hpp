@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class CallingConvention;
 //--------------------------------------------------------
 
 //  This class is responsible of mapping items (locals, monitors, spill
-//  slots and registers to their frame location
+//  slots and registers) to their frame location
 //
 //  The monitors are specified by a consecutive index, although each monitor entry
 //  occupies two words. The monitor_index is 0.._num_monitors
@@ -58,12 +58,8 @@ class CallingConvention;
 //  |arguments | x | monitors | spill | reserved argument area | ABI |
 //  +----------+---+----------+-------+------------------------+-----+
 //
-//  x =  ABI area (SPARC) or  return adress and link (i486)
+//  x =  ABI area (SPARC) or  return address and link (i486)
 //  ABI  = ABI area (SPARC) or nothing (i486)
-
-
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
 
 
 class FrameMap : public CompilationResourceObj {
@@ -81,9 +77,14 @@ class FrameMap : public CompilationResourceObj {
     spill_slot_size_in_bytes = 4
   };
 
+  void update_reserved_argument_area_size (int size) {
+    assert(size >= 0, "check");
+    _reserved_argument_area_size = MAX2(_reserved_argument_area_size, size);
+  }
+
 #include CPU_HEADER(c1_FrameMap)
 
-  friend class LIR_OprDesc;
+  friend class LIR_Opr;
 
  private:
   static bool         _init_done;
@@ -126,17 +127,11 @@ class FrameMap : public CompilationResourceObj {
     _cpu_reg2rnr[reg->encoding()] = rnr;
   }
 
-  void update_reserved_argument_area_size (int size) {
-    assert(size >= 0, "check");
-    _reserved_argument_area_size = MAX2(_reserved_argument_area_size, size);
-  }
-
  protected:
 #ifndef PRODUCT
   static void cpu_range_check (int rnr)          { assert(0 <= rnr && rnr < nof_cpu_regs, "cpu register number is too big"); }
   static void fpu_range_check (int rnr)          { assert(0 <= rnr && rnr < nof_fpu_regs, "fpu register number is too big"); }
 #endif
-
 
   ByteSize sp_offset_for_monitor_base(const int idx) const;
 

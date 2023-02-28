@@ -23,7 +23,7 @@
  * questions.
  */
 
-//  Native side of the Quartz text pipe, paints on Quartz Surface Datas.
+//  Native side of the Quartz text pipe, paints on Quartz Surface Data.
 //  Interesting Docs : /Developer/Documentation/Cocoa/TasksAndConcepts/ProgrammingTopics/FontHandling/FontHandling.html
 
 #import "sun_awt_SunHints.h"
@@ -315,9 +315,9 @@ static void DrawTextContext
     and improve accountability for JNI resources, malloc'd memory, and error handling.
 
     Each stage of the pipeline is responsible for doing only one major thing, like allocating buffers,
-    aquiring transform arrays from JNI, filling buffers, or striking glyphs. All resources or memory
+    acquiring transform arrays from JNI, filling buffers, or striking glyphs. All resources or memory
     acquired at a given stage, must be released in that stage. Any error that occurs (like a failed malloc)
-    is to be handled in the stage it occurs in, and is to return immediatly after freeing it's resources.
+    is to be handled in the stage it occurs in, and is to return immediately after freeing its resources.
 
 -----------------------------------*/
 
@@ -354,14 +354,21 @@ static inline void doDrawGlyphsPipe_checkForPerGlyphTransforms
     if (g_gtiTransformsArray == NULL) {
         return;
     }
-    jdouble *g_gvTransformsAsDoubles = (*env)->GetPrimitiveArrayCritical(env, g_gtiTransformsArray, NULL);
-    if (g_gvTransformsAsDoubles == NULL) {
+
+    DECLARE_FIELD(jm_StandardGlyphVector_GlyphTransformInfo_indices, jc_StandardGlyphVector_GlyphTransformInfo, "indices", "[I");
+    jintArray g_gtiTXIndicesArray = (*env)->GetObjectField(env, gti, jm_StandardGlyphVector_GlyphTransformInfo_indices);
+    if (g_gtiTXIndicesArray == NULL) {
         (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
         return;
     }
 
-    DECLARE_FIELD(jm_StandardGlyphVector_GlyphTransformInfo_indices, jc_StandardGlyphVector_GlyphTransformInfo, "indices", "[I");
-    jintArray g_gtiTXIndicesArray = (*env)->GetObjectField(env, gti, jm_StandardGlyphVector_GlyphTransformInfo_indices);
+    jdouble *g_gvTransformsAsDoubles = (*env)->GetPrimitiveArrayCritical(env, g_gtiTransformsArray, NULL);
+    if (g_gvTransformsAsDoubles == NULL) {
+        (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
+        (*env)->DeleteLocalRef(env, g_gtiTXIndicesArray);
+        return;
+    }
+
     jint *g_gvTXIndicesAsInts = (*env)->GetPrimitiveArrayCritical(env, g_gtiTXIndicesArray, NULL);
     if (g_gvTXIndicesAsInts == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, g_gtiTransformsArray, g_gvTransformsAsDoubles, JNI_ABORT);
@@ -404,7 +411,7 @@ void JavaCT_GetAdvancesForUnichars
 }
 
 // Fills the glyph buffer with glyphs from the GlyphVector object. Also checks to see if the glyph's positions have been
-// already caculated from GlyphVector, or we simply ask Core Graphics to make some advances for us. Pre-calculated positions
+// already calculated from GlyphVector, or we simply ask Core Graphics to make some advances for us. Pre-calculated positions
 // are translated into advances, since CG only understands advances.
 static inline void doDrawGlyphsPipe_fillGlyphAndAdvanceBuffers
 (JNIEnv *env, QuartzSDOps *qsdo, const AWTStrike *strike, jobject gVector, CGGlyph *glyphs, int *uniChars, CGSize *advances, size_t length, jintArray glyphsArray)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  * @compile test-classes/HelloWB.java
  * @compile test-classes/ForNameTest.java
  * @compile test-classes/BootClassPathAppendHelper.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver ClassLoaderTest
  */
 
@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ClassLoaderTest {
     public static void main(String[] args) throws Exception {
-        JarBuilder.build(true, "ClassLoaderTest-WhiteBox", "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, "ClassLoaderTest-WhiteBox", "jdk/test/whitebox/WhiteBox");
         JarBuilder.getOrCreateHelloJar();
         JarBuilder.build("ClassLoaderTest-HelloWB", "HelloWB");
         JarBuilder.build("ClassLoaderTest-ForName", "ForNameTest");

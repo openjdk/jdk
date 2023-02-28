@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,8 @@ private:
   G1CollectedHeap* _g1h;
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRootsClosure(VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
     _vo(vo),
@@ -99,7 +97,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
     }
 
     // Don't check the code roots during marking verification in a full GC
-    if (_vo == VerifyOption_G1UseFullMarking) {
+    if (_vo == VerifyOption::G1UseFullMarking) {
       return;
     }
 
@@ -114,9 +112,9 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       // Now fetch the region containing the object
       HeapRegion* hr = _g1h->heap_region_containing(obj);
       HeapRegionRemSet* hrrs = hr->rem_set();
-      // Verify that the strong code root list for this region
+      // Verify that the code root list for this region
       // contains the nmethod
-      if (!hrrs->strong_code_roots_list_contains(_nm)) {
+      if (!hrrs->code_roots_list_contains(_nm)) {
         log_error(gc, verify)("Code root location " PTR_FORMAT " "
                               "from nmethod " PTR_FORMAT " not in strong "
                               "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -204,10 +202,8 @@ private:
   size_t _live_bytes;
   HeapRegion *_hr;
   VerifyOption _vo;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
@@ -223,13 +219,13 @@ public:
       // word), it may not be marked, or may have been marked
       // but has since became dead, or may have been allocated
       // since the last marking.
-      if (_vo == VerifyOption_G1UseFullMarking) {
+      if (_vo == VerifyOption::G1UseFullMarking) {
         guarantee(!_g1h->is_obj_dead(o), "Full GC marking and concurrent mark mismatch");
       }
 
       o->oop_iterate(&isLive);
-      if (!_hr->obj_allocated_since_prev_marking(o)) {
-        size_t obj_size = o->size();    // Make sure we don't overflow
+      if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
+        size_t obj_size = o->size();
         _live_bytes += (obj_size * HeapWordSize);
       }
     }
@@ -309,32 +305,10 @@ public:
     if (hr->is_humongous()) {
       _has_humongous = true;
     }
-    log_info(gc, region, cds)("HeapRegion " INTPTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
+    log_info(gc, region, cds)("HeapRegion " PTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
     return false;
   }
 };
-
-// We want all used regions to be moved to the bottom-end of the heap, so we have
-// a contiguous range of free regions at the top end of the heap. This way, we can
-// avoid fragmentation while allocating the archive regions.
-//
-// Before calling this, a full GC should have been executed with a single worker thread,
-// so that no old regions would be moved to the middle of the heap.
-void G1HeapVerifier::verify_ready_for_archiving() {
-  VerifyReadyForArchivingRegionClosure cl;
-  G1CollectedHeap::heap()->heap_region_iterate(&cl);
-  if (cl.has_holes()) {
-    log_warning(gc, verify)("All free regions should be at the top end of the heap, but"
-                            " we found holes. This is probably caused by (unmovable) humongous"
-                            " allocations or active GCLocker, and may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-  if (cl.has_humongous()) {
-    log_warning(gc, verify)("(Unmovable) humongous regions have been found and"
-                            " may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-}
 
 class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
   virtual bool do_heap_region(HeapRegion* r) {
@@ -354,16 +328,12 @@ void G1HeapVerifier::verify_archive_regions() {
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool             _par;
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  VerifyRegionClosure(bool par, VerifyOption vo)
-    : _par(par),
-      _vo(vo),
+  VerifyRegionClosure(VerifyOption vo)
+    : _vo(vo),
       _failures(false) {}
 
   bool failures() {
@@ -375,9 +345,17 @@ public:
     guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
     guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
-    // Verify that the continues humongous regions' remembered set state matches the
-    // one from the starts humongous region.
-    if (r->is_continues_humongous()) {
+
+    // For archive regions, verify there are no heap pointers to non-pinned regions.
+    if (r->is_closed_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
+      r->object_iterate(&verify_oop_pointers);
+    } else if (r->is_open_archive()) {
+      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
+      r->object_iterate(&verify_open_archive_oop);
+    } else if (r->is_continues_humongous()) {
+      // Verify that the continues humongous regions' remembered set state
+      // matches the one from the starts humongous region.
       if (r->rem_set()->get_state_str() != r->humongous_start_region()->rem_set()->get_state_str()) {
          log_error(gc, verify)("Remset states differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
                                r->hrm_index(),
@@ -388,45 +366,28 @@ public:
                                r->humongous_start_region()->rem_set()->get_state_str());
          _failures = true;
       }
-    }
-    // For archive regions, verify there are no heap pointers to
-    // non-pinned regions. For all others, verify liveness info.
-    if (r->is_closed_archive()) {
-      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
-      r->object_iterate(&verify_oop_pointers);
-      return true;
-    } else if (r->is_open_archive()) {
-      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
-      r->object_iterate(&verify_open_archive_oop);
-      return true;
-    } else if (!r->is_continues_humongous()) {
-      bool failures = false;
-      r->verify(_vo, &failures);
-      if (failures) {
+    } else {
+      if (r->verify(_vo)) {
         _failures = true;
       } else if (!r->is_starts_humongous()) {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
         r->object_iterate(&not_dead_yet_cl);
-        if (_vo != VerifyOption_G1UseNextMarking) {
-          if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
-            log_error(gc, verify)("[" PTR_FORMAT "," PTR_FORMAT "] max_live_bytes " SIZE_FORMAT " < calculated " SIZE_FORMAT,
-                                  p2i(r->bottom()), p2i(r->end()), r->max_live_bytes(), not_dead_yet_cl.live_bytes());
-            _failures = true;
-          }
-        } else {
-          // When vo == UseNextMarking we cannot currently do a sanity
-          // check on the live bytes as the calculation has not been
-          // finalized yet.
+        if (r->live_bytes() < not_dead_yet_cl.live_bytes()) {
+          log_error(gc, verify)(HR_FORMAT " max_live_bytes %zu < calculated %zu",
+                                HR_FORMAT_PARAMS(r), r->live_bytes(), not_dead_yet_cl.live_bytes());
+          _failures = true;
         }
       }
     }
-    return false; // stop the region iteration if we hit a failure
+
+    // stop the region iteration if we hit a failure
+    return _failures;
   }
 };
 
-// This is the task used for parallel verification of the heap regions
+// This is the task used for verification of the heap regions
 
-class G1ParVerifyTask: public AbstractGangTask {
+class G1VerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -434,11 +395,8 @@ private:
   HeapRegionClaimer _hrclaimer;
 
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      AbstractGangTask("Parallel verify task"),
+  G1VerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
+      WorkerTask("Verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),
@@ -449,7 +407,7 @@ public:
   }
 
   void work(uint worker_id) {
-    VerifyRegionClosure blk(true, _vo);
+    VerifyRegionClosure blk(_vo);
     _g1h->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
     if (blk.failures()) {
       _failures = true;
@@ -501,24 +459,12 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   log_debug(gc, verify)("HeapRegions");
-  if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
 
-    G1ParVerifyTask task(_g1h, vo);
-    _g1h->workers()->run_task(&task);
-    if (task.failures()) {
-      failures = true;
-    }
-
-  } else {
-    VerifyRegionClosure blk(false, vo);
-    _g1h->heap_region_iterate(&blk);
-    if (blk.failures()) {
-      failures = true;
-    }
-  }
-
-  if (failures) {
-    log_error(gc, verify)("Heap after failed verification (kind %d):", vo);
+  G1VerifyTask task(_g1h, vo);
+  _g1h->workers()->run_task(&task);
+  if (failures || task.failures()) {
+    log_error(gc, verify)("Heap after failed verification (kind %u):",
+                          static_cast<std::underlying_type_t<VerifyOption>>(vo));
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
@@ -526,8 +472,9 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
+
+    fatal("there should not have been any failures");
   }
-  guarantee(!failures, "there should not have been any failures");
 }
 
 // Heap region set verification
@@ -612,13 +559,37 @@ void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg)
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
+  verify(type, VerifyOption::G1UseConcMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
+  verify(type, VerifyOption::G1UseConcMarking, "After GC");
 }
 
+void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
+  if (!G1VerifyBitmaps) {
+    return;
+  }
+
+  class G1VerifyBitmapClear : public HeapRegionClosure {
+    bool _from_tams;
+
+  public:
+    G1VerifyBitmapClear(bool from_tams) : _from_tams(from_tams) { }
+
+    virtual bool do_heap_region(HeapRegion* r) {
+      G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
+
+      HeapWord* start = _from_tams ? r->top_at_mark_start() : r->bottom();
+
+      HeapWord* mark = bitmap->get_next_marked_addr(start, r->end());
+      guarantee(mark == r->end(), "Found mark at " PTR_FORMAT " in region %u from start " PTR_FORMAT, p2i(mark), r->hrm_index(), p2i(start));
+      return false;
+    }
+  } cl(from_tams);
+
+  G1CollectedHeap::heap()->heap_region_iterate(&cl);
+}
 
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
@@ -683,81 +654,6 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   _g1h->collection_set()->iterate(&cl);
 }
 
-bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, const G1CMBitMap* const bitmap,
-                                               HeapWord* tams, HeapWord* end) {
-  guarantee(tams <= end,
-            "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
-  HeapWord* result = bitmap->get_next_marked_addr(tams, end);
-  if (result < end) {
-    log_error(gc, verify)("## wrong marked address on %s bitmap: " PTR_FORMAT, bitmap_name, p2i(result));
-    log_error(gc, verify)("## %s tams: " PTR_FORMAT " end: " PTR_FORMAT, bitmap_name, p2i(tams), p2i(end));
-    return false;
-  }
-  return true;
-}
-
-bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prev_mark_bitmap();
-  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->next_mark_bitmap();
-
-  HeapWord* ptams  = hr->prev_top_at_mark_start();
-  HeapWord* ntams  = hr->next_top_at_mark_start();
-  HeapWord* end    = hr->end();
-
-  bool res_p = verify_no_bits_over_tams("prev", prev_bitmap, ptams, end);
-
-  bool res_n = true;
-  // We cannot verify the next bitmap while we are about to clear it.
-  if (!_g1h->collector_state()->clearing_next_bitmap()) {
-    res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
-  }
-  if (!res_p || !res_n) {
-    log_error(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
-    log_error(gc, verify)("#### Caller: %s", caller);
-    return false;
-  }
-  return true;
-}
-
-void G1HeapVerifier::check_bitmaps(const char* caller, HeapRegion* hr) {
-  if (!G1VerifyBitmaps) {
-    return;
-  }
-
-  guarantee(verify_bitmaps(caller, hr), "bitmap verification");
-}
-
-class G1VerifyBitmapClosure : public HeapRegionClosure {
-private:
-  const char* _caller;
-  G1HeapVerifier* _verifier;
-  bool _failures;
-
-public:
-  G1VerifyBitmapClosure(const char* caller, G1HeapVerifier* verifier) :
-    _caller(caller), _verifier(verifier), _failures(false) { }
-
-  bool failures() { return _failures; }
-
-  virtual bool do_heap_region(HeapRegion* hr) {
-    bool result = _verifier->verify_bitmaps(_caller, hr);
-    if (!result) {
-      _failures = true;
-    }
-    return false;
-  }
-};
-
-void G1HeapVerifier::check_bitmaps(const char* caller) {
-  if (!G1VerifyBitmaps) {
-    return;
-  }
-
-  G1VerifyBitmapClosure cl(caller, this);
-  _g1h->heap_region_iterate(&cl);
-  guarantee(!cl.failures(), "bitmap verification");
-}
-
 class G1CheckRegionAttrTableClosure : public HeapRegionClosure {
 private:
   bool _failures;
@@ -779,13 +675,13 @@ public:
         _failures = true;
         return true;
       }
-      if (hr->is_continues_humongous() && region_attr.is_humongous()) {
+      if (hr->is_continues_humongous() && region_attr.is_humongous_candidate()) {
         log_error(gc, verify)("## inconsistent region attr type %s for continues humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
     } else {
-      if (region_attr.is_humongous()) {
+      if (region_attr.is_humongous_candidate()) {
         log_error(gc, verify)("## inconsistent region attr type %s for non-humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;

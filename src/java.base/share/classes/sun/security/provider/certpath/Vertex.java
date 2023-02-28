@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -46,10 +45,10 @@ import sun.security.x509.X509CertImpl;
  * @author      Sean Mullan
  * @since       1.4
  */
-public class Vertex {
+final class Vertex {
 
     private static final Debug debug = Debug.getInstance("certpath");
-    private X509Certificate cert;
+    private final X509Certificate cert;
     private int index;
     private Throwable throwable;
 
@@ -134,7 +133,7 @@ public class Vertex {
     public String certToString() {
         StringBuilder sb = new StringBuilder();
 
-        X509CertImpl x509Cert = null;
+        X509CertImpl x509Cert;
         try {
             x509Cert = X509CertImpl.toImpl(cert);
         } catch (CertificateException ce) {
@@ -146,13 +145,13 @@ public class Vertex {
         }
 
         sb.append("Issuer:     ").append
-                 (x509Cert.getIssuerX500Principal()).append("\n");
+                (x509Cert.getIssuerX500Principal()).append("\n");
         sb.append("Subject:    ").append
-                 (x509Cert.getSubjectX500Principal()).append("\n");
+                (x509Cert.getSubjectX500Principal()).append("\n");
         sb.append("SerialNum:  ").append
-                 (x509Cert.getSerialNumber().toString(16)).append("\n");
+                (x509Cert.getSerialNumber().toString(16)).append("\n");
         sb.append("Expires:    ").append
-                 (x509Cert.getNotAfter().toString()).append("\n");
+                (x509Cert.getNotAfter().toString()).append("\n");
         boolean[] iUID = x509Cert.getIssuerUniqueID();
         if (iUID != null) {
             sb.append("IssuerUID:  ");
@@ -169,26 +168,17 @@ public class Vertex {
             }
             sb.append("\n");
         }
-        try {
-            SubjectKeyIdentifierExtension sKeyID =
+        SubjectKeyIdentifierExtension sKeyID =
                 x509Cert.getSubjectKeyIdentifierExtension();
-            if (sKeyID != null) {
-                KeyIdentifier keyID = sKeyID.get(
-                        SubjectKeyIdentifierExtension.KEY_ID);
-                sb.append("SubjKeyID:  ").append(keyID.toString());
-            }
-            AuthorityKeyIdentifierExtension aKeyID =
+        if (sKeyID != null) {
+            KeyIdentifier keyID = sKeyID.getKeyIdentifier();
+            sb.append("SubjKeyID:  ").append(keyID.toString());
+        }
+        AuthorityKeyIdentifierExtension aKeyID =
                 x509Cert.getAuthorityKeyIdentifierExtension();
-            if (aKeyID != null) {
-                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(
-                        AuthorityKeyIdentifierExtension.KEY_ID);
-                sb.append("AuthKeyID:  ").append(keyID.toString());
-            }
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("Vertex.certToString() unexpected exception");
-                e.printStackTrace();
-            }
+        if (aKeyID != null) {
+            KeyIdentifier keyID = aKeyID.getKeyIdentifier();
+            sb.append("AuthKeyID:  ").append(keyID.toString());
         }
         return sb.toString();
     }
@@ -214,13 +204,11 @@ public class Vertex {
      * the way other Vertex.xToString() methods display
      * information.
      *
-     * @return String form of index as "Last cert?  [Yes/No]
+     * @return String form of index as "Last cert?  [Yes/No]"
      */
     public String moreToString() {
-        StringBuilder sb = new StringBuilder("Last cert?  ");
-        sb.append((index == -1) ? "Yes" : "No");
-        sb.append("\n");
-        return sb.toString();
+        return "Last cert?  " + ((index == -1) ? "Yes" : "No") +
+                "\n";
     }
 
     /**

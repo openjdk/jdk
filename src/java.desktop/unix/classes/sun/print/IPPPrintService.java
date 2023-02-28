@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -406,7 +407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         defaultMediaIndex = -1;
         try {
             myURL =
-                new URL(uriStr.replaceFirst("ipp", "http"));
+                newURL(uriStr.replaceFirst("ipp", "http"));
         } catch (Exception e) {
             IPPPrintService.debug_println(debugPrefix+
                                           " IPPPrintService, myURL="+
@@ -671,8 +672,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             int match = -1;
             Media media = (Media)attributes.get(Media.class);
-            if (media != null && media instanceof MediaSizeName) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
 
                 // case when no supported mediasizenames are reported
                 // check given media against the default
@@ -832,7 +832,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     //This class is for getting all pre-defined Finishings
     @SuppressWarnings("serial") // JDK implementation class
-    private class ExtFinishing extends Finishings {
+    private static class ExtFinishing extends Finishings {
         ExtFinishing(int value) {
             super(100); // 100 to avoid any conflicts with predefined values.
         }
@@ -927,7 +927,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                 gifImagesAdded = true;
                             } else if (mimeType.equals("image/jpeg")) {
                                 jpgImagesAdded = true;
-                            } else if (mimeType.indexOf("postscript") != -1) {
+                            } else if (mimeType.contains("postscript")) {
                                 psSupported = true;
                             }
                             break;
@@ -1555,7 +1555,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return mediaSizeNames[defaultMediaIndex];
                 } else {
                     for (int i=0; i< mediaSizeNames.length; i++) {
-                        if (mediaSizeNames[i].toString().indexOf(name) != -1) {
+                        if (mediaSizeNames[i].toString().contains(name)) {
                             defaultMediaIndex = i;
                             return mediaSizeNames[defaultMediaIndex];
                         }
@@ -1763,7 +1763,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (isCupsPrinter) {
                 try {
                     urlConnection = getIPPConnection(
-                                             new URL(myURL+".ppd"));
+                                             newURL(myURL+".ppd"));
 
                    InputStream is = urlConnection.getInputStream();
                    if (is != null) {
@@ -2076,5 +2076,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     public int hashCode() {
         return this.getClass().hashCode()+getName().hashCode();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

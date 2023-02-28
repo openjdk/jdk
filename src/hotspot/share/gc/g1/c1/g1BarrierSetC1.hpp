@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_C1_G1BARRIERSETC1_HPP
 
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Compilation.hpp"
 #include "gc/shared/c1/modRefBarrierSetC1.hpp"
 
 class G1PreBarrierStub: public CodeStub {
@@ -47,6 +48,8 @@ class G1PreBarrierStub: public CodeStub {
   {
     assert(_pre_val->is_register(), "should be temporary register");
     assert(_addr->is_address(), "should be the address of the field");
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   // Version that _does not_ generate load of the previous value; the
@@ -56,6 +59,8 @@ class G1PreBarrierStub: public CodeStub {
     _patch_code(lir_patch_none), _info(NULL)
   {
     assert(_pre_val->is_register(), "should be a register");
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   LIR_Opr addr() const { return _addr; }
@@ -94,7 +99,10 @@ class G1PostBarrierStub: public CodeStub {
 
  public:
   // addr (the address of the object head) and new_val must be registers.
-  G1PostBarrierStub(LIR_Opr addr, LIR_Opr new_val): _addr(addr), _new_val(new_val) { }
+  G1PostBarrierStub(LIR_Opr addr, LIR_Opr new_val): _addr(addr), _new_val(new_val) {
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(2 * BytesPerWord);
+  }
 
   LIR_Opr addr() const { return _addr; }
   LIR_Opr new_val() const { return _new_val; }
@@ -120,7 +128,7 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
 
   virtual void pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
                            LIR_Opr pre_val, CodeEmitInfo* info);
-  virtual void post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val);
+  virtual void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
 
   virtual void load_at_resolved(LIRAccess& access, LIR_Opr result);
 

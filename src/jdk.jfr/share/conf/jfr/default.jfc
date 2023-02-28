@@ -37,21 +37,6 @@
       <setting name="period">10 s</setting>
     </event>
 
-    <event name="jdk.PlaceholderTableStatistics">
-      <setting name="enabled">true</setting>
-      <setting name="period">10 s</setting>
-    </event>
-
-    <event name="jdk.LoaderConstraintsTableStatistics">
-      <setting name="enabled">true</setting>
-      <setting name="period">10 s</setting>
-    </event>
-
-    <event name="jdk.ProtectionDomainCacheTableStatistics">
-      <setting name="enabled">true</setting>
-      <setting name="period">10 s</setting>
-    </event>
-
     <event name="jdk.ThreadStart">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -71,6 +56,26 @@
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
       <setting name="threshold" control="locking-threshold">20 ms</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadStart">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadEnd">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadPinned">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">20 ms</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadSubmitFailed">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.JavaMonitorEnter">
@@ -94,6 +99,34 @@
     <event name="jdk.SyncOnValueBasedClass">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreeze">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ContinuationThaw">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreezeFast">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreezeSlow">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawFast">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawSlow">
+      <setting name="enabled">false</setting>
     </event>
 
     <event name="jdk.ReservedStackActivation">
@@ -393,6 +426,10 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
+    <event name="jdk.GCCPUTime">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+    </event>
+
     <event name="jdk.PromotionFailed">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -475,6 +512,16 @@
       <setting name="cutoff" control="old-objects-cutoff">0 ns</setting>
     </event>
 
+    <event name="jdk.NativeMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
+    <event name="jdk.NativeMemoryUsageTotal">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.CompilerConfiguration">
       <setting name="enabled" control="compiler-enabled">true</setting>
       <setting name="period">beginChunk</setting>
@@ -503,19 +550,8 @@
       <setting name="enabled" control="compiler-enabled-failure">false</setting>
     </event>
 
-    <event name="jdk.CodeSweeperConfiguration">
+    <event name="jdk.JITRestart">
       <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">beginChunk</setting>
-    </event>
-
-    <event name="jdk.CodeSweeperStatistics">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">everyChunk</setting>
-    </event>
-
-    <event name="jdk.SweepCodeCache">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="threshold" control="compiler-sweeper-threshold">100 ms</setting>
     </event>
 
     <event name="jdk.CodeCacheConfiguration">
@@ -683,7 +719,17 @@
        <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.InitialSecurityProperty">
+      <setting name="enabled">true</setting>
+      <setting name="period">beginChunk</setting>
+    </event>
+
     <event name="jdk.SecurityPropertyModification">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.SecurityProviderService">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
     </event>
@@ -807,6 +853,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.FinalizerStatistics">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
+    </event>
 
 
 
@@ -832,10 +882,11 @@
 
 
 
-  <!--                                                                                                        
-  Contents of the control element is not read by the JVM, it's used                                           
-  by JDK Mission Control and the 'jfr' tool to change settings that                                           
-  carry the control attribute.                                                                                
+
+  <!--
+  Contents of the control element is not read by the JVM, it's used
+  by JDK Mission Control and the 'jfr' tool to change settings that
+  carry the control attribute.
   -->
     <control>
      <selection name="gc" default="normal" label="Garbage Collector">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,13 @@ import java.math.BigInteger;
 public class DHPublicKeySpec implements java.security.spec.KeySpec {
 
     // The public value
-    private BigInteger y;
+    private final BigInteger y;
 
     // The prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // The base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     /**
      * Constructor that takes a public value <code>y</code>, a prime

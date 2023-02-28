@@ -470,7 +470,7 @@ public abstract class DkCrypto {
      * must be expanded with n-fold() so it can be encrypted.  If the output
      * of E is shorter than k bits it is fed back into the encryption as
      * many times as necessary.  The construct is as follows (where |
-     * indicates concatentation):
+     * indicates concatenation):
      *
      * K1 = E(Key, n-fold(Constant), initial-cipher-state)
      * K2 = E(Key, K1, initial-cipher-state)

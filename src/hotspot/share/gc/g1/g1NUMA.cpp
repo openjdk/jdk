@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1NUMA.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -77,7 +78,7 @@ G1NUMA::G1NUMA() :
 }
 
 void G1NUMA::initialize_without_numa() {
-  // If NUMA is not enabled or supported, initialize as having a singel node.
+  // If NUMA is not enabled or supported, initialize as having a single node.
   _num_active_node_ids = 1;
   _node_ids = NEW_C_HEAP_ARRAY(int, _num_active_node_ids, mtGC);
   _node_ids[0] = 0;

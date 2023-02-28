@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class DateFormatRoundTripTest extends IntlTest {
     }
 
     /**
-     * Parse a name like "fr_FR" into new Locale("fr", "FR", "");
+     * Parse a name like "fr_FR" into Locale.of("fr", "FR", "");
      */
     static Locale createLocale(String name) {
         String country = "",
@@ -92,7 +92,7 @@ public class DateFormatRoundTripTest extends IntlTest {
             variant = country.substring(i+1);
             country = country.substring(0, i);
         }
-        return new Locale(name, country, variant);
+        return Locale.of(name, country, variant);
     }
 
     public static void main(String[] args) throws Exception {

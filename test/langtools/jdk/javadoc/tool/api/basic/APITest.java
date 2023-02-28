@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,25 +196,16 @@ class APITest {
             "allclasses-index.html",
             "allpackages-index.html",
             "constant-values.html",
+            "copy.svg",
             "deprecated-list.html",
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.5.1.min.js",
+            "script-dir/jquery-3.6.1.min.js",
             "script-dir/jquery-ui.min.js",
             "script-dir/jquery-ui.min.css",
-            "script-dir/jquery-ui.structure.min.css",
-            "script-dir/images/ui-bg_glass_65_dadada_1x400.png",
-            "script-dir/images/ui-icons_454545_256x240.png",
-            "script-dir/images/ui-bg_glass_95_fef1ec_1x400.png",
-            "script-dir/images/ui-bg_glass_75_dadada_1x400.png",
-            "script-dir/images/ui-bg_highlight-soft_75_cccccc_1x100.png",
-            "script-dir/images/ui-icons_888888_256x240.png",
-            "script-dir/images/ui-icons_2e83ff_256x240.png",
-            "script-dir/images/ui-icons_cd0a0a_256x240.png",
-            "script-dir/images/ui-bg_glass_55_fbf9ee_1x400.png",
-            "script-dir/images/ui-icons_222222_256x240.png",
-            "script-dir/images/ui-bg_glass_75_e6e6e6_1x400.png",
+            "search.html",
+            "search-page.js",
             "member-search-index.js",
             "module-search-index.js",
             "overview-tree.html",
@@ -227,7 +218,6 @@ class APITest {
             "resources/x.png",
             "script.js",
             "search.js",
-            "jquery-ui.overrides.css",
             "stylesheet.css",
             "tag-search-index.js",
             "type-search-index.js"
@@ -239,7 +229,8 @@ class APITest {
                          && !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
                          && !s.equals("search.js")
-                         && !s.equals("jquery-ui.overrides.css")
+                         && !s.equals("search.html")
+                         && !s.equals("search-page.js")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")
                          && !s.equals("system-properties.html"))

@@ -436,7 +436,7 @@ public class InputMethodEvent extends AWTEvent {
      * belongs to.
      *
      * @param source the source of the event
-     * @exception  IllegalArgumentException  if source is null.
+     * @throws  IllegalArgumentException  if source is null.
      * @return most recent event time in the {@code EventQueue}
      */
     private static long getMostRecentEventTimeForSource(Object source) {

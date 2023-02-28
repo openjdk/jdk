@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +56,13 @@ package java.lang.ref;
  * prevent its most recently used entries from being discarded by keeping
  * strong referents to those entries, leaving the remaining entries to be
  * discarded at the discretion of the garbage collector.
+ * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
  * @since    1.2
  */
 
-public class SoftReference<T> extends Reference<T> {
+public non-sealed class SoftReference<T> extends Reference<T> {
 
     /**
      * Timestamp clock, updated by the garbage collector

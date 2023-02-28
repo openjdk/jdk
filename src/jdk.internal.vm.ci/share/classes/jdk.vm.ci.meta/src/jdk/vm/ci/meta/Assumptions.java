@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,11 +89,14 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
         public void recordTo(Assumptions target) {
             assert canRecordTo(target);
 
-            if (assumptions.length > 0) {
-                for (Assumption assumption : assumptions) {
-                    target.record(assumption);
-                }
+            for (Assumption assumption : assumptions) {
+                target.record(assumption);
             }
+        }
+
+        @Override
+        public String toString() {
+            return String.format("AssumptionResult<%s, assumptions=%s>", result, Arrays.toString(assumptions));
         }
     }
 
@@ -102,7 +105,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
      */
     public static final class NoFinalizableSubclass extends Assumption {
 
-        private ResolvedJavaType receiverType;
+        public final ResolvedJavaType receiverType;
 
         public NoFinalizableSubclass(ResolvedJavaType receiverType) {
             this.receiverType = receiverType;

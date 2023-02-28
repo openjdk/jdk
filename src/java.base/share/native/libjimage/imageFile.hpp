@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -203,8 +203,8 @@ public:
 // 'length' less 1 (lower 3 bits of header) of bytes that follow containing the
 // attribute value.  Attribute values present as most significant byte first.
 //
-// Ex. Container offset (ATTRIBUTE_OFFSET) 0x33562 would be represented as 0x22
-// (kind = 4, length = 3), 0x03, 0x35, 0x62.
+// Ex. Container offset (ATTRIBUTE_OFFSET) 0x33562 would be represented as 0x2A
+// (kind = 5, length = 3), 0x03, 0x35, 0x62.
 //
 // An attribute stream is terminated with a header kind of ATTRIBUTE_END (header
 // byte of zero.)
@@ -214,10 +214,10 @@ public:
 // direct indexing. Unspecified values default to zero.
 //
 // Notes:
-//  - Even though ATTRIBUTE_END is used to mark the end of the attribute stream,
-//      streams will contain zero byte values to represent lesser significant bits.
-//      Thus, detecting a zero byte is not sufficient to detect the end of an attribute
-//      stream.
+//  - Even though ATTRIBUTE_END (which might be encoded with a zero byte) is used to
+//      mark the end of the attribute stream, streams will contain zero byte values
+//      in the non-header portion of the attribute data. Thus, detecting a zero byte
+//      is not sufficient to detect the end of an attribute stream.
 //  - ATTRIBUTE_OFFSET represents the number of bytes from the beginning of the region
 //      storing the resources.  Thus, in an image this represents the number of bytes
 //      after the index.
@@ -401,7 +401,7 @@ public:
 // index is then memory mapped to allow load on demand and sharing.  The
 // -XX:+MemoryMapImage flag determines if the entire file is loaded (server use.)
 // An image can be used by Hotspot and multiple reference points in the JDK, thus
-// it is desirable to share a reader.    To accomodate sharing, a share table is
+// it is desirable to share a reader.    To accommodate sharing, a share table is
 // defined (see ImageFileReaderTable in imageFile.cpp)  To track the number of
 // uses, ImageFileReader keeps a use count (_use).  Use is incremented when
 // 'opened' by reference point and decremented when 'closed'.    Use of zero
@@ -460,13 +460,13 @@ public:
     // Close an image file if the file is not in use elsewhere.
     static void close(ImageFileReader *reader);
 
-    // Return an id for the specifed ImageFileReader.
+    // Return an id for the specified ImageFileReader.
     static u8 reader_to_ID(ImageFileReader *reader);
 
     // Validate the image id.
     static bool id_check(u8 id);
 
-    // Return an id for the specifed ImageFileReader.
+    // Return an id for the specified ImageFileReader.
     static ImageFileReader* id_to_reader(u8 id);
 
     // Open image file for read access.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,52 @@
 
 package sun.net.httpserver;
 
-import java.net.*;
-import java.io.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
-import javax.net.ssl.*;
-import com.sun.net.httpserver.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import com.sun.net.httpserver.Filter;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
 import sun.net.httpserver.HttpConnection.State;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
+import java.net.BindException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executor;
+
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.net.httpserver.Utils.isValidName;
 
 /**
  * Provides implementation for both HTTP and HTTPS
  */
-class ServerImpl implements TimeSource {
+class ServerImpl {
 
     private String protocol;
     private boolean https;
@@ -55,32 +82,47 @@ class ServerImpl implements TimeSource {
     private ServerSocketChannel schan;
     private Selector selector;
     private SelectionKey listenerKey;
-    private Set<HttpConnection> idleConnections;
-    private Set<HttpConnection> allConnections;
+    private final Set<HttpConnection> idleConnections;
+    // connections which have been accepted() by the server but which haven't
+    // yet sent any byte on the connection yet
+    private final Set<HttpConnection> newlyAcceptedConnections;
+    private final Set<HttpConnection> allConnections;
     /* following two are used to keep track of the times
      * when a connection/request is first received
      * and when we start to send the response
      */
-    private Set<HttpConnection> reqConnections;
-    private Set<HttpConnection> rspConnections;
+    private final Set<HttpConnection> reqConnections;
+    private final Set<HttpConnection> rspConnections;
     private List<Event> events;
-    private Object lolock = new Object();
+    private final Object lolock = new Object();
     private volatile boolean finished = false;
     private volatile boolean terminating = false;
     private boolean bound = false;
     private boolean started = false;
-    private volatile long time;  /* current time */
-    private volatile long subticks = 0;
-    private volatile long ticks; /* number of clock ticks since server started */
     private HttpServer wrapper;
 
-    final static int CLOCK_TICK = ServerConfig.getClockTick();
-    final static long IDLE_INTERVAL = ServerConfig.getIdleInterval();
-    final static int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
-    final static long TIMER_MILLIS = ServerConfig.getTimerMillis ();
-    final static long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
-    final static long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
-    final static boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    // schedule for the timer task that's responsible for idle connection management
+    static final long IDLE_TIMER_TASK_SCHEDULE = ServerConfig.getIdleTimerScheduleMillis();
+    static final int MAX_CONNECTIONS = ServerConfig.getMaxConnections();
+    static final int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
+    // schedule for the timer task that's responsible for request/response timeout management
+    static final long REQ_RSP_TIMER_SCHEDULE = ServerConfig.getReqRspTimerScheduleMillis();
+    static final long MAX_REQ_TIME = getTimeMillis(ServerConfig.getMaxReqTime());
+    static final long MAX_RSP_TIME = getTimeMillis(ServerConfig.getMaxRspTime());
+    static final boolean reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    // the maximum idle duration for a connection which is currently idle but has served
+    // some request in the past
+    static final long IDLE_INTERVAL = ServerConfig.getIdleIntervalMillis();
+    // the maximum idle duration for a newly accepted connection which hasn't yet received
+    // the first byte of data on that connection
+    static final long NEWLY_ACCEPTED_CONN_IDLE_INTERVAL;
+    static {
+        // the idle duration of a newly accepted connection is considered to be the least of the
+        // configured idle interval and the configured max request time (if any).
+        NEWLY_ACCEPTED_CONN_IDLE_INTERVAL = MAX_REQ_TIME > 0
+                ? Math.min(IDLE_INTERVAL, MAX_REQ_TIME)
+                : IDLE_INTERVAL;
+    }
 
     private Timer timer, timer1;
     private final Logger logger;
@@ -111,13 +153,14 @@ class ServerImpl implements TimeSource {
         allConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
         reqConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
         rspConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
-        time = System.currentTimeMillis();
-        timer = new Timer ("server-timer", true);
-        timer.schedule (new ServerTimerTask(), CLOCK_TICK, CLOCK_TICK);
-        if (timer1Enabled) {
-            timer1 = new Timer ("server-timer1", true);
-            timer1.schedule (new ServerTimerTask1(),TIMER_MILLIS,TIMER_MILLIS);
-            logger.log (Level.DEBUG, "HttpServer timer1 enabled period in ms: ", TIMER_MILLIS);
+        newlyAcceptedConnections = Collections.synchronizedSet(new HashSet<>());
+        timer = new Timer ("idle-timeout-task", true);
+        timer.schedule (new IdleTimeoutTask(), IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE);
+        if (reqRspTimeoutEnabled) {
+            timer1 = new Timer ("req-rsp-timeout-task", true);
+            timer1.schedule (new ReqRspTimeoutTask(), REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE);
+            logger.log(Level.DEBUG, "HttpServer request/response timeout task schedule ms: ",
+                    REQ_RSP_TIMER_SCHEDULE);
             logger.log (Level.DEBUG, "MAX_REQ_TIME:  "+MAX_REQ_TIME);
             logger.log (Level.DEBUG, "MAX_RSP_TIME:  "+MAX_RSP_TIME);
         }
@@ -208,8 +251,9 @@ class ServerImpl implements TimeSource {
         }
         allConnections.clear();
         idleConnections.clear();
+        newlyAcceptedConnections.clear();
         timer.cancel();
-        if (timer1Enabled) {
+        if (reqRspTimeoutEnabled) {
             timer1.cancel();
         }
         if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
@@ -272,10 +316,6 @@ class ServerImpl implements TimeSource {
                 });
     }
 
-    Selector getSelector () {
-        return selector;
-    }
-
     void addEvent (Event r) {
         synchronized (lolock) {
             events.add (r);
@@ -285,6 +325,70 @@ class ServerImpl implements TimeSource {
 
     /* main server listener task */
 
+    /**
+     * The Dispatcher is responsible for accepting any connections and then using those connections
+     * to processing any incoming requests. A connection is represented as an instance of
+     * sun.net.httpserver.HttpConnection.
+     *
+     * Connection states:
+     *  An instance of HttpConnection goes through the following states:
+     *
+     *  - NEWLY_ACCEPTED: A connection is marked as newly accepted as soon as the Dispatcher
+     *    accept()s a connection. A newly accepted connection is added to a newlyAcceptedConnections
+     *    collection. A newly accepted connection also gets added to the allConnections collection.
+     *    The newlyAcceptedConnections isn't checked for any size limits, however, if the server is
+     *    configured with a maximum connection limit, then the elements in the
+     *    newlyAcceptedConnections will never exceed that configured limit (no explicit size checks
+     *    are done on the newlyAcceptedConnections collection, since the maximum connection limit
+     *    applies to connections across different connection states). A connection in NEWLY_ACCEPTED
+     *    state is considered idle and is eligible for idle connection management.
+     *
+     *  - REQUEST: A connection is marked to be in REQUEST state when the request processing starts
+     *    on that connection. This typically happens when the first byte of data is received on a
+     *    NEWLY_ACCEPTED connection or when new data arrives on a connection which was previously
+     *    in IDLE state. When a connection is in REQUEST state, it implies that the connection is
+     *    active and thus isn't eligible for idle connection management. If the server is configured
+     *    with a maximum request timeout, then connections in REQUEST state are eligible
+     *    for Request/Response timeout management.
+     *
+     *  - RESPONSE: A connection is marked to be in RESPONSE state when the server has finished
+     *    reading the request. A connection is RESPONSE state is considered active and isn't eligible
+     *    for idle connection management. If the server is configured with a maximum response timeout,
+     *    then connections in RESPONSE state are eligible for Request/Response timeout management.
+     *
+     *  - IDLE: A connection is marked as IDLE when a request/response cycle (successfully) completes
+     *    on that particular connection. Idle connections are held in a idleConnections collection.
+     *    The idleConnections collection is limited in size and the size is decided by a server
+     *    configuration. Connections in IDLE state get added to the idleConnections collection only
+     *    if that collection hasn't reached the configured limit. If a connection has reached IDLE
+     *    state and there's no more room in the idleConnections collection, then such a connection
+     *    gets closed. Connections in idleConnections collection are eligible for idle connection
+     *    management.
+     *
+     * Idle connection management:
+     *  A timer task is responsible for closing idle connections. Each connection that is in a state
+     *  which is eligible for idle timeout management (see above section on connection states)
+     *  will have a corresponding idle expiration time associated with it. The idle timeout management
+     *  task will check the expiration time of each such connection against the current time and will
+     *  close the connection if the current time is either equal to or past the expiration time.
+     *
+     * Request/Response timeout management:
+     *  The server can be optionally configured with a maximum request timeout and/or maximum response
+     *  timeout. If either of these timeouts have been configured, then an additional timer task is
+     *  run by the server. This timer task is then responsible for closing connections which have
+     *  been in REQUEST or RESPONSE state for a period of time that exceeds the respective configured
+     *  timeouts.
+     *
+     * Maximum connection limit management:
+     *  The server can be optionally configured with a maximum connection limit. A value of 0 or
+     *  negative integer is ignored and considered to represent no connection limit. In case of a
+     *  positive integer value, any newly accepted connections will be first checked against the
+     *  current count of established connections (held by the allConnections collection) and if the
+     *  configured limit has reached, then the newly accepted connection will be closed immediately
+     *  (even before setting its state to NEWLY_ACCEPTED or adding it to the newlyAcceptedConnections
+     *  collection).
+     *
+     */
     class Dispatcher implements Runnable {
 
         private void handleEvent (Event r) {
@@ -306,7 +410,7 @@ class ServerImpl implements TimeSource {
                         }
                     }
                     responseCompleted (c);
-                    if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
+                    if (t.close) {
                         c.close();
                         allConnections.remove (c);
                     } else {
@@ -338,8 +442,7 @@ class ServerImpl implements TimeSource {
                 SelectionKey key = chan.register (selector, SelectionKey.OP_READ);
                 key.attach (c);
                 c.selectionKey = key;
-                c.time = getTime() + IDLE_INTERVAL;
-                idleConnections.add (c);
+                markIdle(c);
             } catch (IOException e) {
                 dprint(e);
                 logger.log (Level.TRACE, "Dispatcher(8)", e);
@@ -373,18 +476,31 @@ class ServerImpl implements TimeSource {
 
                     /* process the selected list now  */
                     Set<SelectionKey> selected = selector.selectedKeys();
-                    Iterator<SelectionKey> iter = selected.iterator();
-                    while (iter.hasNext()) {
-                        SelectionKey key = iter.next();
-                        iter.remove ();
+                    // create a copy of the selected keys so that we can iterate over it
+                    // and at the same time not worry about the underlying Set being
+                    // modified (leading to ConcurrentModificationException) due to
+                    // any subsequent select operations that we invoke on the
+                    // selector (in this same thread).
+                    for (final SelectionKey key : selected.toArray(SelectionKey[]::new)) {
+                        // remove the key from the original selected keys (live) Set
+                        selected.remove(key);
                         if (key.equals (listenerKey)) {
                             if (terminating) {
                                 continue;
                             }
                             SocketChannel chan = schan.accept();
-
                             // optimist there's a channel
                             if (chan != null) {
+                                if (MAX_CONNECTIONS > 0 && allConnections.size() >= MAX_CONNECTIONS) {
+                                    // we've hit max limit of current open connections, so we go
+                                    // ahead and close this connection without processing it
+                                    try {
+                                        chan.close();
+                                    } catch (IOException ignore) {
+                                    }
+                                    // move on to next selected key
+                                    continue;
+                                }
                                 // Set TCP_NODELAY, if appropriate
                                 if (ServerConfig.noDelay()) {
                                     chan.socket().setTcpNoDelay(true);
@@ -396,7 +512,7 @@ class ServerImpl implements TimeSource {
                                 c.selectionKey = newkey;
                                 c.setChannel (chan);
                                 newkey.attach (c);
-                                requestStarted (c);
+                                markNewlyAccepted(c);
                                 allConnections.add (c);
                             }
                         } else {
@@ -407,10 +523,12 @@ class ServerImpl implements TimeSource {
 
                                     key.cancel();
                                     chan.configureBlocking (true);
-                                    if (idleConnections.remove(conn)) {
-                                        // was an idle connection so add it
-                                        // to reqConnections set.
-                                        requestStarted (conn);
+                                    if (newlyAcceptedConnections.remove(conn)
+                                            || idleConnections.remove(conn)) {
+                                        // was either a newly accepted connection or an idle
+                                        // connection. In either case, we mark that the request
+                                        // has now started on this connection.
+                                        requestStarted(conn);
                                     }
                                     handle (chan, conn);
                                 } else {
@@ -492,10 +610,14 @@ class ServerImpl implements TimeSource {
         case IDLE:
             idleConnections.remove(conn);
             break;
+        case NEWLY_ACCEPTED:
+            newlyAcceptedConnections.remove(conn);
+            break;
         }
         assert !reqConnections.remove(conn);
         assert !rspConnections.remove(conn);
         assert !idleConnections.remove(conn);
+        assert !newlyAcceptedConnections.remove(conn);
     }
 
         /* per exchange task */
@@ -520,6 +642,18 @@ class ServerImpl implements TimeSource {
         public void run () {
             /* context will be null for new connections */
             logger.log(Level.TRACE, "exchange started");
+
+            if (dispatcherThread == Thread.currentThread()) {
+                try {
+                    // call selector to process cancelled keys
+                    selector.selectNow();
+                } catch (IOException ioe) {
+                    logger.log(Level.DEBUG, "processing of cancelled keys failed: closing");
+                    closeConnection(connection);
+                    return;
+                }
+            }
+
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -586,7 +720,7 @@ class ServerImpl implements TimeSource {
                 Headers headers = req.headers();
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
-                    if (!isValidHeaderKey(k)) {
+                    if (!isValidName(k)) {
                         reject(Code.HTTP_BAD_REQUEST, requestLine,
                                 "Header key contains illegal characters");
                         return;
@@ -617,6 +751,11 @@ class ServerImpl implements TimeSource {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
                         clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
                         requestCompleted(connection);
@@ -648,12 +787,11 @@ class ServerImpl implements TimeSource {
                     if (chdr == null) {
                         tx.close = true;
                         rheaders.set ("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase ("keep-alive")) {
-                        rheaders.set ("Connection", "keep-alive");
-                        int idle=(int)(ServerConfig.getIdleInterval()/1000);
-                        int max=ServerConfig.getMaxIdleConnections();
-                        String val = "timeout="+idle+", max="+max;
-                        rheaders.set ("Keep-Alive", val);
+                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                        rheaders.set("Connection", "keep-alive");
+                        int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
+                        String val = "timeout=" + idleSeconds;
+                        rheaders.set("Keep-Alive", val);
                     }
                 }
 
@@ -793,14 +931,6 @@ class ServerImpl implements TimeSource {
         logger.log (Level.DEBUG, message);
     }
 
-    long getTicks() {
-        return ticks;
-    }
-
-    public long getTime() {
-        return time;
-    }
-
     void delay () {
         Thread.yield();
         try {
@@ -825,9 +955,36 @@ class ServerImpl implements TimeSource {
     }
 
     void requestStarted (HttpConnection c) {
-        c.creationTime = getTime();
+        c.reqStartedTime = System.currentTimeMillis();
         c.setState (State.REQUEST);
         reqConnections.add (c);
+    }
+
+    void markIdle(HttpConnection c) {
+        boolean close = false;
+
+        synchronized(idleConnections) {
+            if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
+                // closing the connection here could block
+                // instead set boolean and close outside the synchronized block
+                close = true;
+            } else {
+                c.idleStartTime = System.currentTimeMillis();
+                c.setState(State.IDLE);
+                idleConnections.add(c);
+            }
+        }
+
+        if (close) {
+            c.close();
+            allConnections.remove(c);
+        }
+    }
+
+    void markNewlyAccepted(HttpConnection c) {
+        c.idleStartTime = System.currentTimeMillis();
+        c.setState(State.NEWLY_ACCEPTED);
+        newlyAcceptedConnections.add(c);
     }
 
     // called after a request has been completely read
@@ -841,7 +998,7 @@ class ServerImpl implements TimeSource {
         State s = c.getState();
         assert s == State.REQUEST : "State is not REQUEST ("+s+")";
         reqConnections.remove (c);
-        c.rspStartedTime = getTime();
+        c.rspStartedTime = System.currentTimeMillis();
         rspConnections.add (c);
         c.setState (State.RESPONSE);
     }
@@ -855,38 +1012,58 @@ class ServerImpl implements TimeSource {
     }
 
     /**
+     * Responsible for closing connections that have been idle.
      * TimerTask run every CLOCK_TICK ms
      */
-    class ServerTimerTask extends TimerTask {
+    class IdleTimeoutTask extends TimerTask {
         public void run () {
             LinkedList<HttpConnection> toClose = new LinkedList<HttpConnection>();
-            time = System.currentTimeMillis();
-            ticks ++;
+            final long currentTime = System.currentTimeMillis();
             synchronized (idleConnections) {
-                for (HttpConnection c : idleConnections) {
-                    if (c.time <= time) {
-                        toClose.add (c);
+                final Iterator<HttpConnection> it = idleConnections.iterator();
+                while (it.hasNext()) {
+                    final HttpConnection c = it.next();
+                    if (currentTime - c.idleStartTime >= IDLE_INTERVAL) {
+                        toClose.add(c);
+                        it.remove();
                     }
                 }
-                for (HttpConnection c : toClose) {
-                    idleConnections.remove (c);
-                    allConnections.remove (c);
-                    c.close();
+            }
+            // if any newly accepted connection has been idle (i.e. no byte has been sent on that
+            // connection during the configured idle timeout period) then close it as well
+            synchronized (newlyAcceptedConnections) {
+                final Iterator<HttpConnection> it = newlyAcceptedConnections.iterator();
+                while (it.hasNext()) {
+                    final HttpConnection c = it.next();
+                    if (currentTime - c.idleStartTime >= NEWLY_ACCEPTED_CONN_IDLE_INTERVAL) {
+                        toClose.add(c);
+                        it.remove();
+                    }
+                }
+            }
+            for (HttpConnection c : toClose) {
+                allConnections.remove(c);
+                c.close();
+                if (logger.isLoggable(Level.TRACE)) {
+                    logger.log(Level.TRACE, "Closed idle connection " + c);
                 }
             }
         }
     }
 
-    class ServerTimerTask1 extends TimerTask {
+    /**
+     * Responsible for closing connections which have timed out while in REQUEST or RESPONSE state
+     */
+    class ReqRspTimeoutTask extends TimerTask {
 
         // runs every TIMER_MILLIS
         public void run () {
             LinkedList<HttpConnection> toClose = new LinkedList<HttpConnection>();
-            time = System.currentTimeMillis();
+            final long currentTime = System.currentTimeMillis();
             synchronized (reqConnections) {
                 if (MAX_REQ_TIME != -1) {
                     for (HttpConnection c : reqConnections) {
-                        if (c.creationTime + TIMER_MILLIS + MAX_REQ_TIME <= time) {
+                        if (currentTime - c.reqStartedTime >= MAX_REQ_TIME) {
                             toClose.add (c);
                         }
                     }
@@ -902,7 +1079,7 @@ class ServerImpl implements TimeSource {
             synchronized (rspConnections) {
                 if (MAX_RSP_TIME != -1) {
                     for (HttpConnection c : rspConnections) {
-                        if (c.rspStartedTime + TIMER_MILLIS +MAX_RSP_TIME <= time) {
+                        if (currentTime - c.rspStartedTime >= MAX_RSP_TIME) {
                             toClose.add (c);
                         }
                     }
@@ -917,41 +1094,17 @@ class ServerImpl implements TimeSource {
         }
     }
 
-    void logStackTrace (String s) {
-        logger.log (Level.TRACE, s);
-        StringBuilder b = new StringBuilder ();
-        StackTraceElement[] e = Thread.currentThread().getStackTrace();
-        for (int i=0; i<e.length; i++) {
-            b.append (e[i].toString()).append("\n");
-        }
-        logger.log (Level.TRACE, b.toString());
-    }
-
-    static long getTimeMillis(long secs) {
-        if (secs == -1) {
-            return -1;
-        } else {
-            return secs * 1000;
-        }
-    }
-
-    /*
-     * Validates a RFC 7230 header-key.
+    /**
+     * Converts and returns the passed {@code secs} as milli seconds. If the passed {@code secs}
+     * is negative or zero or if the conversion from seconds to milli seconds results in a negative
+     * number, then this method returns -1.
      */
-    static boolean isValidHeaderKey(String token) {
-        if (token == null) return false;
-
-        boolean isValidChar;
-        char[] chars = token.toCharArray();
-        String validSpecialChars = "!#$%&'*+-.^_`|~";
-        for (char c : chars) {
-            isValidChar = ((c >= 'a') && (c <= 'z')) ||
-                          ((c >= 'A') && (c <= 'Z')) ||
-                          ((c >= '0') && (c <= '9'));
-            if (!isValidChar && validSpecialChars.indexOf(c) == -1) {
-                return false;
-            }
+    private static long getTimeMillis(long secs) {
+        if (secs <= 0) {
+            return -1;
         }
-        return !token.isEmpty();
+        final long milli = secs * 1000;
+        // this handles potential numeric overflow that may have happened during conversion
+        return milli > 0 ? milli : -1;
     }
 }

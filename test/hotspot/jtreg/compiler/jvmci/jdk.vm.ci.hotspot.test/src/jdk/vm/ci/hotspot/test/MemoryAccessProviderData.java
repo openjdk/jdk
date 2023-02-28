@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.reflect.Field;
 
 import org.testng.annotations.DataProvider;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
@@ -77,6 +77,16 @@ public class MemoryAccessProviderData {
         for (KindData k : PRIMITIVE_KIND_DATA) {
             result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset, k.instanceFieldValue, Math.max(8, k.kind.getBitCount())});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, k.staticFieldOffset, k.staticFieldValue, Math.max(8, k.kind.getBitCount())});
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
+    @DataProvider(name = "unalignedPrimitive")
+    public static Object[][] getUnalignedPrimitiveJavaKinds() {
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
+            if (k.unalignedInstanceFieldValue != null) {
+                result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset - 1, k.unalignedInstanceFieldValue, Math.max(8, k.kind.getBitCount())});
+            }
         }
         return result.toArray(new Object[result.size()][]);
     }
@@ -170,6 +180,7 @@ public class MemoryAccessProviderData {
         final long staticFieldOffset;
         final JavaConstant instanceFieldValue;
         final JavaConstant staticFieldValue;
+        final JavaConstant unalignedInstanceFieldValue;
         KindData(JavaKind kind, Object testObject) {
             this.kind = kind;
             try {
@@ -182,6 +193,17 @@ public class MemoryAccessProviderData {
                 staticFieldOffset = UNSAFE.staticFieldOffset(staticField);
                 instanceFieldValue = JavaConstant.forBoxedPrimitive(instanceField.get(testObject));
                 staticFieldValue = JavaConstant.forBoxedPrimitive(staticField.get(null));
+                if (kind == JavaKind.Long) {
+                    unalignedInstanceFieldValue = JavaConstant.forLong(UNSAFE.getLongUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Int) {
+                    unalignedInstanceFieldValue = JavaConstant.forInt(UNSAFE.getIntUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Char) {
+                    unalignedInstanceFieldValue = JavaConstant.forChar(UNSAFE.getCharUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Short) {
+                    unalignedInstanceFieldValue = JavaConstant.forShort(UNSAFE.getShortUnaligned(testObject, instanceFieldOffset - 1));
+                } else {
+                    unalignedInstanceFieldValue = null;
+                }
             } catch (Exception e) {
                 throw new Error("TESTBUG for kind " + kind, e);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /**
-     * Create a Zip file that will result in the an Zip64 Extra (EXT) header
+     * Create a Zip file that will result in a Zip64 Extra (EXT) header
      * being added to the CEN entry in order to find the LOC offset for
      * SMALL_FILE_NAME.
      */

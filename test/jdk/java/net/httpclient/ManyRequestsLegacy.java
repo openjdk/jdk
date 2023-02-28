@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.insertDelay=true ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.chunkSize=64 ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.insertDelay=true
+ * @run main/othervm/timeout=80 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.insertDelay=true -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.chunkSize=64 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.insertDelay=true -Dsun.net.httpserver.idleInterval=50000
  *                              -Dtest.chunkSize=64 ManyRequestsLegacy
  * @summary Send a large number of requests asynchronously using the legacy
  *          URL.openConnection(), to help sanitize results of the test
@@ -43,6 +43,7 @@
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.HostnameVerifier;
+
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
@@ -50,12 +51,18 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -73,12 +80,20 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.Proxy.NO_PROXY;
 
 public class ManyRequestsLegacy {
 
-    volatile static int counter = 0;
+    static final int MAX_COUNT = 20;
+    static final int MAX_LIMIT = 40;
+    static final AtomicInteger COUNT = new AtomicInteger();
+    static final AtomicInteger LIMIT = new AtomicInteger(MAX_LIMIT);
+    static final Random RANDOM = RandomFactory.getRandom();
+
 
     public static void main(String[] args) throws Exception {
         Logger logger = Logger.getLogger("com.sun.net.httpserver");
@@ -110,7 +125,7 @@ public class ManyRequestsLegacy {
     }
 
     //static final int REQUESTS = 1000;
-    static final int REQUESTS = 20;
+    static final int REQUESTS = MAX_COUNT;
     static final boolean INSERT_DELAY = Boolean.getBoolean("test.insertDelay");
     static final int CHUNK_SIZE = Math.max(0,
            Integer.parseInt(System.getProperty("test.chunkSize", "0")));
@@ -194,7 +209,7 @@ public class ManyRequestsLegacy {
     }
 
     static class TestEchoHandler extends EchoHandler {
-        final Random rand = new Random();
+        final Random rand = RANDOM;
         @Override
         public void handle(HttpExchange e) throws IOException {
             System.out.println("Server: received " + e.getRequestURI());
@@ -220,60 +235,119 @@ public class ManyRequestsLegacy {
         }
     }
 
+    static String now(long start) {
+        long elapsed = System.nanoTime() - start;
+        long ms = elapsed / 1000_000L;
+        long s = ms / 1000L;
+        if (s == 0) return ms + "ms: ";
+        return s + "s, " + (ms - s * 1000L) + "ms: ";
+    }
+
+    static String failure(Throwable t) {
+        String s = "\n\t failed: " + t;
+        for (t = t.getCause(); t != null ; t = t.getCause()) {
+            s = s + "\n\t\t  Caused by: " + t;
+        }
+        return s;
+    }
+
     static void test(HttpsServer server, LegacyHttpClient client) throws Exception {
         int port = server.getAddress().getPort();
         URI baseURI = new URI("https://localhost:" + port + "/foo/x");
         server.createContext("/foo", new TestEchoHandler());
         server.start();
 
-        RequestLimiter limiter = new RequestLimiter(40);
-        Random rand = new Random();
-        CompletableFuture<?>[] results = new CompletableFuture<?>[REQUESTS];
-        HashMap<HttpRequest,byte[]> bodies = new HashMap<>();
+        // This loop implements a retry mechanism to work around an issue
+        // on some systems (observed on Windows 10) that seem to be trying to
+        // throttle the number of connections that can be made concurrently by
+        // rejecting connection attempts.
+        // On the first iteration of this loop, we will attempt 20 concurrent
+        // requests. If this fails with ConnectException, we will retry the
+        // 20 requests, but limiting the concurrency to 10 (LIMIT <- 10).
+        // If this fails again, the test will fail.
+        boolean done = false;
+        LOOP: do {
+            RequestLimiter limiter = new RequestLimiter(LIMIT.get());
+            Random rand = RANDOM;
+            CompletableFuture<?>[] results = new CompletableFuture<?>[REQUESTS];
+            Map<HttpRequest,byte[]> bodies = new ConcurrentHashMap<>();
+            long start = System.nanoTime();
 
-        for (int i=0; i<REQUESTS; i++) {
-            byte[] buf = new byte[(i+1)*CHUNK_SIZE+i+1];  // different size bodies
-            rand.nextBytes(buf);
-            URI uri = new URI(baseURI.toString() + String.valueOf(i+1));
-            HttpRequest r = HttpRequest.newBuilder(uri)
-                                       .header("XFixed", "true")
-                                       .POST(BodyPublishers.ofByteArray(buf))
-                                       .build();
-            bodies.put(r, buf);
+            for (int i = 0; i < REQUESTS; i++) {
+                byte[] buf = new byte[(i + 1) * CHUNK_SIZE + i + 1];  // different size bodies
+                rand.nextBytes(buf);
+                URI uri = new URI(baseURI.toString() + String.valueOf(i + 1));
+                HttpRequest r = HttpRequest.newBuilder(uri)
+                        .header("XFixed", "true")
+                        .POST(BodyPublishers.ofByteArray(buf))
+                        .build();
+                bodies.put(r, buf);
 
-            results[i] =
-                limiter.whenOkToSend()
-                       .thenCompose((v) -> {
-                           System.out.println("Client: sendAsync: " + r.uri());
-                           return client.sendAsync(r, buf);
-                       })
-                       .thenCompose((resp) -> {
-                           limiter.requestComplete();
-                           if (resp.statusCode() != 200) {
-                               String s = "Expected 200, got: " + resp.statusCode();
-                               System.out.println(s + " from "
-                                                  + resp.request().uri().getPath());
-                               return completedWithIOException(s);
-                           } else {
-                               counter++;
-                               System.out.println("Result (" + counter + ") from "
-                                                   + resp.request().uri().getPath());
-                           }
-                           return CompletableFuture.completedStage(resp.body())
-                                      .thenApply((b) -> new Pair<>(resp, b));
-                       })
-                      .thenAccept((pair) -> {
-                          HttpRequest request = pair.t.request();
-                          byte[] requestBody = bodies.get(request);
-                          check(Arrays.equals(requestBody, pair.u),
-                                "bodies not equal:[" + bytesToHexString(requestBody)
-                                + "] [" + bytesToHexString(pair.u) + "]");
+                results[i] =
+                        limiter.whenOkToSend()
+                                .thenCompose((v) -> {
+                                    System.out.println("Client: sendAsync: " + r.uri());
+                                    return client.sendAsync(r, buf);
+                                })
+                                .handle((resp, t) -> {
+                                    limiter.requestComplete();
+                                    CompletionStage<Pair<HttpResponse<byte[]>, byte[]>> res;
+                                    String now = now(start);
+                                    if (t == null) {
+                                        if (resp.statusCode() != 200) {
+                                            String s = "Expected 200, got: " + resp.statusCode();
+                                            System.out.println(now + s + " from "
+                                                    + resp.request().uri().getPath());
+                                            res = completedWithIOException(s);
+                                            return res;
+                                        } else {
+                                            int counter = COUNT.incrementAndGet();
+                                            System.out.println(now + "Result (" + counter + ") from "
+                                                    + resp.request().uri().getPath());
+                                        }
+                                        res = CompletableFuture.completedStage(resp.body())
+                                                .thenApply((b) -> new Pair<>(resp, b));
+                                        return res;
+                                    } else {
+                                        int counter = COUNT.incrementAndGet();
+                                        System.out.println(now + "Result (" + counter + ") from "
+                                                + r.uri().getPath()
+                                                + failure(t));
+                                        res = CompletableFuture.failedFuture(t);
+                                        return res;
+                                    }
+                                })
+                                .thenCompose(c -> c)
+                                .thenAccept((pair) -> {
+                                    HttpRequest request = pair.t.request();
+                                    byte[] requestBody = bodies.get(request);
+                                    check(Arrays.equals(requestBody, pair.u),
+                                            "bodies not equal:[" + bytesToHexString(requestBody)
+                                                    + "] [" + bytesToHexString(pair.u) + "]");
 
-                      });
-        }
+                                });
+            }
 
-        // wait for them all to complete and throw exception in case of error
-        CompletableFuture.allOf(results).join();
+            try {
+                // wait for them all to complete and throw exception in case of error
+                CompletableFuture.allOf(results).join();
+                done = true;
+            } catch (CompletionException e) {
+                if (!Platform.isWindows()) throw e;
+                if (LIMIT.get() < REQUESTS) throw e;
+                Throwable cause = e;
+                while ((cause = cause.getCause()) != null) {
+                    if (cause instanceof ConnectException) {
+                        // try again, limit concurrency by half
+                        COUNT.set(0);
+                        LIMIT.set(REQUESTS/2);
+                        System.out.println("*** Retrying due to " + cause);
+                        continue LOOP;
+                    }
+                }
+                throw e;
+            }
+        } while (!done);
     }
 
     static <T> CompletableFuture<T> completedWithIOException(String message) {
@@ -294,13 +368,7 @@ public class ManyRequestsLegacy {
         return sb.toString();
     }
 
-    static final class Pair<T,U> {
-        Pair(T t, U u) {
-            this.t = t; this.u = u;
-        }
-        T t;
-        U u;
-    }
+    record Pair<T,U>(T t, U u) { }
 
     /**
      * A simple limiter for controlling the number of requests to be run in

@@ -45,6 +45,7 @@ include NativeCompilation.gmk
 #   SOURCE_DIRS A list of source directories to search
 #   OUTPUT_DIR Where to put the resulting files
 #   EXCLUDE A list of filenames to exclude from compilation
+#   EXTRA_FILES List of extra files not in SOURCE_DIRS
 SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
 define SetupTestFilesCompilationBody
 
@@ -62,12 +63,9 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := lib
     $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
-    ifeq ($(call isTargetOs, windows), false)
-	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN) -pthread
-    else
-	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
-    endif
+    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
+    $1_LOG_TYPE := library
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
@@ -75,6 +73,7 @@ define SetupTestFilesCompilationBody
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE)
     $1_LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
+    $1_LOG_TYPE := executable
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
@@ -86,6 +85,8 @@ define SetupTestFilesCompilationBody
   $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
   $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))
 
+  $1_BUILD_INFO := $$($1_OUTPUT_DIR)/_$1-build-info.marker
+
   # Setup a compilation for each and every one of them
   $$(foreach file, $$($1_FILTERED_FILE_LIST),\
     $$(eval name := $$(strip $$(basename $$(notdir $$(file))))) \
@@ -93,7 +94,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
-        EXTRA_FILES := $$(file), \
+        EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
         CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
@@ -107,9 +108,20 @@ define SetupTestFilesCompilationBody
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
         COPY_DEBUG_SYMBOLS := false, \
         STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \
+        BUILD_INFO_LOG_MACRO := LogInfo, \
     )) \
-    $$(eval $1 += $$(BUILD_TEST_$$(name)) )  \
+    $$(eval $1 += $$(BUILD_TEST_$$(name)) ) \
+    $$(eval $1_BUILD_INFO_DEPS += $$(BUILD_TEST_$$(name)_BUILD_INFO_DEPS)) \
+    $$(eval $$(BUILD_TEST_$$(name)_BUILD_INFO): | $$($1_BUILD_INFO)) \
   )
+
+  # Setup rule for printing a summary of all the tests being compiled. On Warn
+  # log level, this replaces the individual build info logging done by
+  # SetupNativeCompilation.
+  $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
+	$$(call LogWarn, $$(strip Creating $$(words $$(filter-out %.vardeps, $$?)) \
+	    test $$($1_LOG_TYPE) file(s) for $1))
+	$(TOUCH) $$@
 
 endef
 

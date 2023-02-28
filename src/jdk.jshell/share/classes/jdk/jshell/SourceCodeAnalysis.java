@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jshell;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Provides analysis utilities for source code input.
@@ -169,6 +170,19 @@ public abstract class SourceCodeAnalysis {
      * @return the collection of dependents
      */
     public abstract Collection<Snippet> dependents(Snippet snippet);
+
+    /**
+     * Returns a collection of {@code Highlight}s which can be used to color
+     * the given snippet.
+     * <p>
+     * The returned {@code Highlight}s do not overlap, and are sorted by their
+     * start position.
+     *
+     * @param snippet the snippet for which the {@code Highlight}s should be computed
+     * @return the computed {@code Highlight}s.
+     * @since 19
+     */
+    public abstract List<Highlight> highlights(String snippet);
 
     /**
      * Internal only constructor
@@ -459,5 +473,33 @@ public abstract class SourceCodeAnalysis {
          * {@link SnippetWrapper#source() }
          */
         int wrappedToSourcePosition(int pos);
+    }
+
+    /**Assigns attributes usable for coloring to spans inside a snippet.
+     *
+     * @param start the starting position of the span
+     * @param end the ending position of the span
+     * @param attributes the attributes assigned to the span
+     * @since 19
+     */
+    public record Highlight(int start, int end, Set<Attribute> attributes) {}
+
+    /**
+     * A span attribute which can be used to derive a coloring.
+     * @since 19
+     */
+    public enum Attribute {
+        /**
+         * The span refers to a declaration of an element.
+         */
+        DECLARATION,
+        /**
+         * The span refers to a deprecated element.
+         */
+        DEPRECATED,
+        /**
+         * The span is a keyword.
+         */
+        KEYWORD;
     }
 }

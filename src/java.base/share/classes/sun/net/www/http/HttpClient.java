@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ import java.io.*;
 import java.net.*;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetworkClient;
-import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
@@ -122,13 +122,14 @@ public class HttpClient extends NetworkClient {
                                          recomputing the value of keepingAlive */
     int keepAliveConnections = -1;    /* number of keep-alives left */
 
-    /**Idle timeout value, in milliseconds. Zero means infinity,
-     * iff keepingAlive=true.
-     * Unfortunately, we can't always believe this one.  If I'm connected
-     * through a Netscape proxy to a server that sent me a keep-alive
-     * time of 15 sec, the proxy unilaterally terminates my connection
-     * after 5 sec.  So we have to hard code our effective timeout to
-     * 4 sec for the case where we're using a proxy. *SIGH*
+    /*
+     * The timeout if specified by the server. Following values possible
+     *  0: the server specified no keep alive headers
+     * -1: the server provided "Connection: keep-alive" but did not specify a
+     *     a particular time in a "Keep-Alive:" headers
+     * -2: the server provided "Connection: keep-alive" and timeout=0
+     * Positive values are the number of seconds specified by the server
+     * in a "Keep-Alive" header
      */
     int keepAliveTimeout = 0;
 
@@ -144,10 +145,25 @@ public class HttpClient extends NetworkClient {
     // Traffic capture tool, if configured. See HttpCapture class for info
     private HttpCapture capture = null;
 
+    /* "jdk.https.negotiate.cbt" property can be set to "always" (always sent), "never" (never sent) or
+     * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
+     * a comma separated list of arbitrary length with no white-space allowed.
+     * If enabled (for a particular destination) then Negotiate/SPNEGO authentication requests will include
+     * a channel binding token for the destination server. The default behavior and setting for the
+     * property is "never"
+     */
+    private static final String spnegoCBT;
+
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
+
     private static void logFinest(String msg) {
         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest(msg);
+        }
+    }
+    private static void logError(String msg) {
+        if (logger.isLoggable(PlatformLogger.Level.SEVERE)) {
+            logger.severe(msg);
         }
     }
 
@@ -165,12 +181,27 @@ public class HttpClient extends NetworkClient {
         return keepAliveTimeout;
     }
 
+    static String normalizeCBT(String s) {
+        if (s == null || s.equals("never")) {
+            return "never";
+        }
+        if (s.equals("always") || s.startsWith("domain:")) {
+            return s;
+        } else {
+            logError("Unexpected value for \"jdk.https.negotiate.cbt\" system property");
+            return "never";
+        }
+    }
+
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
         String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
+
+        String s = props.getProperty("jdk.https.negotiate.cbt");
+        spnegoCBT = normalizeCBT(s);
 
         if (keepAlive != null) {
             keepAliveProp = Boolean.parseBoolean(keepAlive);
@@ -205,6 +236,9 @@ public class HttpClient extends NetworkClient {
         return keepAliveProp;
     }
 
+    public String getSpnegoCBT() {
+        return spnegoCBT;
+    }
 
     protected HttpClient() {
     }
@@ -307,7 +341,7 @@ public class HttpClient extends NetworkClient {
             ret = kac.get(url, null);
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
-                httpuc.getRequestMethod() == "POST") {
+                "POST".equals(httpuc.getRequestMethod())) {
                 if (!ret.available()) {
                     ret.inCache = false;
                     ret.closeServer();
@@ -490,7 +524,7 @@ public class HttpClient extends NetworkClient {
 
     /* We're very particular here about what our InputStream to the server
      * looks like for reasons that are apparent if you can decipher the
-     * method parseHTTP().  That's why this method is overidden from the
+     * method parseHTTP().  That's why this method is overridden from the
      * superclass.
      */
     @Override
@@ -706,7 +740,7 @@ public class HttpClient extends NetworkClient {
     /** Parse the first line of the HTTP request.  It usually looks
         something like: {@literal "HTTP/1.0 <number> comment\r\n"}. */
 
-    public boolean parseHTTP(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    public boolean parseHTTP(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -723,7 +757,7 @@ public class HttpClient extends NetworkClient {
                 serverInput = new HttpCaptureInputStream(serverInput, capture);
             }
             serverInput = new BufferedInputStream(serverInput);
-            return (parseHTTPHeader(responses, pi, httpuc));
+            return (parseHTTPHeader(responses, httpuc));
         } catch (SocketTimeoutException stex) {
             // We don't want to retry the request when the app. sets a timeout
             // but don't close the server if timeout while waiting for 100-continue
@@ -735,9 +769,12 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
+                Thread thread = Thread.currentThread();
+                boolean doNotRetry = thread.isVirtual() && thread.isInterrupted();
                 failedOnce = true;
                 if (getRequestMethod().equals("CONNECT")
                     || streaming
+                    || doNotRetry
                     || (httpuc.getRequestMethod().equals("POST")
                         && !retryPostProp)) {
                     // do not retry the request
@@ -747,7 +784,7 @@ public class HttpClient extends NetworkClient {
                     checkTunneling(httpuc);
                     afterConnect();
                     writeRequests(requests, poster);
-                    return parseHTTP(responses, pi, httpuc);
+                    return parseHTTP(responses, httpuc);
                 }
             }
             throw e;
@@ -767,7 +804,7 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    private boolean parseHTTPHeader(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    private boolean parseHTTPHeader(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -864,7 +901,23 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
-                        keepAliveTimeout = p.findInt("timeout", usingProxy?60:5);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
+                        OptionalInt timeout = p.findInt("timeout");
+                        if (timeout.isEmpty()) {
+                            keepAliveTimeout = -1;
+                        } else {
+                            keepAliveTimeout = timeout.getAsInt();
+                            if (keepAliveTimeout < 0) {
+                                // if the server specified a negative (invalid) value
+                                // then we set to -1, which is equivalent to no value
+                                keepAliveTimeout = -1;
+                            } else if (keepAliveTimeout == 0) {
+                                // handled specially to mean close connection immediately
+                                keepAliveTimeout = -2;
+                            }
+                        }
                     }
                 } else if (b[7] != '0') {
                     /*
@@ -897,7 +950,7 @@ public class HttpClient extends NetworkClient {
                         checkTunneling(httpuc);
                         afterConnect();
                         writeRequests(requests, poster);
-                        return parseHTTP(responses, pi, httpuc);
+                        return parseHTTP(responses, httpuc);
                     }
                 }
                 throw new SocketException("Unexpected end of file from server");
@@ -924,9 +977,23 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        if (code == HTTP_CONTINUE && ignoreContinue) {
+        if (code == 101) {
+            // We don't support protocol upgrade through the "Upgrade:" request header, so if a
+            // server still unexpectedly sends a 101 response, we consider that a protocol violation
+            // and close the connection.
+            closeServer();
+            logFinest("Closed connection due to unexpected 101 response");
+            // clear off the response headers so that they don't get propagated
+            // to the application
             responses.reset();
-            return parseHTTPHeader(responses, pi, httpuc);
+            throw new ProtocolException("Unexpected 101 response from server");
+        }
+        // ignore interim informational responses and continue to wait for final response.
+        if ((code == HTTP_CONTINUE && ignoreContinue)
+                || (code >= 102 && code <= 199)) {
+            logFinest("Ignoring interim informational 1xx response: " + code);
+            responses.reset();
+            return parseHTTPHeader(responses, httpuc);
         }
 
         long cl = -1;
@@ -999,11 +1066,6 @@ public class HttpClient extends NetworkClient {
             // In this case, content length is well known, so it is okay
             // to wrap the input stream with KeepAliveStream/MeteredStream.
 
-            if (pi != null) {
-                // Progress monitor is enabled
-                pi.setContentType(responses.findValue("content-type"));
-            }
-
             // If disableKeepAlive == true, the client will not be returned
             // to the cache. But we still need to use a keepalive stream to
             // allow the multi-message authentication exchange on the connection
@@ -1011,39 +1073,13 @@ public class HttpClient extends NetworkClient {
             if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
-                serverInput = new KeepAliveStream(serverInput, pi, cl, this);
+                serverInput = new KeepAliveStream(serverInput, cl, this);
                 failedOnce = false;
             }
             else        {
-                serverInput = new MeteredStream(serverInput, pi, cl);
+                serverInput = new MeteredStream(serverInput, cl);
             }
         }
-        else if (cl == -1)  {
-            // In this case, content length is unknown - the input
-            // stream would simply be a regular InputStream or
-            // ChunkedInputStream.
-
-            if (pi != null) {
-                // Progress monitoring is enabled.
-
-                pi.setContentType(responses.findValue("content-type"));
-
-                // Wrap MeteredStream for tracking indeterministic
-                // progress, even if the input stream is ChunkedInputStream.
-                serverInput = new MeteredStream(serverInput, pi, cl);
-            }
-            else    {
-                // Progress monitoring is disabled, and there is no
-                // need to wrap an unknown length input stream.
-
-                // ** This is an no-op **
-            }
-        }
-        else    {
-            if (pi != null)
-                pi.finishTracking();
-        }
-
         return ret;
     }
 
@@ -1115,6 +1151,10 @@ public class HttpClient extends NetworkClient {
         } else {
             return ((InetSocketAddress)proxy.address()).getHostString();
         }
+    }
+
+    public boolean getUsingProxy() {
+        return usingProxy;
     }
 
     /**

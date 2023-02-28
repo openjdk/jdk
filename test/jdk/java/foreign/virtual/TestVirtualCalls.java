@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,57 +23,53 @@
 
 /*
  * @test
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @enablePreview
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @library ../
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
  *   TestVirtualCalls
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
 
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.CLinker.*;
 import static org.testng.Assert.assertEquals;
 
-public class TestVirtualCalls {
+public class TestVirtualCalls extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.getInstance();
+    static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
-    static final MemoryAddress funcA;
-    static final MemoryAddress funcB;
-    static final MemoryAddress funcC;
+    static final MemorySegment funcA;
+    static final MemorySegment funcB;
+    static final MemorySegment funcC;
 
     static {
         func = abi.downcallHandle(
-            MethodType.methodType(int.class),
-            FunctionDescriptor.of(C_INT));
+                FunctionDescriptor.of(C_INT));
 
         System.loadLibrary("Virtual");
-        SymbolLookup lookup = SymbolLookup.loaderLookup();
-        funcA = lookup.lookup("funcA").get();
-        funcB = lookup.lookup("funcB").get();
-        funcC = lookup.lookup("funcC").get();
+        funcA = findNativeOrThrow("funcA");
+        funcB = findNativeOrThrow("funcB");
+        funcC = findNativeOrThrow("funcC");
     }
 
     @Test
     public void testVirtualCalls() throws Throwable {
-        assertEquals((int) func.invokeExact((Addressable) funcA), 1);
-        assertEquals((int) func.invokeExact((Addressable) funcB), 2);
-        assertEquals((int) func.invokeExact((Addressable) funcC), 3);
+        assertEquals((int) func.invokeExact(funcA), 1);
+        assertEquals((int) func.invokeExact(funcB), 2);
+        assertEquals((int) func.invokeExact(funcC), 3);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullTarget() throws Throwable {
-        int x = (int) func.invokeExact((Addressable) null);
+        int x = (int) func.invokeExact((MemorySegment)null);
     }
 
 }

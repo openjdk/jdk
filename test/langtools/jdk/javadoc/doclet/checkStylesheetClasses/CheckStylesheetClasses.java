@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class CheckStylesheetClasses {
         // summary and details tables; styles for these may be present in the stylesheet
         // using constructs like these:
         //      .summary section[class$="-summary"], .details section[class$="-details"],
-        htmlStyleNames.removeIf(s -> s.endsWith("-details"));
+        htmlStyleNames.removeIf(s -> s.endsWith("-details") && !styleSheetNames.contains(s));
         htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
 
         // signature classes
@@ -120,7 +120,7 @@ public class CheckStylesheetClasses {
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link",
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
                 "hierarchy", "index", "package-uses", "packages", "permits-note",
                 "serialized-package-container", "source-container");
 
@@ -134,26 +134,15 @@ public class CheckStylesheetClasses {
         // for doc-comment authors; maybe worthy of inclusion in HtmlStyle, just to be documented
         removeAll(styleSheetNames, "borderless", "plain", "striped");
 
-        // used in search.js; may be worth documenting in HtmlStyle
-        removeAll(styleSheetNames, "result-highlight", "result-item",
-                "search-tag-desc-result", "search-tag-holder-result",
-                "ui-autocomplete", "ui-autocomplete-category",
-                "watermark");
-
-        // snippet-related
-        removeAll(styleSheetNames, "bold", "highlighted", "italic");
+        // used in search.js and search-page.js; may be worth documenting in HtmlStyle
+        removeAll(styleSheetNames, "result-highlight", "result-item", "copy-header",
+                "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
+                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "expanded",
+                "search-result-link", "two-column-search-results", "ui-static-link");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
-
-        // apparently unused
-        // "tab" is commented implying it is in the header/footer, but
-        // (a) it is a poorly chosen name
-        // (b) it does not seem to be used in make/Docs.gmk or anywhere else
-        removeAll(styleSheetNames, "all-classes-container", "all-packages-container",
-                "clear", "constant-values-container", "deprecated-content", "expanded",
-                "footer", "hidden", "override-specify-label", "serialized-class-details",
-                "tab", "table-sub-heading-color");
+        styleSheetNames.remove("sealed-graph");
 
         boolean ok = check(htmlStyleNames, "HtmlStyle", styleSheetNames, "stylesheet")
                     & check(styleSheetNames, "stylesheet", htmlStyleNames, "HtmlStyle");
@@ -214,7 +203,7 @@ public class CheckStylesheetClasses {
                 throw new AssertionError("Cannot find or access resource " + resource);
             }
             String s = new String(in.readAllBytes());
-            Pattern p = Pattern.compile("(?i)(\\s|([a-z][a-z0-9-]*))\\.(?<name>[a-z0-9-]+)\\b");
+            Pattern p = Pattern.compile("(?i)(\\s|([a-z][a-z0-9-]*))\\.(?<name>[a-z][a-z0-9-]+)\\b");
             Matcher m = p.matcher(s);
             while (m.find()) {
                 names.add(m.group("name"));

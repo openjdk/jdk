@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.TextEvent;
 import javax.swing.text.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
@@ -39,10 +36,6 @@ import javax.swing.InputMap;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
-
-import java.awt.event.MouseEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyEvent;
 
 import javax.swing.plaf.UIResource;
 import javax.swing.UIDefaults;
@@ -445,7 +438,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
     }
 
-    final class AWTTextFieldUI extends MotifPasswordFieldUI {
+    static final class AWTTextFieldUI extends MotifPasswordFieldUI {
 
         private JTextField jtf;
 
@@ -541,7 +534,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    final class XAWTTextField extends JPasswordField
+    static final class XAWTTextField extends JPasswordField
             implements ActionListener, DocumentListener {
 
         private boolean isFocused = false;

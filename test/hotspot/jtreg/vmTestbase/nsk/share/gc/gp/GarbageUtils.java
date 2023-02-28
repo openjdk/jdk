@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.*;
 import java.util.*;
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.gc.gp.array.*;
 import nsk.share.gc.gp.string.*;
 import nsk.share.gc.gp.list.*;
@@ -84,6 +85,27 @@ public final class GarbageUtils {
         public static final Throwable preloadThrowable = new Throwable("preload");
 
         private GarbageUtils() {
+        }
+
+        /**
+         * engages GC by allocating memory chunks and triggering youngGC.
+         * Allocations are done for a total of YOUNG_GC_ITERATIONS times.
+         * Each iteration, we allocate a memory chunk and trigger youngGC.
+         * Finally fullGC is run once.
+         * This way the objects get to travel to various GC regions.
+         * @param testMemory - memory size to be operated on
+         */
+        public static void engageGC(long testMemory) {
+            final int YOUNG_GC_ITERATIONS = 100;
+            final long memChunk = testMemory / YOUNG_GC_ITERATIONS;
+            int iteration = 0;
+            Object referenceArray[] = new Object[YOUNG_GC_ITERATIONS];
+
+            while (iteration < YOUNG_GC_ITERATIONS) {
+                referenceArray[iteration++] = byteArrayProducer.create(memChunk);
+                WhiteBox.getWhiteBox().youngGC();
+            }
+            WhiteBox.getWhiteBox().fullGC();
         }
 
         /**
@@ -203,12 +225,7 @@ public final class GarbageUtils {
           *
           * It is Important that the impl is not inlined.
           */
-
-         public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
-            try {
-               // Using a methodhandle invoke of eatMemoryImpl to prevent inlining of it
-               MethodHandles.Lookup lookup = MethodHandles.lookup();
-               MethodType mt = MethodType.methodType(
+          private static MethodType mt = MethodType.methodType(
                      int.class,
                      ExecutionController.class,
                      GarbageProducer.class,
@@ -216,7 +233,22 @@ public final class GarbageUtils {
                      long.class,
                      long.class,
                      OOM_TYPE.class);
-               MethodHandle eat = lookup.findStatic(GarbageUtils.class, "eatMemoryImpl", mt);
+
+         private static MethodHandle eat;
+
+         static {
+             try {
+                 eat = MethodHandles.lookup().findStatic(GarbageUtils.class, "eatMemoryImpl", mt);
+             } catch (Exception nsme) {
+                 // Can't run the test for some unexpected reason
+                 throw new RuntimeException(nsme);
+             }
+         }
+
+
+         public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
+            try {
+               // Using a methodhandle invoke of eatMemoryImpl to prevent inlining of it
                return (int) eat.invoke(stresser, gp, initialFactor, minMemoryChunk, factor, type);
             } catch (OutOfMemoryError e) {
                return numberOfOOMEs++;

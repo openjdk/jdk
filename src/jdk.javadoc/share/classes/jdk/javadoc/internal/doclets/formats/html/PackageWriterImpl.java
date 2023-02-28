@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * Class to generate file for each package contents in the right-hand
  * frame. This will list all the Class Kinds in the package. A click on any
  * class-kind will update the frame with the clicked class-kind page.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class PackageWriterImpl extends HtmlDocletWriter
     implements PackageSummaryWriter {
@@ -77,15 +72,15 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private SortedSet<TypeElement> allClasses;
 
     /**
-     * The HTML tree for section tag.
+     * The HTML element for the section tag being written.
      */
-    protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final BodyContents bodyContents = new BodyContents();
 
     // Maximum number of subpackages and sibling packages to list in related packages table
-    private final static int MAX_SUBPACKAGES = 20;
-    private final static int MAX_SIBLING_PACKAGES = 5;
+    private static final int MAX_SUBPACKAGES = 20;
+    private static final int MAX_SIBLING_PACKAGES = 5;
 
 
     /**
@@ -110,13 +105,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
-        HtmlTree bodyTree = getBody(getWindowTitle(packageName));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.header);
+        HtmlTree body = getBody(getWindowTitle(packageName));
+        var div = HtmlTree.DIV(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
-            Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
+            var classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
+            var moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle,
                     Text.of(mdle.getQualifiedName().toString())));
@@ -127,12 +121,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packageHead.add(contents.packageLabel).add(" ");
         }
         packageHead.add(packageName);
-        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, packageHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     @Override
@@ -159,7 +153,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private List<PackageElement> findRelatedPackages() {
         String pkgName = packageElement.getQualifiedName().toString();
 
-        // always add super package
+        // always add superpackage
         int lastdot = pkgName.lastIndexOf('.');
         String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
         List<PackageElement> packages = new ArrayList<>(
@@ -174,7 +168,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packages.addAll(subpackages);
         }
 
-        // only add sibling packages if there is a non-empty super package, we are beneath threshold,
+        // only add sibling packages if there is a non-empty superpackage, we are beneath threshold,
         // and number of siblings is beneath threshold as well
         if (hasSuperPackage && pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
             Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
@@ -206,15 +200,14 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * Add the package deprecation information to the documentation tree.
      *
-     * @param div the content tree to which the deprecation information will be added
+     * @param div the content to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
-            deprDiv.setStyle(HtmlStyle.deprecationBlock);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
+            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
@@ -228,42 +221,41 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getSummariesList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
     @Override
-    public void addRelatedPackagesSummary(Content summaryContentTree) {
+    public void addRelatedPackagesSummary(Content summaryContent) {
         boolean showModules = configuration.showModules && hasRelatedPackagesInOtherModules(relatedPackages);
         TableHeader tableHeader= showModules
                 ? new TableHeader(contents.moduleLabel, contents.packageLabel, contents.descriptionLabel)
                 : new TableHeader(contents.packageLabel, contents.descriptionLabel);
         addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader,
-                summaryContentTree, showModules);
+                summaryContent, showModules);
     }
 
 
     /**
-     * Add all types to the content tree.
+     * Add all types to the content.
      *
-     * @param summaryContentTree HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    public void addAllClassesAndInterfacesSummary(Content summaryContentTree) {
-        Table table = new Table(HtmlStyle.summaryTable)
+    public void addAllClassesAndInterfacesSummary(Content target) {
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
-                .addTab(contents.interfaces, utils::isInterface)
-                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.interfaces, utils::isPlainInterface)
+                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptions, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errors, e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypes, utils::isAnnotationType);
+                .addTab(contents.records, e -> utils.isRecord(e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
+                .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(
-                        configuration, HtmlLinkInfo.Kind.PACKAGE, typeElement));
+                        configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement));
                 ContentBuilder description = new ContentBuilder();
                 addPreviewSummary(typeElement, description);
                 if (utils.isDeprecated(typeElement)) {
@@ -279,18 +271,15 @@ public class PackageWriterImpl extends HtmlDocletWriter
             }
         }
         if (!table.isEmpty()) {
-            summaryContentTree.add(HtmlTree.LI(table));
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
+            target.add(HtmlTree.LI(table));
         }
     }
 
     public void addPackageSummary(List<PackageElement> packages, Content label,
-                                  TableHeader tableHeader, Content summaryContentTree,
+                                  TableHeader tableHeader, Content summaryContent,
                                   boolean showModules) {
         if (!packages.isEmpty()) {
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(label)
                     .setHeader(tableHeader);
@@ -302,7 +291,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
             for (PackageElement pkg : packages) {
                 Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
-                Content moduleLink = HtmlTree.EMPTY;
+                Content moduleLink = Text.EMPTY;
                 if (showModules) {
                     ModuleElement module = (ModuleElement) pkg.getEnclosingElement();
                     if (module != null && !module.isUnnamed()) {
@@ -326,37 +315,35 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     table.addRow(packageLink, description);
                 }
             }
-            summaryContentTree.add(HtmlTree.LI(table));
+            summaryContent.add(HtmlTree.LI(table));
         }
     }
 
     @Override
-    public void addPackageDescription(Content packageContentTree) {
-        addPreviewInfo(packageElement, packageContentTree);
+    public void addPackageDescription(Content packageContent) {
+        addPreviewInfo(packageElement, packageContent);
         if (!utils.getBody(packageElement).isEmpty()) {
-            HtmlTree tree = sectionTree;
-            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
-            addDeprecationInfo(tree);
-            addInlineComment(packageElement, tree);
+            section.setId(HtmlIds.PACKAGE_DESCRIPTION);
+            addDeprecationInfo(section);
+            addInlineComment(packageElement, section);
         }
     }
 
     @Override
-    public void addPackageTags(Content packageContentTree) {
-        Content htmlTree = sectionTree;
-        addTagsInfo(packageElement, htmlTree);
-        packageContentTree.add(sectionTree);
+    public void addPackageTags(Content packageContent) {
+        addTagsInfo(packageElement, section);
+        packageContent.add(section);
     }
 
     @Override
-    public void addPackageSignature(Content packageContentTree) {
-        packageContentTree.add(new HtmlTree(TagName.HR));
-        packageContentTree.add(Signatures.getPackageSignature(packageElement, this));
+    public void addPackageSignature(Content packageContent) {
+        packageContent.add(new HtmlTree(TagName.HR));
+        packageContent.add(Signatures.getPackageSignature(packageElement, this));
     }
 
     @Override
-    public void addPackageContent(Content packageContentTree) {
-        bodyContents.addMainContent(packageContentTree);
+    public void addPackageContent(Content packageContent) {
+        bodyContents.addMainContent(packageContent);
     }
 
     @Override
@@ -365,17 +352,17 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public void printDocument(Content contentTree) throws DocFileIOException {
+    public void printDocument(Content content) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
-        contentTree.add(bodyContents);
+        content.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
-                description, localStylesheets, contentTree);
+                description, localStylesheets, content);
     }
 
     @Override
-    public Content getPackageSummary(Content summaryContentTree) {
-        return HtmlTree.SECTION(HtmlStyle.summary, summaryContentTree);
+    public Content getPackageSummary(Content summaryContent) {
+        return HtmlTree.SECTION(HtmlStyle.summary, summaryContent);
     }
 
     private boolean hasRelatedPackagesInOtherModules(List<PackageElement> relatedPackages) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * of a given type expression. This mapping returns the original type is no changes occurred
      * when recursively mapping the original type's subterms.
      */
-    public static abstract class StructuralTypeMapping<S> extends Types.TypeMapping<S> {
+    public abstract static class StructuralTypeMapping<S> extends Types.TypeMapping<S> {
 
         @Override
         public Type visitClassType(ClassType t, S s) {
@@ -1038,8 +1038,24 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                 appendAnnotationsString(buf);
                 buf.append(className(tsym, false));
             } else {
-                appendAnnotationsString(buf);
-                buf.append(className(tsym, true));
+                if (isAnnotated()) {
+                    if (!tsym.packge().isUnnamed()) {
+                        buf.append(tsym.packge());
+                        buf.append(".");
+                    }
+                    ListBuffer<Name> names = new ListBuffer<>();
+                    for (Symbol sym = tsym.owner; sym != null && sym.kind == TYP; sym = sym.owner) {
+                        names.prepend(sym.name);
+                    }
+                    for (Name name : names) {
+                        buf.append(name);
+                        buf.append(".");
+                    }
+                    appendAnnotationsString(buf);
+                    buf.append(tsym.name);
+                } else {
+                    buf.append(className(tsym, true));
+                }
             }
 
             if (getTypeArguments().nonEmpty()) {
@@ -1786,7 +1802,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
     }
 
-    public static abstract class DelegatedType extends Type {
+    public abstract static class DelegatedType extends Type {
         public Type qtype;
         public TypeTag tag;
 
@@ -2026,6 +2042,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this.kind = Kind.THROWS;
         }
 
+        public void setNormal() {
+            Assert.check(this.kind == Kind.CAPTURED);
+            this.kind = Kind.NORMAL;
+        }
+
         /**
          * Returns a new copy of this undet var.
          */
@@ -2109,21 +2130,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         /** add a bound of a given kind - this might trigger listener notification */
         public final void addBound(InferenceBound ib, Type bound, Types types) {
-            // Per JDK-8075793: in pre-8 sources, follow legacy javac behavior
-            // when capture variables are inferred as bounds: for lower bounds,
-            // map to the capture variable's upper bound; for upper bounds,
-            // if the capture variable has a lower bound, map to that type
-            if (types.mapCapturesToBounds) {
-                switch (ib) {
-                    case LOWER:
-                        bound = types.cvarUpperBound(bound);
-                        break;
-                    case UPPER:
-                        Type altBound = types.cvarLowerBound(bound);
-                        if (!altBound.hasTag(TypeTag.BOT)) bound = altBound;
-                        break;
-                }
-            }
             addBound(ib, bound, types, false);
         }
 

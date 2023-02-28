@@ -34,6 +34,7 @@ import javax.sound.sampled.SourceDataLine;
 
 /**
  * @test
+ * @key sound
  * @bug 4828556
  * @summary stopping and starting sampled audio plays small chunk in infinite
  *          loop

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@
 //                ^ increment on lookup()
 // and not
 //    Symbol* G = lookup()
-//              ^ increment on assignmnet
+//              ^ increment on assignment
 // The reference count must be decremented manually when the copy of the
 // pointer G is destroyed.
 //
@@ -131,10 +131,6 @@ class Symbol : public MetaspaceObj {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len) throw();
-  void* operator new(size_t size, int len, Arena* arena) throw();
-
-  void  operator delete(void* p);
 
   static short extract_hash(uint32_t value)   { return (short)(value >> 16); }
   static int extract_refcount(uint32_t value) { return value & 0xffff; }
@@ -143,11 +139,15 @@ class Symbol : public MetaspaceObj {
   int length() const   { return _length; }
 
  public:
+  Symbol(const Symbol& s1);
+
   // Low-level access (used with care, since not GC-safe)
   const u1* base() const { return &_body[0]; }
 
-  int size()                { return size(utf8_length()); }
-  int byte_size()           { return byte_size(utf8_length()); }
+  int size()      const     { return size(utf8_length()); }
+  int byte_size() const     { return byte_size(utf8_length()); };
+  // length without the _body
+  size_t effective_length() const { return (size_t)byte_size() - sizeof(Symbol); }
 
   // Symbols should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
@@ -155,7 +155,7 @@ class Symbol : public MetaspaceObj {
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogBytesPerWord + 3));
+    unsigned addr_bits = (unsigned)((uintptr_t)this >> LogBytesPerWord);
     return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
@@ -172,6 +172,16 @@ class Symbol : public MetaspaceObj {
   void set_permanent() NOT_CDS_RETURN;
   void make_permanent();
 
+  static void maybe_increment_refcount(Symbol* s) {
+    if (s != nullptr) {
+      s->increment_refcount();
+    }
+  }
+  static void maybe_decrement_refcount(Symbol* s) {
+    if (s != nullptr) {
+      s->decrement_refcount();
+    }
+  }
   // Function char_at() returns the Symbol's selected u1 byte as a char type.
   //
   // Note that all multi-byte chars have the sign bit set on all their bytes.
@@ -192,6 +202,7 @@ class Symbol : public MetaspaceObj {
     return contains_utf8_at(0, str, len);
   }
   bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
+  bool is_star_match(const char* pattern) const;
 
   // Tests if the symbol starts with the given prefix.
   bool starts_with(const char* prefix, int len) const {
@@ -217,7 +228,7 @@ class Symbol : public MetaspaceObj {
   // Tests if the symbol contains the given utf8 substring
   // at the given byte position.
   bool contains_utf8_at(int position, const char* substring, int len) const {
-    assert(len >= 0 && substring != NULL, "substring must be valid");
+    assert(len >= 0 && substring != nullptr, "substring must be valid");
     if (position < 0)  return false;  // can happen with ends_with
     if (position + len > utf8_length()) return false;
     return (memcmp((char*)base() + position, substring, len) == 0);
@@ -230,8 +241,8 @@ class Symbol : public MetaspaceObj {
     return code_byte == char_at(position);
   }
 
-  // Tests if the symbol starts with the given prefix.
-  int index_of_at(int i, const char* str, int len) const;
+  // Test if the symbol has the give substring at or after the i-th char.
+  int index_of_at(int i, const char* substr, int substr_len) const;
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
   // note that the ordering is not alfabetical
@@ -261,15 +272,16 @@ class Symbol : public MetaspaceObj {
   // 'java.lang.Object[][]'.
   void print_as_signature_external_return_type(outputStream *os);
   // Treating the symbol as a signature, print the parameter types
-  // seperated by ', ' to the outputStream.  Prints external names as
+  // separated by ', ' to the outputStream.  Prints external names as
   //  'double' or 'java.lang.Object[][]'.
   void print_as_signature_external_parameters(outputStream *os);
+  void print_as_field_external_type(outputStream *os);
 
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return SymbolType; }
 
   // Printing
-  void print_symbol_on(outputStream* st = NULL) const;
+  void print_symbol_on(outputStream* st = nullptr) const;
   void print_utf8_on(outputStream* st) const;
   void print_on(outputStream* st) const;         // First level print
   void print_value_on(outputStream* st) const;   // Second level print.
@@ -285,6 +297,10 @@ class Symbol : public MetaspaceObj {
   static Symbol* vm_symbol_at(vmSymbolID vm_symbol_id) {
     assert(is_valid_id(vm_symbol_id), "must be");
     return _vm_symbols[static_cast<int>(vm_symbol_id)];
+  }
+
+  static unsigned int compute_hash(const Symbol* const& name) {
+    return (unsigned int) name->identity_hash();
   }
 
 #ifndef PRODUCT

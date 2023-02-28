@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.ref;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
@@ -36,12 +37,15 @@ import jdk.internal.ref.Cleaner;
  * operations common to all reference objects.  Because reference objects are
  * implemented in close cooperation with the garbage collector, this class may
  * not be subclassed directly.
+ * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
  * @since    1.2
+ * @sealedGraph
  */
 
-public abstract class Reference<T> {
+public abstract sealed class Reference<T>
+    permits PhantomReference, SoftReference, WeakReference, FinalReference {
 
     /* The state of a Reference object is characterized by two attributes.  It
      * may be either "active", "pending", or "inactive".  It may also be
@@ -190,27 +194,16 @@ public abstract class Reference<T> {
     /* High-priority thread to enqueue pending References
      */
     private static class ReferenceHandler extends Thread {
-
-        private static void ensureClassInitialized(Class<?> clazz) {
-            try {
-                Class.forName(clazz.getName(), true, clazz.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                throw (Error) new NoClassDefFoundError(e.getMessage()).initCause(e);
-            }
-        }
-
-        static {
-            // pre-load and initialize Cleaner class so that we don't
-            // get into trouble later in the run loop if there's
-            // memory shortage while loading/initializing it lazily.
-            ensureClassInitialized(Cleaner.class);
-        }
-
         ReferenceHandler(ThreadGroup g, String name) {
             super(g, null, name, 0, false);
         }
 
         public void run() {
+            // pre-load and initialize Cleaner class so that we don't
+            // get into trouble later in the run loop if there's
+            // memory shortage while loading/initializing it lazily.
+            Unsafe.getUnsafe().ensureClassInitialized(Cleaner.class);
+
             while (true) {
                 processPendingReferences();
             }
@@ -300,11 +293,10 @@ public abstract class Reference<T> {
         }
     }
 
-    static {
-        ThreadGroup tg = Thread.currentThread().getThreadGroup();
-        for (ThreadGroup tgn = tg;
-             tgn != null;
-             tg = tgn, tgn = tg.getParent());
+    /**
+     * Start the Reference Handler thread as a daemon thread.
+     */
+    static void startReferenceHandlerThread(ThreadGroup tg) {
         Thread handler = new ReferenceHandler(tg, "Reference Handler");
         /* If there were a special system-only priority greater than
          * MAX_PRIORITY, it would be used here
@@ -312,9 +304,21 @@ public abstract class Reference<T> {
         handler.setPriority(Thread.MAX_PRIORITY);
         handler.setDaemon(true);
         handler.start();
+    }
 
+    static {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
+            @Override
+            public void startThreads() {
+                ThreadGroup tg = Thread.currentThread().getThreadGroup();
+                for (ThreadGroup tgn = tg;
+                     tgn != null;
+                     tg = tgn, tgn = tg.getParent());
+                Reference.startReferenceHandlerThread(tg);
+                Finalizer.startFinalizerThread(tg);
+            }
+
             @Override
             public boolean waitForReferenceProcessing()
                 throws InterruptedException
@@ -325,6 +329,11 @@ public abstract class Reference<T> {
             @Override
             public void runFinalization() {
                 Finalizer.runFinalization();
+            }
+
+            @Override
+            public <T> ReferenceQueue<T> newNativeReferenceQueue() {
+                return new NativeReferenceQueue<T>();
             }
         });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -385,6 +385,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
+    __ authenticate_return_address(exception_pc, rscratch1);
 
     // make sure that the vm_results are cleared (may be unnecessary)
     __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
@@ -433,6 +434,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
 
   // patch throwing pc into return address (has bci & oop map)
+  __ protect_return_address(exception_pc, rscratch1);
   __ str(exception_pc, Address(rfp, 1*BytesPerWord));
 
   // compute the exception handler.
@@ -448,6 +450,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ invalidate_registers(false, true, true, true, true, true);
 
   // patch the return address, this stub will directly return to the exception handler
+  __ protect_return_address(r0, rscratch1);
   __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {
@@ -496,10 +499,12 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Save our return address because
   // exception_handler_for_return_address will destroy it.  We also
   // save exception_oop
+  __ mov(r3, lr);
+  __ protect_return_address();
   __ stp(lr, exception_oop, Address(__ pre(sp, -2 * wordSize)));
 
   // search the exception handler address of the caller (using the return address)
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, lr);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3);
   // r0: exception handler address of the caller
 
   // Only R0 is valid at this time; all other registers have been
@@ -512,6 +517,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // get throwing pc (= return address).
   // lr has been destroyed by the call
   __ ldp(lr, exception_oop, Address(__ post(sp, 2 * wordSize)));
+  __ authenticate_return_address();
   __ mov(r3, lr);
 
   __ verify_not_null_oop(exception_oop);
@@ -650,56 +656,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            !UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Label slow_path;
-          Register obj_size = r19;
-          Register t1       = r10;
-          Register t2       = r11;
-          assert_different_registers(klass, obj, obj_size, t1, t2);
-
-          __ stp(r19, zr, Address(__ pre(sp, -2 * wordSize)));
-
-          if (id == fast_new_instance_init_check_id) {
-            // make sure the klass is initialized
-            __ ldrb(rscratch1, Address(klass, InstanceKlass::init_state_offset()));
-            __ cmpw(rscratch1, InstanceKlass::fully_initialized);
-            __ br(Assembler::NE, slow_path);
-          }
-
-#ifdef ASSERT
-          // assert object can be fast path allocated
-          {
-            Label ok, not_ok;
-            __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
-            __ cmp(obj_size, (u1)0);
-            __ br(Assembler::LE, not_ok);  // make sure it's an instance (LH > 0)
-            __ tstw(obj_size, Klass::_lh_instance_slow_path_bit);
-            __ br(Assembler::EQ, ok);
-            __ bind(not_ok);
-            __ stop("assert(can be fast path allocated)");
-            __ should_not_reach_here();
-            __ bind(ok);
-          }
-#endif // ASSERT
-
-          // get the instance size (size is postive so movl is fine for 64bit)
-          __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
-
-          __ eden_allocate(obj, obj_size, 0, t1, slow_path);
-
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
-          __ verify_oop(obj);
-          __ ldp(r19, zr, Address(__ post(sp, 2 * wordSize)));
-          __ ret(lr);
-
-          __ bind(slow_path);
-          __ ldp(r19, zr, Address(__ post(sp, 2 * wordSize)));
-        }
-
         __ enter();
         OopMap* map = save_live_registers(sasm);
         int call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
@@ -764,51 +720,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
         }
 #endif // ASSERT
-
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Register arr_size = r5;
-          Register t1       = r10;
-          Register t2       = r11;
-          Label slow_path;
-          assert_different_registers(length, klass, obj, arr_size, t1, t2);
-
-          // check that array length is small enough for fast path.
-          __ mov(rscratch1, C1_MacroAssembler::max_array_allocation_length);
-          __ cmpw(length, rscratch1);
-          __ br(Assembler::HI, slow_path);
-
-          // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is positive ldrw does right thing on 64bit
-          __ ldrw(t1, Address(klass, Klass::layout_helper_offset()));
-          // since size is positive movw does right thing on 64bit
-          __ movw(arr_size, length);
-          __ lslvw(arr_size, length, t1);
-          __ ubfx(t1, t1, Klass::_lh_header_size_shift,
-                  exact_log2(Klass::_lh_header_size_mask + 1));
-          __ add(arr_size, arr_size, t1);
-          __ add(arr_size, arr_size, MinObjAlignmentInBytesMask); // align up
-          __ andr(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
-
-          __ eden_allocate(obj, arr_size, 0, t1, slow_path);  // preserves arr_size
-
-          __ initialize_header(obj, klass, length, t1, t2);
-          __ ldrb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
-          assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
-          assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
-          __ andr(t1, t1, Klass::_lh_header_size_mask);
-          __ sub(arr_size, arr_size, t1);  // body length
-          __ add(t1, t1, obj);       // body start
-          __ initialize_body(t1, arr_size, 0, t1, t2);
-          __ membar(Assembler::StoreStore);
-          __ verify_oop(obj);
-
-          __ ret(lr);
-
-          __ bind(slow_path);
-        }
 
         __ enter();
         OopMap* map = save_live_registers(sasm);
@@ -1091,7 +1002,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);
         save_live_registers(sasm);
 
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), c_rarg0);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), c_rarg0);
 
         restore_live_registers(sasm);
       }

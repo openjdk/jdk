@@ -50,22 +50,22 @@ public class AWTEventMonitor {
      */
     public AWTEventMonitor() {}
 
-    static private Component componentWithFocus = null;
+    private static Component componentWithFocus = null;
 
     // Low-level listeners
-    static private ComponentListener componentListener = null;
-    static private ContainerListener containerListener = null;
-    static private FocusListener focusListener = null;
-    static private KeyListener keyListener = null;
-    static private MouseListener mouseListener = null;
-    static private MouseMotionListener mouseMotionListener = null;
-    static private WindowListener windowListener = null;
+    private static ComponentListener componentListener = null;
+    private static ContainerListener containerListener = null;
+    private static FocusListener focusListener = null;
+    private static KeyListener keyListener = null;
+    private static MouseListener mouseListener = null;
+    private static MouseMotionListener mouseMotionListener = null;
+    private static WindowListener windowListener = null;
 
     // Semantic listeners
-    static private ActionListener actionListener = null;
-    static private AdjustmentListener adjustmentListener = null;
-    static private ItemListener itemListener = null;
-    static private TextListener textListener = null;
+    private static ActionListener actionListener = null;
+    private static AdjustmentListener adjustmentListener = null;
+    private static ItemListener itemListener = null;
+    private static TextListener textListener = null;
 
     /**
      * The actual listener that is installed on the component instances.
@@ -73,7 +73,7 @@ public class AWTEventMonitor {
      * occurs.  By doing things this way, the actual number of listeners
      * installed on a component instance is drastically reduced.
      */
-    static private final AWTEventsListener awtListener = new AWTEventsListener();
+    private static final AWTEventsListener awtListener = new AWTEventsListener();
 
     /**
      * Returns the component that currently has keyboard focus.  The return
@@ -81,14 +81,14 @@ public class AWTEventMonitor {
      *
      * @return the component that has keyboard focus
      */
-    static public Component getComponentWithFocus() {
+    public static Component getComponentWithFocus() {
         return componentWithFocus;
     }
 
     /*
      * Check permissions
      */
-    static private void checkInstallPermission() {
+    private static void checkInstallPermission() {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -106,7 +106,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeComponentListener
      */
-    static public void addComponentListener(ComponentListener l) {
+    public static void addComponentListener(ComponentListener l) {
         if (componentListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.COMPONENT);
@@ -121,7 +121,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addComponentListener
      */
-    static public void removeComponentListener(ComponentListener l) {
+    public static void removeComponentListener(ComponentListener l) {
         componentListener = AWTEventMulticaster.remove(componentListener, l);
         if (componentListener == null) {
             awtListener.removeListeners(EventID.COMPONENT);
@@ -138,7 +138,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeContainerListener
      */
-    static public void addContainerListener(ContainerListener l) {
+    public static void addContainerListener(ContainerListener l) {
         containerListener = AWTEventMulticaster.add(containerListener, l);
     }
 
@@ -149,7 +149,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addContainerListener
      */
-    static public void removeContainerListener(ContainerListener l) {
+    public static void removeContainerListener(ContainerListener l) {
         containerListener = AWTEventMulticaster.remove(containerListener, l);
     }
 
@@ -163,7 +163,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeFocusListener
      */
-    static public void addFocusListener(FocusListener l) {
+    public static void addFocusListener(FocusListener l) {
         focusListener = AWTEventMulticaster.add(focusListener, l);
     }
 
@@ -174,7 +174,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addFocusListener
      */
-    static public void removeFocusListener(FocusListener l) {
+    public static void removeFocusListener(FocusListener l) {
         focusListener = AWTEventMulticaster.remove(focusListener, l);
     }
 
@@ -188,7 +188,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeKeyListener
      */
-    static public void addKeyListener(KeyListener l) {
+    public static void addKeyListener(KeyListener l) {
         if (keyListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.KEY);
@@ -203,7 +203,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addKeyListener
      */
-    static public void removeKeyListener(KeyListener l) {
+    public static void removeKeyListener(KeyListener l) {
         keyListener = AWTEventMulticaster.remove(keyListener, l);
         if (keyListener == null)  {
             awtListener.removeListeners(EventID.KEY);
@@ -220,7 +220,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeMouseListener
      */
-    static public void addMouseListener(MouseListener l) {
+    public static void addMouseListener(MouseListener l) {
         if (mouseListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.MOUSE);
@@ -235,7 +235,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addMouseListener
      */
-    static public void removeMouseListener(MouseListener l) {
+    public static void removeMouseListener(MouseListener l) {
         mouseListener = AWTEventMulticaster.remove(mouseListener, l);
         if (mouseListener == null) {
             awtListener.removeListeners(EventID.MOUSE);
@@ -252,7 +252,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeMouseMotionListener
      */
-    static public void addMouseMotionListener(MouseMotionListener l) {
+    public static void addMouseMotionListener(MouseMotionListener l) {
         if (mouseMotionListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.MOTION);
@@ -267,7 +267,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addMouseMotionListener
      */
-    static public void removeMouseMotionListener(MouseMotionListener l) {
+    public static void removeMouseMotionListener(MouseMotionListener l) {
         mouseMotionListener = AWTEventMulticaster.remove(mouseMotionListener, l);
         if (mouseMotionListener == null) {
             awtListener.removeListeners(EventID.MOTION);
@@ -284,7 +284,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeWindowListener
      */
-    static public void addWindowListener(WindowListener l) {
+    public static void addWindowListener(WindowListener l) {
         if (windowListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.WINDOW);
@@ -299,7 +299,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addWindowListener
      */
-    static public void removeWindowListener(WindowListener l) {
+    public static void removeWindowListener(WindowListener l) {
         windowListener = AWTEventMulticaster.remove(windowListener, l);
         if (windowListener == null) {
             awtListener.removeListeners(EventID.WINDOW);
@@ -316,7 +316,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeActionListener
      */
-    static public void addActionListener(ActionListener l) {
+    public static void addActionListener(ActionListener l) {
         if (actionListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.ACTION);
@@ -331,7 +331,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addActionListener
      */
-    static public void removeActionListener(ActionListener l) {
+    public static void removeActionListener(ActionListener l) {
         actionListener = AWTEventMulticaster.remove(actionListener, l);
         if (actionListener == null) {
             awtListener.removeListeners(EventID.ACTION);
@@ -349,7 +349,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeAdjustmentListener
      */
-    static public void addAdjustmentListener(AdjustmentListener l) {
+    public static void addAdjustmentListener(AdjustmentListener l) {
         if (adjustmentListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.ADJUSTMENT);
@@ -364,7 +364,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addAdjustmentListener
      */
-    static public void removeAdjustmentListener(AdjustmentListener l) {
+    public static void removeAdjustmentListener(AdjustmentListener l) {
         adjustmentListener = AWTEventMulticaster.remove(adjustmentListener, l);
         if (adjustmentListener == null) {
             awtListener.removeListeners(EventID.ADJUSTMENT);
@@ -381,7 +381,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeItemListener
      */
-    static public void addItemListener(ItemListener l) {
+    public static void addItemListener(ItemListener l) {
         if (itemListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.ITEM);
@@ -396,7 +396,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addItemListener
      */
-    static public void removeItemListener(ItemListener l) {
+    public static void removeItemListener(ItemListener l) {
         itemListener = AWTEventMulticaster.remove(itemListener, l);
         if (itemListener == null) {
             awtListener.removeListeners(EventID.ITEM);
@@ -413,7 +413,7 @@ public class AWTEventMonitor {
      * @param l the listener to add
      * @see #removeTextListener
      */
-    static public void addTextListener(TextListener l) {
+    public static void addTextListener(TextListener l) {
         if (textListener == null) {
             checkInstallPermission();
             awtListener.installListeners(EventID.TEXT);
@@ -428,7 +428,7 @@ public class AWTEventMonitor {
      * @param l the listener to remove
      * @see #addTextListener
      */
-    static public void removeTextListener(TextListener l) {
+    public static void removeTextListener(TextListener l) {
         textListener = AWTEventMulticaster.remove(textListener, l);
         if (textListener == null) {
             awtListener.removeListeners(EventID.TEXT);

@@ -83,15 +83,11 @@ public class TestSpecialArgs extends TestHelper {
         Set<String> envToRemove = new HashSet<>();
         Map<String, String> map = System.getenv();
         for (String s : map.keySet()) {
-            if (s.startsWith("JAVA_MAIN_CLASS_")
-                    || s.startsWith("APP_NAME_")
+            if (s.startsWith("APP_NAME_")
                     || s.startsWith("APP_ICON_")) {
                 envToRemove.add(s);
             }
         }
-        runTest(envToRemove, javaCmd, "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
-                "EnvironmentVariables", "JAVA_MAIN_CLASS_*",
-                "EnvironmentVariables");
 
         runTest(envToRemove, javaCmd, "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
                 "-Xdock:name=TestAppName", "EnvironmentVariables",

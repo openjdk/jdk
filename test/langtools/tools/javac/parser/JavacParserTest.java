@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -52,7 +52,6 @@ import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
-import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
@@ -72,6 +71,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -83,7 +83,10 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
+import com.sun.source.tree.DefaultCaseLabelTree;
+import com.sun.source.tree.ModuleTree;
 import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.api.JavacTaskPool;
 import java.util.Objects;
 
 public class JavacParserTest extends TestCase {
@@ -105,7 +108,11 @@ public class JavacParserTest extends TestCase {
         private String text;
 
         public MyFileObject(String text) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
+            this("Test", text);
+        }
+
+        public MyFileObject(String fileName, String text) {
+            super(URI.create("myfo:/" + fileName + ".java"), JavaFileObject.Kind.SOURCE);
             this.text = text;
         }
 
@@ -859,11 +866,7 @@ public class JavacParserTest extends TestCase {
                 + expectedValues, values, expectedValues);
     }
 
-    /*
-     * The following tests do not work just yet with nb-javac nor javac,
-     * they need further investigation, see CR: 7167356
-     */
-
+    @Test
     void testPositionBrokenSource126732a() throws IOException {
         String[] commands = new String[]{
             "return Runnable()",
@@ -903,6 +906,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test
     void testPositionBrokenSource126732b() throws IOException {
         String[] commands = new String[]{
             "break",
@@ -944,6 +948,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test
     void testStartPositionEnumConstantInit() throws IOException {
 
         String code = "package t; enum Test { AAA; }";
@@ -957,7 +962,7 @@ public class JavacParserTest extends TestCase {
         int start = (int) t.getSourcePositions().getStartPosition(cut,
                 enumAAA.getInitializer());
 
-        assertEquals("testStartPositionEnumConstantInit", -1, start);
+        assertEquals("testStartPositionEnumConstantInit", 23, start);
     }
 
     @Test
@@ -1818,6 +1823,242 @@ public class JavacParserTest extends TestCase {
                 return scan(tree.getErrorTrees(), p);
             }
         }.scan(cut, null);
+    }
+
+    @Test //JDK-8275097
+    void testDefaultTagPosition() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private void test1(int i) {
+                              switch (i) {
+                                  default:
+                              }
+                          }
+                          private void test2(int i) {
+                              switch (i) {
+                                  case default:
+                              }
+                          }
+                          private int test3(int i) {
+                              return switch (i) {
+                                  default: yield 0;
+                              }
+                          }
+                          private int test4(int i) {
+                              return switch (i) {
+                                  case default: yield 0;
+                              }
+                          }
+                          private void test5(int i) {
+                              switch (i) {
+                                  default -> {}
+                              }
+                          }
+                          private void test6(int i) {
+                              switch (i) {
+                                  case default -> {}
+                              }
+                          }
+                          private int test5(int i) {
+                              return switch (i) {
+                                  default -> { yield 0; }
+                              }
+                          }
+                          private int test6(int i) {
+                              return switch (i) {
+                                  case default -> { yield 0; }
+                              }
+                          }
+                          private int test7(int i) {
+                              return switch (i) {
+                                  default -> 0;
+                              }
+                          }
+                          private int test8(int i) {
+                              return switch (i) {
+                                  case default -> 0;
+                              }
+                          }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees t = Trees.instance(ct);
+        SourcePositions sp = t.getSourcePositions();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitDefaultCaseLabel(DefaultCaseLabelTree tree, Void p) {
+                int start = (int) sp.getStartPosition(cut, tree);
+                int end   = (int) sp.getEndPosition(cut, tree);
+                String defaultName = code.substring(start, end);
+                if (!"default".equals(defaultName)) {
+                    throw new AssertionError("Incorrect span: " + defaultName);
+                }
+                return super.visitDefaultCaseLabel(tree, p);
+            }
+
+            @Override
+            public Void visitCase(CaseTree node, Void p) {
+                scan(node.getLabels(), p);
+                if (node.getCaseKind() == CaseTree.CaseKind.RULE)
+                    scan(node.getBody(), p);
+                else
+                    scan(node.getStatements(), p);
+                return null;
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8293897
+    void testImplicitFinalInTryWithResources() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          void test1() {
+                              try (AutoCloseable ac = null) {}
+                          }
+                          void test2() {
+                              try (@Ann AutoCloseable withAnnotation = null) {}
+                          }
+                          void test3() {
+                              try (final AutoCloseable withFinal = null) {}
+                          }
+                          void test4() {
+                              try (final @Ann AutoCloseable withAnnotationFinal = null) {}
+                          }
+                          @interface Ann {}
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees t = Trees.instance(ct);
+        SourcePositions sp = t.getSourcePositions();
+        new TreeScanner<Void, Void>() {
+            boolean modifiersHaveFinal;
+            boolean modifiersHaveSpan;
+
+            @Override
+            public Void visitVariable(VariableTree node, Void p) {
+                boolean prevModifiersHaveFinal = modifiersHaveFinal;
+                boolean prevModifiersHaveSpan = modifiersHaveSpan;
+                try {
+                    modifiersHaveFinal = node.getName().toString().contains("Final");
+                    modifiersHaveSpan = modifiersHaveFinal ||
+                                        node.getName().toString().contains("Annotation");
+                    return super.visitVariable(node, p);
+                } finally {
+                    modifiersHaveFinal = prevModifiersHaveFinal;
+                    modifiersHaveSpan = prevModifiersHaveSpan;
+                }
+            }
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                boolean prevModifiersHaveSpan = modifiersHaveSpan;
+                try {
+                    modifiersHaveSpan = node.getKind() == Kind.ANNOTATION_TYPE;
+                    return super.visitClass(node, p);
+                } finally {
+                    modifiersHaveSpan = prevModifiersHaveSpan;
+                }
+            }
+            @Override
+            public Void visitModifiers(ModifiersTree node, Void p) {
+                if (modifiersHaveFinal) {
+                    if (!node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Expected final missing.");
+                    }
+                } else {
+                    if (node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Unexpected final modified.");
+                    }
+                }
+                long start = sp.getStartPosition(cut, node);
+                long end = sp.getEndPosition(cut, node);
+                if (modifiersHaveSpan) {
+                    if (start == (-1) || end == (-1)) {
+                        throw new AssertionError("Incorrect modifier span: " + start + "-" + end);
+                    }
+                } else {
+                    if (start != (-1) || end != (-1)) {
+                        throw new AssertionError("Incorrect modifier span: " + start + "-" + end);
+                    }
+                }
+                return super.visitModifiers(node, p);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8295401
+    void testModuleInfoProvidesRecovery() throws IOException {
+        String code = """
+                      module m {
+                          $DIRECTIVE
+                      }
+                      """;
+        record Test(String directive, int prefix, Kind expectedKind) {}
+        Test[] tests = new Test[] {
+            new Test("uses api.api.API;", 4, Kind.USES),
+            new Test("opens api.api to other.module;", 5, Kind.OPENS),
+            new Test("exports api.api to other.module;", 7, Kind.EXPORTS),
+            new Test("provides java.util.spi.ToolProvider with impl.ToolProvider;", 8, Kind.PROVIDES),
+        };
+        JavacTaskPool pool = new JavacTaskPool(1);
+        for (Test test : tests) {
+            String directive = test.directive();
+            for (int i = test.prefix(); i < directive.length(); i++) {
+                String replaced = code.replace("$DIRECTIVE", directive.substring(0, i));
+                pool.getTask(null, null, d -> {}, List.of(), null, List.of(new MyFileObject(replaced)), task -> {
+                    try {
+                        CompilationUnitTree cut = task.parse().iterator().next();
+                        new TreePathScanner<Void, Void>() {
+                            @Override
+                            public Void visitModule(ModuleTree node, Void p) {
+                                assertEquals("Unexpected directives size: " + node.getDirectives().size(),
+                                             node.getDirectives().size(),
+                                             1);
+                                assertEquals("Unexpected directive: " + node.getDirectives().get(0).getKind(),
+                                             node.getDirectives().get(0).getKind(),
+                                             test.expectedKind);
+                                return super.visitModule(node, p);
+                            }
+                        }.scan(cut, null);
+                        return null;
+                    } catch (IOException ex) {
+                        throw new IllegalStateException(ex);
+                    }
+                });
+            }
+        }
+        String extendedCode = """
+                              module m {
+                                  provides ;
+                                  provides java.;
+                                  provides java.util.spi.ToolProvider with ;
+                                  provides java.util.spi.ToolProvider with impl.;
+                              """;
+        pool.getTask(null, null, d -> {}, List.of(), null, List.of(new MyFileObject("module-info", extendedCode)), task -> {
+            try {
+                CompilationUnitTree cut = task.parse().iterator().next();
+                task.analyze();
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitModule(ModuleTree node, Void p) {
+                        assertEquals("Unexpected directives size: " + node.getDirectives().size(),
+                                     node.getDirectives().size(),
+                                     4);
+                        return super.visitModule(node, p);
+                    }
+                }.scan(cut, null);
+                return null;
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        });
     }
 
     void run(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,16 @@ import jdk.incubator.vector.VectorSpecies;
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeFill compiler.vectorapi.TestLoopStoreVector
  */
+
+/*
+ * @test
+ * @bug 8288180
+ * @summary VectorPhase must ensure that SafePointNode's memory input is MergeMemNode, required for GraphKit
+ * @modules jdk.incubator.vector
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeFill -XX:+StressReflectiveCode compiler.vectorapi.TestLoopStoreVector
+ */
+
 
 public class TestLoopStoreVector {
     static final VectorSpecies<Integer> SPECIESi = IntVector.SPECIES_PREFERRED;

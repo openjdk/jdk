@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Usage: jarsigner [options] jar-file alias"},
         {".jarsigner.verify.options.jar.file.alias.",
                 "       jarsigner -verify [options] jar-file [alias...]"},
+        {".jarsigner.version",
+                "       jarsigner -version"},
         {".keystore.url.keystore.location",
                 "[-keystore <url>]           keystore location"},
         {".storepass.password.password.for.keystore.integrity",
@@ -77,6 +79,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-sigalg <algorithm>]       name of signature algorithm"},
         {".verify.verify.a.signed.JAR.file",
                 "[-verify]                   verify a signed JAR file"},
+        {".version.print.the.program.version",
+                "[-version]                  print the program version"},
         {".verbose.suboptions.verbose.output.when.signing.verifying.",
                 "[-verbose[:suboptions]]     verbose output when signing/verifying."},
         {".suboptions.can.be.all.grouped.or.summary",
@@ -115,6 +119,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-providerClass <class>     add security provider by fully-qualified class name"},
         {".providerArg.option.2",
                 "  [-providerArg <arg>]] ... configure argument for -providerClass"},
+        {".providerPath.option",
+                "[-providerPath <list>]      provider classpath"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   treat warnings as errors"},
         {".conf.url.specify.a.pre.configured.options.file",
@@ -170,10 +176,14 @@ public class Resources extends java.util.ListResourceBundle {
         {"history.nobk", "- Missing block file for signature-related file META-INF/%s.SF"},
 
         {"with.weak", "%s (weak)"},
+        {"with.algparams.weak", "%1$s using %2$s (weak)"},
         {"with.disabled", "%s (disabled)"},
+        {"with.algparams.disabled", "%1$s using %2$s (disabled)"},
         {"key.bit", "%d-bit key"},
         {"key.bit.weak", "%d-bit key (weak)"},
+        {"key.bit.eccurve.weak", "%1$d-bit %2$s key (weak)"},
         {"key.bit.disabled", "%d-bit key (disabled)"},
+        {"key.bit.eccurve.disabled", "%1$d-bit %2$s key (disabled)"},
         {"unknown.size", "unknown size"},
         {"extra.attributes.detected", "POSIX file permission and/or symlink attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 

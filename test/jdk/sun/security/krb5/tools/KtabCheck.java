@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,31 +69,31 @@ public class KtabCheck {
         check(3,17,3,18,3,19,4,17,4,18,4,19,5,17,5,18,5,19);
         ktab("-a me mine -n 6 -append");
         check(3,17,3,18,3,19,4,17,4,18,4,19,5,17,5,18,5,19,6,17,6,18,6,19);
-        ktab("-d me 3");
+        ktab("-d me -f 3");
         check(4,17,4,18,4,19,5,17,5,18,5,19,6,17,6,18,6,19);
-        ktab("-d me -e 17 6");
+        ktab("-d me -f -e 17 6");
         check(4,17,4,18,4,19,5,17,5,18,5,19,6,18,6,19);
-        ktab("-d me -e 19 6");
+        ktab("-d me -f -e 19 6");
         check(4,17,4,18,4,19,5,17,5,18,5,19,6,18);
-        ktab("-d me -e 17 5");
+        ktab("-d me -f -e 17 5");
         check(4,17,4,18,4,19,5,18,5,19,6,18);
-        ktab("-d me old");
+        ktab("-d me -f old");
         check(4,17,5,19,6,18);
         try {
-            ktab("-d me old");
+            ktab("-d me -f old");
             throw new Exception("Should fail");
         } catch (Exception e) {
             // no-op
         }
         check(4,17,5,19,6,18);
-        ktab("-d me");
+        ktab("-d me -f");
         check();
     }
 
     static void ktab(String s) throws Exception {
         File conf = new File(System.getProperty("test.src"), "onlythree.conf");
         SecurityTools.ktab("-J-Djava.security.krb5.conf=" + conf
-                + " -k " + KEYTAB + " -f " + s).shouldHaveExitValue(0);
+                + " -k " + KEYTAB + " " + s).shouldHaveExitValue(0);
     }
 
     /**

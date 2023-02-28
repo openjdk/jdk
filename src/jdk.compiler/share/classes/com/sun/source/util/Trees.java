@@ -72,7 +72,7 @@ public abstract class Trees {
     }
 
     /**
-     * Returns a {code Trees} object for a given {@code ProcessingEnvironment}.
+     * Returns a {@code Trees} object for a given {@code ProcessingEnvironment}.
      * @param env the processing environment for which to get the {@code Trees} object
      * @throws IllegalArgumentException if the env does not support the Tree API.
      * @return the {@code Trees} object

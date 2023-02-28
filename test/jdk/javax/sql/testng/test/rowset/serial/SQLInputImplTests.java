@@ -183,7 +183,7 @@ public class SQLInputImplTests extends BaseTest {
      */
     @Test(enabled = true)
     public void test10() throws Exception {
-        URL u = new URL("http://www.oracle.com/");;
+        URL u = new URL("http://www.oracle.com/");
         Object[] values = {u};
         SQLInputImpl sqli = new SQLInputImpl(values, map);
         URL u2 = sqli.readURL();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public class ConnectorAddressLink {
         Perf perf = Perf.getPerf();
         ByteBuffer bb;
         try {
-            bb = perf.attach(vmid, "r");
+            bb = perf.attach(vmid);
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }
@@ -200,7 +200,7 @@ public class ConnectorAddressLink {
         Perf perf = Perf.getPerf();
         ByteBuffer bb;
         try {
-            bb = perf.attach(vmid, "r");
+            bb = perf.attach(vmid);
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }

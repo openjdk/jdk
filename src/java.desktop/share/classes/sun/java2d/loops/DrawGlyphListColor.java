@@ -37,10 +37,10 @@ import java.awt.*;
  */
 public class DrawGlyphListColor extends GraphicsPrimitive {
 
-    public final static String methodSignature =
+    public static final String methodSignature =
             "DrawGlyphListColor(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawGlyphListColor locate(SurfaceType srctype,
                                             CompositeType comptype,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@
 
 
 // Structure to pass around
-struct OopFlow : public ResourceObj {
+struct OopFlow : public ArenaObj {
   short *_callees;              // Array mapping register to callee-saved
   Node **_defs;                 // array mapping register to reaching def
                                 // or NULL if dead/conflict
@@ -231,10 +231,6 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
     VMReg r = OptoReg::as_VMReg(OptoReg::Name(reg), framesize, max_inarg_slot);
 
-    if (false && r->is_reg() && !r->is_concrete()) {
-      continue;
-    }
-
     // See if dead (no reaching def).
     Node *def = _defs[reg];     // Get reaching def
     assert( def, "since live better have reaching def" );
@@ -312,14 +308,10 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
           set_live_bit(live,breg);
           // Already missed our turn?
           if( breg < reg ) {
-            if (b->is_stack() || b->is_concrete() || true ) {
-              omap->set_oop( b);
-            }
+            omap->set_oop(b);
           }
         }
-        if (b->is_stack() || b->is_concrete() || true ) {
-          omap->set_derived_oop( r, b);
-        }
+        omap->set_derived_oop(r, b);
       }
 
     } else if( t->isa_narrowoop() ) {
@@ -347,17 +339,31 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
       assert( dup_check[_callees[reg]]==0, "trying to callee save same reg twice" );
       debug_only( dup_check[_callees[reg]]=1; )
       VMReg callee = OptoReg::as_VMReg(OptoReg::Name(_callees[reg]));
-      if ( callee->is_concrete() || true ) {
-        omap->set_callee_saved( r, callee);
-      }
+      omap->set_callee_saved(r, callee);
 
     } else {
       // Other - some reaching non-oop value
 #ifdef ASSERT
-      if( t->isa_rawptr() && C->cfg()->_raw_oops.member(def) ) {
-        def->dump();
-        n->dump();
-        assert(false, "there should be a oop in OopMap instead of a live raw oop at safepoint");
+      if (t->isa_rawptr()) {
+        ResourceMark rm;
+        Unique_Node_List worklist;
+        worklist.push(def);
+        for (uint i = 0; i < worklist.size(); i++) {
+          Node* m = worklist.at(i);
+          if (C->cfg()->_raw_oops.member(m)) {
+            def->dump();
+            m->dump();
+            n->dump();
+            assert(false, "there should be an oop in OopMap instead of a live raw oop at safepoint");
+          }
+          // Check users as well because def might be spilled
+          for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
+            Node* u = m->fast_out(j);
+            if ((u->is_SpillCopy() && u->in(1) == m) || u->is_Phi()) {
+              worklist.push(u);
+            }
+          }
+        }
       }
 #endif
     }
@@ -377,11 +383,13 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 #endif
 
 #ifdef ASSERT
+  bool has_derived_oops = false;
   for( OopMapStream oms1(omap); !oms1.is_done(); oms1.next()) {
     OopMapValue omv1 = oms1.current();
     if (omv1.type() != OopMapValue::derived_oop_value) {
       continue;
     }
+    has_derived_oops = true;
     bool found = false;
     for( OopMapStream oms2(omap); !oms2.is_done(); oms2.next()) {
       OopMapValue omv2 = oms2.current();
@@ -393,8 +401,18 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         break;
       }
     }
+    assert(has_derived_oops == omap->has_derived_oops(), "");
     assert( found, "derived with no base in oopmap" );
   }
+
+  int num_oops = 0;
+  for (OopMapStream oms2(omap); !oms2.is_done(); oms2.next()) {
+    OopMapValue omv = oms2.current();
+    if (omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value) {
+      num_oops++;
+    }
+  }
+  assert(num_oops == omap->num_oops(), "num_oops: %d omap->num_oops(): %d", num_oops, omap->num_oops());
 #endif
 
   return omap;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package com.sun.nio.sctp;
 
 /**
- * Notification emitted when a peers shutdowns an the association.
+ * Notification emitted when a peer shuts down an association.
  *
  * <P> When a peer sends a <i>SHUTDOWN</i>, the SCTP stack delivers this
  * notification to inform the application that it should cease sending data.

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +60,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
-  _new_top(NULL),
+  _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
@@ -77,11 +78,10 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
-  ResourceMark rm;
   stringStream ss;
   ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
   print_on(&ss);
-  fatal("%s", ss.as_string());
+  fatal("%s", ss.freeze());
 }
 
 void ShenandoahHeapRegion::make_regular_allocation() {
@@ -362,11 +362,14 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     default:
       ShouldNotReachHere();
   }
-  st->print("|BTE " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12),
+
+#define SHR_PTR_FORMAT "%12" PRIxPTR
+
+  st->print("|BTE " SHR_PTR_FORMAT  ", " SHR_PTR_FORMAT ", " SHR_PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
-  st->print("|TAMS " INTPTR_FORMAT_W(12),
+  st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
-  st->print("|UWM " INTPTR_FORMAT_W(12),
+  st->print("|UWM " SHR_PTR_FORMAT,
             p2i(_update_watermark));
   st->print("|U " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
@@ -375,6 +378,8 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP " SIZE_FORMAT_W(3), pin_count());
   st->cr();
+
+#undef SHR_PTR_FORMAT
 }
 
 void ShenandoahHeapRegion::oop_iterate(OopIterateClosure* blk) {
@@ -450,7 +455,7 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
       last = cur;
       cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, cast_to_oop(last));
+    shenandoah_assert_correct(nullptr, cast_to_oop(last));
     return last;
   }
 }
@@ -548,12 +553,12 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // region size to regular page size.
 
   // Figure out page size to use, and aligns up heap to page size
-  int page_size = os::vm_page_size();
+  size_t page_size = os::vm_page_size();
   if (UseLargePages) {
     size_t large_page_size = os::large_page_size();
     max_heap_size = align_up(max_heap_size, large_page_size);
     if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
-      page_size = (int)large_page_size;
+      page_size = large_page_size;
     } else {
       // Should have been checked during argument initialization
       assert(!ShenandoahUncommit, "Uncommit requires region size aligns to large page size");

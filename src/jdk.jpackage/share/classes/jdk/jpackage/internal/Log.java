@@ -108,7 +108,7 @@ public class Log {
         public void verbose(List<String> strings,
                 List<String> output, int returnCode, long pid) {
             if (verbose) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("Command [PID: ");
                 sb.append(pid);
                 sb.append("]:\n   ");
@@ -116,13 +116,13 @@ public class Log {
                 for (String s : strings) {
                     sb.append(" " + s);
                 }
-                verbose(new String(sb));
+                verbose(sb.toString());
                 if (output != null && !output.isEmpty()) {
-                    sb = new StringBuffer("Output:");
+                    sb = new StringBuilder("Output:");
                     for (String s : output) {
                         sb.append("\n    " + s);
                     }
-                    verbose(new String(sb));
+                    verbose(sb.toString());
                 }
                 verbose("Returned: " + returnCode + "\n");
             }

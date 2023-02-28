@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 // no precompiled headers
-#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -33,6 +32,7 @@
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -48,6 +48,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -58,8 +59,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-
-// no precompiled headers
 
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching
@@ -99,6 +98,9 @@
 #undef PREFETCH_OPCCODE
 #define PREFETCH_OPCCODE
 
+JRT_ENTRY(void, at_safepoint(JavaThread* current)) {}
+JRT_END
+
 /*
   Interpreter safepoint: it is expected that the interpreter will have no live
   handles of its own creation live at an interpreter safepoint. Therefore we
@@ -107,12 +109,10 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define RETURN_SAFEPOINT                                                                                  \
-    if (SafepointMechanism::should_process(THREAD)) {                                                     \
-      HandleMarkCleaner __hmc(THREAD);                                                                    \
-      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
-              handle_exception);                                                                          \
-    }                                                                                                     \
+#define RETURN_SAFEPOINT                                    \
+    if (SafepointMechanism::should_process(THREAD)) {       \
+      CALL_VM(at_safepoint(THREAD), handle_exception);      \
+    }
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -293,6 +293,8 @@
    istate->set_bcp(pc+opsize);        \
    return;
 
+#define REWRITE_AT_PC(val) \
+    *pc = val;
 
 #define METHOD istate->method()
 #define GET_METHOD_COUNTERS(res)
@@ -305,7 +307,7 @@
 /*
  * Macros for caching and flushing the interpreter state. Some local
  * variables need to be flushed out to the frame before we do certain
- * things (like pushing frames or becomming gc safe) and some need to
+ * things (like pushing frames or becoming gc safe) and some need to
  * be recached later (like after popping a frame). We could use one
  * macro to cache or decache everything, but this would be less then
  * optimal because we don't always need to cache or decache everything
@@ -338,8 +340,8 @@
  */
 #undef CHECK_NULL
 #define CHECK_NULL(obj_)                                                                         \
-        if ((obj_) == NULL) {                                                                    \
-          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), NULL);                      \
+        if ((obj_) == nullptr) {                                                                    \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), nullptr);                      \
         }                                                                                        \
         VERIFY_OOP(obj_)
 
@@ -389,6 +391,81 @@
           if (THREAD->has_pending_exception()) goto label;         \
         }
 
+#define MAYBE_POST_FIELD_ACCESS(obj) {                              \
+  if (JVMTI_ENABLED) {                                              \
+    int* count_addr;                                                \
+    /* Check to see if a field modification watch has been set */   \
+    /* before we take the time to call into the VM. */              \
+    count_addr = (int*)JvmtiExport::get_field_access_count_addr();  \
+    if (*count_addr > 0) {                                          \
+      oop target;                                                   \
+      if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {       \
+        target = nullptr;                                              \
+      } else {                                                      \
+        target = obj;                                               \
+      }                                                             \
+      CALL_VM(InterpreterRuntime::post_field_access(THREAD,         \
+                                  target, cache),                   \
+                                  handle_exception);                \
+    }                                                               \
+  }                                                                 \
+}
+
+#define MAYBE_POST_FIELD_MODIFICATION(obj) {                        \
+  if (JVMTI_ENABLED) {                                              \
+    int* count_addr;                                                \
+    /* Check to see if a field modification watch has been set */   \
+    /* before we take the time to call into the VM.            */   \
+    count_addr = (int*)JvmtiExport::get_field_modification_count_addr(); \
+    if (*count_addr > 0) {                                          \
+      oop target;                                                   \
+      if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {       \
+        target = nullptr;                                              \
+      } else {                                                      \
+        target = obj;                                               \
+      }                                                             \
+      CALL_VM(InterpreterRuntime::post_field_modification(THREAD,   \
+                                  target, cache,                    \
+                                  (jvalue*)STACK_SLOT(-1)),         \
+                                  handle_exception);                \
+    }                                                               \
+  }                                                                 \
+}
+
+static inline int fast_get_type(TosState tos) {
+  switch (tos) {
+    case ztos:
+    case btos: return Bytecodes::_fast_bgetfield;
+    case ctos: return Bytecodes::_fast_cgetfield;
+    case stos: return Bytecodes::_fast_sgetfield;
+    case itos: return Bytecodes::_fast_igetfield;
+    case ltos: return Bytecodes::_fast_lgetfield;
+    case ftos: return Bytecodes::_fast_fgetfield;
+    case dtos: return Bytecodes::_fast_dgetfield;
+    case atos: return Bytecodes::_fast_agetfield;
+    default:
+      ShouldNotReachHere();
+      return -1;
+  }
+}
+
+static inline int fast_put_type(TosState tos) {
+  switch (tos) {
+    case ztos: return Bytecodes::_fast_zputfield;
+    case btos: return Bytecodes::_fast_bputfield;
+    case ctos: return Bytecodes::_fast_cputfield;
+    case stos: return Bytecodes::_fast_sputfield;
+    case itos: return Bytecodes::_fast_iputfield;
+    case ltos: return Bytecodes::_fast_lputfield;
+    case ftos: return Bytecodes::_fast_fputfield;
+    case dtos: return Bytecodes::_fast_dputfield;
+    case atos: return Bytecodes::_fast_aputfield;
+    default:
+      ShouldNotReachHere();
+      return -1;
+  }
+}
+
 /*
  * BytecodeInterpreter::run(interpreterState istate)
  *
@@ -397,42 +474,14 @@
  * the method passed in.
  */
 
-// Instantiate two variants of the method for future linking.
-template void BytecodeInterpreter::run<true>(interpreterState istate);
-template void BytecodeInterpreter::run<false>(interpreterState istate);
+// Instantiate variants of the method for future linking.
+template void BytecodeInterpreter::run<false, false>(interpreterState istate);
+template void BytecodeInterpreter::run<false,  true>(interpreterState istate);
+template void BytecodeInterpreter::run< true, false>(interpreterState istate);
+template void BytecodeInterpreter::run< true,  true>(interpreterState istate);
 
-template<bool JVMTI_ENABLED>
+template<bool JVMTI_ENABLED, bool REWRITE_BYTECODES>
 void BytecodeInterpreter::run(interpreterState istate) {
-
-  // In order to simplify some tests based on switches set at runtime
-  // we invoke the interpreter a single time after switches are enabled
-  // and set simpler to to test variables rather than method calls or complex
-  // boolean expressions.
-
-  static int initialized = 0;
-  static int checkit = 0;
-  static intptr_t* c_addr = NULL;
-  static intptr_t  c_value;
-
-  if (checkit && *c_addr != c_value) {
-    os::breakpoint();
-  }
-
-#ifdef ASSERT
-  if (istate->_msg != initialize) {
-    assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-  }
-  // Verify linkages.
-  interpreterState l = istate;
-  do {
-    assert(l == l->_self_link, "bad link");
-    l = l->_prev_link;
-  } while (l != NULL);
-  // Screwups with stack management usually cause us to overwrite istate
-  // save a copy so we can verify it.
-  interpreterState orig = istate;
-#endif
-
   intptr_t*        topOfStack = (intptr_t *)istate->stack(); /* access with STACK macros */
   address          pc = istate->bcp();
   jubyte opcode;
@@ -445,124 +494,117 @@ void BytecodeInterpreter::run(interpreterState istate) {
 #define THREAD istate->thread()
 #endif
 
+#ifdef ASSERT
+  assert(labs(istate->stack_base() - istate->stack_limit()) == (istate->method()->max_stack() + 1),
+         "Bad stack limit");
+  /* QQQ this should be a stack method so we don't know actual direction */
+  assert(topOfStack >= istate->stack_limit() && topOfStack < istate->stack_base(),
+         "Stack top out of range");
+
+  // Verify linkages.
+  interpreterState l = istate;
+  do {
+    assert(l == l->_self_link, "bad link");
+    l = l->_prev_link;
+  } while (l != nullptr);
+  // Screwups with stack management usually cause us to overwrite istate
+  // save a copy so we can verify it.
+  interpreterState orig = istate;
+#endif
+
 #ifdef USELABELS
   const static void* const opclabels_data[256] = {
-/* 0x00 */ &&opc_nop,     &&opc_aconst_null,&&opc_iconst_m1,&&opc_iconst_0,
-/* 0x04 */ &&opc_iconst_1,&&opc_iconst_2,   &&opc_iconst_3, &&opc_iconst_4,
-/* 0x08 */ &&opc_iconst_5,&&opc_lconst_0,   &&opc_lconst_1, &&opc_fconst_0,
-/* 0x0C */ &&opc_fconst_1,&&opc_fconst_2,   &&opc_dconst_0, &&opc_dconst_1,
+/* 0x00 */ &&opc_nop,           &&opc_aconst_null,      &&opc_iconst_m1,      &&opc_iconst_0,
+/* 0x04 */ &&opc_iconst_1,      &&opc_iconst_2,         &&opc_iconst_3,       &&opc_iconst_4,
+/* 0x08 */ &&opc_iconst_5,      &&opc_lconst_0,         &&opc_lconst_1,       &&opc_fconst_0,
+/* 0x0C */ &&opc_fconst_1,      &&opc_fconst_2,         &&opc_dconst_0,       &&opc_dconst_1,
 
-/* 0x10 */ &&opc_bipush, &&opc_sipush, &&opc_ldc,    &&opc_ldc_w,
-/* 0x14 */ &&opc_ldc2_w, &&opc_iload,  &&opc_lload,  &&opc_fload,
-/* 0x18 */ &&opc_dload,  &&opc_aload,  &&opc_iload_0,&&opc_iload_1,
-/* 0x1C */ &&opc_iload_2,&&opc_iload_3,&&opc_lload_0,&&opc_lload_1,
+/* 0x10 */ &&opc_bipush,        &&opc_sipush,           &&opc_ldc,            &&opc_ldc_w,
+/* 0x14 */ &&opc_ldc2_w,        &&opc_iload,            &&opc_lload,          &&opc_fload,
+/* 0x18 */ &&opc_dload,         &&opc_aload,            &&opc_iload_0,        &&opc_iload_1,
+/* 0x1C */ &&opc_iload_2,       &&opc_iload_3,          &&opc_lload_0,        &&opc_lload_1,
 
-/* 0x20 */ &&opc_lload_2,&&opc_lload_3,&&opc_fload_0,&&opc_fload_1,
-/* 0x24 */ &&opc_fload_2,&&opc_fload_3,&&opc_dload_0,&&opc_dload_1,
-/* 0x28 */ &&opc_dload_2,&&opc_dload_3,&&opc_aload_0,&&opc_aload_1,
-/* 0x2C */ &&opc_aload_2,&&opc_aload_3,&&opc_iaload, &&opc_laload,
+/* 0x20 */ &&opc_lload_2,       &&opc_lload_3,          &&opc_fload_0,        &&opc_fload_1,
+/* 0x24 */ &&opc_fload_2,       &&opc_fload_3,          &&opc_dload_0,        &&opc_dload_1,
+/* 0x28 */ &&opc_dload_2,       &&opc_dload_3,          &&opc_aload_0,        &&opc_aload_1,
+/* 0x2C */ &&opc_aload_2,       &&opc_aload_3,          &&opc_iaload,         &&opc_laload,
 
-/* 0x30 */ &&opc_faload,  &&opc_daload,  &&opc_aaload,  &&opc_baload,
-/* 0x34 */ &&opc_caload,  &&opc_saload,  &&opc_istore,  &&opc_lstore,
-/* 0x38 */ &&opc_fstore,  &&opc_dstore,  &&opc_astore,  &&opc_istore_0,
-/* 0x3C */ &&opc_istore_1,&&opc_istore_2,&&opc_istore_3,&&opc_lstore_0,
+/* 0x30 */ &&opc_faload,        &&opc_daload,           &&opc_aaload,         &&opc_baload,
+/* 0x34 */ &&opc_caload,        &&opc_saload,           &&opc_istore,         &&opc_lstore,
+/* 0x38 */ &&opc_fstore,        &&opc_dstore,           &&opc_astore,         &&opc_istore_0,
+/* 0x3C */ &&opc_istore_1,      &&opc_istore_2,         &&opc_istore_3,       &&opc_lstore_0,
 
-/* 0x40 */ &&opc_lstore_1,&&opc_lstore_2,&&opc_lstore_3,&&opc_fstore_0,
-/* 0x44 */ &&opc_fstore_1,&&opc_fstore_2,&&opc_fstore_3,&&opc_dstore_0,
-/* 0x48 */ &&opc_dstore_1,&&opc_dstore_2,&&opc_dstore_3,&&opc_astore_0,
-/* 0x4C */ &&opc_astore_1,&&opc_astore_2,&&opc_astore_3,&&opc_iastore,
+/* 0x40 */ &&opc_lstore_1,      &&opc_lstore_2,         &&opc_lstore_3,       &&opc_fstore_0,
+/* 0x44 */ &&opc_fstore_1,      &&opc_fstore_2,         &&opc_fstore_3,       &&opc_dstore_0,
+/* 0x48 */ &&opc_dstore_1,      &&opc_dstore_2,         &&opc_dstore_3,       &&opc_astore_0,
+/* 0x4C */ &&opc_astore_1,      &&opc_astore_2,         &&opc_astore_3,       &&opc_iastore,
 
-/* 0x50 */ &&opc_lastore,&&opc_fastore,&&opc_dastore,&&opc_aastore,
-/* 0x54 */ &&opc_bastore,&&opc_castore,&&opc_sastore,&&opc_pop,
-/* 0x58 */ &&opc_pop2,   &&opc_dup,    &&opc_dup_x1, &&opc_dup_x2,
-/* 0x5C */ &&opc_dup2,   &&opc_dup2_x1,&&opc_dup2_x2,&&opc_swap,
+/* 0x50 */ &&opc_lastore,       &&opc_fastore,          &&opc_dastore,        &&opc_aastore,
+/* 0x54 */ &&opc_bastore,       &&opc_castore,          &&opc_sastore,        &&opc_pop,
+/* 0x58 */ &&opc_pop2,          &&opc_dup,              &&opc_dup_x1,         &&opc_dup_x2,
+/* 0x5C */ &&opc_dup2,          &&opc_dup2_x1,          &&opc_dup2_x2,        &&opc_swap,
 
-/* 0x60 */ &&opc_iadd,&&opc_ladd,&&opc_fadd,&&opc_dadd,
-/* 0x64 */ &&opc_isub,&&opc_lsub,&&opc_fsub,&&opc_dsub,
-/* 0x68 */ &&opc_imul,&&opc_lmul,&&opc_fmul,&&opc_dmul,
-/* 0x6C */ &&opc_idiv,&&opc_ldiv,&&opc_fdiv,&&opc_ddiv,
+/* 0x60 */ &&opc_iadd,          &&opc_ladd,             &&opc_fadd,           &&opc_dadd,
+/* 0x64 */ &&opc_isub,          &&opc_lsub,             &&opc_fsub,           &&opc_dsub,
+/* 0x68 */ &&opc_imul,          &&opc_lmul,             &&opc_fmul,           &&opc_dmul,
+/* 0x6C */ &&opc_idiv,          &&opc_ldiv,             &&opc_fdiv,           &&opc_ddiv,
 
-/* 0x70 */ &&opc_irem, &&opc_lrem, &&opc_frem,&&opc_drem,
-/* 0x74 */ &&opc_ineg, &&opc_lneg, &&opc_fneg,&&opc_dneg,
-/* 0x78 */ &&opc_ishl, &&opc_lshl, &&opc_ishr,&&opc_lshr,
-/* 0x7C */ &&opc_iushr,&&opc_lushr,&&opc_iand,&&opc_land,
+/* 0x70 */ &&opc_irem,          &&opc_lrem,             &&opc_frem,           &&opc_drem,
+/* 0x74 */ &&opc_ineg,          &&opc_lneg,             &&opc_fneg,           &&opc_dneg,
+/* 0x78 */ &&opc_ishl,          &&opc_lshl,             &&opc_ishr,           &&opc_lshr,
+/* 0x7C */ &&opc_iushr,         &&opc_lushr,            &&opc_iand,           &&opc_land,
 
-/* 0x80 */ &&opc_ior, &&opc_lor,&&opc_ixor,&&opc_lxor,
-/* 0x84 */ &&opc_iinc,&&opc_i2l,&&opc_i2f, &&opc_i2d,
-/* 0x88 */ &&opc_l2i, &&opc_l2f,&&opc_l2d, &&opc_f2i,
-/* 0x8C */ &&opc_f2l, &&opc_f2d,&&opc_d2i, &&opc_d2l,
+/* 0x80 */ &&opc_ior,           &&opc_lor,              &&opc_ixor,           &&opc_lxor,
+/* 0x84 */ &&opc_iinc,          &&opc_i2l,              &&opc_i2f,            &&opc_i2d,
+/* 0x88 */ &&opc_l2i,           &&opc_l2f,              &&opc_l2d,            &&opc_f2i,
+/* 0x8C */ &&opc_f2l,           &&opc_f2d,              &&opc_d2i,            &&opc_d2l,
 
-/* 0x90 */ &&opc_d2f,  &&opc_i2b,  &&opc_i2c,  &&opc_i2s,
-/* 0x94 */ &&opc_lcmp, &&opc_fcmpl,&&opc_fcmpg,&&opc_dcmpl,
-/* 0x98 */ &&opc_dcmpg,&&opc_ifeq, &&opc_ifne, &&opc_iflt,
-/* 0x9C */ &&opc_ifge, &&opc_ifgt, &&opc_ifle, &&opc_if_icmpeq,
+/* 0x90 */ &&opc_d2f,           &&opc_i2b,              &&opc_i2c,            &&opc_i2s,
+/* 0x94 */ &&opc_lcmp,          &&opc_fcmpl,            &&opc_fcmpg,          &&opc_dcmpl,
+/* 0x98 */ &&opc_dcmpg,         &&opc_ifeq,             &&opc_ifne,           &&opc_iflt,
+/* 0x9C */ &&opc_ifge,          &&opc_ifgt,             &&opc_ifle,           &&opc_if_icmpeq,
 
-/* 0xA0 */ &&opc_if_icmpne,&&opc_if_icmplt,&&opc_if_icmpge,  &&opc_if_icmpgt,
-/* 0xA4 */ &&opc_if_icmple,&&opc_if_acmpeq,&&opc_if_acmpne,  &&opc_goto,
-/* 0xA8 */ &&opc_jsr,      &&opc_ret,      &&opc_tableswitch,&&opc_lookupswitch,
-/* 0xAC */ &&opc_ireturn,  &&opc_lreturn,  &&opc_freturn,    &&opc_dreturn,
+/* 0xA0 */ &&opc_if_icmpne,     &&opc_if_icmplt,        &&opc_if_icmpge,      &&opc_if_icmpgt,
+/* 0xA4 */ &&opc_if_icmple,     &&opc_if_acmpeq,        &&opc_if_acmpne,      &&opc_goto,
+/* 0xA8 */ &&opc_jsr,           &&opc_ret,              &&opc_tableswitch,    &&opc_lookupswitch,
+/* 0xAC */ &&opc_ireturn,       &&opc_lreturn,          &&opc_freturn,        &&opc_dreturn,
 
-/* 0xB0 */ &&opc_areturn,     &&opc_return,         &&opc_getstatic,    &&opc_putstatic,
-/* 0xB4 */ &&opc_getfield,    &&opc_putfield,       &&opc_invokevirtual,&&opc_invokespecial,
-/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,&&opc_invokedynamic,&&opc_new,
-/* 0xBC */ &&opc_newarray,    &&opc_anewarray,      &&opc_arraylength,  &&opc_athrow,
+/* 0xB0 */ &&opc_areturn,       &&opc_return,           &&opc_getstatic,      &&opc_putstatic,
+/* 0xB4 */ &&opc_getfield,      &&opc_putfield,         &&opc_invokevirtual,  &&opc_invokespecial,
+/* 0xB8 */ &&opc_invokestatic,  &&opc_invokeinterface,  &&opc_invokedynamic,  &&opc_new,
+/* 0xBC */ &&opc_newarray,      &&opc_anewarray,        &&opc_arraylength,    &&opc_athrow,
 
-/* 0xC0 */ &&opc_checkcast,   &&opc_instanceof,     &&opc_monitorenter, &&opc_monitorexit,
-/* 0xC4 */ &&opc_wide,        &&opc_multianewarray, &&opc_ifnull,       &&opc_ifnonnull,
-/* 0xC8 */ &&opc_goto_w,      &&opc_jsr_w,          &&opc_breakpoint,   &&opc_default,
-/* 0xCC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xC0 */ &&opc_checkcast,     &&opc_instanceof,       &&opc_monitorenter,   &&opc_monitorexit,
+/* 0xC4 */ &&opc_wide,          &&opc_multianewarray,   &&opc_ifnull,         &&opc_ifnonnull,
+/* 0xC8 */ &&opc_goto_w,        &&opc_jsr_w,            &&opc_breakpoint,     &&opc_fast_agetfield,
+/* 0xCC */ &&opc_fast_bgetfield,&&opc_fast_cgetfield,   &&opc_fast_dgetfield, &&opc_fast_fgetfield,
 
-/* 0xD0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xD4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xD8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xD0 */ &&opc_fast_igetfield,&&opc_fast_lgetfield,   &&opc_fast_sgetfield, &&opc_fast_aputfield,
+/* 0xD4 */ &&opc_fast_bputfield,&&opc_fast_zputfield,   &&opc_fast_cputfield, &&opc_fast_dputfield,
+/* 0xD8 */ &&opc_fast_fputfield,&&opc_fast_iputfield,   &&opc_fast_lputfield, &&opc_fast_sputfield,
+/* 0xDC */ &&opc_fast_aload_0,  &&opc_fast_iaccess_0,   &&opc_fast_aaccess_0, &&opc_fast_faccess_0,
 
-/* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_default,        &&opc_fast_aldc,    &&opc_fast_aldc_w,
+/* 0xE0 */ &&opc_fast_iload,    &&opc_fast_iload2,      &&opc_fast_icaload,   &&opc_fast_invokevfinal,
+/* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
 /* 0xE8 */ &&opc_return_register_finalizer,
-                              &&opc_invokehandle,   &&opc_default,      &&opc_default,
-/* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
+                                &&opc_invokehandle,     &&opc_nofast_getfield,&&opc_nofast_putfield,
+/* 0xEC */ &&opc_nofast_aload_0,&&opc_nofast_iload,     &&opc_default,        &&opc_default,
 
-/* 0xF0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xF4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xF8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xFC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default
+/* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xF8 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xFC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default
   };
   uintptr_t *dispatch_table = (uintptr_t*)&opclabels_data[0];
 #endif /* USELABELS */
 
-#ifdef ASSERT
-  // this will trigger a VERIFY_OOP on entry
-  if (istate->msg() != initialize && ! METHOD->is_static()) {
-    oop rcvr = LOCALS_OBJECT(0);
-    VERIFY_OOP(rcvr);
-  }
-#endif
-
-  /* QQQ this should be a stack method so we don't know actual direction */
-  guarantee(istate->msg() == initialize ||
-         topOfStack >= istate->stack_limit() &&
-         topOfStack < istate->stack_base(),
-         "Stack top out of range");
-
-  assert(!UseCompiler, "Zero does not support compilers");
-  assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
-
   switch (istate->msg()) {
     case initialize: {
-      if (initialized++) ShouldNotReachHere(); // Only one initialize call.
+      ShouldNotCallThis();
       return;
     }
-    break;
     case method_entry: {
-      THREAD->set_do_not_unlock();
-      // count invocations
-      assert(initialized, "Interpreter not initialized");
-
-      if ((istate->_stack_base - istate->_stack_limit) != istate->method()->max_stack() + 1) {
-        // initialize
-        os::breakpoint();
-      }
+      THREAD->set_do_not_unlock_if_synchronized(true);
 
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
@@ -583,16 +625,21 @@ void BytecodeInterpreter::run(interpreterState istate) {
         markWord displaced = rcvr->mark().set_unlocked();
         mon->lock()->set_displaced_header(displaced);
         bool call_vm = UseHeavyMonitors;
+        bool inc_monitor_count = true;
         if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
           // Is it simple recursive case?
           if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
+            mon->lock()->set_displaced_header(markWord::from_pointer(nullptr));
           } else {
+            inc_monitor_count = false;
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
           }
         }
+        if (inc_monitor_count) {
+          THREAD->inc_held_monitor_count();
+        }
       }
-      THREAD->clr_do_not_unlock();
+      THREAD->set_do_not_unlock_if_synchronized(false);
 
       // Notify jvmti.
       // Whenever JVMTI puts a thread in interp_only_mode, method
@@ -670,20 +717,25 @@ void BytecodeInterpreter::run(interpreterState istate) {
       // derefing's lockee ought to provoke implicit null check
       // find a free monitor
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
-      assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
+      assert(entry->obj() == nullptr, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
 
       // traditional lightweight locking
       markWord displaced = lockee->mark().set_unlocked();
       entry->lock()->set_displaced_header(displaced);
       bool call_vm = UseHeavyMonitors;
+      bool inc_monitor_count = true;
       if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
         // Is it simple recursive case?
         if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-          entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+          entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
         } else {
+          inc_monitor_count = false;
           CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
         }
+      }
+      if (inc_monitor_count) {
+        THREAD->inc_held_monitor_count();
       }
       UPDATE_PC_AND_TOS(1, -1);
       goto run;
@@ -712,7 +764,7 @@ run:
       // need at entry to the loop.
       // DEBUGGER_SINGLE_STEP_NOTIFY();
       /* Using this labels avoids double breakpoints when quickening and
-       * when returing from transition frames.
+       * when returning from transition frames.
        */
   opcode_switch:
       assert(istate == orig, "Corrupted istate");
@@ -732,7 +784,7 @@ run:
           /* Push miscellaneous constants onto the stack. */
 
       CASE(_aconst_null):
-          SET_STACK_OBJECT(NULL, 0);
+          SET_STACK_OBJECT(nullptr, 0);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
 
 #undef  OPC_CONST_n
@@ -784,9 +836,47 @@ run:
           UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
 
       CASE(_iload):
+      {
+        if (REWRITE_BYTECODES) {
+          // Attempt to rewrite iload, iload -> fast_iload2
+          //                    iload, caload -> fast_icaload
+          // Normal iloads will be rewritten to fast_iload to avoid checking again.
+          switch (*(pc + 2)) {
+            case Bytecodes::_fast_iload:
+              REWRITE_AT_PC(Bytecodes::_fast_iload2);
+              break;
+            case Bytecodes::_caload:
+              REWRITE_AT_PC(Bytecodes::_fast_icaload);
+              break;
+            case Bytecodes::_iload:
+              // Wait until rewritten to _fast_iload.
+              break;
+            default:
+              // Last iload in a (potential) series, don't check again.
+              REWRITE_AT_PC(Bytecodes::_fast_iload);
+          }
+        }
+        // Normal iload handling.
+        SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
+      }
+
+      CASE(_nofast_iload):
+      {
+        // Normal, non-rewritable iload handling.
+        SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
+      }
+
+      CASE(_fast_iload):
       CASE(_fload):
           SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
           UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
+
+      CASE(_fast_iload2):
+          SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
+          SET_STACK_SLOT(LOCALS_SLOT(pc[3]), 1);
+          UPDATE_PC_AND_TOS_AND_CONTINUE(4, 2);
 
       CASE(_lload):
           SET_STACK_LONG_FROM_ADDR(LOCALS_LONG_AT(pc[1]), 1);
@@ -798,11 +888,6 @@ run:
 
 #undef  OPC_LOAD_n
 #define OPC_LOAD_n(num)                                                 \
-      CASE(_aload_##num):                                               \
-          VERIFY_OOP(LOCALS_OBJECT(num));                               \
-          SET_STACK_OBJECT(LOCALS_OBJECT(num), 0);                      \
-          UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);                         \
-                                                                        \
       CASE(_iload_##num):                                               \
       CASE(_fload_##num):                                               \
           SET_STACK_SLOT(LOCALS_SLOT(num), 0);                          \
@@ -815,10 +900,63 @@ run:
           SET_STACK_DOUBLE_FROM_ADDR(LOCALS_DOUBLE_AT(num), 1);         \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 2);
 
-          OPC_LOAD_n(0);
-          OPC_LOAD_n(1);
-          OPC_LOAD_n(2);
-          OPC_LOAD_n(3);
+      OPC_LOAD_n(0);
+      OPC_LOAD_n(1);
+      OPC_LOAD_n(2);
+      OPC_LOAD_n(3);
+
+#undef  OPC_ALOAD_n
+#define OPC_ALOAD_n(num)                                                \
+      CASE(_aload_##num): {                                             \
+          oop obj = LOCALS_OBJECT(num);                                 \
+          VERIFY_OOP(obj);                                              \
+          SET_STACK_OBJECT(obj, 0);                                     \
+          UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);                         \
+      }
+
+      CASE(_aload_0):
+      {
+        /* Maybe rewrite if following bytecode is one of the supported _fast_Xgetfield bytecodes. */
+        if (REWRITE_BYTECODES) {
+          switch (*(pc + 1)) {
+            case Bytecodes::_fast_agetfield:
+              REWRITE_AT_PC(Bytecodes::_fast_aaccess_0);
+              break;
+            case Bytecodes::_fast_fgetfield:
+              REWRITE_AT_PC(Bytecodes::_fast_faccess_0);
+              break;
+            case Bytecodes::_fast_igetfield:
+              REWRITE_AT_PC(Bytecodes::_fast_iaccess_0);
+              break;
+            case Bytecodes::_getfield:
+            case Bytecodes::_nofast_getfield: {
+              /* Otherwise, do nothing here, wait until/if it gets rewritten to _fast_Xgetfield.
+               * Unfortunately, this punishes volatile field access, because it never gets
+               * rewritten. */
+              break;
+            }
+            default:
+              REWRITE_AT_PC(Bytecodes::_fast_aload_0);
+              break;
+          }
+        }
+        // Normal aload_0 handling.
+        VERIFY_OOP(LOCALS_OBJECT(0));
+        SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
+      }
+
+      CASE(_nofast_aload_0):
+      {
+        // Normal, non-rewritable aload_0 handling.
+        VERIFY_OOP(LOCALS_OBJECT(0));
+        SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
+      }
+
+      OPC_ALOAD_n(1);
+      OPC_ALOAD_n(2);
+      OPC_ALOAD_n(3);
 
           /* store to a local variable */
 
@@ -1229,7 +1367,7 @@ run:
 
 #define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
-          int skip = (!(STACK_OBJECT(-1) == NULL))                           \
+          int skip = (!(STACK_OBJECT(-1) == nullptr))                           \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
@@ -1239,7 +1377,7 @@ run:
 
 #define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
-          int skip = ((STACK_OBJECT(-1) == NULL))                            \
+          int skip = ((STACK_OBJECT(-1) == nullptr))                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
@@ -1350,11 +1488,7 @@ run:
 
       /* Array access byte-codes */
 
-      /* Every array access byte-code starts out like this */
-//        arrayOopDesc* arrObj = (arrayOopDesc*)STACK_OBJECT(arrayOff);
-#define ARRAY_INTRO(arrayOff)                                                  \
-      arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
-      jint     index  = STACK_INT(arrayOff + 1);                               \
+#define ARRAY_INDEX_CHECK(arrObj, index)                                       \
       /* Two integers, the additional message, and the null-terminator */      \
       char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
@@ -1365,6 +1499,13 @@ run:
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
                         message);                                              \
       }
+
+      /* Every array access byte-code starts out like this */
+//        arrayOopDesc* arrObj = (arrayOopDesc*)STACK_OBJECT(arrayOff);
+#define ARRAY_INTRO(arrayOff)                                                  \
+      arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
+      jint     index  = STACK_INT(arrayOff + 1);                               \
+      ARRAY_INDEX_CHECK(arrObj, index)
 
       /* 32-bit loads. These handle conversion from < 32-bit types */
 #define ARRAY_LOADTO32(T, T2, format, stackRes, extra)                                \
@@ -1405,6 +1546,15 @@ run:
       CASE(_daload):
           ARRAY_LOADTO64(T_DOUBLE, jdouble, STACK_DOUBLE, 0);
 
+      CASE(_fast_icaload): {
+          // Custom fast access for iload,caload pair.
+          arrayOop arrObj = (arrayOop) STACK_OBJECT(-1);
+          jint index = LOCALS_INT(pc[1]);
+          ARRAY_INDEX_CHECK(arrObj, index);
+          SET_STACK_INT(*(jchar *)(((address) arrObj->base(T_CHAR)) + index * sizeof(jchar)), -1);
+          UPDATE_PC_AND_TOS_AND_CONTINUE(3, 0);
+      }
+
       /* 32-bit stores. These handle conversion to < 32-bit types */
 #define ARRAY_STOREFROM32(T, T2, format, stackSrc, extra)                            \
       {                                                                              \
@@ -1435,12 +1585,12 @@ run:
           VERIFY_OOP(rhsObject);
           ARRAY_INTRO( -3);
           // arrObj, index are set
-          if (rhsObject != NULL) {
+          if (rhsObject != nullptr) {
             /* Check assignability of rhsObject into arrObj */
             Klass* rhsKlass = rhsObject->klass(); // EBX (subclass)
             Klass* elemKlass = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
@@ -1491,26 +1641,31 @@ run:
         // since this is recursive enter
         BasicObjectLock* limit = istate->monitor_base();
         BasicObjectLock* most_recent = (BasicObjectLock*) istate->stack_base();
-        BasicObjectLock* entry = NULL;
+        BasicObjectLock* entry = nullptr;
         while (most_recent != limit ) {
-          if (most_recent->obj() == NULL) entry = most_recent;
+          if (most_recent->obj() == nullptr) entry = most_recent;
           else if (most_recent->obj() == lockee) break;
           most_recent++;
         }
-        if (entry != NULL) {
+        if (entry != nullptr) {
           entry->set_obj(lockee);
 
           // traditional lightweight locking
           markWord displaced = lockee->mark().set_unlocked();
           entry->lock()->set_displaced_header(displaced);
           bool call_vm = UseHeavyMonitors;
+          bool inc_monitor_count = true;
           if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
             // Is it simple recursive case?
             if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+              entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
             } else {
+              inc_monitor_count = false;
               CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
             }
+          }
+          if (inc_monitor_count) {
+            THREAD->inc_held_monitor_count();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
         } else {
@@ -1530,17 +1685,22 @@ run:
           if ((most_recent)->obj() == lockee) {
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
-            most_recent->set_obj(NULL);
+            most_recent->set_obj(nullptr);
 
             // If it isn't recursive we either must swap old header or call the runtime
+            bool dec_monitor_count = true;
             bool call_vm = UseHeavyMonitors;
-            if (header.to_pointer() != NULL || call_vm) {
+            if (header.to_pointer() != nullptr || call_vm) {
               markWord old_header = markWord::encode(lock);
               if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
                 // restore object for the slow case
                 most_recent->set_obj(lockee);
+                dec_monitor_count = false;
                 InterpreterRuntime::monitorexit(most_recent);
               }
+            }
+            if (dec_monitor_count) {
+              THREAD->dec_held_monitor_count();
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
           }
@@ -1557,6 +1717,7 @@ run:
        *  constant pool index in the instruction.
        */
       CASE(_getfield):
+      CASE(_nofast_getfield):
       CASE(_getstatic):
         {
           u2 index;
@@ -1567,31 +1728,18 @@ run:
           // split all the bytecode cases out so c++ compiler has a chance
           // for constant prop to fold everything possible away.
 
-          cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
-                    handle_exception);
-            cache = cp->entry_at(index);
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_getfield) {
+            code = Bytecodes::_getfield;
           }
 
-          if (JVMTI_ENABLED) {
-            int *count_addr;
-            oop obj;
-            // Check to see if a field modification watch has been set
-            // before we take the time to call into the VM.
-            count_addr = (int *)JvmtiExport::get_field_access_count_addr();
-            if ( *count_addr > 0 ) {
-              if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-                obj = NULL;
-              } else {
-                obj = STACK_OBJECT(-1);
-                VERIFY_OOP(obj);
-              }
-              CALL_VM(InterpreterRuntime::post_field_access(THREAD,
-                                          obj,
-                                          cache),
-                                          handle_exception);
-            }
+          cache = cp->entry_at(index);
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
+                    handle_exception);
+            cache = cp->entry_at(index);
           }
 
           oop obj;
@@ -1602,7 +1750,15 @@ run:
           } else {
             obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
+            // Check if we can rewrite non-volatile _getfield to one of the _fast_Xgetfield.
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_getfield)) {
+              // Rewrite current BC to _fast_Xgetfield.
+              REWRITE_AT_PC(fast_get_type(cache->flag_state()));
+            }
           }
+
+          MAYBE_POST_FIELD_ACCESS(obj);
 
           //
           // Now store the result on the stack
@@ -1688,41 +1844,23 @@ run:
          }
 
       CASE(_putfield):
+      CASE(_nofast_putfield):
       CASE(_putstatic):
         {
           u2 index = Bytes::get_native_u2(pc+1);
           ConstantPoolCacheEntry* cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
-                    handle_exception);
-            cache = cp->entry_at(index);
+
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_putfield) {
+            code = Bytecodes::_putfield;
           }
 
-          if (JVMTI_ENABLED) {
-            int *count_addr;
-            oop obj;
-            // Check to see if a field modification watch has been set
-            // before we take the time to call into the VM.
-            count_addr = (int *)JvmtiExport::get_field_modification_count_addr();
-            if ( *count_addr > 0 ) {
-              if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-                obj = NULL;
-              }
-              else {
-                if (cache->is_long() || cache->is_double()) {
-                  obj = STACK_OBJECT(-3);
-                } else {
-                  obj = STACK_OBJECT(-2);
-                }
-                VERIFY_OOP(obj);
-              }
-
-              CALL_VM(InterpreterRuntime::post_field_modification(THREAD,
-                                          obj,
-                                          cache,
-                                          (jvalue *)STACK_SLOT(-1)),
-                                          handle_exception);
-            }
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
+                    handle_exception);
+            cache = cp->entry_at(index);
           }
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
@@ -1743,7 +1881,16 @@ run:
             --count;
             obj = STACK_OBJECT(count);
             CHECK_NULL(obj);
+
+            // Check if we can rewrite non-volatile _putfield to one of the _fast_Xputfield.
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_putfield)) {
+              // Rewrite current BC to _fast_Xputfield.
+              REWRITE_AT_PC(fast_put_type(cache->flag_state()));
+            }
           }
+
+          MAYBE_POST_FIELD_MODIFICATION(obj);
 
           //
           // Now store the result
@@ -1841,7 +1988,7 @@ run:
           if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
             HeapWord* result = THREAD->tlab().allocate(obj_size);
-            if (result != NULL) {
+            if (result != nullptr) {
               // Initialize object field block:
               //   - if TLAB is pre-zeroed, we can skip this path
               //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
@@ -1851,12 +1998,12 @@ run:
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
-              oop obj = cast_to_oop(result);
+              // Initialize header, mirrors MemAllocator.
+              oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
+              oopDesc::release_set_klass(result, ik);
 
-              // Initialize header
-              obj->set_mark(markWord::prototype());
-              obj->set_klass_gap(0);
-              obj->set_klass(ik);
+              oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
@@ -1873,7 +2020,7 @@ run:
         // with stores that publish the new object.
         OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), 0);
-        THREAD->set_vm_result(NULL);
+        THREAD->set_vm_result(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
       }
       CASE(_anewarray): {
@@ -1885,7 +2032,7 @@ run:
         // with stores that publish the new object.
         OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(NULL);
+        THREAD->set_vm_result(nullptr);
         UPDATE_PC_AND_CONTINUE(3);
       }
       CASE(_multianewarray): {
@@ -1902,11 +2049,11 @@ run:
         // with stores that publish the new object.
         OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -dims);
-        THREAD->set_vm_result(NULL);
+        THREAD->set_vm_result(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, -(dims-1));
       }
       CASE(_checkcast):
-          if (STACK_OBJECT(-1) != NULL) {
+          if (STACK_OBJECT(-1) != nullptr) {
             VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
             // Constant pool may have actual klass or unresolved klass. If it is
@@ -1917,7 +2064,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
@@ -1930,7 +2077,7 @@ run:
           UPDATE_PC_AND_CONTINUE(3);
 
       CASE(_instanceof):
-          if (STACK_OBJECT(-1) == NULL) {
+          if (STACK_OBJECT(-1) == nullptr) {
             SET_STACK_INT(0, -1);
           } else {
             VERIFY_OOP(STACK_OBJECT(-1));
@@ -1943,7 +2090,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if ( objKlass == klassOf || objKlass->is_subtype_of(klassOf)) {
@@ -1980,11 +2127,11 @@ run:
 
           case JVM_CONSTANT_String:
             {
-              oop result = constants->resolved_references()->obj_at(index);
-              if (result == NULL) {
+              oop result = constants->resolved_reference_at(index);
+              if (result == nullptr) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
                 SET_STACK_OBJECT(THREAD->vm_result(), 0);
-                THREAD->set_vm_result(NULL);
+                THREAD->set_vm_result(nullptr);
               } else {
                 VERIFY_OOP(result);
                 SET_STACK_OBJECT(result, 0);
@@ -2001,7 +2148,7 @@ run:
           case JVM_CONSTANT_UnresolvedClassInError:
             CALL_VM(InterpreterRuntime::ldc(THREAD, wide), handle_exception);
             SET_STACK_OBJECT(THREAD->vm_result(), 0);
-            THREAD->set_vm_result(NULL);
+            THREAD->set_vm_result(nullptr);
             break;
 
           case JVM_CONSTANT_Dynamic:
@@ -2085,14 +2232,14 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
-        oop result = constants->resolved_references()->obj_at(index);
-        if (result == NULL) {
+        oop result = constants->resolved_reference_at(index);
+        if (result == nullptr) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);
           result = THREAD->vm_result();
         }
         if (result == Universe::the_null_sentinel())
-          result = NULL;
+          result = nullptr;
 
         VERIFY_OOP(result);
         SET_STACK_OBJECT(result, 0);
@@ -2175,7 +2322,7 @@ run:
 
         // Special case of invokeinterface called for virtual method of
         // java.lang.Object.  See cpCache.cpp for details.
-        Method* callee = NULL;
+        Method* callee = nullptr;
         if (cache->is_forced_virtual()) {
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
@@ -2211,7 +2358,7 @@ run:
           }
           callee = cache->f2_as_vfinal_method();
         }
-        if (callee != NULL) {
+        if (callee != nullptr) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
           if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
@@ -2236,7 +2383,7 @@ run:
           Klass* refc = cache->f1_as_klass();
           itableOffsetEntry* scan;
           for (scan = (itableOffsetEntry*) int2->start_of_itable();
-               scan->interface_klass() != NULL;
+               scan->interface_klass() != nullptr;
                scan++) {
             if (scan->interface_klass() == refc) {
               break;
@@ -2246,7 +2393,7 @@ run:
           // that the receiver class doesn't implement the
           // interface, and wasn't the same as when the caller was
           // compiled.
-          if (scan->interface_klass() == NULL) {
+          if (scan->interface_klass() == nullptr) {
             VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "");
           }
         }
@@ -2267,7 +2414,7 @@ run:
 
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
-        if (callee == NULL) {
+        if (callee == nullptr) {
           CALL_VM(InterpreterRuntime::throw_AbstractMethodErrorVerbose(THREAD, rcvr->klass(), interface_method),
                   handle_exception);
         }
@@ -2303,6 +2450,10 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
+                // Rewrite to _fast_invokevfinal.
+                REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
+              }
             } else {
               // get receiver
               int parms = cache->parameter_size();
@@ -2361,7 +2512,7 @@ run:
         // with stores that publish the new object.
         OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(NULL);
+        THREAD->set_vm_result(nullptr);
 
         UPDATE_PC_AND_CONTINUE(2);
       }
@@ -2372,7 +2523,7 @@ run:
           oop except_oop = STACK_OBJECT(-1);
           CHECK_NULL(except_oop);
           // set pending_exception so we use common code
-          THREAD->set_pending_exception(except_oop, NULL, 0);
+          THREAD->set_pending_exception(except_oop, nullptr, 0);
           goto handle_exception;
       }
 
@@ -2437,6 +2588,329 @@ run:
           goto opcode_switch;
       }
 
+      CASE(_fast_agetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        VERIFY_OOP(obj->obj_field(field_offset));
+        SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_bgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_INT(obj->byte_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_cgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_INT(obj->char_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_dgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
+        MORE_STACK(1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_fgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_FLOAT(obj->float_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_igetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_INT(obj->int_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_lgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_LONG(obj->long_field(field_offset), 0);
+        MORE_STACK(1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_sgetfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = STACK_OBJECT(-1);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_INT(obj->short_field(field_offset), -1);
+        UPDATE_PC_AND_CONTINUE(3);
+      }
+
+      CASE(_fast_aputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->obj_field_put(field_offset, STACK_OBJECT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_bputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->byte_field_put(field_offset, STACK_INT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_zputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_cputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->char_field_put(field_offset, STACK_INT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_dputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-3);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -3);
+      }
+
+      CASE(_fast_fputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->float_field_put(field_offset, STACK_FLOAT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_iputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->int_field_put(field_offset, STACK_INT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_lputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-3);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->long_field_put(field_offset, STACK_LONG(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -3);
+      }
+
+      CASE(_fast_sputfield): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        oop obj = STACK_OBJECT(-2);
+        CHECK_NULL(obj);
+
+        MAYBE_POST_FIELD_MODIFICATION(obj);
+
+        int field_offset = cache->f2_as_index();
+        obj->short_field_put(field_offset, STACK_INT(-1));
+
+        UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
+      }
+
+      CASE(_fast_aload_0): {
+        oop obj = LOCALS_OBJECT(0);
+        VERIFY_OOP(obj);
+        SET_STACK_OBJECT(obj, 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
+      }
+
+      CASE(_fast_aaccess_0): {
+        u2 index = Bytes::get_native_u2(pc+2);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = LOCALS_OBJECT(0);
+        CHECK_NULL(obj);
+        VERIFY_OOP(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        VERIFY_OOP(obj->obj_field(field_offset));
+        SET_STACK_OBJECT(obj->obj_field(field_offset), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
+      }
+
+      CASE(_fast_iaccess_0): {
+        u2 index = Bytes::get_native_u2(pc+2);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = LOCALS_OBJECT(0);
+        CHECK_NULL(obj);
+        VERIFY_OOP(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_INT(obj->int_field(field_offset), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
+      }
+
+      CASE(_fast_faccess_0): {
+        u2 index = Bytes::get_native_u2(pc+2);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        int field_offset = cache->f2_as_index();
+
+        oop obj = LOCALS_OBJECT(0);
+        CHECK_NULL(obj);
+        VERIFY_OOP(obj);
+
+        MAYBE_POST_FIELD_ACCESS(obj);
+
+        SET_STACK_FLOAT(obj->float_field(field_offset), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
+      }
+
+      CASE(_fast_invokevfinal): {
+        u2 index = Bytes::get_native_u2(pc+1);
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+
+        assert(cache->is_resolved(Bytecodes::_invokevirtual), "Should be resolved before rewriting");
+
+        istate->set_msg(call_method);
+
+        CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
+        Method* callee = cache->f2_as_vfinal_method();
+        istate->set_callee(callee);
+        if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
+          istate->set_callee_entry_point(callee->interpreter_entry());
+        } else {
+          istate->set_callee_entry_point(callee->from_interpreted_entry());
+        }
+        istate->set_bcp_advance(3);
+        UPDATE_PC_AND_RETURN(0);
+      }
+
       DEFAULT:
           fatal("Unimplemented opcode %d = %s", opcode,
                 Bytecodes::name((Bytecodes::Code)opcode));
@@ -2471,7 +2945,7 @@ run:
     HandleMark __hm(THREAD);
 
     THREAD->clear_pending_exception();
-    assert(except_oop() != NULL, "No exception to process");
+    assert(except_oop() != nullptr, "No exception to process");
     intptr_t continuation_bci;
     // expression stack is emptied
     topOfStack = istate->stack_base() - Interpreter::stackElementWords;
@@ -2479,7 +2953,7 @@ run:
             handle_exception);
 
     except_oop = Handle(THREAD, THREAD->vm_result());
-    THREAD->set_vm_result(NULL);
+    THREAD->set_vm_result(nullptr);
     if (continuation_bci >= 0) {
       // Place exception on top of stack
       SET_STACK_OBJECT(except_oop(), 0);
@@ -2513,7 +2987,7 @@ run:
     Exceptions::debug_check_abort(except_oop);
 
     // No handler in this activation, unwind and try again
-    THREAD->set_pending_exception(except_oop(), NULL, 0);
+    THREAD->set_pending_exception(except_oop(), nullptr, 0);
     goto handle_return;
   }  // handle_exception:
 
@@ -2575,10 +3049,12 @@ run:
         SET_STACK_OBJECT(ts->earlyret_oop(), 0);
         MORE_STACK(1);
         break;
+      default:
+        ShouldNotReachHere();
     }
 
     ts->clr_earlyret_value();
-    ts->set_earlyret_oop(NULL);
+    ts->set_earlyret_oop(nullptr);
     ts->clr_earlyret_pending();
 
     // Fall through to handle_return.
@@ -2597,14 +3073,14 @@ run:
     bool suppress_error = istate->msg() == popping_frame || istate->msg() == early_return;
     bool suppress_exit_event = THREAD->has_pending_exception() || istate->msg() == popping_frame;
     Handle original_exception(THREAD, THREAD->pending_exception());
-    Handle illegal_state_oop(THREAD, NULL);
+    Handle illegal_state_oop(THREAD, nullptr);
 
     // We'd like a HandleMark here to prevent any subsequent HandleMarkCleaner
     // in any following VM entries from freeing our live handles, but illegal_state_oop
     // isn't really allocated yet and so doesn't become live until later and
-    // in unpredicatable places. Instead we must protect the places where we enter the
+    // in unpredictable places. Instead we must protect the places where we enter the
     // VM. It would be much simpler (and safer) if we could allocate a real handle with
-    // a NULL oop in it and then overwrite the oop later as needed. This isn't
+    // a null oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
 
     if (THREAD->has_pending_exception()) {
@@ -2622,12 +3098,12 @@ run:
     // there is no need to unlock it (or look for other monitors), since that
     // could not have happened.
 
-    if (THREAD->do_not_unlock()) {
+    if (THREAD->do_not_unlock_if_synchronized()) {
 
       // Never locked, reset the flag now because obviously any caller must
       // have passed their point of locking for us to have gotten here.
 
-      THREAD->clr_do_not_unlock();
+      THREAD->set_do_not_unlock_if_synchronized(false);
     } else {
       // At this point we consider that we have returned. We now check that the
       // locks were properly block structured. If we find that they were not
@@ -2654,23 +3130,28 @@ run:
       // Check all the monitors to see they are unlocked. Install exception if found to be locked.
       while (end < base) {
         oop lockee = end->obj();
-        if (lockee != NULL) {
+        if (lockee != nullptr) {
           BasicLock* lock = end->lock();
           markWord header = lock->displaced_header();
-          end->set_obj(NULL);
+          end->set_obj(nullptr);
 
           // If it isn't recursive we either must swap old header or call the runtime
-          if (header.to_pointer() != NULL) {
+          bool dec_monitor_count = true;
+          if (header.to_pointer() != nullptr) {
             markWord old_header = markWord::encode(lock);
             if (lockee->cas_set_mark(header, old_header) != old_header) {
               // restore object for the slow case
               end->set_obj(lockee);
+              dec_monitor_count = false;
               InterpreterRuntime::monitorexit(end);
             }
           }
+          if (dec_monitor_count) {
+            THREAD->dec_held_monitor_count();
+          }
 
           // One error is plenty
-          if (illegal_state_oop() == NULL && !suppress_error) {
+          if (illegal_state_oop() == nullptr && !suppress_error) {
             {
               // Prevent any HandleMarkCleaner from freeing our live handles
               HandleMark __hm(THREAD);
@@ -2685,9 +3166,9 @@ run:
       }
       // Unlock the method if needed
       if (method_unlock_needed) {
-        if (base->obj() == NULL) {
+        if (base->obj() == nullptr) {
           // The method is already unlocked this is not good.
-          if (illegal_state_oop() == NULL && !suppress_error) {
+          if (illegal_state_oop() == nullptr && !suppress_error) {
             {
               // Prevent any HandleMarkCleaner from freeing our live handles
               HandleMark __hm(THREAD);
@@ -2708,7 +3189,7 @@ run:
           // and must use first monitor slot.
           //
           oop rcvr = base->obj();
-          if (rcvr == NULL) {
+          if (rcvr == nullptr) {
             if (!suppress_error) {
               VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "");
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
@@ -2723,14 +3204,16 @@ run:
           } else {
             BasicLock* lock = base->lock();
             markWord header = lock->displaced_header();
-            base->set_obj(NULL);
+            base->set_obj(nullptr);
 
             // If it isn't recursive we either must swap old header or call the runtime
-            if (header.to_pointer() != NULL) {
+            bool dec_monitor_count = true;
+            if (header.to_pointer() != nullptr) {
               markWord old_header = markWord::encode(lock);
               if (rcvr->cas_set_mark(header, old_header) != old_header) {
                 // restore object for the slow case
                 base->set_obj(rcvr);
+                dec_monitor_count = false;
                 InterpreterRuntime::monitorexit(base);
                 if (THREAD->has_pending_exception()) {
                   if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
@@ -2738,12 +3221,15 @@ run:
                 }
               }
             }
+            if (dec_monitor_count) {
+              THREAD->dec_held_monitor_count();
+            }
           }
         }
       }
     }
     // Clear the do_not_unlock flag now.
-    THREAD->clr_do_not_unlock();
+    THREAD->set_do_not_unlock_if_synchronized(false);
 
     //
     // Notify jvmti/jvmdi
@@ -2755,7 +3241,7 @@ run:
     // If we notify it again JVMDI will be all confused about how many frames
     // are still on the stack (4340444).
     //
-    // NOTE Further! It turns out the the JVMTI spec in fact expects to see
+    // NOTE Further! It turns out the JVMTI spec in fact expects to see
     // method_exit events whenever we leave an activation unless it was done
     // for popframe. This is nothing like jvmdi. However we are passing the
     // tests at the moment (apparently because they are jvmdi based) so rather
@@ -2763,7 +3249,7 @@ run:
     // (with this note) in anticipation of changing the vm and the tests
     // simultaneously.
 
-    suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
+    suppress_exit_event = suppress_exit_event || illegal_state_oop() != nullptr;
 
     // Whenever JVMTI puts a thread in interp_only_mode, method
     // entry/exit events are sent for that thread to track stack depth.
@@ -2779,21 +3265,21 @@ run:
     // A pending exception that was pending prior to a possible popping frame
     // overrides the popping frame.
     //
-    assert(!suppress_error || (suppress_error && illegal_state_oop() == NULL), "Error was not suppressed");
-    if (illegal_state_oop() != NULL || original_exception() != NULL) {
+    assert(!suppress_error || (suppress_error && illegal_state_oop() == nullptr), "Error was not suppressed");
+    if (illegal_state_oop() != nullptr || original_exception() != nullptr) {
       // Inform the frame manager we have no result.
       istate->set_msg(throwing_exception);
-      if (illegal_state_oop() != NULL)
-        THREAD->set_pending_exception(illegal_state_oop(), NULL, 0);
+      if (illegal_state_oop() != nullptr)
+        THREAD->set_pending_exception(illegal_state_oop(), nullptr, 0);
       else
-        THREAD->set_pending_exception(original_exception(), NULL, 0);
+        THREAD->set_pending_exception(original_exception(), nullptr, 0);
       UPDATE_PC_AND_RETURN(0);
     }
 
     if (istate->msg() == popping_frame) {
       // Make it simpler on the assembly code and set the message for the frame pop.
       // returns
-      if (istate->prev() == NULL) {
+      if (istate->prev() == nullptr) {
         // We must be returning to a deoptimized frame (because popframe only happens between
         // two interpreted frames). We need to save the current arguments in C heap so that
         // the deoptimized frame when it restarts can copy the arguments to its expression
@@ -2823,14 +3309,14 @@ finish:
   return;
 }
 
-// This constructor should only be used to contruct the object to signal
+// This constructor should only be used to construct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
 BytecodeInterpreter::BytecodeInterpreter(messages msg) {
   if (msg != initialize) ShouldNotReachHere();
   _msg = msg;
   _self_link = this;
-  _prev_link = NULL;
+  _prev_link = nullptr;
 }
 
 void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,

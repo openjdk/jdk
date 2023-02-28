@@ -25,10 +25,13 @@ package org.openjdk.bench.java.util.stream.tasks.PrimesFilter.t100;
 import org.openjdk.bench.java.util.stream.tasks.PrimesFilter.PrimesProblem;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +48,9 @@ import java.util.stream.LongStream;
  * filter()...into() actions are benchmarked.
  */
 @BenchmarkMode(Mode.Throughput)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 public class Bulk {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
-    # NOTE: The old build also have -D_CRT_SECURE_NO_DEPRECATE but it doesn't
-    # seem needed any more.
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
 
@@ -57,6 +55,14 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -D$(HOTSPOT_TARGET_CPU_DEFINE)
 
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
+
+  # Add file macro mappings
+  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
+
+  ifeq ($(UBSAN_ENABLED), true)
+    ADLC_CFLAGS += $(UBSAN_CFLAGS)
+    ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
+  endif
 
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
       NAME := adlc, \
@@ -141,20 +147,28 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_neon.ad \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_sve.ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_vector.ad \
+    )))
+  endif
+
+  ifeq ($(HOTSPOT_TARGET_CPU_ARCH), riscv)
+    AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_v.ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_b.ad \
     )))
   endif
 
   ifeq ($(call check-jvm-feature, shenandoahgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/shenandoah/shenandoah_$(HOTSPOT_TARGET_CPU).ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/shenandoah/shenandoah_$(HOTSPOT_TARGET_CPU_ARCH).ad \
       )))
   endif
 
   ifeq ($(call check-jvm-feature, zgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU).ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU_ARCH).ad \
       )))
   endif
 

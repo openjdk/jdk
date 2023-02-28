@@ -56,9 +56,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.List;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.FieldInsnNode;
@@ -78,7 +80,7 @@ public class BasicVerifier extends BasicInterpreter {
       * use this constructor</i>. Instead, they must use the {@link #BasicVerifier(int)} version.
       */
     public BasicVerifier() {
-        super(/* latest api = */ ASM8);
+        super(/* latest api = */ ASM9);
         if (getClass() != BasicVerifier.class) {
             throw new IllegalStateException();
         }
@@ -87,10 +89,8 @@ public class BasicVerifier extends BasicInterpreter {
     /**
       * Constructs a new {@link BasicVerifier}.
       *
-      * @param api the ASM API version supported by this interpreter. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
+      * @param api the ASM API version supported by this interpreter. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected BasicVerifier(final int api) {
         super(api);
@@ -480,3 +480,4 @@ public class BasicVerifier extends BasicInterpreter {
         return value.equals(expected);
     }
 }
+

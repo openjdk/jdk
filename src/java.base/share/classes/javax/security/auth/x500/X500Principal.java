@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ import sun.security.util.*;
  * of the distinguished name, or by using the ASN.1 DER encoded byte
  * representation of the distinguished name.  The current specification
  * for the string representation of a distinguished name is defined in
- * <a href="http://tools.ietf.org/html/rfc2253">RFC 2253: Lightweight
+ * <a href="https://tools.ietf.org/html/rfc2253">RFC 2253: Lightweight
  * Directory Access Protocol (v3): UTF-8 String Representation of
  * Distinguished Names</a>. This class, however, accepts string formats from
- * both RFC 2253 and <a href="http://tools.ietf.org/html/rfc1779">RFC 1779:
+ * both RFC 2253 and <a href="https://tools.ietf.org/html/rfc1779">RFC 1779:
  * A String Representation of Distinguished Names</a>, and also recognizes
  * attribute type keywords whose OIDs (Object Identifiers) are defined in
- * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
+ * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  *
  * <p> The string representation for this {@code X500Principal}
@@ -91,7 +91,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *
      * NOTE: The constructor is package private. It is intended to be accessed
      * using privileged reflection from classes in sun.security.*.
-     * Currently referenced from sun.security.x509.X500Name.asX500Principal().
+     * Currently, it is referenced from sun.security.x509.X500Name.asX500Principal().
      */
     X500Principal(X500Name x500Name) {
         thisX500Name = x500Name;
@@ -126,7 +126,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *                  is improperly specified
      */
     public X500Principal(String name) {
-        this(name, Collections.<String, String>emptyMap());
+        this(name, Collections.emptyMap());
     }
 
     /**
@@ -181,10 +181,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name, keywordMap);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name: " + name);
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name: " + name, e);
         }
     }
 
@@ -226,10 +224,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name", e);
         }
     }
 
@@ -266,17 +262,13 @@ public final class X500Principal implements Principal, java.io.Serializable {
                 try {
                     is.reset();
                 } catch (IOException ioe) {
-                    IllegalArgumentException iae = new IllegalArgumentException
+                    throw new IllegalArgumentException
                         ("improperly specified input stream " +
-                        ("and unable to reset input stream"));
-                    iae.initCause(e);
-                    throw iae;
+                        ("and unable to reset input stream"), e);
                 }
             }
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input stream");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input stream", e);
         }
     }
 
@@ -296,7 +288,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
     /**
      * Returns a string representation of the X.500 distinguished name
      * using the specified format. Valid values for the format are
-     * "RFC1779", "RFC2253", and "CANONICAL" (case insensitive).
+     * "RFC1779", "RFC2253", and "CANONICAL" (case-insensitive).
      *
      * <p> If "RFC1779" is specified as the format,
      * this method emits the attribute type keywords defined in
@@ -371,7 +363,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
     /**
      * Returns a string representation of the X.500 distinguished name
      * using the specified format. Valid values for the format are
-     * "RFC1779" and "RFC2253" (case insensitive). "CANONICAL" is not
+     * "RFC1779" and "RFC2253" (case-insensitive). "CANONICAL" is not
      * permitted and an {@code IllegalArgumentException} will be thrown.
      *
      * <p>This method returns Strings in the format as specified in
@@ -469,10 +461,9 @@ public final class X500Principal implements Principal, java.io.Serializable {
         if (this == o) {
             return true;
         }
-        if (o instanceof X500Principal == false) {
+        if (!(o instanceof X500Principal other)) {
             return false;
         }
-        X500Principal other = (X500Principal)o;
         return this.thisX500Name.equals(other.thisX500Name);
     }
 

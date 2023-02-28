@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,58 +24,86 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
-DumpTimeClassInfo DumpTimeClassInfo::clone() {
-  DumpTimeClassInfo clone;
-  clone._klass = _klass;
-  clone._nest_host = _nest_host;
-  clone._failed_verification = _failed_verification;
-  clone._is_archived_lambda_proxy = _is_archived_lambda_proxy;
-  clone._has_checked_exclusion = _has_checked_exclusion;
-  clone._id = _id;
-  clone._clsfile_size = _clsfile_size;
-  clone._clsfile_crc32 = _clsfile_crc32;
-  clone._excluded = _excluded;
-  clone._is_early_klass = _is_early_klass;
-  clone._verifier_constraints = NULL;
-  clone._verifier_constraint_flags = NULL;
-  clone._loader_constraints = NULL;
-  int clone_num_verifier_constraints = num_verifier_constraints();
-  if (clone_num_verifier_constraints > 0) {
-    clone._verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(clone_num_verifier_constraints, mtClass);
-    clone._verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(clone_num_verifier_constraints, mtClass);
-    for (int i = 0; i < clone_num_verifier_constraints; i++) {
-      clone._verifier_constraints->append(_verifier_constraints->at(i));
-      clone._verifier_constraint_flags->append(_verifier_constraint_flags->at(i));
+// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
+// See comments there about the need for making a deep copy.
+DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
+  assert(DynamicDumpSharedSpaces, "must be");
+
+  _klass = src._klass;
+  _nest_host = src._nest_host;
+  _failed_verification = src._failed_verification;
+  _is_archived_lambda_proxy = src._is_archived_lambda_proxy;
+  _has_checked_exclusion = src._has_checked_exclusion;
+  _id = src._id;
+  _clsfile_size = src._clsfile_size;
+  _clsfile_crc32 = src._clsfile_crc32;
+  _excluded = src._excluded;
+  _is_early_klass = src._is_early_klass;
+  _verifier_constraints = nullptr;
+  _verifier_constraint_flags = nullptr;
+  _loader_constraints = nullptr;
+
+  assert(src._enum_klass_static_fields == nullptr, "This should not happen with dynamic dump.");
+  _enum_klass_static_fields = nullptr;
+
+  {
+    int n = src.num_verifier_constraints();
+    if (n > 0) {
+      _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(n, mtClass);
+      _verifier_constraint_flags = new (mtClass) GrowableArray<char>(n, mtClass);
+      for (int i = 0; i < n; i++) {
+        _verifier_constraints->append(src._verifier_constraints->at(i));
+        _verifier_constraint_flags->append(src._verifier_constraint_flags->at(i));
+      }
     }
   }
-  int clone_num_loader_constraints = num_loader_constraints();
-  if (clone_num_loader_constraints > 0) {
-    clone._loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(clone_num_loader_constraints, mtClass);
-    for (int i = 0; i < clone_num_loader_constraints; i++) {
-      clone._loader_constraints->append(_loader_constraints->at(i));
+
+  {
+    int n = src.num_loader_constraints();
+    if (n > 0) {
+      _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(n, mtClass);
+      for (int i = 0; i < n; i++) {
+        _loader_constraints->append(src._loader_constraints->at(i));
+      }
     }
   }
-  return clone;
+}
+
+DumpTimeClassInfo::~DumpTimeClassInfo() {
+  if (_verifier_constraints != nullptr) {
+    assert(_verifier_constraint_flags != nullptr, "must be");
+    delete _verifier_constraints;
+    delete _verifier_constraint_flags;
+  }
+  if (_loader_constraints != nullptr) {
+    delete _loader_constraints;
+  }
+}
+
+size_t DumpTimeClassInfo::runtime_info_bytesize() const {
+  return RunTimeClassInfo::byte_size(_klass, num_verifier_constraints(),
+                                     num_loader_constraints(),
+                                     num_enum_klass_static_fields());
 }
 
 void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
-  if (_verifier_constraints == NULL) {
-    _verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
+  if (_verifier_constraints == nullptr) {
+    _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
   }
-  if (_verifier_constraint_flags == NULL) {
-    _verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, mtClass);
+  if (_verifier_constraint_flags == nullptr) {
+    _verifier_constraint_flags = new (mtClass) GrowableArray<char>(4, mtClass);
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
-    DTVerifierConstraint* p = vc_array->adr_at(i);
-    if (name == p->_name && from_name == p->_from_name) {
+    if (vc_array->at(i).equals(name, from_name)) {
       return;
     }
   }
@@ -112,15 +140,14 @@ static char get_loader_type_by(oop  loader) {
 void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, Handle loader2) {
   assert(loader1 != loader2, "sanity");
   LogTarget(Info, class, loader, constraints) log;
-  if (_loader_constraints == NULL) {
-    _loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(4, mtClass);
+  if (_loader_constraints == nullptr) {
+    _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(4, mtClass);
   }
   char lt1 = get_loader_type_by(loader1());
   char lt2 = get_loader_type_by(loader2());
   DTLoaderConstraint lc(name, lt1, lt2);
   for (int i = 0; i < _loader_constraints->length(); i++) {
-    DTLoaderConstraint dt = _loader_constraints->at(i);
-    if (lc.equals(dt)) {
+    if (lc.equals(_loader_constraints->at(i))) {
       if (log.is_enabled()) {
         ResourceMark rm;
         // Use loader[0]/loader[1] to be consistent with the logs in loaderConstraints.cpp
@@ -144,27 +171,37 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   }
 }
 
+void DumpTimeClassInfo::add_enum_klass_static_field(int archived_heap_root_index) {
+  if (_enum_klass_static_fields == nullptr) {
+    _enum_klass_static_fields = new (mtClass) GrowableArray<int>(20, mtClass);
+  }
+  _enum_klass_static_fields->append(archived_heap_root_index);
+}
+
+int DumpTimeClassInfo::enum_klass_static_field(int which_field) {
+  assert(_enum_klass_static_fields != nullptr, "must be");
+  return _enum_klass_static_fields->at(which_field);
+}
+
 bool DumpTimeClassInfo::is_builtin() {
   return SystemDictionaryShared::is_builtin(_klass);
 }
 
-DumpTimeClassInfo* DumpTimeSharedClassTable::find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress) {
-  bool created = false;
-  DumpTimeClassInfo* p;
-  if (!dump_in_progress) {
-    p = put_if_absent(k, &created);
-  } else {
-    p = get(k);
-  }
-  if (created) {
-    assert(!SystemDictionaryShared::no_class_loading_should_happen(),
-           "no new classes can be loaded while dumping archive");
-    p->_klass = k;
-  } else {
-    if (!dump_in_progress) {
-      assert(p->_klass == k, "Sanity");
-    }
-  }
+DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
+  assert(!k->is_shared(), "Do not call with shared classes");
+  bool created;
+  DumpTimeClassInfo* p = put_if_absent(k, &created);
+  assert(created, "must not exist in table");
+  p->_klass = k;
+  return p;
+}
+
+DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
+  assert(!k->is_shared(), "Do not call with shared classes");
+  DumpTimeClassInfo* p = get(k);
+  assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
+         "not stored with SystemDictionaryShared::init_dumptime_info");
+  assert(p->_klass == k, "Sanity");
   return p;
 }
 
@@ -172,7 +209,7 @@ class CountClassByCategory : StackObj {
   DumpTimeSharedClassTable* _table;
 public:
   CountClassByCategory(DumpTimeSharedClassTable* table) : _table(table) {}
-  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
+  void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       if (info.is_builtin()) {
         _table->inc_builtin_count();
@@ -180,7 +217,6 @@ public:
         _table->inc_unregistered_count();
       }
     }
-    return true; // keep on iterating
   }
 };
 
@@ -188,5 +224,5 @@ void DumpTimeSharedClassTable::update_counts() {
   _builtin_count = 0;
   _unregistered_count = 0;
   CountClassByCategory counter(this);
-  iterate(&counter);
+  iterate_all_live_classes(&counter);
 }

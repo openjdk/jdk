@@ -78,7 +78,7 @@ public class AttributedString {
         }
         else {
             // Build the String contents
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             for (int counter = 0; counter < iterators.length; counter++) {
                 appendContents(buffer, iterators[counter]);
             }
@@ -668,9 +668,9 @@ public class AttributedString {
 
     /**
      * Appends the contents of the CharacterIterator iterator into the
-     * StringBuffer buf.
+     * StringBuilder buf.
      */
-    private final void appendContents(StringBuffer buf,
+    private final void appendContents(StringBuilder buf,
                                       CharacterIterator iterator) {
         int index = iterator.getBeginIndex();
         int end = iterator.getEndIndex();

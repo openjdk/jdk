@@ -29,7 +29,7 @@ import java.util.Objects;
 
 // ## If the sequence is a string, use reflection to share its array
 
-class StringCharBuffer                                  // package-private
+final class StringCharBuffer                                  // package-private
     extends CharBuffer
 {
     CharSequence str;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 /*
  * @test
@@ -34,49 +34,21 @@ import compiler.lib.ir_framework.driver.IRViolationException;
  */
 
 /**
- * Multiple @IR rules can be specified at @Test methods. The framework performs a regex based match on the PrintIdeal
- * and PrintOptoAssembly of the run test VM. Some default string regexes for IR nodes are defined in the framework
- * IRNode class. There are two kinds of checks:
- * <ul>
- *     <li><p>{@link IR#failOn}: One or more (IR node) regexes that are not allowed to occur in the IR (neither in
- *                               PrintIdeal nor in PrintOptoAssembly)</li>
- *     <li><p>{@link IR#counts}: One or more regexes-count pairs specifies how often an (IR node) regex must be found in
- *                               PrintIdeal and PrintOptoAssembly.</li>
- * </ul>
- * <p>
- *
- * One might also want to restrict the application of certain @IR rules depending on the used flags in the test VM.
- * These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted (see
- * {@link TestFramework}) most of them should not have an impact on the IR except for different GC flags which should
- * be considered) to enable a verification by the framework (see below). The @IR rules thus have an option to restrict
- * their application:
- * <ul>
- *     <li><p>{@link IR#applyIf}: Only apply a rule if a flag has a certain value</li>
- *     <li><p>{@link IR#applyIfNot}: Only apply a rule if a flag has NOT a certain value (inverse of applyIf)</li>
- *     <li><p>{@link IR#applyIfAnd}: Only apply a rule if all flags have the specified value</li>
- *     <li><p>{@link IR#applyIfOr}: Only apply a rule if at least one flag has the specified value</li>
- * </ul>
- * <p>
- *
- * The framework, however, does not perform the verification if:
- * <ul>
- *     <li><p>-DVerifyIR=false is used</li>
- *     <li><p>The test is run with a non-debug build</li>
- *     <li><p>-Xcomp, -Xint, -XX:-UseCompile, -XX:CompileThreshold, -DFlipC1C2=true, or -DExcludeRandom=true are used.</li>
- *     <li><p>JTreg specifies non-whitelisted flags as VM and/or Javaoptions (could change the IR in an unexpected way)</li>
- * </ul>
+ * The file shows some examples how IR verification can be done by using the {@link IR @IR} annotation. Additional
+ * comments are provided at the IR rules to explain their purpose. A more detailed and complete description about
+ * IR verification and the possibilities to write IR tests with {@link IR @IR} annotations can be found in the
+ * IR framework README.md file.
  *
  * @see IR
  * @see Test
  * @see TestFramework
  */
-// This test is expected to fail when run with JTreg.
 public class IRExample {
     int iFld, iFld2, iFld3;
     public static void main(String[] args) {
-        TestFramework.run(); // First run tests from IRExample
+        TestFramework.run(); // First run tests from IRExample. No failure.
         try {
-            TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples
+            TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples. Expected to fail.
         } catch (IRViolationException e) {
             // Expected. Check stderr/stdout to see how IR failures are reported (always printed, regardless if
             // exception is thrown or not). Uncomment the "throw" statement below to get a completely failing test.
@@ -84,33 +56,35 @@ public class IRExample {
         }
     }
 
-    // Rules with failOn constraint which all pass
+    // Rules with failOn constraint which all pass.
     @Test
-    @IR(failOn = IRNode.LOAD) // 1 default regex
-    @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 default regexes
-    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}) // 1 default regex and a user-defined regex
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+    @IR(failOn = IRNode.LOAD) // 1 (pre-defined) IR node
+    @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 IR nodes
+    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}, // 1 IR node with a user-defined regex
+        phase = CompilePhase.PRINT_IDEAL)
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld2", IRNode.LOAD, IRNode.STORE_OF_CLASS, "Foo"})
     // Only apply this rule if the VM flag UseZGC is true
     @IR(applyIf = {"UseZGC", "true"}, failOn = IRNode.LOAD)
     // We can also use comparators (<, <=, >, >=, !=, =) to restrict the rules.
-    // This rule is only applied if the loop unroll limit is 10 or greater.
-    @IR(applyIf = {"LoopUnrollLimit", ">= 10"}, failOn = IRNode.LOAD)
+    // This rule is only applied if TypeProfileLevel is 100 or greater.
+    @IR(applyIf = {"TypeProfileLevel", ">= 100"}, failOn = IRNode.LOAD)
     public void goodFailOn() {
         iFld = 42; // No load, no loop, no store to iFld2, no store to class Foo
     }
 
-    // Rules with counts constraint which all pass
+    // Rules with counts constraint which all pass.
     @Test
-    @IR(counts = {IRNode.STORE, "2"}) // 1 default regex
+    @IR(counts = {IRNode.STORE, "2"}) // 1 (pre-defined) IR node
     @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD
     @IR(counts = {IRNode.STORE, "2",
-                  IRNode.LOAD, "0"}) // 2 default regexes
+                  IRNode.LOAD, "0"}) // 2 IR nodes
     @IR(counts = {IRNode.STORE, "2",
-                  "some regex that does not occur", "0"}) // 1 default regex and a user-defined regex
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+                  "some regex that does not occur", "0"}, // 1 IR node and a user-defined regex
+        phase = CompilePhase.PRINT_IDEAL)
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "1",
                   IRNode.STORE, "2",
                   IRNode.STORE_OF_CLASS, "IRExample", "2"})
@@ -119,7 +93,7 @@ public class IRExample {
         iFld2 = 42; // No load, store to iFld2 in class IRExample
     }
 
-    // @IR rules can also specify both type of checks in the same rule
+    // @IR rules can also specify both type of checks in the same rule.
     @Test
     @IR(failOn = {IRNode.ALLOC,
                   IRNode.LOOP},
@@ -129,6 +103,21 @@ public class IRExample {
     public void mixFailOnAndCounts() {
         iFld = iFld2;
         iFld2 = iFld3;
+    }
+
+    // Rules on compile phases.
+    @Test
+    // Apply IR matching on default phase which is PrintOptoAssembly for ALLOC and PrintIdeal for LOAD
+    @IR(failOn = {IRNode.ALLOC, IRNode.LOAD})
+    // Apply IR matching on compile phase AFTER_PARSING.
+    @IR(failOn = {IRNode.ALLOC, IRNode.LOAD}, phase = CompilePhase.AFTER_PARSING)
+    // Apply IR matching on compile phase AFTER_PARSING and CCP1.
+    @IR(counts = {IRNode.ALLOC, "0", IRNode.STORE_I, "1"}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.CCP1})
+    // Apply IR matching on compile phase BEFORE_MATCHING by using a custom regex. In this case, a compile phase must
+    // be specified as there is no default compile phase for user defined regexes.
+    @IR(failOn = "LoadI", phase = CompilePhase.BEFORE_MATCHING)
+    public void compilePhases() {
+        iFld = 42;
     }
 }
 
@@ -142,7 +131,7 @@ class FailingExamples {
     @IR(failOn = {IRNode.STORE, IRNode.LOOP}) // LOOP regex not found but STORE regex, letting the rule fail
     @IR(failOn = {IRNode.LOOP, IRNode.STORE}) // Order does not matter
     @IR(failOn = {IRNode.STORE, IRNode.LOAD}) // STORE and LOAD regex found, letting the rule fail
-    @IR(failOn = {"LoadI"}) // LoadI can be found in PrintIdeal letting the rule fail
+    @IR(failOn = {"LoadI"}, phase = CompilePhase.PRINT_IDEAL) // LoadI can be found in PrintIdeal letting the rule fail
     // Store to iFld, store, and store to class IRExample, all 3 regexes found letting the rule fail
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.STORE, IRNode.STORE_OF_CLASS, "IRExample"})
     public void badFailOn() {
@@ -150,22 +139,59 @@ class FailingExamples {
     }
 
 
-    // Rules with counts constraint which all fail
+    // Rules with counts constraint which all fail.
     @Test
     @IR(counts = {IRNode.STORE, "1"}) // There are 2 stores
-    @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD, there is 1 load
+    @IR(counts = {IRNode.LOAD, "0"}) // Equivalent to failOn = IRNode.LOAD, there is 1 load
     @IR(counts = {IRNode.STORE, "1",
-                  IRNode.LOAD, "1"}) // first constraint holds (there is 1 load) but 2 stores, letting this rule fail
+                  IRNode.LOAD, "1"}) // First constraint holds (there is 1 load) but 2 stores, letting this rule fail
     @IR(counts = {IRNode.LOAD, "1",
-                  IRNode.STORE, "1"}) // order does not matter
-    @IR(counts = {"some regex that does not occur", "1"}) // user-defined regex does not occur once
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+                  IRNode.STORE, "1"}) // Order does not matter
+    @IR(counts = {"some regex that does not occur", "1"},
+        phase = CompilePhase.PRINT_IDEAL) // user-defined regex does not occur once in PrintIdeal output
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "2", // Only one store to iFld
                   IRNode.LOAD, "2", // Only 1 load
                   IRNode.STORE_OF_CLASS, "Foo", "1"}) // No store to class Foo
     public void badCounts() {
         irExample.iFld = iFld3; // No load, store to iFld in class IRExample
         iFld2 = 42; // No load, store to iFld2 in class IRExample
+    }
+
+    // Rules on compile phases which fail
+    @Test
+    // The compile phase BEFORE_STRINGOPTS will not be emitted for this method, resulting in an IR matching failure.
+    @IR(failOn = IRNode.LOAD_I, phase = CompilePhase.BEFORE_STRINGOPTS)
+    // The compile phase BEFORE_STRINGOPTS and AFTER_PARSING will not be emitted for this method. The other phases will
+    // match on STORE_I. This results in a failure for each compile phase. The compile phase input will be sorted by
+    // the order in which the compile phases are sorted in the enum class CompilePhase.
+    @IR(failOn = IRNode.STORE_I, phase = {CompilePhase.BEFORE_MATCHING, CompilePhase.CCP1, CompilePhase.BEFORE_STRINGOPTS,
+                                         CompilePhase.AFTER_CLOOPS, CompilePhase.AFTER_PARSING})
+    // Apply IR matching on compile phase AFTER_PARSING and ITER_GVN1. After parsing, we have 2 stores and we fail
+    // for compile phase AFTER_PARSING. However, once IGVN is over, we were able to optimize one store away, leaving
+    // us with only 1 store and we do not fail with compile phase ITER_GVN1.
+    @IR(counts = {IRNode.STORE_I, "1"},
+        phase = {CompilePhase.AFTER_PARSING, // Fails
+                 CompilePhase.ITER_GVN1}) // Works
+    public void badCompilePhases() {
+        iFld2 = 42;
+        iFld2 = 42 + iFld2; // Removed in first IGVN iteration and replaced by iFld2 = 84
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"}) // Should work but since we do not invoke the method enough times, we fail.
+    public void testNotCompiled() {
+        iFld2 = 34;
+    }
+
+    // RunMode.STANDALONE gives the user full control over how the associated @Test method is compiled: The IR framework
+    // only invokes this @Run method once, without any additional warm-up iterations, and does NOT initiate a compilation.
+    // This is entirely left to the @Run method to do. Since we invoke the @Test method testNotCompiled() only once, this
+    // is not enough to normally trigger a C2 compilation. IR matching fails since there is no C2 compilation output.
+    // To fix that, we would need to invoke testNotCompiled() enough times to trigger a C2 compilation.
+    @Run(test = "testNotCompiled", mode = RunMode.STANDALONE)
+    public void badStandAloneNotCompiled() {
+        testNotCompiled();
     }
 }

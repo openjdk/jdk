@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,54 @@
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 
-#define VM_STRUCTS_SERIALGC(nonstatic_field,                                  \
-                            volatile_nonstatic_field,                         \
-                            static_field)                                     \
-  nonstatic_field(TenuredGeneration, _min_heap_delta_bytes, size_t)           \
-  nonstatic_field(TenuredGeneration, _the_space,            ContiguousSpace*) \
-                                                                              \
-  nonstatic_field(DefNewGeneration,  _old_gen,              Generation*)      \
-  nonstatic_field(DefNewGeneration,  _tenuring_threshold,   uint)             \
-  nonstatic_field(DefNewGeneration,  _age_table,            AgeTable)         \
-  nonstatic_field(DefNewGeneration,  _eden_space,           ContiguousSpace*) \
-  nonstatic_field(DefNewGeneration,  _from_space,           ContiguousSpace*) \
-  nonstatic_field(DefNewGeneration,  _to_space,             ContiguousSpace*)
+#define VM_STRUCTS_SERIALGC(nonstatic_field,                                                    \
+                            volatile_nonstatic_field,                                           \
+                            static_field)                                                       \
+  nonstatic_field(TenuredGeneration,           _rs,                    CardTableRS*)            \
+  nonstatic_field(TenuredGeneration,           _bts,                   BlockOffsetSharedArray*) \
+  nonstatic_field(TenuredGeneration,           _shrink_factor,         size_t)                  \
+  nonstatic_field(TenuredGeneration,           _capacity_at_prologue,  size_t)                  \
+  nonstatic_field(TenuredGeneration,           _used_at_prologue,      size_t)                  \
+  nonstatic_field(TenuredGeneration,           _min_heap_delta_bytes,  size_t)                  \
+  nonstatic_field(TenuredGeneration,           _the_space,             TenuredSpace*)           \
+                                                                                                \
+  nonstatic_field(DefNewGeneration,            _old_gen,               Generation*)             \
+  nonstatic_field(DefNewGeneration,            _tenuring_threshold,    uint)                    \
+  nonstatic_field(DefNewGeneration,            _age_table,             AgeTable)                \
+  nonstatic_field(DefNewGeneration,            _eden_space,            ContiguousSpace*)        \
+  nonstatic_field(DefNewGeneration,            _from_space,            ContiguousSpace*)        \
+  nonstatic_field(DefNewGeneration,            _to_space,              ContiguousSpace*)        \
+                                                                                                \
+  nonstatic_field(BlockOffsetTable,            _bottom,                HeapWord*)               \
+  nonstatic_field(BlockOffsetTable,            _end,                   HeapWord*)               \
+                                                                                                \
+  nonstatic_field(BlockOffsetSharedArray,      _reserved,              MemRegion)               \
+  nonstatic_field(BlockOffsetSharedArray,      _end,                   HeapWord*)               \
+  nonstatic_field(BlockOffsetSharedArray,      _vs,                    VirtualSpace)            \
+  nonstatic_field(BlockOffsetSharedArray,      _offset_array,          u_char*)                 \
+                                                                                                \
+  nonstatic_field(BlockOffsetArray,            _array,                 BlockOffsetSharedArray*) \
+  nonstatic_field(BlockOffsetArray,            _sp,                    Space*)                  \
+  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold, HeapWord*)               \
+  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,     size_t)                  \
+                                                                                                \
+  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetArray)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
   declare_type(SerialHeap,                   GenCollectedHeap)                \
-  declare_type(TenuredGeneration,            CardGeneration)                  \
-  declare_type(TenuredSpace,                 OffsetTableContigSpace)          \
+  declare_type(TenuredGeneration,            Generation)                      \
+  declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \
                                                                               \
-  declare_toplevel_type(TenuredGeneration*)
+  declare_toplevel_type(TenuredGeneration*)                                   \
+  declare_toplevel_type(BlockOffsetSharedArray)                               \
+  declare_toplevel_type(BlockOffsetTable)                                     \
+           declare_type(BlockOffsetArray,             BlockOffsetTable)       \
+           declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)       \
+  declare_toplevel_type(BlockOffsetSharedArray*)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
                                   declare_constant_with_value)

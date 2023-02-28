@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ debugDispatch_getHandler(int cmdSetNum, int cmdNum, const char **cmdSetName_p, c
 {
     CommandSet *cmd_set;
     *cmdSetName_p = "<Invalid CommandSet>";
-    *cmdName_p = "<Unkown Command>";
+    *cmdName_p = "<Unknown Command>";
 
     if (cmdSetNum > JDWP_HIGHEST_COMMAND_SET) {
         return NULL;

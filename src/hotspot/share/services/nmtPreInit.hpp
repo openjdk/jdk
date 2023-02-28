@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,10 @@
 #ifdef ASSERT
 #include "runtime/atomic.hpp"
 #endif
+#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
 
 class outputStream;
 
@@ -124,7 +123,7 @@ struct NMTPreInitAllocation {
   const size_t size; // (inner) payload size without header
   // <-- USER ALLOCATION (PAYLOAD) STARTS HERE -->
 
-  NMTPreInitAllocation(size_t size) : next(NULL), size(size) {};
+  NMTPreInitAllocation(size_t size) : next(nullptr), size(size) {};
 
   // Returns start of the user data area
   void* payload()             { return this + 1; }
@@ -171,10 +170,10 @@ class NMTPreInitAllocationTable {
   NMTPreInitAllocation** find_entry(const void* p) {
     const unsigned index = index_for_key(p);
     NMTPreInitAllocation** aa = (&(_entries[index]));
-    while ((*aa) != NULL && (*aa)->payload() != p) {
+    while ((*aa) != nullptr && (*aa)->payload() != p) {
       aa = &((*aa)->next);
     }
-    assert((*aa) == NULL || p == (*aa)->payload(),
+    assert((*aa) == nullptr || p == (*aa)->payload(),
            "retrieve mismatch " PTR_FORMAT " vs " PTR_FORMAT ".",
            p2i(p), p2i((*aa)->payload()));
     return aa;
@@ -188,14 +187,14 @@ public:
   void add(NMTPreInitAllocation* a) {
     void* payload = a->payload();
     const unsigned index = index_for_key(payload);
-    assert(a->next == NULL, "entry already in table?");
+    assert(a->next == nullptr, "entry already in table?");
     a->next = _entries[index]; // add to front
     _entries[index] = a;        //   of list
     assert(find(payload) == a, "add: reverse lookup error?");
   }
 
   // Find - but does not remove - an entry in this map.
-  // Returns NULL if not found.
+  // Returns null if not found.
   const NMTPreInitAllocation* find(const void* p) const {
     return *(find_entry(p));
   }
@@ -203,10 +202,10 @@ public:
   // Find and removes an entry from the table. Asserts if not found.
   NMTPreInitAllocation* find_and_remove(void* p) {
     NMTPreInitAllocation** aa = find_entry(p);
-    assert((*aa) != NULL, "Entry not found: " PTR_FORMAT, p2i(p));
+    assert((*aa) != nullptr, "Entry not found: " PTR_FORMAT, p2i(p));
     NMTPreInitAllocation* a = (*aa);
     (*aa) = (*aa)->next;         // remove from its list
-    DEBUG_ONLY(a->next = NULL;)  // mark as removed
+    DEBUG_ONLY(a->next = nullptr;)  // mark as removed
     return a;
   }
 
@@ -219,7 +218,6 @@ public:
 class NMTPreInit : public AllStatic {
 
   static NMTPreInitAllocationTable* _table;
-  static bool _nmt_was_initialized;
 
   // Some statistics
   static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
@@ -229,28 +227,28 @@ class NMTPreInit : public AllStatic {
   static void create_table();
 
   static void add_to_map(NMTPreInitAllocation* a) {
-    assert(!_nmt_was_initialized, "lookup map cannot be modified after NMT initialization");
+    assert(!MemTracker::is_initialized(), "lookup map cannot be modified after NMT initialization");
     // Only on add, we create the table on demand. Only needed on add, since everything should start
     // with a call to os::malloc().
-    if (_table == NULL) {
+    if (_table == nullptr) {
       create_table();
     }
     return _table->add(a);
   }
 
   static const NMTPreInitAllocation* find_in_map(void* p) {
-    assert(_table != NULL, "stray allocation?");
+    assert(_table != nullptr, "stray allocation?");
     return _table->find(p);
   }
 
   static NMTPreInitAllocation* find_and_remove_in_map(void* p) {
-    assert(!_nmt_was_initialized, "lookup map cannot be modified after NMT initialization");
-    assert(_table != NULL, "stray allocation?");
+    assert(!MemTracker::is_initialized(), "lookup map cannot be modified after NMT initialization");
+    assert(_table != nullptr, "stray allocation?");
     return _table->find_and_remove(p);
   }
 
   // Just a wrapper for os::malloc to avoid including os.hpp here.
-  static void* do_os_malloc(size_t size);
+  static void* do_os_malloc(size_t size, MEMFLAGS memflags);
 
 public:
 
@@ -258,15 +256,12 @@ public:
   //  in post-init, no modifications to the lookup table are possible.
   static void pre_to_post();
 
-  // Returns true if we are still in pre-init phase, false if post-init
-  static bool in_preinit_phase()  { return _nmt_was_initialized == false; }
-
   // Called from os::malloc.
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_malloc(void** rc, size_t size) {
     size = MAX2((size_t)1, size);         // malloc(0)
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // Allocate entry and add address to lookup table
       NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
@@ -281,12 +276,12 @@ public:
   // Called from os::realloc.
   // Returns true if reallocation was handled here; in that case,
   // *rc contains the return address.
-  static bool handle_realloc(void** rc, void* old_p, size_t new_size) {
-    if (old_p == NULL) {                  // realloc(NULL, n)
+  static bool handle_realloc(void** rc, void* old_p, size_t new_size, MEMFLAGS memflags) {
+    if (old_p == nullptr) {                  // realloc(null, n)
       return handle_malloc(rc, new_size);
     }
     new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // - the address must already be in the lookup table
       // - find the old entry, remove from table, reallocate, add to table
@@ -309,8 +304,8 @@ public:
       //   the old block allocated too, to prevent the libc from returning the same address
       //   and confusing us.
       const NMTPreInitAllocation* a = find_in_map(old_p);
-      if (a != NULL) { // this was originally a pre-init allocation
-        void* p_new = do_os_malloc(new_size);
+      if (a != nullptr) { // this was originally a pre-init allocation
+        void* p_new = do_os_malloc(new_size, memflags);
         ::memcpy(p_new, a->payload(), MIN2(a->size, new_size));
         (*rc) = p_new;
         return true;
@@ -322,10 +317,10 @@ public:
   // Called from os::free.
   // Returns true if free was handled here.
   static bool handle_free(void* p) {
-    if (p == NULL) { // free(NULL)
+    if (p == nullptr) { // free(null)
       return true;
     }
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // - the allocation must be in the hash map, since all allocations went through
       //   NMTPreInit::handle_malloc()
@@ -341,7 +336,7 @@ public:
       //   in the table. We leave the block allocated to prevent the libc from returning
       //   the same address and confusing us.
       // - if not found, we let regular os::free() handle this pointer
-      if (find_in_map(p) != NULL) {
+      if (find_in_map(p) != nullptr) {
         return true;
       }
     }
@@ -352,8 +347,6 @@ public:
   static void print_map(outputStream* st);
   DEBUG_ONLY(static void verify();)
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_NMT_PREINIT_HPP
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,12 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -62,10 +66,15 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
     // parentLocale.<parent_locale_id>=<child_locale_id>(" "<child_locale_id>)+
     private final Map<String, String> parentLocalesMap;
 
+    // Input Skeleton map for "preferred" and "allowed"
+    // Map<"preferred"/"allowed", Map<"skeleton", SortedSet<"regions">>>
+    private final Map<String, Map<String, SortedSet<String>>> inputSkeletonMap;
+
     SupplementDataParseHandler() {
         firstDayMap = new HashMap<>();
         minDaysMap = new HashMap<>();
         parentLocalesMap = new HashMap<>();
+        inputSkeletonMap = new HashMap<>();
     }
 
     /**
@@ -76,22 +85,25 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
      * It returns null when there is no firstDay and minDays for the country
      * although this should not happen because supplementalData.xml includes
      * default value for the world ("001") for firstDay and minDays.
+     *
+     * This method also returns Maps for "preferred" and "allowed" skeletons,
+     * which are grouped by regions. E.g, "h:XX YY ZZ;" which means 'h' pattern
+     * is "preferred"/"allowed" in "XX", "YY", and "ZZ" regions.
      */
     Map<String, Object> getData(String id) {
         Map<String, Object> values = new HashMap<>();
         if ("root".equals(id)) {
-            parentLocalesMap.keySet().forEach(key -> {
-            values.put(CLDRConverter.PARENT_LOCALE_PREFIX+key,
-                parentLocalesMap.get(key));
-            });
-            firstDayMap.keySet().forEach(key -> {
-            values.put(CLDRConverter.CALENDAR_FIRSTDAY_PREFIX+firstDayMap.get(key),
-                key);
-            });
-            minDaysMap.keySet().forEach(key -> {
-            values.put(CLDRConverter.CALENDAR_MINDAYS_PREFIX+minDaysMap.get(key),
-                key);
-            });
+            parentLocalesMap.forEach((k, v) -> values.put(CLDRConverter.PARENT_LOCALE_PREFIX + k, v));
+            firstDayMap.forEach((k, v) -> values.put(CLDRConverter.CALENDAR_FIRSTDAY_PREFIX + v, k));
+            minDaysMap.forEach((k, v) -> values.put(CLDRConverter.CALENDAR_MINDAYS_PREFIX + v, k));
+            inputSkeletonMap.get("preferred").forEach((k, v) ->
+                    values.merge(Bundle.DATEFORMATITEM_INPUT_REGIONS_PREFIX + "preferred",
+                            k + ":" + v.stream().collect(Collectors.joining(" ")) + ";",
+                            (old, newVal) -> old + (String)newVal));
+            inputSkeletonMap.get("allowed").forEach((k, v) ->
+                    values.merge(Bundle.DATEFORMATITEM_INPUT_REGIONS_PREFIX + "allowed",
+                            k + ":" + v.stream().collect(Collectors.joining(" ")) + ";",
+                            (old, newVal) -> old + (String)newVal));
         }
         return values.isEmpty() ? null : values;
     }
@@ -158,11 +170,23 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
                     attributes.getValue("locales").replaceAll("_", "-"));
             }
             break;
+        case "hours":
+            if (!isIgnored(attributes)) {
+                var preferred = attributes.getValue("preferred");
+                var allowed = attributes.getValue("allowed").replaceFirst(" .*", "").replaceFirst("b", "B"); // take only the first one, "b" -> "B"
+                var regions = Arrays.stream(attributes.getValue("regions").split(" "))
+                        .map(r -> r.replaceAll("_", "-"))
+                        .collect(Collectors.toSet());
+                var pmap = inputSkeletonMap.computeIfAbsent("preferred", k -> new HashMap<>());
+                var amap = inputSkeletonMap.computeIfAbsent("allowed", k -> new HashMap<>());
+                pmap.computeIfAbsent(preferred, k -> new TreeSet<>()).addAll(regions);
+                amap.computeIfAbsent(allowed, k -> new TreeSet<>()).addAll(regions);
+            }
+            break;
         default:
             // treat anything else as a container
             pushContainer(qName, attributes);
             break;
         }
     }
-
 }

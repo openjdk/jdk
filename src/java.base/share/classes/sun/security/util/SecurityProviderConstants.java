@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@ package sun.security.util;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+import javax.crypto.spec.DHParameterSpec;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -43,11 +47,11 @@ public final class SecurityProviderConstants {
     private static final Debug debug =
         Debug.getInstance("jca", "ProviderConfig");
 
-    // cache for provider aliases; key is the standard algorithm name
+    // Cache for provider aliases; key is the standard algorithm name
     // value is the associated aliases List
     private static final ConcurrentHashMap<String, List<String>> aliasesMap;
 
-    // utility method for generating aliases list using the supplied
+    // Utility method for generating aliases list using the supplied
     // 'oid' and 'extraAliases', then store into "aliasesMap" cache under the
     // key 'stdName'
     private static List<String> store(String stdName, KnownOIDs oid,
@@ -62,20 +66,16 @@ public final class SecurityProviderConstants {
                 value.add(oid.value());
                 String[] knownAliases = oid.aliases();
                 if (knownAliases != null) {
-                    for (String ka : knownAliases) {
-                        value.add(ka);
-                    }
+                    value.addAll(Arrays.asList(knownAliases));
                 }
             }
-            for (String ea : extraAliases) {
-                value.add(ea);
-            }
+            value.addAll(Arrays.asList(extraAliases));
         }
         aliasesMap.put(stdName, value);
         return value;
     }
 
-    // returns an aliases List for the specified algorithm name o
+    // Return an aliases List for the specified algorithm name o.
     // NOTE: exception is thrown if no aliases nor oid found, so
     // only call this method if aliases are expected
     public static List<String> getAliases(String o) {
@@ -85,9 +85,7 @@ public final class SecurityProviderConstants {
             if (e != null) {
                 return store(o, e);
             }
-            ProviderException pe =
-                    new ProviderException("Cannot find aliases for " + o);
-            throw pe;
+            throw new ProviderException("Cannot find aliases for " + o);
         }
         return res;
     }
@@ -105,6 +103,61 @@ public final class SecurityProviderConstants {
         }
     }
 
+    public static final int getDefDHPrivateExpSize(DHParameterSpec spec) {
+
+        int dhGroupSize = spec.getP().bitLength();
+
+        if (spec instanceof SafeDHParameterSpec) {
+            // Known safe primes
+            // use 2*security strength as default private exponent size
+            // as in table 2 of NIST SP 800-57 part 1 rev 5, sec 5.6.1.1
+            // and table 25 of NIST SP 800-56A rev 3, appendix D.
+            if (dhGroupSize >= 15360) {
+                return 512;
+            } else if (dhGroupSize >= 8192) {
+                return 400;
+            } else if (dhGroupSize >= 7680) {
+                return 384;
+            } else if (dhGroupSize >= 6144) {
+                return 352;
+            } else if (dhGroupSize >= 4096) {
+                return 304;
+            } else if (dhGroupSize >= 3072) {
+                return 256;
+            } else if (dhGroupSize >= 2048) {
+                return 224;
+            } else {
+                // min value for legacy key sizes
+                return 160;
+            }
+        } else {
+            // assume the worst and use groupSize/2 as private exp length
+            // up to 1024-bit and use the same minimum 384 as before
+            return Math.max((dhGroupSize >= 2048 ? 1024 : dhGroupSize >> 1),
+                    384);
+        }
+
+    }
+
+    public static final int getDefAESKeySize() {
+        int currVal = DEF_AES_KEY_SIZE.get();
+        if (currVal == -1) {
+            int v = 256; // default AES key size
+            try {
+                // adjust if crypto policy only allows a smaller value
+                int max = Cipher.getMaxAllowedKeyLength("AES");
+                if (v > max)  {
+                    v = max;
+                }
+            } catch (NoSuchAlgorithmException ne) {
+                // should never happen; ignore and use the default
+            }
+            DEF_AES_KEY_SIZE.compareAndSet(-1, v);
+            currVal = v;
+        }
+        return currVal;
+    }
+
     public static final int DEF_DSA_KEY_SIZE;
     public static final int DEF_RSA_KEY_SIZE;
     public static final int DEF_RSASSA_PSS_KEY_SIZE;
@@ -112,6 +165,11 @@ public final class SecurityProviderConstants {
     public static final int DEF_EC_KEY_SIZE;
     public static final int DEF_ED_KEY_SIZE;
     public static final int DEF_XEC_KEY_SIZE;
+    // The logic for finding the max allowable value in getDefAESKeySize()
+    // interferes with provider loading logic and may lead to deadlocks if
+    // called inside a static block. So, it is deferred to a later time when
+    // DEF_AES_KEY_SIZE is actually used/needed.
+    private static final AtomicInteger DEF_AES_KEY_SIZE;
 
     private static final String KEY_LENGTH_PROP =
         "jdk.security.defaultKeySize";
@@ -120,12 +178,13 @@ public final class SecurityProviderConstants {
         String keyLengthStr = GetPropertyAction.privilegedGetProperty
             (KEY_LENGTH_PROP);
         int dsaKeySize = 2048;
-        int rsaKeySize = 2048;
+        int rsaKeySize = 3072;
         int rsaSsaPssKeySize = rsaKeySize; // default to same value as RSA
-        int dhKeySize = 2048;
-        int ecKeySize = 256;
+        int dhKeySize = 3072;
+        int ecKeySize = 384;
         int edKeySize = 255;
         int xecKeySize = 255;
+        int aesKeySize = -1; // needs to check crypto policy
 
         if (keyLengthStr != null) {
             try {
@@ -140,8 +199,9 @@ public final class SecurityProviderConstants {
                         }
                         continue;
                     }
-                    String algoName = algoAndValue[0].trim().toUpperCase();
-                    int value = -1;
+                    String algoName =
+                            algoAndValue[0].trim().toUpperCase(Locale.ENGLISH);
+                    int value;
                     try {
                         value = Integer.parseInt(algoAndValue[1].trim());
                     } catch (NumberFormatException nfe) {
@@ -166,6 +226,8 @@ public final class SecurityProviderConstants {
                         edKeySize = value;
                     } else if (algoName.equals("XDH")) {
                         xecKeySize = value;
+                    } else if (algoName.equals("AES")) {
+                        aesKeySize = value;
                     } else {
                         if (debug != null) {
                             debug.println("Ignoring unsupported algo in " +
@@ -194,6 +256,7 @@ public final class SecurityProviderConstants {
         DEF_EC_KEY_SIZE = ecKeySize;
         DEF_ED_KEY_SIZE = edKeySize;
         DEF_XEC_KEY_SIZE = xecKeySize;
+        DEF_AES_KEY_SIZE = new AtomicInteger(aesKeySize);
 
         // Set up aliases with default mappings
         // This is needed when the mapping contains non-oid
@@ -223,7 +286,7 @@ public final class SecurityProviderConstants {
         store("NONEwithDSA", null, "RawDSA");
         store("DESede", null, "TripleDES");
         store("ARCFOUR", KnownOIDs.ARCFOUR);
-        // For backward compatility, refer to PKCS1 mapping for RSA
+        // For backward compatibility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory
         store("PKCS1", KnownOIDs.PKCS1, KnownOIDs.RSA.value());
 

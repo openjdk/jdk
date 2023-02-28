@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class Bug8167143 {
      * all Available Locales.
      */
     private static void testTimeZoneParsing() {
-        Set<Locale> locales = Set.of(Locale.forLanguageTag("zh-hant"), new Locale("no", "NO", "NY"));
+        Set<Locale> locales = Set.of(Locale.forLanguageTag("zh-hant"), Locale.of("no", "NO", "NY"));
         // Set<Locale> locales = Set.of(Locale.getAvailableLocales());
         locales.forEach((locale) -> {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd z", locale);
@@ -180,8 +180,8 @@ public class Bug8167143 {
      * for th-TH should not be cached in cache of DateFormatSymbols class.
      */
     private static void testDateFormatSymbolsCache() {
-        Locale th_TH_TH = new Locale("th", "TH", "TH");
-        Locale th_TH = new Locale("th", "TH");
+        Locale th_TH_TH = Locale.of("th", "TH", "TH");
+        Locale th_TH = Locale.of("th", "TH");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd z", th_TH_TH);
         String[][] thTHTHZoneStrings = sdf.getDateFormatSymbols().getZoneStrings();
         String[][] thTHZoneStrings = sdf.getDateFormatSymbols().getZoneStrings();

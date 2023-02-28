@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.FileInputStream;
@@ -70,6 +71,7 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -192,7 +194,7 @@ public class CheckClassAdapter extends ClassVisitor {
       * @param classVisitor the class visitor to which this adapter must delegate calls.
       */
     public CheckClassAdapter(final ClassVisitor classVisitor) {
-        this(classVisitor, true);
+        this(classVisitor, /* checkDataFlow = */ true);
     }
 
     /**
@@ -200,12 +202,11 @@ public class CheckClassAdapter extends ClassVisitor {
       * Instead, they must use the {@link #CheckClassAdapter(int, ClassVisitor, boolean)} version.
       *
       * @param classVisitor the class visitor to which this adapter must delegate calls.
-      * @param checkDataFlow whether to perform basic data flow checks. This option requires valid
-      *     maxLocals and maxStack values.
+      * @param checkDataFlow whether to perform basic data flow checks.
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public CheckClassAdapter(final ClassVisitor classVisitor, final boolean checkDataFlow) {
-        this(/* latest api = */ Opcodes.ASM8, classVisitor, checkDataFlow);
+        this(/* latest api = */ Opcodes.ASM9, classVisitor, checkDataFlow);
         if (getClass() != CheckClassAdapter.class) {
             throw new IllegalStateException();
         }
@@ -214,13 +215,11 @@ public class CheckClassAdapter extends ClassVisitor {
     /**
       * Constructs a new {@link CheckClassAdapter}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param classVisitor the class visitor to which this adapter must delegate calls.
       * @param checkDataFlow {@literal true} to perform basic data flow checks, or {@literal false} to
-      *     not perform any data flow check (see {@link CheckMethodAdapter}). This option requires
-      *     valid maxLocals and maxStack values.
+      *     not perform any data flow check (see {@link CheckMethodAdapter}).
       */
     protected CheckClassAdapter(
             final int api, final ClassVisitor classVisitor, final boolean checkDataFlow) {
@@ -353,18 +352,11 @@ public class CheckClassAdapter extends ClassVisitor {
         super.visitNestMember(nestMember);
     }
 
-    /**
-      * <b>Experimental, use at your own risk.</b>.
-      *
-      * @param permittedSubclass the internal name of a permitted subclass.
-      * @deprecated this API is experimental.
-      */
     @Override
-    @Deprecated
-    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
+    public void visitPermittedSubclass(final String permittedSubclass) {
         checkState();
         CheckMethodAdapter.checkInternalName(version, permittedSubclass, "permittedSubclass");
-        super.visitPermittedSubclassExperimental(permittedSubclass);
+        super.visitPermittedSubclass(permittedSubclass);
     }
 
     @Override
@@ -468,7 +460,8 @@ public class CheckClassAdapter extends ClassVisitor {
             final String signature,
             final String[] exceptions) {
         checkState();
-        checkAccess(
+        checkMethodAccess(
+                version,
                 access,
                 Opcodes.ACC_PUBLIC
                         | Opcodes.ACC_PRIVATE
@@ -498,21 +491,17 @@ public class CheckClassAdapter extends ClassVisitor {
             }
         }
         CheckMethodAdapter checkMethodAdapter;
+        MethodVisitor methodVisitor =
+                super.visitMethod(access, name, descriptor, signature, exceptions);
         if (checkDataFlow) {
+            if (cv instanceof ClassWriter) {
+                methodVisitor =
+                        new CheckMethodAdapter.MethodWriterWrapper(api, (ClassWriter) cv, methodVisitor);
+            }
             checkMethodAdapter =
-                    new CheckMethodAdapter(
-                            api,
-                            access,
-                            name,
-                            descriptor,
-                            super.visitMethod(access, name, descriptor, signature, exceptions),
-                            labelInsnIndices);
+                    new CheckMethodAdapter(api, access, name, descriptor, methodVisitor, labelInsnIndices);
         } else {
-            checkMethodAdapter =
-                    new CheckMethodAdapter(
-                            api,
-                            super.visitMethod(access, name, descriptor, signature, exceptions),
-                            labelInsnIndices);
+            checkMethodAdapter = new CheckMethodAdapter(api, methodVisitor, labelInsnIndices);
         }
         checkMethodAdapter.version = version;
         return checkMethodAdapter;
@@ -590,6 +579,23 @@ public class CheckClassAdapter extends ClassVisitor {
         }
         if (Integer.bitCount(access & (Opcodes.ACC_FINAL | Opcodes.ACC_ABSTRACT)) > 1) {
             throw new IllegalArgumentException("final and abstract are mutually exclusive: " + access);
+        }
+    }
+
+    /**
+      * Checks that the given access flags do not contain invalid flags for a method. This method also
+      * checks that mutually incompatible flags are not set simultaneously.
+      *
+      * @param version the class version.
+      * @param access the method access flags to be checked.
+      * @param possibleAccess the valid access flags.
+      */
+    private static void checkMethodAccess(
+            final int version, final int access, final int possibleAccess) {
+        checkAccess(access, possibleAccess);
+        if ((version & 0xFFFF) < Opcodes.V17
+                && Integer.bitCount(access & (Opcodes.ACC_STRICT | Opcodes.ACC_ABSTRACT)) > 1) {
+            throw new IllegalArgumentException("strictfp and abstract are mutually exclusive: " + access);
         }
     }
 
@@ -981,9 +987,9 @@ public class CheckClassAdapter extends ClassVisitor {
                 mask = 0xFF0000FF;
                 break;
             default:
-                throw new AssertionError();
+                break;
         }
-        if ((typeRef & ~mask) != 0) {
+        if (mask == 0 || (typeRef & ~mask) != 0) {
             throw new IllegalArgumentException(
                     "Invalid type reference 0x" + Integer.toHexString(typeRef));
         }
@@ -1034,9 +1040,10 @@ public class CheckClassAdapter extends ClassVisitor {
 
         ClassReader classReader;
         if (args[0].endsWith(".class")) {
-            InputStream inputStream =
-                    new FileInputStream(args[0]); // NOPMD(AvoidFileStream): can't fix for 1.5 compatibility
-            classReader = new ClassReader(inputStream);
+            // Can't fix PMD warning for 1.5 compatibility.
+            try (InputStream inputStream = new FileInputStream(args[0])) { // NOPMD(AvoidFileStream)
+                classReader = new ClassReader(inputStream);
+            }
         } else {
             classReader = new ClassReader(args[0]);
         }
@@ -1065,7 +1072,6 @@ public class CheckClassAdapter extends ClassVisitor {
       * @param printResults whether to print the results of the bytecode verification.
       * @param printWriter where the results (or the stack trace in case of error) must be printed.
       */
-    @SuppressWarnings("deprecation")
     public static void verify(
             final ClassReader classReader,
             final ClassLoader loader,
@@ -1073,7 +1079,7 @@ public class CheckClassAdapter extends ClassVisitor {
             final PrintWriter printWriter) {
         ClassNode classNode = new ClassNode();
         classReader.accept(
-                new CheckClassAdapter(Opcodes.ASM9_EXPERIMENTAL, classNode, false) {},
+                new CheckClassAdapter(/*latest*/ Opcodes.ASM9, classNode, false) {},
                 ClassReader.SKIP_DEBUG);
 
         Type syperType = classNode.superName == null ? null : Type.getObjectType(classNode.superName);
@@ -1152,7 +1158,12 @@ public class CheckClassAdapter extends ClassVisitor {
             if (name.charAt(endIndex - 1) == ';') {
                 endIndex--;
             }
-            return name.substring(lastSlashIndex + 1, endIndex);
+            int lastBracketIndex = name.lastIndexOf('[');
+            if (lastBracketIndex == -1) {
+                return name.substring(lastSlashIndex + 1, endIndex);
+            }
+            return name.substring(0, lastBracketIndex + 1) + name.substring(lastSlashIndex + 1, endIndex);
         }
     }
 }
+

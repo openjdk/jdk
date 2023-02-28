@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import java.awt.Point;
@@ -36,26 +37,14 @@ import java.util.List;
 public class ClusterIngoingConnection implements Link {
 
     private List<Point> controlPoints;
-    private ClusterInputSlotNode inputSlotNode;
-    private Link connection;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final Port inputSlot;
+    private final Port outputSlot;
 
     public ClusterIngoingConnection(ClusterInputSlotNode inputSlotNode, Link c) {
-        this.inputSlotNode = inputSlotNode;
-        this.connection = c;
-        this.controlPoints = new ArrayList<Point>();
+        this.controlPoints = new ArrayList<>();
 
         inputSlot = c.getTo();
         outputSlot = inputSlotNode.getOutputSlot();
-    }
-
-    public Link getConnection() {
-        return connection;
-    }
-
-    public ClusterInputSlotNode getInputSlotNode() {
-        return inputSlotNode;
     }
 
     public Port getTo() {
@@ -64,6 +53,14 @@ public class ClusterIngoingConnection implements Link {
 
     public Port getFrom() {
         return outputSlot;
+    }
+
+    public Cluster getFromCluster() {
+        return null;
+    }
+
+    public Cluster getToCluster() {
+        return null;
     }
 
     public void setControlPoints(List<Point> p) {

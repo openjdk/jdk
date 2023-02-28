@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
  * @run testng/othervm TestHandshake
  * @run testng/othervm -Xint TestHandshake
@@ -31,9 +32,8 @@
  * @run testng/othervm -XX:-TieredCompilation TestHandshake
  */
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -45,9 +45,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 public class TestHandshake {
@@ -66,8 +67,8 @@ public class TestHandshake {
     @Test(dataProvider = "accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
-            ResourceScope scope = ResourceScope.newSharedScope();
-            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, scope);
+            Arena arena = Arena.openShared();
+            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, arena.scope());
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
@@ -78,7 +79,7 @@ public class TestHandshake {
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
             System.out.println("Starting handshaker with delay set to " + delay + " millis");
             Thread.sleep(delay);
-            accessExecutor.execute(new Handshaker(scope));
+            accessExecutor.execute(new Handshaker(arena));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
             assertTrue(!segment.scope().isAlive());
@@ -88,6 +89,7 @@ public class TestHandshake {
     static abstract class AbstractSegmentAccessor implements Runnable {
         final MemorySegment segment;
         final int id;
+        final AtomicBoolean failed = new AtomicBoolean();
 
         AbstractSegmentAccessor(int id, MemorySegment segment) {
             this.id = id;
@@ -150,7 +152,7 @@ public class TestHandshake {
         void doAccess() {
             int sum = 0;
             for (int i = 0; i < segment.byteSize(); i++) {
-                sum += MemoryAccess.getByteAtOffset(segment, i);
+                sum += segment.get(JAVA_BYTE, i);
             }
         }
     }
@@ -193,7 +195,7 @@ public class TestHandshake {
             super(id, segment);
             this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.scope());
             copy.copyFrom(segment);
-            MemoryAccess.setByteAtOffset(copy, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
+            copy.set(JAVA_BYTE, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }
 
         @Override
@@ -236,10 +238,10 @@ public class TestHandshake {
 
     static class Handshaker implements Runnable {
 
-        final ResourceScope scope;
+        final Arena arena;
 
-        Handshaker(ResourceScope scope) {
-            this.scope = scope;
+        Handshaker(Arena arena) {
+            this.arena = arena;
         }
 
         @Override
@@ -247,7 +249,7 @@ public class TestHandshake {
             start("Handshaker");
             while (true) {
                 try {
-                    scope.close();
+                    arena.close();
                     break;
                 } catch (IllegalStateException ex) {
                     Thread.onSpinWait();

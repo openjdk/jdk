@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+LAUNCHER_AS_SERVICE_SCRIPTS
+
+unregister_services `/usr/sbin/pkgutil --files SERVICES_PACKAGE_ID | /usr/bin/grep '\.plist$' | /usr/bin/awk '{print "/"$0}'`

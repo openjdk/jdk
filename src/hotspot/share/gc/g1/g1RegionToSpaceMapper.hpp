@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-class WorkGang;
+class WorkerThreads;
 
 class G1MappingChangedListener {
  public:
@@ -49,7 +49,6 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   // Backing storage.
   G1PageBasedVirtualSpace _storage;
 
-  size_t _region_granularity;
   // Mapping management
   CHeapBitMap _region_commit_map;
 
@@ -70,7 +69,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   virtual ~G1RegionToSpaceMapper() {}
 
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
   // Creates an appropriate G1RegionToSpaceMapper for the given parameters.

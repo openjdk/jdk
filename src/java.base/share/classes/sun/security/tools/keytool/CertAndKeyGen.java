@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import sun.security.pkcs10.PKCS10;
 import sun.security.util.SignatureUtil;
@@ -157,7 +160,7 @@ public final class CertAndKeyGen {
             }
 
         } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
         generateInternal();
     }
@@ -173,7 +176,7 @@ public final class CertAndKeyGen {
                 keyGen.initialize(keyBits, prng);
 
             } catch (Exception e) {
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
         }
         generateInternal();
@@ -227,7 +230,7 @@ public final class CertAndKeyGen {
      *
      * XXX Note: This behaviour is needed for backwards compatibility.
      * What this method really should return is the public key of the
-     * generated key pair, regardless of whether or not it is an instance of
+     * generated key pair, regardless of whether it is an instance of
      * <code>X509Key</code>. Accordingly, the return type of this method
      * should be <code>PublicKey</code>.
      */
@@ -304,43 +307,46 @@ public final class CertAndKeyGen {
         try {
             lastDate = new Date ();
             lastDate.setTime (firstDate.getTime () + validity * 1000);
+            Calendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+            c.setTime(lastDate);
+            if (c.get(Calendar.YEAR) > 9999) {
+                throw new CertificateException("Validity period ends at calendar year " +
+                        c.get(Calendar.YEAR) + " which is greater than 9999");
+            }
 
             CertificateValidity interval =
                                    new CertificateValidity(firstDate,lastDate);
 
             X509CertInfo info = new X509CertInfo();
             // Add all mandatory attributes
-            info.set(X509CertInfo.VERSION,
-                     new CertificateVersion(CertificateVersion.V3));
+            info.setVersion(new CertificateVersion(CertificateVersion.V3));
             if (prng == null) {
                 prng = new SecureRandom();
             }
-            info.set(X509CertInfo.SERIAL_NUMBER,
-                    CertificateSerialNumber.newRandom64bit(prng));
-            info.set(X509CertInfo.SUBJECT, myname);
-            info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-            info.set(X509CertInfo.VALIDITY, interval);
+            info.setSerialNumber(CertificateSerialNumber.newRandom64bit(prng));
+            info.setSubject(myname);
+            info.setKey(new CertificateX509Key(publicKey));
+            info.setValidity(interval);
             if (signerFlag) {
                 // use signer's subject name to set the issuer name
-                info.set(X509CertInfo.ISSUER, signerSubjectName);
+                info.setIssuer(signerSubjectName);
             } else {
-                info.set(X509CertInfo.ISSUER, myname);
+                info.setIssuer(myname);
             }
-            if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
+            if (ext != null) info.setExtensions(ext);
 
-            cert = new X509CertImpl(info);
             if (signerFlag) {
                 // use signer's private key to sign
-                cert.sign(signerPrivateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, signerPrivateKey, sigAlg);
             } else {
-                cert.sign(privateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, privateKey, sigAlg);
             }
 
             return cert;
 
         } catch (IOException e) {
              throw new CertificateEncodingException("getSelfCert: " +
-                                                    e.getMessage());
+                                                    e.getMessage(), e);
         }
     }
 
@@ -353,7 +359,7 @@ public final class CertAndKeyGen {
     }
 
     private SecureRandom        prng;
-    private String              keyType;
+    private final String        keyType;
     private String              sigAlg;
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;

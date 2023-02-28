@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.event.EventWriter;
 
 /**
  * Interface against the JVM.
@@ -38,10 +39,16 @@ import jdk.jfr.internal.handlers.EventHandler;
 public final class JVM {
     private static final JVM jvm = new JVM();
 
-    // JVM signals file changes by doing Object#notify on this object
-    static final Object FILE_DELTA_CHANGE = new Object();
-
     static final long RESERVED_CLASS_ID_LIMIT = 500;
+
+    private static class ChunkRotationMonitor {}
+
+    /*
+     * The JVM uses the chunk rotation monitor to notify Java that a rotation is warranted.
+     * The monitor type is used to exclude jdk.JavaMonitorWait events from being generated
+     * when Object.wait() is called on this monitor.
+     */
+    public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
     private volatile boolean nativeOK;
 
@@ -111,11 +118,11 @@ public final class JVM {
      * @param eventTypeId type id
      *
      * @param timestamp commit time for event
-     * @param when when it is being done {@link Periodic.When}
+     * @param periodicType when it is being done {@link PeriodicType.When}
      *
      * @return true if the event was committed
      */
-    public native boolean emitEvent(long eventTypeId, long timestamp, long when);
+    public native boolean emitEvent(long eventTypeId, long timestamp, long periodicType);
 
     /**
      * Return a list of all classes deriving from {@link jdk.internal.event.Event}
@@ -211,7 +218,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public native synchronized void retransformClasses(Class<?>[] classes);
+     public synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event
@@ -260,13 +267,13 @@ public final class JVM {
     public native void setMemorySize(long size) throws IllegalArgumentException;
 
     /**
-     * Set interval for method samples, in milliseconds.
+     * Set period for method samples, in milliseconds.
      *
-     * Setting interval to 0 turns off the method sampler.
+     * Setting period to 0 turns off the method sampler.
      *
-     * @param intervalMillis the sampling interval
+     * @param periodMillis the sampling period
      */
-    public native void setMethodSamplingInterval(long type, long intervalMillis);
+    public native void setMethodSamplingPeriod(long type, long periodMillis);
 
     /**
      * Sets the file where data should be written.
@@ -300,15 +307,6 @@ public final class JVM {
      * @param force, true to force initialization, false otherwise
      */
     public native void setForceInstrumentation(boolean force);
-
-    /**
-     * Turn on/off thread sampling.
-     *
-     * @param sampleThreads true if threads should be sampled, false otherwise.
-     *
-     * @throws IllegalStateException if state can't be changed.
-     */
-    public native void setSampleThreads(boolean sampleThreads) throws IllegalStateException;
 
     /**
      * Turn on/off compressed integers.
@@ -447,7 +445,7 @@ public final class JVM {
      * @return thread local EventWriter
      */
     @IntrinsicCandidate
-    public static native Object getEventWriter();
+    public static native EventWriter getEventWriter();
 
     /**
      * Create a new EventWriter
@@ -473,12 +471,25 @@ public final class JVM {
     public native void flush();
 
     /**
-     * Sets the location of the disk repository, to be used at an emergency
-     * dump.
+     * Sets the location of the disk repository.
      *
      * @param dirText
      */
     public native void setRepositoryLocation(String dirText);
+
+    /**
+     * Sets the path to emergency dump.
+     *
+     * @param dumpPathText
+     */
+    public native void setDumpPath(String dumpPathText);
+
+    /**
+     * Gets the path to emergency dump.
+     *
+     * @return The path to emergency dump.
+     */
+    public native String getDumpPath();
 
    /**
     * Access to VM termination support.
@@ -556,11 +567,29 @@ public final class JVM {
     public native void include(Thread thread);
 
     /**
-     * Test if a thread ius currently excluded from the jfr system.
+     * Test if a thread is currently excluded from the jfr system.
      *
      * @return is thread currently excluded
      */
     public native boolean isExcluded(Thread thread);
+
+    /**
+     * Test if a class is excluded from the jfr system.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class excluded
+     */
+    public native boolean isExcluded(Class<? extends jdk.internal.event.Event> eventClass);
+
+    /**
+     * Test if a class is instrumented.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class instrumented
+     */
+    public native boolean isInstrumented(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Get the start time in nanos from the header of the current chunk
@@ -570,24 +599,24 @@ public final class JVM {
     public native long getChunkStartNanos();
 
     /**
-     * Stores an EventHandler to the eventHandler field of an event class.
+     * Stores an EventConfiguration to the configuration field of an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @param handler the handler, may be {@code null}
+     * @param configuration the configuration, may be {@code null}
      *
      * @return if the field could be set
      */
-    public native boolean setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler);
+    public native boolean setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration);
 
     /**
-     * Retrieves the EventHandler for an event class.
+     * Retrieves the EventConfiguration for an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @return the handler, may be {@code null}
+     * @return the configuration, may be {@code null}
      */
-    public native Object getHandler(Class<? extends jdk.internal.event.Event> eventClass);
+    public native Object getConfiguration(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Returns the id for the Java types defined in metadata.xml.
@@ -597,4 +626,19 @@ public final class JVM {
      * @return the id, or a negative value if it does not exists.
      */
     public native long getTypeId(String name);
+
+    /**
+     * Returns {@code true}, if the JVM is running in a container, {@code false} otherwise.
+     * <p>
+     * If -XX:-UseContainerSupport has been specified, this method returns {@code false},
+     * which is questionable, but Container.metrics() returns {@code null}, so events
+     * can't be emitted anyway.
+     */
+    public native boolean isContainerized();
+
+    /**
+     * Returns the total amount of memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public native long hostTotalMemory();
 }

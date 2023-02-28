@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,28 +71,28 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * To format a number for the current Locale, use one of the factory
  * class methods:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * myString = NumberFormat.getInstance().format(myNumber);
- * }</pre>
+ * }
  * </blockquote>
  * If you are formatting multiple numbers, it is
  * more efficient to get the format and use it multiple times so that
  * the system doesn't have to fetch the information about the local
  * language and country conventions multiple times.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance();
  * for (int i = 0; i < myNumber.length; ++i) {
  *     output.println(nf.format(myNumber[i]) + "; ");
  * }
- * }</pre>
+ * }
  * </blockquote>
  * To format a number for a different Locale, specify it in the
  * call to {@code getInstance}.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance(Locale.FRENCH);
- * }</pre>
+ * }
  * </blockquote>
  *
  * <p>If the locale contains "nu" (numbers) and/or "rg" (region override)
@@ -103,9 +103,9 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <p>You can also use a {@code NumberFormat} to parse numbers:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * myNumber = nf.parse(myString);
- * }</pre>
+ * }
  * </blockquote>
  * Use {@code getInstance} or {@code getNumberInstance} to get the
  * normal number format. Use {@code getIntegerInstance} to get an
@@ -682,8 +682,9 @@ public abstract class NumberFormat extends Format  {
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.NumberFormatProvider NumberFormatProvider} implementations.
-     * It must contain at least a {@code Locale} instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code NumberFormat} instances are available.

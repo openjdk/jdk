@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
@@ -34,7 +35,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
@@ -51,13 +54,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * The interface for the taglet writer.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public abstract class TagletWriter {
 
     /**
@@ -84,7 +81,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content codeTagOutput(Element element, DocTree tag);
+    protected abstract Content codeTagOutput(Element element, LiteralTree tag);
 
     /**
      * Returns the output for a {@code {@index...}} tag.
@@ -111,6 +108,16 @@ public abstract class TagletWriter {
      * @return the output
      */
     protected abstract Content deprecatedTagOutput(Element element);
+
+    /**
+     * Returns the output for a {@code {@link ...}} or {@code {@linkplain ...}} tag.
+     *
+     * @param element The element that owns the doc comment
+     * @param tag     the tag
+     *
+     * @return the output
+     */
+    protected abstract Content linkTagOutput(Element element, LinkTree tag);
 
     /**
      * Returns the output for a {@code {@literal ...}} tag.
@@ -181,15 +188,28 @@ public abstract class TagletWriter {
      *
      * @param element    The element that owns the doc comment
      * @param snippetTag the snippet tag
+     * @param id         the value of the id attribute, or null if not defined
+     * @param lang       the value of the lang attribute, or null if not defined
      *
      * @return the output
      */
-    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text);
+    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
+                                                String id, String lang);
+
+    /**
+     * Returns the output for one or more {@code @spec} tags.
+     *
+     * @param element  the element that owns the doc comment
+     * @param specTags the array of @spec tags.
+     *
+     * @return the output
+     */
+    protected abstract Content specTagOutput(Element element, List<? extends SpecTree> specTags);
 
     /**
      * Returns the output for a {@code {@systemProperty...}} tag.
      *
-     * @param element           The element that owns the doc comment
+     * @param element           the element that owns the doc comment
      * @param systemPropertyTag the system property tag
      *
      * @return the output
@@ -204,24 +224,14 @@ public abstract class TagletWriter {
     protected abstract Content getThrowsHeader();
 
     /**
-     * Returns the output for a {@code @throws} tag.
-     *
-     * @param element        The element that owns the doc comment
-     * @param throwsTag      the throws tag
-     * @param substituteType instantiated type of a generic type-variable, or null
-     *
-     * @return the output
-     */
-    protected abstract Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType);
-
-    /**
      * Returns the output for a default {@code @throws} tag.
      *
      * @param throwsType the type that is thrown
+     * @param content    the optional content to add as a description
      *
      * @return the output
      */
-    protected abstract Content throwsTagOutput(TypeMirror throwsType);
+    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content);
 
     /**
      * Returns the output for a {@code {@value}} tag.
@@ -235,6 +245,17 @@ public abstract class TagletWriter {
      */
     protected abstract Content valueTagOutput(VariableElement field,
         String constantVal, boolean includeLink);
+
+    /**
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
+     *
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
+     * @return the output
+     */
+    protected abstract Content invalidTagOutput(String summary, Optional<String> detail);
 
     /**
      * Returns the main type element of the current page or null for pages that don't have one.
@@ -266,8 +287,8 @@ public abstract class TagletWriter {
 
         Content output = getOutputInstance();
         Utils utils = configuration().utils;
-        tagletManager.checkTags(element, utils.getBlockTags(element), false);
-        tagletManager.checkTags(element, utils.getFullBody(element), true);
+        tagletManager.checkTags(element, utils.getBlockTags(element));
+        tagletManager.checkTags(element, utils.getFullBody(element));
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 // The type parameters and state components are documented in a special
@@ -317,15 +338,12 @@ public abstract class TagletWriter {
      *
      * @param holder        the element associated with the doc comment
      * @param tagletManager the taglet manager for the current doclet
-     * @param holderTag     the tag that holds this inline tag, or {@code null} if
-     *                      there is no tag that holds it
      * @param inlineTag     the inline tag to be documented
      *
      * @return the content, or {@code null}
      */
     public Content getInlineTagOutput(Element holder,
                                       TagletManager tagletManager,
-                                      DocTree holderTag,
                                       DocTree inlineTag) {
 
         Map<String, Taglet> inlineTags = tagletManager.getInlineTaglets();
@@ -337,9 +355,7 @@ public abstract class TagletWriter {
         }
 
         try {
-            Content tagletOutput = t.getInlineTagOutput(holder,
-                    holderTag != null && t.getName().equals("inheritDoc") ? holderTag : inlineTag,
-                    this);
+            Content tagletOutput = t.getInlineTagOutput(holder, inlineTag, this);
             tagletManager.seenTag(t.getName());
             return tagletOutput;
         } catch (UnsupportedTagletOperationException e) {

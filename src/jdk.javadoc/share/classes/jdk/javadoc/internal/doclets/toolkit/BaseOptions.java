@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -80,6 +91,12 @@ public abstract class BaseOptions {
      * Arguments for command-line option {@code -tag} and {@code -taglet}.
      */
     private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
+
+    /**
+     * Argument for command-line option {@code --date}.
+     * {@code null} if option not given.
+     */
+    private ZonedDateTime date;
 
     /**
      * Argument for command-line option {@code -d}.
@@ -164,6 +181,20 @@ public abstract class BaseOptions {
      */
     // A list of pairs containing urls and package list
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
+
+    /**
+     * An enum of policies for handling modularity mismatches in external documentation.
+     */
+    public enum ModularityMismatchPolicy {
+        INFO,
+        WARN
+    }
+
+    /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    private ModularityMismatchPolicy linkModularityMismatch = ModularityMismatchPolicy.WARN;
 
     /**
      * Location of alternative platform link properties file.
@@ -268,9 +299,15 @@ public abstract class BaseOptions {
     private int sourceTabSize;
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    private URI specBaseURI;
+
+    /**
      * Value for command-line option {@code --override-methods summary}
-     * or  {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * or {@code --override-methods detail}.
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */
@@ -292,12 +329,17 @@ public abstract class BaseOptions {
 
     private final BaseConfiguration config;
 
+    /**
+     * The default amount of space between tab stops.
+     */
+    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
+
     protected BaseOptions(BaseConfiguration config) {
         this.config = config;
 
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
-        sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+        sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
         groupPairs = new ArrayList<>(0);
     }
 
@@ -320,6 +362,33 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         destDirName = addTrailingFileSep(args.get(0));
                         return true;
+                    }
+                },
+
+                new XOption(resources, "--date", 1) {
+                    // Valid --date range: within ten years of now
+                    private static final ZonedDateTime now = ZonedDateTime.now();
+                    static final ZonedDateTime DATE_MIN = now.minusYears(10);
+                    static final ZonedDateTime DATE_MAX = now.plusYears(10);
+
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        if (noTimestamp) {
+                            messages.error("doclet.Option_conflict", "--date", "-notimestamp");
+                            return false;
+                        }
+                        String arg = args.get(0);
+                        try {
+                            date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+                            if (date.isBefore(DATE_MIN) || date.isAfter(DATE_MAX)) {
+                                messages.error("doclet.Option_date_out_of_range", arg);
+                                return false;
+                            }
+                            return true;
+                        } catch (DateTimeParseException x) {
+                            messages.error("doclet.Option_date_not_valid", arg);
+                            return false;
+                        }
                     }
                 },
 
@@ -350,7 +419,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-excludedocfilessubdir", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedDocFileDirs, args.get(0));
+                        excludedDocFileDirs.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -403,6 +472,23 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--link-modularity-mismatch", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String s = args.get(0);
+                        switch (s) {
+                            case "warn", "info" ->
+                                    linkModularityMismatch = ModularityMismatchPolicy.valueOf(s.toUpperCase(Locale.ROOT));
+                            default -> {
+                                reporter.print(ERROR, resources.getText(
+                                        "doclet.Option_invalid", s, "--link-modularity-mismatch"));
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                },
+
                 new Option(resources, "--link-platform-properties", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -439,6 +525,10 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         noTimestamp = true;
+                        if (date != null) {
+                            messages.error("doclet.Option_conflict", "--date", "-notimestamp");
+                            return false;
+                        }
                         return true;
                     }
                 },
@@ -446,7 +536,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-noqualifier", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedQualifiers, args.get(0));
+                        excludedQualifiers.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -464,16 +554,13 @@ public abstract class BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String o = args.get(0);
                         switch (o) {
-                            case "summary":
-                                summarizeOverriddenMethods = true;
-                                break;
-                            case "detail":
-                                summarizeOverriddenMethods = false;
-                                break;
-                            default:
+                            case "summary" -> summarizeOverriddenMethods = true;
+                            case "detail"  -> summarizeOverriddenMethods = false;
+                            default -> {
                                 reporter.print(ERROR,
                                         resources.getText("doclet.Option_invalid",o, "--override-methods"));
                                 return false;
+                            }
                         }
                         return true;
                     }
@@ -524,7 +611,7 @@ public abstract class BaseOptions {
                         }
                         if (sourceTabSize <= 0) {
                             messages.warning("doclet.sourcetab_warning");
-                            sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                            sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
                         }
                         return true;
                     }
@@ -589,6 +676,26 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         allowScriptInComments = true;
                         return true;
+                    }
+                },
+
+                new Option(resources, "--spec-base-url", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URL",
+                                            e.getMessage()));
+                            return false;
+                        }
                     }
                 },
 
@@ -657,15 +764,6 @@ public abstract class BaseOptions {
         return true;
     }
 
-    private void addToSet(Set<String> s, String str) {
-        StringTokenizer st = new StringTokenizer(str, ":");
-        String current;
-        while (st.hasMoreTokens()) {
-            current = st.nextToken();
-            s.add(current);
-        }
-    }
-
     /**
      * Add a trailing file separator, if not found. Remove superfluous
      * file separators if any. Preserve the front double file separator for
@@ -708,6 +806,13 @@ public abstract class BaseOptions {
      */
     LinkedHashSet<List<String>> customTagStrs() {
         return customTagStrs;
+    }
+
+    /**
+     * Argument for command-line option {@code --date}.
+     */
+    public ZonedDateTime date() {
+        return date;
     }
 
     /**
@@ -828,6 +933,14 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    public ModularityMismatchPolicy linkModularityMismatch() {
+        return linkModularityMismatch;
+    }
+
+    /**
      * Argument for command-line option {@code --link-platform-properties}.
      */
     String linkPlatformProperties() {
@@ -939,7 +1052,7 @@ public abstract class BaseOptions {
      * Arguments for command line option {@code --since}.
      */
     public List<String> since() {
-        return Collections.unmodifiableList(since);
+        return List.copyOf(since);
     }
 
     /**
@@ -958,9 +1071,17 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    public URI specBaseURI() {
+        return specBaseURI;
+    }
+
+    /**
      * Value for command-line option {@code --override-methods summary}
-     * or  {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * or {@code --override-methods detail}.
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */

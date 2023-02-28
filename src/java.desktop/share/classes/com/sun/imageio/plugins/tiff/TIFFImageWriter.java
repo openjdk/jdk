@@ -181,7 +181,7 @@ public class TIFFImageWriter extends ImageWriter {
     private boolean isImageSimple; // Whether image can be copied into directly
     private boolean isInverted; // Whether photometric inversion is required
 
-    private boolean isTiled; // Whether the image is tiled (true) or stipped (false).
+    private boolean isTiled; // Whether the image is tiled (true) or stripped (false).
 
     private int nativePhotometricInterpretation;
     private int photometricInterpretation;
@@ -2895,7 +2895,7 @@ public class TIFFImageWriter extends ImageWriter {
             int numThumbs = thumbnails.size();
             for(int i = 0; i < numThumbs; i++) {
                 Object thumb = thumbnails.get(i);
-                if(thumb == null || !(thumb instanceof BufferedImage)) {
+                if (!(thumb instanceof BufferedImage)) {
                     throw new IllegalArgumentException
                         ("thumbnails contains null references or objects other than BufferedImages!");
                 }

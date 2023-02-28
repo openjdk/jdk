@@ -157,24 +157,30 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      */
     public void finish() throws IOException {
         if (!def.finished()) {
-            def.finish();
-            while (!def.finished()) {
-                int len = def.deflate(buf, 0, buf.length);
-                if (def.finished() && len <= buf.length - TRAILER_SIZE) {
-                    // last deflater buffer. Fit trailer at the end
-                    writeTrailer(buf, len);
-                    len = len + TRAILER_SIZE;
-                    out.write(buf, 0, len);
-                    return;
+            try {
+                def.finish();
+                while (!def.finished()) {
+                    int len = def.deflate(buf, 0, buf.length);
+                    if (def.finished() && len <= buf.length - TRAILER_SIZE) {
+                        // last deflater buffer. Fit trailer at the end
+                        writeTrailer(buf, len);
+                        len = len + TRAILER_SIZE;
+                        out.write(buf, 0, len);
+                        return;
+                    }
+                    if (len > 0)
+                        out.write(buf, 0, len);
                 }
-                if (len > 0)
-                    out.write(buf, 0, len);
+                // if we can't fit the trailer at the end of the last
+                // deflater buffer, we write it separately
+                byte[] trailer = new byte[TRAILER_SIZE];
+                writeTrailer(trailer, 0);
+                out.write(trailer);
+            } catch (IOException e) {
+                if (usesDefaultDeflater)
+                    def.end();
+                throw e;
             }
-            // if we can't fit the trailer at the end of the last
-            // deflater buffer, we write it separately
-            byte[] trailer = new byte[TRAILER_SIZE];
-            writeTrailer(trailer, 0);
-            out.write(trailer);
         }
     }
 

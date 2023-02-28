@@ -41,6 +41,9 @@ class FixedLengthInputStream extends LeftOverInputStream {
 
     FixedLengthInputStream (ExchangeImpl t, InputStream src, long len) {
         super (t, src);
+        if (len < 0) {
+            throw new IllegalArgumentException("Content-Length: " + len);
+        }
         this.remaining = len;
     }
 

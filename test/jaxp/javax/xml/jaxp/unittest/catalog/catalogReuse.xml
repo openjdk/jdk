@@ -1,0 +1,5 @@
+<?xml version='1.0'?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog" prefer="public">
+    <rewriteURI uriStartString="http://entailments/example.org/" rewritePrefix="derived/"/>
+    <rewriteURI uriStartString="http://example.org/" rewritePrefix="sources/"/>
+</catalog>

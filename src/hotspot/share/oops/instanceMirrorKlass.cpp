@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
-int InstanceMirrorKlass::instance_size(Klass* k) {
-  if (k != NULL && k->is_instance_klass()) {
+size_t InstanceMirrorKlass::instance_size(Klass* k) {
+  if (k != nullptr && k->is_instance_klass()) {
     return align_object_size(size_helper() + InstanceKlass::cast(k)->static_field_size());
   }
   return size_helper();
@@ -47,21 +47,21 @@ int InstanceMirrorKlass::instance_size(Klass* k) {
 
 instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, TRAPS) {
   // Query before forming handle.
-  int size = instance_size(k);
-  assert(size > 0, "total object size must be positive: %d", size);
+  size_t size = instance_size(k);
+  assert(size > 0, "total object size must be non-zero: " SIZE_FORMAT, size);
 
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.
   return (instanceOop)Universe::heap()->class_allocate(this, size, THREAD);
 }
 
-int InstanceMirrorKlass::oop_size(oop obj) const {
+size_t InstanceMirrorKlass::oop_size(oop obj) const {
   return java_lang_Class::oop_size(obj);
 }
 
 int InstanceMirrorKlass::compute_static_oop_field_count(oop obj) {
   Klass* k = java_lang_Class::as_Klass(obj);
-  if (k != NULL && k->is_instance_klass()) {
+  if (k != nullptr && k->is_instance_klass()) {
     return InstanceKlass::cast(k)->static_oop_field_count();
   }
   return 0;

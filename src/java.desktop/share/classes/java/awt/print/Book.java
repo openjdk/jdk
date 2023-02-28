@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class Book implements Pageable {
      * The BookPage inner class describes an individual
      * page in a Book through a PageFormat-Printable pair.
      */
-    private class BookPage {
+    private static class BookPage {
         /**
          *  The size and orientation of the page.
          */

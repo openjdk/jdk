@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import sun.net.www.URLConnection;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
-import sun.net.ProgressSource;
-import sun.net.ProgressMonitor;
 import sun.net.www.ParseUtil;
 import sun.security.action.GetPropertyAction;
 
@@ -159,17 +157,15 @@ public class FtpURLConnection extends URLConnection {
         }
     }
 
-    static URL checkURL(URL u) throws IllegalArgumentException {
+    private static URL checkURL(URL u) throws MalformedURLException {
         if (u != null) {
             if (u.toExternalForm().indexOf('\n') > -1) {
-                Exception mfue = new MalformedURLException("Illegal character in URL");
-                throw new IllegalArgumentException(mfue.getMessage(), mfue);
+                throw new MalformedURLException("Illegal character in URL");
             }
         }
-        String s = IPAddressUtil.checkAuthority(u);
-        if (s != null) {
-            Exception mfue = new MalformedURLException(s);
-            throw new IllegalArgumentException(mfue.getMessage(), mfue);
+        String errMsg = IPAddressUtil.checkAuthority(u);
+        if (errMsg != null) {
+            throw new MalformedURLException(errMsg);
         }
         return u;
     }
@@ -179,14 +175,14 @@ public class FtpURLConnection extends URLConnection {
      *
      * @param   url     The {@code URL} to retrieve or store.
      */
-    public FtpURLConnection(URL url) {
+    public FtpURLConnection(URL url) throws MalformedURLException {
         this(url, null);
     }
 
     /**
      * Same as FtpURLconnection(URL) with a per connection proxy specified
      */
-    FtpURLConnection(URL url, Proxy p) {
+    FtpURLConnection(URL url, Proxy p) throws MalformedURLException {
         super(checkURL(url));
         instProxy = p;
         host = url.getHost();
@@ -410,13 +406,13 @@ public class FtpURLConnection extends URLConnection {
     }
 
     /**
-     * Get the InputStream to retreive the remote file. It will issue the
+     * Get the InputStream to retrieve the remote file. It will issue the
      * "get" (or "dir") command to the ftp server.
      *
      * @return  the {@code InputStream} to the connection.
      *
      * @throws  IOException if already opened for output
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -468,17 +464,7 @@ public class FtpURLConnection extends URLConnection {
 
                     // Wrap input stream with MeteredStream to ensure read() will always return -1
                     // at expected length.
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    ProgressSource pi = null;
-
-                    if (meteredInput) {
-                        pi = new ProgressSource(url, "GET", l);
-                        pi.beginTracking();
-                    }
-
-                    is = new MeteredStream(is, pi, l);
+                    is = new MeteredStream(is, l);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -510,17 +496,7 @@ public class FtpURLConnection extends URLConnection {
                 is = new FtpInputStream(ftp, ftp.list(null));
                 msgh.add("content-type", "text/plain");
                 msgh.add("access-type", "directory");
-            } catch (IOException ex) {
-                FileNotFoundException fnfe = new FileNotFoundException(fullpath);
-                if (ftp != null) {
-                    try {
-                        ftp.close();
-                    } catch (IOException ioe) {
-                        fnfe.addSuppressed(ioe);
-                    }
-                }
-                throw fnfe;
-            } catch (FtpProtocolException ex2) {
+            } catch (IOException | FtpProtocolException ex) {
                 FileNotFoundException fnfe = new FileNotFoundException(fullpath);
                 if (ftp != null) {
                     try {
@@ -553,7 +529,7 @@ public class FtpURLConnection extends URLConnection {
      *
      * @throws  IOException if already opened for input or the URL
      *          points to a directory
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -563,7 +539,7 @@ public class FtpURLConnection extends URLConnection {
 
         if (http != null) {
             OutputStream out = http.getOutputStream();
-            // getInputStream() is neccessary to force a writeRequests()
+            // getInputStream() is necessary to force a writeRequests()
             // on the http client.
             http.getInputStream();
             return out;

@@ -61,7 +61,7 @@ public class ZGlobals {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZGlobalsForVMStructs");
 
         instanceField = type.getField("_instance_p");
@@ -78,7 +78,7 @@ public class ZGlobals {
         ZPageSizeMediumShift = db.lookupLongConstant("ZPageSizeMediumShift").longValue();
 
         ZObjectAlignmentMediumShift = db.lookupIntConstant("ZObjectAlignmentMediumShift").intValue();
-        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();;
+        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();
 
         ZAddressOffsetShift = db.lookupLongConstant("ZAddressOffsetShift").longValue();
 

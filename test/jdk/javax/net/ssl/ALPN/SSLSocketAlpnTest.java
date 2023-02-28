@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,7 +480,7 @@ public class SSLSocketAlpnTest {
          */
         if ((local != null) && (remote != null)) {
             // If both failed, return the curthread's exception.
-            local.initCause(remote);
+            local.addSuppressed(remote);
             exception = local;
         } else if (local != null) {
             exception = local;

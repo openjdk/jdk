@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,32 @@
  *
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
-import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm -Xverify:all TestSlices
  */
 public class TestSlices {
 
     static MemoryLayout LAYOUT = MemoryLayout.sequenceLayout(2,
-            MemoryLayout.sequenceLayout(5, MemoryLayouts.JAVA_INT));
+            MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT));
 
-    static VarHandle VH_ALL = LAYOUT.varHandle(int.class,
+    static VarHandle VH_ALL = LAYOUT.varHandle(
             MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement());
 
     @Test(dataProvider = "slices")
     public void testSlices(VarHandle handle, int lo, int hi, int[] values) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, arena.scope());;
             //init
             for (long i = 0 ; i < 2 ; i++) {
                 for (long j = 0 ; j < 5 ; j++) {
@@ -56,6 +56,15 @@ public class TestSlices {
             }
 
             checkSlice(segment, handle, lo, hi, values);
+        }
+    }
+
+    @Test(dataProvider = "slices")
+    public void testSliceBadIndex(VarHandle handle, int lo, int hi, int[] values) {
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, arena.scope());;
+            assertThrows(() -> handle.get(segment, lo, 0));
+            assertThrows(() -> handle.get(segment, 0, hi));
         }
     }
 
@@ -76,16 +85,16 @@ public class TestSlices {
                 // x
                 { VH_ALL, 2, 5, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } },
                 // x[0::2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(0, 2)), 2, 3, new int[] { 1, 3, 5, 6, 8, 10 } },
                 // x[1::2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(1, 2)), 2, 2, new int[] { 2, 4, 7, 9 } },
                 // x[4::-2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(4, -2)), 2, 3, new int[] { 5, 3, 1, 10, 8, 6 } },
                 // x[3::-2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(3, -2)), 2, 2, new int[] { 4, 2, 9, 7 } },
         };
     }

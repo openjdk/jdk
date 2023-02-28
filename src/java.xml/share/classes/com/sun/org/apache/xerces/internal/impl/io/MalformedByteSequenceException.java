@@ -58,6 +58,7 @@ public class MalformedByteSequenceException extends CharConversionException {
     private String fKey;
 
     /** replacement arguements for the error message **/
+    @SuppressWarnings("serial") // Array component type is not Serializable
     private Object[] fArguments;
 
     /** message text for this message, initially null **/

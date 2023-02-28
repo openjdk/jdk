@@ -61,7 +61,7 @@ private:
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
 
 public:
-  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry, bool check_for_duplicates);
+  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
 
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
@@ -111,7 +111,7 @@ public:
     return _has_non_jar_in_classpath;
   }
 
-  static void record_result(const s2 classpath_index, InstanceKlass* result);
+  static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }

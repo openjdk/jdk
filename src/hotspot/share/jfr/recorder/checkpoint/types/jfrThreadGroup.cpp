@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,12 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
   assert(current != NULL, "invariant");
   assert(_thread_group_hierarchy != NULL, "invariant");
 
+  oop thread_oop = jt->threadObj();
+  if (thread_oop == nullptr) {
+    return 0;
+  }
   // immediate thread group
-  Handle thread_group_handle(current, java_lang_Thread::threadGroup(jt->threadObj()));
+  Handle thread_group_handle(current, java_lang_Thread::threadGroup(thread_oop));
   if (thread_group_handle == NULL) {
     return 0;
   }
@@ -167,7 +171,7 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
   Handle parent_thread_group_handle(current, parent_thread_group_obj);
 
   // and check parents parents...
-  while (!(parent_thread_group_handle == NULL)) {
+  while (parent_thread_group_handle != nullptr) {
     const jweak parent_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(parent_thread_group_handle) : NULL;
     thread_group_pointers = new JfrThreadGroupPointers(parent_thread_group_handle, parent_group_weak_ref);
     _thread_group_hierarchy->append(thread_group_pointers);
@@ -178,7 +182,7 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
 }
 
 static traceid next_id() {
-  static traceid _current_threadgroup_id = 0;
+  static traceid _current_threadgroup_id = 1; // 1 is reserved for thread group "VirtualThreads"
   return ++_current_threadgroup_id;
 }
 
@@ -259,7 +263,7 @@ void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group(JfrThreadGroupPointer
 }
 
 JfrThreadGroup::JfrThreadGroup() :
-  _list(new (ResourceObj::C_HEAP, mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, mtTracing)) {}
+  _list(new (mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, mtTracing)) {}
 
 JfrThreadGroup::~JfrThreadGroup() {
   if (_list != NULL) {
@@ -280,6 +284,7 @@ void JfrThreadGroup::set_instance(JfrThreadGroup* new_instance) {
 }
 
 traceid JfrThreadGroup::thread_group_id(const JavaThread* jt, Thread* current) {
+  HandleMark hm(current);
   JfrThreadGroupsHelper helper(jt, current);
   return helper.is_valid() ? thread_group_id_internal(helper) : 0;
 }
@@ -349,7 +354,14 @@ int JfrThreadGroup::add_entry(JfrThreadGroupEntry* tge) {
 void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) const {
   assert(_list != NULL && !_list->is_empty(), "should not need be here!");
   const int number_of_tg_entries = _list->length();
-  writer.write_count(number_of_tg_entries);
+  writer.write_count(number_of_tg_entries + 1); // + VirtualThread group
+  writer.write_key(1);      // 1 is reserved for VirtualThread group
+  writer.write<traceid>(0); // parent
+  const oop vgroup = java_lang_Thread_Constants::get_VTHREAD_GROUP();
+  assert(vgroup != (oop)NULL, "invariant");
+  const char* const vgroup_name = java_lang_ThreadGroup::name(vgroup);
+  assert(vgroup_name != NULL, "invariant");
+  writer.write(vgroup_name);
   for (int index = 0; index < number_of_tg_entries; ++index) {
     const JfrThreadGroupEntry* const curtge = _list->at(index);
     writer.write_key(curtge->thread_group_id());
@@ -361,6 +373,7 @@ void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) con
 void JfrThreadGroup::write_selective_thread_group(JfrCheckpointWriter* writer, traceid thread_group_id) const {
   assert(writer != NULL, "invariant");
   assert(_list != NULL && !_list->is_empty(), "should not need be here!");
+  assert(thread_group_id != 1, "should not need be here!");
   const int number_of_tg_entries = _list->length();
 
   // save context

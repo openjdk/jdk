@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -46,6 +47,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
+import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -54,7 +56,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     // Background image name in resources
     static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
-    // Backround image name and folder under which it will be stored in DMG
+    // Background image name and folder under which it will be stored in DMG
     static final String BACKGROUND_IMAGE_FOLDER =".background";
     static final String BACKGROUND_IMAGE = "background.tiff";
     static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
@@ -79,7 +81,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         try {
             Path appLocation = prepareAppBundle(params);
 
-            if (appLocation != null && prepareConfigFiles(params)) {
+            if (appLocation != null && prepareConfigFiles(appLocation,params)) {
                 Path configScript = getConfig_Script(params);
                 if (IOUtils.exists(configScript)) {
                     IOUtils.run("bash", configScript);
@@ -96,8 +98,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     private static final String hdiutil = "/usr/bin/hdiutil";
 
-    private void prepareDMGSetupScript(Map<String, ? super Object> params)
-                                                                    throws IOException {
+    private void prepareDMGSetupScript(Path appLocation,
+            Map<String, ? super Object> params) throws IOException {
         Path dmgSetup = getConfig_VolumeScript(params);
         Log.verbose(MessageFormat.format(
                 I18N.getString("message.preparing-dmg-setup"),
@@ -115,18 +117,22 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path volumePath = rootPath.resolve(APP_NAME.fetchFrom(params));
         String volumeUrl = volumePath.toUri().toString() + File.separator;
 
-        // Provide full path to backround image, so we can find it.
+        // Provide full path to background image, so we can find it.
         Path bgFile = Path.of(rootPath.toString(), APP_NAME.fetchFrom(params),
                               BACKGROUND_IMAGE_FOLDER, BACKGROUND_IMAGE);
 
-        //prepare config for exe
+        // Prepare DMG setup script
         Map<String, String> data = new HashMap<>();
         data.put("DEPLOY_VOLUME_URL", volumeUrl);
         data.put("DEPLOY_BG_FILE", bgFile.toString());
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
-
+        String targetItem = (StandardBundlerParam.isRuntimeInstaller(params)) ?
+              APP_NAME.fetchFrom(params) : appLocation.getFileName().toString();
+        data.put("DEPLOY_TARGET", targetItem);
         data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
+        data.put("DEPLOY_INSTALL_LOCATION_DISPLAY_NAME",
+                getInstallDirDisplayName(params));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
@@ -181,8 +187,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    private boolean prepareConfigFiles(Map<String, ? super Object> params)
-            throws IOException {
+    private boolean prepareConfigFiles(Path appLocation,
+            Map<String, ? super Object> params) throws IOException {
 
         createResource(DEFAULT_BACKGROUND_IMAGE, params)
                     .setCategory(I18N.getString("resource.dmg-background"))
@@ -199,7 +205,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         prepareLicense(params);
 
-        prepareDMGSetupScript(params);
+        prepareDMGSetupScript(appLocation, params);
 
         return true;
     }
@@ -273,11 +279,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
-        Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
-        Path predefinedImage = StandardBundlerParam.getPredefinedAppImage(params);
-        if (predefinedImage != null) {
-            srcFolder = predefinedImage;
-        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+        Path srcFolder = appLocation.getParent();
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
             Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
                     "root-");
 
@@ -313,7 +316,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         String hdiUtilVerbosityFlag = VERBOSE.fetchFrom(params) ?
                 "-verbose" : "-quiet";
-
+        List <String> dmgContent = DMG_CONTENT.fetchFrom(params);
+        for (String content : dmgContent) {
+            Path path = Path.of(content);
+            IOUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
+        }
         // create temp image
         ProcessBuilder pb = new ProcessBuilder(
                 hdiutil,
@@ -389,7 +396,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
             // We will not consider setting background image and creating link
             // to install-dir in DMG as critical error, since it can fail in
-            // headless enviroment.
+            // headless environment.
             try {
                 pb = new ProcessBuilder("/usr/bin/osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());

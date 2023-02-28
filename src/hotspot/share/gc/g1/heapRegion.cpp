@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -65,8 +64,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -84,15 +84,13 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   LogOfHRGrainBytes = region_size_log;
 
   guarantee(GrainBytes == 0, "we should only set it once");
-  // The cast to int is safe, given that we've bounded region_size by
-  // MIN_REGION_SIZE and MAX_REGION_SIZE.
   GrainBytes = region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
@@ -104,8 +102,11 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_old();
-  _next_marked_bytes = 0;
+  clear_index_in_opt_cset();
+  move_to_old();
+
+  _rem_set->clean_code_roots(this);
+  _rem_set->clear_locked(true /* only_cardset */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -126,8 +127,6 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear_locked();
 
-  zero_marked_bytes();
-
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
@@ -147,7 +146,7 @@ void HeapRegion::calc_gc_efficiency() {
   // Retrieve a prediction of the elapsed time for this region for
   // a mixed gc because the region will only be evacuated during a
   // mixed gc.
-  double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_gc */);
+  double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
@@ -211,8 +210,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
-
-  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -220,8 +217,10 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
+}
 
-  _bot_part.set_object_can_span(false);
+void HeapRegion::prepare_remset_for_scan() {
+  return _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -231,9 +230,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
-  _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock", Mutex::_safepoint_check_never),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -244,8 +241,9 @@ HeapRegion::HeapRegion(uint hrm_index,
 #ifdef ASSERT
   _containing_set(NULL),
 #endif
-  _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
-  _prev_marked_bytes(0), _next_marked_bytes(0),
+  _top_at_mark_start(NULL),
+  _parsable_bottom(NULL),
+  _garbage_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
@@ -265,8 +263,6 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
   }
 
   set_top(bottom());
-  set_compaction_top(bottom());
-  reset_bot();
 
   hr_clear(false /*clear_space*/);
 }
@@ -279,59 +275,52 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start,
-                                                    bool during_conc_mark) {
-  // We always recreate the prev marking info and we'll explicitly
-  // mark all objects we find to be self-forwarded on the prev
-  // bitmap. So all objects need to be below PTAMS.
-  _prev_marked_bytes = 0;
+void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+  // PB must be bottom - we only evacuate old gen regions after scrubbing, and
+  // young gen regions never have their PB set to anything other than bottom.
+  assert(parsable_bottom_acquire() == bottom(), "must be");
+
+  _garbage_bytes = 0;
 
   if (during_concurrent_start) {
-    // During concurrent start, we'll also explicitly mark all objects
-    // we find to be self-forwarded on the next bitmap. So all
-    // objects need to be below NTAMS.
-    _next_top_at_mark_start = top();
-    _next_marked_bytes = 0;
-  } else if (during_conc_mark) {
-    // During concurrent mark, all objects in the CSet (including
-    // the ones we find to be self-forwarded) are implicitly live.
-    // So all objects need to be above NTAMS.
-    _next_top_at_mark_start = bottom();
-    _next_marked_bytes = 0;
+    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
+    // below it.
+    set_top_at_mark_start(top());
+  } else {
+    // Outside of the mixed phase all regions that had an evacuation failure must
+    // be young regions, and their TAMS is always bottom. Similarly, before the
+    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
+    assert(top_at_mark_start() == bottom(), "must be");
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
-  assert(marked_bytes <= used(),
-         "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
-  _prev_top_at_mark_start = top();
-  _prev_marked_bytes = marked_bytes;
+void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
+  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
-
-void HeapRegion::add_strong_code_root(nmethod* nm) {
+void HeapRegion::add_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root(nm);
+  hrrs->add_code_root(nm);
 }
 
-void HeapRegion::add_strong_code_root_locked(nmethod* nm) {
+void HeapRegion::add_code_root_locked(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root_locked(nm);
+  hrrs->add_code_root_locked(nm);
 }
 
-void HeapRegion::remove_strong_code_root(nmethod* nm) {
+void HeapRegion::remove_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_strong_code_root(nm);
+  hrrs->remove_code_root(nm);
 }
 
-void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->strong_code_roots_do(blk);
+  hrrs->code_roots_do(blk);
 }
 
-class VerifyStrongCodeRootOopClosure: public OopClosure {
+class VerifyCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
   bool _failures;
   bool _has_oops_in_region;
@@ -359,7 +348,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
+  VerifyCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -369,33 +358,27 @@ public:
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
 
-class VerifyStrongCodeRootCodeBlobClosure: public CodeBlobClosure {
+class VerifyCodeRootCodeBlobClosure: public CodeBlobClosure {
   const HeapRegion* _hr;
   bool _failures;
 public:
-  VerifyStrongCodeRootCodeBlobClosure(const HeapRegion* hr) :
+  VerifyCodeRootCodeBlobClosure(const HeapRegion* hr) :
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
     nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
     if (nm != NULL) {
       // Verify that the nemthod is live
-      if (!nm->is_alive()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its strong code roots",
+      VerifyCodeRootOopClosure oop_cl(_hr);
+      nm->oops_do(&oop_cl);
+      if (!oop_cl.has_oops_in_region()) {
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
-      } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr);
-        nm->oops_do(&oop_cl);
-        if (!oop_cl.has_oops_in_region()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
-                                p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-          _failures = true;
-        } else if (oop_cl.failures()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
-                                p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-          _failures = true;
-        }
+      } else if (oop_cl.failures()) {
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
+                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+        _failures = true;
       }
     }
   }
@@ -403,51 +386,49 @@ public:
   bool failures()       { return _failures; }
 };
 
-void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const {
+bool HeapRegion::verify_code_roots(VerifyOption vo) const {
   if (!G1VerifyHeapRegionCodeRoots) {
     // We're not verifying code roots.
-    return;
+    return false;
   }
-  if (vo == VerifyOption_G1UseFullMarking) {
+  if (vo == VerifyOption::G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
-    // unloading, code cache unloading, etc so the strong code roots
+    // unloading, code cache unloading, etc so the code roots
     // attached to each heap region are in an inconsistent state. They won't
-    // be consistent until the strong code roots are rebuilt after the
-    // actual GC. Skip verifying the strong code roots in this particular
+    // be consistent until the code roots are rebuilt after the
+    // actual GC. Skip verifying the code roots in this particular
     // time.
     assert(VerifyDuringGC, "only way to get here");
-    return;
+    return false;
   }
 
   HeapRegionRemSet* hrrs = rem_set();
-  size_t strong_code_roots_length = hrrs->strong_code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_list_length();
 
   // if this region is empty then there should be no entries
-  // on its strong code root list
+  // on its code root list
   if (is_empty()) {
-    if (strong_code_roots_length > 0) {
+    bool has_code_roots = code_roots_length > 0;
+    if (has_code_roots) {
       log_error(gc, verify)("region " HR_FORMAT " is empty but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
-      *failures = true;
+                            HR_FORMAT_PARAMS(this), code_roots_length);
     }
-    return;
+    return has_code_roots;
   }
 
   if (is_continues_humongous()) {
-    if (strong_code_roots_length > 0) {
+    bool has_code_roots = code_roots_length > 0;
+    if (has_code_roots) {
       log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
-      *failures = true;
+                            HR_FORMAT_PARAMS(this), code_roots_length);
     }
-    return;
+    return has_code_roots;
   }
 
-  VerifyStrongCodeRootCodeBlobClosure cb_cl(this);
-  strong_code_roots_do(&cb_cl);
+  VerifyCodeRootCodeBlobClosure cb_cl(this);
+  code_roots_do(&cb_cl);
 
-  if (cb_cl.failures()) {
-    *failures = true;
-  }
+  return cb_cl.failures();
 }
 
 void HeapRegion::print() const { print_on(tty); }
@@ -463,8 +444,8 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
-               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
+            p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
@@ -476,242 +457,206 @@ void HeapRegion::print_on(outputStream* st) const {
   st->print_cr("");
 }
 
-class G1VerificationClosure : public BasicOopIterateClosure {
-protected:
+static bool is_oop_safe(oop obj) {
+  if (!oopDesc::is_oop(obj)) {
+    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
+    return false;
+  }
+
+  // Now examine the Klass a little more closely.
+  Klass* klass = obj->klass_raw();
+
+  bool is_metaspace_object = Metaspace::contains(klass);
+  if (!is_metaspace_object) {
+    log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
+                          "not metadata", p2i(klass), p2i(obj));
+    return false;
+  } else if (!klass->is_klass()) {
+    log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
+                          "not a klass", p2i(klass), p2i(obj));
+    return false;
+  }
+
+  return true;
+}
+
+// Closure that glues together validity check for oop references (first),
+// then optionally verifies the remembered set for that reference.
+class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
+  using CardValue = CardTable::CardValue;
+
   G1CollectedHeap* _g1h;
-  G1CardTable *_ct;
-  oop _containing_obj;
-  bool _failures;
-  int _n_failures;
   VerifyOption _vo;
-public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
-  G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-    _g1h(g1h), _ct(g1h->card_table()),
-    _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
-  }
+  bool _verify_remsets;
 
-  void set_containing_obj(oop obj) {
-    _containing_obj = obj;
-  }
+  oop _containing_obj;
 
-  bool failures() { return _failures; }
-  int n_failures() { return _n_failures; }
+  size_t _num_failures;
+
+  G1CardTable *_ct;
+
+  bool has_failures() const { return _num_failures != 0; }
 
   void print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
-    Klass* k = obj->klass();
-    const char* class_name = k->external_name();
-    out->print_cr("class name %s", class_name);
+    obj->print_name_on(out);
 #else // PRODUCT
     obj->print_on(out);
 #endif // PRODUCT
   }
-};
 
-class VerifyLiveClosure : public G1VerificationClosure {
-public:
-  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p) { do_oop_work(p); }
+  template<class T>
+  bool verify_liveness(T* p, oop obj) {
+    bool is_in_heap = _g1h->is_in(obj);
 
-  template <class T>
-  void do_oop_work(T* p) {
-    assert(_containing_obj != NULL, "Precondition");
-    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
-      "Precondition");
-    verify_liveness(p);
-  }
+    if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
+      ResourceMark rm;
+      Log(gc, verify) log;
+      LogStream ls(log.error());
 
-  template <class T>
-  void verify_liveness(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    Log(gc, verify) log;
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      bool failed = false;
-      if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
-        MutexLocker x(ParGCRareEvent_lock,
-          Mutex::_no_safepoint_check_flag);
+      MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
 
-        if (!_failures) {
-          log.error("----------");
-        }
-        ResourceMark rm;
-        if (!_g1h->is_in(obj)) {
-          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-          log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
-                    p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-          LogStream ls(log.error());
-          print_object(&ls, _containing_obj);
-          HeapRegion* const to = _g1h->heap_region_containing(obj);
-          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
-                    p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
-        } else {
-          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-          HeapRegion* to = _g1h->heap_region_containing(obj);
-          log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
-                    p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-          LogStream ls(log.error());
-          print_object(&ls, _containing_obj);
-          log.error("points to dead obj " PTR_FORMAT " in region " HR_FORMAT,
-                    p2i(obj), HR_FORMAT_PARAMS(to));
-          print_object(&ls, obj);
-        }
+      if (!has_failures()) {
         log.error("----------");
-        _failures = true;
-        failed = true;
-        _n_failures++;
+      }
+
+      HeapRegion* from = _g1h->heap_region_containing(p);
+      log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
+                p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
+      print_object(&ls, _containing_obj);
+
+      if (!is_in_heap) {
+        log.error("points to address " PTR_FORMAT " outside of heap", p2i(obj));
+      } else {
+        HeapRegion* to = _g1h->heap_region_containing(obj);
+        log.error("points to dead obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
+                  p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
+        print_object(&ls, obj);
+      }
+      log.error("----------");
+      _num_failures++;
+      return false;
+    }
+    return true;
+  }
+
+  template <class T>
+  void verify_remset(T* p, oop obj) {
+    HeapRegion* from = _g1h->heap_region_containing(p);
+    HeapRegion* to = _g1h->heap_region_containing(obj);
+    if (from != to && !from->is_young() && to->rem_set()->is_complete()) {
+
+      CardValue cv_obj = *_ct->byte_for_const(_containing_obj);
+      CardValue cv_field = *_ct->byte_for_const(p);
+      const CardValue dirty = G1CardTable::dirty_card_val();
+
+      bool is_bad = !(to->rem_set()->contains_reference(p) ||
+                      (_containing_obj->is_objArray() ?
+                       cv_field == dirty :
+                       cv_obj == dirty || cv_field == dirty));
+
+      if (is_bad) {
+        ResourceMark rm;
+        Log(gc, verify) log;
+        LogStream ls(log.error());
+
+        MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
+
+        if (!has_failures()) {
+          log.error("----------");
+        }
+        log.error("Missing rem set entry:");
+        log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,
+                  p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
+        _containing_obj->print_on(&ls);
+        log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
+                  p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
+        print_object(&ls, obj);
+        log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
+        log.error("----------");
+        _num_failures++;
       }
     }
   }
-};
-
-class VerifyRemSetClosure : public G1VerificationClosure {
-public:
-  VerifyRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p) { do_oop_work(p); }
 
   template <class T>
   void do_oop_work(T* p) {
-    assert(_containing_obj != NULL, "Precondition");
-    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
-      "Precondition");
-    verify_remembered_set(p);
-  }
+    assert(_containing_obj != nullptr, "must be");
+    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
 
-  template <class T>
-  void verify_remembered_set(T* p) {
     T heap_oop = RawAccess<>::oop_load(p);
-    Log(gc, verify) log;
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-      HeapRegion* to = _g1h->heap_region_containing(obj);
-      if (from != NULL && to != NULL &&
-        from != to &&
-        !to->is_pinned() &&
-        to->rem_set()->is_complete()) {
-        jbyte cv_obj = *_ct->byte_for_const(_containing_obj);
-        jbyte cv_field = *_ct->byte_for_const(p);
-        const jbyte dirty = G1CardTable::dirty_card_val();
+    if (CompressedOops::is_null(heap_oop)) {
+      return;
+    }
+    oop obj = CompressedOops::decode_not_null(heap_oop);
 
-        bool is_bad = !(from->is_young()
-          || to->rem_set()->contains_reference(p)
-          || (_containing_obj->is_objArray() ?
-                cv_field == dirty :
-                cv_obj == dirty || cv_field == dirty));
-        if (is_bad) {
-          MutexLocker x(ParGCRareEvent_lock,
-            Mutex::_no_safepoint_check_flag);
-
-          if (!_failures) {
-            log.error("----------");
-          }
-          LogStream ls(log.error());
-          to->rem_set()->print_info(&ls, p);
-          log.error("Missing rem set entry:");
-          log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,
-                    p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-          ResourceMark rm;
-          _containing_obj->print_on(&ls);
-          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
-                    p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
-          if (oopDesc::is_oop(obj)) {
-            obj->print_on(&ls);
-          }
-          log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
-          log.error("----------");
-          _failures = true;
-          _n_failures++;
-        }
-      }
+    bool is_live = verify_liveness(p, obj);
+    if (is_live && _verify_remsets) {
+      verify_remset(p, obj);
     }
   }
-};
 
-// Closure that applies the given two closures in sequence.
-class G1Mux2Closure : public BasicOopIterateClosure {
-  OopClosure* _c1;
-  OopClosure* _c2;
 public:
-  G1Mux2Closure(OopClosure *c1, OopClosure *c2) { _c1 = c1; _c2 = c2; }
-  template <class T> inline void do_oop_work(T* p) {
-    // Apply first closure; then apply the second.
-    _c1->do_oop(p);
-    _c2->do_oop(p);
+  G1VerifyLiveAndRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo, bool verify_remsets) :
+    _g1h(G1CollectedHeap::heap()),
+    _vo(vo),
+    _verify_remsets(verify_remsets),
+    _containing_obj(nullptr),
+    _num_failures(0),
+    _ct(_g1h->card_table()) { }
+
+  void set_containing_obj(oop const obj) {
+    _containing_obj = obj;
   }
-  virtual inline void do_oop(oop* p) { do_oop_work(p); }
+
+  size_t num_failures() const { return _num_failures; }
+
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual inline void do_oop(oop* p) { do_oop_work(p); }
 };
 
-void HeapRegion::verify(VerifyOption vo,
-                        bool* failures) const {
+bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  *failures = false;
-  HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
-  VerifyLiveClosure vl_cl(g1h, vo);
-  VerifyRemSetClosure vr_cl(g1h, vo);
-  bool is_region_humongous = is_humongous();
-  size_t object_num = 0;
-  while (p < top()) {
+
+  bool verify_rem_sets = !g1h->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC;
+  G1VerifyLiveAndRemSetClosure cl(g1h, vo, verify_rem_sets);
+
+  size_t other_failures = 0;
+
+  HeapWord* p;
+  for (p = bottom(); p < top(); p += block_size(p)) {
     oop obj = cast_to_oop(p);
-    size_t obj_size = block_size(p);
-    object_num += 1;
 
-    if (!g1h->is_obj_dead_cond(obj, this, vo)) {
-      if (oopDesc::is_oop(obj)) {
-        Klass* klass = obj->klass();
-        bool is_metaspace_object = Metaspace::contains(klass);
-        if (!is_metaspace_object) {
-          log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
-                                "not metadata", p2i(klass), p2i(obj));
-          *failures = true;
-          return;
-        } else if (!klass->is_klass()) {
-          log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
-                                "not a klass", p2i(klass), p2i(obj));
-          *failures = true;
-          return;
-        } else {
-          vl_cl.set_containing_obj(obj);
-          if (!g1h->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC) {
-            // verify liveness and rem_set
-            vr_cl.set_containing_obj(obj);
-            G1Mux2Closure mux(&vl_cl, &vr_cl);
-            obj->oop_iterate(&mux);
-
-            if (vr_cl.failures()) {
-              *failures = true;
-            }
-            if (G1MaxVerifyFailures >= 0 &&
-              vr_cl.n_failures() >= G1MaxVerifyFailures) {
-              return;
-            }
-          } else {
-            // verify only liveness
-            obj->oop_iterate(&vl_cl);
-          }
-          if (vl_cl.failures()) {
-            *failures = true;
-          }
-          if (G1MaxVerifyFailures >= 0 &&
-              vl_cl.n_failures() >= G1MaxVerifyFailures) {
-            return;
-          }
-        }
-      } else {
-        log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
-        *failures = true;
-        return;
-      }
+    if (g1h->is_obj_dead_cond(obj, this, vo)) {
+      continue;
     }
-    prev_p = p;
-    p += obj_size;
+
+    if (is_oop_safe(obj)) {
+      cl.set_containing_obj(obj);
+      obj->oop_iterate(&cl);
+    } else {
+      other_failures++;
+    }
+
+    if ((cl.num_failures() + other_failures) >= G1MaxVerifyFailures) {
+      return true;
+    }
+  }
+
+  if (!is_humongous() && p != top()) {
+    log_error(gc, verify)("end of last object " PTR_FORMAT " does not match top " PTR_FORMAT,
+                          p2i(p), p2i(top()));
+    return true;
+  }
+  return false;
+}
+
+bool HeapRegion::verify(VerifyOption vo) const {
+  // We cast p to an oop, so region-bottom must be an obj-start.
+  assert(!is_humongous() || is_starts_humongous(), "invariant");
+
+  if (verify_liveness_and_remset(vo)) {
+    return true;
   }
 
   // Only regions in old generation contain valid BOT.
@@ -719,78 +664,23 @@ void HeapRegion::verify(VerifyOption vo,
     _bot_part.verify();
   }
 
-  if (is_region_humongous) {
+  if (is_humongous()) {
     oop obj = cast_to_oop(this->humongous_start_region()->bottom());
     if (cast_from_oop<HeapWord*>(obj) > bottom() || cast_from_oop<HeapWord*>(obj) + obj->size() < bottom()) {
       log_error(gc, verify)("this humongous region is not part of its' humongous object " PTR_FORMAT, p2i(obj));
-      *failures = true;
-      return;
+      return true;
     }
   }
 
-  if (!is_region_humongous && p != top()) {
-    log_error(gc, verify)("end of last object " PTR_FORMAT " "
-                          "does not match top " PTR_FORMAT, p2i(p), p2i(top()));
-    *failures = true;
-    return;
-  }
-
-  verify_strong_code_roots(vo, failures);
-}
-
-void HeapRegion::verify() const {
-  bool dummy = false;
-  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
-}
-
-void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  *failures = false;
-  HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
-  VerifyRemSetClosure vr_cl(g1h, vo);
-  while (p < top()) {
-    oop obj = cast_to_oop(p);
-    size_t obj_size = block_size(p);
-
-    if (!g1h->is_obj_dead_cond(obj, this, vo)) {
-      if (oopDesc::is_oop(obj)) {
-        vr_cl.set_containing_obj(obj);
-        obj->oop_iterate(&vr_cl);
-
-        if (vr_cl.failures()) {
-          *failures = true;
-        }
-        if (G1MaxVerifyFailures >= 0 &&
-          vr_cl.n_failures() >= G1MaxVerifyFailures) {
-          return;
-        }
-      } else {
-        log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
-        *failures = true;
-        return;
-      }
-    }
-
-    prev_p = p;
-    p += obj_size;
-  }
-}
-
-void HeapRegion::verify_rem_set() const {
-  bool failures = false;
-  verify_rem_set(VerifyOption_G1UsePrevMarking, &failures);
-  guarantee(!failures, "HeapRegion RemSet verification failed");
+  return verify_code_roots(vo);
 }
 
 void HeapRegion::clear(bool mangle_space) {
   set_top(bottom());
-  set_compaction_top(bottom());
 
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
-  reset_bot();
 }
 
 #ifndef PRODUCT
@@ -799,20 +689,43 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
-}
-
-void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
-  _bot_part.alloc_block(start, end);
+void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  _bot_part.update_for_block(start, end);
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
-    if (block_is_obj(p)) {
+    if (block_is_obj(p, parsable_bottom())) {
       blk->do_object(cast_to_oop(p));
     }
     p += block_size(p);
   }
+}
+
+void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
+  // Keep the BOT in sync for old generation regions.
+  if (is_old()) {
+    update_bot_for_obj(address, word_size);
+  }
+  // Fill in the object.
+  CollectedHeap::fill_with_object(address, word_size, zap);
+}
+
+void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
+  size_t range_size = pointer_delta(end, start);
+
+  // Fill the dead range with objects. G1 might need to create two objects if
+  // the range is larger than half a region, which is the max_fill_size().
+  CollectedHeap::fill_with_objects(start, range_size);
+  HeapWord* current = start;
+  do {
+    // Update the BOT if the a threshold is crossed.
+    size_t obj_size = cast_to_oop(current)->size();
+    update_bot_for_block(current, current + obj_size);
+
+    // Advance to the next object.
+    current += obj_size;
+    guarantee(current <= end, "Should never go past end");
+  } while (current != end);
 }

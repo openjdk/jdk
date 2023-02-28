@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public abstract class TypeVectorOperations {
-    @Param({"512","1024", "2048"})
+    @Param({"512", /* "1024", */ "2048"})
     public int COUNT;
 
     private byte[] bytesA;
@@ -195,14 +198,198 @@ public abstract class TypeVectorOperations {
         }
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Benchmark
+    public void convertB2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) bytesA[i];
+        }
+    }
+
+    @Benchmark
+    public void convertB2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) bytesA[i];
+        }
+    }
+
+    @Benchmark
+    public void convertB2L() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) bytesA[i];
+        }
+    }
+
+    @Benchmark
+    public void convertD2B() {
+        for (int i = 0; i < COUNT; i++) {
+            resB[i] = (byte) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convertD2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convertD2I() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convertD2S() {
+        for (int i = 0; i < COUNT; i++) {
+            resS[i] = (short) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convertD2L() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2I() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2B() {
+        for (int i = 0; i < COUNT; i++) {
+            resB[i] = (byte) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2L() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2S() {
+        for (int i = 0; i < COUNT; i++) {
+            resS[i] = (short) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertI2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convertI2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convertI2L() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convertL2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertL2B() {
+        for (int i = 0; i < COUNT; i++) {
+            resB[i] = (byte) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertL2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertL2I() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertL2S() {
+        for (int i = 0; i < COUNT; i++) {
+            resS[i] = (short) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertS2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void convertS2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void convertS2L() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) shorts[i];
+        }
+    }
+
+    @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    public void cmoveD() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = resD[i] < doubles[i] ? resD[i] : doubles[i];
+        }
+    }
+
+    @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    public void cmoveF() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = resF[i] < floats[i] ? resF[i] : floats[i];
+        }
+    }
+
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:+UseSuperWord"
     })
     public static class TypeVectorOperationsSuperWord extends TypeVectorOperations {
 
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:-UseSuperWord"
     })
     public static class TypeVectorOperationsNonSuperWord extends TypeVectorOperations {

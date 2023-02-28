@@ -29,10 +29,31 @@
 #include "hb.hh"
 #include "hb-machinery.hh"
 
-#include <locale.h>
+#if !defined(HB_NO_SETLOCALE) && (!defined(HAVE_NEWLOCALE) || !defined(HAVE_USELOCALE))
+#define HB_NO_SETLOCALE 1
+#endif
 
-#ifdef HB_NO_SETLOCALE
-#define setlocale(Category, Locale) "C"
+#ifndef HB_NO_SETLOCALE
+
+#include <locale.h>
+#ifdef HAVE_XLOCALE_H
+#include <xlocale.h> // Needed on BSD/OS X for uselocale
+#endif
+
+#ifdef WIN32
+#define hb_locale_t _locale_t
+#else
+#define hb_locale_t locale_t
+#endif
+#define hb_setlocale setlocale
+#define hb_uselocale uselocale
+
+#else
+
+#define hb_locale_t void *
+#define hb_setlocale(Category, Locale) "C"
+#define hb_uselocale(Locale) ((hb_locale_t) 0)
+
 #endif
 
 /**
@@ -139,7 +160,7 @@ hb_tag_to_string (hb_tag_t tag, char *buf)
 
 /* hb_direction_t */
 
-const char direction_strings[][4] = {
+static const char direction_strings[][4] = {
   "ltr",
   "rtl",
   "ttb",
@@ -257,13 +278,11 @@ struct hb_language_item_t {
   bool operator == (const char *s) const
   { return lang_equal (lang, s); }
 
-  hb_language_item_t & operator = (const char *s) {
-    /* If a custom allocated is used calling strdup() pairs
-    badly with a call to the custom free() in fini() below.
-    Therefore don't call strdup(), implement its behavior.
-    */
+  hb_language_item_t & operator = (const char *s)
+  {
+    /* We can't call strdup(), because we allow custom allocators. */
     size_t len = strlen(s) + 1;
-    lang = (hb_language_t) malloc(len);
+    lang = (hb_language_t) hb_malloc(len);
     if (likely (lang))
     {
       memcpy((unsigned char *) lang, s, len);
@@ -274,16 +293,15 @@ struct hb_language_item_t {
     return *this;
   }
 
-  void fini () { free ((void *) lang); }
+  void fini () { hb_free ((void *) lang); }
 };
 
 
-/* Thread-safe lock-free language list */
+/* Thread-safe lockfree language list */
 
 static hb_atomic_ptr_t <hb_language_item_t> langs;
 
-#if HB_USE_ATEXIT
-static void
+static inline void
 free_langs ()
 {
 retry:
@@ -294,11 +312,10 @@ retry:
   while (first_lang) {
     hb_language_item_t *next = first_lang->next;
     first_lang->fini ();
-    free (first_lang);
+    hb_free (first_lang);
     first_lang = next;
   }
 }
-#endif
 
 static hb_language_item_t *
 lang_find_or_insert (const char *key)
@@ -311,28 +328,26 @@ retry:
       return lang;
 
   /* Not found; allocate one. */
-  hb_language_item_t *lang = (hb_language_item_t *) calloc (1, sizeof (hb_language_item_t));
+  hb_language_item_t *lang = (hb_language_item_t *) hb_calloc (1, sizeof (hb_language_item_t));
   if (unlikely (!lang))
     return nullptr;
   lang->next = first_lang;
   *lang = key;
   if (unlikely (!lang->lang))
   {
-    free (lang);
+    hb_free (lang);
     return nullptr;
   }
 
   if (unlikely (!langs.cmpexch (first_lang, lang)))
   {
     lang->fini ();
-    free (lang);
+    hb_free (lang);
     goto retry;
   }
 
-#if HB_USE_ATEXIT
   if (!first_lang)
-    atexit (free_langs); /* First person registers atexit() callback. */
-#endif
+    hb_atexit (free_langs); /* First person registers atexit() callback. */
 
   return lang;
 }
@@ -419,7 +434,7 @@ hb_language_get_default ()
   hb_language_t language = default_language;
   if (unlikely (language == HB_LANGUAGE_INVALID))
   {
-    language = hb_language_from_string (setlocale (LC_CTYPE, nullptr), -1);
+    language = hb_language_from_string (hb_setlocale (LC_CTYPE, nullptr), -1);
     (void) default_language.cmpexch (HB_LANGUAGE_INVALID, language);
   }
 
@@ -600,6 +615,9 @@ hb_script_get_horizontal_direction (hb_script_t script)
     /* Unicode-13.0 additions */
     case HB_SCRIPT_CHORASMIAN:
     case HB_SCRIPT_YEZIDI:
+
+    /* Unicode-14.0 additions */
+    case HB_SCRIPT_OLD_UYGHUR:
 
       return HB_DIRECTION_RTL;
 
@@ -1042,6 +1060,47 @@ hb_variation_from_string (const char *str, int len,
   return false;
 }
 
+#ifndef HB_NO_SETLOCALE
+
+static inline void free_static_C_locale ();
+
+static struct hb_C_locale_lazy_loader_t : hb_lazy_loader_t<hb_remove_pointer<hb_locale_t>,
+                                                           hb_C_locale_lazy_loader_t>
+{
+  static hb_locale_t create ()
+  {
+    hb_locale_t l = newlocale (LC_ALL_MASK, "C", NULL);
+    if (!l)
+      return l;
+
+    hb_atexit (free_static_C_locale);
+
+    return l;
+  }
+  static void destroy (hb_locale_t l)
+  {
+    freelocale (l);
+  }
+  static hb_locale_t get_null ()
+  {
+    return (hb_locale_t) 0;
+  }
+} static_C_locale;
+
+static inline
+void free_static_C_locale ()
+{
+  static_C_locale.free_instance ();
+}
+
+static hb_locale_t
+get_C_locale ()
+{
+  return static_C_locale.get_unconst ();
+}
+
+#endif
+
 /**
  * hb_variation_to_string:
  * @variation: an #hb_variation_t to convert
@@ -1067,7 +1126,11 @@ hb_variation_to_string (hb_variation_t *variation,
   while (len && s[len - 1] == ' ')
     len--;
   s[len++] = '=';
+
+  hb_locale_t oldlocale HB_UNUSED;
+  oldlocale = hb_uselocale (get_C_locale ());
   len += hb_max (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%g", (double) variation->value));
+  (void) hb_uselocale (oldlocale);
 
   assert (len < ARRAY_LENGTH (s));
   len = hb_min (len, size - 1);

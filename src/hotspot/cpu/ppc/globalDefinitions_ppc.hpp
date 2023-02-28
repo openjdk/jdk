@@ -26,10 +26,6 @@
 #ifndef CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
 #define CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
 
-#ifndef FILE_AND_LINE
-#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
-#endif
-
 // Size of PPC Instructions
 const int BytesPerInstWord = 4;
 
@@ -40,6 +36,8 @@ const int StackAlignmentInBytes = 16;
 const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
+
+#define SUPPORT_MONITOR_COUNT
 
 // PPC64 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC

@@ -45,7 +45,7 @@ public class WEmbeddedFramePeer extends WFramePeer {
     @Override
     public void print(Graphics g) {}
 
-    // supress calling native setMinSize()
+    // suppress calling native setMinSize()
     @Override
     public void updateMinimumSize() {}
 

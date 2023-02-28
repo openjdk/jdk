@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public interface MonitoredVm {
      *
      * Polling implementations may choose to poll asynchronously. This
      * method allows an asynchronous task to communicate any polling related
-     * exceptions with the application. When an a non-null exception is reported
+     * exceptions with the application. When a non-null exception is reported
      * through this interface, the MonitoredVm instance is considered to
      * be in the <em>errored</em> state.
      *

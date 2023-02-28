@@ -28,6 +28,7 @@ import javax.sound.midi.Sequencer;
 
 /**
  * @test
+ * @key sound
  * @bug 4716740
  * @summary default sequencer does not set the tempo factor
  */

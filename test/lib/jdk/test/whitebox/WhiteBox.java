@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,8 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  public native void forceClassLoaderStatsSafepoint();
+
   private native long getConstantPool0(Class<?> aClass);
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -163,7 +165,52 @@ public class WhiteBox {
   }
 
   // G1
+
   public native boolean g1InConcurrentMark();
+  public native int g1CompletedConcurrentMarkCycles();
+
+  // Perform a complete concurrent GC cycle, using concurrent GC breakpoints.
+  // Completes any in-progress cycle before performing the requested cycle.
+  // Returns true if the cycle completed successfully.  If the cycle was not
+  // successful (e.g. it was aborted), then throws RuntimeException if
+  // errorIfFail is true, returning false otherwise.
+  public boolean g1RunConcurrentGC(boolean errorIfFail) {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      int count = g1CompletedConcurrentMarkCycles();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+      concurrentGCRunToIdle();
+      if (count < g1CompletedConcurrentMarkCycles()) {
+        return true;
+      } else if (errorIfFail) {
+        throw new RuntimeException("Concurrent GC aborted");
+      } else {
+        return false;
+      }
+    } finally {
+      concurrentGCReleaseControl();
+    }
+  }
+
+  public void g1RunConcurrentGC() {
+    g1RunConcurrentGC(true);
+  }
+
+  // Start a concurrent GC cycle, using concurrent GC breakpoints.
+  // The concurrent GC will continue in parallel with the caller.
+  // Completes any in-progress cycle before starting the requested cycle.
+  public void g1StartConcurrentGC() {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+    } finally {
+      // Release control, permitting the cycle to complete.
+      concurrentGCReleaseControl();
+    }
+  }
+
   public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
@@ -225,7 +272,6 @@ public class WhiteBox {
   public native void NMTReleaseMemory(long addr, long size);
   public native long NMTMallocWithPseudoStack(long size, int index);
   public native long NMTMallocWithPseudoStackAndType(long size, int index, int type);
-  public native boolean NMTChangeTrackingLevel();
   public native int NMTGetHashSize();
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
@@ -317,6 +363,36 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getMethodCompilationLevel0(method, isOsr);
   }
+  public         int     getMethodDecompileCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodDecompileCount0(method);
+  }
+  private native int     getMethodDecompileCount0(Executable method);
+  // Get the total trap count of a method. If the trap count for a specific reason
+  // did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, null);
+  }
+  // Get the trap count of a method for a specific reason. If the trap count for
+  // that reason did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method, String reason) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, reason);
+  }
+  private native int     getMethodTrapCount0(Executable method, String reason);
+  // Get the total deopt count.
+  public         int     getDeoptCount() {
+    return getDeoptCount0(null, null);
+  }
+  // Get the deopt count for a specific reason and a specific action. If either
+  // one of 'reason' or 'action' is null, the method returns the sum of all
+  // deoptimizations with the specific 'action' or 'reason' respectively.
+  // If both arguments are null, the method returns the total deopt count.
+  public         int     getDeoptCount(String reason, String action) {
+    return getDeoptCount0(reason, action);
+  }
+  private native int     getDeoptCount0(String reason, String action);
   private native boolean testSetDontInlineMethod0(Executable method, boolean value);
   public         boolean testSetDontInlineMethod(Executable method, boolean value) {
     Objects.requireNonNull(method);
@@ -372,7 +448,6 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   private native long getMethodData0(Executable method);
@@ -458,6 +533,12 @@ public class WhiteBox {
   public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
     "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
+  // G1 specific GC breakpoints.
+  public final String G1_AFTER_REBUILD_STARTED = "AFTER REBUILD STARTED";
+  public final String G1_BEFORE_REBUILD_COMPLETED = "BEFORE REBUILD COMPLETED";
+  public final String G1_AFTER_CLEANUP_STARTED = "AFTER CLEANUP STARTED";
+  public final String G1_BEFORE_CLEANUP_COMPLETED = "BEFORE CLEANUP COMPLETED";
+
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
     if (concurrentGCIsControlled) {
@@ -503,10 +584,6 @@ public class WhiteBox {
       return false;
     }
   }
-
-  // Method tries to start concurrent mark cycle.
-  // It returns false if CM Thread is always in concurrent cycle.
-  public native boolean g1StartConcMarkCycle();
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
@@ -594,6 +671,8 @@ public class WhiteBox {
   }
 
   // Sharing & archiving
+  public native int     getCDSGenericHeaderMinVersion();
+  public native int     getCurrentCDSVersion();
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
@@ -603,6 +682,7 @@ public class WhiteBox {
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
+  public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
@@ -628,6 +708,8 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+  public native long hostPhysicalMemory();
+  public native long hostPhysicalSwap();
 
   // Decoder
   public native void disableElfSectionCache();

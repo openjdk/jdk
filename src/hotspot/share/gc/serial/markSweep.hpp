@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -87,7 +86,6 @@ class MarkSweep : AllStatic {
   //
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
-  friend class VM_MarkSweep;
 
   //
   // Vars
@@ -144,13 +142,9 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static int adjust_pointers(oop obj);
+  static size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
-
-  static void follow_klass(Klass* klass);
-
-  static void follow_cld(ClassLoaderData* cld);
 
   template <class T> static inline void adjust_pointer(T* p);
 
@@ -172,15 +166,13 @@ class MarkSweep : AllStatic {
   static void follow_array_chunk(objArrayOop array, int index);
 };
 
-class MarkAndPushClosure: public OopIterateClosure {
+class MarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 public:
-  template <typename T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
+  MarkAndPushClosure(int claim) : ClaimMetadataVisitingOopIterateClosure(claim) {}
 
-  virtual bool do_metadata() { return true; }
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
+  template <typename T> void do_oop_work(T* p);
+  virtual void do_oop(      oop* p);
+  virtual void do_oop(narrowOop* p);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);

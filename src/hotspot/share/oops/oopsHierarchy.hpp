@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_OOPSHIERARCHY_HPP
 #define SHARE_OOPS_OOPSHIERARCHY_HPP
 
-#include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // OBJECT hierarchy
 // This hierarchy is a representation hierarchy, i.e. if A is a superclass
@@ -45,6 +46,7 @@ typedef void* OopOrNarrowOopStar;
 
 typedef class oopDesc*                    oop;
 typedef class   instanceOopDesc*            instanceOop;
+typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
 typedef class     typeArrayOopDesc*           typeArrayOop;
@@ -66,7 +68,7 @@ typedef class     typeArrayOopDesc*           typeArrayOop;
 // a conversion to or from an oop to a numerical type is needed,
 // use the inline template methods, cast_*_oop, defined below.
 //
-// Converting NULL to oop to Handle implicit is no longer accepted by the
+// Converting null to oop to Handle implicit is no longer accepted by the
 // compiler because there are too many steps in the conversion.  Use Handle()
 // instead, which generates less code anyway.
 
@@ -107,7 +109,7 @@ public:
 };
 
 template<>
-struct PrimitiveConversions::Translate<oop> : public TrueType {
+struct PrimitiveConversions::Translate<oop> : public std::true_type {
   typedef oop Value;
   typedef oopDesc* Decayed;
 
@@ -115,34 +117,35 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
   static Value recover(Decayed x) { return oop(x); }
 };
 
-#define DEF_OOP(type)                                                      \
-   class type##OopDesc;                                                    \
-   class type##Oop : public oop {                                          \
-     public:                                                               \
-       type##Oop() : oop() {}                                              \
-       type##Oop(const type##Oop& o) : oop(o) {}                           \
-       type##Oop(const oop& o) : oop(o) {}                                 \
-       type##Oop(type##OopDesc* o) : oop((oopDesc*)o) {}                   \
-       operator type##OopDesc* () const { return (type##OopDesc*)obj(); }  \
-       type##OopDesc* operator->() const {                                 \
-            return (type##OopDesc*)obj();                                  \
-       }                                                                   \
-       type##Oop& operator=(const type##Oop& o) {                          \
-            oop::operator=(o);                                             \
-            return *this;                                                  \
-       }                                                                   \
-   };                                                                      \
-                                                                           \
-   template<>                                                              \
-   struct PrimitiveConversions::Translate<type##Oop> : public TrueType {   \
-     typedef type##Oop Value;                                              \
-     typedef type##OopDesc* Decayed;                                       \
-                                                                           \
-     static Decayed decay(Value x) { return (type##OopDesc*)x.obj(); }     \
-     static Value recover(Decayed x) { return type##Oop(x); }              \
+#define DEF_OOP(type)                                                          \
+   class type##OopDesc;                                                        \
+   class type##Oop : public oop {                                              \
+     public:                                                                   \
+       type##Oop() : oop() {}                                                  \
+       type##Oop(const type##Oop& o) : oop(o) {}                               \
+       type##Oop(const oop& o) : oop(o) {}                                     \
+       type##Oop(type##OopDesc* o) : oop((oopDesc*)o) {}                       \
+       operator type##OopDesc* () const { return (type##OopDesc*)obj(); }      \
+       type##OopDesc* operator->() const {                                     \
+            return (type##OopDesc*)obj();                                      \
+       }                                                                       \
+       type##Oop& operator=(const type##Oop& o) {                              \
+            oop::operator=(o);                                                 \
+            return *this;                                                      \
+       }                                                                       \
+   };                                                                          \
+                                                                               \
+   template<>                                                                  \
+   struct PrimitiveConversions::Translate<type##Oop> : public std::true_type { \
+     typedef type##Oop Value;                                                  \
+     typedef type##OopDesc* Decayed;                                           \
+                                                                               \
+     static Decayed decay(Value x) { return (type##OopDesc*)x.obj(); }         \
+     static Value recover(Decayed x) { return type##Oop(x); }                  \
    };
 
 DEF_OOP(instance);
+DEF_OOP(stackChunk);
 DEF_OOP(array);
 DEF_OOP(objArray);
 DEF_OOP(typeArray);
@@ -177,6 +180,7 @@ class   InstanceKlass;
 class     InstanceMirrorKlass;
 class     InstanceClassLoaderKlass;
 class     InstanceRefKlass;
+class     InstanceStackChunkKlass;
 class   ArrayKlass;
 class     ObjArrayKlass;
 class     TypeArrayKlass;

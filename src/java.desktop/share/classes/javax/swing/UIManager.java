@@ -57,7 +57,6 @@ import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Objects;
 import sun.awt.AppContext;
@@ -380,7 +379,7 @@ public class UIManager implements Serializable
         iLAFs.add(new LookAndFeelInfo("CDE/Motif",
                   "com.sun.java.swing.plaf.motif.MotifLookAndFeel"));
 
-        // Only include windows on Windows boxs.
+        // Only include windows on Windows boxes.
         @SuppressWarnings("removal")
         OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
         if (osType == OSInfo.OSType.WINDOWS) {
@@ -644,7 +643,7 @@ public class UIManager implements Serializable
      * Returns the name of the <code>LookAndFeel</code> class that implements
      * the native system look and feel if there is one, otherwise
      * the name of the default cross platform <code>LookAndFeel</code>
-     * class. This value can be overriden by setting the
+     * class. This value can be overridden by setting the
      * <code>swing.systemlaf</code> system property.
      *
      * @return the <code>String</code> of the <code>LookAndFeel</code>
@@ -688,7 +687,7 @@ public class UIManager implements Serializable
     /**
      * Returns the name of the <code>LookAndFeel</code> class that implements
      * the default cross platform look and feel -- the Java
-     * Look and Feel (JLF).  This value can be overriden by setting the
+     * Look and Feel (JLF).  This value can be overridden by setting the
      * <code>swing.crossplatformlaf</code> system property.
      *
      * @return  a string with the JLF implementation-class
@@ -1301,9 +1300,9 @@ public class UIManager implements Serializable
                         if (file.exists()) {
                             // InputStream has been buffered in Properties
                             // class
-                            FileInputStream ins = new FileInputStream(file);
-                            props.load(ins);
-                            ins.close();
+                            try (FileInputStream ins = new FileInputStream(file)) {
+                                props.load(ins);
+                            }
                         }
                     }
                     catch (Exception e) {

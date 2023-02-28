@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,7 @@ public final class ClassFinder {
                 return Class.forName(name, false, loader);
             }
 
-        } catch (ClassNotFoundException exception) {
-            // use current class loader instead
-        } catch (SecurityException exception) {
+        } catch (ClassNotFoundException | SecurityException exception) {
             // use current class loader instead
         }
         return Class.forName(name);
@@ -101,9 +99,7 @@ public final class ClassFinder {
         if (loader != null) {
             try {
                 return Class.forName(name, false, loader);
-            } catch (ClassNotFoundException exception) {
-                // use default class loader instead
-            } catch (SecurityException exception) {
+            } catch (ClassNotFoundException | SecurityException exception) {
                 // use default class loader instead
             }
         }

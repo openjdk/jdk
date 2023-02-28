@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_ATTACHLISTENER_HPP
 #define SHARE_SERVICES_ATTACHLISTENER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
@@ -168,7 +168,7 @@ class AttachOperation: public CHeapObj<mtInternal> {
   // set an argument value
   void set_arg(int i, char* arg) {
     assert(i>=0 && i<arg_count_max, "invalid argument index");
-    if (arg == NULL) {
+    if (arg == nullptr) {
       _arg[i][0] = '\0';
     } else {
       assert(strlen(arg) <= arg_length_max, "exceeds maximum argument length");
@@ -182,7 +182,7 @@ class AttachOperation: public CHeapObj<mtInternal> {
   AttachOperation(const char* name) {
     set_name(name);
     for (int i=0; i<arg_count_max; i++) {
-      set_arg(i, NULL);
+      set_arg(i, nullptr);
     }
   }
 

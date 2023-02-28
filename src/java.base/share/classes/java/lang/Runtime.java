@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.loader.NativeLibrary;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -45,10 +44,77 @@ import jdk.internal.reflect.Reflection;
  * {@code Runtime} that allows the application to interface with
  * the environment in which the application is running. The current
  * runtime can be obtained from the {@code getRuntime} method.
- * <p>
- * An application cannot create its own instance of this class.
+ *
+ * <p>An application cannot create its own instance of this class.
+ *
+ * <h2><a id="shutdown">Shutdown Sequence</a></h2>
+ *
+ * <p>The Java Virtual Machine initiates the <i>shutdown sequence</i> in response
+ * to one of several events:
+ * <ol>
+ * <li>when the number of {@linkplain Thread#isAlive() live} non-daemon threads drops to zero
+ * for the first time (see note below on the JNI Invocation API);</li>
+ * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called
+ * for the first time; or</li>
+ * <li>when some external event occurs, such as an interrupt or a signal is received from
+ * the operating system.</li>
+ * </ol>
+ *
+ * <p>At the beginning of the shutdown sequence, the registered shutdown hooks are
+ * {@linkplain Thread#start started} in some unspecified order. They run concurrently
+ * with any daemon or non-daemon threads that were {@linkplain Thread#isAlive() alive}
+ * at the beginning of the shutdown sequence.
+ *
+ * <p>After the shutdown sequence has begun, registration and de-registration of shutdown hooks
+ * with {@link #addShutdownHook addShutdownHook} and {@link #removeShutdownHook removeShutdownHook}
+ * is prohibited. However, creating and starting new threads is permitted. New threads run
+ * concurrently with the registered shutdown hooks and with any daemon or non-daemon threads
+ * that are already running.
+ *
+ * <p>The shutdown sequence finishes when all shutdown hooks have terminated. At this point,
+ * the Java Virtual Machine terminates as described below.
+ *
+ * <p>It is possible that one or more shutdown hooks do not terminate, for example, because
+ * of an infinite loop. In this case, the shutdown sequence will never finish. Other threads
+ * and shutdown hooks continue to run and can terminate the JVM via the {@link #halt halt} method.
+ *
+ * <p>Prior to the beginning of the shutdown sequence, it is possible for a program to start
+ * a shutdown hook by calling its {@link Thread#start start} method explicitly. If this occurs, the
+ * behavior of the shutdown sequence is unspecified.
+ *
+ * <h2><a id="termination">Java Virtual Machine Termination</a></h2>
+ *
+ * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} is called.
+ * In contrast to {@link #exit exit}, the {@link #halt halt} method does not initiate the
+ * shutdown sequence.
+ *
+ * <p>When the JVM terminates, all threads are immediately prevented from executing any further
+ * Java code. This includes shutdown hooks as well as daemon and non-daemon threads.
+ * This means, for example, that:
+ * <ul>
+ * <li>threads' current methods do not complete normally or abruptly;</li>
+ * <li>{@code finally} clauses are not executed;</li>
+ * <li>{@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers} are not run; and</li>
+ * <li>resources opened with try-with-resources are not {@linkplain AutoCloseable closed};</li>
+ * </ul>
+ *
+ * @implNote
+ * Native code typically uses the
+ * <a href="{@docRoot}/../specs/jni/invocation.html">JNI Invocation API</a>
+ * to control launching and termination of the JVM. Such native code invokes the
+ * <a href="{@docRoot}/../specs/jni/invocation.html#jni_createjavavm">{@code JNI_CreateJavaVM}</a>
+ * function to launch the JVM. Subsequently, the native code invokes the
+ * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">{@code DestroyJavaVM}</a>
+ * function to await termination of that JVM. The {@code DestroyJavaVM} function is responsible
+ * for initiating the shutdown sequence when the number of {@linkplain Thread#isAlive() live}
+ * non-daemon threads first drops to zero. When the shutdown sequence completes and the JVM
+ * terminates, control is returned to the native code that invoked {@code DestroyJavaVM}. This
+ * behavior differs from the {@link #exit exit} or {@link #halt halt} methods. These methods
+ * typically terminate the OS process hosting the JVM and do not interact with the JNI Invocation
+ * API.
  *
  * @see     java.lang.Runtime#getRuntime()
+ * @jls     12.8 Program Exit
  * @since   1.0
  */
 
@@ -73,23 +139,27 @@ public class Runtime {
     private Runtime() {}
 
     /**
-     * Terminates the currently running Java virtual machine by initiating its
-     * shutdown sequence.  This method never returns normally.  The argument
-     * serves as a status code; by convention, a nonzero status code indicates
-     * abnormal termination.
+     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
+     * This method blocks indefinitely; it never returns or throws an exception (that is, it
+     * does not complete either normally or abruptly). The argument serves as a status code;
+     * by convention, a nonzero status code indicates abnormal termination.
      *
-     * <p> All registered {@linkplain #addShutdownHook shutdown hooks}, if any,
-     * are started in some unspecified order and allowed to run concurrently
-     * until they finish.  Once this is done the virtual machine
-     * {@linkplain #halt halts}.
+     * <p> Invocations of this method are serialized such that only one
+     * invocation will actually proceed with the shutdown sequence and
+     * terminate the VM with the given status code. All other invocations
+     * simply block indefinitely.
      *
-     * <p> If this method is invoked after all shutdown hooks have already
-     * been run and the status is nonzero then this method halts the
-     * virtual machine with the given status code. Otherwise, this method
-     * blocks indefinitely.
+     * <p> Because this method always blocks indefinitely, if it is invoked from
+     * a shutdown hook, it will prevent that shutdown hook from terminating.
+     * Consequently, this will prevent the shutdown sequence from finishing.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
+     *
+     * @implNote
+     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.Runtime}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code Runtime.exit()} is logged.
      *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
@@ -118,85 +188,46 @@ public class Runtime {
     /**
      * Registers a new virtual-machine shutdown hook.
      *
-     * <p> The Java virtual machine <i>shuts down</i> in response to two kinds
-     * of events:
+     * <p> A <i>shutdown hook</i> is simply an initialized but unstarted thread. Shutdown hooks
+     * are started at the beginning of the <a href="#shutdown">shutdown sequence</a>.
+     * Registration and de-registration of shutdown hooks is disallowed once the shutdown
+     * sequence has begun.
+     * <p>
+     * Uncaught exceptions are handled in shutdown hooks just as in any other thread, as
+     * specified in {@link Thread.UncaughtExceptionHandler}. After the uncaught exception
+     * handler has completed, the shutdown hook is considered to have terminated and is not
+     * treated differently from a hook that has terminated without having thrown an
+     * uncaught exception.
      *
-     *   <ul>
-     *
-     *   <li> The program <i>exits</i> normally, when the last non-daemon
-     *   thread exits or when the {@link #exit exit} (equivalently,
-     *   {@link System#exit(int) System.exit}) method is invoked, or
-     *
-     *   <li> The virtual machine is <i>terminated</i> in response to a
-     *   user interrupt, such as typing {@code ^C}, or a system-wide event,
-     *   such as user logoff or system shutdown.
-     *
-     *   </ul>
-     *
-     * <p> A <i>shutdown hook</i> is simply an initialized but unstarted
-     * thread.  When the virtual machine begins its shutdown sequence it will
-     * start all registered shutdown hooks in some unspecified order and let
-     * them run concurrently.  When all the hooks have finished it will then
-     * halt. Note that daemon threads will continue to run during the shutdown
-     * sequence, as will non-daemon threads if shutdown was initiated by
-     * invoking the {@link #exit exit} method.
-     *
-     * <p> Once the shutdown sequence has begun it can be stopped only by
-     * invoking the {@link #halt halt} method, which forcibly
-     * terminates the virtual machine.
-     *
-     * <p> Once the shutdown sequence has begun it is impossible to register a
-     * new shutdown hook or de-register a previously-registered hook.
-     * Attempting either of these operations will cause an
-     * {@link IllegalStateException} to be thrown.
-     *
-     * <p> Shutdown hooks run at a delicate time in the life cycle of a virtual
-     * machine and should therefore be coded defensively.  They should, in
+     * @apiNote
+     * Shutdown hooks run at a delicate time in the life cycle of a virtual
+     * machine and should therefore be coded defensively. They should, in
      * particular, be written to be thread-safe and to avoid deadlocks insofar
-     * as possible.  They should also not rely blindly upon services that may
-     * have registered their own shutdown hooks and therefore may themselves in
-     * the process of shutting down.  Attempts to use other thread-based
+     * as possible. They should also not rely blindly upon services that may
+     * have registered their own shutdown hooks and therefore may themselves be
+     * in the process of shutting down. Attempts to use other thread-based
      * services such as the AWT event-dispatch thread, for example, may lead to
      * deadlocks.
-     *
-     * <p> Shutdown hooks should also finish their work quickly.  When a
-     * program invokes {@link #exit exit} the expectation is
+     * <p>
+     * Shutdown hooks should also finish their work quickly.  When a
+     * program invokes {@link #exit exit}, the expectation is
      * that the virtual machine will promptly shut down and exit.  When the
      * virtual machine is terminated due to user logoff or system shutdown the
-     * underlying operating system may only allow a fixed amount of time in
-     * which to shut down and exit.  It is therefore inadvisable to attempt any
+     * underlying operating system may only allow a limited amount of time in
+     * which to shut down and exit. It is therefore inadvisable to attempt any
      * user interaction or to perform a long-running computation in a shutdown
      * hook.
-     *
-     * <p> Uncaught exceptions are handled in shutdown hooks just as in any
-     * other thread, by invoking the
-     * {@link ThreadGroup#uncaughtException uncaughtException} method of the
-     * thread's {@link ThreadGroup} object. The default implementation of this
-     * method prints the exception's stack trace to {@link System#err} and
-     * terminates the thread; it does not cause the virtual machine to exit or
-     * halt.
-     *
-     * <p> In rare circumstances the virtual machine may <i>abort</i>, that is,
-     * stop running without shutting down cleanly.  This occurs when the
-     * virtual machine is terminated externally, for example with the
-     * {@code SIGKILL} signal on Unix or the {@code TerminateProcess} call on
-     * Microsoft Windows.  The virtual machine may also abort if a native
-     * method goes awry by, for example, corrupting internal data structures or
-     * attempting to access nonexistent memory.  If the virtual machine aborts
-     * then no guarantee can be made about whether or not any shutdown hooks
-     * will be run.
      *
      * @param   hook
      *          An initialized but unstarted {@link Thread} object
      *
      * @throws  IllegalArgumentException
-     *          If the specified hook has already been registered,
-     *          or if it can be determined that the hook is already running or
-     *          has already been run
+     *          If the same hook (compared using {@code ==}) as the specified hook has
+     *          already been registered, or if it can be determined that the hook is
+     *          already running or has already been run
      *
      * @throws  IllegalStateException
-     *          If the virtual machine is already in the process
-     *          of shutting down
+     *          If the shutdown sequence has already begun
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
@@ -218,6 +249,9 @@ public class Runtime {
 
     /**
      * De-registers a previously-registered virtual-machine shutdown hook.
+     * Hooks are compared using {@code ==}.
+     * Registration and de-registration of shutdown hooks is disallowed
+     * once the shutdown sequence has begun.
      *
      * @param hook the hook to remove
      * @return {@code true} if the specified hook had previously been
@@ -225,8 +259,7 @@ public class Runtime {
      * otherwise.
      *
      * @throws  IllegalStateException
-     *          If the virtual machine is already in the process of shutting
-     *          down
+     *          If the shutdown sequence has already begun
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
@@ -246,14 +279,16 @@ public class Runtime {
     }
 
     /**
-     * Forcibly terminates the currently running Java virtual machine.  This
-     * method never returns normally.
+     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine. Termination
+     * is unconditional and immediate. This method does not initiate the
+     * <a href="#shutdown">shutdown sequence</a>, nor does it wait for the shutdown sequence
+     * to finish if it is already in progress. This method never returns normally.
      *
-     * <p> This method should be used with extreme caution.  Unlike the
-     * {@link #exit exit} method, this method does not cause shutdown
-     * hooks to be started.  If the shutdown sequence has already been
-     * initiated then this method does not wait for any running
-     * shutdown hooks to finish their work.
+     * @apiNote
+     * This method should be used with extreme caution. Using it may circumvent or disrupt
+     * any cleanup actions intended to be performed by shutdown hooks, possibly leading to
+     * data corruption. See the <a href="#termination">termination</a> section above
+     * for other possible consequences of halting the Java Virtual Machine.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
@@ -290,6 +325,12 @@ public class Runtime {
      * behaves in exactly the same way as the invocation
      * {@link #exec(String, String[], File) exec}{@code (command, null, null)}.
      *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[])} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
+     *
      * @param   command   a specified system command.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -311,6 +352,7 @@ public class Runtime {
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
+    @Deprecated(since="18")
     public Process exec(String command) throws IOException {
         return exec(command, null, null);
     }
@@ -323,6 +365,12 @@ public class Runtime {
      * {@code exec(command, envp)}
      * behaves in exactly the same way as the invocation
      * {@link #exec(String, String[], File) exec}{@code (command, envp, null)}.
+     *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[], String[])} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
      *
      * @param   command   a specified system command.
      *
@@ -352,6 +400,7 @@ public class Runtime {
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
+    @Deprecated(since="18")
     public Process exec(String command, String[] envp) throws IOException {
         return exec(command, envp, null);
     }
@@ -373,6 +422,12 @@ public class Runtime {
      * further modification of the character categories.  The tokens
      * produced by the tokenizer are then placed in the new string
      * array {@code cmdarray}, in the same order.
+     *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[], String[], File)} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
      *
      * @param   command   a specified system command.
      *
@@ -406,6 +461,7 @@ public class Runtime {
      * @see     ProcessBuilder
      * @since 1.3
      */
+    @Deprecated(since="18")
     public Process exec(String command, String[] envp, File dir)
         throws IOException {
         if (command.isEmpty())
@@ -518,6 +574,8 @@ public class Runtime {
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the specified environment.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.
@@ -686,8 +744,17 @@ public class Runtime {
      * The method {@link System#runFinalization()} is the conventional
      * and convenient means of invoking this method.
      *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
+     * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * no objects will be pending finalization, so this method does nothing.
+     *
      * @see     java.lang.Object#finalize()
+     * @jls 12.6 Finalization of Class Instances
      */
+    @Deprecated(since="18", forRemoval=true)
     public void runFinalization() {
         SharedSecrets.getJavaLangRefAccess().runFinalization();
     }
@@ -1044,7 +1111,7 @@ public class Runtime {
                     m.group(VersionPattern.OPT_GROUP));
 
             // empty '+'
-            if (!build.isPresent()) {
+            if (build.isEmpty()) {
                 if (m.group(VersionPattern.PLUS_GROUP) != null) {
                     if (optional.isPresent()) {
                         if (pre.isPresent())
@@ -1056,7 +1123,7 @@ public class Runtime {
                             + " build or optional components: '" + s + "'");
                     }
                 } else {
-                    if (optional.isPresent() && !pre.isPresent()) {
+                    if (optional.isPresent() && pre.isEmpty()) {
                         throw new IllegalArgumentException("optional component"
                             + " must be preceded by a pre-release component"
                             + " or '+': '" + s + "'");
@@ -1322,11 +1389,11 @@ public class Runtime {
 
         private int comparePre(Version obj) {
             Optional<String> oPre = obj.pre();
-            if (!pre.isPresent()) {
+            if (pre.isEmpty()) {
                 if (oPre.isPresent())
                     return 1;
             } else {
-                if (!oPre.isPresent())
+                if (oPre.isEmpty())
                     return -1;
                 String val = pre.get();
                 String oVal = oPre.get();
@@ -1357,11 +1424,11 @@ public class Runtime {
 
         private int compareOptional(Version obj) {
             Optional<String> oOpt = obj.optional();
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 if (oOpt.isPresent())
                     return -1;
             } else {
-                if (!oOpt.isPresent())
+                if (oOpt.isEmpty())
                     return 1;
                 return optional.get().compareTo(oOpt.get());
             }

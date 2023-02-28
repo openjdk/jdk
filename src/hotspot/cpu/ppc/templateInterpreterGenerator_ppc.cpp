@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // first C-argument and to return the result_handler in
   // R3_RET. Since native_entry will copy the jni-pointer to the
   // first C-argument slot later on, it is OK to occupy this slot
-  // temporarilly. Then we copy the argument list on the java
+  // temporarily. Then we copy the argument list on the java
   // expression stack into native varargs format on the native stack
   // and load arguments into argument registers. Integer arguments in
   // the varargs vector will be sign-extended to 8 bytes.
@@ -631,9 +631,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     default  : ShouldNotReachHere();
   }
 
-  __ restore_interpreter_state(R11_scratch1); // Sets R11_scratch1 = fp.
-  __ ld(R12_scratch2, _ijava_state_neg(top_frame_sp), R11_scratch1);
-  __ resize_frame_absolute(R12_scratch2, R11_scratch1, R0);
+  __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
 
   // Compiled code destroys templateTableBase, reload.
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
@@ -702,7 +700,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   address entry = __ pc();
 
   __ push(state);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath();
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
 
   return entry;
@@ -1010,7 +1010,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   if (native_call) {
     __ li(R14_bcp, 0); // Must initialize.
   } else {
-    __ add(R14_bcp, in_bytes(ConstMethod::codes_offset()), Rconst_method);
+    __ addi(R14_bcp, Rconst_method, in_bytes(ConstMethod::codes_offset()));
   }
 
   // Resize parent frame.
@@ -1030,7 +1030,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Store values.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
   __ std(Rmirror, _ijava_state_neg(mirror), R1_SP);
-  __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
+  __ sub(R12_scratch2, R18_locals, R1_SP);
+  __ srdi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized R18_locals, see frame::interpreter_frame_locals().
+  __ std(R12_scratch2, _ijava_state_neg(locals), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 
   // Note: esp, bcp, monitor, mdx live in registers. Hence, the correct version can only
@@ -1159,8 +1162,8 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  const int page_size = os::vm_page_size();
-  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
+  const size_t page_size = os::vm_page_size();
+  const int n_shadow_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   const int start_page = native_call ? n_shadow_pages : 1;
   BLOCK_COMMENT("bang_stack_shadow_pages:");
   for (int pages = start_page; pages <= n_shadow_pages; pages++) {
@@ -1184,7 +1187,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   address entry = __ pc();
 
-  const bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // -----------------------------------------------------------------------------
   // Allocate a new frame that represents the native callee (i2n frame).
@@ -1436,7 +1439,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_native_trans);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  __ fence();
+  if (!UseSystemMemoryBarrier) {
+    __ fence();
+  }
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).
@@ -1578,7 +1583,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                   return_pc /* return pc */);
   __ merge_frames(/*top_frame_sp*/ R21_sender_SP, noreg, R11_scratch1, R12_scratch2);
 
-  // Load the PC of the the exception handler into LR.
+  // Load the PC of the exception handler into LR.
   __ mtlr(R3_RET);
 
   // Load exception into R3_ARG1 and clear pending exception in thread.
@@ -1608,7 +1613,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 // Generic interpreted method entry to (asm) interpreter.
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
   Register Rsize_of_parameters = R4_ARG2, // Written by generate_fixed_frame.
@@ -1697,8 +1702,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(Lok);
   }
 #endif // ASSERT
-
-  __ verify_thread();
 
   // --------------------------------------------------------------------------
   // JVMTI support
@@ -1941,9 +1944,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Entry point if an method returns with a pending exception (rethrow).
   Interpreter::_rethrow_exception_entry = __ pc();
   {
-    __ restore_interpreter_state(R11_scratch1); // Sets R11_scratch1 = fp.
-    __ ld(R12_scratch2, _ijava_state_neg(top_frame_sp), R11_scratch1);
-    __ resize_frame_absolute(R12_scratch2, R11_scratch1, R0);
+    __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
 
     // Compiled code destroys templateTableBase, reload.
     __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
@@ -1954,7 +1955,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ mr(Rexception, R3_RET);
 
-    __ verify_thread();
     __ verify_oop(Rexception);
 
     // Expression stack must be empty before entering the VM in case of an exception.
@@ -2030,10 +2030,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ stw(R11_scratch1, in_bytes(JavaThread::popframe_condition_offset()), R16_thread);
 
     // Return from the current method into the deoptimization blob. Will eventually
-    // end up in the deopt interpeter entry, deoptimization prepared everything that
+    // end up in the deopt interpreter entry, deoptimization prepared everything that
     // we will reexecute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*reload return_pc*/ return_pc, R11_scratch1, R12_scratch2);
     __ mtlr(return_pc);
+    __ pop_cont_fastpath();
     __ blr();
 
     // The non-deoptimized case.
@@ -2045,9 +2046,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Get out of the current method and re-execute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ noreg, R11_scratch1, R12_scratch2);
-    __ restore_interpreter_state(R11_scratch1);
-    __ ld(R12_scratch2, _ijava_state_neg(top_frame_sp), R11_scratch1);
-    __ resize_frame_absolute(R12_scratch2, R11_scratch1, R0);
+    __ pop_cont_fastpath();
+    __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
     if (ProfileInterpreter) {
       __ set_method_data_pointer_for_bcp();
       __ ld(R11_scratch1, 0, R1_SP);
@@ -2083,7 +2083,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   Interpreter::_remove_activation_entry = __ pc();
   {
     __ pop_ptr(Rexception);
-    __ verify_thread();
     __ verify_oop(Rexception);
     __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
 
@@ -2106,6 +2105,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Remove the current activation.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ noreg, R11_scratch1, R12_scratch2);
+    __ pop_cont_fastpath();
 
     __ mr(R4_ARG2, return_pc);
     __ mtlr(R3_RET);

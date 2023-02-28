@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,8 +248,9 @@ class MacroAssembler: public Assembler {
   // Crypto instructions.
   // Being interruptible, these instructions need a retry-loop.
   void cksm(Register crcBuff, Register srcBuff);
-  void km( Register dstBuff, Register srcBuff);
-  void kmc(Register dstBuff, Register srcBuff);
+  void km(   Register dstBuff, Register srcBuff);
+  void kmc(  Register dstBuff, Register srcBuff);
+  void kmctr(Register dstBuff, Register ctrBuff, Register srcBuff);
   void kimd(Register srcBuff);
   void klmd(Register srcBuff);
   void kmac(Register srcBuff);
@@ -765,6 +766,7 @@ class MacroAssembler: public Assembler {
   void decode_klass_not_null(Register dst);
   void load_klass(Register klass, Address mem);
   void load_klass(Register klass, Register src_oop);
+  void load_klass_check_null(Register klass, Register src_oop, Register tmp);
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
 
@@ -902,9 +904,6 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
   }
   void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) PRODUCT_RETURN;
-
-  // Verify Z_thread contents.
-  void verify_thread();
 
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 # This file handles detection of the Boot JDK. The Boot JDK detection
 # process has been developed as a response to solve a complex real-world
 # problem. Initially, it was simple, but it has grown as platform after
-# platform, idiosyncracy after idiosyncracy has been supported.
+# platform, idiosyncrasy after idiosyncrasy has been supported.
 #
 # The basic idea is this:
 # 1) You need an acceptable *) JDK to use as a Boot JDK
@@ -126,16 +126,18 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
   if test "x$with_boot_jdk" != x; then
-    if test -d "$with_boot_jdk"; then
-      BOOT_JDK=$with_boot_jdk
+    BOOT_JDK_ARG="$with_boot_jdk"
+    UTIL_FIXUP_PATH(BOOT_JDK_ARG)
+    if test -d "$BOOT_JDK_ARG"; then
+      BOOT_JDK=$BOOT_JDK_ARG
       BOOT_JDK_FOUND=maybe
-    elif test -f "$with_boot_jdk"; then
-      case "$with_boot_jdk" in
+    elif test -f "$BOOT_JDK_ARG"; then
+      case "$BOOT_JDK_ARG" in
         *.tar.gz )
             BOOT_JDK_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/boot-jdk
             $RM -rf $BOOT_JDK_SUPPORT_DIR
             $MKDIR -p $BOOT_JDK_SUPPORT_DIR
-            $GUNZIP -c $with_boot_jdk | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
+            $GUNZIP -c $BOOT_JDK_ARG | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
 
             # Try to find javac to determine BOOT_JDK path
             BOOT_JDK_JAVAC_PATH=`$FIND $BOOT_JDK_SUPPORT_DIR | $GREP "/bin/javac"`
@@ -378,6 +380,16 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
 
   # Finally, set some other options...
+
+  # Determine if the boot jdk jar supports the --date option
+  if $JAR --help 2>&1 | $GREP -q -e "--date=TIMESTAMP"; then
+    BOOT_JDK_JAR_SUPPORTS_DATE=true
+  else
+    BOOT_JDK_JAR_SUPPORTS_DATE=false
+  fi
+  AC_MSG_CHECKING([if Boot JDK jar supports --date=TIMESTAMP])
+  AC_MSG_RESULT([$BOOT_JDK_JAR_SUPPORTS_DATE])
+  AC_SUBST(BOOT_JDK_JAR_SUPPORTS_DATE)
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.

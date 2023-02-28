@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,12 @@ public final class PlatformRecording implements AutoCloseable {
         if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
             throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no content to write");
         }
+
         if (state == RecordingState.STOPPED) {
+            if (!isToDisk()) {
+                throw new IOException("Recording \"" + name + "\" (id=" + id + ")"
+                    + " is an in memory recording. No data to copy after it has been stopped.");
+            }
             PlatformRecording clone = recorder.newTemporaryRecording();
             for (RepositoryChunk r : chunks) {
                 clone.add(r);
@@ -465,7 +470,7 @@ public final class PlatformRecording implements AutoCloseable {
         synchronized (recorder) {
             this.settings.put(id, value);
             if (getState() == RecordingState.RUNNING) {
-                recorder.updateSettings();
+                recorder.updateSettings(true);
             }
         }
     }
@@ -486,7 +491,7 @@ public final class PlatformRecording implements AutoCloseable {
         synchronized (recorder) {
             this.settings = new LinkedHashMap<>(settings);
             if (getState() == RecordingState.RUNNING && update) {
-                recorder.updateSettings();
+                recorder.updateSettings(true);
             }
         }
     }
@@ -713,8 +718,12 @@ public final class PlatformRecording implements AutoCloseable {
         synchronized (recorder) {
                 userPath.doPrivilegedIO(() -> {
                     try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-                        cc.transferTo(fc);
-                        fc.force(true);
+                        long bytes = cc.transferTo(fc);
+                        Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
+                        // No need to force if no data was transferred, which avoids IOException when device is /dev/null
+                        if (bytes != 0) {
+                            fc.force(true);
+                        }
                     }
                     return null;
                 });
@@ -731,7 +740,7 @@ public final class PlatformRecording implements AutoCloseable {
                     result = reduceFromEnd(maxSize, result);
                 }
             }
-            int size = 0;
+            long size = 0;
             for (RepositoryChunk r : result) {
                 size += r.getSize();
                 r.use();

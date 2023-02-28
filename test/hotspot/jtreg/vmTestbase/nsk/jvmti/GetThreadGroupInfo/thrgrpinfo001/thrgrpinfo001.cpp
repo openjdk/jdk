@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,14 +113,6 @@ Java_nsk_jvmti_GetThreadGroupInfo_thrgrpinfo001_check(JNIEnv *env, jclass cls, j
         printf(" expected: %d\n", pri);
         result = STATUS_FAILED;
     }
-
-    if (daemon != inf.is_daemon) {
-        printf("(%d) unexpected is_daemon: %s,", stage,
-            (inf.is_daemon == JNI_TRUE) ? "true" : "false");
-        printf(" expected: %s\n", (daemon == JNI_TRUE) ? "true" : "false");
-        result = STATUS_FAILED;
-    }
-
     if (printdump == JNI_TRUE) {
         printf(">>> done ...\n");
     }

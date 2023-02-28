@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,13 @@ public abstract class Diag {
      */
     boolean isNotAStatementError() {
         return getCode().equals("compiler.err.not.stmt");
+    }
+
+    /**
+     * This is a method does not override superclass error
+     */
+    boolean isOverrideError() {
+        return getCode().equals("compiler.err.method.does.not.override.superclass");
     }
 
     /**

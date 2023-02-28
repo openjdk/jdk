@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(float bound) {
-        if (!(bound > 0.0 && bound < Float.POSITIVE_INFINITY)) {
+        if (!(0.0f < bound && bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -158,7 +158,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(double bound) {
-        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
+        if (!(0.0 < bound && bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -195,11 +195,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(float origin, float bound) {
-        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
+        if (!(Float.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -210,11 +212,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(double origin, double bound) {
-        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -265,7 +269,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 3);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>3] = (result[j>>3] << 8) | seed[j];
+            result[j>>3] = (result[j>>3] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -308,7 +312,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 2);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>2] = (result[j>>2] << 8) | seed[j];
+            result[j>>2] = (result[j>>2] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -343,8 +347,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextLong() nextLong}() used by
      * a {@link LongStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextLong(long, long) nextLong}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextLong() nextLong}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code long} values}, and
      * otherwise uses one or more calls to
@@ -508,8 +512,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextInt() nextInt}() used by
      * an {@link IntStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextInt(int, int) nextInt}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextInt() nextInt}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code int} values}, and otherwise
      * uses one or more calls to {@link RandomGenerator#nextInt() nextInt}() to
@@ -604,8 +608,8 @@ public class RandomSupport {
      * used by a {@link DoubleStream} {@link Spliterator} and by the public
      * method
      * {@link RandomGenerator#nextDouble(double, double) nextDouble}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextDouble() nextDouble}(), and otherwise scales
      * and translates the result of a call to
      * {@link RandomGenerator#nextDouble() nextDouble}() so that it lies between
@@ -643,9 +647,15 @@ public class RandomSupport {
     public static double boundedNextDouble(RandomGenerator rng, double origin, double bound) {
         double r = rng.nextDouble();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Double.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                double halfOrigin = 0.5 * origin;
+                r = (r * (0.5 * bound - halfOrigin) + halfOrigin) * 2.0;
+            }
             if (r >= bound)  // may need to correct a rounding problem
-                r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -677,7 +687,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+            r = Math.nextDown(bound);
         return r;
     }
 
@@ -686,8 +696,8 @@ public class RandomSupport {
      * by a {@link Stream<Float>} {@link Spliterator} (if there were any) and by
      * the public method
      * {@link RandomGenerator#nextFloat(float, float) nextFloat}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextFloat() nextFloat}(), and otherwise scales and
      * translates the result of a call to
      * {@link RandomGenerator#nextFloat() nextFloat}() so that it lies between
@@ -715,9 +725,15 @@ public class RandomSupport {
     public static float boundedNextFloat(RandomGenerator rng, float origin, float bound) {
         float r = rng.nextFloat();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Float.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                float halfOrigin = 0.5f * origin;
+                r = (r * (0.5f * bound - halfOrigin) + halfOrigin) * 2.0f;
+            }
             if (r >= bound) // may need to correct a rounding problem
-                r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -749,7 +765,7 @@ public class RandomSupport {
         float r = rng.nextFloat();
         r = r * bound;
         if (r >= bound) // may need to correct a rounding problem
-            r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+            r = Math.nextDown(bound);
         return r;
     }
 
@@ -1186,10 +1202,10 @@ public class RandomSupport {
                 // For the exponential distribution, every overhang is convex.
                 final double[] X = DoubleZigguratTables.exponentialX;
                 final double[] Y = DoubleZigguratTables.exponentialY;
-                for (;; U1 = (rng.nextLong() >>> 1)) {
+                // At this point, the high-order bits of U1 have not been used yet,
+                // but we need the value in U1 to be positive.
+                for (U1 = (U1 >>> 1);; U1 = (rng.nextLong() >>> 1)) {
                     long U2 = (rng.nextLong() >>> 1);
-                    // Compute the actual x-coordinate of the randomly chosen point.
-                    double x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                     // Does the point lie below the curve?
                     long Udiff = U2 - U1;
                     if (Udiff < 0) {
@@ -1200,11 +1216,13 @@ public class RandomSupport {
                         U2 = U1;
                         U1 -= Udiff;
                     }
+                    // Compute the actual x-coordinate of the randomly chosen point.
+                    double x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                     if (Udiff >= DoubleZigguratTables.exponentialConvexMargin) {
                         return x + extra;   // The chosen point is way below the curve; accept it.
                     }
                     // Compute the actual y-coordinate of the randomly chosen point.
-                    double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                    double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                     // Now see how that y-coordinate compares to the curve
                     if (y <= Math.exp(-x)) {
                         return x + extra;   // The chosen point is below the curve; accept it.
@@ -1323,7 +1341,7 @@ public class RandomSupport {
                     continue;   // The chosen point is way above the curve; reject it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) {
                     break;   // The chosen point is below the curve; accept it.
@@ -1348,8 +1366,6 @@ public class RandomSupport {
         } else if (j < DoubleZigguratTables.normalInflectionIndex) {   // Convex overhang
             for (;; U1 = (rng.nextLong() >>> 1)) {
                 long U2 = (rng.nextLong() >>> 1);
-                // Compute the actual x-coordinate of the randomly chosen point.
-                x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                 // Does the point lie below the curve?
                 long Udiff = U2 - U1;
                 if (Udiff < 0) {
@@ -1360,11 +1376,13 @@ public class RandomSupport {
                     U2 = U1;
                     U1 -= Udiff;
                 }
+                // Compute the actual x-coordinate of the randomly chosen point.
+                x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                 if (Udiff >= DoubleZigguratTables.normalConvexMargin) {
                     break;   // The chosen point is way below the curve; accept it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) break; // The chosen point is below the curve; accept it.
                 // Otherwise, we reject this sample and have to try again.
@@ -1384,7 +1402,7 @@ public class RandomSupport {
                     continue;   // The chosen point is way above the curve; reject it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) {
                     break;   // The chosen point is below the curve; accept it.
@@ -1398,7 +1416,7 @@ public class RandomSupport {
     /**
      * This class overrides the stream-producing methods (such as
      * {@link RandomGenerator#ints() ints}()) in class {@link RandomGenerator}
-     * to provide {@link Spliterator}-based implmentations that support
+     * to provide {@link Spliterator}-based implementations that support
      * potentially parallel execution.
      *
      * <p> To implement a pseudorandom number generator, the programmer needs
@@ -2381,7 +2399,7 @@ public class RandomSupport {
             long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
             while ((salt & multiplier) == 0) {
-                long digit = Math.multiplyHigh(bits, multiplier);
+                long digit = Math.unsignedMultiplyHigh(bits, multiplier);
                 salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
                 bits *= multiplier;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,18 +74,18 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
 ///  DragPane class
 ////////////////////////////////////////////////////////////////////////////////////
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class DragPane extends JComponent {
+    private static class DragPane extends JComponent {
         public void paint(Graphics g) {
             g.setColor(Color.darkGray);
             g.drawRect(0, 0, getWidth()-1, getHeight()-1);
         }
-    };
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ///  MotifDesktopManager class
 ////////////////////////////////////////////////////////////////////////////////////
     @SuppressWarnings("serial") // JDK-implementation class
-    private class MotifDesktopManager extends DefaultDesktopManager implements Serializable, UIResource {
+    private static class MotifDesktopManager extends DefaultDesktopManager implements Serializable, UIResource {
         JComponent dragPane;
         boolean usingDragPane = false;
         private transient JLayeredPane layeredPaneForDragPane;
@@ -266,5 +266,5 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             }
             return null;
         }
-    }; /// END of MotifDesktopManager
+    } /// END of MotifDesktopManager
 }

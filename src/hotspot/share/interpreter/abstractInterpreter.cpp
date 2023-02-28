@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
@@ -84,12 +83,12 @@ void AbstractInterpreter::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of interpreter
 
-StubQueue* AbstractInterpreter::_code                                       = NULL;
+StubQueue* AbstractInterpreter::_code                                       = nullptr;
 bool       AbstractInterpreter::_notice_safepoints                          = false;
-address    AbstractInterpreter::_rethrow_exception_entry                    = NULL;
+address    AbstractInterpreter::_rethrow_exception_entry                    = nullptr;
 
-address    AbstractInterpreter::_native_entry_begin                         = NULL;
-address    AbstractInterpreter::_native_entry_end                           = NULL;
+address    AbstractInterpreter::_native_entry_begin                         = nullptr;
+address    AbstractInterpreter::_native_entry_end                           = nullptr;
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
@@ -97,8 +96,8 @@ address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::nu
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
 
-AbstractInterpreterGenerator::AbstractInterpreterGenerator(StubQueue* _code) {
-  _masm                      = NULL;
+AbstractInterpreterGenerator::AbstractInterpreterGenerator() {
+  _masm                      = nullptr;
 }
 
 
@@ -134,6 +133,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
       case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+      case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
+#endif
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
@@ -145,14 +147,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dexp:              return java_lang_math_exp;
       case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
+      case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
+      case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
-      case vmIntrinsics::_dsqrt:
-        // _dsqrt will be selected for both Math::sqrt and StrictMath::sqrt, but the latter
-        // is native. Keep treating it like a native method in the interpreter
-        assert(m->name() == vmSymbols::sqrt_name() &&
-               (m->klass_name() == vmSymbols::java_lang_Math() ||
-                m->klass_name() == vmSymbols::java_lang_StrictMath()), "must be");
-        return m->is_native() ? native : java_lang_math_sqrt;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -166,6 +163,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
   // Native method?
   if (m->is_native()) {
+    if (m->is_continuation_native_intrinsic()) {
+      // This entry will never be called.  The real entry gets generated later, like for MH intrinsics.
+      return abstract;
+    }
     assert(!m->is_method_handle_intrinsic(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
   }
@@ -230,7 +231,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
         int method_index = invoke_bc.get_index_u2_cpcache(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
-        return (resolved_method == NULL);
+        return (resolved_method == nullptr);
       }
       default: ShouldNotReachHere();
     }
@@ -321,7 +322,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
         method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
@@ -335,7 +336,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
@@ -389,7 +390,7 @@ bool AbstractInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
     case Bytecodes::_tableswitch:
     case Bytecodes::_fast_binaryswitch:
     case Bytecodes::_fast_linearswitch:
-    // recompute condtional expression folded into _if<cond>
+    // recompute conditional expression folded into _if<cond>
     case Bytecodes::_lcmp      :
     case Bytecodes::_fcmpl     :
     case Bytecodes::_fcmpg     :

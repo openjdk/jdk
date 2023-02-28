@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,8 @@ final class JFCParser {
             JFCParserHandler ch = new JFCParserHandler();
             parseXML(content, ch);
             return PrivateAccess.getInstance().newConfiguration(name, ch.label, ch.description, ch.provider, ch.settings, content);
-        } catch (IllegalArgumentException iae) {
-            throw new ParseException(iae.getMessage(), -1);
-        } catch (SAXException e) {
-            ParseException pe =  new ParseException("Error reading JFC file. " + e.getMessage(), -1);
-            pe.initCause(e);
-            throw pe;
+        } catch (IllegalArgumentException | SAXException e) {
+            throw new ParseException(e.getMessage(), -1);
         }
     }
 
@@ -69,7 +65,7 @@ final class JFCParser {
         parser.parse(new InputSource(r), ch);
     }
 
-    private static String readContent(Reader r) throws IOException {
+    private static String readContent(Reader r) throws IOException, ParseException {
         CharArrayWriter writer = new CharArrayWriter(1024);
         int count = 0;
         int ch;

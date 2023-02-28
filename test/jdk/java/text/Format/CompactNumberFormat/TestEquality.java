@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,10 +165,10 @@ public class TestEquality {
     @Test
     public void testEqualsAndHashCode() {
         NumberFormat cnf1 = NumberFormat
-                .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.SHORT);
+                .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.SHORT);
         cnf1.setMinimumIntegerDigits(5);
         NumberFormat cnf2 = NumberFormat
-                .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.SHORT);
+                .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.SHORT);
         cnf2.setMinimumIntegerDigits(5);
         if (cnf1.equals(cnf2)) {
             if (cnf1.hashCode() != cnf2.hashCode()) {

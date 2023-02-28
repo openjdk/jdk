@@ -37,6 +37,8 @@
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 
+#include <fenv.h>
+
 PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 }
 
@@ -784,7 +786,7 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
       assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
     }
-    assert(lrg._area >= 0.0, "negative spill area" );
+    assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
   }
 }
 
@@ -895,7 +897,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if (g_isfinite(cost)) {
             lrg._area -= cost;
           }
-          assert(lrg._area >= 0.0, "negative spill area" );
+          assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
 
           assign_high_score_to_immediate_copies(block, n, lrg, location + 1, last_inst);
 

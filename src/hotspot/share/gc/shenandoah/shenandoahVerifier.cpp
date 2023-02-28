@@ -39,6 +39,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)
@@ -77,8 +78,8 @@ public:
     _heap(ShenandoahHeap::heap()),
     _map(map),
     _ld(ld),
-    _interior_loc(NULL),
-    _loc(NULL) {
+    _interior_loc(nullptr),
+    _loc(nullptr) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
       set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
@@ -129,8 +130,8 @@ private:
     // Verify that obj is not in dead space:
     {
       // Do this before touching obj->size()
-      check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != NULL,
-             "Object klass pointer should not be NULL");
+      check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != nullptr,
+             "Object klass pointer should not be null");
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 
@@ -173,7 +174,7 @@ private:
 
     oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-    ShenandoahHeapRegion* fwd_reg = NULL;
+    ShenandoahHeapRegion* fwd_reg = nullptr;
 
     if (obj != fwd) {
       check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in(fwd),
@@ -185,8 +186,8 @@ private:
 
       // Do this before touching fwd->size()
       Klass* fwd_klass = fwd->klass_or_null();
-      check(ShenandoahAsserts::_safe_oop, obj, fwd_klass != NULL,
-             "Forwardee klass pointer should not be NULL");
+      check(ShenandoahAsserts::_safe_oop, obj, fwd_klass != nullptr,
+             "Forwardee klass pointer should not be null");
       check(ShenandoahAsserts::_safe_oop, obj, Metaspace::contains(fwd_klass),
              "Forwardee klass pointer must go to metaspace");
       check(ShenandoahAsserts::_safe_oop, obj, obj_klass == fwd_klass,
@@ -283,7 +284,7 @@ public:
   void verify_oop_at(T* p, oop obj) {
     _interior_loc = p;
     verify_oop(obj);
-    _interior_loc = NULL;
+    _interior_loc = nullptr;
   }
 
   /**
@@ -293,9 +294,9 @@ public:
    * @param obj verified object
    */
   void verify_oop_standalone(oop obj) {
-    _interior_loc = NULL;
+    _interior_loc = nullptr;
     verify_oop(obj);
-    _interior_loc = NULL;
+    _interior_loc = nullptr;
   }
 
   /**
@@ -305,7 +306,7 @@ public:
   void verify_oops_from(oop obj) {
     _loc = obj;
     obj->oop_iterate(this);
-    _loc = NULL;
+    _loc = nullptr;
   }
 
   virtual void do_oop(oop* p) { do_oop_work(p); }
@@ -421,7 +422,7 @@ public:
   }
 };
 
-class ShenandoahVerifierReachableTask : public AbstractGangTask {
+class ShenandoahVerifierReachableTask : public WorkerTask {
 private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
@@ -435,7 +436,7 @@ public:
                                   ShenandoahLivenessData* ld,
                                   const char* label,
                                   ShenandoahVerifier::VerifyOptions options) :
-    AbstractGangTask("Shenandoah Verifier Reachable Objects"),
+    WorkerTask("Shenandoah Verifier Reachable Objects"),
     _label(label),
     _options(options),
     _heap(ShenandoahHeap::heap()),
@@ -484,7 +485,7 @@ public:
   }
 };
 
-class ShenandoahVerifierMarkedRegionTask : public AbstractGangTask {
+class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
 private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
@@ -499,7 +500,7 @@ public:
                                      ShenandoahLivenessData* ld,
                                      const char* label,
                                      ShenandoahVerifier::VerifyOptions options) :
-          AbstractGangTask("Shenandoah Verifier Marked Objects"),
+          WorkerTask("Shenandoah Verifier Marked Objects"),
           _label(label),
           _options(options),
           _heap(ShenandoahHeap::heap()),
@@ -764,11 +765,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
 
       size_t reg_live = r->get_live_data_words();
       if (reg_live != verf_live) {
-        ResourceMark rm;
         stringStream ss;
         r->print_on(&ss);
         fatal("%s: Live data should match: region-live = " SIZE_FORMAT ", verifier-live = " UINT32_FORMAT "\n%s",
-              label, reg_live, verf_live, ss.as_string());
+              label, reg_live, verf_live, ss.freeze());
       }
     }
   }
@@ -920,7 +920,7 @@ private:
       oop obj = CompressedOops::decode_not_null(o);
       oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
       }
     }
@@ -941,18 +941,18 @@ private:
       ShenandoahHeap* heap = ShenandoahHeap::heap();
 
       if (!heap->marking_context()->is_marked(obj)) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }
 
       if (heap->in_collection_set(obj)) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
       oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
-        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }
     }

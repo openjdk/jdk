@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 #ifndef SHARE_MEMORY_HEAPINSPECTION_HPP
 #define SHARE_MEMORY_HEAPINSPECTION_HPP
 
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
-#include "gc/shared/workgroup.hpp"
 
 class ParallelObjectIterator;
 
@@ -63,7 +63,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
  public:
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
     _next(next), _klass(k), _instance_count(0), _instance_words(0), _index(-1),
-    _do_print(false), _subclasses(NULL)
+    _do_print(false), _subclasses(nullptr)
   {}
   ~KlassInfoEntry();
   KlassInfoEntry* next() const   { return _next; }
@@ -97,7 +97,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   void set_list(KlassInfoEntry* l) { _list = l; }
  public:
   KlassInfoEntry* lookup(Klass* k);
-  void initialize() { _list = NULL; }
+  void initialize() { _list = nullptr; }
   void empty();
   void iterate(KlassInfoClosure* cic);
 };
@@ -123,7 +123,7 @@ class KlassInfoTable: public StackObj {
   ~KlassInfoTable();
   bool record_instance(const oop obj);
   void iterate(KlassInfoClosure* cic);
-  bool allocation_failed() { return _buckets == NULL; }
+  bool allocation_failed() { return _buckets == nullptr; }
   size_t size_of_instances_in_words() const;
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
@@ -152,22 +152,6 @@ class KlassInfoHisto : public StackObj {
   static int sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2);
   void print_elements(outputStream* st) const;
   bool is_selected(const char *col_name);
-
-  template <class T> static int count_bytes(T* x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
-  }
-
-  template <class T> static int count_bytes_array(T* x) {
-    if (x == NULL) {
-      return 0;
-    }
-    if (x->length() == 0) {
-      // This is a shared array, e.g., Universe::the_empty_int_array(). Don't
-      // count it to avoid double-counting.
-      return 0;
-    }
-    return HeapWordSize * x->size();
-  }
 
   static void print_julong(outputStream* st, int width, julong n) {
     int num_spaces = width - julong_width(n);
@@ -217,16 +201,14 @@ class KlassInfoClosure;
 class HeapInspection : public StackObj {
  public:
   void heap_inspection(outputStream* st, uint parallel_thread_num = 1) NOT_SERVICES_RETURN;
-  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
+  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = nullptr, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
- private:
-  void iterate_over_heap(KlassInfoTable* cit, BoolObjectClosure* filter = NULL);
 };
 
 // Parallel heap inspection task. Parallel inspection can fail due to
 // a native OOM when allocating memory for TL-KlassInfoTable.
 // _success will be set false on an OOM, and serial inspection tried.
-class ParHeapInspectTask : public AbstractGangTask {
+class ParHeapInspectTask : public WorkerTask {
  private:
   ParallelObjectIterator* _poi;
   KlassInfoTable* _shared_cit;
@@ -239,13 +221,13 @@ class ParHeapInspectTask : public AbstractGangTask {
   ParHeapInspectTask(ParallelObjectIterator* poi,
                      KlassInfoTable* shared_cit,
                      BoolObjectClosure* filter) :
-      AbstractGangTask("Iterating heap"),
+      WorkerTask("Iterating heap"),
       _poi(poi),
       _shared_cit(shared_cit),
       _filter(filter),
       _missed_count(0),
       _success(true),
-      _mutex(Mutex::nosafepoint, "ParHeapInspectTask_lock", Mutex::_safepoint_check_never) {}
+      _mutex(Mutex::nosafepoint, "ParHeapInspectTask_lock") {}
 
   uintx missed_count() const {
     return _missed_count;

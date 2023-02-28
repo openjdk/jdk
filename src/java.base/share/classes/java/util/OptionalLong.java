@@ -326,7 +326,7 @@ public final class OptionalLong {
     @Override
     public String toString() {
         return isPresent
-                ? String.format("OptionalLong[%s]", value)
+                ? ("OptionalLong[" + value + "]")
                 : "OptionalLong.empty";
     }
 }

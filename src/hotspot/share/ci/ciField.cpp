@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 // the ciField will be incomplete.
 
 // The ciObjectFactory cannot create circular data structures in one query.
-// To avoid vicious circularities, we initialize ciField::_type to NULL
+// To avoid vicious circularities, we initialize ciField::_type to null
 // for reference types and derive it lazily from the ciField::_signature.
 // Primitive types are eagerly initialized, and basic layout queries
 // can succeed without initialization, using only the BasicType of the field.
@@ -71,7 +71,7 @@
 // ------------------------------------------------------------------
 // ciField::ciField
 ciField::ciField(ciInstanceKlass* klass, int index) :
-    _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
+    _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
   ASSERT_IN_VM;
   CompilerThread *THREAD = CompilerThread::current();
 
@@ -155,7 +155,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
   fieldDescriptor field_desc;
   Klass* canonical_holder =
     loaded_decl_holder->find_field(name, signature, &field_desc);
-  if (canonical_holder == NULL) {
+  if (canonical_holder == nullptr) {
     // Field lookup failed.  Will be detected by will_link.
     _holder = declared_holder;
     _offset = -1;
@@ -191,7 +191,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
 }
 
 ciField::ciField(fieldDescriptor *fd) :
-    _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
+    _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
   ASSERT_IN_VM;
 
   // Get the field's name, signature, and type.
@@ -204,7 +204,7 @@ ciField::ciField(fieldDescriptor *fd) :
   // If the field is a pointer type, get the klass of the
   // field.
   if (is_reference_type(field_type)) {
-    _type = NULL;  // must call compute_type on first access
+    _type = nullptr;  // must call compute_type on first access
   } else {
     _type = ciType::make(field_type);
   }
@@ -217,14 +217,15 @@ ciField::ciField(fieldDescriptor *fd) :
 }
 
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
-  if (holder == NULL)
+  if (holder == nullptr)
     return false;
   if (holder->name() == ciSymbols::java_lang_System())
     // Never trust strangely unstable finals:  System.out, etc.
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
-      holder->is_in_package("jdk/internal/foreign") || holder->is_in_package("jdk/incubator/foreign") ||
+      holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
+      holder->is_in_package("jdk/internal/foreign/layout") || holder->is_in_package("jdk/internal/foreign") ||
       holder->is_in_package("jdk/internal/vm/vector") || holder->is_in_package("jdk/incubator/vector") ||
       holder->is_in_package("java/lang"))
     return true;
@@ -257,7 +258,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _flags = ciFlags(fd->access_flags());
   _offset = fd->offset();
   Klass* field_holder = fd->field_holder();
-  assert(field_holder != NULL, "null field_holder");
+  assert(field_holder != nullptr, "null field_holder");
   _holder = CURRENT_ENV->get_instance_klass(field_holder);
 
   // Check to see if the field is constant.
@@ -269,7 +270,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // not be constant is when the field is a *special* static & final field
       // whose value may change.  The three examples are java.lang.System.in,
       // java.lang.System.out, and java.lang.System.err.
-      assert(vmClasses::System_klass() != NULL, "Check once per vm");
+      assert(vmClasses::System_klass() != nullptr, "Check once per vm");
       if (k == vmClasses::System_klass()) {
         // Check offsets for case 2: System.in, System.out, or System.err
         if (_offset == java_lang_System::in_offset()  ||
@@ -288,7 +289,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
-    assert(vmClasses::CallSite_klass() != NULL, "should be already initialized");
+    assert(vmClasses::CallSite_klass() != nullptr, "should be already initialized");
     if (k == vmClasses::CallSite_klass() &&
         _offset == java_lang_invoke_CallSite::target_offset()) {
       assert(!has_initialized_final_update(), "CallSite is not supposed to have writes to final fields outside initializers");
@@ -310,8 +311,7 @@ ciConstant ciField::constant_value() {
   }
   if (_constant_value.basic_type() == T_ILLEGAL) {
     // Static fields are placed in mirror objects.
-    VM_ENTRY_MARK;
-    ciInstance* mirror = CURRENT_ENV->get_instance(_holder->get_Klass()->java_mirror());
+    ciInstance* mirror = _holder->java_mirror();
     _constant_value = mirror->field_value_impl(type()->basic_type(), offset());
   }
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
@@ -419,7 +419,7 @@ bool ciField::will_link(ciMethod* accessing_method,
 
 bool ciField::is_call_site_target() {
   ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();
-  if (callsite_klass == NULL)
+  if (callsite_klass == nullptr)
     return false;
   return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbols::target_name()));
 }
@@ -445,7 +445,7 @@ void ciField::print() {
   tty->print(" signature=");
   _signature->print_symbol();
   tty->print(" offset=%d type=", _offset);
-  if (_type != NULL)
+  if (_type != nullptr)
     _type->print_name();
   else
     tty->print("(reference)");

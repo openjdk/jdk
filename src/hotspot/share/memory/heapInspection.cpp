@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
@@ -45,14 +44,14 @@
 // HeapInspection
 
 inline KlassInfoEntry::~KlassInfoEntry() {
-  if (_subclasses != NULL) {
+  if (_subclasses != nullptr) {
     delete _subclasses;
   }
 }
 
 inline void KlassInfoEntry::add_subclass(KlassInfoEntry* cie) {
-  if (_subclasses == NULL) {
-    _subclasses = new  (ResourceObj::C_HEAP, mtServiceability) GrowableArray<KlassInfoEntry*>(4, mtServiceability);
+  if (_subclasses == nullptr) {
+    _subclasses = new (mtServiceability) GrowableArray<KlassInfoEntry*>(4, mtServiceability);
   }
   _subclasses->append(cie);
 }
@@ -81,7 +80,7 @@ int KlassInfoEntry::compare(KlassInfoEntry* e1, KlassInfoEntry* e2) {
 
 const char* KlassInfoEntry::name() const {
   const char* name;
-  if (_klass->name() != NULL) {
+  if (_klass->name() != nullptr) {
     name = _klass->external_name();
   } else {
     if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
@@ -108,8 +107,8 @@ void KlassInfoEntry::print_on(outputStream* st) const {
                  (uint64_t)_instance_words * HeapWordSize,
                  name(),
                  module->name()->as_C_string(),
-                 module->version() != NULL ? "@" : "",
-                 module->version() != NULL ? module->version()->as_C_string() : "");
+                 module->version() != nullptr ? "@" : "",
+                 module->version() != nullptr ? module->version()->as_C_string() : "");
   } else {
     st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
                  (int64_t)_instance_count,
@@ -120,12 +119,12 @@ void KlassInfoEntry::print_on(outputStream* st) const {
 
 KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
   // Can happen if k is an archived class that we haven't loaded yet.
-  if (k->java_mirror_no_keepalive() == NULL) {
-    return NULL;
+  if (k->java_mirror_no_keepalive() == nullptr) {
+    return nullptr;
   }
 
   KlassInfoEntry* elt = _list;
-  while (elt != NULL) {
+  while (elt != nullptr) {
     if (elt->is_equal(k)) {
       return elt;
     }
@@ -133,7 +132,7 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
   }
   elt = new (std::nothrow) KlassInfoEntry(k, list());
   // We may be out of space to allocate the new entry.
-  if (elt != NULL) {
+  if (elt != nullptr) {
     set_list(elt);
   }
   return elt;
@@ -141,7 +140,7 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
 
 void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
   KlassInfoEntry* elt = _list;
-  while (elt != NULL) {
+  while (elt != nullptr) {
     cic->do_cinfo(elt);
     elt = elt->next();
   }
@@ -149,8 +148,8 @@ void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
 
 void KlassInfoBucket::empty() {
   KlassInfoEntry* elt = _list;
-  _list = NULL;
-  while (elt != NULL) {
+  _list = nullptr;
+  while (elt != nullptr) {
     KlassInfoEntry* next = elt->next();
     delete elt;
     elt = next;
@@ -175,7 +174,7 @@ KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
        mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  if (_buckets != NULL) {
+  if (_buckets != nullptr) {
     for (int index = 0; index < _num_buckets; index++) {
       _buckets[index].initialize();
     }
@@ -187,12 +186,12 @@ KlassInfoTable::KlassInfoTable(bool add_all_classes) {
 }
 
 KlassInfoTable::~KlassInfoTable() {
-  if (_buckets != NULL) {
+  if (_buckets != nullptr) {
     for (int index = 0; index < _num_buckets; index++) {
       _buckets[index].empty();
     }
     FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
-    _buckets = NULL;
+    _buckets = nullptr;
   }
 }
 
@@ -202,12 +201,12 @@ uint KlassInfoTable::hash(const Klass* p) {
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
   uint         idx = hash(k) % _num_buckets;
-  assert(_buckets != NULL, "Allocation failure should have been caught");
+  assert(_buckets != nullptr, "Allocation failure should have been caught");
   KlassInfoEntry*  e   = _buckets[idx].lookup(k);
   // Lookup may fail if this is a new klass for which we
   // could not allocate space for an new entry, or if it's
   // an archived class that we haven't loaded yet.
-  assert(e == NULL || k == e->klass(), "must be equal");
+  assert(e == nullptr || k == e->klass(), "must be equal");
   return e;
 }
 
@@ -216,9 +215,9 @@ KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
 bool KlassInfoTable::record_instance(const oop obj) {
   Klass*        k = obj->klass();
   KlassInfoEntry* elt = lookup(k);
-  // elt may be NULL if it's a new klass for which we
+  // elt may be null if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
-  if (elt != NULL) {
+  if (elt != nullptr) {
     elt->set_count(elt->count() + 1);
     elt->set_words(elt->words() + obj->size());
     _size_of_instances_in_words += obj->size();
@@ -229,7 +228,7 @@ bool KlassInfoTable::record_instance(const oop obj) {
 }
 
 void KlassInfoTable::iterate(KlassInfoClosure* cic) {
-  assert(_buckets != NULL, "Allocation failure should have been caught");
+  assert(_buckets != nullptr, "Allocation failure should have been caught");
   for (int index = 0; index < _num_buckets; index++) {
     _buckets[index].iterate(cic);
   }
@@ -244,9 +243,9 @@ size_t KlassInfoTable::size_of_instances_in_words() const {
 bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
   Klass*          k = cie->klass();
   KlassInfoEntry* elt = lookup(k);
-  // elt may be NULL if it's a new klass for which we
+  // elt may be null if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
-  if (elt != NULL) {
+  if (elt != nullptr) {
     elt->set_count(elt->count() + cie->count());
     elt->set_words(elt->words() + cie->words());
     _size_of_instances_in_words += cie->words();
@@ -280,7 +279,7 @@ int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
 
 KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit) :
   _cit(cit) {
-  _elements = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<KlassInfoEntry*>(_histo_initial_size, mtServiceability);
+  _elements = new (mtServiceability) GrowableArray<KlassInfoEntry*>(_histo_initial_size, mtServiceability);
 }
 
 KlassInfoHisto::~KlassInfoHisto() {
@@ -350,9 +349,9 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
     cie->set_index(i + 1);
 
     // Add the class to the subclass array of its superclass.
-    if (super != NULL) {
+    if (super != nullptr) {
       KlassInfoEntry* super_cie = cit.lookup(super);
-      assert(super_cie != NULL, "could not lookup superclass");
+      assert(super_cie != nullptr, "could not lookup superclass");
       super_cie->add_subclass(cie);
     }
   }
@@ -360,7 +359,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
   // Set the do_print flag for each class that should be printed.
   for(int i = 0; i < elements.length(); i++) {
     KlassInfoEntry* cie = elements.at(i);
-    if (classname == NULL) {
+    if (classname == nullptr) {
       // We are printing all classes.
       cie->set_do_print(true);
     } else {
@@ -375,7 +374,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
   // maintain the list of classes we still need to process. Start things off
   // by priming it with java.lang.Object.
   KlassInfoEntry* jlo_cie = cit.lookup(vmClasses::Object_klass());
-  assert(jlo_cie != NULL, "could not lookup java.lang.Object");
+  assert(jlo_cie != nullptr, "could not lookup java.lang.Object");
   class_stack.push(jlo_cie);
 
   // Repeatedly pop the top item off the stack, print its class info,
@@ -385,7 +384,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
     KlassInfoEntry* curr_cie = class_stack.pop();
     if (curr_cie->do_print()) {
       print_class(st, curr_cie, print_interfaces);
-      if (curr_cie->subclasses() != NULL) {
+      if (curr_cie->subclasses() != nullptr) {
         // Current class has subclasses, so push all of them onto the stack.
         for (int i = 0; i < curr_cie->subclasses()->length(); i++) {
           KlassInfoEntry* cie = curr_cie->subclasses()->at(i);
@@ -405,7 +404,7 @@ void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, Klass
                                                       bool print_subclasses) {
   // Set do_print for all superclasses of this class.
   Klass* super = ((InstanceKlass*)cie->klass())->java_super();
-  while (super != NULL) {
+  while (super != nullptr) {
     KlassInfoEntry* super_cie = cit->lookup(super);
     super_cie->set_do_print(true);
     super = super->super();
@@ -417,7 +416,7 @@ void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, Klass
   while (!class_stack.is_empty()) {
     KlassInfoEntry* curr_cie = class_stack.pop();
     curr_cie->set_do_print(true);
-    if (print_subclasses && curr_cie->subclasses() != NULL) {
+    if (print_subclasses && curr_cie->subclasses() != nullptr) {
       // Current class has subclasses, so push all of them onto the stack.
       for (int i = 0; i < curr_cie->subclasses()->length(); i++) {
         KlassInfoEntry* cie = curr_cie->subclasses()->at(i);
@@ -437,14 +436,14 @@ static void print_indent(outputStream* st, int indent) {
   }
 }
 
-// Print the class name and its unique ClassLoader identifer.
+// Print the class name and its unique ClassLoader identifier.
 static void print_classname(outputStream* st, Klass* klass) {
   oop loader_oop = klass->class_loader_data()->class_loader();
   st->print("%s/", klass->external_name());
-  if (loader_oop == NULL) {
+  if (loader_oop == nullptr) {
     st->print("null");
   } else {
-    st->print(INTPTR_FORMAT, p2i(klass->class_loader_data()));
+    st->print(PTR_FORMAT, p2i(klass->class_loader_data()));
   }
 }
 
@@ -462,23 +461,17 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
 
   // Print indentation with proper indicators of superclass.
   Klass* super = klass->super();
-  while (super != NULL) {
+  while (super != nullptr) {
     super = super->super();
     indent++;
   }
   print_indent(st, indent);
   if (indent != 0) st->print("--");
 
-  // Print the class name, its unique ClassLoader identifer, and if it is an interface.
+  // Print the class name, its unique ClassLoader identifier, and if it is an interface.
   print_classname(st, klass);
   if (klass->is_interface()) {
     st->print(" (intf)");
-  }
-  // Special treatment for generated core reflection accessor classes: print invocation target.
-  if (ReflectionAccessorImplKlassHelper::is_generated_accessor(klass)) {
-    st->print(" (invokes: ");
-    ReflectionAccessorImplKlassHelper::print_invocation_target(st, klass);
-    st->print(")");
   }
   st->print("\n");
 
@@ -537,7 +530,7 @@ class RecordInstanceClosure : public ObjectClosure {
 
  private:
   bool should_visit(oop obj) {
-    return _filter == NULL || _filter->do_object_b(obj);
+    return _filter == nullptr || _filter->do_object_b(obj);
   }
 };
 
@@ -577,25 +570,20 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   if (parallel_thread_num > 1) {
     ResourceMark rm;
 
-    WorkGang* gang = Universe::heap()->safepoint_workers();
-    if (gang != NULL) {
-      // The GC provided a WorkGang to be used during a safepoint.
+    WorkerThreads* workers = Universe::heap()->safepoint_workers();
+    if (workers != nullptr) {
+      // The GC provided a WorkerThreads to be used during a safepoint.
 
-      // Can't run with more threads than provided by the WorkGang.
-      WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
+      // Can't run with more threads than provided by the WorkerThreads.
+      const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
+      WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
 
-      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());
-      if (poi != NULL) {
-        // The GC supports parallel object iteration.
-
-        ParHeapInspectTask task(poi, cit, filter);
-        // Run task with the active workers.
-        gang->run_task(&task);
-
-        delete poi;
-        if (task.success()) {
-          return task.missed_count();
-        }
+      ParallelObjectIterator poi(workers->active_workers());
+      ParHeapInspectTask task(&poi, cit, filter);
+      // Run task with the active workers.
+      workers->run_task(&task);
+      if (task.success()) {
+        return task.missed_count();
       }
     }
   }
@@ -613,7 +601,7 @@ void HeapInspection::heap_inspection(outputStream* st, uint parallel_thread_num)
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {
     // populate table with object allocation info
-    uintx missed_count = populate_table(&cit, NULL, parallel_thread_num);
+    uintx missed_count = populate_table(&cit, nullptr, parallel_thread_num);
     if (missed_count != 0) {
       log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
                                " total instances in data below",

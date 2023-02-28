@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class MultiReleaseJars {
 
+    static final int BASE_VERSION = 8;
+    static final String BASE_VERSION_STRING = Integer.toString(BASE_VERSION);
     static final int MAJOR_VERSION = Runtime.version().major();
     static final String MAJOR_VERSION_STRING = String.valueOf(MAJOR_VERSION);
 
@@ -102,8 +104,10 @@ public class MultiReleaseJars {
         writeFile(fileMain, getMain());
 
         File fileVersion = TestCommon.getOutputSourceFile("Version.java");
-        writeFile(fileVersion, getVersion(7));
-        JarBuilder.compile(baseDir.getAbsolutePath(), fileVersion.getAbsolutePath(), "--release", "7");
+        writeFile(fileVersion, getVersion(BASE_VERSION));
+        JarBuilder.compile(baseDir.getAbsolutePath(),
+                           fileVersion.getAbsolutePath(),
+                           "--release", BASE_VERSION_STRING);
         JarBuilder.compile(baseDir.getAbsolutePath(), fileMain.getAbsolutePath(),
             "-cp", baseDir.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
 
@@ -146,7 +150,7 @@ public class MultiReleaseJars {
 
     public static void main(String... args) throws Exception {
         // create version.jar which contains Main.class and Version.class.
-        // Version.class has two versions: 8 and the current version.
+        // Version.class has two versions: base version and the current version.
         createClassFilesAndJar();
 
         String mainClass          = "version.Main";
@@ -168,12 +172,12 @@ public class MultiReleaseJars {
         output = TestCommon.exec(appJar, mainClass);
         checkExecOutput(output, "I am running on version " + MAJOR_VERSION_STRING);
 
-        // 2. Test versions 7 and the current major version.
+        // 2. Test versions base and the current major version.
         //    -Djdk.util.jar.enableMultiRelease=true (or force), default is true.
-        //    a) -Djdk.util.jar.version=7 does not exist in jar.
-        //        It will fallback to the root version which is also 7 in this test.
+        //    a) -Djdk.util.jar.version=BASE_VERSION does not exist in jar.
+        //        It will fallback to the root version which is also BASE_VERSION in this test.
         //    b) -Djdk.util.jar.version=MAJOR_VERSION exists in the jar.
-        for (int i : new int[] {7, MAJOR_VERSION}) {
+        for (int i : new int[] {BASE_VERSION, MAJOR_VERSION}) {
             jarVersion = "-Djdk.util.jar.version=" + i;
             expectedOutput = "I am running on version " + i;
             output = TestCommon.dump(appJar, appClasses, enableMultiRelease, jarVersion);
@@ -196,7 +200,7 @@ public class MultiReleaseJars {
 
             output = TestCommon.exec(appJar, mainClass);
             if (i == 5)
-                checkExecOutput(output, "I am running on version 7");
+                checkExecOutput(output, "I am running on version " + BASE_VERSION_STRING);
             else
                 checkExecOutput(output, "I am running on version " + MAJOR_VERSION_STRING);
         }
@@ -210,7 +214,7 @@ public class MultiReleaseJars {
             output.shouldHaveExitValue(0);
 
             output = TestCommon.exec(appJar, mainClass);
-            expectedOutput = "I am running on version 7";
+            expectedOutput = "I am running on version " + BASE_VERSION_STRING;
             checkExecOutput(output, expectedOutput);
         }
 
@@ -222,7 +226,7 @@ public class MultiReleaseJars {
         output.shouldHaveExitValue(0);
 
         output = TestCommon.exec(appJar, "-Xbootclasspath/a:" + appJar, mainClass);
-        checkExecOutput(output, "I am running on version 7");
+        checkExecOutput(output, "I am running on version " + BASE_VERSION_STRING);
 
         // 6. Sanity test case-insensitive "Multi-Release" attribute name
         output = TestCommon.dump(appJar2, appClasses);

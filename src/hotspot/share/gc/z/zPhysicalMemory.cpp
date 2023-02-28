@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
 }
 
 void ZPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     const uintptr_t addr = ZAddress::marked0(offset);
     Tracker tracker(Tracker::uncommit);
     tracker.record((address)addr, size);
@@ -295,7 +295,7 @@ void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {
   // Allocate segments
   while (size > 0) {
     size_t allocated = 0;
-    const uintptr_t start = _manager.alloc_from_front_at_most(size, &allocated);
+    const uintptr_t start = _manager.alloc_low_address_at_most(size, &allocated);
     assert(start != UINTPTR_MAX, "Allocation should never fail");
     pmem.add_segment(ZPhysicalMemorySegment(start, allocated, false /* committed */));
     size -= allocated;

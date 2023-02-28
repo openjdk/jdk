@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSContextImpl;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.HttpCaller;
+import sun.security.jgss.krb5.internal.TlsChannelBindingImpl;
+import sun.security.util.ChannelBindingException;
+import sun.security.util.TlsChannelBinding;
 
 /**
  * This class encapsulates all JAAS and JGSS API calls in a separate class
@@ -65,7 +68,7 @@ public class NegotiatorImpl extends Negotiator {
      * <li>Creating GSSContext
      * <li>A first call to initSecContext</ul>
      */
-    private void init(HttpCallerInfo hci) throws GSSException {
+    private void init(HttpCallerInfo hci) throws GSSException, ChannelBindingException {
         final Oid oid;
 
         if (hci.scheme.equalsIgnoreCase("Kerberos")) {
@@ -100,6 +103,14 @@ public class NegotiatorImpl extends Negotiator {
         if (context instanceof GSSContextImpl) {
             ((GSSContextImpl)context).requestDelegPolicy(true);
         }
+        if (hci.serverCert != null) {
+            if (DEBUG) {
+                System.out.println("Negotiate: Setting CBT");
+            }
+            // set the channel binding token
+            TlsChannelBinding b = TlsChannelBinding.create(hci.serverCert);
+            context.setChannelBinding(new TlsChannelBindingImpl(b.getData()));
+        }
         oneToken = context.initSecContext(new byte[0], 0, 0);
     }
 
@@ -110,15 +121,13 @@ public class NegotiatorImpl extends Negotiator {
     public NegotiatorImpl(HttpCallerInfo hci) throws IOException {
         try {
             init(hci);
-        } catch (GSSException e) {
+        } catch (GSSException | ChannelBindingException e) {
             if (DEBUG) {
                 System.out.println("Negotiate support not initiated, will " +
                         "fallback to other scheme if allowed. Reason:");
                 e.printStackTrace();
             }
-            IOException ioe = new IOException("Negotiate support not initiated");
-            ioe.initCause(e);
-            throw ioe;
+            throw new IOException("Negotiate support not initiated", e);
         }
     }
 
@@ -146,9 +155,7 @@ public class NegotiatorImpl extends Negotiator {
                 System.out.println("Negotiate support cannot continue. Reason:");
                 e.printStackTrace();
             }
-            IOException ioe = new IOException("Negotiate support cannot continue");
-            ioe.initCause(e);
-            throw ioe;
+            throw new IOException("Negotiate support cannot continue", e);
         }
     }
 }

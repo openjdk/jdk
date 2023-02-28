@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -36,7 +36,8 @@
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
   _low_boundary(NULL), _high_boundary(NULL), _tail_size(0), _page_size(0),
-  _committed(mtGC), _dirty(mtGC), _special(false), _executable(false) {
+  _committed(mtGC), _dirty(mtGC), _special(false) {
+  assert(!rs.executable(), "precondition");
   initialize_with_page_size(rs, used_size, page_size);
 }
 
@@ -49,7 +50,7 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
   guarantee(is_aligned(rs.base(), page_size),
             "Reserved space base " PTR_FORMAT " is not aligned to requested page size " SIZE_FORMAT, p2i(rs.base()), page_size);
   guarantee(is_aligned(used_size, os::vm_page_size()),
-            "Given used reserved space size needs to be OS page size aligned (%d bytes) but is " SIZE_FORMAT, os::vm_page_size(), used_size);
+            "Given used reserved space size needs to be OS page size aligned (" SIZE_FORMAT " bytes) but is " SIZE_FORMAT, os::vm_page_size(), used_size);
   guarantee(used_size <= rs.size(),
             "Used size of reserved space " SIZE_FORMAT " bytes is smaller than reservation at " SIZE_FORMAT " bytes", used_size, rs.size());
   guarantee(is_aligned(rs.size(), page_size),
@@ -59,7 +60,6 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
   _high_boundary = _low_boundary + used_size;
 
   _special = rs.special();
-  _executable = rs.executable();
 
   _page_size = page_size;
 
@@ -79,7 +79,6 @@ G1PageBasedVirtualSpace::~G1PageBasedVirtualSpace() {
   _low_boundary           = NULL;
   _high_boundary          = NULL;
   _special                = false;
-  _executable             = false;
   _page_size              = 0;
   _tail_size              = 0;
 }
@@ -140,14 +139,14 @@ void G1PageBasedVirtualSpace::commit_preferred_pages(size_t start, size_t num_pa
   char* start_addr = page_start(start);
   size_t size = num_pages * _page_size;
 
-  os::commit_memory_or_exit(start_addr, size, _page_size, _executable, "G1 virtual space");
+  os::commit_memory_or_exit(start_addr, size, _page_size, false, "G1 virtual space");
 }
 
 void G1PageBasedVirtualSpace::commit_tail() {
   vmassert(_tail_size > 0, "The size of the tail area must be > 0 when reaching here");
 
   char* const aligned_end_address = align_down(_high_boundary, _page_size);
-  os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), _executable, "G1 virtual space");
+  os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), false, "G1 virtual space");
 }
 
 void G1PageBasedVirtualSpace::commit_internal(size_t start_page, size_t end_page) {
@@ -176,13 +175,6 @@ void G1PageBasedVirtualSpace::commit_internal(size_t start_page, size_t end_page
 
 char* G1PageBasedVirtualSpace::bounded_end_addr(size_t end_page) const {
   return MIN2(_high_boundary, page_start(end_page));
-}
-
-void G1PageBasedVirtualSpace::pretouch_internal(size_t start_page, size_t end_page) {
-  guarantee(start_page < end_page,
-            "Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page);
-
-  os::pretouch_memory(page_start(start_page), bounded_end_addr(end_page), _page_size);
 }
 
 bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
@@ -233,10 +225,10 @@ void G1PageBasedVirtualSpace::uncommit(size_t start_page, size_t size_in_pages) 
   _committed.par_clear_range(start_page, end_page, BitMap::unknown_range);
 }
 
-void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkGang* pretouch_gang) {
+void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_workers) {
 
   PretouchTask::pretouch("G1 PreTouch", page_start(start_page), bounded_end_addr(start_page + size_in_pages),
-                         _page_size, pretouch_gang);
+                         _page_size, pretouch_workers);
 }
 
 bool G1PageBasedVirtualSpace::contains(const void* p) const {

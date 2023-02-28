@@ -729,7 +729,7 @@ Java_sun_print_Win32PrintService_getPrinterPort(JNIEnv *env,
   }
 
   jstring jPort;
-  LPTSTR printerName = NULL, printerPort = TEXT("LPT1");
+  LPTSTR printerName = NULL, printerPort = (LPTSTR)TEXT("LPT1");
   LPBYTE buffer = NULL;
   DWORD cbBuf = 0;
 
@@ -745,7 +745,7 @@ Java_sun_print_Win32PrintService_getPrinterPort(JNIEnv *env,
   }
 
   if (printerPort == NULL) {
-    printerPort = TEXT("LPT1");
+    printerPort = (LPTSTR)TEXT("LPT1");
   }
   jPort = JNU_NewStringPlatform(env, printerPort);
   delete [] buffer;
@@ -1110,7 +1110,7 @@ Java_sun_print_Win32PrintJob_startPrintRawData(JNIEnv *env,
   // Fill in the structure with info about this "document."
   DocInfo.pDocName = jname;
   DocInfo.pOutputFile = NULL;
-  DocInfo.pDatatype = TEXT("RAW");
+  DocInfo.pDatatype = (LPTSTR)TEXT("RAW");
 
   // Inform the spooler the document is beginning.
   if( (::StartDocPrinter(hPrinter, 1, (LPBYTE)&DocInfo)) == 0 ) {

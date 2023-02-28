@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,9 +31,11 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_aix.hpp"
+#include "os_aix.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "porting_aix.hpp"
@@ -43,12 +44,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
@@ -89,7 +90,7 @@ intptr_t* os::Aix::ucontext_get_sp(const ucontext_t * uc) {
 }
 
 intptr_t* os::Aix::ucontext_get_fp(const ucontext_t * uc) {
-  return NULL;
+  return nullptr;
 }
 
 void os::Posix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
@@ -106,14 +107,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Aix::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Aix::ucontext_get_fp(uc);
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -140,9 +141,9 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
-  if (*fr->sp() == NULL) {
+  if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
-    return frame(NULL, NULL);
+    return frame(nullptr, nullptr);
   }
   return frame(fr->sender_sp(), fr->sender_pc());
 }
@@ -158,27 +159,27 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
   // Decide if this trap can be handled by a stub.
-  address stub = NULL;
+  address stub = nullptr;
 
   // retrieve program counter
-  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : nullptr;
 
   // retrieve crash address
-  address const addr = info ? (const address) info->si_addr : NULL;
+  address const addr = info ? (const address) info->si_addr : nullptr;
 
-  if (info == NULL || uc == NULL) {
+  if (info == nullptr || uc == nullptr) {
     return false; // Fatal error
   }
 
   // If we are a java thread...
-  if (thread != NULL) {
+  if (thread != nullptr) {
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV && thread->is_in_full_stack(addr)) {
       // stack overflow
       if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
         return true; // continue
-      } else if (stub != NULL) {
+      } else if (stub != nullptr) {
         goto run_stub;
       } else {
         return false; // Fatal error
@@ -192,7 +193,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //
       // SIGILL: the compiler generates illegal opcodes
       //   at places where it wishes to interrupt the VM:
-      //   Safepoints, Unreachable Code, Entry points of Zombie methods,
+      //   Safepoints, Unreachable Code, Entry points of not entrant nmethods,
       //    This results in a SIGILL with (*pc) == inserted illegal instruction.
       //
       //   (so, SIGILLs with a pc inside the zero page are real errors)
@@ -201,7 +202,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //   The ppc trap instruction raises a SIGTRAP and is very efficient if it
       //   does not trap. It is used for conditional branches that are expected
       //   to be never taken. These are:
-      //     - zombie methods
+      //     - not entrant nmethods
       //     - IC (inline cache) misses.
       //     - null checks leading to UncommonTraps.
       //     - range checks leading to Uncommon Traps.
@@ -221,12 +222,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //     happens rarely.  In heap based and disjoint base compressd oop modes also loads
       //     are used for null checks.
 
-      CodeBlob *cb = NULL;
+      CodeBlob *cb = nullptr;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
         goto run_stub;
@@ -235,7 +236,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if ((sig == USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV) &&
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
-               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               ((cb = CodeCache::find_blob(pc)) != nullptr) &&
                cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
@@ -248,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (UseSIGTRAP && sig == SIGTRAP &&
                ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
                CodeCache::contains((void*) pc) &&
-               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               ((cb = CodeCache::find_blob(pc)) != nullptr) &&
                cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
@@ -312,7 +313,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         bool msg_present = (stop_type & MacroAssembler::stop_msg_present);
         stop_type = (stop_type &~ MacroAssembler::stop_msg_present);
 
-        const char *msg = NULL;
+        const char *msg = nullptr;
         switch (stop_type) {
           case MacroAssembler::stop_stop              : msg = "stop"; break;
           case MacroAssembler::stop_untested          : msg = "untested"; break;
@@ -331,7 +332,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
         va_list va_dummy;
-        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
         va_end(va_dummy);
 
         ShouldNotReachHere();
@@ -340,10 +341,10 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : NULL;
+        CodeBlob* cb = CodeCache::find_blob(pc);
+        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
@@ -393,9 +394,9 @@ run_stub:
 
   // One of the above code blocks ininitalized the stub, so we want to
   // delegate control to that stub.
-  if (stub != NULL) {
+  if (stub != nullptr) {
     // Save all thread context in case we need to restore it.
-    if (thread != NULL) thread->set_saved_exception_pc(pc);
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
@@ -417,9 +418,9 @@ void os::Aix::init_thread_fpu_state(void) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 192 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 192 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -432,7 +433,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -447,10 +448,15 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
 
-  intptr_t *sp = (intptr_t *)os::Aix::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 128), sizeof(intptr_t));
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == nullptr) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
+
+  address sp = (address)os::Aix::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
@@ -468,7 +474,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   ucontext_t *uc = (ucontext_t*)context;
 
@@ -503,12 +509,14 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }
 
 // HAVE_FUNCTION_DESCRIPTORS
-void* os::resolve_function_descriptor(void* p) {
+void* os::Aix::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
+
+void os::setup_fpu() {}

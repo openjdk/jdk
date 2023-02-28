@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 class JVMCIEnv;
 
-// JVMCIEnv exception utility macros.  Analagous to the regular CHECK, TRAP and THREAD macros.
+// JVMCIEnv exception utility macros.  Analogous to the regular CHECK, TRAP and THREAD macros.
 
 #define JVMCIENV __jvmci_env__
 #define JVMCI_TRAPS  JVMCIEnv* JVMCIENV
@@ -47,7 +47,7 @@ class JVMCIEnv;
 #define JVMCI_CHECK                                    JVMCIENV); if (JVMCI_HAS_PENDING_EXCEPTION) return       ; (void)(0
 #define JVMCI_CHECK_(result)                           JVMCIENV); if (JVMCI_HAS_PENDING_EXCEPTION) return result; (void)(0
 #define JVMCI_CHECK_0                                  JVMCI_CHECK_(0)
-#define JVMCI_CHECK_NULL                               JVMCI_CHECK_(NULL)
+#define JVMCI_CHECK_NULL                               JVMCI_CHECK_(nullptr)
 #define JVMCI_CHECK_false                              JVMCI_CHECK_(false)
 #define JVMCI_CHECK_OK                                 JVMCI_CHECK_(JVMCI::ok)
 
@@ -58,13 +58,13 @@ class JVMCIEnv;
   { JVMCIENV->fthrow_error( __FILE__, __LINE__, __VA_ARGS__); return ret; }
 
 #define JVMCI_ERROR_0(...)    JVMCI_ERROR_(0, __VA_ARGS__)
-#define JVMCI_ERROR_NULL(...) JVMCI_ERROR_(NULL, __VA_ARGS__)
+#define JVMCI_ERROR_NULL(...) JVMCI_ERROR_(nullptr, __VA_ARGS__)
 #define JVMCI_ERROR_OK(...)   JVMCI_ERROR_(JVMCI::ok, __VA_ARGS__)
 
 #define JVMCI_THROW(name) { JVMCIENV->throw_##name(); return; }
-#define JVMCI_THROW_NULL(name) { JVMCIENV->throw_##name(); return NULL; }
+#define JVMCI_THROW_NULL(name) { JVMCIENV->throw_##name(); return nullptr; }
 #define JVMCI_THROW_0(name) { JVMCIENV->throw_##name(); return 0; }
-#define JVMCI_THROW_MSG_NULL(name, msg) { JVMCIENV->throw_##name(msg); return NULL; }
+#define JVMCI_THROW_MSG_NULL(name, msg) { JVMCIENV->throw_##name(msg); return nullptr; }
 #define JVMCI_THROW_MSG_(name, msg, value) { JVMCIENV->throw_##name(msg); return (value); }
 #define JVMCI_THROW_MSG_0(name, msg) { JVMCIENV->throw_##name(msg); return 0; }
 #define JVMCI_THROW_MSG(name, msg) { JVMCIENV->throw_##name(msg); return; }

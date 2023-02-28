@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@ package java.awt.image;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
-import sun.java2d.cmm.CMSManager;
-import sun.java2d.cmm.ColorTransform;
-import sun.java2d.cmm.PCMM;
+import java.awt.color.ICC_Profile;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.Arrays;
+
+import sun.java2d.cmm.CMSManager;
+import sun.java2d.cmm.ColorTransform;
+import sun.java2d.cmm.PCMM;
 
 /**
  * The {@code ColorModel} abstract class encapsulates the
@@ -154,7 +156,6 @@ import java.util.Arrays;
  * @see DataBuffer
  */
 public abstract class ColorModel implements Transparency{
-    private long pData;         // Placeholder for data for native functions
 
     /**
      * The total number of bits in the pixel.
@@ -220,7 +221,6 @@ public abstract class ColorModel implements Transparency{
         loadLibraries();
         initIDs();
     }
-    private static ColorModel RGBdefault;
 
     /**
      * Returns a {@code DirectColorModel} that describes the default
@@ -239,15 +239,13 @@ public abstract class ColorModel implements Transparency{
      *          RGB values.
      */
     public static ColorModel getRGBdefault() {
-        if (RGBdefault == null) {
-            RGBdefault = new DirectColorModel(32,
-                                              0x00ff0000,       // Red
-                                              0x0000ff00,       // Green
-                                              0x000000ff,       // Blue
-                                              0xff000000        // Alpha
-                                              );
+        interface RGBdefault {
+            ColorModel INSTANCE = new DirectColorModel(32, 0x00ff0000,  // Red
+                                                           0x0000ff00,  // Green
+                                                           0x000000ff,  // Blue
+                                                           0xff000000); // Alpha
         }
-        return RGBdefault;
+        return RGBdefault.INSTANCE;
     }
 
     /**
@@ -463,9 +461,8 @@ public abstract class ColorModel implements Transparency{
      * @param componentIdx the index of the color/alpha component
      * @return the number of bits for the color/alpha component at the
      *          specified index.
-     * @throws ArrayIndexOutOfBoundsException if {@code componentIdx}
-     *         is greater than the number of components or
-     *         less than zero
+     * @throws ArrayIndexOutOfBoundsException if {@code componentIdx} is greater
+     *         than or equal to the number of components or less than zero
      * @throws NullPointerException if the number of bits array is
      *         {@code null}
      */
@@ -1618,26 +1615,6 @@ public abstract class ColorModel implements Transparency{
     }
 
     /**
-     * Disposes of system resources associated with this
-     * {@code ColorModel} once this {@code ColorModel} is no
-     * longer referenced.
-     *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void finalize() {
-    }
-
-
-    /**
      * Returns a {@code Raster} representing the alpha channel of an
      * image, extracted from the input {@code Raster}, provided that
      * pixel values of this {@code ColorModel} represent color and
@@ -1811,15 +1788,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 255; i++) {
             g8Tos8LUT[i] = (byte) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace srgbCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        transformList[0] = mdl.createTransform(
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform(
-            srgbCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               grayCS.getProfile(), srgb);
         byte[] tmp = t.colorConvert(g8Tos8LUT, null);
         for (int i = 0, j= 2; i <= 255; i++, j += 3) {
             // All three components of tmp should be equal, since
@@ -1852,15 +1824,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var lg = ICC_Profile.getInstance(ColorSpace.CS_GRAY);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace lgCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        transformList[0] = mdl.createTransform (
-            lgCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform (
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               lg, grayCS.getProfile());
         tmp = t.colorConvert(tmp, null);
         byte[] lg16Toog8LUT = new byte[65536];
         for (int i = 0; i <= 65535; i++) {
@@ -1896,15 +1863,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace srgbCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        transformList[0] = mdl.createTransform (
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform (
-            srgbCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               grayCS.getProfile(), srgb);
         tmp = t.colorConvert(tmp, null);
         byte[] g16Tos8LUT = new byte[65536];
         for (int i = 0, j= 2; i <= 65535; i++, j += 3) {
@@ -1941,16 +1903,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var lg = ICC_Profile.getInstance(ColorSpace.CS_GRAY);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace lgCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        transformList[0] = mdl.createTransform (
-            lgCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform(
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(
-            transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               lg, grayCS.getProfile());
         short[] lg16Toog16LUT = t.colorConvert(tmp, null);
         if (lg16Toog16Map == null) {
             lg16Toog16Map = Collections.synchronizedMap(new WeakHashMap<ICC_ColorSpace, short[]>(2));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ NMTDCmd::NMTDCmd(outputStream* output,
             "comparison against previous baseline, which shows the memory " \
             "allocation activities at different callsites.",
             "BOOLEAN", false, "false"),
-  _shutdown("shutdown", "request runtime to shutdown itself and free the " \
-            "memory used by runtime.",
-            "BOOLEAN", false, "false"),
   _statistics("statistics", "print tracker statistics for tuning purpose.", \
             "BOOLEAN", false, "false"),
   _scale("scale", "Memory usage in which scale, KB, MB or GB",
@@ -62,14 +59,13 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _dcmdparser.add_dcmd_option(&_baseline);
   _dcmdparser.add_dcmd_option(&_summary_diff);
   _dcmdparser.add_dcmd_option(&_detail_diff);
-  _dcmdparser.add_dcmd_option(&_shutdown);
   _dcmdparser.add_dcmd_option(&_statistics);
   _dcmdparser.add_dcmd_option(&_scale);
 }
 
 
 size_t NMTDCmd::get_scale(const char* scale) const {
-  if (scale == NULL) return 0;
+  if (scale == nullptr) return 0;
   return NMTUtil::scale_from_name(scale);
 }
 
@@ -79,9 +75,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   if (MemTracker::tracking_level() == NMT_off) {
     output()->print_cr("Native memory tracking is not enabled");
     return;
-  } else if (MemTracker::tracking_level() == NMT_minimal) {
-     output()->print_cr("Native memory tracking has been shutdown");
-     return;
   }
 
   const char* scale_value = _scale.value();
@@ -97,12 +90,11 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   if (_baseline.is_set() && _baseline.value()) { ++nopt; }
   if (_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
   if (_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
-  if (_shutdown.is_set() && _shutdown.value()) { ++nopt; }
   if (_statistics.is_set() && _statistics.value()) { ++nopt; }
 
   if (nopt > 1) {
       output()->print_cr("At most one of the following option can be specified: " \
-        "summary, detail, metadata, baseline, summary.diff, detail.diff, shutdown");
+        "summary, detail, metadata, baseline, summary.diff, detail.diff");
       return;
   } else if (nopt == 0) {
     if (_summary.is_set()) {
@@ -125,11 +117,8 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     report(false, scale_unit);
   } else if (_baseline.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
-    if (!baseline.baseline(MemTracker::tracking_level() != NMT_detail)) {
-      output()->print_cr("Baseline failed");
-    } else {
-      output()->print_cr("Baseline succeeded");
-    }
+    baseline.baseline(MemTracker::tracking_level() != NMT_detail);
+    output()->print_cr("Baseline taken");
   } else if (_summary_diff.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
     if (baseline.baseline_type() >= MemBaseline::Summary_baselined) {
@@ -147,9 +136,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     } else {
       output()->print_cr("No detail baseline for comparison");
     }
-  } else if (_shutdown.value()) {
-    MemTracker::shutdown();
-    output()->print_cr("Native memory tracking has been turned off");
   } else if (_statistics.value()) {
     if (check_detail_tracking_level(output())) {
       MemTracker::tuning_statistics(output());
@@ -162,14 +148,13 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
 
 void NMTDCmd::report(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
-  if (baseline.baseline(summaryOnly)) {
-    if (summaryOnly) {
-      MemSummaryReporter rpt(baseline, output(), scale_unit);
-      rpt.report();
-    } else {
-      MemDetailReporter rpt(baseline, output(), scale_unit);
-      rpt.report();
-    }
+  baseline.baseline(summaryOnly);
+  if (summaryOnly) {
+    MemSummaryReporter rpt(baseline, output(), scale_unit);
+    rpt.report();
+  } else {
+    MemDetailReporter rpt(baseline, output(), scale_unit);
+    rpt.report();
   }
 }
 
@@ -181,25 +166,20 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
     "Not a detail baseline");
 
   MemBaseline baseline;
-  if (baseline.baseline(summaryOnly)) {
-    if (summaryOnly) {
-      MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
-      rpt.report_diff();
-    } else {
-      MemDetailDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
-      rpt.report_diff();
-    }
+  baseline.baseline(summaryOnly);
+  if (summaryOnly) {
+    MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+    rpt.report_diff();
+  } else {
+    MemDetailDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+    rpt.report_diff();
   }
 }
 
 bool NMTDCmd::check_detail_tracking_level(outputStream* out) {
-  if (MemTracker::tracking_level() == NMT_detail) {
-    return true;
-  } else if (MemTracker::cmdline_tracking_level() == NMT_detail) {
-    out->print_cr("Tracking level has been downgraded due to lack of resources");
-    return false;
-  } else {
+  if (MemTracker::tracking_level() != NMT_detail) {
     out->print_cr("Detail tracking is not enabled");
     return false;
   }
+  return true;
 }

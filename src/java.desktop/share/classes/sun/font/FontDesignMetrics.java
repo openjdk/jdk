@@ -188,16 +188,10 @@ public final class FontDesignMetrics extends FontMetrics {
         /* It is possible that since this reference object has been
          * enqueued, that a new metrics has been put into the table
          * for the same key value. So we'll test to see if the table maps
-         * to THIS reference. If its a new one, we'll leave it alone.
-         * It is possible that a new entry comes in after our test, but
-         * it is unlikely and if this were a problem we would need to
-         * synchronize all 'put' and 'remove' accesses to the cache which
-         * I would prefer not to do.
+         * to THIS reference. If it's a new one, we'll leave it alone.
          */
         public void dispose() {
-            if (metricsCache.get(key) == this) {
-                metricsCache.remove(key);
-            }
+            metricsCache.remove(key, this);
         }
     }
 
@@ -595,7 +589,7 @@ public final class FontDesignMetrics extends FontMetrics {
         // if the calculations in any other methods change this needs
         // to be changed too.
         // the 0.95 value used here and in the other methods allows some
-        // tiny fraction of leeway before rouding up. A higher value (0.99)
+        // tiny fraction of leeway before rounding up. A higher value (0.99)
         // caused some excessive rounding up.
         return
             (int)(roundingUpValue + descent + leading) -

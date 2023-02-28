@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -34,15 +34,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">амхарская</language>
 			<language type="an">арагонская</language>
 			<language type="ang">стараанглійская</language>
+			<language type="ann">абола</language>
 			<language type="anp">ангіка</language>
 			<language type="ar">арабская</language>
 			<language type="ar_001">сучасная стандартная арабская</language>
 			<language type="arc">арамейская</language>
 			<language type="arn">мапудунгун</language>
 			<language type="arp">арапаха</language>
+			<language type="ars">недждыйская арабская</language>
 			<language type="as">асамская</language>
 			<language type="asa">асу</language>
 			<language type="ast">астурыйская</language>
+			<language type="atj">атыкамек</language>
 			<language type="av">аварская</language>
 			<language type="awa">авадхі</language>
 			<language type="ay">аймара</language>
@@ -69,6 +72,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">бугіс</language>
 			<language type="byn">білен</language>
 			<language type="ca">каталанская</language>
+			<language type="cay">каюга</language>
 			<language type="ccp">чакма</language>
 			<language type="ce">чачэнская</language>
 			<language type="ceb">себуана</language>
@@ -78,15 +82,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">чуук</language>
 			<language type="chm">мары</language>
 			<language type="cho">чокта</language>
+			<language type="chp">чыпеваян</language>
 			<language type="chr">чэрокі</language>
 			<language type="chy">шэйен</language>
 			<language type="ckb">цэнтральнакурдская</language>
 			<language type="ckb" alt="menu">курдская, сарані</language>
 			<language type="ckb" alt="variant">сарані</language>
+			<language type="clc">чылькатын</language>
 			<language type="co">карсіканская</language>
 			<language type="cop">копцкая</language>
+			<language type="crg">мічыф</language>
+			<language type="crj">паўднёва-ўсходняя кры</language>
+			<language type="crk">раўнінны кры</language>
+			<language type="crl">паўночна-ўсходняя кры</language>
+			<language type="crm">муская кры</language>
+			<language type="crr">каралінская алганкійская</language>
 			<language type="crs">сэсэльва</language>
 			<language type="cs">чэшская</language>
+			<language type="csw">балотная кры</language>
 			<language type="cu">царкоўнаславянская</language>
 			<language type="cv">чувашская</language>
 			<language type="cy">валійская</language>
@@ -99,6 +112,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="de_CH">швейцарская літаратурная нямецкая</language>
 			<language type="dgr">догрыб</language>
 			<language type="dje">зарма</language>
+			<language type="doi">догры</language>
 			<language type="dsb">ніжнялужыцкая</language>
 			<language type="dua">дуала</language>
 			<language type="dv">мальдыўская</language>
@@ -117,6 +131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_GB">брытанская англійская</language>
 			<language type="en_GB" alt="short">вялікабрытанская англійская</language>
 			<language type="en_US">амерыканская англійская</language>
+			<language type="en_US" alt="short">англійская (ЗША)</language>
 			<language type="eo">эсперанта</language>
 			<language type="es">іспанская</language>
 			<language type="es_419">лацінаамерыканская іспанская</language>
@@ -136,7 +151,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">французская</language>
 			<language type="fr_CA">канадская французская</language>
 			<language type="fr_CH">швейцарская французская</language>
+			<language type="frc">каджунская французская</language>
 			<language type="fro">старафранцузская</language>
+			<language type="frr">паўночнафрызская</language>
 			<language type="fur">фрыульская</language>
 			<language type="fy">заходняя фрызская</language>
 			<language type="ga">ірландская</language>
@@ -155,9 +172,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">мэнская</language>
 			<language type="gwi">гуіч’ін</language>
 			<language type="ha">хауса</language>
+			<language type="hai">хайда</language>
 			<language type="haw">гавайская</language>
+			<language type="hax">паўднёвая хайда</language>
 			<language type="he">іўрыт</language>
 			<language type="hi">хіндзі</language>
+			<language type="hi_Latn" alt="variant">хінгліш</language>
 			<language type="hil">хілігайнон</language>
 			<language type="hmn">хмонг</language>
 			<language type="hr">харвацкая</language>
@@ -165,6 +185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">гаіцянская крэольская</language>
 			<language type="hu">венгерская</language>
 			<language type="hup">хупа</language>
+			<language type="hur">халкамелем</language>
 			<language type="hy">армянская</language>
 			<language type="hz">герэра</language>
 			<language type="ia">інтэрлінгва</language>
@@ -174,6 +195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ie">інтэрлінгвэ</language>
 			<language type="ig">ігба</language>
 			<language type="ii">сычуаньская йі</language>
+			<language type="ikt">заходнеканадская інуктытут</language>
 			<language type="ilo">ілакана</language>
 			<language type="inh">інгушская</language>
 			<language type="io">іда</language>
@@ -195,6 +217,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kde">макондэ</language>
 			<language type="kea">кабувердыяну</language>
 			<language type="kfo">кора</language>
+			<language type="kgp">каінганг</language>
 			<language type="kha">кхасі</language>
 			<language type="khq">койра чыіні</language>
 			<language type="ki">кікуйю</language>
@@ -222,6 +245,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">кумыцкая</language>
 			<language type="kv">комі</language>
 			<language type="kw">корнская</language>
+			<language type="kwk">квакіутль</language>
 			<language type="ky">кіргізская</language>
 			<language type="la">лацінская</language>
 			<language type="lad">ладына</language>
@@ -230,12 +254,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">лезгінская</language>
 			<language type="lg">ганда</language>
 			<language type="li">лімбургская</language>
+			<language type="lil">лілуэт</language>
 			<language type="lkt">лакота</language>
 			<language type="ln">лінгала</language>
 			<language type="lo">лаоская</language>
 			<language type="lol">монга</language>
+			<language type="lou">луізіянская крэольская</language>
 			<language type="loz">лозі</language>
 			<language type="lrc">паўночная луры</language>
+			<language type="lsm">саамія</language>
 			<language type="lt">літоўская</language>
 			<language type="lu">луба-катанга</language>
 			<language type="lua">луба-касаі</language>
@@ -265,6 +292,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">малаялам</language>
 			<language type="mn">мангольская</language>
 			<language type="mni">мейтэй</language>
+			<language type="moe">іну-аймун</language>
 			<language type="moh">мохак</language>
 			<language type="mos">мосі</language>
 			<language type="mr">маратхі</language>
@@ -305,7 +333,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">ньянджа</language>
 			<language type="nyn">ньянколе</language>
 			<language type="oc">аксітанская</language>
-			<language type="oj">аджыбва</language>
+			<language type="oj">аджыбвэ</language>
+			<language type="ojb">паўночна-заходняя аджыбвэ</language>
+			<language type="ojc">цэнтральная аджыбвэ</language>
+			<language type="ojs">оджы-кры</language>
+			<language type="ojw">заходняя аджыбвэ</language>
+			<language type="oka">аканаган</language>
 			<language type="om">арома</language>
 			<language type="or">орыя</language>
 			<language type="os">асецінская</language>
@@ -317,7 +350,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">нігерыйскі піджын</language>
 			<language type="peo">стараперсідская</language>
 			<language type="phn">фінікійская</language>
+			<language type="pis">саламонскі піджын</language>
 			<language type="pl">польская</language>
+			<language type="pqm">малесіт-пасамакуоды</language>
 			<language type="prg">пруская</language>
 			<language type="pro">стараправансальская</language>
 			<language type="ps">пушту</language>
@@ -329,6 +364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">раджастханская</language>
 			<language type="rap">рапануі</language>
 			<language type="rar">раратонг</language>
+			<language type="rhg">рахінджа</language>
 			<language type="rm">рэтараманская</language>
 			<language type="rn">рундзі</language>
 			<language type="ro">румынская</language>
@@ -361,6 +397,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">сінгальская</language>
 			<language type="sk">славацкая</language>
 			<language type="sl">славенская</language>
+			<language type="slh">паўднёвая лушуцыд</language>
 			<language type="sm">самоа</language>
 			<language type="sma">паўднёвасаамская</language>
 			<language type="smj">луле-саамская</language>
@@ -375,6 +412,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">суаці</language>
 			<language type="ssy">саха</language>
 			<language type="st">сесута</language>
+			<language type="str">стрэйтс саліш</language>
 			<language type="su">сунда</language>
 			<language type="suk">сукума</language>
 			<language type="sux">шумерская</language>
@@ -384,23 +422,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">каморская</language>
 			<language type="syr">сірыйская</language>
 			<language type="ta">тамільская</language>
+			<language type="tce">паўднёвая тутчонэ</language>
 			<language type="te">тэлугу</language>
 			<language type="tem">тэмнэ</language>
 			<language type="teo">тэсо</language>
 			<language type="tet">тэтум</language>
 			<language type="tg">таджыкская</language>
+			<language type="tgx">тагіш</language>
 			<language type="th">тайская</language>
+			<language type="tht">тальтан</language>
 			<language type="ti">тыгрынья</language>
 			<language type="tig">тыгрэ</language>
 			<language type="tk">туркменская</language>
 			<language type="tlh">клінган</language>
+			<language type="tli">тлінгіт</language>
 			<language type="tn">тсвана</language>
 			<language type="to">танганская</language>
+			<language type="tok">такіпона</language>
 			<language type="tpi">ток-пісін</language>
 			<language type="tr">турэцкая</language>
 			<language type="trv">тарока</language>
 			<language type="ts">тсонга</language>
 			<language type="tt">татарская</language>
+			<language type="ttm">паўночная тутчонэ</language>
 			<language type="tum">тумбука</language>
 			<language type="tvl">тувалу</language>
 			<language type="twq">тасаўак</language>
@@ -425,6 +469,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">варай</language>
 			<language type="wbp">варлпіры</language>
 			<language type="wo">валоф</language>
+			<language type="wuu">ву</language>
 			<language type="xal">калмыцкая</language>
 			<language type="xh">коса</language>
 			<language type="xog">сога</language>
@@ -432,6 +477,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">йемба</language>
 			<language type="yi">ідыш</language>
 			<language type="yo">ёруба</language>
+			<language type="yrl">ньенгату</language>
 			<language type="yue">кантонскі дыялект кітайскай</language>
 			<language type="yue" alt="menu">кітайская, кантонскі дыялект</language>
 			<language type="zap">сапатэк</language>
@@ -448,11 +494,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">зазакі</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">адлам</script>
 			<script type="Arab">арабскае</script>
+			<script type="Aran">насталік</script>
 			<script type="Armn">армянскае</script>
 			<script type="Beng">бенгальскае</script>
 			<script type="Bopo">бапамофа</script>
 			<script type="Brai">шрыфт Брайля</script>
+			<script type="Cakm">чакма</script>
+			<script type="Cans">складавае пісьмо канадскіх абарыгенаў</script>
+			<script type="Cher">чэрокі</script>
 			<script type="Cyrl">кірыліца</script>
 			<script type="Deva">дэванагары</script>
 			<script type="Ethi">эфіопскае</script>
@@ -480,14 +531,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Latn">лацініца</script>
 			<script type="Mlym">малаялам</script>
 			<script type="Mong">старамангольскае</script>
+			<script type="Mtei">маніпуры</script>
 			<script type="Mymr">бірманскае</script>
+			<script type="Nkoo">нко</script>
+			<script type="Olck">ол-чыкі</script>
 			<script type="Orya">орыя</script>
+			<script type="Rohg">ханіфі</script>
 			<script type="Sinh">сінгальскае</script>
+			<script type="Sund">сунданскае</script>
+			<script type="Syrc">сірыйскае</script>
 			<script type="Taml">тамільскае</script>
 			<script type="Telu">тэлугу</script>
+			<script type="Tfng">тыфінаг</script>
 			<script type="Thaa">тана</script>
 			<script type="Thai">тайскае</script>
 			<script type="Tibt">тыбецкае</script>
+			<script type="Vaii">вайскае</script>
+			<script type="Yiii">йі</script>
 			<script type="Zmth">матэматычныя знакі</script>
 			<script type="Zsye">эмодзі</script>
 			<script type="Zsym">сімвалы</script>
@@ -712,6 +772,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">Науру</territory>
 			<territory type="NU">Ніуэ</territory>
 			<territory type="NZ">Новая Зеландыя</territory>
+			<territory type="NZ" alt="variant">Аотэароа (Новая Зеландыя)</territory>
 			<territory type="OM">Аман</territory>
 			<territory type="PA">Панама</territory>
 			<territory type="PE">Перу</territory>
@@ -793,7 +854,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="WF">Уоліс і Футуна</territory>
 			<territory type="WS">Самоа</territory>
 			<territory type="XA">Псеўдаакцэнты</territory>
-			<territory type="XB">псеўдадвухнапрамкавы</territory>
+			<territory type="XB">Псеўдадвухнапрамкавы</territory>
 			<territory type="XK">Косава</territory>
 			<territory type="YE">Емен</territory>
 			<territory type="YT">Маёта</territory>
@@ -815,12 +876,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">будыйскі каляндар</type>
 			<type key="calendar" type="chinese">кітайскі каляндар</type>
+			<type key="calendar" type="coptic">копцкі каляндар</type>
 			<type key="calendar" type="dangi">каляндар дангі</type>
 			<type key="calendar" type="ethiopic">эфіопскі каляндар</type>
+			<type key="calendar" type="ethiopic-amete-alem">эфіопскі каляндар Аметэ Алем</type>
 			<type key="calendar" type="gregorian">грыгарыянскі каляндар</type>
 			<type key="calendar" type="hebrew">яўрэйскі каляндар</type>
 			<type key="calendar" type="islamic">мусульманскі каляндар</type>
 			<type key="calendar" type="islamic-civil">мусульманскі свецкі каляндар</type>
+			<type key="calendar" type="islamic-umalqura">мусульманскі каляндар (Ум аль-Кура)</type>
 			<type key="calendar" type="iso8601">каляндар ISO-8601</type>
 			<type key="calendar" type="japanese">японскі каляндар</type>
 			<type key="calendar" type="persian">персідскі каляндар</type>
@@ -845,6 +909,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">армянскія лічбы</type>
 			<type key="numbers" type="armnlow">армянскія лічбы ў ніжнім рэгістры</type>
 			<type key="numbers" type="beng">бенгальскія лічбы</type>
+			<type key="numbers" type="cakm">лічбы чакма</type>
 			<type key="numbers" type="deva">лічбы дэванагары</type>
 			<type key="numbers" type="ethi">эфіопскія лічбы</type>
 			<type key="numbers" type="fullwide">поўнашырынныя лічбы</type>
@@ -859,6 +924,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">кітайскія традыцыйныя лічбы</type>
 			<type key="numbers" type="hantfin">кітайскія традыцыйныя лічбы (фінансы)</type>
 			<type key="numbers" type="hebr">яўрэйскія лічбы</type>
+			<type key="numbers" type="java">яванскія лічбы</type>
 			<type key="numbers" type="jpan">японскія лічбы</type>
 			<type key="numbers" type="jpanfin">японскія лічбы (фінансы)</type>
 			<type key="numbers" type="khmr">кхмерскія лічбы</type>
@@ -866,7 +932,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="laoo">лаоскія лічбы</type>
 			<type key="numbers" type="latn">сучасныя арабскія лічбы</type>
 			<type key="numbers" type="mlym">лічбы малаялам</type>
+			<type key="numbers" type="mtei">лічбы маніпуры</type>
 			<type key="numbers" type="mymr">бірманскія лічбы</type>
+			<type key="numbers" type="olck">лічбы ол-чыкі</type>
 			<type key="numbers" type="orya">лічбы орыя</type>
 			<type key="numbers" type="roman">рымскія лічбы</type>
 			<type key="numbers" type="romanlow">рымскія лічбы ў ніжнім рэгістры</type>
@@ -875,6 +943,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="telu">лічбы тэлугу</type>
 			<type key="numbers" type="thai">тайскія лічбы</type>
 			<type key="numbers" type="tibt">тыбецкія лічбы</type>
+			<type key="numbers" type="vaii">лічбы ваі</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">метрычная</measurementSystemName>
@@ -910,25 +979,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<dates>
 		<calendars>
 			<calendar type="buddhist">
+				<eras>
+					<eraAbbr>
+						<era type="0">б.э.</era>
+					</eraAbbr>
+				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d.M.yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -937,9 +1015,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
@@ -957,37 +1035,97 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d.M.y G</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d.M.y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'у' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'у' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1010,19 +1148,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
@@ -1097,32 +1236,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
+							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h.mm–h.mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH.mm–HH.mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH.mm–HH.mm</greatestDifference>
+							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
+							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH.mm–HH.mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH.mm–HH.mm v</greatestDifference>
+							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
+							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1440,22 +1579,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM y 'г'.</pattern>
+							<pattern>EEEE, d MMMM y 'г'.</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>d MMMM y 'г'.</pattern>
+							<pattern>d MMMM y 'г'.</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>d.MM.y</pattern>
+							<pattern>d MMM y 'г'.</pattern>
+							<datetimeSkeleton>yMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d.MM.yy</pattern>
+							<datetimeSkeleton>yyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1463,37 +1606,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss, zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'у' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'у' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1511,23 +1667,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMM">LLL y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="h">hh a</dateFormatItem>
+						<dateFormatItem id="Gy">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">LLL y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="h">hh a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
@@ -1613,33 +1770,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E, d MMM, y – E, d MMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -3173,6 +3330,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Эндэрберы</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Кірыцімаці</exemplarCity>
@@ -4712,20 +4872,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Екацярынбургскі летні час</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Час Юкана</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">2</minimumGroupingDigits>
+		<minimumGroupingDigits>2</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<approximatelySign>≈</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
@@ -4737,7 +4902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -4863,9 +5028,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4932,7 +5099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">дырхамы ААЭ</displayName>
 				<displayName count="many">дырхамаў ААЭ</displayName>
 				<displayName count="other">дырхама ААЭ</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>афганскі афгані</displayName>
@@ -4940,7 +5107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">афганскія афгані</displayName>
 				<displayName count="many">афганскіх афгані</displayName>
 				<displayName count="other">афганскага афгані</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>албанскі лек</displayName>
@@ -4948,7 +5115,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">албанскія лекі</displayName>
 				<displayName count="many">албанскіх лекаў</displayName>
 				<displayName count="other">албанскага лека</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>армянскі драм</displayName>
@@ -4956,7 +5123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">армянскія драмы</displayName>
 				<displayName count="many">армянскіх драмаў</displayName>
 				<displayName count="other">армянскага драма</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>нідэрландскі антыльскі гульдэн</displayName>
@@ -4964,7 +5131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">нідэрландскія антыльскія гульдэны</displayName>
 				<displayName count="many">нідэрландскіх антыльскіх гульдэнаў</displayName>
 				<displayName count="other">нідэрландскага антыльскага гульдэна</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>ангольская кванза</displayName>
@@ -4972,8 +5139,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ангольскія кванзы</displayName>
 				<displayName count="many">ангольскіх кванз</displayName>
 				<displayName count="other">ангольскай кванзы</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>аргенцінскае песа</displayName>
@@ -4981,8 +5148,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">аргенцінскія песа</displayName>
 				<displayName count="many">аргенцінскіх песа</displayName>
 				<displayName count="other">аргенцінскага песа</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>аўстралійскі долар</displayName>
@@ -4990,8 +5157,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">аўстралійскія долары</displayName>
 				<displayName count="many">аўстралійскіх долараў</displayName>
 				<displayName count="other">аўстралійскага долара</displayName>
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">A$</symbol>
+				<symbol>A$</symbol>
+				<symbol alt="narrow">A$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>арубанскі фларын</displayName>
@@ -4999,7 +5166,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">арубанскія фларыны</displayName>
 				<displayName count="many">арубанскіх фларынаў</displayName>
 				<displayName count="other">арубанскага фларына</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>азербайджанскі манат</displayName>
@@ -5007,7 +5174,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">азербайджанскія манаты</displayName>
 				<displayName count="many">азербайджанскіх манатаў</displayName>
 				<displayName count="other">азербайджанскага маната</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>канверсоўная марка Босніі і Герцагавіны</displayName>
@@ -5015,8 +5182,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">канверсоўныя маркі Босніі і Герцагавіны</displayName>
 				<displayName count="many">канверсоўных марак Босніі і Герцагавіны</displayName>
 				<displayName count="other">канверсоўнай маркі Босніі і Герцагавіны</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>барбадаскі долар</displayName>
@@ -5024,8 +5191,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">барбадаскія долары</displayName>
 				<displayName count="many">барбадаскіх долараў</displayName>
 				<displayName count="other">барбадаскага долара</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">Bds$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">Bds$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>бангладэшская така</displayName>
@@ -5033,8 +5200,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бангладэшскія такі</displayName>
 				<displayName count="many">бангладэшскіх так</displayName>
 				<displayName count="other">бангладэшскай такі</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>балгарскі леў</displayName>
@@ -5042,7 +5209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">балгарскія левы</displayName>
 				<displayName count="many">балгарскіх леваў</displayName>
 				<displayName count="other">балгарскага лева</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>бахрэйнскі дынар</displayName>
@@ -5050,7 +5217,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бахрэйнскія дынары</displayName>
 				<displayName count="many">бахрэйнскі дынараў</displayName>
 				<displayName count="other">бахрэйнскага дынара</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>бурундзійскі франк</displayName>
@@ -5058,7 +5225,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бурундзійскія франкі</displayName>
 				<displayName count="many">бурундзійскіх франкаў</displayName>
 				<displayName count="other">бурундзійскага франка</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>бермудскі долар</displayName>
@@ -5066,8 +5233,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бермудскія долары</displayName>
 				<displayName count="many">бермудскіх долараў</displayName>
 				<displayName count="other">бермудскага долара</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">BD$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">BD$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>брунейскі долар</displayName>
@@ -5075,8 +5242,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">брунейскія долары</displayName>
 				<displayName count="many">брунейскіх долараў</displayName>
 				<displayName count="other">брунейскага долара</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>балівіяна</displayName>
@@ -5084,8 +5251,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">балівіяна</displayName>
 				<displayName count="many">балівіяна</displayName>
 				<displayName count="other">балівіяна</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>бразільскі рэал</displayName>
@@ -5093,8 +5260,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бразільскія рэалы</displayName>
 				<displayName count="many">бразільскіх рэалаў</displayName>
 				<displayName count="other">бразільскага рэала</displayName>
-				<symbol draft="contributed">BRL</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>BRL</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>багамскі долар</displayName>
@@ -5102,8 +5269,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">багамскія долары</displayName>
 				<displayName count="many">багамскіх долараў</displayName>
 				<displayName count="other">багамскага долара</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">B$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">B$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>бутанскі нгултрум</displayName>
@@ -5111,7 +5278,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">бутанскія нгултрумы</displayName>
 				<displayName count="many">бутанскіх нгултрумаў</displayName>
 				<displayName count="other">бутанскага нгултрума</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>батсванская пула</displayName>
@@ -5119,8 +5286,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">батсванскія пулы</displayName>
 				<displayName count="many">батсванскіх пул</displayName>
 				<displayName count="other">батсванскай пулы</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>беларускі рубель</displayName>
@@ -5129,7 +5296,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">беларускіх рублёў</displayName>
 				<displayName count="other">беларускага рубля</displayName>
 				<symbol>Br</symbol>
-				<symbol alt="narrow" draft="contributed">Br</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>беларускі рубель (2000–2016)</displayName>
@@ -5145,8 +5311,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">белізскія долары</displayName>
 				<displayName count="many">белізскіх долараў</displayName>
 				<displayName count="other">белізскага долара</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">BZ$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">BZ$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>канадскі долар</displayName>
@@ -5154,8 +5320,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">канадскія долары</displayName>
 				<displayName count="many">канадскіх долараў</displayName>
 				<displayName count="other">канадскага долара</displayName>
-				<symbol draft="contributed">CAD</symbol>
-				<symbol alt="narrow" draft="contributed">CA$</symbol>
+				<symbol>CAD</symbol>
+				<symbol alt="narrow">CA$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>кангалезскі франк</displayName>
@@ -5163,7 +5329,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кангалезскія франкі</displayName>
 				<displayName count="many">кангалезскіх франкаў</displayName>
 				<displayName count="other">кангалезскага франка</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>швейцарскі франк</displayName>
@@ -5171,7 +5337,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">швейцарскія франкі</displayName>
 				<displayName count="many">швейцарскіх франкаў</displayName>
 				<displayName count="other">швейцарскага франка</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>чылійскае песа</displayName>
@@ -5179,8 +5345,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">чылійскія песа</displayName>
 				<displayName count="many">чылійскіх песа</displayName>
 				<displayName count="other">чылійскага песа</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>афшорны кітайскі юань</displayName>
@@ -5188,7 +5354,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">афшорныя кітайскія юані</displayName>
 				<displayName count="many">афшорных кітайскіх юаняў</displayName>
 				<displayName count="other">афшорнага кітайскага юаня</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>кітайскі юань</displayName>
@@ -5196,8 +5362,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кітайскія юані</displayName>
 				<displayName count="many">кітайскіх юаняў</displayName>
 				<displayName count="other">кітайскага юаня</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>CN¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>калумбійскае песа</displayName>
@@ -5205,8 +5371,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">калумбійскія песа</displayName>
 				<displayName count="many">калумбійскіх песа</displayName>
 				<displayName count="other">калумбійскага песа</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>коста-рыканскі калон</displayName>
@@ -5214,8 +5380,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">коста-рыканскія калоны</displayName>
 				<displayName count="many">коста-рыканскіх калонаў</displayName>
 				<displayName count="other">коста-рыканскага калона</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>кубінскае канверсоўнае песа</displayName>
@@ -5223,8 +5389,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кубінскія канверсоўныя песа</displayName>
 				<displayName count="many">кубінскіх канверсоўных песа</displayName>
 				<displayName count="other">кубінскага канверсоўнага песа</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">CUC$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">CUC$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>кубінскае песа</displayName>
@@ -5232,8 +5398,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кубінскія песа</displayName>
 				<displayName count="many">кубінскіх песа</displayName>
 				<displayName count="other">кубінскага песа</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$MN</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$MN</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>эскуда Каба-Вердэ</displayName>
@@ -5241,7 +5407,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">эскуда Каба-Вердэ</displayName>
 				<displayName count="many">эскуда Каба-Вердэ</displayName>
 				<displayName count="other">эскуда Каба-Вердэ</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>чэшская крона</displayName>
@@ -5249,8 +5415,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">чэшскія кроны</displayName>
 				<displayName count="many">чэшскіх крон</displayName>
 				<displayName count="other">чэшскай кроны</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>джыбуційскі франк</displayName>
@@ -5258,7 +5424,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">джыбуційскія франкі</displayName>
 				<displayName count="many">джыбуційскіх франкаў</displayName>
 				<displayName count="other">джыбуційскага франка</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>дацкая крона</displayName>
@@ -5266,8 +5432,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">дацкія кроны</displayName>
 				<displayName count="many">дацкіх крон</displayName>
 				<displayName count="other">дацкай кроны</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>дамініканскае песа</displayName>
@@ -5275,8 +5441,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">дамініканскія песа</displayName>
 				<displayName count="many">дамініканскіх песа</displayName>
 				<displayName count="other">дамініканскага песа</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">RD$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">RD$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>алжырскі дынар</displayName>
@@ -5284,7 +5450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">алжырскія дынары</displayName>
 				<displayName count="many">алжырскіх дынараў</displayName>
 				<displayName count="other">алжырскага дынара</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>егіпецкі фунт</displayName>
@@ -5292,8 +5458,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">егіпецкія фунты</displayName>
 				<displayName count="many">егіпецкіх фунтаў</displayName>
 				<displayName count="other">егіпецкага фунта</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>эрытрэйская накфа</displayName>
@@ -5301,7 +5467,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">эрытрэйскія накфы</displayName>
 				<displayName count="many">эрытрэйскіх накфаў</displayName>
 				<displayName count="other">эрытрэйскай накфы</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>эфіопскі быр</displayName>
@@ -5309,7 +5475,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">эфіопскія быры</displayName>
 				<displayName count="many">эфіопскіх быраў</displayName>
 				<displayName count="other">эфіопскага быра</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>еўра</displayName>
@@ -5317,8 +5483,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">еўра</displayName>
 				<displayName count="many">еўра</displayName>
 				<displayName count="other">еўра</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>фіджыйскі долар</displayName>
@@ -5326,8 +5492,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">фіджыйскія долары</displayName>
 				<displayName count="many">фіджыйскіх долараў</displayName>
 				<displayName count="other">фіджыйскага долара</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">FJ$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">FJ$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>фунт Фалклендскіх астравоў</displayName>
@@ -5335,8 +5501,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">фунты Фалклендскіх астравоў</displayName>
 				<displayName count="many">фунтаў Фалклендскіх астравоў</displayName>
 				<displayName count="other">фунта Фалклендскіх астравоў</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">FK£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">FK£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>брытанскі фунт стэрлінгаў</displayName>
@@ -5344,8 +5510,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">брытанскія фунты стэрлінгаў</displayName>
 				<displayName count="many">брытанскіх фунтаў стэрлінгаў</displayName>
 				<displayName count="other">брытанскага фунта стэрлінгаў</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>грузінскі лары</displayName>
@@ -5353,9 +5519,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">грузінскія лары</displayName>
 				<displayName count="many">грузінскіх лары</displayName>
 				<displayName count="other">грузінскага лары</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ганскі седзі</displayName>
@@ -5363,7 +5528,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ганскія седзі</displayName>
 				<displayName count="many">ганскіх седзі</displayName>
 				<displayName count="other">ганскага седзі</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>гібралтарскі фунт</displayName>
@@ -5371,8 +5536,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гібралтарскія фунты</displayName>
 				<displayName count="many">гібралтарскіх фунтаў</displayName>
 				<displayName count="other">гібралтарскага фунта</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>гамбійскі даласі</displayName>
@@ -5380,7 +5545,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гамбійскія даласі</displayName>
 				<displayName count="many">гамбійскіх даласі</displayName>
 				<displayName count="other">гамбійскага даласі</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>гвінейскі франк</displayName>
@@ -5388,8 +5553,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гвінейскія франкі</displayName>
 				<displayName count="many">гвінейскіх франкаў</displayName>
 				<displayName count="other">гвінейскага франка</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>гватэмальскі кетсаль</displayName>
@@ -5397,8 +5562,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гватэмальскія кетсалі</displayName>
 				<displayName count="many">гватэмальскіх кетсаляў</displayName>
 				<displayName count="other">гватэмальскага кетсаля</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>гаянскі долар</displayName>
@@ -5406,8 +5571,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гаянскія долары</displayName>
 				<displayName count="many">гаянскіх долараў</displayName>
 				<displayName count="other">гаянскага долара</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">G$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">G$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ганконгскі долар</displayName>
@@ -5415,8 +5580,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ганконгскія долары</displayName>
 				<displayName count="many">ганконгскіх долараў</displayName>
 				<displayName count="other">ганконгскага долара</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>HK$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>гандураская лемпіра</displayName>
@@ -5424,8 +5589,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гандураскія лемпіры</displayName>
 				<displayName count="many">гандураскіх лемпір</displayName>
 				<displayName count="other">гандураскай лемпіры</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>харвацкая куна</displayName>
@@ -5433,8 +5598,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">харвацкія куны</displayName>
 				<displayName count="many">харвацкіх кун</displayName>
 				<displayName count="other">харвацкай куны</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>гаіцянскі гурд</displayName>
@@ -5442,7 +5607,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">гаіцянскія гурды</displayName>
 				<displayName count="many">гаіцянскіх гурдаў</displayName>
 				<displayName count="other">гаіцянскага гурда</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>венгерскі форынт</displayName>
@@ -5450,8 +5615,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">венгерскія форынты</displayName>
 				<displayName count="many">венгерскіх форынтаў</displayName>
 				<displayName count="other">венгерскага форынта</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>інданезійская рупія</displayName>
@@ -5459,8 +5624,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">інданезійскія рупіі</displayName>
 				<displayName count="many">інданезійскіх рупій</displayName>
 				<displayName count="other">інданезійскай рупіі</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>новы ізраільскі шэкель</displayName>
@@ -5468,8 +5633,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">новыя ізраільскія шэкелі</displayName>
 				<displayName count="many">новых ізраільскіх шэкеляў</displayName>
 				<displayName count="other">новага ізраільскага шэкеля</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol>₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>індыйская рупія</displayName>
@@ -5477,8 +5642,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">індыйскія рупіі</displayName>
 				<displayName count="many">індыйскіх рупій</displayName>
 				<displayName count="other">індыйскай рупіі</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol>₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>іракскі дынар</displayName>
@@ -5486,7 +5651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">іракскія дынары</displayName>
 				<displayName count="many">іракскіх дынараў</displayName>
 				<displayName count="other">іракскага дынара</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>іранскі рыял</displayName>
@@ -5494,7 +5659,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">іранскія рыялы</displayName>
 				<displayName count="many">іранскіх рыялаў</displayName>
 				<displayName count="other">іранскага рыяла</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ісландская крона</displayName>
@@ -5502,8 +5667,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ісландскія кроны</displayName>
 				<displayName count="many">ісландскіх крон</displayName>
 				<displayName count="other">ісландскай кроны</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">Íkr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">Íkr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>ямайскі долар</displayName>
@@ -5511,8 +5676,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ямайскія долары</displayName>
 				<displayName count="many">ямайскіх долараў</displayName>
 				<displayName count="other">ямайскага долара</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">J$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">J$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>іарданскі дынар</displayName>
@@ -5520,7 +5685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">іарданскія дынары</displayName>
 				<displayName count="many">іарданскіх дынараў</displayName>
 				<displayName count="other">іарданскага дынара</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>японская іена</displayName>
@@ -5528,8 +5693,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">японскія іены</displayName>
 				<displayName count="many">японскіх іен</displayName>
 				<displayName count="other">японскай іены</displayName>
-				<symbol draft="contributed">¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>кенійскі шылінг</displayName>
@@ -5537,7 +5702,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кенійскія шылінгі</displayName>
 				<displayName count="many">кенійскіх шылінгаў</displayName>
 				<displayName count="other">кенійскага шылінга</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>кіргізскі сом</displayName>
@@ -5545,7 +5710,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кіргізскія сомы</displayName>
 				<displayName count="many">кіргізскіх сомаў</displayName>
 				<displayName count="other">кіргізскага сома</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>камбаджыйскі рыель</displayName>
@@ -5553,8 +5718,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">камбаджыйскія рыелі</displayName>
 				<displayName count="many">камбаджыйскіх рыеляў</displayName>
 				<displayName count="other">камбаджыйскага рыеля</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>каморскі франк</displayName>
@@ -5562,8 +5727,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">каморскія франкі</displayName>
 				<displayName count="many">каморскіх франкаў</displayName>
 				<displayName count="other">каморскага франка</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>паўночнакарэйская вона</displayName>
@@ -5571,8 +5736,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">паўночнакарэйскія воны</displayName>
 				<displayName count="many">паўночнакарэйскіх вон</displayName>
 				<displayName count="other">паўночнакарэйскай воны</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>паўднёвакарэйская вона</displayName>
@@ -5580,8 +5745,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">паўднёвакарэйскія воны</displayName>
 				<displayName count="many">паўднёвакарэйскіх вон</displayName>
 				<displayName count="other">паўднёвакарэйскай воны</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>кувейцкі дынар</displayName>
@@ -5589,7 +5754,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кувейцкія дынары</displayName>
 				<displayName count="many">кувейцкіх дынараў</displayName>
 				<displayName count="other">кувейцкага дынара</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>долар Кайманавых астравоў</displayName>
@@ -5597,8 +5762,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">долары Кайманавых астравоў</displayName>
 				<displayName count="many">долараў Кайманавых астравоў</displayName>
 				<displayName count="other">долара Кайманавых астравоў</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">CI$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">CI$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>казахстанскі тэнге</displayName>
@@ -5606,8 +5771,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">казахстанскія тэнге</displayName>
 				<displayName count="many">казахстанскіх тэнге</displayName>
 				<displayName count="other">казахстанскага тэнге</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>лаоскі кіп</displayName>
@@ -5615,8 +5780,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">лаоскія кіпы</displayName>
 				<displayName count="many">лаоскіх кіпаў</displayName>
 				<displayName count="other">лаоскага кіпа</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ліванскі фунт</displayName>
@@ -5624,8 +5789,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ліванскія фунты</displayName>
 				<displayName count="many">ліванскіх фунтаў</displayName>
 				<displayName count="other">ліванскага фунта</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>шры-ланкійская рупія</displayName>
@@ -5633,8 +5798,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">шры-ланкійскія рупіі</displayName>
 				<displayName count="many">шры-ланкійскіх рупій</displayName>
 				<displayName count="other">шры-ланкійскай рупіі</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ліберыйскі долар</displayName>
@@ -5642,8 +5807,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ліберыйскія долары</displayName>
 				<displayName count="many">ліберыйскіх долараў</displayName>
 				<displayName count="other">ліберыйскага долара</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">L$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">L$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>лесоцкі лоці</displayName>
+				<displayName count="one">лесоцкі лоці</displayName>
+				<displayName count="few">лесоцкія лоці</displayName>
+				<displayName count="many">лесоцкіх лоці</displayName>
+				<displayName count="other">лесоцкага лоці</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>лівійскі дынар</displayName>
@@ -5651,7 +5823,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">лівійскія дынары</displayName>
 				<displayName count="many">лівійскіх дынараў</displayName>
 				<displayName count="other">лівійскага дынара</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>мараканскі дырхам</displayName>
@@ -5659,7 +5831,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">мараканскія дырхамы</displayName>
 				<displayName count="many">мараканскіх дырхамаў</displayName>
 				<displayName count="other">мараканскага дырхама</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>малдаўскі лей</displayName>
@@ -5667,7 +5839,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">малдаўскія леі</displayName>
 				<displayName count="many">малдаўскіх леяў</displayName>
 				<displayName count="other">малдаўскага лея</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>малагасійскі арыяры</displayName>
@@ -5675,8 +5847,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">малагасійскія арыяры</displayName>
 				<displayName count="many">малагасійскіх арыяры</displayName>
 				<displayName count="other">малагасійскага арыяры</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>македонскі дэнар</displayName>
@@ -5684,7 +5856,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">македонскія дэнары</displayName>
 				<displayName count="many">македонскіх дэнараў</displayName>
 				<displayName count="other">македонскага дэнара</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>м’янманскі к’ят</displayName>
@@ -5692,8 +5864,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">м’янманскія к’яты</displayName>
 				<displayName count="many">м’янманскіх к’ятаў</displayName>
 				<displayName count="other">м’янманскага к’ята</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>мангольскі тугрык</displayName>
@@ -5701,8 +5873,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">мангольскія тугрыкі</displayName>
 				<displayName count="many">мангольскіх тугрыкаў</displayName>
 				<displayName count="other">мангольскага тугрыка</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>патака Макаа</displayName>
@@ -5710,7 +5882,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">патакі Макаа</displayName>
 				<displayName count="many">патак Макаа</displayName>
 				<displayName count="other">патакі Макаа</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>маўрытанская ўгія (1973–2017)</displayName>
@@ -5726,7 +5898,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">маўрытанскія угіі</displayName>
 				<displayName count="many">маўрытанскіх угій</displayName>
 				<displayName count="other">маўрытанскай угіі</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>маўрыкійская рупія</displayName>
@@ -5734,8 +5906,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">маўрыкійскія рупіі</displayName>
 				<displayName count="many">маўрыкійскіх рупій</displayName>
 				<displayName count="other">маўрыкійскай рупіі</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>мальдыўская руфія</displayName>
@@ -5743,7 +5915,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">мальдыўскія руфіі</displayName>
 				<displayName count="many">мальдыўскіх руфій</displayName>
 				<displayName count="other">мальдыўскай руфіі</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>малавійская квача</displayName>
@@ -5751,7 +5923,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">малавійскія квачы</displayName>
 				<displayName count="many">малавійскіх квач</displayName>
 				<displayName count="other">малавійскай квачы</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>мексіканскае песа</displayName>
@@ -5759,8 +5931,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">мексіканскія песа</displayName>
 				<displayName count="many">мексіканскіх песа</displayName>
 				<displayName count="other">мексіканскага песа</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">MX$</symbol>
+				<symbol>MX$</symbol>
+				<symbol alt="narrow">MX$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>малайзійскі рынгіт</displayName>
@@ -5768,8 +5940,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">малайзійскія рынгіты</displayName>
 				<displayName count="many">малайзійскіх рынгітаў</displayName>
 				<displayName count="other">малайзійскага рынгіта</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>мазамбікскі метыкал</displayName>
@@ -5777,7 +5949,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">мазамбікскія метыкалы</displayName>
 				<displayName count="many">мазамбікскіх метыкалаў</displayName>
 				<displayName count="other">мазамбікскага метыкала</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>намібійскі долар</displayName>
@@ -5785,8 +5957,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">намібійскія долары</displayName>
 				<displayName count="many">намібійскіх долараў</displayName>
 				<displayName count="other">намібійскага долара</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">N$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">N$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>нігерыйская наіра</displayName>
@@ -5794,8 +5966,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">нігерыйскія наіры</displayName>
 				<displayName count="many">нігерыйскіх наір</displayName>
 				<displayName count="other">нігерыйскай наіры</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>нікарагуанская кордаба</displayName>
@@ -5803,8 +5975,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">нікарагуанскія кордабы</displayName>
 				<displayName count="many">нікарагуанскіх кордаб</displayName>
 				<displayName count="other">нікарагуанскай кордабы</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>нарвежская крона</displayName>
@@ -5812,8 +5984,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">нарвежскія кроны</displayName>
 				<displayName count="many">нарвежскіх крон</displayName>
 				<displayName count="other">нарвежскай кроны</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>непальская рупія</displayName>
@@ -5821,8 +5993,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">непальскія рупіі</displayName>
 				<displayName count="many">непальскіх рупій</displayName>
 				<displayName count="other">непальскай рупіі</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>новазеландскі долар</displayName>
@@ -5830,8 +6002,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">новазеландскія долары</displayName>
 				<displayName count="many">новазеландскіх долараў</displayName>
 				<displayName count="other">новазеландскага долара</displayName>
-				<symbol draft="contributed">NZD</symbol>
-				<symbol alt="narrow" draft="contributed">NZ$</symbol>
+				<symbol>NZD</symbol>
+				<symbol alt="narrow">NZ$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>аманскі рыял</displayName>
@@ -5839,7 +6011,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">аманскія рыялы</displayName>
 				<displayName count="many">аманскіх рыялаў</displayName>
 				<displayName count="other">аманскага рыяла</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>панамскае бальбоа</displayName>
@@ -5847,7 +6019,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">панамскія бальбоа</displayName>
 				<displayName count="many">панамскіх бальбоа</displayName>
 				<displayName count="other">панамскага бальбоа</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>перуанскі соль</displayName>
@@ -5855,7 +6027,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">перуанскія солі</displayName>
 				<displayName count="many">перуанскіх соляў</displayName>
 				<displayName count="other">перуанскага соля</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>кіна Папуа-Новай Гвінеі</displayName>
@@ -5863,7 +6035,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">кіны Папуа-Новай Гвінеі</displayName>
 				<displayName count="many">кін Папуа-Новай Гвінеі</displayName>
 				<displayName count="other">кіны Папуа-Новай Гвінеі</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>філіпінскае песа</displayName>
@@ -5871,8 +6043,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">філіпінскія песа</displayName>
 				<displayName count="many">філіпінскіх песа</displayName>
 				<displayName count="other">філіпінскага песа</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>пакістанская рупія</displayName>
@@ -5880,8 +6052,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">пакістанскія рупіі</displayName>
 				<displayName count="many">пакістанскіх рупій</displayName>
 				<displayName count="other">пакістанскай рупіі</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>польскі злоты</displayName>
@@ -5889,8 +6061,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">польскія злотыя</displayName>
 				<displayName count="many">польскіх злотых</displayName>
 				<displayName count="other">польскага злотага</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>парагвайскі гуарані</displayName>
@@ -5898,8 +6070,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">парагвайскія гуарані</displayName>
 				<displayName count="many">парагвайскіх гуарані</displayName>
 				<displayName count="other">парагвайскага гуарані</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>катарскі рыял</displayName>
@@ -5907,7 +6079,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">катарскія рыялы</displayName>
 				<displayName count="many">катарскіх рыялаў</displayName>
 				<displayName count="other">катарскага рыяла</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>румынскі лей</displayName>
@@ -5915,8 +6087,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">румынскія леі</displayName>
 				<displayName count="many">румынскіх леяў</displayName>
 				<displayName count="other">румынскага лея</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>сербскі дынар</displayName>
@@ -5924,7 +6096,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сербскія дынары</displayName>
 				<displayName count="many">сербскіх дынараў</displayName>
 				<displayName count="other">сербскага дынара</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>расійскі рубель</displayName>
@@ -5933,7 +6105,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">расійскіх рублёў</displayName>
 				<displayName count="other">расійскага рубля</displayName>
 				<symbol>₽</symbol>
-				<symbol alt="narrow" draft="contributed">руб.</symbol>
+				<symbol alt="narrow">руб.</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>руандыйскі франк</displayName>
@@ -5941,8 +6113,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">руандыйскія франкі</displayName>
 				<displayName count="many">руандыйскіх франкаў</displayName>
 				<displayName count="other">руандыйскага франка</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>саудаўскі рыял</displayName>
@@ -5950,7 +6122,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">саудаўскія рыялы</displayName>
 				<displayName count="many">саудаўскіх рыялаў</displayName>
 				<displayName count="other">саудаўскага рыяла</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>долар Саламонавых астравоў</displayName>
@@ -5958,8 +6130,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">долар Саламонавых астравоў</displayName>
 				<displayName count="many">долараў Саламонавых астравоў</displayName>
 				<displayName count="other">долара Саламонавых астравоў</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">SI$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">SI$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>сейшэльская рупія</displayName>
@@ -5967,7 +6139,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сейшэльскія рупіі</displayName>
 				<displayName count="many">сейшэльскіх рупій</displayName>
 				<displayName count="other">сейшэльскай рупіі</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>суданскі фунт</displayName>
@@ -5975,7 +6147,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">суданскія фунты</displayName>
 				<displayName count="many">суданскіх фунтаў</displayName>
 				<displayName count="other">суданскага фунта</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>шведская крона</displayName>
@@ -5983,8 +6155,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">шведскія кроны</displayName>
 				<displayName count="many">шведскіх крон</displayName>
 				<displayName count="other">шведскай кроны</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>сінгапурскі долар</displayName>
@@ -5992,8 +6164,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сінгапурскія долары</displayName>
 				<displayName count="many">сінгапурскіх долараў</displayName>
 				<displayName count="other">сінгапурскага долара</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">S$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">S$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>фунт в-ва Святой Алены</displayName>
@@ -6001,8 +6173,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">фунты в-ва Святой Алены</displayName>
 				<displayName count="many">фунтаў в-ва Святой Алены</displayName>
 				<displayName count="other">фунта в-ва Святой Алены</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>сьера-леонскі леонэ</displayName>
@@ -6010,7 +6182,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сьера-леонскія леонэ</displayName>
 				<displayName count="many">сьера-леонскіх леонэ</displayName>
 				<displayName count="other">сьера-леонскага леонэ</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>самалійскі шылінг</displayName>
@@ -6018,7 +6190,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">самалійскія шылінгі</displayName>
 				<displayName count="many">самалійскіх шылінгаў</displayName>
 				<displayName count="other">самалійскага шылінга</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>сурынамскі долар</displayName>
@@ -6026,8 +6198,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сурынамскія долары</displayName>
 				<displayName count="many">сурынамскіх долараў</displayName>
 				<displayName count="other">сурынамскага долара</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>паўднёвасуданскі фунт</displayName>
@@ -6035,8 +6207,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">паўднёвасуданскія фунты</displayName>
 				<displayName count="many">паўднёвасуданскіх фунтаў</displayName>
 				<displayName count="other">паўднёвасуданскага фунта</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>добра Сан-Тамэ і Прынсіпі (1977–2017)</displayName>
@@ -6052,8 +6224,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">добры Сан-Тамэ і Прынсіпі</displayName>
 				<displayName count="many">добраў Сан-Тамэ і Прынсіпі</displayName>
 				<displayName count="other">добры Сан-Тамэ і Прынсіпі</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>сірыйскі фунт</displayName>
@@ -6061,8 +6233,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">сірыйскія фунты</displayName>
 				<displayName count="many">сірыйскіх фунтаў</displayName>
 				<displayName count="other">сірыйскага фунта</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>свазілендскі лілангені</displayName>
@@ -6070,7 +6242,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">свазілендскія лілангені</displayName>
 				<displayName count="many">свазілендскіх лілангені</displayName>
 				<displayName count="other">свазілендскага лілангені</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>тайскі бат</displayName>
@@ -6078,8 +6250,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">тайскія баты</displayName>
 				<displayName count="many">тайскіх батаў</displayName>
 				<displayName count="other">тайскага бата</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol>THB</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>таджыкскі самані</displayName>
@@ -6087,7 +6259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">таджыкскія самані</displayName>
 				<displayName count="many">таджыкскіх самані</displayName>
 				<displayName count="other">таджыкскага самані</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>туркменскі манат</displayName>
@@ -6095,7 +6267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">туркменскія манаты</displayName>
 				<displayName count="many">туркменскіх манатаў</displayName>
 				<displayName count="other">туркменскага маната</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>туніскі дынар</displayName>
@@ -6103,7 +6275,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">туніскія дынары</displayName>
 				<displayName count="many">туніскіх дынараў</displayName>
 				<displayName count="other">туніскага дынара</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>танганская паанга</displayName>
@@ -6111,8 +6283,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">танганскія паангі</displayName>
 				<displayName count="many">танганскіх паанг</displayName>
 				<displayName count="other">танганскай паангі</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>турэцкая ліра</displayName>
@@ -6120,9 +6292,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">турэцкія ліры</displayName>
 				<displayName count="many">турэцкіх лір</displayName>
 				<displayName count="other">турэцкай ліры</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>долар Трынідада і Табага</displayName>
@@ -6130,8 +6302,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">долары Трынідада і Табага</displayName>
 				<displayName count="many">долараў Трынідада і Табага</displayName>
 				<displayName count="other">долара Трынідада і Табага</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">TT$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">TT$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>новы тайваньскі долар</displayName>
@@ -6139,8 +6311,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">новыя тайваньскія долары</displayName>
 				<displayName count="many">новых тайваньскіх долараў</displayName>
 				<displayName count="other">новага тайваньскага долара</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NT$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>танзанійскі шылінг</displayName>
@@ -6148,7 +6320,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">танзанійскія шылінгі</displayName>
 				<displayName count="many">танзанійскіх шылінгаў</displayName>
 				<displayName count="other">танзанійскага шылінга</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>украінская грыўня</displayName>
@@ -6156,8 +6328,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">украінскія грыўні</displayName>
 				<displayName count="many">украінскіх грыўняў</displayName>
 				<displayName count="other">украінскай грыўні</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>угандыйскі шылінг</displayName>
@@ -6165,7 +6337,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">угандыйскія шылінгі</displayName>
 				<displayName count="many">угандыйскіх шылінгаў</displayName>
 				<displayName count="other">угандыйскага шылінга</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>долар ЗША</displayName>
@@ -6173,8 +6345,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">долары ЗША</displayName>
 				<displayName count="many">долараў ЗША</displayName>
 				<displayName count="other">долара ЗША</displayName>
-				<symbol draft="contributed">$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>уругвайскае песа</displayName>
@@ -6182,8 +6354,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">уругвайскія песа</displayName>
 				<displayName count="many">уругвайскіх песа</displayName>
 				<displayName count="other">уругвайскага песа</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$U</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$U</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>узбекскі сум</displayName>
@@ -6191,7 +6363,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">узбекскія сумы</displayName>
 				<displayName count="many">узбекскіх сумаў</displayName>
 				<displayName count="other">узбекскага сума</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>венесуальскі балівар (2008–2018)</displayName>
@@ -6208,7 +6380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">венесуэльскія балівары</displayName>
 				<displayName count="many">венесуэльскіх балівараў</displayName>
 				<displayName count="other">венесуэльскага балівара</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>в’етнамскі донг</displayName>
@@ -6216,8 +6388,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">в’етнамскія донгі</displayName>
 				<displayName count="many">в’етнамскіх донгаў</displayName>
 				<displayName count="other">в’етнамскага донга</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol>₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>вануацкі вату</displayName>
@@ -6225,7 +6397,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">вануацкія вату</displayName>
 				<displayName count="many">вануацкіх вату</displayName>
 				<displayName count="other">вануацкага вату</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>самаанская тала</displayName>
@@ -6233,7 +6405,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">самаанскія талы</displayName>
 				<displayName count="many">самаанскіх тал</displayName>
 				<displayName count="other">самаанскай талы</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>цэнтральнаафрыканскі франк КФА</displayName>
@@ -6241,7 +6413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">цэнтральнаафрыканскія франкі КФА</displayName>
 				<displayName count="many">цэнтральнаафрыканскіх франкаў КФА</displayName>
 				<displayName count="other">цэнтральнаафрыканскага франка КФА</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>усходнекарыбскі долар</displayName>
@@ -6249,8 +6421,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">усходнекарыбскія долары</displayName>
 				<displayName count="many">усходнекарыбскіх долараў</displayName>
 				<displayName count="other">усходнекарыбскага долара</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">EC$</symbol>
+				<symbol>EC$</symbol>
+				<symbol alt="narrow">EC$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>заходнеафрыканскі франк КФА</displayName>
@@ -6266,7 +6438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">французскія ціхаакіянскія франкі</displayName>
 				<displayName count="many">французскіх ціхаакіянскіх франкаў</displayName>
 				<displayName count="other">французскага ціхаакіянскага франка</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>невядомая валюта</displayName>
@@ -6281,7 +6453,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">еменскія рыялы</displayName>
 				<displayName count="many">еменскіх рыялаў</displayName>
 				<displayName count="other">еменскага рыяла</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>паўднёваафрыканскі рэнд</displayName>
@@ -6289,8 +6461,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">паўднёваафрыканскія рэнды</displayName>
 				<displayName count="many">паўднёваафрыканскіх рэндаў</displayName>
 				<displayName count="other">паўднёваафрыканскага рэнда</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>замбійская квача</displayName>
@@ -6298,8 +6470,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">замбійскія квачы</displayName>
 				<displayName count="many">замбійскіх квач</displayName>
 				<displayName count="other">замбійскай квачы</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -6563,6 +6735,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} мілімоляў на літр</unitPattern>
 				<unitPattern count="other">{0} мілімоля на літр</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>элемент</displayName>
+				<unitPattern count="one">{0} элемент</unitPattern>
+				<unitPattern count="few">{0} элементы</unitPattern>
+				<unitPattern count="many">{0} элементаў</unitPattern>
+				<unitPattern count="other">{0} элемента</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>часткі на мільён</displayName>
 				<unitPattern count="one">{0} частка на мільён</unitPattern>
@@ -6724,6 +6903,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} гадоў</unitPattern>
 				<unitPattern count="other">{0} года</unitPattern>
 				<perUnitPattern>{0} у год</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>кварталы</displayName>
+				<unitPattern count="one">{0} квартал</unitPattern>
+				<unitPattern count="few">{0} кварталы</unitPattern>
+				<unitPattern count="many">{0} кварталаў</unitPattern>
+				<unitPattern count="other">{0} квартала</unitPattern>
+				<perUnitPattern>{0} у квартал</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>месяцы</displayName>
@@ -6898,6 +7085,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ньютаны</unitPattern>
 				<unitPattern count="many">{0} ньютанаў</unitPattern>
 				<unitPattern count="other">{0} ньютана</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>кілават-гадзіны на 100 кіламетраў</displayName>
+				<unitPattern count="one">{0} кілават-гадзіна на 100 кіламетраў</unitPattern>
+				<unitPattern count="few">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="many">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="other">{0} кілават-гадзіны на 100 кіламетраў</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>гігагерцы</displayName>
@@ -7170,7 +7364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} сонечных свяцільнасцей</unitPattern>
 				<unitPattern count="other">{0} сонечнай свяцільнасці</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>тоны</displayName>
 				<unitPattern count="one">{0} тона</unitPattern>
 				<unitPattern count="few">{0} тоны</unitPattern>
@@ -7962,6 +8156,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ммоль/л</unitPattern>
 				<unitPattern count="other">{0} ммоль/л</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>элем.</displayName>
+				<unitPattern count="one">{0} элем.</unitPattern>
+				<unitPattern count="few">{0} элем.</unitPattern>
+				<unitPattern count="many">{0} элем.</unitPattern>
+				<unitPattern count="other">{0} элем.</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -8111,10 +8312,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>дзесяцігоддзе</displayName>
-				<unitPattern count="one">{0} дзесяцігоддзе</unitPattern>
-				<unitPattern count="few">{0} дзесяцігоддзі</unitPattern>
-				<unitPattern count="many">{0} дзесяцігоддзяў</unitPattern>
-				<unitPattern count="other">{0} дзесяцігоддзя</unitPattern>
+				<unitPattern count="one">{0} дз.</unitPattern>
+				<unitPattern count="few">{0} дз.</unitPattern>
+				<unitPattern count="many">{0} дз.</unitPattern>
+				<unitPattern count="other">{0} дз.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>г.</displayName>
@@ -8123,6 +8324,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} г.</unitPattern>
 				<unitPattern count="other">{0} г.</unitPattern>
 				<perUnitPattern>{0} у г.</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>кв.</displayName>
+				<unitPattern count="one">{0} кв.</unitPattern>
+				<unitPattern count="few">{0} кв.</unitPattern>
+				<unitPattern count="many">{0} кв.</unitPattern>
+				<unitPattern count="other">{0} кв.</unitPattern>
+				<perUnitPattern>{0}/кв.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>мес.</displayName>
@@ -8297,6 +8506,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} Н</unitPattern>
 				<unitPattern count="many">{0} Н</unitPattern>
 				<unitPattern count="other">{0} Н</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>кВт·г/100 км</displayName>
+				<unitPattern count="one">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="few">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="many">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="other">{0} кВт·г/100 км</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ГГц</displayName>
@@ -8562,7 +8778,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="few">{0} т</unitPattern>
@@ -9206,6 +9422,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
+			<unit type="concentr-item">
+				<unitPattern count="one">{0} элем.</unitPattern>
+				<unitPattern count="few">{0} элем.</unitPattern>
+				<unitPattern count="many">{0} элем.</unitPattern>
+				<unitPattern count="other">{0} элем.</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
@@ -9226,6 +9448,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} г.</unitPattern>
 				<unitPattern count="many">{0} г.</unitPattern>
 				<unitPattern count="other">{0} г.</unitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>кв.</displayName>
+				<unitPattern count="one">{0} кв.</unitPattern>
+				<unitPattern count="few">{0} кв.</unitPattern>
+				<unitPattern count="many">{0} кв.</unitPattern>
+				<unitPattern count="other">{0} кв.</unitPattern>
+				<perUnitPattern>{0}/кв.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>мес.</displayName>
@@ -9275,6 +9505,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} мс</unitPattern>
 				<unitPattern count="many">{0} мс</unitPattern>
 				<unitPattern count="other">{0} мс</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>Н</displayName>
+				<unitPattern count="one">{0} Н</unitPattern>
+				<unitPattern count="few">{0} Н</unitPattern>
+				<unitPattern count="many">{0} Н</unitPattern>
+				<unitPattern count="other">{0} Н</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>кВт·г/100 км</displayName>
+				<unitPattern count="one">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="few">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="many">{0} кВт·г/100 км</unitPattern>
+				<unitPattern count="other">{0} кВт·г/100 км</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
@@ -9570,4 +9814,141 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">таблічныя лічбы</featureName>
 		<featureName type="zero">перакрэслены нуль</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und be</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Васіль</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Ірына</nameField>
+			<nameField type="surname">Алейнік</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Вольга</nameField>
+			<nameField type="given2">Караліна</nameField>
+			<nameField type="surname">Равенская</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">праф., д-р</nameField>
+			<nameField type="given">Ганна</nameField>
+			<nameField type="given-informal">Зміцер</nameField>
+			<nameField type="given2">Адэлаіда</nameField>
+			<nameField type="surname-prefix">ван дэн</nameField>
+			<nameField type="surname-core">Вольф</nameField>
+			<nameField type="surname2">Бэкер-Шмідт</nameField>
+			<nameField type="suffix">M.D. Ph.D.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

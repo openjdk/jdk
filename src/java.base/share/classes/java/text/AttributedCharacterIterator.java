@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,15 @@ import java.util.Set;
  *
  * <p>
  * Attribute keys are instances of {@link AttributedCharacterIterator.Attribute} and its
- * subclasses, such as {@link java.awt.font.TextAttribute}.
+ * subclasses, such as {@link java.desktop/java.awt.font.TextAttribute}.
  *
  * @see AttributedCharacterIterator.Attribute
- * @see java.awt.font.TextAttribute
+ * @see java.desktop/java.awt.font.TextAttribute
  * @see AttributedString
  * @see Annotation
  * @since 1.2
  */
-
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface AttributedCharacterIterator extends CharacterIterator {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,16 @@ public enum Target {
     JDK1_17("17", 61, 0),
 
     /** JDK 18. */
-    JDK1_18("18", 62, 0);
+    JDK1_18("18", 62, 0),
+
+    /** JDK 19. */
+    JDK1_19("19", 63, 0),
+
+    /** JDK 20. */
+    JDK1_20("20", 64, 0),
+
+    /** JDK 21. */
+    JDK1_21("21", 65, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 
@@ -104,9 +113,11 @@ public enum Target {
         return instance;
     }
 
-    public static final Target MIN = Target.JDK1_7;
+    public static final Target MIN = Target.JDK1_8;
 
     private static final Target MAX = values()[values().length - 1];
+
+    public static final Target DEFAULT = MAX;
 
     private static final Map<String,Target> tab = new HashMap<>();
     static {
@@ -129,8 +140,6 @@ public enum Target {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
     }
-
-    public static final Target DEFAULT = values()[values().length - 1];
 
     public static Target lookup(String name) {
         return tab.get(name);
@@ -202,5 +211,12 @@ public enum Target {
      */
     public boolean obsoleteAccStrict() {
         return compareTo(JDK1_17) >= 0;
+    }
+
+    /** Omit unused enclosing instance fields from inner classes that don't access enclosing
+     * instance state.
+     */
+    public boolean optimizeOuterThis() {
+        return compareTo(JDK1_18) >= 0;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class SharedStringsUtils {
 
     // build the test jar and a whitebox jar
     public static void buildJarAndWhiteBox(String... classes) throws Exception {
-        JarBuilder.build(true, WHITEBOX_JAR_NAME, "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, WHITEBOX_JAR_NAME, "jdk/test/whitebox/WhiteBox");
         buildJar(classes);
     }
 

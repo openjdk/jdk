@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class Repository {
     /**
      * We use a global reentrant read write lock to protect the repository.
      * This seems safer and more efficient: we are using Maps of Maps,
-     * Guaranteing consistency while using Concurent objects at each level
+     * Guaranteing consistency while using Concurrent objects at each level
      * may be more difficult.
      **/
     private final ReentrantReadWriteLock lock;
@@ -106,131 +106,18 @@ public class Repository {
     // Private fields <=============================================
 
     // Private methods --------------------------------------------->
-
-    /* This class is used to match an ObjectName against a pattern. */
-    private static final class ObjectNamePattern {
-        private final String[] keys;
-        private final String[] values;
-        private final String   properties;
-        private final boolean  isPropertyListPattern;
-        private final boolean  isPropertyValuePattern;
-
-        /**
-         * The ObjectName pattern against which ObjectNames are matched.
-         **/
-        public final ObjectName pattern;
-
-        /**
-         * Builds a new ObjectNamePattern object from an ObjectName pattern.
-         * @param pattern The ObjectName pattern under examination.
-         **/
-        public ObjectNamePattern(ObjectName pattern) {
-            this(pattern.isPropertyListPattern(),
-                 pattern.isPropertyValuePattern(),
-                 pattern.getCanonicalKeyPropertyListString(),
-                 pattern.getKeyPropertyList(),
-                 pattern);
-        }
-
-        /**
-         * Builds a new ObjectNamePattern object from an ObjectName pattern
-         * constituents.
-         * @param propertyListPattern pattern.isPropertyListPattern().
-         * @param propertyValuePattern pattern.isPropertyValuePattern().
-         * @param canonicalProps pattern.getCanonicalKeyPropertyListString().
-         * @param keyPropertyList pattern.getKeyPropertyList().
-         * @param pattern The ObjectName pattern under examination.
-         **/
-        ObjectNamePattern(boolean propertyListPattern,
-                          boolean propertyValuePattern,
-                          String canonicalProps,
-                          Map<String,String> keyPropertyList,
-                          ObjectName pattern) {
-            this.isPropertyListPattern = propertyListPattern;
-            this.isPropertyValuePattern = propertyValuePattern;
-            this.properties = canonicalProps;
-            final int len = keyPropertyList.size();
-            this.keys   = new String[len];
-            this.values = new String[len];
-            int i = 0;
-            for (Map.Entry<String,String> entry : keyPropertyList.entrySet()) {
-                keys[i]   = entry.getKey();
-                values[i] = entry.getValue();
-                i++;
-            }
-            this.pattern = pattern;
-        }
-
-        /**
-         * Return true if the given ObjectName matches the ObjectName pattern
-         * for which this object has been built.
-         * WARNING: domain name is not considered here because it is supposed
-         *          not to be wildcard when called. PropertyList is also
-         *          supposed not to be zero-length.
-         * @param name The ObjectName we want to match against the pattern.
-         * @return true if <code>name</code> matches the pattern.
-         **/
-        public boolean matchKeys(ObjectName name) {
-            // If key property value pattern but not key property list
-            // pattern, then the number of key properties must be equal
-            //
-            if (isPropertyValuePattern &&
-                !isPropertyListPattern &&
-                (name.getKeyPropertyList().size() != keys.length))
-                return false;
-
-            // If key property value pattern or key property list pattern,
-            // then every property inside pattern should exist in name
-            //
-            if (isPropertyValuePattern || isPropertyListPattern) {
-                for (int i = keys.length - 1; i >= 0 ; i--) {
-                    // Find value in given object name for key at current
-                    // index in receiver
-                    //
-                    String v = name.getKeyProperty(keys[i]);
-                    // Did we find a value for this key ?
-                    //
-                    if (v == null) return false;
-                    // If this property is ok (same key, same value), go to next
-                    //
-                    if (isPropertyValuePattern &&
-                        pattern.isPropertyValuePattern(keys[i])) {
-                        // wildmatch key property values
-                        // values[i] is the pattern;
-                        // v is the string
-                        if (Util.wildmatch(v,values[i]))
-                            continue;
-                        else
-                            return false;
-                    }
-                    if (v.equals(values[i])) continue;
-                    return false;
-                }
-                return true;
-            }
-
-            // If no pattern, then canonical names must be equal
-            //
-            final String p1 = name.getCanonicalKeyPropertyListString();
-            final String p2 = properties;
-            return (p1.equals(p2));
-        }
-    }
-
     /**
      * Add all the matching objects from the given hashtable in the
-     * result set for the given ObjectNamePattern
-     * Do not check whether the domains match (only check for matching
-     * key property lists - see <i>matchKeys()</i>)
+     * result set for the given pattern
      **/
     private void addAllMatching(final Map<String,NamedObject> moiTb,
                                 final Set<NamedObject> result,
-                                final ObjectNamePattern pattern) {
+                                final ObjectName pattern) {
         synchronized (moiTb) {
             for (NamedObject no : moiTb.values()) {
                 final ObjectName on = no.getName();
                 // if all couples (property, value) are contained
-                if (pattern.matchKeys(on)) result.add(no);
+                if (pattern.apply(ObjectName.getInstance(on))) result.add(no);
             }
         }
     }
@@ -239,8 +126,7 @@ public class Repository {
                               final String dom,
                               final ObjectName name,
                               final RegistrationContext context) {
-        final Map<String,NamedObject> moiTb =
-            new HashMap<String,NamedObject>();
+        final Map<String,NamedObject> moiTb = new HashMap<>();
         final String key = name.getCanonicalKeyPropertyListString();
         addMoiToTb(object,name,key,moiTb,context);
         domainTb.put(dom, moiTb);
@@ -325,7 +211,7 @@ public class Repository {
     public Repository(String domain, boolean fairLock) {
         lock = new ReentrantReadWriteLock(fairLock);
 
-        domainTb = new HashMap<String,Map<String,NamedObject>>(5);
+        domainTb = new HashMap<>(5);
 
         if (domain != null && domain.length() != 0)
             this.domain = domain.intern(); // we use == domain later on...
@@ -333,7 +219,7 @@ public class Repository {
             this.domain = ServiceName.DOMAIN;
 
         // Creates a new hashtable for the default domain
-        domainTb.put(this.domain, new HashMap<String,NamedObject>());
+        domainTb.put(this.domain, new HashMap<>());
     }
 
     /**
@@ -347,7 +233,7 @@ public class Repository {
         final List<String> result;
         try {
             // Temporary list
-            result = new ArrayList<String>(domainTb.size());
+            result = new ArrayList<>(domainTb.size());
             for (Map.Entry<String,Map<String,NamedObject>> entry :
                      domainTb.entrySet()) {
                 // Skip domains that are in the table but have no
@@ -377,7 +263,7 @@ public class Repository {
      *                can be stored in the repository with that {@code name}.
      *                If {@link RegistrationContext#registering()
      *                context.registering()} throws an exception, the
-     *                operation is abandonned, the MBean is not added to the
+     *                operation is abandoned, the MBean is not added to the
      *                repository, and a {@link RuntimeOperationsException}
      *                is thrown.
      */
@@ -507,7 +393,7 @@ public class Repository {
      */
     public Set<NamedObject> query(ObjectName pattern, QueryExp query) {
 
-        final Set<NamedObject> result = new HashSet<NamedObject>();
+        final Set<NamedObject> result = new HashSet<>();
 
         // The following filter cases are considered:
         // null, "", "*:*" : names in all domains
@@ -520,7 +406,7 @@ public class Repository {
             pattern.getCanonicalName().length() == 0 ||
             pattern.equals(ObjectName.WILDCARD))
            name = ObjectName.WILDCARD;
-        else name = pattern;
+        else name = ObjectName.getInstance(pattern);
 
         lock.readLock().lock();
         try {
@@ -544,38 +430,36 @@ public class Repository {
                     name.getCanonicalKeyPropertyListString();
             final boolean allNames =
                     (canonical_key_property_list_string.length()==0);
-            final ObjectNamePattern namePattern =
-                (allNames?null:new ObjectNamePattern(name));
+            final String dom2Match = name.getDomain();
 
             // All names in default domain
-            if (name.getDomain().length() == 0) {
+            if (dom2Match.length() == 0) {
                 final Map<String,NamedObject> moiTb = domainTb.get(domain);
                 if (allNames)
                     result.addAll(moiTb.values());
                 else
-                    addAllMatching(moiTb, result, namePattern);
+                    addAllMatching(moiTb, result, Util.newObjectName(domain + name.getCanonicalName()));
                 return result;
             }
 
             if (!name.isDomainPattern()) {
-                final Map<String,NamedObject> moiTb = domainTb.get(name.getDomain());
+                final Map<String,NamedObject> moiTb = domainTb.get(dom2Match);
                 if (moiTb == null) return Collections.emptySet();
                 if (allNames)
                     result.addAll(moiTb.values());
                 else
-                    addAllMatching(moiTb, result, namePattern);
+                    addAllMatching(moiTb, result, name);
                 return result;
             }
 
             // Pattern matching in the domain name (*, ?)
-            final String dom2Match = name.getDomain();
             for (String dom : domainTb.keySet()) {
                 if (Util.wildmatch(dom, dom2Match)) {
                     final Map<String,NamedObject> moiTb = domainTb.get(dom);
                     if (allNames)
                         result.addAll(moiTb.values());
                     else
-                        addAllMatching(moiTb, result, namePattern);
+                        addAllMatching(moiTb, result, name);
                 }
             }
             return result;
@@ -641,7 +525,7 @@ public class Repository {
                 // big buckets array size inside table, never cleared,
                 // thus the new !
                 if (dom == domain) // ES: OK dom and domain are interned.
-                    domainTb.put(domain, new HashMap<String,NamedObject>());
+                    domainTb.put(domain, new HashMap<>());
             }
 
             unregistering(context,name);

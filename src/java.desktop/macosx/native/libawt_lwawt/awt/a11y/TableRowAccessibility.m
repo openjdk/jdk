@@ -5,7 +5,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -33,12 +35,6 @@
 
 static jclass sjc_CAccessibility = NULL;
 
-static jmethodID jm_getChildrenAndRoles = NULL;
-#define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
-    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
-    GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
-                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZ)[Ljava/lang/Object;", ret);
-
 @implementation TableRowAccessibility
 
 // NSAccessibilityElement protocol methods
@@ -55,25 +51,28 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 
 - (NSArray *)accessibilityChildren
 {
-    NSArray *children = [super accessibilityChildren];
+    NSMutableArray *children = [super accessibilityChildren];
     if (children == nil) {
         JNIEnv *env = [ThreadUtilities getJNIEnv];
         CommonComponentAccessibility *parent = [self accessibilityParent];
         if (parent->fAccessible == NULL) return nil;
-        GET_CHILDRENANDROLES_METHOD_RETURN(nil);
-        jobjectArray jchildrenAndRoles = (jobjectArray)(*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getChildrenAndRoles,
-                                                                                      parent->fAccessible, parent->fComponent, sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN, NO);
+
+        GET_CACCESSIBILITY_CLASS_RETURN(nil);
+        DECLARE_STATIC_METHOD_RETURN(jm_getTableRowChildrenAndRoles, sjc_CAccessibility, "getTableRowChildrenAndRoles",\
+            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZI)[Ljava/lang/Object;", nil);
+
+        jobjectArray jchildrenAndRoles = (jobjectArray)(*env)->CallStaticObjectMethod(
+                env, sjc_CAccessibility, jm_getTableRowChildrenAndRoles, parent->fAccessible, parent->fComponent,
+                sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN, NO, [self rowNumberInTable]);
         CHECK_EXCEPTION();
+
         if (jchildrenAndRoles == NULL) return nil;
 
         jsize arrayLen = (*env)->GetArrayLength(env, jchildrenAndRoles);
-        NSMutableArray *childrenCells = [NSMutableArray arrayWithCapacity:arrayLen/2];
+        children = [NSMutableArray arrayWithCapacity:arrayLen / 2];
+        int childIndex = [self rowNumberInTable] * [(TableAccessibility *)parent accessibilityColumnCount];
 
-        NSUInteger childIndex = fIndex * [(TableAccessibility *)parent accessibilityColumnCount];
-        NSInteger i = childIndex * 2;
-        NSInteger n = (fIndex + 1) * [(TableAccessibility *)parent accessibilityColumnCount] * 2;
-        for(i; i < n; i+=2)
-        {
+        for (NSInteger i = 0; i < arrayLen; i += 2) {
             jobject /* Accessible */ jchild = (*env)->GetObjectArrayElement(env, jchildrenAndRoles, i);
             jobject /* String */ jchildJavaRole = (*env)->GetObjectArrayElement(env, jchildrenAndRoles, i+1);
 
@@ -87,13 +86,15 @@ static jmethodID jm_getChildrenAndRoles = NULL;
                 (*env)->DeleteLocalRef(env, jkey);
             }
 
-            CellAccessibility *child = [[CellAccessibility alloc] initWithParent:self
-                                                                         withEnv:env
-                                                                  withAccessible:jchild
-                                                                       withIndex:childIndex
-                                                                        withView:self->fView
-                                                                    withJavaRole:childJavaRole];
-            [childrenCells addObject:[[child retain] autorelease]];
+            CellAccessibility *child = (CellAccessibility *)
+                [CommonComponentAccessibility createWithParent:self
+                                                     withClass:[CellAccessibility class]
+                                                    accessible:jchild
+                                                          role:childJavaRole
+                                                         index:childIndex
+                                                       withEnv:env
+                                                      withView:self->fView];
+            [children addObject:child];
 
             (*env)->DeleteLocalRef(env, jchild);
             (*env)->DeleteLocalRef(env, jchildJavaRole);
@@ -101,10 +102,12 @@ static jmethodID jm_getChildrenAndRoles = NULL;
             childIndex++;
         }
         (*env)->DeleteLocalRef(env, jchildrenAndRoles);
-        return childrenCells;
-    } else {
-        return children;
     }
+    return children;
+}
+
+- (NSUInteger)rowNumberInTable {
+    return self->fIndex;
 }
 
 - (NSInteger)accessibilityIndex
@@ -120,7 +123,14 @@ static jmethodID jm_getChildrenAndRoles = NULL;
             if ([accessibilityName isEqualToString:@""]) {
                 accessibilityName = [cell accessibilityLabel];
             } else {
-                accessibilityName = [accessibilityName stringByAppendingFormat:@", %@", [cell accessibilityLabel]];
+                NSString *label = [cell accessibilityLabel];
+                if (label == nil) {
+                    id val = [cell accessibilityValue];
+                    if (val != nil) {
+                        label = [NSString stringWithFormat:@"%@", val];
+                    }
+                }
+                accessibilityName = [accessibilityName stringByAppendingFormat:@", %@", label];
             }
         }
         return accessibilityName;
@@ -140,6 +150,11 @@ static jmethodID jm_getChildrenAndRoles = NULL;
             width += [cell accessibilityFrame].size.width;
         }
         return NSMakeRect(point.x, point.y, width, height);
+}
+
+- (BOOL)isAccessibilityOrderedByRow
+{
+    return YES;
 }
 
 @end

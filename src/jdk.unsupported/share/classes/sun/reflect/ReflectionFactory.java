@@ -144,9 +144,9 @@ public class ReflectionFactory {
     /**
      * Returns a direct MethodHandle for the {@code readObjectNoData} method on
      * a Serializable class.
-     * The first argument of {@link MethodHandle#invoke} is the serializable
-     * object and the second argument is the {@code ObjectInputStream} passed to
-     * {@code readObjectNoData}.
+     * The only argument of {@link MethodHandle#invoke} is the serializable
+     * object, which {@code readObjectNoData} is called on. No arguments are
+     * passed to the {@code readObjectNoData} method.
      *
      * @param cl a Serializable class
      * @return  a direct MethodHandle for the {@code readObjectNoData} method

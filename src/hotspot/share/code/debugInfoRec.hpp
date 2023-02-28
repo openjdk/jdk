@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,13 +106,12 @@ class DebugInformationRecorder: public ResourceObj {
                       bool        reexecute,
                       bool        rethrow_exception = false,
                       bool        is_method_handle_invoke = false,
-                      bool        is_optimized_linkToNative = false,
                       bool        return_oop = false,
                       bool        has_ea_local_in_scope = false,
                       bool        arg_escape = false,
-                      DebugToken* locals      = NULL,
-                      DebugToken* expressions = NULL,
-                      DebugToken* monitors    = NULL);
+                      DebugToken* locals      = nullptr,
+                      DebugToken* expressions = nullptr,
+                      DebugToken* monitors    = nullptr);
 
 
   void dump_object_pool(GrowableArray<ScopeValue*>* objects);
@@ -122,7 +121,7 @@ class DebugInformationRecorder: public ResourceObj {
   void end_safepoint(int pc_offset)      { end_scopes(pc_offset, true); }
   void end_non_safepoint(int pc_offset)  { end_scopes(pc_offset, false); }
 
-  // helper fuctions for describe_scope to enable sharing
+  // helper functions for describe_scope to enable sharing
   DebugToken* create_scope_values(GrowableArray<ScopeValue*>* values);
   DebugToken* create_monitor_values(GrowableArray<MonitorValue*>* monitors);
 

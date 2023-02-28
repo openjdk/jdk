@@ -34,15 +34,6 @@
     return "ppc64";
   }
 
-  // Find preceding instruction.
-  //
-  // Starting at the passed location, the n-th preceding (towards lower addresses)
-  // location is searched, the contents of which - if interpreted as
-  // instructions - has the passed location as n-th successor.
-  //  - If no such location exists, NULL is returned. The caller should then
-  //    terminate its search and react properly.
-  static address find_prev_instr(address here, int n_instr);
-
   // special-case instruction decoding.
   // There may be cases where the binutils disassembler doesn't do
   // the perfect job. In those cases, decode_instruction0 may kick in

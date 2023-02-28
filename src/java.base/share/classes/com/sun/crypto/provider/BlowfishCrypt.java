@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ final class BlowfishCrypt extends SymmetricCipher
             throw new InvalidKeyException("Key too long (> 448 bits)");
         }
         // Step 1: Init P and then S arrays from pi bytes
-        int i, j, count;
+        int i, j;
 
         System.arraycopy(pi, 0, p, 0, 18);
         System.arraycopy(pi, 18, s0, 0, 256);

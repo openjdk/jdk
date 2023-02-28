@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ void StringDedup::Stat::add(const Stat* const stat) {
   _block_elapsed       += stat->_block_elapsed;
 }
 
-// Support for log output formating
+// Support for log output formatting
 #define STRDEDUP_PERCENT_FORMAT         "%5.1f%%"
 #define STRDEDUP_PERCENT_FORMAT_NS      "%.1f%%"
 #define STRDEDUP_BYTES_FORMAT           "%8.1f%s"

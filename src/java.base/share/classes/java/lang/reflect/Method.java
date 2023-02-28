@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -34,6 +36,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
+import sun.reflect.generics.repository.GenericDeclRepository;
 import sun.reflect.generics.repository.MethodRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
@@ -67,25 +70,24 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Method extends Executable {
-    @Stable
-    private Class<?>            clazz;
-    private int                 slot;
+    private final Class<?>            clazz;
+    private final int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
-    private String              name;
-    private Class<?>            returnType;
-    private Class<?>[]          parameterTypes;
-    private Class<?>[]          exceptionTypes;
-    @Stable
-    private int                 modifiers;
+    private final String              name;
+    private final Class<?>            returnType;
+    private final Class<?>[]          parameterTypes;
+    private final Class<?>[]          exceptionTypes;
+    private final int                 modifiers;
     // Generics and annotations support
-    private transient String              signature;
+    private final transient String    signature;
     // generic info repository; lazily initialized
     private transient MethodRepository genericInfo;
-    private byte[]              annotations;
-    private byte[]              parameterAnnotations;
-    private byte[]              annotationDefault;
-    private volatile MethodAccessor methodAccessor;
+    private final byte[]              annotations;
+    private final byte[]              parameterAnnotations;
+    private final byte[]              annotationDefault;
+    @Stable
+    private MethodAccessor      methodAccessor;
     // For sharing of MethodAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Method and
     // potentially many Method objects pointing to it.)
@@ -253,7 +255,7 @@ public final class Method extends Executable {
         if (getGenericSignature() != null)
             return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
         else
-            return (TypeVariable<Method>[])new TypeVariable[0];
+            return (TypeVariable<Method>[])GenericDeclRepository.EMPTY_TYPE_VARS;
     }
 
     /**
@@ -430,7 +432,7 @@ public final class Method extends Executable {
 
     String toShortSignature() {
         StringJoiner sj = new StringJoiner(",", getName() + "(", ")");
-        for (Class<?> parameterType : getParameterTypes()) {
+        for (Class<?> parameterType : getSharedParameterTypes()) {
             sj.add(parameterType.getTypeName());
         }
         return sj.toString();
@@ -552,20 +554,68 @@ public final class Method extends Executable {
     @ForceInline // to ensure Reflection.getCallerClass optimization
     @IntrinsicCandidate
     public Object invoke(Object obj, Object... args)
-        throws IllegalAccessException, IllegalArgumentException,
-           InvocationTargetException
+        throws IllegalAccessException, InvocationTargetException
     {
+        boolean callerSensitive = isCallerSensitive();
+        Class<?> caller = null;
+        if (!override || callerSensitive) {
+            caller = Reflection.getCallerClass();
+        }
+
+        // Reflection::getCallerClass filters all subclasses of
+        // jdk.internal.reflect.MethodAccessorImpl and Method::invoke(Object, Object[])
+        // Should not call Method::invoke(Object, Object[], Class) here
         if (!override) {
-            Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, clazz,
+                    Modifier.isStatic(modifiers) ? null : obj.getClass(),
+                    modifiers);
+        }
+        MethodAccessor ma = methodAccessor;             // read @Stable
+        if (ma == null) {
+            ma = acquireMethodAccessor();
+        }
+
+        return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
+    }
+
+    /**
+     * This is to support MethodHandle calling caller-sensitive Method::invoke
+     * that may invoke a caller-sensitive method in order to get the original caller
+     * class (not the injected invoker).
+     *
+     * If this adapter is not presented, MethodHandle invoking Method::invoke
+     * will get an invoker class, a hidden nestmate of the original caller class,
+     * that becomes the caller class invoking Method::invoke.
+     */
+    @CallerSensitiveAdapter
+    private Object invoke(Object obj, Object[] args, Class<?> caller)
+            throws IllegalAccessException, InvocationTargetException
+    {
+        boolean callerSensitive = isCallerSensitive();
+        if (!override) {
             checkAccess(caller, clazz,
                         Modifier.isStatic(modifiers) ? null : obj.getClass(),
                         modifiers);
         }
-        MethodAccessor ma = methodAccessor;             // read volatile
+        MethodAccessor ma = methodAccessor;             // read @Stable
         if (ma == null) {
             ma = acquireMethodAccessor();
         }
-        return ma.invoke(obj, args);
+
+        return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
+    }
+
+    //  0 = not initialized (@Stable contract)
+    //  1 = initialized, CS
+    // -1 = initialized, not CS
+    @Stable private byte callerSensitive;
+
+    private boolean isCallerSensitive() {
+        byte cs = callerSensitive;
+        if (cs == 0) {
+            callerSensitive = cs = (byte)(Reflection.isCallerSensitive(this) ? 1 : -1);
+        }
+        return (cs > 0);
     }
 
     /**
@@ -665,14 +715,16 @@ public final class Method extends Executable {
     private MethodAccessor acquireMethodAccessor() {
         // First check to see if one has been created yet, and take it
         // if so
-        MethodAccessor tmp = null;
-        if (root != null) tmp = root.getMethodAccessor();
+        Method root = this.root;
+        MethodAccessor tmp = root == null ? null : root.getMethodAccessor();
         if (tmp != null) {
             methodAccessor = tmp;
         } else {
             // Otherwise fabricate one and propagate it up to the root
-            tmp = reflectionFactory.newMethodAccessor(this);
-            setMethodAccessor(tmp);
+            tmp = reflectionFactory.newMethodAccessor(this, isCallerSensitive());
+            // set the method accessor only if it's not using native implementation
+            if (VM.isJavaLangInvokeInited())
+                setMethodAccessor(tmp);
         }
 
         return tmp;
@@ -689,6 +741,7 @@ public final class Method extends Executable {
     void setMethodAccessor(MethodAccessor accessor) {
         methodAccessor = accessor;
         // Propagate up
+        Method root = this.root;
         if (root != null) {
             root.setMethodAccessor(accessor);
         }

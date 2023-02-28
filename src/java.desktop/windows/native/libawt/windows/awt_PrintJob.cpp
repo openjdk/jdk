@@ -24,6 +24,7 @@
  */
 
 #include "awt.h"
+#include <strsafe.h>
 #include <math.h>
 #include <windef.h>
 #include <wtypes.h>
@@ -64,8 +65,8 @@ extern "C" {
 
 /*** Private Constants ***/
 
-static char *kJavaIntStr = "I";
-static char *kJavaLongStr = "J";
+static const char *kJavaIntStr = "I";
+static const char *kJavaLongStr = "J";
 
 /* 2D printing uses 3 byte BGR pixels in Raster printing */
 static int J2DRasterBPP = 3;
@@ -841,9 +842,9 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
 
           // set margins to 1"
           margins.left = convertFromPoints(72, units);
-          margins.top = convertFromPoints(72, units);;
-          margins.right = convertFromPoints(72, units);;
-          margins.bottom = convertFromPoints(72, units);;
+          margins.top = convertFromPoints(72, units);
+          margins.right = convertFromPoints(72, units);
+          margins.bottom = convertFromPoints(72, units);
 
           jobject paper = getPaper(env, page);
           if (paper == NULL) {
@@ -1353,7 +1354,7 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     } else {
         destination = VerifyDestination(env, self);
     }
-    LPTSTR docname = NULL;
+    LPCTSTR docname = NULL;
     if (jobname != NULL) {
         LPTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, jobname, NULL);
         if (tmp == NULL) {
@@ -2291,7 +2292,7 @@ static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
 
     /* If WideCharToMultiByte succeeded then the number
      * of bytes it copied into the face name buffer will
-     * be creater than zero and we just need to NULL terminate
+     * be greater than zero and we just need to NULL terminate
      * the string. If there was an error then the number of
      * bytes copied is zero and we can not match the font.
      */
@@ -2402,13 +2403,13 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     /* Describe the GDI fonts we want enumerated. We
      * simply supply the java font name and let GDI
      * do the matching. If the java font name is
-     * longer than the GDI maximum font lenght then
+     * longer than the GDI maximum font length then
      * we can't convert the font.
      */
     size_t nameLen = wcslen(fontNameW);
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
 
-        wcscpy(lf.lfFaceName, fontNameW);
+        StringCchCopyW(lf.lfFaceName, LF_FACESIZE, fontNameW);
 
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfPitchAndFamily = 0;
@@ -3170,7 +3171,7 @@ LRESULT CALLBACK PageDialogWndProc(HWND hWnd, UINT message,
             if ((LOWORD(wParam) == IDOK) ||
                 (LOWORD(wParam) == IDCANCEL))
             {
-                // If we recieve on of these two notifications, the dialog
+                // If we receive one of these two notifications, the dialog
                 // is about to be closed. It's time to unblock all the
                 // windows blocked by this dialog, as doing so from the
                 // WM_DESTROY handler is too late
@@ -3479,7 +3480,7 @@ static void retrievePaperInfo(const PAGESETUPDLG *setup, POINT *paperSize,
     /* The driver didn't tell us the paper orientation
      * so we declare it landscape if the paper
      * is wider than it is long. Square paper is
-     * declared to be portait.
+     * declared to be portrait.
      */
     if (orientationKnown == FALSE && paperSize->x > paperSize->y) {
         gdiOrientation = DMORIENT_LANDSCAPE;
@@ -3520,10 +3521,10 @@ static void retrievePaperInfo(const PAGESETUPDLG *setup, POINT *paperSize,
     }
 
     /* The Paper class expresses the page size in
-     * portait mode while Windows returns the paper
+     * portrait mode while Windows returns the paper
      * size adjusted for the orientation. If the
      * orientation is landscape then we want to
-     * flip the width and height to get a portait
+     * flip the width and height to get a portrait
      * description of the page.
      */
     if (gdiOrientation != DMORIENT_PORTRAIT) {
@@ -3700,7 +3701,7 @@ static void getPaperValues(JNIEnv *env, jobject paper, RectDouble *paperSize,
  * the units are 1000ths of an inch (MM_HIENGLISH)
  * or 100ths of a millimeter (MM_HIMETRIC),
  * convert the margins to 72nds of an inch
- * and set them into the PageFormat insance provided.
+ * and set them into the PageFormat instance provided.
  */
 static void setPaperValues(JNIEnv *env, jobject paper, const POINT *paperSize,
                                          const RECT *margins, int units) {
@@ -4297,7 +4298,7 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
       hDevMode = NULL;
     }
 
-    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);;
+    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);
     if (hDevNames != NULL) {
       ::GlobalFree(hDevNames);
       hDevNames = NULL;

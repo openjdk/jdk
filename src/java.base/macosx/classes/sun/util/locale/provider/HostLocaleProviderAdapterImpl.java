@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -570,7 +570,7 @@ public class HostLocaleProviderAdapterImpl {
                 String[] names = getCalendarDisplayStrings(locale.toLanguageTag(),
                         field, style);
                 if (names != null) {
-                    map = new HashMap<>((int)Math.ceil(names.length / 0.75));
+                    map = HashMap.newHashMap(names.length);
                     for (int value = 0; value < names.length; value++) {
                         if (names[value] != null) {
                             map.put(names[value], value);

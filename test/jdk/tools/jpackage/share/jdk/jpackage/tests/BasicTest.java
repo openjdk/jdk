@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+
+import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
 
 /*
  * @test
@@ -273,21 +275,6 @@ public final class BasicTest {
     @Parameter("false")
     public void testTemp(boolean withExistingTempDir) throws IOException {
         final Path tempRoot = TKit.createTempDirectory("tmp");
-        // This Test has problems on windows where path in the temp dir are too long
-        // for the wix tools.  We can't use a tempDir outside the TKit's WorkDir, so
-        // we minimize both the tempRoot directory name (above) and the tempDir name
-        // (below) to the extension part (which is necessary to differenciate between
-        // the multiple PackageTypes that will be run for one JPackageCommand).
-        // It might be beter if the whole work dir name was shortened from:
-        // jtreg_open_test_jdk_tools_jpackage_share_jdk_jpackage_tests_BasicTest_java.
-        Function<JPackageCommand, Path> getTempDir = cmd -> {
-            String ext = cmd.outputBundle().getFileName().toString();
-            int i = ext.lastIndexOf(".");
-            if (i > 0 && i < (ext.length() - 1)) {
-                ext = ext.substring(i+1);
-            }
-            return tempRoot.resolve(ext);
-        };
 
         Supplier<PackageTest> createTest = () -> {
             return new PackageTest()
@@ -295,7 +282,7 @@ public final class BasicTest {
             // Force save of package bundle in test work directory.
             .addInitializer(JPackageCommand::setDefaultInputOutput)
             .addInitializer(cmd -> {
-                Path tempDir = getTempDir.apply(cmd);
+                Path tempDir = getTempDirectory(cmd, tempRoot);
                 if (withExistingTempDir) {
                     Files.createDirectories(tempDir);
                 } else {
@@ -308,7 +295,7 @@ public final class BasicTest {
         createTest.get()
         .addBundleVerifier(cmd -> {
             // Check jpackage actually used the supplied directory.
-            Path tempDir = getTempDir.apply(cmd);
+            Path tempDir = getTempDirectory(cmd, tempRoot);
             TKit.assertNotEquals(0, tempDir.toFile().list().length,
                     String.format(
                             "Check jpackage wrote some data in the supplied temporary directory [%s]",
@@ -347,6 +334,17 @@ public final class BasicTest {
         // Verify output of jpackage command.
         cmd.assertImageCreated();
         HelloApp.executeLauncherAndVerifyOutput(cmd);
+    }
+
+    @Test
+    @Parameter("1")
+    @Parameter("123")
+    public void testExitCode(int exitCode) {
+        JPackageCommand cmd = JPackageCommand
+                .helloAppImage()
+                .addArguments("--java-options", String.format(
+                        "-Djpackage.test.exitCode=%d", exitCode));
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 
     private static Executor getJPackageToolProvider() {

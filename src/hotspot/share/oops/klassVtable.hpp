@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class klassVtable {
   int index_of_miranda(Symbol* name, Symbol* signature);
 
   // initialize vtable of a new klass
-  void initialize_vtable(GrowableArray<InstanceKlass*>* supers = NULL);
+  void initialize_vtable(GrowableArray<InstanceKlass*>* supers = nullptr);
   void initialize_vtable_and_check_constraints(TRAPS);
 
   // computes vtable length (in words) and the number of miranda methods
@@ -97,7 +97,6 @@ class klassVtable {
   // Debugging code
   void print()                                              PRODUCT_RETURN;
   void verify(outputStream* st, bool force = false);
-  static void print_statistics()                            PRODUCT_RETURN;
 
  protected:
   friend class vtableEntry;
@@ -152,7 +151,7 @@ class klassVtable {
       bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
-  // When loading a class from CDS archive at run time, and no class redefintion
+  // When loading a class from CDS archive at run time, and no class redefinition
   // has happened, it is expected that the class's itable/vtables are
   // laid out exactly the same way as they had been during dump time.
   // Therefore, in klassVtable::initialize_[iv]table, we do not layout the
@@ -191,8 +190,8 @@ class vtableEntry {
 
  private:
   Method* _method;
-  void set(Method* method)  { assert(method != NULL, "use clear"); _method = method; }
-  void clear()                { _method = NULL; }
+  void set(Method* method)  { assert(method != nullptr, "use clear"); _method = method; }
+  void clear()                { _method = nullptr; }
   void print()                                        PRODUCT_RETURN;
   void verify(klassVtable* vt, outputStream* st);
 
@@ -202,7 +201,7 @@ class vtableEntry {
 
 inline Method* klassVtable::method_at(int i) const {
   assert(i >= 0 && i < _length, "index out of bounds");
-  assert(table()[i].method() != NULL, "should not be null");
+  assert(table()[i].method() != nullptr, "should not be null");
   assert(((Metadata*)table()[i].method())->is_method(), "should be method");
   return table()[i].method();
 }
@@ -247,7 +246,7 @@ class itableMethodEntry {
   Method* method() const { return _method; }
   Method**method_addr() { return &_method; }
 
-  void clear()             { _method = NULL; }
+  void clear()             { _method = nullptr; }
 
   void initialize(InstanceKlass* klass, Method* method);
 
@@ -299,7 +298,7 @@ class klassItable {
 
   // Initialization
   void initialize_itable_and_check_constraints(TRAPS);
-  void initialize_itable(GrowableArray<Method*>* supers = NULL);
+  void initialize_itable(GrowableArray<Method*>* supers = nullptr);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
@@ -319,8 +318,6 @@ class klassItable {
   static int compute_itable_size(Array<InstanceKlass*>* transitive_interfaces);
   static void setup_itable_offset_table(InstanceKlass* klass);
 
-  // Debugging/Statistics
-  static void print_statistics() PRODUCT_RETURN;
  private:
   intptr_t* vtable_start() const { return ((intptr_t*)_klass) + _table_offset; }
   intptr_t* method_start() const { return vtable_start() + _size_offset_table * itableOffsetEntry::size(); }
@@ -328,11 +325,6 @@ class klassItable {
   // Helper methods
   static int  calc_itable_size(int num_interfaces, int num_methods) { return (num_interfaces * itableOffsetEntry::size()) + (num_methods * itableMethodEntry::size()); }
 
-  // Statistics
-  NOT_PRODUCT(static int  _total_classes;)   // Total no. of classes with itables
-  NOT_PRODUCT(static size_t _total_size;)    // Total no. of bytes used for itables
-
-  static void update_stats(int size) PRODUCT_RETURN NOT_PRODUCT({ _total_classes++; _total_size += size; })
 };
 
 #endif // SHARE_OOPS_KLASSVTABLE_HPP

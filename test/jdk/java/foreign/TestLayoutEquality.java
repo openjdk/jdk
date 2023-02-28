@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- *
+ * @enablePreview
+ * @modules java.base/jdk.internal.foreign
  * @run testng TestLayoutEquality
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import jdk.internal.foreign.PlatformLayouts;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -45,17 +45,19 @@ public class TestLayoutEquality {
 
     @Test(dataProvider = "layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
-        ValueLayout newLayout = MemoryLayout.valueLayout(layout.bitSize(), layout.order());
+        ValueLayout newLayout = MemoryLayout.valueLayout(layout.carrier(), layout.order());
+        newLayout = newLayout.withBitAlignment(layout.bitAlignment());
+        if (layout instanceof ValueLayout.OfAddress addressLayout && addressLayout.isUnbounded()) {
+            newLayout = ((ValueLayout.OfAddress)newLayout).asUnbounded();
+        }
 
         // properties should be equal
         assertEquals(newLayout.bitSize(), layout.bitSize());
         assertEquals(newLayout.bitAlignment(), layout.bitAlignment());
         assertEquals(newLayout.name(), layout.name());
-        assertEquals(newLayout.attributes().toArray().length, 0);
-        assertEquals(layout.attributes().toArray().length, 1);
 
-        // but equals should return false, because one is a ValueLayout with a CLinker kind
-        assertNotEquals(newLayout, layout);
+        // layouts should be equals
+        assertEquals(newLayout, layout);
     }
 
     @DataProvider
@@ -65,6 +67,7 @@ public class TestLayoutEquality {
         addLayoutConstants(testValues, PlatformLayouts.SysV.class);
         addLayoutConstants(testValues, PlatformLayouts.Win64.class);
         addLayoutConstants(testValues, PlatformLayouts.AArch64.class);
+        addLayoutConstants(testValues, PlatformLayouts.RISCV64.class);
 
         return testValues.stream().map(e -> new Object[]{ e }).toArray(Object[][]::new);
     }
@@ -75,5 +78,4 @@ public class TestLayoutEquality {
                 testValues.add((ValueLayout) f.get(null));
         }
     }
-
 }

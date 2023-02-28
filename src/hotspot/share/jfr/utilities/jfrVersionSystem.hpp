@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 /*
  * A lock-free data structure usually require support for tracking references
  * in the service of Safe Memory Reclamation (SMR). JfrVersionSystem provides local,
- * compared to global, reference tracking for an assoicated data structure.
+ * compared to global, reference tracking for an associated data structure.
  *
  * A client, before accessing a structure, will perform a "checkout" from the JfrVersionSystem.
  * This checkout is associated with the current, or latest, version, analogous to the "tip" in a version control system.

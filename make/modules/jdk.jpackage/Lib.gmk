@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #
 
 include LibCommon.gmk
+include LauncherCommon.gmk
 
 ################################################################################
 
@@ -72,9 +73,12 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
-    LIBS_macosx := $(LIBCXX) -framework Cocoa, \
-    LIBS_windows := $(LIBCXX), \
+    LIBS_macosx := $(LIBCXX) -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
+    LIBS_windows := $(LIBCXX) user32.lib ole32.lib msi.lib shlwapi.lib \
+        Shell32.lib, \
     LIBS_linux := -ldl, \
+    MANIFEST := $(JAVA_MANIFEST), \
+    MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS) \
 ))
 
 JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
@@ -92,9 +96,9 @@ ifeq ($(call isTargetOs, linux), true)
   JPACKAGE_LIBAPPLAUNCHER_INCLUDES := $(addprefix -I, $(JPACKAGE_LIBAPPLAUNCHER_SRC))
 
   $(eval $(call SetupJdkLibrary, BUILD_JPACKAGE_LIBAPPLAUNCHER, \
-      NAME := jpackageapplauncher, \
+      NAME := jpackageapplauncheraux, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
-      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncher, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncheraux, \
       SRC := $(JPACKAGE_LIBAPPLAUNCHER_SRC), \
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -121,10 +125,15 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBCXX), \
+      LIBS := $(LIBCXX) advapi32.lib ole32.lib msi.lib user32.lib \
+          shlwapi.lib Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_LIB_JPACKAGE)
+
+  JPACKAGE_WIXHELPER_SRC := \
+      $(call FindSrcDirsForComponent, jdk.jpackage, libwixhelper) \
+      $(call FindSrcDirsForComponent, jdk.jpackage, common)
 
   # Build Wix custom action helper
   # Output library in resources dir, and symbols in the object dir
@@ -133,11 +142,12 @@ ifeq ($(call isTargetOs, windows), true)
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
       OPTIMIZATION := LOW, \
+      SRC := $(JPACKAGE_WIXHELPER_SRC), \
       CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKLIB)) \
-          $(JPACKAGE_CXXFLAGS_windows), \
+          $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
-      LIBS := $(LIBCXX), \
-      LIBS_windows := msi.lib Shlwapi.lib User32.lib, \
+      LIBS := $(LIBCXX) ole32.lib msi.lib User32.lib shlwapi.lib \
+          Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_LIB_WIXHELPER)
@@ -155,7 +165,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \
           $(addprefix -I, $(JPACKAGE_MSIWRAPPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
-      LIBS := $(LIBCXX), \
+      LIBS := $(LIBCXX) ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_MSIWRAPPER)
@@ -175,6 +185,8 @@ ifeq ($(call isTargetOs, windows), true)
       LDFLAGS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LDFLAGS), \
       LIBS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS), \
       LIBS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS_windows), \
+      MANIFEST := $(JAVA_MANIFEST), \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS) \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHERWEXE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -331,7 +332,6 @@ Node::Node(uint req)
   : _idx(Init(req))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
@@ -352,7 +352,6 @@ Node::Node(Node *n0)
   : _idx(Init(1))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -366,7 +365,6 @@ Node::Node(Node *n0, Node *n1)
   : _idx(Init(2))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -382,7 +380,6 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   : _idx(Init(3))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -400,7 +397,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   : _idx(Init(4))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -420,7 +416,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   : _idx(Init(5))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -443,7 +438,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   : _idx(Init(6))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -468,7 +462,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   : _idx(Init(7))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -579,6 +572,7 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
+  Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
 }
 
@@ -622,33 +616,7 @@ void Node::destruct(PhaseValues* phase) {
     //assert(def->out(def->outcnt()-1) == (Node *)this,"bad def-use hacking in reclaim");
   }
   assert(outcnt() == 0, "deleting a node must not leave a dangling use");
-  // See if the input array was allocated just prior to the object
-  int edge_size = _max*sizeof(void*);
-  int out_edge_size = _outmax*sizeof(void*);
-  char *edge_end = ((char*)_in) + edge_size;
-  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
-  int node_size = size_of();
 
-  // Free the output edge array
-  if (out_edge_size > 0) {
-    compile->node_arena()->Afree(out_array, out_edge_size);
-  }
-
-  // Free the input edge array and the node itself
-  if( edge_end == (char*)this ) {
-    // It was; free the input array and object all in one hit
-#ifndef ASSERT
-    compile->node_arena()->Afree(_in,edge_size+node_size);
-#endif
-  } else {
-    // Free just the input array
-    compile->node_arena()->Afree(_in,edge_size);
-
-    // Free just the object
-#ifndef ASSERT
-    compile->node_arena()->Afree(this,node_size);
-#endif
-  }
   if (is_macro()) {
     compile->remove_macro_node(this);
   }
@@ -664,16 +632,50 @@ void Node::destruct(PhaseValues* phase) {
 
   if (is_SafePoint()) {
     as_SafePoint()->delete_replaced_nodes();
+
+    if (is_CallStaticJava()) {
+      compile->remove_unstable_if_trap(as_CallStaticJava(), false);
+    }
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->unregister_potential_barrier_node(this);
+
+  // See if the input array was allocated just prior to the object
+  int edge_size = _max*sizeof(void*);
+  int out_edge_size = _outmax*sizeof(void*);
+  char *in_array = ((char*)_in);
+  char *edge_end = in_array + edge_size;
+  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
+  int node_size = size_of();
+
 #ifdef ASSERT
   // We will not actually delete the storage, but we'll make the node unusable.
+  compile->remove_modified_node(this);
   *(address*)this = badAddress;  // smash the C++ vtbl, probably
   _in = _out = (Node**) badAddress;
   _max = _cnt = _outmax = _outcnt = 0;
-  compile->remove_modified_node(this);
 #endif
+
+  // Free the output edge array
+  if (out_edge_size > 0) {
+    compile->node_arena()->Afree(out_array, out_edge_size);
+  }
+
+  // Free the input edge array and the node itself
+  if( edge_end == (char*)this ) {
+    // It was; free the input array and object all in one hit
+#ifndef ASSERT
+    compile->node_arena()->Afree(in_array, edge_size+node_size);
+#endif
+  } else {
+    // Free just the input array
+    compile->node_arena()->Afree(in_array, edge_size);
+
+    // Free just the object
+#ifndef ASSERT
+    compile->node_arena()->Afree(this, node_size);
+#endif
+  }
 }
 
 //------------------------------grow-------------------------------------------
@@ -736,8 +738,11 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
+}
+
+bool Node::is_not_dead(const Node* n) {
+  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
 }
 
 bool Node::is_reachable_from_root() const {
@@ -784,6 +789,7 @@ void Node::add_req( Node *n ) {
   }
   _in[_cnt++] = n;            // Stuff over old prec edge
   if (n != NULL) n->add_out((Node *)this);
+  Compile::current()->record_modified_node(this);
 }
 
 //---------------------------add_req_batch-------------------------------------
@@ -822,6 +828,7 @@ void Node::add_req_batch( Node *n, uint m ) {
       n->add_out((Node *)this);
     }
   }
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------del_req----------------------------------------
@@ -868,6 +875,7 @@ void Node::ins_req( uint idx, Node *n ) {
   }
   _in[idx] = n;                            // Stuff over old required edge
   if (n != NULL) n->add_out((Node *)this); // Add reciprocal def-use edge
+  Compile::current()->record_modified_node(this);
 }
 
 //-----------------------------find_edge---------------------------------------
@@ -1045,6 +1053,7 @@ void Node::add_prec( Node *n ) {
 #ifdef ASSERT
   while ((++i)<_max) { assert(_in[i] == NULL, "spec violation: Gap in prec edges (node %d)", _idx); }
 #endif
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------rm_prec----------------------------------------
@@ -1056,6 +1065,7 @@ void Node::rm_prec( uint j ) {
   if (_in[j] == NULL) return;   // Avoid spec violation: Gap in prec edges.
   _in[j]->del_out((Node *)this);
   close_prec_gap_at(j);
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------size_of----------------------------------------
@@ -1142,9 +1152,9 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '+VerifyIterativeGVN' checks
+// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
 // these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with +VerifyIterativeGVN!
+// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
@@ -1215,6 +1225,9 @@ bool Node::has_special_unique_user() const {
     return n->Opcode() == op && n->in(2) == this;
   } else if (is_If() && (n->is_IfFalse() || n->is_IfTrue())) {
     // See IfProjNode::Identity()
+    return true;
+  } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
+    // See IfNode::fold_compares
     return true;
   } else {
     return false;
@@ -1374,6 +1387,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   ResourceMark rm;
   Node_List nstack;
+  VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1381,6 +1395,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (!dead_set.test_set(dead->_idx)) {
+      // If dead has any live uses, those are now still attached. Notify them before we lose them.
+      igvn->add_users_to_worklist(dead);
+    }
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(igvn);
     }
@@ -1588,23 +1606,156 @@ jfloat Node::getf() const {
 #ifndef PRODUCT
 
 // Call this from debugger:
+Node* old_root() {
+  Matcher* matcher = Compile::current()->matcher();
+  if (matcher != nullptr) {
+    Node* new_root = Compile::current()->root();
+    Node* old_root = matcher->find_old_node(new_root);
+    if (old_root != nullptr) {
+      return old_root;
+    }
+  }
+  tty->print("old_root: not found.\n");
+  return nullptr;
+}
+
+// BFS traverse all reachable nodes from start, call callback on them
+template <typename Callback>
+void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only_ctrl) {
+  Unique_Mixed_Node_List worklist;
+  worklist.add(start);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist[i];
+    callback(n);
+    for (uint i = 0; i < n->len(); i++) {
+      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
+        // If only_ctrl is set: Add regions, the root node, or control inputs only
+        worklist.add(n->in(i));
+      }
+    }
+    if (traverse_output && !only_ctrl) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        worklist.add(n->raw_out(i));
+      }
+    }
+  }
+}
+
+// BFS traverse from start, return node with idx
+Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
+  ResourceMark rm;
+  Node* result = nullptr;
+  auto callback = [&] (Node* n) {
+    if (n->_idx == idx) {
+      if (result != nullptr) {
+        tty->print("find_node_by_idx: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
+          (uintptr_t)result, (uintptr_t)n, idx);
+      }
+      result = n;
+    }
+  };
+  visit_nodes(start, callback, traverse_output, only_ctrl);
+  return result;
+}
+
+int node_idx_cmp(const Node** n1, const Node** n2) {
+  return (*n1)->_idx - (*n2)->_idx;
+}
+
+void find_nodes_by_name(Node* start, const char* name) {
+  ResourceMark rm;
+  GrowableArray<const Node*> ns;
+  auto callback = [&] (const Node* n) {
+    if (StringUtils::is_star_match(name, n->Name())) {
+      ns.push(n);
+    }
+  };
+  visit_nodes(start, callback, true, false);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
+}
+
+void find_nodes_by_dump(Node* start, const char* pattern) {
+  ResourceMark rm;
+  GrowableArray<const Node*> ns;
+  auto callback = [&] (const Node* n) {
+    stringStream stream;
+    n->dump("", false, &stream);
+    if (StringUtils::is_star_match(pattern, stream.base())) {
+      ns.push(n);
+    }
+  };
+  visit_nodes(start, callback, true, false);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
+}
+
+// call from debugger: find node with name pattern in new/current graph
+// name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+void find_nodes_by_name(const char* name) {
+  Node* root = Compile::current()->root();
+  find_nodes_by_name(root, name);
+}
+
+// call from debugger: find node with name pattern in old graph
+// name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+void find_old_nodes_by_name(const char* name) {
+  Node* root = old_root();
+  find_nodes_by_name(root, name);
+}
+
+// call from debugger: find node with dump pattern in new/current graph
+// can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+void find_nodes_by_dump(const char* pattern) {
+  Node* root = Compile::current()->root();
+  find_nodes_by_dump(root, pattern);
+}
+
+// call from debugger: find node with name pattern in old graph
+// can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+void find_old_nodes_by_dump(const char* pattern) {
+  Node* root = old_root();
+  find_nodes_by_dump(root, pattern);
+}
+
+// Call this from debugger, search in same graph as n:
 Node* find_node(Node* n, const int idx) {
   return n->find(idx);
 }
 
-// Call this from debugger with root node as default:
+// Call this from debugger, search in new nodes:
 Node* find_node(const int idx) {
   return Compile::current()->root()->find(idx);
 }
 
-// Call this from debugger:
+// Call this from debugger, search in old nodes:
+Node* find_old_node(const int idx) {
+  Node* root = old_root();
+  return (root == nullptr) ? nullptr : root->find(idx);
+}
+
+// Call this from debugger, search in same graph as n:
 Node* find_ctrl(Node* n, const int idx) {
   return n->find_ctrl(idx);
 }
 
-// Call this from debugger with root node as default:
+// Call this from debugger, search in new nodes:
 Node* find_ctrl(const int idx) {
   return Compile::current()->root()->find_ctrl(idx);
+}
+
+// Call this from debugger, search in old nodes:
+Node* find_old_ctrl(const int idx) {
+  Node* root = old_root();
+  return (root == nullptr) ? nullptr : root->find_ctrl(idx);
 }
 
 //------------------------------find_ctrl--------------------------------------
@@ -1620,61 +1771,674 @@ Node* Node::find_ctrl(int idx) {
 // not found or if the node to be found is not a control node (search will not find it).
 Node* Node::find(const int idx, bool only_ctrl) {
   ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  Arena* old_arena = Compile::current()->old_arena();
-  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
-  Node* result = NULL;
-  int node_idx = (idx >= 0) ? idx : -idx;
-
-  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    Node* n = worklist[list_index];
-
-    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
-      if (result != NULL) {
-        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
-                  (uintptr_t)result, (uintptr_t)n, node_idx);
-      }
-      result = n;
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
-        // If only_ctrl is set: Add regions, the root node, or control inputs only
-        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-
-    // Also search along forward edges if idx is negative and the search is not done on control nodes only
-    if (idx < 0 && !only_ctrl) {
-      for (uint i = 0; i < n->outcnt(); i++) {
-        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-#ifdef ASSERT
-    // Search along debug_orig edges last
-    Node* orig = n->debug_orig();
-    while (orig != NULL && add_to_worklist(orig, &worklist, old_arena, &old_space, &new_space)) {
-      orig = orig->debug_orig();
-    }
-#endif // ASSERT
-  }
-  return result;
+  return find_node_by_idx(this, abs(idx), (idx < 0), only_ctrl);
 }
 
-bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
-  if (not_a_node(n)) {
-    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
+class PrintBFS {
+public:
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options)
+  : _start(start), _max_distance(max_distance), _target(target), _options(options),
+    _dcc(this), _info_uid(cmpkey, hashkey) {}
+
+  void run();
+private:
+  // pipeline steps
+  bool configure();
+  void collect();
+  void select();
+  void select_all();
+  void select_all_paths();
+  void select_shortest_path();
+  void sort();
+  void print();
+
+  // inputs
+  const Node* _start;
+  const int _max_distance;
+  const Node* _target;
+  const char* _options;
+
+  // options
+  bool _traverse_inputs = false;
+  bool _traverse_outputs = false;
+  struct Filter {
+    bool _control = false;
+    bool _memory = false;
+    bool _data = false;
+    bool _mixed = false;
+    bool _other = false;
+    bool is_empty() const {
+      return !(_control || _memory || _data || _mixed || _other);
+    }
+    void set_all() {
+      _control = true;
+      _memory = true;
+      _data = true;
+      _mixed = true;
+      _other = true;
+    }
+    // Check if the filter accepts the node. Go by the type categories, but also all CFG nodes
+    // are considered to have control.
+    bool accepts(const Node* n) {
+      const Type* t = n->bottom_type();
+      return ( _data    &&  t->has_category(Type::Category::Data)                    ) ||
+             ( _memory  &&  t->has_category(Type::Category::Memory)                  ) ||
+             ( _mixed   &&  t->has_category(Type::Category::Mixed)                   ) ||
+             ( _control && (t->has_category(Type::Category::Control) || n->is_CFG()) ) ||
+             ( _other   &&  t->has_category(Type::Category::Other)                   );
+    }
+  };
+  Filter _filter_visit;
+  Filter _filter_boundary;
+  bool _sort_idx = false;
+  bool _all_paths = false;
+  bool _use_color = false;
+  bool _print_blocks = false;
+  bool _print_old = false;
+  bool _dump_only = false;
+  static void print_options_help(bool print_examples);
+  bool parse_options();
+
+public:
+  class DumpConfigColored : public Node::DumpConfig {
+  public:
+    DumpConfigColored(PrintBFS* bfs) : _bfs(bfs) {};
+    virtual void pre_dump(outputStream* st, const Node* n);
+    virtual void post_dump(outputStream* st);
+  private:
+    PrintBFS* _bfs;
+  };
+private:
+  DumpConfigColored _dcc;
+
+  // node info
+  static Node* old_node(const Node* n); // mach node -> prior IR node
+  static void print_node_idx(const Node* n); // to tty
+  static void print_block_id(const Block* b); // to tty
+  static void print_node_block(const Node* n); // to tty: _pre_order, head idx, _idom, _dom_depth
+
+  // traversal data structures
+  GrowableArray<const Node*> _worklist; // BFS queue
+  void maybe_traverse(const Node* src, const Node* dst);
+
+  // node info annotation
+  class Info {
+  public:
+    Info() : Info(nullptr, 0) {};
+    Info(const Node* node, int distance)
+      : _node(node), _distance_from_start(distance) {};
+    const Node* node() const { return _node; };
+    int distance() const { return _distance_from_start; };
+    int distance_from_target() const { return _distance_from_target; }
+    void set_distance_from_target(int d) { _distance_from_target = d; }
+    GrowableArray<const Node*> edge_bwd; // pointing toward _start
+    bool is_marked() const { return _mark; } // marked to keep during select
+    void set_mark() { _mark = true; }
+  private:
+    const Node* _node;
+    int _distance_from_start; // distance from _start
+    int _distance_from_target = 0; // distance from _target if _all_paths
+    bool _mark = false;
+  };
+  Dict _info_uid;            // Node -> uid
+  GrowableArray<Info> _info; // uid  -> info
+
+  Info* find_info(const Node* n) {
+    size_t uid = (size_t)_info_uid[n];
+    if (uid == 0) {
+      return nullptr;
+    }
+    return &_info.at((int)uid);
   }
 
-  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
-  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
-  if (!v->test_set(n->_idx)) {
-    worklist->push(n);
-    return true;
+  void make_info(const Node* node, const int distance) {
+    assert(find_info(node) == nullptr, "node does not yet have info");
+    size_t uid = _info.length() + 1;
+    _info_uid.Insert((void*)node, (void*)uid);
+    _info.at_put_grow((int)uid, Info(node, distance));
+    assert(find_info(node)->node() == node, "stored correct node");
+  };
+
+  // filled by sort, printed by print
+  GrowableArray<const Node*> _print_list;
+
+  // print header + node table
+  void print_header() const;
+  void print_node(const Node* n);
+};
+
+void PrintBFS::run() {
+  if (!configure()) {
+    return;
   }
-  return false;
+  collect();
+  select();
+  sort();
+  print();
+}
+
+// set up configuration for BFS and print
+bool PrintBFS::configure() {
+  if (_max_distance < 0) {
+    tty->print("dump_bfs: max_distance must be non-negative!\n");
+    return false;
+  }
+  return parse_options();
+}
+
+// BFS traverse according to configuration, fill worklist and info
+void PrintBFS::collect() {
+  maybe_traverse(_start, _start);
+  int pos = 0;
+  while (pos < _worklist.length()) {
+    const Node* n = _worklist.at(pos++); // next node to traverse
+    Info* info = find_info(n);
+    if (!_filter_visit.accepts(n) && n != _start) {
+      continue; // we hit boundary, do not traverse further
+    }
+    if (n != _start && n->is_Root()) {
+      continue; // traversing through root node would lead to unrelated nodes
+    }
+    if (_traverse_inputs && _max_distance > info->distance()) {
+      for (uint i = 0; i < n->req(); i++) {
+        maybe_traverse(n, n->in(i));
+      }
+    }
+    if (_traverse_outputs && _max_distance > info->distance()) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        maybe_traverse(n, n->raw_out(i));
+      }
+    }
+  }
+}
+
+// go through work list, mark those that we want to print
+void PrintBFS::select() {
+  if (_target == nullptr ) {
+    select_all();
+  } else {
+    if (find_info(_target) == nullptr) {
+      tty->print("Could not find target in BFS.\n");
+      return;
+    }
+    if (_all_paths) {
+      select_all_paths();
+    } else {
+      select_shortest_path();
+    }
+  }
+}
+
+// take all nodes from BFS
+void PrintBFS::select_all() {
+  for (int i = 0; i < _worklist.length(); i++) {
+    const Node* n = _worklist.at(i);
+    Info* info = find_info(n);
+    info->set_mark();
+  }
+}
+
+// traverse backward from target, along edges found in BFS
+void PrintBFS::select_all_paths() {
+  int pos = 0;
+  GrowableArray<const Node*> backtrace;
+  // start from target
+  backtrace.push(_target);
+  find_info(_target)->set_mark();
+  // traverse backward
+  while (pos < backtrace.length()) {
+    const Node* n = backtrace.at(pos++);
+    Info* info = find_info(n);
+    for (int i = 0; i < info->edge_bwd.length(); i++) {
+      // all backward edges
+      const Node* back = info->edge_bwd.at(i);
+      Info* back_info = find_info(back);
+      if (!back_info->is_marked()) {
+        // not yet found this on way back.
+        back_info->set_distance_from_target(info->distance_from_target() + 1);
+        if (back_info->distance_from_target() + back_info->distance() <= _max_distance) {
+          // total distance is small enough
+          back_info->set_mark();
+          backtrace.push(back);
+        }
+      }
+    }
+  }
+}
+
+void PrintBFS::select_shortest_path() {
+  const Node* current = _target;
+  while (true) {
+    Info* info = find_info(current);
+    info->set_mark();
+    if (current == _start) {
+      break;
+    }
+    // first edge -> leads us one step closer to _start
+    current = info->edge_bwd.at(0);
+  }
+}
+
+// go through worklist in desired order, put the marked ones in print list
+void PrintBFS::sort() {
+  if (_traverse_inputs && !_traverse_outputs) {
+    // reverse order
+    for (int i = _worklist.length() - 1; i >= 0; i--) {
+      const Node* n = _worklist.at(i);
+      Info* info = find_info(n);
+      if (info->is_marked()) {
+        _print_list.push(n);
+      }
+    }
+  } else {
+    // same order as worklist
+    for (int i = 0; i < _worklist.length(); i++) {
+      const Node* n = _worklist.at(i);
+      Info* info = find_info(n);
+      if (info->is_marked()) {
+        _print_list.push(n);
+      }
+    }
+  }
+  if (_sort_idx) {
+    _print_list.sort(node_idx_cmp);
+  }
+}
+
+// go through printlist and print
+void PrintBFS::print() {
+  if (_print_list.length() > 0 ) {
+    print_header();
+    for (int i = 0; i < _print_list.length(); i++) {
+      const Node* n = _print_list.at(i);
+      print_node(n);
+    }
+  } else {
+    tty->print("No nodes to print.\n");
+  }
+}
+
+void PrintBFS::print_options_help(bool print_examples) {
+  tty->print("Usage: node->dump_bfs(int max_distance, Node* target, char* options)\n");
+  tty->print("\n");
+  tty->print("Use cases:\n");
+  tty->print("  BFS traversal: no target required\n");
+  tty->print("  shortest path: set target\n");
+  tty->print("  all paths: set target and put 'A' in options\n");
+  tty->print("  detect loop: subcase of all paths, have start==target\n");
+  tty->print("\n");
+  tty->print("Arguments:\n");
+  tty->print("  this/start: staring point of BFS\n");
+  tty->print("  target:\n");
+  tty->print("    if nullptr: simple BFS\n");
+  tty->print("    else: shortest path or all paths between this/start and target\n");
+  tty->print("  options:\n");
+  tty->print("    if nullptr: same as \"cdmox@B\"\n");
+  tty->print("    else: use combination of following characters\n");
+  tty->print("      h: display this help info\n");
+  tty->print("      H: display this help info, with examples\n");
+  tty->print("      +: traverse in-edges (on if neither + nor -)\n");
+  tty->print("      -: traverse out-edges\n");
+  tty->print("      c: visit control nodes\n");
+  tty->print("      d: visit data nodes\n");
+  tty->print("      m: visit memory nodes\n");
+  tty->print("      o: visit other nodes\n");
+  tty->print("      x: visit mixed nodes\n");
+  tty->print("      C: boundary control nodes\n");
+  tty->print("      D: boundary data nodes\n");
+  tty->print("      M: boundary memory nodes\n");
+  tty->print("      O: boundary other nodes\n");
+  tty->print("      X: boundary mixed nodes\n");
+  tty->print("      #: display node category in color (not supported in all terminals)\n");
+  tty->print("      S: sort displayed nodes by node idx\n");
+  tty->print("      A: all paths (not just shortest path to target)\n");
+  tty->print("      @: print old nodes - before matching (if available)\n");
+  tty->print("      B: print scheduling blocks (if available)\n");
+  tty->print("      $: dump only, no header, no other columns\n");
+  tty->print("\n");
+  tty->print("recursively follow edges to nodes with permitted visit types,\n");
+  tty->print("on the boundary additionally display nodes allowed in boundary types\n");
+  tty->print("Note: the categories can be overlapping. For example a mixed node\n");
+  tty->print("      can contain control and memory output. Some from the other\n");
+  tty->print("      category are also control (Halt, Return, etc).\n");
+  tty->print("\n");
+  tty->print("output columns:\n");
+  tty->print("  dist:  BFS distance to this/start\n");
+  tty->print("  apd:   all paths distance (d_start + d_target)\n");
+  tty->print("  block: block identifier, based on _pre_order\n");
+  tty->print("  head:  first node in block\n");
+  tty->print("  idom:  head node of idom block\n");
+  tty->print("  depth: depth of block (_dom_depth)\n");
+  tty->print("  old:   old IR node - before matching\n");
+  tty->print("  dump:  node->dump()\n");
+  tty->print("\n");
+  tty->print("Note: if none of the \"cmdxo\" characters are in the options string\n");
+  tty->print("      then we set all of them.\n");
+  tty->print("      This allows for short strings like \"#\" for colored input traversal\n");
+  tty->print("      or \"-#\" for colored output traversal.\n");
+  if (print_examples) {
+    tty->print("\n");
+    tty->print("Examples:\n");
+    tty->print("  if->dump_bfs(10, 0, \"+cxo\")\n");
+    tty->print("    starting at some if node, traverse inputs recursively\n");
+    tty->print("    only along control (mixed and other can also be control)\n");
+    tty->print("  phi->dump_bfs(5, 0, \"-dxo\")\n");
+    tty->print("    starting at phi node, traverse outputs recursively\n");
+    tty->print("    only along data (mixed and other can also have data flow)\n");
+    tty->print("  find_node(385)->dump_bfs(3, 0, \"cdmox+#@B\")\n");
+    tty->print("    find inputs of node 385, up to 3 nodes up (+)\n");
+    tty->print("    traverse all nodes (cdmox), use colors (#)\n");
+    tty->print("    display old nodes and blocks, if they exist\n");
+    tty->print("    useful call to start with\n");
+    tty->print("  find_node(102)->dump_bfs(10, 0, \"dCDMOX-\")\n");
+    tty->print("    find non-data dependencies of a data node\n");
+    tty->print("    follow data node outputs until we find another category\n");
+    tty->print("    node as the boundary\n");
+    tty->print("  x->dump_bfs(10, y, 0)\n");
+    tty->print("    find shortest path from x to y, along any edge or node\n");
+    tty->print("    will not find a path if it is longer than 10\n");
+    tty->print("    useful to find how x and y are related\n");
+    tty->print("  find_node(741)->dump_bfs(20, find_node(746), \"c+\")\n");
+    tty->print("    find shortest control path between two nodes\n");
+    tty->print("  find_node(741)->dump_bfs(8, find_node(746), \"cdmox+A\")\n");
+    tty->print("    find all paths (A) between two nodes of length at most 8\n");
+    tty->print("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")\n");
+    tty->print("    find all control loops for this node\n");
+  }
+}
+
+bool PrintBFS::parse_options() {
+  if (_options == nullptr) {
+    _options = "cdmox@B"; // default options
+  }
+  size_t len = strlen(_options);
+  for (size_t i = 0; i < len; i++) {
+    switch (_options[i]) {
+      case '+':
+        _traverse_inputs = true;
+        break;
+      case '-':
+        _traverse_outputs = true;
+        break;
+      case 'c':
+        _filter_visit._control = true;
+        break;
+      case 'm':
+        _filter_visit._memory = true;
+        break;
+      case 'd':
+        _filter_visit._data = true;
+        break;
+      case 'x':
+        _filter_visit._mixed = true;
+        break;
+      case 'o':
+        _filter_visit._other = true;
+        break;
+      case 'C':
+        _filter_boundary._control = true;
+        break;
+      case 'M':
+        _filter_boundary._memory = true;
+        break;
+      case 'D':
+        _filter_boundary._data = true;
+        break;
+      case 'X':
+        _filter_boundary._mixed = true;
+        break;
+      case 'O':
+        _filter_boundary._other = true;
+        break;
+      case 'S':
+        _sort_idx = true;
+        break;
+      case 'A':
+        _all_paths = true;
+        break;
+      case '#':
+        _use_color = true;
+        break;
+      case 'B':
+        _print_blocks = true;
+        break;
+      case '@':
+        _print_old = true;
+        break;
+      case '$':
+        _dump_only = true;
+        break;
+      case 'h':
+        print_options_help(false);
+        return false;
+       case 'H':
+        print_options_help(true);
+        return false;
+      default:
+        tty->print_cr("dump_bfs: Unrecognized option \'%c\'", _options[i]);
+        tty->print_cr("for help, run: find_node(0)->dump_bfs(0,0,\"H\")");
+        return false;
+    }
+  }
+  if (!_traverse_inputs && !_traverse_outputs) {
+    _traverse_inputs = true;
+  }
+  if (_filter_visit.is_empty()) {
+    _filter_visit.set_all();
+  }
+  Compile* C = Compile::current();
+  _print_old &= (C->matcher() != nullptr); // only show old if there are new
+  _print_blocks &= (C->cfg() != nullptr); // only show blocks if available
+  return true;
+}
+
+void PrintBFS::DumpConfigColored::pre_dump(outputStream* st, const Node* n) {
+  if (!_bfs->_use_color) {
+    return;
+  }
+  Info* info = _bfs->find_info(n);
+  if (info == nullptr || !info->is_marked()) {
+    return;
+  }
+
+  const Type* t = n->bottom_type();
+  switch (t->category()) {
+    case Type::Category::Data:
+      st->print("\u001b[34m");
+      break;
+    case Type::Category::Memory:
+      st->print("\u001b[32m");
+      break;
+    case Type::Category::Mixed:
+      st->print("\u001b[35m");
+      break;
+    case Type::Category::Control:
+      st->print("\u001b[31m");
+      break;
+    case Type::Category::Other:
+      st->print("\u001b[33m");
+      break;
+    case Type::Category::Undef:
+      n->dump();
+      assert(false, "category undef ??");
+      break;
+    default:
+      n->dump();
+      assert(false, "not covered");
+      break;
+  }
+}
+
+void PrintBFS::DumpConfigColored::post_dump(outputStream* st) {
+  if (!_bfs->_use_color) {
+    return;
+  }
+  st->print("\u001b[0m"); // white
+}
+
+Node* PrintBFS::old_node(const Node* n) {
+  Compile* C = Compile::current();
+  if (C->matcher() == nullptr || !C->node_arena()->contains(n)) {
+    return (Node*)nullptr;
+  } else {
+    return C->matcher()->find_old_node(n);
+  }
+}
+
+void PrintBFS::print_node_idx(const Node* n) {
+  Compile* C = Compile::current();
+  char buf[30];
+  if (n == nullptr) {
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
+  } else if (C->node_arena()->contains(n)) {
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
+  } else {
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
+  }
+  tty->print("%6s", buf);
+}
+
+void PrintBFS::print_block_id(const Block* b) {
+  Compile* C = Compile::current();
+  char buf[30];
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
+  tty->print("%7s", buf);
+}
+
+void PrintBFS::print_node_block(const Node* n) {
+  Compile* C = Compile::current();
+  Block* b = C->node_arena()->contains(n)
+             ? C->cfg()->get_block_for_node(n)
+             : nullptr; // guard against old nodes
+  if (b == nullptr) {
+    tty->print("      _"); // Block
+    tty->print("     _");  // head
+    tty->print("     _");  // idom
+    tty->print("      _"); // depth
+  } else {
+    print_block_id(b);
+    print_node_idx(b->head());
+    if (b->_idom) {
+      print_node_idx(b->_idom->head());
+    } else {
+      tty->print("     _"); // idom
+    }
+    tty->print("%6d ", b->_dom_depth);
+  }
+}
+
+// filter, and add to worklist, add info, note traversal edges
+void PrintBFS::maybe_traverse(const Node* src, const Node* dst) {
+  if (dst != nullptr &&
+     (_filter_visit.accepts(dst) ||
+      _filter_boundary.accepts(dst) ||
+      dst == _start)) { // correct category or start?
+    if (find_info(dst) == nullptr) {
+      // never visited - set up info
+      _worklist.push(dst);
+      int d = 0;
+      if (dst != _start) {
+        d = find_info(src)->distance() + 1;
+      }
+      make_info(dst, d);
+    }
+    if (src != dst) {
+      // traversal edges useful during select
+      find_info(dst)->edge_bwd.push(src);
+    }
+  }
+}
+
+void PrintBFS::print_header() const {
+  if (_dump_only) {
+    return; // no header in dump only mode
+  }
+  tty->print("dist");                         // distance
+  if (_all_paths) {
+    tty->print(" apd");                       // all paths distance
+  }
+  if (_print_blocks) {
+    tty->print(" [block  head  idom depth]"); // block
+  }
+  if (_print_old) {
+    tty->print("   old");                     // old node
+  }
+  tty->print(" dump\n");                      // node dump
+  tty->print("---------------------------------------------\n");
+}
+
+void PrintBFS::print_node(const Node* n) {
+  if (_dump_only) {
+    n->dump("\n", false, tty, &_dcc);
+    return;
+  }
+  tty->print("%4d", find_info(n)->distance());// distance
+  if (_all_paths) {
+    Info* info = find_info(n);
+    int apd = info->distance() + info->distance_from_target();
+    tty->print("%4d", apd);                   // all paths distance
+  }
+  if (_print_blocks) {
+    print_node_block(n);                      // block
+  }
+  if (_print_old) {
+    print_node_idx(old_node(n));              // old node
+  }
+  tty->print(" ");
+  n->dump("\n", false, tty, &_dcc);           // node dump
+}
+
+//------------------------------dump_bfs--------------------------------------
+// Call this from debugger
+// Useful for BFS traversal, shortest path, all path, loop detection, etc
+// Designed to be more readable, and provide additional info
+// To find all options, run:
+//   find_node(0)->dump_bfs(0,0,"H")
+void Node::dump_bfs(const int max_distance, Node* target, const char* options) const {
+  PrintBFS bfs(this, max_distance, target, options);
+  bfs.run();
+}
+
+// Call this from debugger, with default arguments
+void Node::dump_bfs(const int max_distance) const {
+  dump_bfs(max_distance, nullptr, nullptr);
+}
+
+// -----------------------------dump_idx---------------------------------------
+void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
+  if (dc != nullptr) {
+    dc->pre_dump(st, this);
+  }
+  Compile* C = Compile::current();
+  bool is_new = C->node_arena()->contains(this);
+  if (align) { // print prefix empty spaces$
+    // +1 for leading digit, +1 for "o"
+    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    // +1 for leading digit, maybe +1 for "o"
+    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    while (max_width > width) {
+      st->print(" ");
+      width++;
+    }
+  }
+  if (!is_new) {
+    st->print("o");
+  }
+  st->print("%d", _idx);
+  if (dc != nullptr) {
+    dc->post_dump(st);
+  }
+}
+
+// -----------------------------dump_name--------------------------------------
+void Node::dump_name(outputStream* st, DumpConfig* dc) const {
+  if (dc != nullptr) {
+    dc->pre_dump(st, this);
+  }
+  st->print("%s", Name());
+  if (dc != nullptr) {
+    dc->post_dump(st);
+  }
 }
 
 // -----------------------------Name-------------------------------------------
@@ -1747,22 +2511,22 @@ void Node::set_debug_orig(Node* orig) {
 
 //------------------------------dump------------------------------------------
 // Dump a Node
-void Node::dump(const char* suffix, bool mark, outputStream *st) const {
+void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
 
-  if (_indent > 0) {
-    st->print("%*s", (_indent << 1), "  ");
-  }
-
-  st->print("%c%d%s%s  === ", is_new ? ' ' : 'o', _idx, mark ? " >" : "  ", Name());
+  // idx mark name ===
+  dump_idx(true, st, dc);
+  st->print(mark ? " >" : "  ");
+  dump_name(st, dc);
+  st->print("  === ");
 
   // Dump the required and precedence inputs
-  dump_req(st);
-  dump_prec(st);
+  dump_req(st, dc);
+  dump_prec(st, dc);
   // Dump the outputs
-  dump_out(st);
+  dump_out(st, dc);
 
   if (is_disconnected(this)) {
 #ifdef ASSERT
@@ -1788,13 +2552,10 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
 
   const Type *t = bottom_type();
 
-  if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+  if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
-    const TypeKlassPtr *tkls = t->isa_klassptr();
-    ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-    if (klass && klass->is_loaded() && klass->is_interface()) {
-      st->print("  Interface:");
-    } else if (toop) {
+    const TypeInstKlassPtr *tkls = t->isa_instklassptr();
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");
@@ -1828,8 +2589,13 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
   C->_in_dump_cnt--;
 }
 
+// call from debugger: dump node to tty with newline
+void Node::dump() const {
+  dump("\n");
+}
+
 //------------------------------dump_req--------------------------------------
-void Node::dump_req(outputStream *st) const {
+void Node::dump_req(outputStream* st, DumpConfig* dc) const {
   // Dump the required input edges
   for (uint i = 0; i < req(); i++) {    // For all required inputs
     Node* d = in(i);
@@ -1838,14 +2604,15 @@ void Node::dump_req(outputStream *st) const {
     } else if (not_a_node(d)) {
       st->print("not_a_node ");  // uninitialized, sentinel, garbage, etc.
     } else {
-      st->print("%c%d ", Compile::current()->node_arena()->contains(d) ? ' ' : 'o', d->_idx);
+      d->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
 }
 
 
 //------------------------------dump_prec-------------------------------------
-void Node::dump_prec(outputStream *st) const {
+void Node::dump_prec(outputStream* st, DumpConfig* dc) const {
   // Dump the precedence edges
   int any_prec = 0;
   for (uint i = req(); i < len(); i++) {       // For all precedence inputs
@@ -1853,15 +2620,16 @@ void Node::dump_prec(outputStream *st) const {
     if (p != NULL) {
       if (!any_prec++) st->print(" |");
       if (not_a_node(p)) { st->print("not_a_node "); continue; }
-      st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
+      p->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
 }
 
 //------------------------------dump_out--------------------------------------
-void Node::dump_out(outputStream *st) const {
+void Node::dump_out(outputStream* st, DumpConfig* dc) const {
   // Delimit the output edges
-  st->print(" [[");
+  st->print(" [[ ");
   // Dump the output edges
   for (uint i = 0; i < _outcnt; i++) {    // For all outputs
     Node* u = _out[i];
@@ -1870,88 +2638,23 @@ void Node::dump_out(outputStream *st) const {
     } else if (not_a_node(u)) {
       st->print("not_a_node ");
     } else {
-      st->print("%c%d ", Compile::current()->node_arena()->contains(u) ? ' ' : 'o', u->_idx);
+      u->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
   st->print("]] ");
 }
 
-//----------------------------collect_nodes_i----------------------------------
-// Collects nodes from an Ideal graph, starting from a given start node and
-// moving in a given direction until a certain depth (distance from the start
-// node) is reached. Duplicates are ignored.
-// Arguments:
-//   queue:         the nodes are collected into this array.
-//   start:         the node at which to start collecting.
-//   direction:     if this is a positive number, collect input nodes; if it is
-//                  a negative number, collect output nodes.
-//   depth:         collect nodes up to this distance from the start node.
-//   include_start: whether to include the start node in the result collection.
-//   only_ctrl:     whether to regard control edges only during traversal.
-//   only_data:     whether to regard data edges only during traversal.
-static void collect_nodes_i(GrowableArray<Node*>* queue, const Node* start, int direction, uint depth, bool include_start, bool only_ctrl, bool only_data) {
-  bool indent = depth <= PrintIdealIndentThreshold;
-  Node* s = (Node*) start; // remove const
-  queue->append(s);
-  int begin = 0;
-  int end = 0;
-
-  s->set_indent(0);
-  for(uint i = 0; i < depth; i++) {
-    end = queue->length();
-    for(int j = begin; j < end; j++) {
-      Node* tp  = queue->at(j);
-      uint limit = direction > 0 ? tp->len() : tp->outcnt();
-      for(uint k = 0; k < limit; k++) {
-        Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
-
-        if (not_a_node(n))  continue;
-        // do not recurse through top or the root (would reach unrelated stuff)
-        if (n->is_Root() || n->is_top()) continue;
-        if (only_ctrl && !n->is_CFG()) continue;
-        if (only_data && n->is_CFG()) continue;
-        bool in_queue = queue->contains(n);
-        if (!in_queue) {
-          queue->append(n);
-          n->set_indent(indent ? (i + 1) : 0);
-        }
-      }
-    }
-    begin = end;
-  }
-  if (!include_start) {
-    queue->remove(s);
-  }
-}
-
-//------------------------------dump_nodes-------------------------------------
-static void dump_nodes(const Node* start, int d, bool only_ctrl) {
-  if (not_a_node(start)) return;
-
-  GrowableArray <Node *> queue(Compile::current()->live_nodes());
-  collect_nodes_i(&queue, start, d, (uint) ABS(d), true, only_ctrl, false);
-
-  int end = queue.length();
-  if (d > 0) {
-    for(int j = end-1; j >= 0; j--) {
-      queue.at(j)->dump();
-    }
-  } else {
-    for(int j = 0; j < end; j++) {
-      queue.at(j)->dump();
-    }
-  }
-}
-
 //------------------------------dump-------------------------------------------
+// call from debugger: dump Node's inputs (or outputs if d negative)
 void Node::dump(int d) const {
-  dump_nodes(this, d, false);
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$");
 }
 
 //------------------------------dump_ctrl--------------------------------------
-// Dump a Node's control history to depth
+// call from debugger: dump Node's control inputs (or outputs if d negative)
 void Node::dump_ctrl(int d) const {
-  dump_nodes(this, d, true);
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$c" : "-$c");
 }
 
 //-----------------------------dump_compact------------------------------------
@@ -1974,247 +2677,7 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
   C->_in_dump_cnt--;
 }
 
-//----------------------------dump_related-------------------------------------
-// Dump a Node's related nodes - the notion of "related" depends on the Node at
-// hand and is determined by the implementation of the virtual method rel.
-void Node::dump_related() const {
-  Compile* C = Compile::current();
-  GrowableArray <Node *> in_rel(C->unique());
-  GrowableArray <Node *> out_rel(C->unique());
-  this->related(&in_rel, &out_rel, false);
-  for (int i = in_rel.length() - 1; i >= 0; i--) {
-    in_rel.at(i)->dump();
-  }
-  this->dump("\n", true);
-  for (int i = 0; i < out_rel.length(); i++) {
-    out_rel.at(i)->dump();
-  }
-}
-
-//----------------------------dump_related-------------------------------------
-// Dump a Node's related nodes up to a given depth (distance from the start
-// node).
-// Arguments:
-//   d_in:  depth for input nodes.
-//   d_out: depth for output nodes (note: this also is a positive number).
-void Node::dump_related(uint d_in, uint d_out) const {
-  Compile* C = Compile::current();
-  GrowableArray <Node *> in_rel(C->unique());
-  GrowableArray <Node *> out_rel(C->unique());
-
-  // call collect_nodes_i directly
-  collect_nodes_i(&in_rel, this, 1, d_in, false, false, false);
-  collect_nodes_i(&out_rel, this, -1, d_out, false, false, false);
-
-  for (int i = in_rel.length() - 1; i >= 0; i--) {
-    in_rel.at(i)->dump();
-  }
-  this->dump("\n", true);
-  for (int i = 0; i < out_rel.length(); i++) {
-    out_rel.at(i)->dump();
-  }
-}
-
-//------------------------dump_related_compact---------------------------------
-// Dump a Node's related nodes in compact representation. The notion of
-// "related" depends on the Node at hand and is determined by the implementation
-// of the virtual method rel.
-void Node::dump_related_compact() const {
-  Compile* C = Compile::current();
-  GrowableArray <Node *> in_rel(C->unique());
-  GrowableArray <Node *> out_rel(C->unique());
-  this->related(&in_rel, &out_rel, true);
-  int n_in = in_rel.length();
-  int n_out = out_rel.length();
-
-  this->dump_comp(n_in == 0 ? "\n" : "  ");
-  for (int i = 0; i < n_in; i++) {
-    in_rel.at(i)->dump_comp(i == n_in - 1 ? "\n" : "  ");
-  }
-  for (int i = 0; i < n_out; i++) {
-    out_rel.at(i)->dump_comp(i == n_out - 1 ? "\n" : "  ");
-  }
-}
-
-//------------------------------related----------------------------------------
-// Collect a Node's related nodes. The default behaviour just collects the
-// inputs and outputs at depth 1, including both control and data flow edges,
-// regardless of whether the presentation is compact or not. For data nodes,
-// the default is to collect all data inputs (till level 1 if compact), and
-// outputs till level 1.
-void Node::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (this->is_CFG()) {
-    collect_nodes_i(in_rel, this, 1, 1, false, false, false);
-    collect_nodes_i(out_rel, this, -1, 1, false, false, false);
-  } else {
-    if (compact) {
-      this->collect_nodes(in_rel, 1, false, true);
-    } else {
-      this->collect_nodes_in_all_data(in_rel, false);
-    }
-    this->collect_nodes(out_rel, -1, false, false);
-  }
-}
-
-//---------------------------collect_nodes-------------------------------------
-// An entry point to the low-level node collection facility, to start from a
-// given node in the graph. The start node is by default not included in the
-// result.
-// Arguments:
-//   ns:   collect the nodes into this data structure.
-//   d:    the depth (distance from start node) to which nodes should be
-//         collected. A value >0 indicates input nodes, a value <0, output
-//         nodes.
-//   ctrl: include only control nodes.
-//   data: include only data nodes.
-void Node::collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const {
-  if (ctrl && data) {
-    // ignore nonsensical combination
-    return;
-  }
-  collect_nodes_i(ns, this, d, (uint) ABS(d), false, ctrl, data);
-}
-
-//--------------------------collect_nodes_in-----------------------------------
-static void collect_nodes_in(Node* start, GrowableArray<Node*> *ns, bool primary_is_data, bool collect_secondary) {
-  // The maximum depth is determined using a BFS that visits all primary (data
-  // or control) inputs and increments the depth at each level.
-  uint d_in = 0;
-  GrowableArray<Node*> nodes(Compile::current()->unique());
-  nodes.push(start);
-  int nodes_at_current_level = 1;
-  int n_idx = 0;
-  while (nodes_at_current_level > 0) {
-    // Add all primary inputs reachable from the current level to the list, and
-    // increase the depth if there were any.
-    int nodes_at_next_level = 0;
-    bool nodes_added = false;
-    while (nodes_at_current_level > 0) {
-      nodes_at_current_level--;
-      Node* current = nodes.at(n_idx++);
-      for (uint i = 0; i < current->len(); i++) {
-        Node* n = current->in(i);
-        if (not_a_node(n)) {
-          continue;
-        }
-        if ((primary_is_data && n->is_CFG()) || (!primary_is_data && !n->is_CFG())) {
-          continue;
-        }
-        if (!nodes.contains(n)) {
-          nodes.push(n);
-          nodes_added = true;
-          nodes_at_next_level++;
-        }
-      }
-    }
-    if (nodes_added) {
-      d_in++;
-    }
-    nodes_at_current_level = nodes_at_next_level;
-  }
-  start->collect_nodes(ns, d_in, !primary_is_data, primary_is_data);
-  if (collect_secondary) {
-    // Now, iterate over the secondary nodes in ns and add the respective
-    // boundary reachable from them.
-    GrowableArray<Node*> sns(Compile::current()->unique());
-    for (GrowableArrayIterator<Node*> it = ns->begin(); it != ns->end(); ++it) {
-      Node* n = *it;
-      n->collect_nodes(&sns, 1, primary_is_data, !primary_is_data);
-      for (GrowableArrayIterator<Node*> d = sns.begin(); d != sns.end(); ++d) {
-        ns->append_if_missing(*d);
-      }
-      sns.clear();
-    }
-  }
-}
-
-//---------------------collect_nodes_in_all_data-------------------------------
-// Collect the entire data input graph. Include the control boundary if
-// requested.
-// Arguments:
-//   ns:   collect the nodes into this data structure.
-//   ctrl: if true, include the control boundary.
-void Node::collect_nodes_in_all_data(GrowableArray<Node*> *ns, bool ctrl) const {
-  collect_nodes_in((Node*) this, ns, true, ctrl);
-}
-
-//--------------------------collect_nodes_in_all_ctrl--------------------------
-// Collect the entire control input graph. Include the data boundary if
-// requested.
-//   ns:   collect the nodes into this data structure.
-//   data: if true, include the control boundary.
-void Node::collect_nodes_in_all_ctrl(GrowableArray<Node*> *ns, bool data) const {
-  collect_nodes_in((Node*) this, ns, false, data);
-}
-
-//------------------collect_nodes_out_all_ctrl_boundary------------------------
-// Collect the entire output graph until hitting control node boundaries, and
-// include those.
-void Node::collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const {
-  // Perform a BFS and stop at control nodes.
-  GrowableArray<Node*> nodes(Compile::current()->unique());
-  nodes.push((Node*) this);
-  while (nodes.length() > 0) {
-    Node* current = nodes.pop();
-    if (not_a_node(current)) {
-      continue;
-    }
-    ns->append_if_missing(current);
-    if (!current->is_CFG()) {
-      for (DUIterator i = current->outs(); current->has_out(i); i++) {
-        nodes.push(current->out(i));
-      }
-    }
-  }
-  ns->remove((Node*) this);
-}
-
 // VERIFICATION CODE
-// For each input edge to a node (ie - for each Use-Def edge), verify that
-// there is a corresponding Def-Use edge.
-//------------------------------verify_edges-----------------------------------
-void Node::verify_edges(Unique_Node_List &visited) {
-  uint i, j, idx;
-  int  cnt;
-  Node *n;
-
-  // Recursive termination test
-  if (visited.member(this))  return;
-  visited.push(this);
-
-  // Walk over all input edges, checking for correspondence
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if (n != NULL && !n->is_top()) {
-      // Count instances of (Node *)this
-      cnt = 0;
-      for (idx = 0; idx < n->_outcnt; idx++ ) {
-        if (n->_out[idx] == (Node *)this)  cnt++;
-      }
-      assert( cnt > 0,"Failed to find Def-Use edge." );
-      // Check for duplicate edges
-      // walk the input array downcounting the input edges to n
-      for( j = 0; j < len(); j++ ) {
-        if( in(j) == n ) cnt--;
-      }
-      assert( cnt == 0,"Mismatched edge count.");
-    } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
-              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
-              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
-    } else {
-      assert(n->is_top(), "sanity");
-      // Nothing to check.
-    }
-  }
-  // Recursive walk over all input edges
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if( n != NULL )
-      in(i)->verify_edges(visited);
-  }
-}
-
 // Verify all nodes if verify_depth is negative
 void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
@@ -2387,9 +2850,9 @@ Node* Node::find_similar(int opc) {
 }
 
 
-//--------------------------unique_ctrl_out------------------------------
+//--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.
-Node* Node::unique_ctrl_out() const {
+Node* Node::unique_ctrl_out_or_null() const {
   Node* found = NULL;
   for (uint i = 0; i < outcnt(); i++) {
     Node* use = raw_out(i);
@@ -2401,6 +2864,14 @@ Node* Node::unique_ctrl_out() const {
     }
   }
   return found;
+}
+
+//--------------------------unique_ctrl_out------------------------------
+// Return the unique control out. Asserts if none or more than one control out.
+Node* Node::unique_ctrl_out() const {
+  Node* ctrl = unique_ctrl_out_or_null();
+  assert(ctrl != NULL, "control out is assumed to be unique");
+  return ctrl;
 }
 
 void Node::ensure_control_or_add_prec(Node* c) {

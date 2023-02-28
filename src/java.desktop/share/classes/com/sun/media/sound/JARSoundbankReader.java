@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,17 @@ import sun.reflect.misc.ReflectUtil;
  */
 public final class JARSoundbankReader extends SoundbankReader {
 
+    /*
+     * Name of the system property that enables the Jar soundbank loading
+     * true if jar sound bank is allowed to be loaded
+     * default is false
+     */
+    private final static String JAR_SOUNDBANK_ENABLED = "jdk.sound.jarsoundbank";
+
     private static boolean isZIP(URL url) {
         boolean ok = false;
         try {
-            InputStream stream = url.openStream();
-            try {
+            try (InputStream stream = url.openStream()) {
                 byte[] buff = new byte[4];
                 ok = stream.read(buff) == 4;
                 if (ok) {
@@ -61,8 +67,6 @@ public final class JARSoundbankReader extends SoundbankReader {
                         && buff[2] == 0x03
                         && buff[3] == 0x04);
                 }
-            } finally {
-                stream.close();
             }
         } catch (IOException e) {
         }
@@ -73,16 +77,17 @@ public final class JARSoundbankReader extends SoundbankReader {
     @SuppressWarnings("deprecation")
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
-        if (!isZIP(url))
+        Objects.requireNonNull(url);
+        if (!Boolean.getBoolean(JAR_SOUNDBANK_ENABLED) || !isZIP(url))
             return null;
+
         ArrayList<Soundbank> soundbanks = new ArrayList<>();
         URLClassLoader ucl = URLClassLoader.newInstance(new URL[]{url});
         InputStream stream = ucl.getResourceAsStream(
                 "META-INF/services/javax.sound.midi.Soundbank");
         if (stream == null)
             return null;
-        try
-        {
+        try (stream) {
             BufferedReader r = new BufferedReader(new InputStreamReader(stream));
             String line = r.readLine();
             while (line != null) {
@@ -99,10 +104,6 @@ public final class JARSoundbankReader extends SoundbankReader {
                 }
                 line = r.readLine();
             }
-        }
-        finally
-        {
-            stream.close();
         }
         if (soundbanks.size() == 0)
             return null;
@@ -124,6 +125,7 @@ public final class JARSoundbankReader extends SoundbankReader {
     @Override
     public Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
         return getSoundbank(file.toURI().toURL());
     }
 }

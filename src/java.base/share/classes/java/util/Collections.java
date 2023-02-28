@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.random.RandomGenerator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -140,7 +141,6 @@ public class Collections {
      *         found to violate the {@link Comparable} contract
      * @see List#sort(Comparator)
      */
-    @SuppressWarnings("unchecked")
     public static <T extends Comparable<? super T>> void sort(List<T> list) {
         list.sort(null);
     }
@@ -174,7 +174,6 @@ public class Collections {
      *         found to violate the {@link Comparator} contract
      * @see List#sort(Comparator)
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T> void sort(List<T> list, Comparator<? super T> c) {
         list.sort(c);
     }
@@ -266,7 +265,7 @@ public class Collections {
      * list listIterator.
      */
     private static <T> T get(ListIterator<? extends T> i, int index) {
-        T obj = null;
+        T obj;
         int pos = i.nextIndex();
         if (pos <= index) {
             do {
@@ -411,8 +410,8 @@ public class Collections {
      * portion of the list that runs from the first element to the current
      * position, inclusive.
      *
-     * <p>This method runs in linear time.  If the specified list does not
-     * implement the {@link RandomAccess} interface and is large, this
+     * @implSpec This method runs in linear time.  If the specified list does
+     * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
      * quadratic behavior that would result from shuffling a "sequential
@@ -433,6 +432,24 @@ public class Collections {
 
     /**
      * Randomly permute the specified list using the specified source of
+     * randomness.<p>
+     *
+     * This method is equivalent to {@link #shuffle(List, RandomGenerator)}
+     * and exists for backward compatibility. The {@link #shuffle(List, RandomGenerator)}
+     * method is preferred, as it is not limited to random generators
+     * that extend the {@link Random} class.
+     *
+     * @param  list the list to be shuffled.
+     * @param  rnd the source of randomness to use to shuffle the list.
+     * @throws UnsupportedOperationException if the specified list or its
+     *         list-iterator does not support the {@code set} operation.
+     */
+    public static void shuffle(List<?> list, Random rnd) {
+        shuffle(list, (RandomGenerator) rnd);
+    }
+
+    /**
+     * Randomly permute the specified list using the specified source of
      * randomness.  All permutations occur with equal likelihood
      * assuming that the source of randomness is fair.<p>
      *
@@ -440,10 +457,10 @@ public class Collections {
      * up to the second, repeatedly swapping a randomly selected element into
      * the "current position".  Elements are randomly selected from the
      * portion of the list that runs from the first element to the current
-     * position, inclusive.<p>
+     * position, inclusive.
      *
-     * This method runs in linear time.  If the specified list does not
-     * implement the {@link RandomAccess} interface and is large, this
+     * @implSpec This method runs in linear time.  If the specified list does
+     * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
      * quadratic behavior that would result from shuffling a "sequential
@@ -453,9 +470,10 @@ public class Collections {
      * @param  rnd the source of randomness to use to shuffle the list.
      * @throws UnsupportedOperationException if the specified list or its
      *         list-iterator does not support the {@code set} operation.
+     * @since 21
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static void shuffle(List<?> list, Random rnd) {
+    public static void shuffle(List<?> list, RandomGenerator rnd) {
         int size = list.size();
         if (size < SHUFFLE_THRESHOLD || list instanceof RandomAccess) {
             for (int i=size; i>1; i--)
@@ -631,10 +649,10 @@ public class Collections {
      * @throws NoSuchElementException if the collection is empty.
      * @see Comparable
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     public static <T> T min(Collection<? extends T> coll, Comparator<? super T> comp) {
         if (comp==null)
-            return (T)min((Collection) coll);
+            return (T)min((Collection<Comparable<Object>>) coll);
 
         Iterator<? extends T> i = coll.iterator();
         T candidate = i.next();
@@ -704,10 +722,10 @@ public class Collections {
      * @throws NoSuchElementException if the collection is empty.
      * @see Comparable
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     public static <T> T max(Collection<? extends T> coll, Comparator<? super T> comp) {
         if (comp==null)
-            return (T)max((Collection) coll);
+            return (T)max((Collection<Comparable<Object>>) coll);
 
         Iterator<? extends T> i = coll.iterator();
         T candidate = i.next();
@@ -1047,7 +1065,7 @@ public class Collections {
         public String toString()                   {return c.toString();}
 
         public Iterator<E> iterator() {
-            return new Iterator<E>() {
+            return new Iterator<>() {
                 private final Iterator<? extends E> i = c.iterator();
 
                 public boolean hasNext() {return i.hasNext();}
@@ -1259,7 +1277,6 @@ public class Collections {
             private Object readResolve()        { return EMPTY_NAVIGABLE_SET; }
         }
 
-        @SuppressWarnings("rawtypes")
         private static final NavigableSet<?> EMPTY_NAVIGABLE_SET =
                 new EmptyNavigableSet<>();
 
@@ -1372,7 +1389,7 @@ public class Collections {
         public ListIterator<E> listIterator()   {return listIterator(0);}
 
         public ListIterator<E> listIterator(final int index) {
-            return new ListIterator<E>() {
+            return new ListIterator<>() {
                 private final ListIterator<? extends E> i
                     = list.listIterator(index);
 
@@ -1614,10 +1631,9 @@ public class Collections {
             @java.io.Serial
             private static final long serialVersionUID = 7854390611657943733L;
 
-            @SuppressWarnings({"unchecked", "rawtypes"})
+            @SuppressWarnings({"unchecked"})
             UnmodifiableEntrySet(Set<? extends Map.Entry<? extends K, ? extends V>> s) {
-                // Need to cast to raw in order to work around a limitation in the type system
-                super((Set)s);
+                super((Set<Map.Entry<K, V>>)s);
             }
 
             static <K, V> Consumer<Map.Entry<? extends K, ? extends V>> entryConsumer(
@@ -1701,7 +1717,7 @@ public class Collections {
             }
 
             public Iterator<Map.Entry<K,V>> iterator() {
-                return new Iterator<Map.Entry<K,V>>() {
+                return new Iterator<>() {
                     private final Iterator<? extends Map.Entry<? extends K, ? extends V>> i = c.iterator();
 
                     public boolean hasNext() {
@@ -1714,6 +1730,7 @@ public class Collections {
                         throw new UnsupportedOperationException();
                     }
                     public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
+                        Objects.requireNonNull(action);
                         i.forEachRemaining(entryConsumer(action));
                     }
                 };
@@ -1899,7 +1916,7 @@ public class Collections {
         private static final long serialVersionUID = -4858195264774772197L;
 
         /**
-         * A class for the {@link EMPTY_NAVIGABLE_MAP} which needs readResolve
+         * A class for the {@link #EMPTY_NAVIGABLE_MAP} which needs readResolve
          * to preserve singleton property.
          *
          * @param <K> type of keys, if there were any, and of bounds
@@ -1922,7 +1939,7 @@ public class Collections {
         }
 
         /**
-         * Singleton for {@link emptyNavigableMap()} which is also immutable.
+         * Singleton for {@link #emptyNavigableMap()} which is also immutable.
          */
         private static final EmptyNavigableMap<?,?> EMPTY_NAVIGABLE_MAP =
             new EmptyNavigableMap<>();
@@ -3170,7 +3187,7 @@ public class Collections {
             // JDK-6363904 - unwrapped iterator could be typecast to
             // ListIterator with unsafe set()
             final Iterator<E> it = c.iterator();
-            return new Iterator<E>() {
+            return new Iterator<>() {
                 public boolean hasNext() { return it.hasNext(); }
                 public E next()          { return it.next(); }
                 public void remove()     {        it.remove(); }
@@ -3561,7 +3578,7 @@ public class Collections {
         public ListIterator<E> listIterator(final int index) {
             final ListIterator<E> i = list.listIterator(index);
 
-            return new ListIterator<E>() {
+            return new ListIterator<>() {
                 public boolean hasNext()     { return i.hasNext(); }
                 public E next()              { return i.next(); }
                 public boolean hasPrevious() { return i.hasPrevious(); }
@@ -3869,7 +3886,7 @@ public class Collections {
             public Iterator<Map.Entry<K,V>> iterator() {
                 final Iterator<Map.Entry<K, V>> i = s.iterator();
 
-                return new Iterator<Map.Entry<K,V>>() {
+                return new Iterator<>() {
                     public boolean hasNext() { return i.hasNext(); }
                     public void remove()     { i.remove(); }
 
@@ -3878,6 +3895,7 @@ public class Collections {
                     }
 
                     public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                        Objects.requireNonNull(action);
                         i.forEachRemaining(
                             e -> action.accept(checkedEntry(e, valueType)));
                     }
@@ -4723,7 +4741,6 @@ public class Collections {
 
         // Override default methods in Map
         @Override
-        @SuppressWarnings("unchecked")
         public V getOrDefault(Object k, V defaultValue) {
             return defaultValue;
         }
@@ -4804,7 +4821,7 @@ public class Collections {
     }
 
     static <E> Iterator<E> singletonIterator(final E e) {
-        return new Iterator<E>() {
+        return new Iterator<>() {
             private boolean hasNext = true;
             public boolean hasNext() {
                 return hasNext;
@@ -4837,7 +4854,7 @@ public class Collections {
      * @return A singleton {@code Spliterator}
      */
     static <T> Spliterator<T> singletonSpliterator(final T element) {
-        return new Spliterator<T>() {
+        return new Spliterator<>() {
             long est = 1;
 
             @Override
@@ -5039,7 +5056,7 @@ public class Collections {
 
         public Set<Map.Entry<K,V>> entrySet() {
             if (entrySet==null)
-                entrySet = Collections.<Map.Entry<K,V>>singleton(
+                entrySet = Collections.singleton(
                     new SimpleImmutableEntry<>(k, v));
             return entrySet;
         }
@@ -5180,6 +5197,16 @@ public class Collections {
         public E get(int index) {
             Objects.checkIndex(index, n);
             return element;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            int n = this.n;
+            E element = this.element;
+            for (int i = 0; i < n; i++) {
+                action.accept(element);
+            }
         }
 
         public Object[] toArray() {
@@ -5397,8 +5424,8 @@ public class Collections {
 
         public boolean equals(Object o) {
             return (o == this) ||
-                (o instanceof ReverseComparator2 &&
-                 cmp.equals(((ReverseComparator2)o).cmp));
+                (o instanceof ReverseComparator2<?> that &&
+                 cmp.equals(that.cmp));
         }
 
         public int hashCode() {
@@ -5427,7 +5454,7 @@ public class Collections {
      * @see Enumeration
      */
     public static <T> Enumeration<T> enumeration(final Collection<T> c) {
-        return new Enumeration<T>() {
+        return new Enumeration<>() {
             private final Iterator<T> i = c.iterator();
 
             public boolean hasMoreElements() {
@@ -5593,7 +5620,7 @@ public class Collections {
      * Adds all of the specified elements to the specified collection.
      * Elements to be added may be specified individually or as an array.
      * The behaviour of this convenience method is similar to that of
-     * {@code cc.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
+     * {@code c.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
      *
      * <p>When elements are specified individually, this method provides a
      * convenient way to add a few elements to an existing collection:

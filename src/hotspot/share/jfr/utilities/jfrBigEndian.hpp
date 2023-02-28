@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP
 #define SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
 
@@ -102,7 +102,7 @@ inline T JfrBigEndian::read_unaligned(const address location) {
 inline bool JfrBigEndian::platform_supports_unaligned_reads(void) {
 #if defined(IA32) || defined(AMD64) || defined(PPC) || defined(S390)
   return true;
-#elif defined(ARM) || defined(AARCH64)
+#elif defined(ARM) || defined(AARCH64) || defined(RISCV)
   return false;
 #else
   #warning "Unconfigured platform"

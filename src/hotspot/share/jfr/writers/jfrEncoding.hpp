@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_JFR_WRITERS_JFRENCODING_HPP
 
 #include "jfr/writers/jfrEncoders.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 enum JfrStringEncoding {
@@ -67,6 +67,11 @@ class EncoderHost : public AllStatic {
     assert(pos != NULL, "invariant");
     assert(len > 0, "invariant");
     return pos + IntegerEncoder::encode_padded(value, len, pos);
+  }
+
+  template <typename T>
+  static size_t size_in_bytes(T value) {
+    return IntegerEncoder::size_in_bytes(value);
   }
 
   template <typename T>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
+  assert(len <= max_jint, "invariant");
   // Might need T + 1 size
   u1* const pos = ensure_size(sizeof(T) * len + len);
   if (pos) {
@@ -125,8 +126,9 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::be_write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
-  // Might need T + 1 size
-  u1* const pos = ensure_size(sizeof(T) * len + len);
+  assert(len <= max_jint, "invariant");
+  // Big endian writes map one-to-one for length, so no extra space is needed.
+  u1* const pos = ensure_size(sizeof(T) * len);
   if (pos) {
     this->set_current_pos(BE::be_write(value, len, pos));
   }
@@ -208,6 +210,11 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(char* value) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
+inline void WriterHost<BE, IE, WriterPolicyImpl>::write_empty_string() {
+  write<u1>(EMPTY_STRING);
+}
+
+template <typename BE, typename IE, typename WriterPolicyImpl>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   if (string == NULL) {
     write<u1>(NULL_STRING);
@@ -217,7 +224,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   assert(string_oop != NULL, "invariant");
   const size_t length = (size_t)java_lang_String::length(string_oop);
   if (0 == length) {
-    write<u1>(EMPTY_STRING);
+    write_empty_string();
     return;
   }
   const bool is_latin1_encoded = java_lang_String::is_latin1(string_oop);
@@ -356,6 +363,12 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_be_at_offset(T value, in
     be_write(value);
     this->seek(current); // restore
   }
+}
+
+template <typename BE, typename IE, typename WriterPolicyImpl>
+template <typename T>
+inline size_t WriterHost<BE, IE, WriterPolicyImpl>::size_in_bytes(T value) {
+  return IE::size_in_bytes(value);
 }
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP

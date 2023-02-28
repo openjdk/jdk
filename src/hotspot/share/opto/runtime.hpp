@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,9 @@ private:
   static const TypeFunc* modf_Type();
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
+  static const TypeFunc* void_void_Type();
+
+  static const TypeFunc* jfr_write_checkpoint_Type();
 
   static const TypeFunc* flush_windows_Type();
 
@@ -275,8 +278,10 @@ private:
   static const TypeFunc* vectorizedMismatch_Type();
 
   static const TypeFunc* ghash_processBlocks_Type();
+  static const TypeFunc* chacha20Block_Type();
   static const TypeFunc* base64_encodeBlock_Type();
   static const TypeFunc* base64_decodeBlock_Type();
+  static const TypeFunc* poly1305_processBlocks_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();
@@ -288,7 +293,7 @@ private:
 
   static const TypeFunc* register_finalizer_Type();
 
-  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
+  JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

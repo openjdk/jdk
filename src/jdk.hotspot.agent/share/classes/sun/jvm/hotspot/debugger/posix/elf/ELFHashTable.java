@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ public interface ELFHashTable {
     /**
      * Returns the ELFSymbol that has the specified name or null if no symbol
      * with that name exists.  NOTE: Currently this method does not work and
-     * willl always return null.
+     * will always return null.
      */
     public ELFSymbol getSymbol(String symbolName);
 }

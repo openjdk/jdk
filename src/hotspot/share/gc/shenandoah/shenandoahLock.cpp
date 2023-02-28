@@ -28,8 +28,8 @@
 
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/thread.hpp"
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");
@@ -44,7 +44,7 @@ void ShenandoahSimpleLock::unlock() {
 }
 
 ShenandoahReentrantLock::ShenandoahReentrantLock() :
-  ShenandoahSimpleLock(), _owner(NULL), _count(0) {
+  ShenandoahSimpleLock(), _owner(nullptr), _count(0) {
   assert(os::mutex_init_done(), "Too early!");
 }
 
@@ -71,7 +71,7 @@ void ShenandoahReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)NULL);
+    Atomic::store(&_owner, (Thread*)nullptr);
     ShenandoahSimpleLock::unlock();
   }
 }

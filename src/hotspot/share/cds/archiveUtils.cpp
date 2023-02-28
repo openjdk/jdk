@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,15 +40,17 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
+CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 VirtualSpace* ArchivePtrMarker::_vs;
 
 bool ArchivePtrMarker::_compacted;
 
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
-  assert(_ptrmap == NULL, "initialize only once");
+  assert(_ptrmap == nullptr, "initialize only once");
   _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
@@ -64,18 +67,18 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
-  assert(_ptrmap != NULL, "not initialized");
+  assert(_ptrmap != nullptr, "not initialized");
   assert(!_compacted, "cannot mark anymore");
 
   if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
     // We don't want any pointer that points to very bottom of the archive, otherwise when
     // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
-    // to nothing (NULL) vs a pointer to an objects that happens to be at the very bottom
+    // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
     // of the archive.
     assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
 
-    if (value != NULL) {
+    if (value != nullptr) {
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
       size_t idx = ptr_loc - ptr_base();
       if (_ptrmap->size() <= idx) {
@@ -89,7 +92,7 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
 }
 
 void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
-  assert(_ptrmap != NULL, "not initialized");
+  assert(_ptrmap != nullptr, "not initialized");
   assert(!_compacted, "cannot clear anymore");
 
   assert(ptr_base() <= ptr_loc && ptr_loc < ptr_end(), "must be");
@@ -115,14 +118,14 @@ public:
   bool do_bit(size_t offset) {
     address* ptr_loc = _ptr_base + offset;
     address  ptr_value = *ptr_loc;
-    if (ptr_value != NULL) {
+    if (ptr_value != nullptr) {
       assert(_relocatable_base <= ptr_value && ptr_value < _relocatable_end, "do not point to arbitrary locations!");
       if (_max_non_null_offset < offset) {
         _max_non_null_offset = offset;
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> NULL @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
     }
 
     return true;
@@ -250,7 +253,7 @@ void DumpRegion::pack(DumpRegion* next) {
   assert(!is_packed(), "sanity");
   _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
-  if (next != NULL) {
+  if (next != nullptr) {
     next->_rs = _rs;
     next->_vs = _vs;
     next->_base = next->_top = this->_end;
@@ -259,12 +262,17 @@ void DumpRegion::pack(DumpRegion* next) {
 }
 
 void WriteClosure::do_oop(oop* o) {
-  if (*o == NULL) {
+  if (*o == nullptr) {
     _dump_region->append_intptr_t(0);
   } else {
     assert(HeapShared::can_write(), "sanity");
-    _dump_region->append_intptr_t(
-      (intptr_t)CompressedOops::encode_not_null(*o));
+    intptr_t p;
+    if (UseCompressedOops) {
+      p = (intptr_t)CompressedOops::encode_not_null(*o);
+    } else {
+      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
+    }
+    _dump_region->append_intptr_t(p);
   }
 }
 
@@ -280,7 +288,7 @@ void WriteClosure::do_region(u_char* start, size_t size) {
 }
 
 void ReadClosure::do_ptr(void** p) {
-  assert(*p == NULL, "initializing previous initialized pointer.");
+  assert(*p == nullptr, "initializing previous initialized pointer.");
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
@@ -306,13 +314,24 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-  if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
-    *p = NULL;
+  if (UseCompressedOops) {
+    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_fully_available()) {
+      *p = nullptr;
+    } else {
+      assert(ArchiveHeapLoader::can_use(), "sanity");
+      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      *p = ArchiveHeapLoader::decode_from_archive(o);
+    }
   } else {
-    assert(HeapShared::can_use(), "sanity");
-    assert(HeapShared::is_fully_available(), "must be");
-    *p = HeapShared::decode_from_archive(o);
+    intptr_t dumptime_oop = nextPtr();
+    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_fully_available()) {
+      *p = nullptr;
+    } else {
+      assert(!ArchiveHeapLoader::is_loaded(), "ArchiveHeapLoader::can_load() is not supported for uncompessed oops");
+      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
+      *p = cast_to_oop(runtime_oop);
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 
 package jdk.test.lib.artifacts;
 
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import java.util.Map;
 
 public interface ArtifactManager {
     public Path resolve(Artifact artifact) throws ArtifactResolverException;
+    default public Path resolve(String name, Map<String, Object> artifactDescription,
+                        boolean unpack) throws ArtifactResolverException {
+        throw new ArtifactResolverException("not implemented");
+    }
 }

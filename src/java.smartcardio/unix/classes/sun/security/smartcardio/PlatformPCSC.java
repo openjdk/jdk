@@ -44,11 +44,11 @@ class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");
 
-    private final static String PROP_NAME = "sun.security.smartcardio.library";
+    private static final String PROP_NAME = "sun.security.smartcardio.library";
 
-    private final static String LIB1 = "/usr/$LIBISA/libpcsclite.so";
-    private final static String LIB2 = "/usr/local/$LIBISA/libpcsclite.so";
-    private final static String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
+    private static final String LIB1 = "/usr/$LIBISA/libpcsclite.so";
+    private static final String LIB2 = "/usr/local/$LIBISA/libpcsclite.so";
+    private static final String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
 
     PlatformPCSC() {
         // empty
@@ -138,16 +138,16 @@ class PlatformPCSC {
 
     // PCSC constants defined differently under Windows and MUSCLE
     // MUSCLE version
-    final static int SCARD_PROTOCOL_T0     =  0x0001;
-    final static int SCARD_PROTOCOL_T1     =  0x0002;
-    final static int SCARD_PROTOCOL_RAW    =  0x0004;
+    static final int SCARD_PROTOCOL_T0     =  0x0001;
+    static final int SCARD_PROTOCOL_T1     =  0x0002;
+    static final int SCARD_PROTOCOL_RAW    =  0x0004;
 
-    final static int SCARD_UNKNOWN         =  0x0001;
-    final static int SCARD_ABSENT          =  0x0002;
-    final static int SCARD_PRESENT         =  0x0004;
-    final static int SCARD_SWALLOWED       =  0x0008;
-    final static int SCARD_POWERED         =  0x0010;
-    final static int SCARD_NEGOTIABLE      =  0x0020;
-    final static int SCARD_SPECIFIC        =  0x0040;
+    static final int SCARD_UNKNOWN         =  0x0001;
+    static final int SCARD_ABSENT          =  0x0002;
+    static final int SCARD_PRESENT         =  0x0004;
+    static final int SCARD_SWALLOWED       =  0x0008;
+    static final int SCARD_POWERED         =  0x0010;
+    static final int SCARD_NEGOTIABLE      =  0x0020;
+    static final int SCARD_SPECIFIC        =  0x0040;
 
 }

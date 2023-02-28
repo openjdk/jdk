@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ ciObjArrayKlass::ciObjArrayKlass(Klass* k) : ciArrayKlass(k) {
   if (dimension() == 1) {
     _element_klass = _base_element_klass;
   } else {
-    _element_klass = NULL;
+    _element_klass = nullptr;
   }
   if (!ciObjectFactory::is_initialized()) {
     assert(_element_klass->is_java_lang_Object(), "only arrays of object are shared");
@@ -70,7 +70,7 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
     if (dimension == 1) {
       _element_klass = base_element_klass;
     } else {
-      _element_klass = NULL;
+      _element_klass = nullptr;
     }
 }
 
@@ -79,8 +79,8 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
 //
 // What is the one-level element type of this array?
 ciKlass* ciObjArrayKlass::element_klass() {
-  if (_element_klass == NULL) {
-    assert(dimension() > 1, "_element_klass should not be NULL");
+  if (_element_klass == nullptr) {
+    assert(dimension() > 1, "_element_klass should not be null");
     // Produce the element klass.
     if (is_loaded()) {
       VM_ENTRY_MARK;
@@ -167,15 +167,23 @@ ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass) {
   GUARDED_VM_ENTRY(return make_impl(element_klass);)
 }
 
+ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+  ciKlass* klass = element_klass;
+  for (int i = 0; i < dims; i++) {
+    klass = ciObjArrayKlass::make(klass);
+  }
+  return klass->as_obj_array_klass();
+}
+
 ciKlass* ciObjArrayKlass::exact_klass() {
   ciType* base = base_element_type();
   if (base->is_instance_klass()) {
     ciInstanceKlass* ik = base->as_instance_klass();
-    if (ik->exact_klass() != NULL) {
+    if (ik->exact_klass() != nullptr) {
       return this;
     }
   } else if (base->is_primitive_type()) {
     return this;
   }
-  return NULL;
+  return nullptr;
 }

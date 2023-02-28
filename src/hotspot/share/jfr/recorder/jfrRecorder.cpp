@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
@@ -133,10 +134,10 @@ static bool validate_recording_options(TRAPS) {
   const int length = options->length();
   assert(length >= 1, "invariant");
   assert(dcmd_recordings_array == NULL, "invariant");
-  dcmd_recordings_array = new (ResourceObj::C_HEAP, mtTracing)GrowableArray<JfrStartFlightRecordingDCmd*>(length, mtTracing);
+  dcmd_recordings_array = new (mtTracing) GrowableArray<JfrStartFlightRecordingDCmd*>(length, mtTracing);
   assert(dcmd_recordings_array != NULL, "invariant");
   for (int i = 0; i < length; ++i) {
-    JfrStartFlightRecordingDCmd* const dcmd_recording = new(ResourceObj::C_HEAP, mtTracing) JfrStartFlightRecordingDCmd(tty, true);
+    JfrStartFlightRecordingDCmd* const dcmd_recording = new (mtTracing) JfrStartFlightRecordingDCmd(tty, true);
     assert(dcmd_recording != NULL, "invariant");
     dcmd_recordings_array->append(dcmd_recording);
     if (!parse_recording_options(options->at(i), dcmd_recording, THREAD)) {
@@ -197,6 +198,8 @@ bool JfrRecorder::on_create_vm_2() {
     return true;
   }
   JavaThread* const thread = JavaThread::current();
+  JfrThreadLocal::assign_thread_id(thread, thread->jfr_thread_local());
+
   if (!JfrOptionSet::initialize(thread)) {
     return false;
   }

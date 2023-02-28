@@ -60,8 +60,8 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 #ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end, CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
   __ mov64(tmp, disp);
@@ -72,8 +72,8 @@ __ BIND(L_loop);
   __ jcc(Assembler::greaterEqual, L_loop);
 #else
   __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end,   CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end,   CardTable::card_shift());
   __ subptr(end, addr); // end --> count
 __ BIND(L_loop);
   Address cardtable(addr, count, Address::times_1, disp);
@@ -93,7 +93,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
 
-  __ shrptr(obj, CardTable::card_shift);
+  __ shrptr(obj, CardTable::card_shift());
 
   Address card_addr;
 
@@ -112,7 +112,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     // entry and that entry is not properly handled by the relocation code.
     AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index));
+    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
   }
 
   int dirty = CardTable::dirty_card_val();
@@ -128,7 +128,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 }
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                                Address dst, Register val, Register tmp1, Register tmp2) {
+                                                Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
 
   bool is_array = (decorators & IS_ARRAY) != 0;
@@ -137,7 +137,7 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
 
   bool needs_post_barrier = val != noreg && in_heap;
 
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg, noreg);
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.disp() == 0)) {

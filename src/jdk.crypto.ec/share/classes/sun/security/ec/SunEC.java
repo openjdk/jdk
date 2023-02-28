@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.ProviderException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
-import sun.security.ec.ed.EdDSAAlgorithmParameters;
 import sun.security.ec.ed.EdDSAKeyFactory;
 import sun.security.ec.ed.EdDSAKeyPairGenerator;
 import sun.security.ec.ed.EdDSASignature;
 import sun.security.util.CurveDB;
-import sun.security.util.KnownOIDs;
 import sun.security.util.NamedCurve;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -208,9 +202,8 @@ public final class SunEC extends Provider {
         /*
          *  Key Factory engine
          */
-        putService(new ProviderService(this, "KeyFactory",
-            "EC", "sun.security.ec.ECKeyFactory",
-            List.of("EllipticCurve"), ATTRS));
+        putService(new ProviderServiceA(this, "KeyFactory",
+            "EC", "sun.security.ec.ECKeyFactory", ATTRS));
 
         /*
          * Algorithm Parameter engine
@@ -319,9 +312,8 @@ public final class SunEC extends Provider {
         /*
          *  Key Pair Generator engine
          */
-        putService(new ProviderService(this, "KeyPairGenerator",
-            "EC", "sun.security.ec.ECKeyPairGenerator",
-            List.of("EllipticCurve"), ATTRS));
+        putService(new ProviderServiceA(this, "KeyPairGenerator",
+            "EC", "sun.security.ec.ECKeyPairGenerator", ATTRS));
 
         /*
          * Key Agreement engine

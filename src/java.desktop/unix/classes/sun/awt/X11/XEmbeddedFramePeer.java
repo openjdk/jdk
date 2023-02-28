@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@ package sun.awt.X11;
 
 import java.awt.*;
 
-import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.ArrayList;
 
 import sun.util.logging.PlatformLogger;
 
@@ -41,7 +40,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
 
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbeddedFramePeer");
 
-    LinkedList<AWTKeyStroke> strokes;
+    private ArrayList<AWTKeyStroke> strokes;
 
     XEmbedClientHelper embedder; // Caution - can be null if XEmbed is not supported
     public XEmbeddedFramePeer(EmbeddedFrame target) {
@@ -56,7 +55,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
 
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
-        strokes = new LinkedList<AWTKeyStroke>();
+        strokes = new ArrayList<>();
         if (supportsXEmbed()) {
             embedder = new XEmbedClientHelper();
         }
@@ -246,9 +245,8 @@ public class XEmbeddedFramePeer extends XFramePeer {
         // Register accelerators
         if (embedder != null && embedder.isActive()) {
             int i = 0;
-            Iterator<AWTKeyStroke> iter = strokes.iterator();
-            while (iter.hasNext()) {
-                embedder.registerAccelerator(iter.next(), i++);
+            for (AWTKeyStroke stroke : strokes) {
+                embedder.registerAccelerator(stroke, i++);
             }
         }
         // Now we know that the embedder is an XEmbed server, so we

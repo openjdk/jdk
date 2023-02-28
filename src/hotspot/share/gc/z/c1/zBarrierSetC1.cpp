@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address r
     // Has index or displacement, need tmp register to load address into
     _tmp = access.gen()->new_pointer_register();
   }
+
+  FrameMap* f = Compilation::current()->frame_map();
+  f->update_reserved_argument_area_size(2 * BytesPerWord);
 }
 
 DecoratorSet ZLoadBarrierStubC1::decorators() const {
@@ -94,7 +97,7 @@ private:
 
 public:
   LIR_OpZLoadBarrierTest(LIR_Opr opr) :
-      LIR_Op(),
+      LIR_Op(lir_zloadbarrier_test, LIR_OprFact::illegalOpr, NULL),
       _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {

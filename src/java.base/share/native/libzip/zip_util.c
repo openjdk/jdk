@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,7 +635,7 @@ readCEN(jzfile *zip, jint knownTotal)
        * file while calling 'read' to read the rest of jar file. Here are a list of
        * reasons apart from above of why we are doing so:
        * 1. Greatly reduces mmap overhead after startup complete;
-       * 2. Avoids dual path code maintainance;
+       * 2. Avoids dual path code maintenance;
        * 3. Greatly reduces risk of address space (not virtual memory) exhaustion.
        */
         if (pagesize == 0) {
@@ -1552,7 +1552,6 @@ JNIEXPORT jboolean
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg)
 {
     z_stream strm;
-    int i = 0;
     memset(&strm, 0, sizeof(z_stream));
 
     *pmsg = 0; /* Reset error message */

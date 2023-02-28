@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "jvm.h"
 
 #ifndef PRODUCT
 
@@ -65,7 +65,7 @@ CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
   char file_name[O_BUFLEN];
   jio_snprintf(file_name, sizeof(file_name), "output_tid" UINTX_FORMAT "_pid%u.cfg",
                os::current_thread_id(), os::current_process_id());
-  _output = new(ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, "at");
+  _output = new (mtCompiler) fileStream(file_name, "at");
 }
 
 void CFGPrinterOutput::inc_indent() {
@@ -231,9 +231,7 @@ void CFGPrinterOutput::print_LIR(BlockBegin* block) {
 
 void CFGPrinterOutput::print_block(BlockBegin* block) {
   print_begin("block");
-
   print("name \"B%d\"", block->block_id());
-
   print("from_bci %d", block->bci());
   print("to_bci %d", (block->end() == NULL ? -1 : block->end()->printable_bci()));
 
@@ -247,8 +245,10 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
 
   output()->indent();
   output()->print("successors ");
-  for (i = 0; i < block->number_of_sux(); i++) {
-    output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+  if (block->end() != NULL) {
+    for (i = 0; i < block->number_of_sux(); i++) {
+      output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+    }
   }
   output()->cr();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
@@ -45,11 +46,11 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @bug 8137058 8164908 8168980
- * @run testng ReflectionFactoryTest
- * @run testng/othervm/policy=security.policy ReflectionFactoryTest
+ * @bug 8137058 8164908 8168980 8275137
  * @summary Basic test for the unsupported ReflectionFactory
  * @modules jdk.unsupported
+ * @run testng ReflectionFactoryTest
+ * @run testng/othervm/policy=security.policy ReflectionFactoryTest
  */
 
 public class ReflectionFactoryTest {
@@ -81,8 +82,7 @@ public class ReflectionFactoryTest {
      */
     @Test(dataProvider="ClassConstructors")
     static void testConstructor(Class<?> type)
-        throws NoSuchMethodException, InstantiationException,
-            IllegalAccessException, InvocationTargetException
+            throws InstantiationException, IllegalAccessException, InvocationTargetException
     {
         @SuppressWarnings("unchecked")
         Constructor<?> c = factory.newConstructorForSerialization(type);
@@ -131,8 +131,8 @@ public class ReflectionFactoryTest {
         }
 
         Assert.assertEquals(((Foo)o).foo(), expectedFoo);
-        if (o instanceof Baz) {
-            Assert.assertEquals(((Baz)o).baz(), expectedBaz);
+        if (o instanceof Baz b) {
+            Assert.assertEquals(b.baz(), expectedBaz);
         }
     }
 
@@ -178,7 +178,7 @@ public class ReflectionFactoryTest {
     }
 
     /**
-     * Test newConstructorForExternalization returns the constructor and it can be called.
+     * Tests that newConstructorForExternalization returns the constructor and it can be called.
      * @throws NoSuchMethodException - error
      * @throws InstantiationException - error
      * @throws IllegalAccessException - error
@@ -186,8 +186,7 @@ public class ReflectionFactoryTest {
      */
     @Test
     static void newConstructorForExternalization()
-            throws NoSuchMethodException, InstantiationException,
-            IllegalAccessException, InvocationTargetException {
+            throws InstantiationException, IllegalAccessException, InvocationTargetException {
         Constructor<?> cons = factory.newConstructorForExternalization(Ext.class);
         Ext ext = (Ext)cons.newInstance();
         Assert.assertEquals(ext.ext, 1, "Constructor not run");
@@ -251,7 +250,7 @@ public class ReflectionFactoryTest {
             Assert.assertFalse(ser2.readObjectNoDataCalled, "readObjectNoData should not be called");
             Assert.assertFalse(ser2.readResolveCalled, "readResolve should not be called");
 
-            readObjectNoDataMethod.invoke(ser2, ois);
+            readObjectNoDataMethod.invoke(ser2);
             Assert.assertTrue(ser2.readObjectCalled, "readObject should have been called");
             Assert.assertTrue(ser2.readObjectNoDataCalled, "readObjectNoData not called");
             Assert.assertFalse(ser2.readResolveCalled, "readResolve should not be called");
@@ -283,12 +282,12 @@ public class ReflectionFactoryTest {
 
         public Ser() {}
 
-        private void readObject(ObjectInputStream ois) throws IOException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             Assert.assertFalse(writeObjectCalled, "readObject called too many times");
             readObjectCalled = ois.readBoolean();
         }
 
-        private void readObjectNoData(ObjectInputStream ois) throws IOException {
+        private void readObjectNoData() throws ObjectStreamException {
             Assert.assertFalse(readObjectNoDataCalled, "readObjectNoData called too many times");
             readObjectNoDataCalled = true;
         }
@@ -299,13 +298,13 @@ public class ReflectionFactoryTest {
             oos.writeBoolean(writeObjectCalled);
         }
 
-        private Object writeReplace() {
+        private Object writeReplace() throws ObjectStreamException {
             Assert.assertFalse(writeReplaceCalled, "writeReplace called too many times");
             writeReplaceCalled = true;
             return this;
         }
 
-        private Object readResolve() {
+        private Object readResolve() throws ObjectStreamException {
             Assert.assertFalse(readResolveCalled, "readResolve called too many times");
             readResolveCalled = true;
             return this;
@@ -313,7 +312,7 @@ public class ReflectionFactoryTest {
     }
 
     /**
-     * Test the constructor of OptionalDataExceptions.
+     * Tests the constructor of OptionalDataExceptions.
      */
     @Test
     static void newOptionalDataException() {
@@ -323,8 +322,6 @@ public class ReflectionFactoryTest {
         Assert.assertFalse(ode.eof, "eof wrong");
 
     }
-
-
 
     // Main can be used to run the tests from the command line with only testng.jar.
     @SuppressWarnings("raw_types")

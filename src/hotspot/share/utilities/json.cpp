@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 
 const char* strchrnul_(const char *s, int c) {
   const char* tmp = strchr(s, c);
-  return tmp == NULL ? s + strlen(s) : tmp;
+  return tmp == nullptr ? s + strlen(s) : tmp;
 }
 
 JSON::JSON(const char* text, bool silent, outputStream* st)
@@ -48,10 +48,10 @@ JSON::JSON(const char* text, bool silent, outputStream* st)
 }
 
 void JSON::parse() {
-  assert(start != NULL, "Need something to parse");
-  if (start == NULL) {
+  assert(start != nullptr, "Need something to parse");
+  if (start == nullptr) {
     _valid = false;
-    error(INTERNAL_ERROR, "JSON parser was called with a string that was NULL.");
+    error(INTERNAL_ERROR, "JSON parser was called with a string that was null.");
   } else {
     _valid = parse_json_value();
   }
@@ -158,7 +158,7 @@ bool JSON::parse_json_object() {
     return false;
   }
 
-  if (!callback(JSON_OBJECT_BEGIN, NULL, level++)) {
+  if (!callback(JSON_OBJECT_BEGIN, nullptr, level++)) {
     return false;
   }
 
@@ -207,7 +207,7 @@ bool JSON::parse_json_object() {
   }
 
   assert(c == '}', "array parsing ended without object end token ('}')");
-  return callback(JSON_OBJECT_END, NULL, --level);
+  return callback(JSON_OBJECT_END, nullptr, --level);
 }
 
 // Should only be called when we actually have the start of an array
@@ -222,7 +222,7 @@ bool JSON::parse_json_array() {
     return false;
   }
 
-  if (!callback(JSON_ARRAY_BEGIN, NULL, level++)) {
+  if (!callback(JSON_ARRAY_BEGIN, nullptr, level++)) {
     return false;
   }
 
@@ -258,7 +258,7 @@ bool JSON::parse_json_array() {
   }
 
   assert(c == ']', "array parsing ended without array end token (']')");
-  return callback(JSON_ARRAY_END, NULL, --level);
+  return callback(JSON_ARRAY_END, nullptr, --level);
 }
 
 bool JSON::parse_json_string(bool key) {
@@ -271,7 +271,7 @@ bool JSON::parse_json_string(bool key) {
   }
 
   end = strchr(pos, '"'); // TODO: escapes
-  if (end == NULL) {
+  if (end == nullptr) {
     error(SYNTAX_ERROR, "String started here never ended. Expected \'\"\' before EOS.");
     return false;
   }
@@ -384,7 +384,7 @@ bool JSON::parse_json_symbol(const char* name, JSON_TYPE symbol) {
     mark_pos();
     return false;
   }
-  return callback(symbol, NULL, level);
+  return callback(symbol, nullptr, level);
 }
 
 void JSON::mark_pos() {
@@ -476,7 +476,7 @@ bool JSON::expect_string(const char* expected_string, const char* error_msg, JSO
   u_char c, expected_char;
   size_t len;
 
-  assert(expected_string != NULL, "need non-null string");
+  assert(expected_string != nullptr, "need non-null string");
   len = strlen(expected_string);
   assert(len > 0, "need non-empty string");
 
@@ -566,7 +566,7 @@ u_char JSON::skip_to(u_char want) {
  * Otherwise it is an internal error.
  *
  * Will return the first token after the line comment without consuming it.
- * Returns 0 if EOS is encoutered.
+ * Returns 0 if EOS is encountered.
  */
 u_char JSON::skip_line_comment() {
   u_char c;

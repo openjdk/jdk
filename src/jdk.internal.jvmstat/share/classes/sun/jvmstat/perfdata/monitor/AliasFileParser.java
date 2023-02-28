@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.jvmstat.perfdata.monitor;
 import java.net.*;
 import java.io.*;
 import java.util.*;
-import java.util.regex.*;
 
 /**
  * Class for parsing alias files. File format is expected to follow
@@ -127,7 +126,7 @@ public class AliasFileParser {
         while (currentToken.ttype != StreamTokenizer.TT_EOF) {
             // look for the start symbol
             if ((currentToken.ttype != StreamTokenizer.TT_WORD)
-                    || (currentToken.sval.compareTo(ALIAS) != 0)) {
+                    || !currentToken.sval.equals(ALIAS)) {
                 nextToken();
                 continue;
             }
@@ -143,7 +142,7 @@ public class AliasFileParser {
                 match(StreamTokenizer.TT_WORD);
 
             } while ((currentToken.ttype != StreamTokenizer.TT_EOF)
-                     && (currentToken.sval.compareTo(ALIAS) != 0));
+                     && !currentToken.sval.equals(ALIAS));
 
             map.put(name, aliases);
         }

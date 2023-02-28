@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,18 +102,22 @@ public class MRTestBase {
     }
 
     void javac(Path dest, Path... sourceFiles) throws Throwable {
+        javac(dest, List.of(), sourceFiles);
+    }
+
+    void javac(Path dest, List<String> extraParameters, Path... sourceFiles) throws Throwable {
 
         List<String> commands = new ArrayList<>();
         String opts = System.getProperty("test.compiler.opts");
         if (!opts.isEmpty()) {
             commands.addAll(Arrays.asList(opts.split(" +")));
         }
-        commands.addAll(Utils.getForwardVmOptions());
         commands.add("-d");
         commands.add(dest.toString());
         Stream.of(sourceFiles)
                 .map(Object::toString)
                 .forEach(x -> commands.add(x));
+        commands.addAll(extraParameters);
 
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
@@ -122,7 +126,6 @@ public class MRTestBase {
                 throw new RuntimeException(sw.toString());
             }
         }
-
     }
 
     OutputAnalyzer jarWithStdin(File stdinSource,

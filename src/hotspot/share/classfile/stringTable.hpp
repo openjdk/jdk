@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static oop do_intern(Handle string_or_null, const jchar* name, int len, uintx hash, TRAPS);
   static oop do_lookup(const jchar* name, int len, uintx hash);
 
-  static void print_table_statistics(outputStream* st, const char* table_name);
+  static void print_table_statistics(outputStream* st);
 
   static bool do_rehash();
 
@@ -105,12 +105,11 @@ class StringTable : public CHeapObj<mtSymbol>{
 
   // Sharing
  private:
-  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
-  static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
-  static oop create_archived_string(oop s) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static void write_to_archive(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
+  static void write_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
   static void transfer_shared_strings_to_local_table() NOT_CDS_JAVA_HEAP_RETURN;
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 #
 #############################################################################
 
-compiler/intrinsics/bmi/verifycode/BzhiTestI2L.java 8268033 generic-x64
-
+vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8277573 generic-all
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
+vmTestbase/nsk/jvmti/SetFieldModificationWatch/setfmodw001/TestDescription.java 8205957 linux-x64,windows-x64
+vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
 
 vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64
 
-vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
-
-vmTestbase/vm/mlvm/hiddenloader/stress/oome/heap/Test.java 8273095 generic-all
-
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
+
+serviceability/jvmti/VMObjectAlloc/VMObjectAllocTest.java 8288430 generic-all
+
+gc/cslocker/TestCSLocker.java 8293289 generic-x64

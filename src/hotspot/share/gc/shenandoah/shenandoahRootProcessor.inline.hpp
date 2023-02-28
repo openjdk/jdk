@@ -82,7 +82,7 @@ ShenandoahClassLoaderDataRoots<CONCURRENT>::ShenandoahClassLoaderDataRoots(Shena
   if (heap_iteration) {
     ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
   } else {
-    ClassLoaderDataGraph::clear_claimed_marks();
+    ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
   }
 
   if (CONCURRENT) {
@@ -134,7 +134,7 @@ public:
     _f(f), _cf(cf), _thread_cl(thread_cl) {}
 
   void do_thread(Thread* t) {
-    if (_thread_cl != NULL) {
+    if (_thread_cl != nullptr) {
       _thread_cl->do_thread(t);
     }
     t->oops_do(_f, _cf);
@@ -152,7 +152,7 @@ public:
 //      we risk executing that code cache blob, and crashing.
 template <typename T>
 void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations, true /*FIXME*/);
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
   ResourceMark rm;
 
@@ -160,7 +160,7 @@ void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
     _thread_roots.oops_do(oops, &blobs_cl, worker_id);
     _cld_roots.always_strong_cld_do(&clds, worker_id);
   } else {
-    _thread_roots.oops_do(oops, NULL, worker_id);
+    _thread_roots.oops_do(oops, nullptr, worker_id);
     _code_roots.code_blobs_do(&blobs_cl, worker_id);
     _cld_roots.cld_do(&clds, worker_id);
   }
@@ -185,7 +185,7 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   // Process heavy-weight/fully parallel roots the last
   _code_roots.code_blobs_do(codes_cl, worker_id);
-  _thread_roots.oops_do(keep_alive, NULL, worker_id);
+  _thread_roots.oops_do(keep_alive, nullptr, worker_id);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP

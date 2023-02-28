@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class PolicyUtil {
                 String keyStoreProvider,        // input: keyStore provider
                 String storePassURL,            // input: keyStore password
                 Debug debug)
-        throws KeyStoreException, MalformedURLException, IOException,
+        throws KeyStoreException, IOException,
                 NoSuchProviderException, NoSuchAlgorithmException,
                 java.security.cert.CertificateException {
 
@@ -110,65 +110,58 @@ public class PolicyUtil {
             if (storePassURL != null) {
                 URL passURL;
                 try {
-                    passURL = new URL(storePassURL);
+                    @SuppressWarnings("deprecation")
+                    var _unused = passURL = new URL(storePassURL);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
                     if (policyUrl == null) {
                         throw e;
                     }
-                    passURL = new URL(policyUrl, storePassURL);
+                    @SuppressWarnings("deprecation")
+                    var _unused = passURL = new URL(policyUrl, storePassURL);
                 }
 
                 if (debug != null) {
                     debug.println("reading password"+passURL);
                 }
 
-                InputStream in = null;
-                try {
-                    in = passURL.openStream();
+                try (InputStream in = passURL.openStream()) {
                     keyStorePassword = Password.readPassword(in);
-                } finally {
-                    if (in != null) {
-                        in.close();
-                    }
                 }
             }
 
             if (NONE.equals(keyStoreName)) {
                 ks.load(null, keyStorePassword);
-                return ks;
             } else {
                 /*
                  * location of keystore is specified as absolute URL in policy
                  * file, or is relative to URL of policy file
                  */
-                URL keyStoreUrl = null;
+                URL keyStoreUrl;
                 try {
-                    keyStoreUrl = new URL(keyStoreName);
+                    @SuppressWarnings("deprecation")
+                    var _unused = keyStoreUrl = new URL(keyStoreName);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
                     if (policyUrl == null) {
                         throw e;
                     }
-                    keyStoreUrl = new URL(policyUrl, keyStoreName);
+                    @SuppressWarnings("deprecation")
+                    var _unused = keyStoreUrl = new URL(policyUrl, keyStoreName);
                 }
 
                 if (debug != null) {
                     debug.println("reading keystore"+keyStoreUrl);
                 }
 
-                InputStream inStream = null;
-                try {
-                    inStream =
-                        new BufferedInputStream(getInputStream(keyStoreUrl));
+                try (InputStream inStream =
+                        new BufferedInputStream(getInputStream(keyStoreUrl))) {
                     ks.load(inStream, keyStorePassword);
-                } finally {
-                    inStream.close();
                 }
-                return ks;
             }
+            return ks;
         } finally {
             if (keyStorePassword != null) {
                 Arrays.fill(keyStorePassword, ' ');

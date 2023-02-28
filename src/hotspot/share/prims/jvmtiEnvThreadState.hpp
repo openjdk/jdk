@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -109,7 +110,7 @@ class JvmtiFramePops : public CHeapObj<mtInternal> {
 class JvmtiEnvThreadState : public CHeapObj<mtInternal> {
 private:
   friend class JvmtiEnv;
-  JavaThread        *_thread;
+  JvmtiThreadState  *_state;
   JvmtiEnv          *_env;
   JvmtiEnvThreadState *_next;
   jmethodID         _current_method_id;
@@ -135,15 +136,15 @@ private:
   void set_next(JvmtiEnvThreadState* link) { _next = link; }
 
 public:
-  JvmtiEnvThreadState(JavaThread *thread, JvmtiEnvBase *env);
+  JvmtiEnvThreadState(JvmtiThreadState* state, JvmtiEnvBase *env);
   ~JvmtiEnvThreadState();
 
   bool is_enabled(jvmtiEvent event_type) { return _event_enable.is_enabled(event_type); }
 
   JvmtiEnvThreadEventEnable *event_enable() { return &_event_enable; }
-  void *get_agent_thread_local_storage_data() { return _agent_thread_local_storage_data; }
-  void set_agent_thread_local_storage_data (void *data) { _agent_thread_local_storage_data = data; }
 
+  void *get_agent_thread_local_storage_data();
+  void set_agent_thread_local_storage_data (void *data);
 
   // If the thread is in the given method at the given
   // location just return.  Otherwise, reset the current location
@@ -152,7 +153,7 @@ public:
   // here.
   void compare_and_set_current_location(Method* method, address location, jvmtiEvent event);
 
-  void clear_current_location() { set_current_location((jmethodID)NULL, 0); }
+  void clear_current_location() { set_current_location((jmethodID)nullptr, 0); }
 
   void reset_current_location(jvmtiEvent event, bool enabled);
 
@@ -164,8 +165,13 @@ public:
   inline bool single_stepping_posted() {
     return _single_stepping_posted;
   }
+  bool is_virtual();
 
-  inline JavaThread *get_thread() { return _thread; }
+  inline JvmtiThreadState* jvmti_thread_state() { return _state; }
+
+  // use _thread_saved if cthread is detached from JavaThread
+  JavaThread *get_thread_or_saved();
+  JavaThread *get_thread();
   inline JvmtiEnv *get_env() { return _env; }
 
   // lazily initialize _frame_pops

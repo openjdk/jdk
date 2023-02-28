@@ -52,9 +52,7 @@ public class ReflectiveLookupTest {
 
         Method lookupMethod =  MethodHandles.class.getMethod("lookup");
         System.out.println("reflection method: " + lookupMethod);
-        if (!lookupMethod.getName().equals("lookup")) {
-            throw new RuntimeException("Unexpected name: " + lookupMethod.getName());
-        }
+        assertEquals(lookupMethod.getName(), "lookup");
 
         // Get a full power Lookup reflectively.
         Lookup lookup2 = (Lookup) lookupMethod.invoke(null);

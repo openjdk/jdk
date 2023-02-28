@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 #ifndef GTEST_THREADHELPER_INLINE_HPP
 #define GTEST_THREADHELPER_INLINE_HPP
 
+#include "memory/allocation.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "unittest.hpp"
 
 static void startTestThread(JavaThread* thread, const char* name) {
@@ -49,13 +50,13 @@ static void startTestThread(JavaThread* thread, const char* name) {
   }
 }
 
-class VM_StopSafepoint : public VM_Operation {
+class VM_GTestStopSafepoint : public VM_Operation {
 public:
   Semaphore* _running;
   Semaphore* _test_complete;
-  VM_StopSafepoint(Semaphore* running, Semaphore* wait_for) :
+  VM_GTestStopSafepoint(Semaphore* running, Semaphore* wait_for) :
     _running(running), _test_complete(wait_for) {}
-  VMOp_Type type() const          { return VMOp_None; }
+  VMOp_Type type() const          { return VMOp_GTestStopSafepoint; }
   bool evaluate_at_safepoint() const { return false; }
   void doit()                     { _running->signal(); _test_complete->wait(); }
 };
@@ -67,7 +68,7 @@ class VMThreadBlocker : public JavaThread {
 
   static void blocker_thread_entry(JavaThread* thread, TRAPS) {
     VMThreadBlocker* t = static_cast<VMThreadBlocker*>(thread);
-    VM_StopSafepoint ss(&t->_ready, &t->_unblock);
+    VM_GTestStopSafepoint ss(&t->_ready, &t->_unblock);
     VMThread::execute(&ss);
   }
 
@@ -116,6 +117,72 @@ public:
     JavaTestThread* t = static_cast<JavaTestThread*>(thread);
     t->main_run();
     t->_post->signal();
+  }
+
+  void join() {
+    _post->wait();
+  }
+};
+
+// Calls a single-argument function of type F with the current thread (this)
+// and a self-assigned thread id as its input in a new thread when doit() is run.
+template<typename F>
+class BasicTestThread : public JavaTestThread {
+private:
+  F _fun;
+  const int _id;
+public:
+  BasicTestThread(F fun, int id, Semaphore* sem)
+    : JavaTestThread(sem),
+      _fun(fun),
+      _id(id) {
+  }
+
+  virtual ~BasicTestThread(){};
+
+  void main_run() override {
+    _fun(this, _id);
+  }
+};
+
+// A TestThreadGroup starts and tracks N threads running the same callable F.
+// The callable F should have the signature void(Thread*,int) where Thread*
+// is the current thread and int is an id in the range [0,N).
+template<typename F>
+class TestThreadGroup {
+private:
+  VMThreadBlocker* _blocker;
+  BasicTestThread<F>** _threads;
+  const int _length;
+  Semaphore _sem;
+
+public:
+  NONCOPYABLE(TestThreadGroup);
+
+  TestThreadGroup(F fun, const int number_of_threads)
+    :
+    _threads(NEW_C_HEAP_ARRAY(BasicTestThread<F>*, number_of_threads, mtTest)),
+    _length(number_of_threads),
+    _sem() {
+    for (int i = 0; i < _length; i++) {
+      _threads[i] = new BasicTestThread<F>(fun, i, &_sem);
+    }
+  }
+  ~TestThreadGroup() {
+    FREE_C_HEAP_ARRAY(BasicTestThread<F>*, _threads);
+  }
+
+  void doit() {
+    _blocker = VMThreadBlocker::start();
+    for (int i = 0; i < _length; i++) {
+      _threads[i]->doit();
+    }
+  }
+  void join() {
+    for (int i = 0; i < _length; i++) {
+      _sem.wait();
+    }
+    _blocker->release();
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,58 +137,11 @@ set_event_notification(jvmtiEventMode mode, EventIndex ei)
     return error;
 }
 
-typedef struct {
-    int major;
-    int minor;
-} version_type;
-
-typedef struct {
-    version_type runtime;
-    version_type compiletime;
-} compatible_versions_type;
-
-/*
- * List of explicitly compatible JVMTI versions, specified as
- * { runtime version, compile-time version } pairs. -1 is a wildcard.
- */
-static int nof_compatible_versions = 3;
-static compatible_versions_type compatible_versions_list[] = {
-    /*
-     * FIXUP: Allow version 0 to be compatible with anything
-     * Special check for FCS of 1.0.
-     */
-    { {  0, -1 }, { -1, -1 } },
-    { { -1, -1 }, {  0, -1 } },
-    /*
-     * 1.2 is runtime compatible with 1.1 -- just make sure to check the
-     * version before using any new 1.2 features
-     */
-    { {  1,  1 }, {  1,  2 } }
-};
-
-
 /* Logic to determine JVMTI version compatibility */
 static jboolean
 compatible_versions(jint major_runtime,     jint minor_runtime,
                     jint major_compiletime, jint minor_compiletime)
 {
-    /*
-     * First check to see if versions are explicitly compatible via the
-     * list specified above.
-     */
-    int i;
-    for (i = 0; i < nof_compatible_versions; ++i) {
-        version_type runtime = compatible_versions_list[i].runtime;
-        version_type comptime = compatible_versions_list[i].compiletime;
-
-        if ((major_runtime     == runtime.major  || runtime.major  == -1) &&
-            (minor_runtime     == runtime.minor  || runtime.minor  == -1) &&
-            (major_compiletime == comptime.major || comptime.major == -1) &&
-            (minor_compiletime == comptime.minor || comptime.minor == -1)) {
-            return JNI_TRUE;
-        }
-    }
-
     return major_runtime == major_compiletime &&
            minor_runtime >= minor_compiletime;
 }
@@ -231,20 +184,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     vmInitialized = JNI_FALSE;
     gdata->vmDead = JNI_FALSE;
 
-    /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */
-    error = JVM_FUNC_PTR(vm,GetEnv)
-                (vm, (void **)&(gdata->jvmti), JVMTI_VERSION_1);
-    if (error != JNI_OK) {
-        ERROR_MESSAGE(("JDWP unable to access JVMTI Version 1 (0x%x),"
-                         " is your J2SE a 1.5 or newer version?"
-                         " JNIEnv's GetEnv() returned %d",
-                         JVMTI_VERSION_1, error));
-        forceExit(1); /* Kill entire process, no core dump */
-    }
-
-    /* Check to make sure the version of jvmti.h we compiled with
-     *      matches the runtime version we are using.
-     */
     jvmtiCompileTimeMajorVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MAJOR )
                                         >> JVMTI_VERSION_SHIFT_MAJOR;
     jvmtiCompileTimeMinorVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MINOR )
@@ -252,12 +191,23 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     jvmtiCompileTimeMicroVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MICRO )
                                         >> JVMTI_VERSION_SHIFT_MICRO;
 
-    /* Check for compatibility */
-    if ( !compatible_versions(jvmtiMajorVersion(), jvmtiMinorVersion(),
-                jvmtiCompileTimeMajorVersion, jvmtiCompileTimeMinorVersion) ) {
+    /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */
+    error = JVM_FUNC_PTR(vm,GetEnv)
+                (vm, (void **)&(gdata->jvmti), JVMTI_VERSION);
+    if (error != JNI_OK) {
+        ERROR_MESSAGE(("JDWP unable to access JVMTI Version %d.%d.%d (0x%x)."
+                       " JNIEnv's GetEnv() returned %d.",
+                       jvmtiCompileTimeMajorVersion, jvmtiCompileTimeMinorVersion,
+                       jvmtiCompileTimeMicroVersion, JVMTI_VERSION, error));
+        forceExit(1); /* Kill entire process, no core dump */
+    }
+
+    /* Check that the JVMTI compile and runtime versions are compatibile. */
+    if (!compatible_versions(jvmtiMajorVersion(), jvmtiMinorVersion(),
+                              jvmtiCompileTimeMajorVersion, jvmtiCompileTimeMinorVersion)) {
 
         ERROR_MESSAGE(("This jdwp native library will not work with this VM's "
-                       "version of JVMTI (%d.%d.%d), it needs JVMTI %d.%d[.%d].",
+                       "version of JVMTI (%d.%d.%d). It needs JVMTI %d.%d[.%d].",
                        jvmtiMajorVersion(),
                        jvmtiMinorVersion(),
                        jvmtiMicroVersion(),
@@ -302,6 +252,9 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     needed_capabilities.can_maintain_original_method_order      = 1;
     needed_capabilities.can_generate_monitor_events             = 1;
     needed_capabilities.can_tag_objects                         = 1;
+    if (gdata->vthreadsSupported) {
+        needed_capabilities.can_support_virtual_threads         = 1;
+    }
 
     /* And what potential ones that would be nice to have */
     needed_capabilities.can_force_early_return
@@ -792,7 +745,6 @@ debugInit_reset(JNIEnv *env)
     threadControl_reset();
     util_reset();
     commonRef_reset(env);
-    classTrack_reset();
 
     /*
      * If this is a server, we are now ready to accept another connection.
@@ -874,6 +826,9 @@ printUsage(void)
  "onthrow=<exception name>         debug on throw                    none\n"
  "onuncaught=y|n                   debug on any uncaught?            n\n"
  "timeout=<timeout value>          for listen/attach in milliseconds n\n"
+ "includevirtualthreads=y|n        List of all threads includes virtual threads as well as platform threads.\n"
+ "                                 Virtual threads are a preview feature of the Java platform.\n"
+ "                                                                   n\n"
  "mutf8=y|n                        output modified utf-8             n\n"
  "quiet=y|n                        control over terminal messages    n\n"));
 
@@ -1020,6 +975,11 @@ parseOptions(char *options)
     gdata->assertFatal  = DEFAULT_ASSERT_FATAL;
     logfile             = DEFAULT_LOGFILE;
 
+    /* Set vthread debugging level. */
+    gdata->vthreadsSupported = JNI_TRUE;
+    gdata->includeVThreads = JNI_FALSE;
+    gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
+
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
         options = "";
@@ -1121,6 +1081,20 @@ parseOptions(char *options)
                 goto syntax_error;
             }
             currentTransport->timeout = atol(current);
+            current += strlen(current) + 1;
+        } else if (strcmp(buf, "includevirtualthreads") == 0) {
+            if (!get_tok(&str, current, (int)(end - current), ',')) {
+                goto syntax_error;
+            }
+            if (strcmp(current, "y") == 0) {
+                gdata->includeVThreads = JNI_TRUE;
+            } else if (strcmp(current, "n") == 0) {
+                gdata->includeVThreads = JNI_FALSE;
+            } else {
+                goto syntax_error;
+            }
+            // These two flags always set the same for now.
+            gdata->rememberVThreadsWhenDisconnected = gdata->includeVThreads;
             current += strlen(current) + 1;
         } else if (strcmp(buf, "launch") == 0) {
             /*LINTED*/
@@ -1353,7 +1327,7 @@ debugInit_exit(jvmtiError error, const char *msg)
         return;
     }
 
-    // No transport initilized.
+    // No transport initialized.
     // As we don't have any details here exiting with separate exit code
     if (error == AGENT_ERROR_TRANSPORT_INIT) {
         forceExit(EXIT_TRANSPORT_ERROR);

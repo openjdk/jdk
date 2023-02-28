@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ class WEPoll {
      *     epoll_data_t data;
      * }
      */
+    static {
+        IOUtil.load();
+    }
     private static final int SIZEOF_EPOLLEVENT   = eventSize();
     private static final int OFFSETOF_EVENTS     = eventsOffset();
     private static final int OFFSETOF_SOCK       = dataOffset();
@@ -139,8 +142,4 @@ class WEPoll {
         throws IOException;
 
     static native void close(long h);
-
-    static {
-        IOUtil.load();
-    }
 }

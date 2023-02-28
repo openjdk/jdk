@@ -35,7 +35,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -328,12 +327,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      */
     public JInternalFrame[] getAllFramesInLayer(int layer) {
         Collection<JInternalFrame> allFrames = getAllFrames(this);
-        Iterator<JInternalFrame> iterator = allFrames.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getLayer() != layer) {
-                iterator.remove();
-            }
-        }
+        allFrames.removeIf(frame -> frame.getLayer() != layer);
         return allFrames.toArray(new JInternalFrame[0]);
     }
 

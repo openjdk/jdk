@@ -35,8 +35,8 @@ import java.io.*;
  * It, together with the ContentModelStates, defines the
  * complete state of the parser while reading a document.
  * When a start tag is encountered an element is pushed onto
- * the stack, when an end tag is enountered an element is popped
- * of the stack.
+ * the stack, when an end tag is encountered an element is popped
+ * off the stack.
  *
  * @see Parser
  * @see DTD
@@ -160,45 +160,5 @@ class TagStack implements DTDConstants {
         return (next == null) ?
             "<" + tag.getElement().getName() + ">" :
             next + " <" + tag.getElement().getName() + ">";
-    }
-}
-
-class NPrintWriter extends PrintWriter {
-
-    private int numLines = 5;
-    private int numPrinted = 0;
-
-    public NPrintWriter (int numberOfLines) {
-        super(System.out);
-        numLines = numberOfLines;
-    }
-
-    public void println(char[] array) {
-        if (numPrinted >= numLines) {
-            return;
-        }
-
-        char[] partialArray = null;
-
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == '\n') {
-                numPrinted++;
-            }
-
-            if (numPrinted == numLines) {
-                System.arraycopy(array, 0, partialArray, 0, i);
-            }
-        }
-
-        if (partialArray != null) {
-            super.print(partialArray);
-        }
-
-        if (numPrinted == numLines) {
-            return;
-        }
-
-        super.println(array);
-        numPrinted++;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,21 @@
 package java.nio;
 
 import java.io.FileDescriptor;
+import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
-import jdk.internal.misc.ScopedMemoryAccess.Scope;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 
+#if[rw]
+sealed
+#else[rw]
+final
+#end[rw]
 class Direct$Type$Buffer$RW$$BO$
 #if[rw]
     extends {#if[byte]?Mapped$Type$Buffer:$Type$Buffer}
@@ -44,12 +50,12 @@ class Direct$Type$Buffer$RW$$BO$
     extends Direct$Type$Buffer$BO$
 #end[rw]
     implements DirectBuffer
+#if[rw]
+    permits Direct$Type$BufferR$BO$
+#end[rw]
 {
 
 #if[rw]
-
-    // Cached array base offset
-    private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
 
     // Cached unaligned-access capability
     protected static final boolean UNALIGNED = Bits.unaligned();
@@ -134,7 +140,14 @@ class Direct$Type$Buffer$RW$$BO$
         } else {
             address = base;
         }
-        cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        try {
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        } catch (Throwable t) {
+            // Prevent leak if the Deallocator or Cleaner fail for any reason
+            UNSAFE.freeMemory(base);
+            Bits.unreserveMemory(size, cap);
+            throw t;
+        }
         att = null;
 #else[rw]
         super(cap);
@@ -147,7 +160,7 @@ class Direct$Type$Buffer$RW$$BO$
     // Invoked to construct a direct ByteBuffer referring to the block of
     // memory. A given arbitrary object may also be attached to the buffer.
     //
-    Direct$Type$Buffer(long addr, int cap, Object ob, MemorySegmentProxy segment) {
+    Direct$Type$Buffer(long addr, int cap, Object ob, MemorySegment segment) {
         super(-1, 0, cap, cap, segment);
         address = addr;
         cleaner = null;
@@ -157,7 +170,7 @@ class Direct$Type$Buffer$RW$$BO$
     // Invoked to construct a direct ByteBuffer referring to the block of
     // memory. A given arbitrary object may also be attached to the buffer.
     //
-    Direct$Type$Buffer(long addr, int cap, Object ob, FileDescriptor fd, boolean isSync, MemorySegmentProxy segment) {
+    Direct$Type$Buffer(long addr, int cap, Object ob, FileDescriptor fd, boolean isSync, MemorySegment segment) {
         super(-1, 0, cap, cap, fd, isSync, segment);
         address = addr;
         cleaner = null;
@@ -165,12 +178,29 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, int cap) {
-        super(-1, 0, cap, cap, null);
+    private Direct$Type$Buffer(long addr, long cap) {
+        super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
         att = null;
+    }
+
+    // Throw an IllegalArgumentException if the capacity is not in
+    // the range [0, Integer.MAX_VALUE]
+    //
+    private static int checkCapacity(long capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity < 0: ("
+                + capacity + ")");
+        } else if (capacity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity > Integer.MAX_VALUE: ("
+                + capacity + ")");
+        }
+        return (int)capacity;
     }
 
 #end[rw]
@@ -180,7 +210,7 @@ class Direct$Type$Buffer$RW$$BO$
     protected Direct$Type$Buffer$RW$(int cap, long addr,
                                      FileDescriptor fd,
                                      Runnable unmapper,
-                                     boolean isSync, MemorySegmentProxy segment)
+                                     boolean isSync, MemorySegment segment)
     {
 #if[rw]
         super(-1, 0, cap, cap, fd, isSync, segment);
@@ -202,7 +232,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[byte]
                                FileDescriptor fd, boolean isSync,
 #end[byte]
-                               MemorySegmentProxy segment)
+                               MemorySegment segment)
     {
 #if[rw]
         super(mark, pos, lim, cap,
@@ -240,7 +270,7 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
-                                              rem, 
+                                              rem,
                                               rem,
                                               off,
 #if[byte]
@@ -301,16 +331,12 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
 
     public long address() {
-        Scope scope = scope();
-        if (scope != null) {
-            if (scope.ownerThread() == null) {
-                throw new UnsupportedOperationException("ByteBuffer derived from shared segments not supported");
+        MemorySessionImpl session = session();
+        if (session != null) {
+            if (session.ownerThread() == null && session.isCloseable()) {
+                throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
             }
-            try {
-                scope.checkValidState();
-            } catch (Scope.ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
+            session.checkValidState();
         }
         return address;
     }
@@ -321,7 +347,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $type$ get() {
         try {
-            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(scope(), null, ix(nextGetIndex()))));
+            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(nextGetIndex()))));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -329,7 +355,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $type$ get(int i) {
         try {
-            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(scope(), null, ix(checkIndex(i)))));
+            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(checkIndex(i)))));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -349,7 +375,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put($type$ x) {
 #if[rw]
         try {
-            SCOPED_MEMORY_ACCESS.put$Swaptype$(scope(), null, ix(nextPutIndex()), $swap$($toBits$(x)));
+            SCOPED_MEMORY_ACCESS.put$Swaptype$(session(), null, ix(nextPutIndex()), $swap$($toBits$(x)));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -362,7 +388,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
         try {
-            SCOPED_MEMORY_ACCESS.put$Swaptype$(scope(), null, ix(checkIndex(i)), $swap$($toBits$(x)));
+            SCOPED_MEMORY_ACCESS.put$Swaptype$(session(), null, ix(checkIndex(i)), $swap$($toBits$(x)));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -379,8 +405,8 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
-            // null is passed as destination Scope to avoid checking scope() twice
-            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
+            // null is passed as destination MemorySession to avoid checking session() twice
+            SCOPED_MEMORY_ACCESS.copyMemory(session(), null, null,
                     ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {
             Reference.reachabilityFence(this);

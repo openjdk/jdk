@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // (point of infinity).  However, the point of infinity has no
         // affine coordinates, although the point of infinity could
         // be encoded.  Per IEEE 1363.3-2013 (see section A.6.4.1),
-        // the point of inifinity is represented by a pair of
+        // the point of infinity is represented by a pair of
         // coordinates (x, y) not on the curve.  For EC prime finite
         // field (q = p^m), the point of infinity is (0, 0) unless
         // b = 0; in which case it is (0, 1).
@@ -197,7 +197,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         EllipticCurve curve = spec.getCurve();
         BigInteger rhs = x.modPow(BigInteger.valueOf(3), p).add(curve.getA()
             .multiply(x)).add(curve.getB()).mod(p);
-        BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
+        BigInteger lhs = y.modPow(BigInteger.TWO, p);
         if (!rhs.equals(lhs)) {
             throw new InvalidKeyException("Point is not on curve");
         }
@@ -205,13 +205,10 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // Check the order of the point.
         //
         // Compute nQ (using elliptic curve arithmetic), and verify that
-        // nQ is the the identity element.
-        ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
-        ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
-        AffinePoint affP = new AffinePoint(xElem, yElem);
+        // nQ is the identity element.
         byte[] order = spec.getOrder().toByteArray();
         ArrayUtil.reverse(order);
-        Point product = ops.multiply(affP, order);
+        Point product = ops.multiply(key.getW(), order);
         if (!ops.isNeutral(product)) {
             throw new InvalidKeyException("Point has incorrect order");
         }
@@ -275,12 +272,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         scalar.setProduct(cofactor);
         int keySize =
             (priv.getParams().getCurve().getField().getFieldSize() + 7) / 8;
-        ImmutableIntegerModuloP x =
-            field.getElement(pubKey.getW().getAffineX());
-        ImmutableIntegerModuloP y =
-            field.getElement(pubKey.getW().getAffineY());
-        Point product = ops.multiply(new AffinePoint(x, y),
-            scalar.asByteArray(keySize));
+        Point product =
+                ops.multiply(pubKey.getW(), scalar.asByteArray(keySize));
         if (ops.isNeutral(product)) {
             throw new InvalidKeyException("Product is zero");
         }

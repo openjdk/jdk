@@ -149,7 +149,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
           else
             AC_MSG_ERROR([Could not locate libffi.so.? for bundling])
           fi
-        elif test "x${OPENJDK_TARGET_CPU}" = "xx86_64"; then
+        elif test "x${OPENJDK_TARGET_CPU}" = "xx86_64" || test "x${OPENJDK_TARGET_CPU}" = "xaarch64"; then
           if test -e ${SYSROOT}/usr/lib64/libffi.so.? ; then
             LIBFFI_LIB_FILE="${SYSROOT}/usr/lib64/libffi.so.?"
           elif test -e ${SYSROOT}/usr/lib/x86_64-linux-gnu/libffi.so.? ; then

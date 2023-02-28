@@ -142,11 +142,11 @@ LIR_Opr FrameMap::r13_metadata_opr;
 LIR_Opr FrameMap::r14_metadata_opr;
 #endif // _LP64
 
-LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
-LIR_Opr FrameMap::_caller_save_fpu_regs[] = { 0, };
-LIR_Opr FrameMap::_caller_save_xmm_regs[] = { 0, };
+LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_xmm_regs[] = {};
 
-XMMRegister FrameMap::_xmm_regs [] = { 0, };
+XMMRegister FrameMap::_xmm_regs[] = {};
 
 XMMRegister FrameMap::nr2xmmreg(int rnr) {
   assert(_init_done, "tables not initialized");

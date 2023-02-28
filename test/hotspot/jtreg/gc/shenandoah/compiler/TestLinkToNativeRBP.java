@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @enablePreview
  * @bug 8259937
  * @summary guarantee(loc != NULL) failed: missing saved register with native invoke
  *
@@ -30,32 +31,27 @@
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @requires vm.gc.Shenandoah
  *
- * @modules jdk.incubator.foreign
- *
  * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
  *
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.SymbolLookup;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
 
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-
-import static jdk.incubator.foreign.CLinker.C_INT;
 
 public class TestLinkToNativeRBP {
     static {
         System.loadLibrary("LinkToNativeRBP");
     }
 
-    final static CLinker abi = CLinker.getInstance();
+    final static Linker abi = Linker.nativeLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
-    final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
-            MethodType.methodType(int.class),
-            FunctionDescriptor.of(C_INT));
+    final static MethodHandle foo = abi.downcallHandle(lookup.find("foo").get(),
+            FunctionDescriptor.of(ValueLayout.JAVA_INT));
 
     static int foo() throws Throwable {
         return (int)foo.invokeExact();

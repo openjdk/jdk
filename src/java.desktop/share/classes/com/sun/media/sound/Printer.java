@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ final class Printer {
      * And in fact if should be implemented as an assertion, but for
      * compatibility reason it just print an error only in case of "internal"
      * build. In time its usage should be replaced by some kind of assertion or
-     * dropped completly.
+     * dropped completely.
      */
     public static void err(String str) {
         if (err) {
@@ -77,7 +77,7 @@ final class Printer {
     private static void println(String s) {
         String prepend = "";
         if (SHOW_THREADID) {
-            prepend = "thread "  + Thread.currentThread().getId() + " " + prepend;
+            prepend = "thread "  + Thread.currentThread().threadId() + " " + prepend;
         }
         if (SHOW_TIMESTAMP) {
             if (startTime == 0) {

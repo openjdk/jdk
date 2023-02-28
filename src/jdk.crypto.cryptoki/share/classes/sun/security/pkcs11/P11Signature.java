@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,19 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 
-import sun.security.rsa.RSASignature;
+import sun.security.rsa.RSAUtil;
 import sun.security.rsa.RSAPadding;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import sun.security.util.KeyUtil;
 
 /**
@@ -98,6 +100,8 @@ import sun.security.util.KeyUtil;
  */
 final class P11Signature extends SignatureSpi {
 
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     // token instance
     private final Token token;
 
@@ -118,6 +122,9 @@ final class P11Signature extends SignatureSpi {
 
     // key instance used, if init*() was called
     private P11Key p11Key;
+
+    // signature length expected or 0 for unknown
+    private int sigLen;
 
     // message digest, if we do the digesting ourselves
     private final MessageDigest md;
@@ -169,84 +176,82 @@ final class P11Signature extends SignatureSpi {
         byte[] buffer = null;
         ObjectIdentifier digestOID = null;
         MessageDigest md = null;
-        switch ((int)mechanism) {
-        case (int)CKM_MD2_RSA_PKCS:
-        case (int)CKM_MD5_RSA_PKCS:
-        case (int)CKM_SHA1_RSA_PKCS:
-        case (int)CKM_SHA224_RSA_PKCS:
-        case (int)CKM_SHA256_RSA_PKCS:
-        case (int)CKM_SHA384_RSA_PKCS:
-        case (int)CKM_SHA512_RSA_PKCS:
-        case (int)CKM_SHA3_224_RSA_PKCS:
-        case (int)CKM_SHA3_256_RSA_PKCS:
-        case (int)CKM_SHA3_384_RSA_PKCS:
-        case (int)CKM_SHA3_512_RSA_PKCS:
-            keyAlgorithm = "RSA";
-            type = T_UPDATE;
-            buffer = new byte[1];
-            break;
-        case (int)CKM_DSA_SHA1:
-        case (int)CKM_DSA_SHA224:
-        case (int)CKM_DSA_SHA256:
-        case (int)CKM_DSA_SHA384:
-        case (int)CKM_DSA_SHA512:
-        case (int)CKM_DSA_SHA3_224:
-        case (int)CKM_DSA_SHA3_256:
-        case (int)CKM_DSA_SHA3_384:
-        case (int)CKM_DSA_SHA3_512:
-            keyAlgorithm = "DSA";
-            type = T_UPDATE;
-            buffer = new byte[1];
-            break;
-        case (int)CKM_ECDSA_SHA1:
-        case (int)CKM_ECDSA_SHA224:
-        case (int)CKM_ECDSA_SHA256:
-        case (int)CKM_ECDSA_SHA384:
-        case (int)CKM_ECDSA_SHA512:
-        case (int)CKM_ECDSA_SHA3_224:
-        case (int)CKM_ECDSA_SHA3_256:
-        case (int)CKM_ECDSA_SHA3_384:
-        case (int)CKM_ECDSA_SHA3_512:
-            keyAlgorithm = "EC";
-            type = T_UPDATE;
-            buffer = new byte[1];
-            break;
-        case (int)CKM_DSA:
-            keyAlgorithm = "DSA";
-            if (algorithm.equals("DSA") ||
-                algorithm.equals("DSAinP1363Format")) {
-                type = T_DIGEST;
-                md = MessageDigest.getInstance("SHA-1");
-            } else if (algorithm.equals("RawDSA") ||
-                       algorithm.equals("RawDSAinP1363Format")) {
-                type = T_RAW;
-                buffer = new byte[20];
-            } else {
-                throw new ProviderException(algorithm);
+        switch ((int) mechanism) {
+            case (int) CKM_MD2_RSA_PKCS,
+                    (int) CKM_MD5_RSA_PKCS,
+                    (int) CKM_SHA1_RSA_PKCS,
+                    (int) CKM_SHA224_RSA_PKCS,
+                    (int) CKM_SHA256_RSA_PKCS,
+                    (int) CKM_SHA384_RSA_PKCS,
+                    (int) CKM_SHA512_RSA_PKCS,
+                    (int) CKM_SHA3_224_RSA_PKCS,
+                    (int) CKM_SHA3_256_RSA_PKCS,
+                    (int) CKM_SHA3_384_RSA_PKCS,
+                    (int) CKM_SHA3_512_RSA_PKCS -> {
+                keyAlgorithm = "RSA";
+                type = T_UPDATE;
+                buffer = new byte[1];
             }
-            break;
-        case (int)CKM_ECDSA:
-            keyAlgorithm = "EC";
-            if (algorithm.equals("NONEwithECDSA") ||
-                algorithm.equals("NONEwithECDSAinP1363Format")) {
-                type = T_RAW;
-                buffer = new byte[RAW_ECDSA_MAX];
-            } else {
-                type = T_DIGEST;
-                md = MessageDigest.getInstance
-                        (getDigestEnum(algorithm).stdName());
+            case (int) CKM_DSA_SHA1,
+                    (int) CKM_DSA_SHA224,
+                    (int) CKM_DSA_SHA256,
+                    (int) CKM_DSA_SHA384,
+                    (int) CKM_DSA_SHA512,
+                    (int) CKM_DSA_SHA3_224,
+                    (int) CKM_DSA_SHA3_256,
+                    (int) CKM_DSA_SHA3_384,
+                    (int) CKM_DSA_SHA3_512 -> {
+                keyAlgorithm = "DSA";
+                type = T_UPDATE;
+                buffer = new byte[1];
             }
-            break;
-        case (int)CKM_RSA_PKCS:
-        case (int)CKM_RSA_X_509:
-            keyAlgorithm = "RSA";
-            type = T_DIGEST;
-            KnownOIDs digestAlg = getDigestEnum(algorithm);
-            md = MessageDigest.getInstance(digestAlg.stdName());
-            digestOID = ObjectIdentifier.of(digestAlg);
-            break;
-        default:
-            throw new ProviderException("Unknown mechanism: " + mechanism);
+            case (int) CKM_ECDSA_SHA1,
+                    (int) CKM_ECDSA_SHA224,
+                    (int) CKM_ECDSA_SHA256,
+                    (int) CKM_ECDSA_SHA384,
+                    (int) CKM_ECDSA_SHA512,
+                    (int) CKM_ECDSA_SHA3_224,
+                    (int) CKM_ECDSA_SHA3_256,
+                    (int) CKM_ECDSA_SHA3_384,
+                    (int) CKM_ECDSA_SHA3_512 -> {
+                keyAlgorithm = "EC";
+                type = T_UPDATE;
+                buffer = new byte[1];
+            }
+            case (int) CKM_DSA -> {
+                keyAlgorithm = "DSA";
+                if (algorithm.equals("DSA") ||
+                        algorithm.equals("DSAinP1363Format")) {
+                    type = T_DIGEST;
+                    md = MessageDigest.getInstance("SHA-1");
+                } else if (algorithm.equals("RawDSA") ||
+                        algorithm.equals("RawDSAinP1363Format")) {
+                    type = T_RAW;
+                    buffer = new byte[20];
+                } else {
+                    throw new ProviderException(algorithm);
+                }
+            }
+            case (int) CKM_ECDSA -> {
+                keyAlgorithm = "EC";
+                if (algorithm.equals("NONEwithECDSA") ||
+                        algorithm.equals("NONEwithECDSAinP1363Format")) {
+                    type = T_RAW;
+                    buffer = new byte[RAW_ECDSA_MAX];
+                } else {
+                    type = T_DIGEST;
+                    md = MessageDigest.getInstance
+                            (getDigestEnum(algorithm).stdName());
+                }
+            }
+            case (int) CKM_RSA_PKCS, (int) CKM_RSA_X_509 -> {
+                keyAlgorithm = "RSA";
+                type = T_DIGEST;
+                KnownOIDs digestAlg = getDigestEnum(algorithm);
+                md = MessageDigest.getInstance(digestAlg.stdName());
+                digestOID = ObjectIdentifier.of(digestAlg);
+            }
+            default -> throw new ProviderException("Unknown mechanism: " + mechanism);
         }
         this.buffer = buffer;
         this.digestOID = digestOID;
@@ -280,12 +285,18 @@ final class P11Signature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
+
+        if (P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession call as some
         // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
                 if (type == T_UPDATE) {
-                    token.p11.C_SignFinal(session.id(), 0);
+                    token.p11.C_SignFinal(session.id(), sigLen);
                 } else {
                     byte[] digest;
                     if (type == T_DIGEST) {
@@ -296,12 +307,7 @@ final class P11Signature extends SignatureSpi {
                     token.p11.C_Sign(session.id(), digest);
                 }
             } else { // M_VERIFY
-                byte[] signature;
-                if (mechanism == CKM_DSA) {
-                    signature = new byte[64]; // assume N = 256
-                } else {
-                    signature = new byte[(p11Key.length() + 7) >> 3];
-                }
+                byte[] signature = new byte[sigLen];
                 if (type == T_UPDATE) {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
@@ -315,17 +321,16 @@ final class P11Signature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
-                // call. If the operation inside the token was already cancelled,
-                // do not fail here. This is part of a defensive mechanism for
-                // PKCS#11 libraries that do not strictly follow the standard.
+                // call. If the operation was already cancelled, do not fail
+                // here. This is part of a defensive mechanism for PKCS#11
+                // libraries that do not strictly follow the standard.
                 return;
             }
             if (mode == M_VERIFY) {
-                long errorCode = e.getErrorCode();
-                if ((errorCode == CKR_SIGNATURE_INVALID) ||
-                     (errorCode == CKR_SIGNATURE_LEN_RANGE)) {
+                if (e.match(CKR_SIGNATURE_INVALID) ||
+                         e.match(CKR_SIGNATURE_LEN_RANGE)) {
                      // expected since signature is incorrect
                      return;
                 }
@@ -373,6 +378,15 @@ final class P11Signature extends SignatureSpi {
                 md.reset();
             }
         }
+        sigLen = 0;
+        if ("DSA".equals(p11Key.getAlgorithm())) {
+            if (p11Key instanceof P11Key.P11DSAPrivateKeyInternal) {
+                sigLen = ((P11Key.P11DSAPrivateKeyInternal)p11Key).getParams()
+                        .getQ().bitLength() >> 2;
+            } else if (p11Key instanceof DSAKey) {
+                sigLen = ((DSAKey)p11Key).getParams().getQ().bitLength() >> 2;
+            }
+        }
         initialized = true;
     }
 
@@ -396,19 +410,16 @@ final class P11Signature extends SignatureSpi {
                maxKeySize = 1024;
         }
         int keySize = 0;
-        if (key instanceof P11Key) {
-            keySize = ((P11Key) key).length();
+        if (key instanceof P11Key keyP11) {
+            keySize = keyP11.length();
         } else {
             try {
-                if (keyAlgo.equals("RSA")) {
-                    keySize = ((RSAKey) key).getModulus().bitLength();
-                } else if (keyAlgo.equals("DSA")) {
-                    keySize = ((DSAKey) key).getParams().getP().bitLength();
-                } else if (keyAlgo.equals("EC")) {
-                    keySize = ((ECKey) key).getParams().getCurve().getField().getFieldSize();
-                } else {
-                    throw new ProviderException("Error: unsupported algo " + keyAlgo);
-                }
+                keySize = switch (keyAlgo) {
+                    case "RSA" -> ((RSAKey) key).getModulus().bitLength();
+                    case "DSA" -> ((DSAKey) key).getParams().getP().bitLength();
+                    case "EC" -> ((ECKey) key).getParams().getCurve().getField().getFieldSize();
+                    default -> throw new ProviderException("Error: unsupported algo " + keyAlgo);
+                };
             } catch (ClassCastException cce) {
                 throw new InvalidKeyException(keyAlgo +
                     " key must be the right type", cce);
@@ -433,7 +444,7 @@ final class P11Signature extends SignatureSpi {
             padding = RSAPadding.getInstance
                 (RSAPadding.PAD_BLOCKTYPE_1, (len + 7) >> 3);
         } catch (InvalidAlgorithmParameterException iape) {
-            throw new InvalidKeyException(iape.getMessage());
+            throw new InvalidKeyException(iape.getMessage(), iape);
         }
         int maxDataSize = padding.getMaxDataSize();
         int encodedLength = switch (algorithm) {
@@ -494,23 +505,22 @@ final class P11Signature extends SignatureSpi {
     protected void engineUpdate(byte b) throws SignatureException {
         ensureInitialized();
         switch (type) {
-        case T_UPDATE:
-            buffer[0] = b;
-            engineUpdate(buffer, 0, 1);
-            break;
-        case T_DIGEST:
-            md.update(b);
-            bytesProcessed++;
-            break;
-        case T_RAW:
-            if (bytesProcessed >= buffer.length) {
-                bytesProcessed = buffer.length + 1;
-                return;
+            case T_UPDATE -> {
+                buffer[0] = b;
+                engineUpdate(buffer, 0, 1);
             }
-            buffer[bytesProcessed++] = b;
-            break;
-        default:
-            throw new ProviderException("Internal error");
+            case T_DIGEST -> {
+                md.update(b);
+                bytesProcessed++;
+            }
+            case T_RAW -> {
+                if (bytesProcessed >= buffer.length) {
+                    bytesProcessed = buffer.length + 1;
+                    return;
+                }
+                buffer[bytesProcessed++] = b;
+            }
+            default -> throw new ProviderException("Internal error");
         }
     }
 
@@ -568,44 +578,48 @@ final class P11Signature extends SignatureSpi {
             return;
         }
         switch (type) {
-        case T_UPDATE:
-            if (byteBuffer instanceof DirectBuffer == false) {
-                // cannot do better than default impl
-                super.engineUpdate(byteBuffer);
-                return;
-            }
-            long addr = ((DirectBuffer)byteBuffer).address();
-            int ofs = byteBuffer.position();
-            try {
-                if (mode == M_SIGN) {
-                    token.p11.C_SignUpdate
-                        (session.id(), addr + ofs, null, 0, len);
-                } else {
-                    token.p11.C_VerifyUpdate
-                        (session.id(), addr + ofs, null, 0, len);
+            case T_UPDATE -> {
+                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+                    // cannot do better than default impl
+                    super.engineUpdate(byteBuffer);
+                    return;
                 }
+                int ofs = byteBuffer.position();
+                NIO_ACCESS.acquireSession(byteBuffer);
+                try {
+                    long addr = dByteBuffer.address();
+                    if (mode == M_SIGN) {
+                        token.p11.C_SignUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    } else {
+                        token.p11.C_VerifyUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    }
+                    bytesProcessed += len;
+                    byteBuffer.position(ofs + len);
+                } catch (PKCS11Exception e) {
+                    reset(false);
+                    throw new ProviderException("Update failed", e);
+                } finally {
+                    NIO_ACCESS.releaseSession(byteBuffer);
+                }
+            }
+            case T_DIGEST -> {
+                md.update(byteBuffer);
                 bytesProcessed += len;
-                byteBuffer.position(ofs + len);
-            } catch (PKCS11Exception e) {
+            }
+            case T_RAW -> {
+                if (bytesProcessed + len > buffer.length) {
+                    bytesProcessed = buffer.length + 1;
+                    return;
+                }
+                byteBuffer.get(buffer, bytesProcessed, len);
+                bytesProcessed += len;
+            }
+            default -> {
                 reset(false);
-                throw new ProviderException("Update failed", e);
+                throw new ProviderException("Internal error");
             }
-            break;
-        case T_DIGEST:
-            md.update(byteBuffer);
-            bytesProcessed += len;
-            break;
-        case T_RAW:
-            if (bytesProcessed + len > buffer.length) {
-                bytesProcessed = buffer.length + 1;
-                return;
-            }
-            byteBuffer.get(buffer, bytesProcessed, len);
-            bytesProcessed += len;
-            break;
-        default:
-            reset(false);
-            throw new ProviderException("Internal error");
         }
     }
 
@@ -618,7 +632,7 @@ final class P11Signature extends SignatureSpi {
         try {
             byte[] signature;
             if (type == T_UPDATE) {
-                signature = token.p11.C_SignFinal(session.id(), 0);
+                signature = token.p11.C_SignFinal(session.id(), sigLen);
             } else {
                 byte[] digest;
                 if (type == T_DIGEST) {
@@ -639,7 +653,7 @@ final class P11Signature extends SignatureSpi {
                         System.arraycopy(buffer, 0, digest, 0, bytesProcessed);
                     }
                 }
-                if (keyAlgorithm.equals("RSA") == false) {
+                if (!keyAlgorithm.equals("RSA")) {
                     // DSA and ECDSA
                     signature = token.p11.C_Sign(session.id(), digest);
                 } else { // RSA
@@ -685,7 +699,7 @@ final class P11Signature extends SignatureSpi {
         try {
             if (!p1363Format) {
                 if (keyAlgorithm.equals("DSA")) {
-                    signature = asn1ToDSA(signature);
+                    signature = asn1ToDSA(signature, sigLen);
                 } else if (keyAlgorithm.equals("EC")) {
                     signature = asn1ToECDSA(signature);
                 }
@@ -712,7 +726,7 @@ final class P11Signature extends SignatureSpi {
                         System.arraycopy(buffer, 0, digest, 0, bytesProcessed);
                     }
                 }
-                if (keyAlgorithm.equals("RSA") == false) {
+                if (!keyAlgorithm.equals("RSA")) {
                     // DSA and ECDSA
                     token.p11.C_Verify(session.id(), digest, signature);
                 } else { // RSA
@@ -727,16 +741,9 @@ final class P11Signature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) { // ECF bug?
                 return false;
             }
             throw new ProviderException(pe);
@@ -760,11 +767,7 @@ final class P11Signature extends SignatureSpi {
     }
 
     private byte[] encodeSignature(byte[] digest) throws SignatureException {
-        try {
-            return RSASignature.encodeSignature(digestOID, digest);
-        } catch (IOException e) {
-            throw new SignatureException("Invalid encoding", e);
-        }
+        return RSAUtil.encodeSignature(digestOID, digest);
     }
 
     private static KnownOIDs getDigestEnum(String algorithm)
@@ -797,19 +800,16 @@ final class P11Signature extends SignatureSpi {
         int n = signature.length >> 1;
         BigInteger r = new BigInteger(1, P11Util.subarray(signature, 0, n));
         BigInteger s = new BigInteger(1, P11Util.subarray(signature, n, n));
-        try {
-            DerOutputStream outseq = new DerOutputStream(100);
-            outseq.putInteger(r);
-            outseq.putInteger(s);
-            DerValue result = new DerValue(DerValue.tag_Sequence,
-                                           outseq.toByteArray());
-            return result.toByteArray();
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("Internal error", e);
-        }
+        DerOutputStream outseq = new DerOutputStream(100);
+        outseq.putInteger(r);
+        outseq.putInteger(s);
+        DerValue result = new DerValue(DerValue.tag_Sequence,
+                outseq.toByteArray());
+        return result.toByteArray();
     }
 
-    private static byte[] asn1ToDSA(byte[] sig) throws SignatureException {
+    private static byte[] asn1ToDSA(byte[] sig, int sigLen)
+            throws SignatureException {
         try {
             // Enforce strict DER checking for signatures
             DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
@@ -824,8 +824,8 @@ final class P11Signature extends SignatureSpi {
             BigInteger r = values[0].getPositiveBigInteger();
             BigInteger s = values[1].getPositiveBigInteger();
 
-            byte[] br = toByteArray(r, 20);
-            byte[] bs = toByteArray(s, 20);
+            byte[] br = toByteArray(r, sigLen/2);
+            byte[] bs = toByteArray(s, sigLen/2);
             if ((br == null) || (bs == null)) {
                 throw new SignatureException("Out of range value for R or S");
             }
@@ -837,7 +837,7 @@ final class P11Signature extends SignatureSpi {
         }
     }
 
-    private byte[] asn1ToECDSA(byte[] sig) throws SignatureException {
+    private static byte[] asn1ToECDSA(byte[] sig) throws SignatureException {
         try {
             // Enforce strict DER checking for signatures
             DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
@@ -917,3 +917,4 @@ final class P11Signature extends SignatureSpi {
         return null;
     }
 }
+

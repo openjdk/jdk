@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 
-import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng TestStringEncoding
  */
 
@@ -39,12 +39,12 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testStrings(String testString, int expectedByteLength) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment text = CLinker.toCString(testString, scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment text = arena.allocateUtf8String(testString);
 
             assertEquals(text.byteSize(), expectedByteLength);
 
-            String roundTrip = CLinker.toJavaString(text);
+            String roundTrip = text.getUtf8String(0);
             assertEquals(roundTrip, testString);
         }
     }

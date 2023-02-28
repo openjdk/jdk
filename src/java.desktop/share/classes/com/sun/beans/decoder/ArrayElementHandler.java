@@ -100,7 +100,7 @@ final class ArrayElementHandler extends NewElementHandler {
 
     /**
      * Calculates the value of this element
-     * if the lentgh attribute is set.
+     * if the length attribute is set.
      */
     @Override
     public void startElement() {

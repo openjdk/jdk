@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8230159
+ * @bug 8230159 8275534
  * @library /test/lib
  * @summary Ensure that correct exceptions are being thrown in
- * BasicAuthenticator constructor
+ *          BasicAuthenticator constructor
  * @run testng BasicAuthenticatorExceptionCheck
  */
 
@@ -36,6 +36,7 @@ import com.sun.net.httpserver.BasicAuthenticator;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.expectThrows;
+import static org.testng.Assert.assertEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
@@ -73,6 +74,7 @@ public class BasicAuthenticatorExceptionCheck {
 
         ex = expectThrows(IAE, () ->
                 createBasicAuthenticator("", UTF_8));
+        assertEquals(ex.getMessage(), "realm must not be empty");
         System.out.println("Empty string for realm and valid charset provided - " +
                 "IllegalArgumentException thrown as expected: " + ex);
 
@@ -83,7 +85,22 @@ public class BasicAuthenticatorExceptionCheck {
 
         ex = expectThrows(IAE, () ->
                 createBasicAuthenticator(""));
+        assertEquals(ex.getMessage(), "realm must not be empty");
         System.out.println("Empty string for realm provided - " +
                 "IllegalArgumentException thrown as expected: " + ex);
+
+        ex = expectThrows(IAE, () ->
+                createBasicAuthenticator("\"/test\""));
+        assertEquals(ex.getMessage(), "realm invalid: \"/test\"");
+        System.out.println("Invalid string for realm provided - " +
+                "IllegalArgumentException thrown as expected: " + ex);
+
+        ex = expectThrows(IAE, () ->
+                createBasicAuthenticator("\""));
+        assertEquals(ex.getMessage(), "realm invalid: \"");
+        System.out.println("Invalid string for realm provided - " +
+                "IllegalArgumentException thrown as expected: " + ex);
+
+        createBasicAuthenticator("\\\"/test\\\"");
     }
 }

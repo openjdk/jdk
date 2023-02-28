@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,9 +164,9 @@ AsmCondition convNegCond(TemplateTable::Condition cc) {
 }
 
 //----------------------------------------------------------------------------------------------------
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 
-// Store an oop (or NULL) at the address described by obj.
+// Store an oop (or null) at the address described by obj.
 // Blows all volatile registers R0-R3, Rtemp, LR).
 // Also destroys new_val and obj.base().
 static void do_oop_store(InterpreterMacroAssembler* _masm,
@@ -364,7 +364,7 @@ void TemplateTable::sipush() {
 }
 
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Label fastCase, Condy, Done;
 
@@ -373,7 +373,7 @@ void TemplateTable::ldc(bool wide) {
   const Register Rtags  = R3_tmp;
   const Register RtagType = R3_tmp;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(Rindex, 1);
   } else {
     __ ldrb(Rindex, at_bcp(1));
@@ -401,7 +401,7 @@ void TemplateTable::ldc(bool wide) {
   __ b(fastCase, ne);
 
   // slow case - call runtime
-  __ mov(R1, wide);
+  __ mov(R1, is_ldc_wide(type) ? 1 : 0);
   call_VM(R0_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R1);
   __ push(atos);
   __ b(Done);
@@ -429,9 +429,9 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label resolved;
 
   // We are resolved if the resolved reference cache entry contains a
@@ -462,7 +462,7 @@ void TemplateTable::fast_aldc(bool wide) {
     __ resolve_oop_handle(tmp);
     __ cmp(result, tmp);
     __ b(notNull, ne);
-    __ mov(result, 0);  // NULL object reference
+    __ mov(result, 0);  // null object reference
     __ bind(notNull);
   }
 
@@ -1224,7 +1224,7 @@ void TemplateTable::aastore() {
   // Compute the array base
   __ add(Raddr_1, Rarray_3, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
 
-  // do array store check - check for NULL value first
+  // do array store check - check for null value first
   __ cbz(Rvalue_2, is_null);
 
   // Load subklass
@@ -1251,11 +1251,11 @@ void TemplateTable::aastore() {
   // object is at TOS
   __ b(Interpreter::_throw_ArrayStoreException_entry);
 
-  // Have a NULL in Rvalue_2, store NULL at array[index].
+  // Have a null in Rvalue_2, store null at array[index].
   __ bind(is_null);
   __ profile_null_seen(R0_tmp);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IS_ARRAY);
 
   // Pop stack arguments
@@ -2041,7 +2041,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the
-  // non-JSR normal-branch stuff occuring below.
+  // non-JSR normal-branch stuff occurring below.
   if (is_jsr) {
     // compute return address as bci in R1
     const Register Rret_addr = R1_tmp;
@@ -2121,7 +2121,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ sub(R1, Rbcp, Rdisp);                   // branch bcp
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R1);
 
-    // R0: osr nmethod (osr ok) or NULL (osr not possible)
+    // R0: osr nmethod (osr ok) or null (osr not possible)
     const Register Rnmethod = R0;
 
     __ ldrb(R3_bytecode, Address(Rbcp));       // reload next bytecode
@@ -2525,7 +2525,7 @@ void TemplateTable::_return(TosState state) {
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.
-// ALSO reads & writes act as aquire & release, so:
+// ALSO reads & writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that happen after
 // the read float up to before the read.  It's OK for non-volatile memory refs
 // that happen before the volatile read to float down below it.
@@ -2675,14 +2675,14 @@ void TemplateTable::jvmti_post_field_access(Register Rcache,
     __ add(R2, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
     __ add(R2, R2, in_bytes(ConstantPoolCache::base_offset()));
     if (is_static) {
-      __ mov(R1, 0);        // NULL object reference
+      __ mov(R1, 0);        // null object reference
     } else {
       __ pop(atos);         // Get the object
       __ mov(R1, R0_tos);
       __ verify_oop(R1);
       __ push(atos);        // Restore stack state
     }
-    // R1: object pointer or NULL
+    // R1: object pointer or null
     // R2: cache entry pointer
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
                R1, R2);
@@ -2991,7 +2991,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rindex, bool 
     // object (tos)
     __ mov(R3, Rstack_top);
 
-    // R1: object pointer set up above (NULL if static)
+    // R1: object pointer set up above (null if static)
     // R2: cache entry pointer
     // R3: value object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification),
@@ -3625,8 +3625,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, Rtemp, oopDesc::klass_offset_in_bytes());
-  __ load_klass(recv_klass, recv);
+  __ load_klass_check_null(recv_klass, recv, Rtemp);
 
   // profile this call
   __ profile_virtual_call(R0_tmp, recv_klass);
@@ -3848,13 +3847,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object;  // including clearing the fields
-
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
-
-  // Literals
-  InlinedAddress Lheap_top_addr(allow_shared_alloc ? (address)Universe::heap()->top_addr() : NULL);
 
   __ get_unsigned_2_byte_index_at_bcp(Rindex, 1);
   __ get_cpool_and_tags(Rcpool, Rtags);
@@ -3892,11 +3884,6 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
@@ -3910,23 +3897,8 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ b(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ b(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    if (allow_shared_alloc) {
-      const Register Rheap_top_addr = R2_tmp;
-      const Register Rheap_top = R5_tmp;
-      const Register Rheap_end = Rtemp;
-      assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
 
-      __ eden_allocate(Robj, Rheap_top, Rheap_top_addr, Rheap_end, Rsize, slow_case);
-    }
-  }
-
-  if (UseTLAB || allow_shared_alloc) {
     const Register Rzero0 = R1_tmp;
     const Register Rzero1 = R2_tmp;
     const Register Rzero_end = R5_tmp;
@@ -3935,7 +3907,6 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ subs(Rsize, Rsize, sizeof(oopDesc));
     __ add(Rzero_cur, Robj, sizeof(oopDesc));
     __ b(initialize_header, eq);
@@ -3985,7 +3956,7 @@ void TemplateTable::_new() {
       __ cbz(Rtemp, Lcontinue);
 
       __ push(atos);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), Robj);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), Robj);
       __ pop(atos);
 
       __ bind(Lcontinue);
@@ -3995,10 +3966,6 @@ void TemplateTable::_new() {
   } else {
     // jump over literals
     __ b(slow_case);
-  }
-
-  if (allow_shared_alloc) {
-    __ bind_literal(Lheap_top_addr);
   }
 
   // slow case
@@ -4097,7 +4064,7 @@ void TemplateTable::checkcast() {
 
   // Come here on success
 
-  // Collect counts on whether this check-cast sees NULLs a lot or not.
+  // Collect counts on whether this check-cast sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -4110,8 +4077,8 @@ void TemplateTable::checkcast() {
 
 
 void TemplateTable::instanceof() {
-  // result = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // result = 1: obj != NULL and obj is     an instanceof the specified klass
+  // result = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // result = 1: obj != nullptr and obj is     an instanceof the specified klass
 
   transition(atos, itos);
   Label done, is_null, not_subtype, quicked, resolved;
@@ -4168,7 +4135,7 @@ void TemplateTable::instanceof() {
   __ profile_typecheck_failed(R1_tmp);
   __ mov(R0_tos, 0);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -4243,7 +4210,7 @@ void TemplateTable::monitorenter() {
   const Register Robj = R0_tos;
   const Register Rentry = R1_tmp;
 
-  // check for NULL object
+  // check for null object
   __ null_check(Robj, Rtemp);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
@@ -4251,7 +4218,7 @@ void TemplateTable::monitorenter() {
   Label allocate_monitor, allocated;
 
   // initialize entry pointer
-  __ mov(Rentry, 0);                             // points to free slot or NULL
+  __ mov(Rentry, 0);                             // points to free slot or null
 
   // find a free slot in the monitor block (result in Rentry)
   { Label loop, exit;
@@ -4330,7 +4297,7 @@ void TemplateTable::monitorenter() {
   __ bind(allocated);
 
   // Increment bcp to point to the next bytecode, so exception handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the expression stack looks correct.
+  // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
   __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object
@@ -4354,7 +4321,7 @@ void TemplateTable::monitorexit() {
   const Register Rcur_obj = Rtemp;
   const Register Rmonitor = R0;      // fixed in unlock_object()
 
-  // check for NULL object
+  // check for null object
   __ null_check(Robj, Rtemp);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);

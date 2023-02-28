@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public abstract class TransformerFactory {
      *
      * @param source The XML source document.
      * @param media The media attribute to be matched.  May be null, in which
-     *      case the prefered templates will be used (i.e. alternate = no).
+     *      case the preferred templates will be used (i.e. alternate = no).
      * @param title The value of the title attribute to match.  May be null.
      * @param charset The value of the charset attribute to match.  May be null.
      *

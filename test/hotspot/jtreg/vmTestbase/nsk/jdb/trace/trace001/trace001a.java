@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@ package nsk.jdb.trace.trace001;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
+import nsk.share.jdi.JDIThreadFactory;
 
 import java.io.*;
 
-/* This is debuggee aplication */
+/* This is the debuggee application */
 public class trace001a {
     public static void main(String args[]) {
        trace001a _trace001a = new trace001a();
@@ -38,7 +39,7 @@ public class trace001a {
 
     static void lastBreak () {}
 
-    static final String MYTHREAD  = "MyThread";
+    static final String MYTHREAD  = trace001.MYTHREAD;
     static final int numThreads   = 2;   // number of threads.
 
     static Object waitnotify = new Object();
@@ -54,7 +55,8 @@ public class trace001a {
 
         for (i = 0; i < numThreads ; i++) {
             locks[i]  = new Object();
-            holder[i] = new MyThread(locks[i],MYTHREAD + "-" + i);
+            String name = MYTHREAD + "-" + i;
+            holder[i] = JDIThreadFactory.newThread(new MyThread(locks[i], name), name);
         }
 
         synchronized (waitnotify) {

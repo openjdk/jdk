@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,11 +220,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("JVMCIHostThreads");
 
         /*
-         * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
-         */
-        excludeTestMinRange("MallocMaxTestWords");
-
-        /*
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */
@@ -256,6 +251,14 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("ProfiledCodeHeapSize");
         excludeTestMaxRange("NonNMethodCodeHeapSize");
         excludeTestMaxRange("CodeCacheExpansionSize");
+
+        /*
+         * Exclude CompileThresholdScaling from max range testing, because
+         * it is expected to print "outside the allowed range" warnings for the
+         * scaled flag and the "outside the allowed range" warning does not
+         * refer to CompileThresholdScaling itself.
+         */
+        excludeTestMaxRange("CompileThresholdScaling");
 
         List<JVMOption> testSubset = getTestSubset(args);
 

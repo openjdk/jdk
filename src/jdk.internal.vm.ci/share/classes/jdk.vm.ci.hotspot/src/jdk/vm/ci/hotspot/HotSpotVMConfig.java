@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,11 +97,11 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vtableEntrySize = getFieldValue("CompilerToVM::Data::sizeof_vtableEntry", Integer.class, "int");
     final int vtableEntryMethodOffset = getFieldOffset("vtableEntry::_method", Integer.class, "Method*");
 
-    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
+    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
-    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags", Integer.class, "u2");
+    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
 
@@ -119,6 +119,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int fieldInfoAccessFlagsOffset = getConstant("FieldInfo::access_flags_offset", Integer.class);
     final int fieldInfoNameIndexOffset = getConstant("FieldInfo::name_index_offset", Integer.class);
     final int fieldInfoSignatureIndexOffset = getConstant("FieldInfo::signature_index_offset", Integer.class);
+    final int fieldInfoConstantValueIndexOffset = getConstant("FieldInfo::initval_index_offset", Integer.class);
     final int fieldInfoLowPackedOffset = getConstant("FieldInfo::low_packed_offset", Integer.class);
     final int fieldInfoHighPackedOffset = getConstant("FieldInfo::high_packed_offset", Integer.class);
     final int fieldInfoFieldSlots = getConstant("FieldInfo::field_slots", Integer.class);
@@ -139,8 +140,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmAccEnum = getConstant("JVM_ACC_ENUM", Integer.class);
     final int jvmAccInterface = getConstant("JVM_ACC_INTERFACE", Integer.class);
 
-    final int jvmMiscFlagsHasDefaultMethods = getConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods", Integer.class);
-    final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods", Integer.class);
+    final int jvmMiscFlagsHasDefaultMethods = getConstant("InstanceKlassFlags::_misc_has_nonstatic_concrete_methods", Integer.class);
+    final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods", Integer.class);
 
     // This is only valid on AMD64.
     final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, osArch.equals("amd64") ? null : 0);
@@ -182,7 +183,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_compiler_counters._nof_overflow_recompiles", Integer.class, "uint");
     final int methodDataOverflowTraps = getFieldOffset("MethodData::_compiler_counters._nof_overflow_traps", Integer.class, "uint");
 
-    final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "int");
+    final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "CompLevel");
 
     final int compilationLevelNone = getConstant("CompLevel_none", Integer.class);
     final int compilationLevelSimple = getConstant("CompLevel_simple", Integer.class);
@@ -336,7 +337,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int deoptReasonLoopLimitCheck = getConstant("Deoptimization::Reason_loop_limit_check", Integer.class);
     final int deoptReasonAliasing = getConstant("Deoptimization::Reason_aliasing", Integer.class);
     final int deoptReasonTransferToInterpreter = getConstant("Deoptimization::Reason_transfer_to_interpreter", Integer.class);
-    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_LIMIT", Integer.class);
+    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_TRAP_HISTORY_LENGTH", Integer.class);
 
     final int deoptActionNone = getConstant("Deoptimization::Action_none", Integer.class);
     final int deoptActionMaybeRecompile = getConstant("Deoptimization::Action_maybe_recompile", Integer.class);

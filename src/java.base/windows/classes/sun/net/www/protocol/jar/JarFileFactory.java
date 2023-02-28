@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,8 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             if (host != null && !host.isEmpty() &&
                     !host.equalsIgnoreCase("localhost")) {
 
-                url = new URL("file", "", "//" + host + url.getPath());
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL("file", "", "//" + host + url.getPath());
             }
         }
         return url;
@@ -226,11 +227,11 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
                         // fallback to checkRead/checkConnect for pre 1.2
                         // security managers
                         if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().indexOf("read") != -1) {
+                            perm.getActions().contains("read")) {
                             sm.checkRead(perm.getName());
                         } else if ((perm instanceof
                             java.net.SocketPermission) &&
-                            perm.getActions().indexOf("connect") != -1) {
+                            perm.getActions().contains("connect")) {
                             sm.checkConnect(url.getHost(), url.getPort());
                         } else {
                             throw se;

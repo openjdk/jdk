@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,24 +22,18 @@ package com.sun.org.apache.bcel.internal.util;
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 
 /**
- * Abstract definition of a class repository. Instances may be used
- * to load classes from different sources and may be used in the
- * Repository.setRepository method.
+ * Abstract definition of a class repository. Instances may be used to load classes from different sources and may be
+ * used in the Repository.setRepository method.
  *
- * @see com.sun.org.apache.bcel.internal.Repository
- * @LastModified: Jan 2020
+ * @see org.apache.bcel.Repository
+ * @LastModified: Feb 2023
  */
 public interface Repository {
 
     /**
-     * Stores the provided class under "clazz.getClassName()"
+     * Clears all entries from cache.
      */
-    void storeClass(JavaClass clazz);
-
-    /**
-     * Removes class from repository
-     */
-    void removeClass(JavaClass clazz);
+    void clear();
 
     /**
      * Finds the class with the name provided, if the class isn't there, return NULL.
@@ -47,17 +41,26 @@ public interface Repository {
     JavaClass findClass(String className);
 
     /**
+     * Finds the JavaClass instance for the given run-time class object.
+     *
+     * @throws ClassNotFoundException if the class can't be found.
+     */
+    JavaClass loadClass(Class<?> clazz) throws ClassNotFoundException;
+
+    /**
      * Finds the class with the name provided, if the class isn't there, make an attempt to load it.
+     *
+     * @throws ClassNotFoundException if the class can't be found.
      */
-    JavaClass loadClass(String className) throws java.lang.ClassNotFoundException;
+    JavaClass loadClass(String className) throws ClassNotFoundException;
 
     /**
-     * Finds the JavaClass instance for the given run-time class object
+     * Removes class from repository
      */
-    JavaClass loadClass(Class<?> clazz) throws java.lang.ClassNotFoundException;
+    void removeClass(JavaClass clazz);
 
     /**
-     * Clears all entries from cache.
+     * Stores the provided class under "clazz.getClassName()"
      */
-    void clear();
+    void storeClass(JavaClass clazz);
 }

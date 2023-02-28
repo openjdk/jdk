@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "oops/access.inline.hpp"
@@ -54,12 +56,10 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   }
 
   // Marked by us, preserve if needed.
-  markWord mark = obj->mark();
-  if (obj->mark_must_be_preserved(mark) &&
-      // It is not necessary to preserve marks for objects in regions we do not
-      // compact because we do not change their headers (i.e. forward them).
-      _collector->is_compacting(obj)) {
-    preserved_stack()->push(obj, mark);
+  if (_collector->is_compacting(obj)) {
+    // It is not necessary to preserve marks for objects in regions we do not
+    // compact because we do not change their headers (i.e. forward them).
+    preserved_stack()->push_if_necessary(obj, obj->mark());
   }
 
   // Check if deduplicatable string.
@@ -68,6 +68,8 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
       G1StringDedup::is_candidate_from_mark(obj)) {
     _string_dedup_requests.add(obj);
   }
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
 
   // Collect live words.
   _mark_stats_cache.add_live_words(obj);
@@ -93,22 +95,14 @@ inline bool G1FullGCMarker::is_empty() {
   return _oop_stack.is_empty() && _objarray_stack.is_empty();
 }
 
-inline bool G1FullGCMarker::pop_object(oop& oop) {
-  return _oop_stack.pop_overflow(oop) || _oop_stack.pop_local(oop);
-}
-
 inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
   ObjArrayTask task(obj, index);
   assert(task.is_valid(), "bad ObjArrayTask");
   _objarray_stack.push(task);
 }
 
-inline bool G1FullGCMarker::pop_objarray(ObjArrayTask& arr) {
-  return _objarray_stack.pop_overflow(arr) || _objarray_stack.pop_local(arr);
-}
-
 inline void G1FullGCMarker::follow_array(objArrayOop array) {
-  follow_klass(array->klass());
+  mark_closure()->do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     push_objarray(array, 0);
@@ -129,14 +123,6 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   }
 
   array->oop_iterate_range(mark_closure(), beg_index, end_index);
-
-  if (VerifyDuringGC) {
-    _verify_closure.set_containing_obj(array);
-    array->oop_iterate_range(&_verify_closure, beg_index, end_index);
-    if (_verify_closure.failures()) {
-      assert(false, "Failed");
-    }
-  }
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
@@ -147,42 +133,46 @@ inline void G1FullGCMarker::follow_object(oop obj) {
     follow_array((objArrayOop)obj);
   } else {
     obj->oop_iterate(mark_closure());
-    if (VerifyDuringGC) {
-      if (obj->is_instance() && InstanceKlass::cast(obj->klass())->is_reference_instance_klass()) {
-        return;
-      }
-      _verify_closure.set_containing_obj(obj);
-      obj->oop_iterate(&_verify_closure);
-      if (_verify_closure.failures()) {
-        log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        assert(false, "Failed");
-      }
-    }
   }
 }
 
-void G1FullGCMarker::drain_stack() {
-  do {
-    oop obj;
-    while (pop_object(obj)) {
+inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
+  oop obj;
+  while (_oop_stack.pop_overflow(obj)) {
+    if (!_oop_stack.try_push_to_taskqueue(obj)) {
       assert(_bitmap->is_marked(obj), "must be marked");
       follow_object(obj);
     }
-    // Process ObjArrays one at a time to avoid marking stack bloat.
+  }
+  while (_oop_stack.pop_local(obj)) {
+    assert(_bitmap->is_marked(obj), "must be marked");
+    follow_object(obj);
+  }
+}
+
+inline bool G1FullGCMarker::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
+  // It is desirable to move as much as possible work from the overflow queue to
+  // the shared queue as quickly as possible.
+  while (_objarray_stack.pop_overflow(task)) {
+    if (!_objarray_stack.try_push_to_taskqueue(task)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void G1FullGCMarker::follow_marking_stacks() {
+  do {
+    // First, drain regular oop stack.
+    publish_and_drain_oop_tasks();
+
+    // Then process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (pop_objarray(task)) {
+    if (publish_or_pop_objarray_tasks(task) ||
+        _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());
-}
-
-inline void G1FullGCMarker::follow_klass(Klass* k) {
-  oop op = k->class_loader_data()->holder_no_keepalive();
-  mark_and_push(&op);
-}
-
-inline void G1FullGCMarker::follow_cld(ClassLoaderData* cld) {
-  _cld_closure.do_cld(cld);
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

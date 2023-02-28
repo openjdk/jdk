@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "jni.h"
+#include "memory/allStatic.hpp"
 
 class ClassLoaderData;
 class Klass;
 class Method;
 class ModuleEntry;
 class PackageEntry;
-class Thread;
 
 /*
  * JfrTraceId is a means of tagging, e.g. marking, specific instances as being actively in-use.
@@ -84,7 +83,6 @@ class JfrTraceId : public AllStatic {
   static void assign(const PackageEntry* package);
   static void assign(const ClassLoaderData* cld);
   static traceid assign_primitive_klass_id();
-  static traceid assign_thread_id();
 
   // through load barrier
   static traceid load(const Klass* klass);
@@ -99,15 +97,16 @@ class JfrTraceId : public AllStatic {
   // load barrier elision
   static traceid load_raw(const Klass* klass);
   static traceid load_raw(jclass jc);
-  static traceid load_raw(const Thread* thread);
   static traceid load_raw(const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
 
+#if INCLUDE_CDS
   static void remove(const Klass* klass);
   static void remove(const Method* method);
   static void restore(const Klass* klass);
+#endif
 
   // set of event classes made visible to java
   static bool in_visible_set(const Klass* k);
@@ -123,6 +122,7 @@ class JfrTraceId : public AllStatic {
   static bool is_jdk_jfr_event_sub(const jclass jc);
   static void tag_as_jdk_jfr_event_sub(const Klass* k);
   static void tag_as_jdk_jfr_event_sub(const jclass jc);
+  static void untag_jdk_jfr_event_sub(const Klass* k);
 
   static bool in_jdk_jfr_event_hierarchy(const Klass* k);
   static bool in_jdk_jfr_event_hierarchy(const jclass jc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,18 +67,12 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
         monitoredHost.addHostListener(this);
     }
 
-    public RemoteVm attachVm(int lvmid, String mode)
-                    throws RemoteException, MonitorException {
+    public RemoteVm attachVm(int lvmid) throws RemoteException, MonitorException {
         Integer v = lvmid;
         RemoteVm stub = null;
         StringBuilder sb = new StringBuilder();
 
-        sb.append("local://").append(lvmid).append("@localhost");
-        if (mode != null) {
-            sb.append("?mode=").append(mode);
-        }
-
-        String vmidStr = sb.toString();
+        String vmidStr = "local://" + lvmid + "@localhost";
 
         try {
             VmIdentifier vmid = new VmIdentifier(vmidStr);

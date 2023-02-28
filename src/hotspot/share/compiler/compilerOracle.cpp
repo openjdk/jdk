@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -98,7 +99,7 @@ template<> OptionType get_type_for<double>() {
 class MethodMatcher;
 class TypedMethodOptionMatcher;
 
-static TypedMethodOptionMatcher* option_list = NULL;
+static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
 
 // A filter for quick lookup if an option is set
@@ -135,7 +136,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
   } _u;
 
   TypedMethodOptionMatcher() : MethodMatcher(),
-    _next(NULL),
+    _next(nullptr),
     _option(CompileCommand::Unknown) {
       memset(&_u, 0, sizeof(_u));
   }
@@ -235,7 +236,7 @@ void TypedMethodOptionMatcher::print() {
 
 void TypedMethodOptionMatcher::print_all() {
    print();
-   if (_next != NULL) {
+   if (_next != nullptr) {
      tty->print(" ");
      _next->print_all();
    }
@@ -249,13 +250,13 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::clone() {
   m->_method_name = _method_name;
   m->_signature = _signature;
   // Need to ref count the symbols
-  if (_class_name != NULL) {
+  if (_class_name != nullptr) {
     _class_name->increment_refcount();
   }
-  if (_method_name != NULL) {
+  if (_method_name != nullptr) {
     _method_name->increment_refcount();
   }
-  if (_signature != NULL) {
+  if (_signature != nullptr) {
     _signature->increment_refcount();
   }
   return m;
@@ -271,20 +272,20 @@ TypedMethodOptionMatcher::~TypedMethodOptionMatcher() {
 
 TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& line, char* errorbuf, const int buf_size) {
   assert(*errorbuf == '\0', "Dont call here with error_msg already set");
-  const char* error_msg = NULL;
+  const char* error_msg = nullptr;
   TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, tom);
-  if (error_msg != NULL) {
+  if (error_msg != nullptr) {
     jio_snprintf(errorbuf, buf_size, error_msg);
     delete tom;
-    return NULL;
+    return nullptr;
   }
   return tom;
 }
 
 TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, enum CompileCommand option) {
   TypedMethodOptionMatcher* current = this;
-  while (current != NULL) {
+  while (current != nullptr) {
     if (current->_option == option) {
       if (current->matches(method)) {
         return current;
@@ -292,7 +293,7 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& me
     }
     current = current->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 template<typename T>
@@ -331,9 +332,9 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   if (!has_command(option)) {
     return false;
   }
-  if (option_list != NULL) {
+  if (option_list != nullptr) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
-    if (m != NULL) {
+    if (m != nullptr) {
       value = m->value<T>();
       return true;
     }
@@ -354,7 +355,7 @@ static bool resolve_inlining_predicate(enum CompileCommand option, const methodH
       // option_list lists options in reverse order. So the first option we find is the last which was specified.
       enum CompileCommand last_one = CompileCommand::Unknown;
       TypedMethodOptionMatcher* current = option_list;
-      while (current != NULL) {
+      while (current != nullptr) {
         last_one = current->option();
         if (last_one == CompileCommand::Inline || last_one == CompileCommand::DontInline) {
           if (current->matches(method)) {
@@ -683,6 +684,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(value, mask);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::TestOptionList) {
+        // all values are ok
+      }
+#endif
+      else {
+        assert(false, "Ccstrlist type option missing validator");
+      }
 
       register_command(matcher, option, (ccstr) value);
       return;
@@ -733,7 +749,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
   }
 }
 
-// Scan next option and value in line, return MethodMatcher object on success, NULL on failure.
+// Scan next option and value in line, return MethodMatcher object on success, nullptr on failure.
 // On failure, error_msg contains description for the first error.
 // For future extensions: set error_msg on first error.
 static void scan_option_and_value(enum OptionType type, char* line, int& total_bytes_read,
@@ -836,7 +852,7 @@ void CompilerOracle::parse_from_line(char* line) {
     char option_type[256]; // stores option for Type (1) and type of Type (2)
     skip_comma(line);
     TypedMethodOptionMatcher* archetype = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
-    if (archetype == NULL) {
+    if (archetype == nullptr) {
       print_parse_error(error_buf, original.get());
       return;
     }
@@ -875,7 +891,7 @@ void CompilerOracle::parse_from_line(char* line) {
           return;
         }
       }
-      assert(typed_matcher != NULL, "sanity");
+      assert(typed_matcher != nullptr, "sanity");
       assert(*error_buf == '\0', "No error here");
       skip_whitespace(line);
     } // while(
@@ -889,7 +905,7 @@ void CompilerOracle::parse_from_line(char* line) {
     int bytes_read = 0;
     skip_comma(line);
     TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
-    if (matcher == NULL) {
+    if (matcher == nullptr) {
       print_parse_error(error_buf, original.get());
       return;
     }
@@ -910,7 +926,7 @@ void CompilerOracle::parse_from_line(char* line) {
       print_parse_error(error_buf, original.get());
       return;
     }
-    assert(matcher != NULL, "consistency");
+    assert(matcher != nullptr, "consistency");
   }
 }
 
@@ -918,22 +934,22 @@ static const char* default_cc_file = ".hotspot_compiler";
 
 static const char* cc_file() {
 #ifdef ASSERT
-  if (CompileCommandFile == NULL)
+  if (CompileCommandFile == nullptr)
     return default_cc_file;
 #endif
   return CompileCommandFile;
 }
 
 bool CompilerOracle::has_command_file() {
-  return cc_file() != NULL;
+  return cc_file() != nullptr;
 }
 
 bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
-  FILE* stream = fopen(cc_file(), "rt");
-  if (stream == NULL) return;
+  FILE* stream = os::fopen(cc_file(), "rt");
+  if (stream == nullptr) return;
 
   char token[1024];
   int  pos = 0;
@@ -996,10 +1012,10 @@ void compilerOracle_init() {
 void CompilerOracle::parse_compile_only(char* line) {
   int i;
   char name[1024];
-  const char* className = NULL;
-  const char* methodName = NULL;
+  const char* className = nullptr;
+  const char* methodName = nullptr;
 
-  bool have_colon = (strstr(line, "::") != NULL);
+  bool have_colon = (strstr(line, "::") != nullptr);
   char method_sep = have_colon ? ':' : '.';
 
   if (Verbose) {
@@ -1020,12 +1036,12 @@ void CompilerOracle::parse_compile_only(char* line) {
 
     if (i > 0) {
       char* newName = NEW_RESOURCE_ARRAY( char, i + 1);
-      if (newName == NULL)
+      if (newName == nullptr)
         return;
       strncpy(newName, name, i);
       newName[i] = '\0';
 
-      if (className == NULL) {
+      if (className == nullptr) {
         className = newName;
       } else {
         methodName = newName;
@@ -1033,13 +1049,13 @@ void CompilerOracle::parse_compile_only(char* line) {
     }
 
     if (*line == method_sep) {
-      if (className == NULL) {
+      if (className == nullptr) {
         className = "";
         c_match = MethodMatcher::Any;
       }
     } else {
       // got foo or foo/bar
-      if (className == NULL) {
+      if (className == nullptr) {
         ShouldNotReachHere();
       } else {
         // missing class name handled as "Any" class match
@@ -1051,7 +1067,7 @@ void CompilerOracle::parse_compile_only(char* line) {
 
     // each directive is terminated by , or NUL or . followed by NUL
     if (*line == ',' || *line == '\0' || (line[0] == '.' && line[1] == '\0')) {
-      if (methodName == NULL) {
+      if (methodName == nullptr) {
         methodName = "";
         if (*line != method_sep) {
           m_match = MethodMatcher::Any;
@@ -1061,7 +1077,7 @@ void CompilerOracle::parse_compile_only(char* line) {
       EXCEPTION_MARK;
       Symbol* c_name = SymbolTable::new_symbol(className);
       Symbol* m_name = SymbolTable::new_symbol(methodName);
-      Symbol* signature = NULL;
+      Symbol* signature = nullptr;
 
       TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
       tom->init_matcher(c_name, c_match, m_name, m_match, signature);
@@ -1071,8 +1087,8 @@ void CompilerOracle::parse_compile_only(char* line) {
         tom->print();
       }
 
-      className = NULL;
-      methodName = NULL;
+      className = nullptr;
+      methodName = nullptr;
     }
 
     line = *line == '\0' ? line : line + 1;

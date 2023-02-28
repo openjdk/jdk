@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ class DCmdArgIter : public ResourceObj {
   const char  _delim;
 public:
   DCmdArgIter(const char* buf, size_t len, char delim)
-    : _buffer(buf), _len(len), _cursor(0), _key_addr(NULL),
-      _key_len(0), _value_addr(NULL), _value_len(0), _delim(delim) {}
+    : _buffer(buf), _len(len), _cursor(0), _key_addr(nullptr),
+      _key_len(0), _value_addr(nullptr), _value_len(0), _delim(delim) {}
 
   bool next(TRAPS);
   const char* key_addr() const    { return _key_addr; }
@@ -207,7 +207,7 @@ private:
   GenDCmdArgument* _arguments_list;
 public:
   DCmdParser()
-    : _options(NULL), _arguments_list(NULL) {}
+    : _options(nullptr), _arguments_list(nullptr) {}
   void add_dcmd_option(GenDCmdArgument* arg);
   void add_dcmd_argument(GenDCmdArgument* arg);
   GenDCmdArgument* lookup_dcmd_option(const char* name, size_t len);
@@ -236,7 +236,7 @@ public:
 // each diagnostic command instance. In case of a C-heap allocated diagnostic
 // command instance, the DCmdMark must be created in the context of the last
 // thread that will access the instance.
-class DCmd : public ResourceObj {
+class DCmd : public AnyObj {
 protected:
   outputStream* const _output;
   const bool          _is_heap_allocated;
@@ -272,7 +272,7 @@ public:
   // execute diagnostic commands to remote users. Any diagnostic command with
   // a potential impact on security should overwrite this method.
   static const JavaPermission permission() {
-    JavaPermission p = {NULL, NULL, NULL};
+    JavaPermission p = {nullptr, nullptr, nullptr};
     return p;
   }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
@@ -336,7 +336,7 @@ class DCmdMark : public StackObj {
 public:
   DCmdMark(DCmd* cmd) : _ref(cmd) {}
   ~DCmdMark() {
-    if (_ref != NULL) {
+    if (_ref != nullptr) {
       _ref->cleanup();
       if (_ref->is_heap_allocated()) {
         delete _ref;
@@ -371,7 +371,7 @@ private:
 
 public:
   DCmdFactory(int num_arguments, uint32_t flags, bool enabled, bool hidden)
-    : _next(NULL), _enabled(enabled), _hidden(hidden),
+    : _next(nullptr), _enabled(enabled), _hidden(hidden),
       _export_flags(flags), _num_arguments(num_arguments) {}
   bool is_enabled() const       { return _enabled; }
   bool is_hidden() const        { return _hidden; }
@@ -442,8 +442,8 @@ private:
   template <typename T, ENABLE_IF(std::is_base_of<DCmdWithParser, T>::value)>
   static int get_num_arguments() {
     ResourceMark rm;
-    DCmdClass* dcmd = new DCmdClass(NULL, false);
-    if (dcmd != NULL) {
+    DCmdClass* dcmd = new DCmdClass(nullptr, false);
+    if (dcmd != nullptr) {
       DCmdMark mark(dcmd);
       return dcmd->dcmdparser()->num_arguments();
     } else {

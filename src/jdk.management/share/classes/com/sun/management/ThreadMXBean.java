@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * This is a convenience method for local management use and is
      * equivalent to calling:
      * <blockquote><pre>
-     *   {@link #getThreadAllocatedBytes getThreadAllocatedBytes}(Thread.currentThread().getId());
+     *   {@link #getThreadAllocatedBytes getThreadAllocatedBytes}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
      * @return an approximation of the total memory allocated, in bytes, in
@@ -138,7 +138,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * @since 14
      */
     public default long getCurrentThreadAllocatedBytes() {
-        return getThreadAllocatedBytes(Thread.currentThread().getId());
+        return getThreadAllocatedBytes(Thread.currentThread().threadId());
     }
 
     /**
@@ -149,10 +149,10 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * delay between the time an object is allocated and the time its size is
      * recorded.
      * <p>
-     * If the thread with the specified ID is not alive or does not exist,
-     * this method returns {@code -1}. If thread memory allocation measurement
-     * is disabled, this method returns {@code -1}.
-     * A thread is alive if it has been started and has not yet died.
+     * If the thread with the specified ID is a virtual thread, is not alive,
+     * or does not exist, this method returns {@code -1}. If thread memory
+     * allocation measurement is disabled, this method returns {@code -1}.
+     * A thread is alive if it has been started and has not yet terminated.
      * <p>
      * If thread memory allocation measurement is enabled after the thread has
      * started, the Java virtual machine implementation may choose any time up

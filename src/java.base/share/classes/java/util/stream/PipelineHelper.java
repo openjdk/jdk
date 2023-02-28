@@ -163,7 +163,7 @@ abstract class PipelineHelper<P_OUT> {
     abstract<P_IN> Spliterator<P_OUT> wrapSpliterator(Spliterator<P_IN> spliterator);
 
     /**
-     * Constructs a @{link Node.Builder} compatible with the output shape of
+     * Constructs a {@link Node.Builder} compatible with the output shape of
      * this {@code PipelineHelper}.
      *
      * @param exactSizeIfKnown if >=0 then a builder will be created that has a

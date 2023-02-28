@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -37,6 +36,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciTypeArray.hpp"
@@ -70,7 +70,7 @@
 // problematic the underlying data structure can be switched to some
 // sort of balanced binary tree.
 
-GrowableArray<ciMetadata*>* ciObjectFactory::_shared_ci_metadata = NULL;
+GrowableArray<ciMetadata*>* ciObjectFactory::_shared_ci_metadata = nullptr;
 ciSymbol*                 ciObjectFactory::_shared_ci_symbols[vmSymbols::number_of_symbols()];
 int                       ciObjectFactory::_shared_ident_limit = 0;
 volatile bool             ciObjectFactory::_initialized = false;
@@ -81,20 +81,20 @@ volatile bool             ciObjectFactory::_initialized = false;
 ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
-                                   _ci_metadata(arena, expected_size, 0, NULL),
-                                   _unloaded_methods(arena, 4, 0, NULL),
-                                   _unloaded_klasses(arena, 8, 0, NULL),
-                                   _unloaded_instances(arena, 4, 0, NULL),
-                                   _return_addresses(arena, 8, 0, NULL),
-                                   _symbols(arena, 100, 0, NULL),
+                                   _ci_metadata(arena, expected_size, 0, nullptr),
+                                   _unloaded_methods(arena, 4, 0, nullptr),
+                                   _unloaded_klasses(arena, 8, 0, nullptr),
+                                   _unloaded_instances(arena, 4, 0, nullptr),
+                                   _return_addresses(arena, 8, 0, nullptr),
+                                   _symbols(arena, 100, 0, nullptr),
                                    _next_ident(_shared_ident_limit),
                                    _non_perm_count(0) {
   for (int i = 0; i < NON_PERM_BUCKETS; i++) {
-    _non_perm_bucket[i] = NULL;
+    _non_perm_bucket[i] = nullptr;
   }
 
   // If the shared ci objects exist append them to this factory's objects
-  if (_shared_ci_metadata != NULL) {
+  if (_shared_ci_metadata != nullptr) {
     _ci_metadata.appendAll(_shared_ci_metadata);
   }
 }
@@ -143,7 +143,7 @@ void ciObjectFactory::init_shared_objects() {
 
   for (int i = T_BOOLEAN; i <= T_CONFLICT; i++) {
     BasicType t = (BasicType)i;
-    if (type2name(t) != NULL && !is_reference_type(t) &&
+    if (type2name(t) != nullptr && !is_reference_type(t) &&
         t != T_NARROWOOP && t != T_NARROWKLASS) {
       ciType::_basic_types[t] = new (_arena) ciType(t);
       init_ident_of(ciType::_basic_types[t]);
@@ -167,13 +167,14 @@ void ciObjectFactory::init_shared_objects() {
       assert (obj->is_metadata(), "what else would it be?");
       if (obj->is_loaded() && obj->is_instance_klass()) {
         obj->as_instance_klass()->compute_nonstatic_fields();
+        obj->as_instance_klass()->transitive_interfaces();
       }
     }
   }
 
   ciEnv::_unloaded_cisymbol = ciObjectFactory::get_symbol(vmSymbols::dummy_symbol());
   // Create dummy InstanceKlass and ObjArrayKlass object and assign them idents
-  ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, NULL, NULL);
+  ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, nullptr, nullptr);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
   ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
   init_ident_of(ciEnv::_unloaded_ciobjarrayklass);
@@ -235,7 +236,7 @@ ciObject* ciObjectFactory::get(oop key) {
   assert(Universe::heap()->is_in(key), "must be");
 
   NonPermObject* &bucket = find_non_perm(key);
-  if (bucket != NULL) {
+  if (bucket != nullptr) {
     return bucket->object();
   }
 
@@ -271,7 +272,7 @@ ciMetadata* ciObjectFactory::cached_metadata(Metadata* key) {
   int index = _ci_metadata.find_sorted<Metadata*, ciObjectFactory::metadata_compare>(key, found);
 
   if (!found) {
-    return NULL;
+    return nullptr;
   }
   return _ci_metadata.at(index)->as_metadata();
 }
@@ -286,9 +287,17 @@ ciMetadata* ciObjectFactory::cached_metadata(Metadata* key) {
 ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   ASSERT_IN_VM;
 
+  if (ReplayCompiles && key->is_klass()) {
+    Klass* k = (Klass*)key;
+    if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
+      // Klass was unresolved at replay dump time. Simulate this case.
+      return ciEnv::_unloaded_ciinstance_klass;
+    }
+  }
+
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {
-    Metadata* last = NULL;
+    Metadata* last = nullptr;
     for (int j = 0; j < _ci_metadata.length(); j++) {
       Metadata* o = _ci_metadata.at(j)->constant_encoding();
       assert(last < o, "out of order");
@@ -344,8 +353,6 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciCallSite(h_i);
     else if (java_lang_invoke_MemberName::is_instance(o))
       return new (arena()) ciMemberName(h_i);
-    else if (jdk_internal_invoke_NativeEntryPoint::is_instance(o))
-      return new (arena()) ciNativeEntryPoint(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else if (java_lang_invoke_MethodType::is_instance(o))
@@ -362,7 +369,7 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
 
   // The oop is of some type not supported by the compiler interface.
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -378,6 +385,7 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   if (o->is_klass()) {
     Klass* k = (Klass*)o;
     if (k->is_instance_klass()) {
+      assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
       return new (arena()) ciObjArrayKlass(k);
@@ -397,7 +405,7 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
 
   // The Metadata* is of some type not supported by the compiler interface.
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------------------------------------------
@@ -412,8 +420,8 @@ ciMethod* ciObjectFactory::get_unloaded_method(ciInstanceKlass* holder,
                                                ciSymbol*        name,
                                                ciSymbol*        signature,
                                                ciInstanceKlass* accessor) {
-  assert(accessor != NULL, "need origin of access");
-  ciSignature* that = NULL;
+  assert(accessor != nullptr, "need origin of access");
+  ciSignature* that = nullptr;
   for (int i = 0; i < _unloaded_methods.length(); i++) {
     ciMethod* entry = _unloaded_methods.at(i);
     if (entry->holder()->equals(holder) &&
@@ -425,7 +433,7 @@ ciMethod* ciObjectFactory::get_unloaded_method(ciInstanceKlass* holder,
         return entry;
       } else {
         // Lazily create ciSignature
-        if (that == NULL)  that = new (arena()) ciSignature(accessor, constantPoolHandle(), signature);
+        if (that == nullptr)  that = new (arena()) ciSignature(accessor, constantPoolHandle(), signature);
         if (entry->signature()->equals(that)) {
           // We've found a match.
           return entry;
@@ -456,9 +464,9 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
                                              ciSymbol* name,
                                              bool create_if_not_found) {
   EXCEPTION_CONTEXT;
-  oop loader = NULL;
-  oop domain = NULL;
-  if (accessing_klass != NULL) {
+  oop loader = nullptr;
+  oop domain = nullptr;
+  if (accessing_klass != nullptr) {
     loader = accessing_klass->loader();
     domain = accessing_klass->protection_domain();
   }
@@ -473,11 +481,11 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   }
 
   if (!create_if_not_found)
-    return NULL;
+    return nullptr;
 
   // This is a new unloaded klass.  Create it and stick it in
   // the cache.
-  ciKlass* new_klass = NULL;
+  ciKlass* new_klass = nullptr;
 
   // Two cases: this is an unloaded ObjArrayKlass or an
   // unloaded InstanceKlass.  Deal with both.
@@ -487,7 +495,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
     int dimension = ss.skip_array_prefix();  // skip all '['s
     BasicType element_type = ss.type();
     assert(element_type != T_ARRAY, "unsuccessful decomposition");
-    ciKlass* element_klass = NULL;
+    ciKlass* element_klass = nullptr;
     if (element_type == T_OBJECT) {
       ciEnv *env = CURRENT_THREAD_ENV;
       ciSymbol* ci_name = env->get_symbol(ss.as_symbol());
@@ -504,9 +512,9 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
     }
     new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);
   } else {
-    jobject loader_handle = NULL;
-    jobject domain_handle = NULL;
-    if (accessing_klass != NULL) {
+    jobject loader_handle = nullptr;
+    jobject domain_handle = nullptr;
+    if (accessing_klass != nullptr) {
       loader_handle = accessing_klass->loader_handle();
       domain_handle = accessing_klass->protection_domain_handle();
     }
@@ -554,8 +562,8 @@ ciInstance* ciObjectFactory::get_unloaded_instance(ciInstanceKlass* instance_kla
 // Get a ciInstance representing an unresolved klass mirror.
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
-ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass*  type) {
-  assert(ciEnv::_Class_klass != NULL, "");
+ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass* type) {
+  assert(ciEnv::_Class_klass != nullptr, "");
   return get_unloaded_instance(ciEnv::_Class_klass->as_instance_klass());
 }
 
@@ -569,7 +577,7 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
                                                                  ciSymbol* name,
                                                                  ciSymbol* signature,
                                                                  int       ref_kind) {
-  if (ciEnv::_MethodHandle_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodHandle_klass != nullptr, "");
   return get_unloaded_instance(ciEnv::_MethodHandle_klass->as_instance_klass());
 }
 
@@ -580,12 +588,12 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
 ciInstance* ciObjectFactory::get_unloaded_method_type_constant(ciSymbol* signature) {
-  if (ciEnv::_MethodType_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodType_klass != nullptr, "");
   return get_unloaded_instance(ciEnv::_MethodType_klass->as_instance_klass());
 }
 
 ciInstance* ciObjectFactory::get_unloaded_object_constant() {
-  if (ciEnv::_Object_klass == NULL)  return NULL;
+  assert(ciEnv::_Object_klass != nullptr, "");
   return get_unloaded_instance(ciEnv::_Object_klass->as_instance_klass());
 }
 
@@ -625,7 +633,7 @@ void ciObjectFactory::init_ident_of(ciBaseObject* obj) {
   obj->set_ident(_next_ident++);
 }
 
-static ciObjectFactory::NonPermObject* emptyBucket = NULL;
+static ciObjectFactory::NonPermObject* emptyBucket = nullptr;
 
 // ------------------------------------------------------------------
 // ciObjectFactory::find_non_perm
@@ -637,7 +645,7 @@ ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
   assert(Universe::heap()->is_in(key), "must be");
   ciMetadata* klass = get_metadata(key->klass());
   NonPermObject* *bp = &_non_perm_bucket[(unsigned) klass->hash() % NON_PERM_BUCKETS];
-  for (NonPermObject* p; (p = (*bp)) != NULL; bp = &p->next()) {
+  for (NonPermObject* p; (p = (*bp)) != nullptr; bp = &p->next()) {
     if (is_equal(p, key))  break;
   }
   return (*bp);

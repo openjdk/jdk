@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ import javax.management.ObjectName;
  * In other words, its methods <code>getClassName</code>, <code>getTypeName</code> and <code>getDescription</code>
  * all return the same string value <i>className</i>.
  *
+ * @param <T> the Java type that values described by this SimpleType must
+ * have.
+ *
  * @since 1.5
  */
 public final class SimpleType<T> extends OpenType<T> {
@@ -70,98 +73,98 @@ public final class SimpleType<T> extends OpenType<T> {
      * Java class name is <code>java.lang.Void</code>.
      */
     public static final SimpleType<Void> VOID =
-        new SimpleType<Void>(Void.class);
+        new SimpleType<>(Void.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Boolean</code>.
      */
     public static final SimpleType<Boolean> BOOLEAN =
-        new SimpleType<Boolean>(Boolean.class);
+        new SimpleType<>(Boolean.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Character</code>.
      */
     public static final SimpleType<Character> CHARACTER =
-        new SimpleType<Character>(Character.class);
+        new SimpleType<>(Character.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Byte</code>.
      */
     public static final SimpleType<Byte> BYTE =
-        new SimpleType<Byte>(Byte.class);
+        new SimpleType<>(Byte.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Short</code>.
      */
     public static final SimpleType<Short> SHORT =
-        new SimpleType<Short>(Short.class);
+        new SimpleType<>(Short.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Integer</code>.
      */
     public static final SimpleType<Integer> INTEGER =
-        new SimpleType<Integer>(Integer.class);
+        new SimpleType<>(Integer.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Long</code>.
      */
     public static final SimpleType<Long> LONG =
-        new SimpleType<Long>(Long.class);
+        new SimpleType<>(Long.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Float</code>.
      */
     public static final SimpleType<Float> FLOAT =
-        new SimpleType<Float>(Float.class);
+        new SimpleType<>(Float.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.Double</code>.
      */
     public static final SimpleType<Double> DOUBLE =
-        new SimpleType<Double>(Double.class);
+        new SimpleType<>(Double.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.lang.String</code>.
      */
     public static final SimpleType<String> STRING =
-        new SimpleType<String>(String.class);
+        new SimpleType<>(String.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.math.BigDecimal</code>.
      */
     public static final SimpleType<BigDecimal> BIGDECIMAL =
-        new SimpleType<BigDecimal>(BigDecimal.class);
+        new SimpleType<>(BigDecimal.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.math.BigInteger</code>.
      */
     public static final SimpleType<BigInteger> BIGINTEGER =
-        new SimpleType<BigInteger>(BigInteger.class);
+        new SimpleType<>(BigInteger.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>java.util.Date</code>.
      */
     public static final SimpleType<Date> DATE =
-        new SimpleType<Date>(Date.class);
+        new SimpleType<>(Date.class);
 
     /**
      * The <code>SimpleType</code> instance describing values whose
      * Java class name is <code>javax.management.ObjectName</code>.
      */
     public static final SimpleType<ObjectName> OBJECTNAME =
-        new SimpleType<ObjectName>(ObjectName.class);
+        new SimpleType<>(ObjectName.class);
 
     private static final SimpleType<?>[] typeArray = {
         VOID, BOOLEAN, CHARACTER, BYTE, SHORT, INTEGER, LONG, FLOAT,
@@ -211,7 +214,7 @@ public final class SimpleType<T> extends OpenType<T> {
     }
 
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified <code>obj</code> parameter with this <code>SimpleType</code> instance for equality.
@@ -291,7 +294,7 @@ public final class SimpleType<T> extends OpenType<T> {
     }
 
     private static final Map<SimpleType<?>,SimpleType<?>> canonicalTypes =
-        new HashMap<SimpleType<?>,SimpleType<?>>();
+        new HashMap<>();
     static {
         for (int i = 0; i < typeArray.length; i++) {
             final SimpleType<?> type = typeArray[i];

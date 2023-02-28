@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     /**
      * a shared empty array for empty property lists
      */
-    static final private Property[] _Empty_property_array = new Property[0];
+    private static final Property[] _Empty_property_array = new Property[0];
 
 
     // Class private fields <==============================
@@ -494,7 +494,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         // parses property list
         Property prop;
-        Map<String,Property> keys_map = new HashMap<String,Property>();
+        Map<String,Property> keys_map = new HashMap<>();
         String[] keys;
         String key_name;
         boolean quoted_value;
@@ -708,7 +708,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         _kp_array = new Property[nb_props];
 
         String[] keys = new String[nb_props];
-        final Map<String,Property> keys_map = new HashMap<String,Property>();
+        final Map<String,Property> keys_map = new HashMap<>();
         Property prop;
         int key_index;
         int i = 0;
@@ -1175,9 +1175,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         try {
             construct(cn);
-        } catch (NullPointerException e) {
-            throw new InvalidObjectException(e.toString());
-        } catch (MalformedObjectNameException e) {
+        } catch (NullPointerException | MalformedObjectNameException e) {
             throw new InvalidObjectException(e.toString());
         }
     }
@@ -1658,7 +1656,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             if (_propertyList == null) {
                 // build (lazy eval) the property list from the canonical
                 // properties array
-                _propertyList = new HashMap<String,String>();
+                _propertyList = new HashMap<>();
                 int len = _ca_array.length;
                 Property prop;
                 for (int i = len - 1; i >= 0; i--) {
@@ -1684,7 +1682,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      */
     // CR 6441274 depends on the modification property defined above
     public Hashtable<String,String> getKeyPropertyList()  {
-        return new Hashtable<String,String>(_getKeyPropertyList());
+        return new Hashtable<>(_getKeyPropertyList());
     }
 
     /**
@@ -2018,11 +2016,22 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     }
 
     private final boolean matchDomains(ObjectName name) {
+        boolean useOptimized = (this.getClass() == ObjectName.class) &&
+                               (name.getClass() == ObjectName.class);
+
         if (isDomainPattern()) {
             // wildmatch domains
             // This ObjectName is the pattern
             // The other ObjectName is the string.
+            if (useOptimized) {
+                return Util.wildmatch(name._canonicalName, _canonicalName,
+                           0, name.getDomainLength(), 0, getDomainLength());
+            }
             return Util.wildmatch(name.getDomain(),getDomain());
+        }
+        if (useOptimized) {
+            return getDomainLength() == name.getDomainLength() &&
+                   _canonicalName.regionMatches(0, name._canonicalName, 0, getDomainLength());
         }
         return getDomain().equals(name.getDomain());
     }

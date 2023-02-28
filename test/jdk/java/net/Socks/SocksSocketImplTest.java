@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class SocksSocketImplTest {
 
     /**
      * A {@link ProxySelector} which strips the "scheme" part of the {@link URI}
-     * before delegating the selection to the the {@link DefaultProxySelector}.
+     * before delegating the selection to the {@link DefaultProxySelector}.
      * This is to ensure that the {@code DefaultProxySelector} throws an {@link IllegalArgumentException}
      * during selection of the proxy
      */

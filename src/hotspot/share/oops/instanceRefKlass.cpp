@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,42 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+
+static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
+  if (       name == vmSymbols::java_lang_ref_SoftReference()) {
+    return REF_SOFT;
+  } else if (name == vmSymbols::java_lang_ref_WeakReference()) {
+    return REF_WEAK;
+  } else if (name == vmSymbols::java_lang_ref_FinalReference()) {
+    return REF_FINAL;
+  } else if (name == vmSymbols::java_lang_ref_PhantomReference()) {
+    return REF_PHANTOM;
+  } else {
+    ShouldNotReachHere();
+    return REF_NONE;
+  }
+}
+
+static ReferenceType determine_reference_type(const ClassFileParser& parser) {
+  const ReferenceType rt = parser.super_reference_type();
+  if (rt != REF_NONE) {
+    // Inherit type from super class
+    return rt;
+  }
+
+  // Bootstrapping: this is one of the direct subclasses of java.lang.ref.Reference
+  const Symbol* const name = parser.class_name();
+  return reference_subclass_name_to_type(name);
+}
+
+InstanceRefKlass::InstanceRefKlass(const ClassFileParser& parser)
+  : InstanceKlass(parser, Kind, determine_reference_type(parser)) {}
 
 void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent
@@ -80,14 +112,13 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   InstanceKlass::oop_verify_on(obj, st);
   // Verify referent field
   oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
-  if (referent != NULL) {
+  if (referent != nullptr) {
     guarantee(oopDesc::is_oop(referent), "referent field heap failed");
   }
   // Additional verification for next field, which must be a Reference or null
   oop next = java_lang_ref_Reference::next(obj);
-  if (next != NULL) {
+  if (next != nullptr) {
     guarantee(oopDesc::is_oop(next), "next field should be an oop");
-    guarantee(next->is_instance(), "next field should be an instance");
-    guarantee(InstanceKlass::cast(next->klass())->is_reference_instance_klass(), "next field verify failed");
+    guarantee(next->is_instanceRef(), "next field verify failed");
   }
 }

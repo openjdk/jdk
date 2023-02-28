@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,7 @@ import sun.jvm.hotspot.utilities.Observer;
     <ul>
     <li> Generation
       <ul>
-      <li> CardGeneration
-        <ul>
-        <li> TenuredGeneration
-        </ul>
+      <li> TenuredGeneration
       <li> DefNewGeneration
       </ul>
     </ul>
@@ -166,7 +163,7 @@ public abstract class Generation extends VMObject {
   }
 
   protected VirtualSpace virtualSpace() {
-    return (VirtualSpace) VMObjectFactory.newObject(VirtualSpace.class, addr.addOffsetTo(virtualSpaceFieldOffset));
+    return VMObjectFactory.newObject(VirtualSpace.class, addr.addOffsetTo(virtualSpaceFieldOffset));
   }
 
   public abstract String name();
@@ -195,6 +192,6 @@ public abstract class Generation extends VMObject {
   }
 
   private StatRecord getStatRecord() {
-    return (StatRecord) VMObjectFactory.newObject(Generation.StatRecord.class, addr.addOffsetTo(statRecordField.getOffset()));
+    return VMObjectFactory.newObject(StatRecord.class, addr.addOffsetTo(statRecordField.getOffset()));
   }
 }

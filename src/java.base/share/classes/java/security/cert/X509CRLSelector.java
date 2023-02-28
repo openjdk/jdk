@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import sun.security.x509.X500Name;
  * {@link CertStore#getCRLs CertStore.getCRLs} or some similar
  * method.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a>
  * for definitions of the X.509 CRL fields and extensions mentioned below.
  * <p>
@@ -323,7 +323,7 @@ public class X509CRLSelector implements CRLSelector {
             else
                 namesCopy.add(nameObject);
         }
-        return(namesCopy);
+        return namesCopy;
     }
 
     /**
@@ -371,7 +371,7 @@ public class X509CRLSelector implements CRLSelector {
                 try {
                     x500Principals.add(new X500Principal((byte[])nameObject));
                 } catch (IllegalArgumentException e) {
-                    throw (IOException)new IOException("Invalid name").initCause(e);
+                    throw new IOException("Invalid name", e);
                 }
             }
         }
@@ -623,6 +623,7 @@ public class X509CRLSelector implements CRLSelector {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: no CRLNumber");
                 }
+                return false;
             }
             BigInteger crlNum;
             try {
@@ -630,7 +631,7 @@ public class X509CRLSelector implements CRLSelector {
                 byte[] encoded = in.getOctetString();
                 CRLNumberExtension crlNumExt =
                     new CRLNumberExtension(Boolean.FALSE, encoded);
-                crlNum = crlNumExt.get(CRLNumberExtension.NUMBER);
+                crlNum = crlNumExt.getCrlNumber();
             } catch (IOException ex) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: exception in "

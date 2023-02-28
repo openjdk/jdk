@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,18 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_failed_evacuation(mtGC),
   _evac_failure_regions(nullptr),
-  _evac_failure_regions_cur_length(0),
-  _max_regions(0) { }
+  _evac_failure_regions_cur_length(0) { }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
   assert(_evac_failure_regions == nullptr, "not cleaned up");
@@ -42,29 +43,27 @@ G1EvacFailureRegions::~G1EvacFailureRegions() {
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  _max_regions = max_regions;
-  _regions_failed_evacuation.resize(_max_regions);
-  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, _max_regions, mtGC);
+  _regions_failed_evacuation.resize(max_regions);
+  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
 }
 
 void G1EvacFailureRegions::post_collection() {
   _regions_failed_evacuation.resize(0);
+
   FREE_C_HEAP_ARRAY(uint, _evac_failure_regions);
   _evac_failure_regions = nullptr;
-  _max_regions = 0; // To have any record() attempt fail in the future.
-}
-
-void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
-                                       HeapRegionClaimer* _hrclaimer,
-                                       uint worker_id) {
-  G1CollectedHeap::heap()->par_iterate_regions_array(closure,
-                                                     _hrclaimer,
-                                                     _evac_failure_regions,
-                                                     Atomic::load(&_evac_failure_regions_cur_length),
-                                                     worker_id);
 }
 
 bool G1EvacFailureRegions::contains(uint region_idx) const {
-  assert(region_idx < _max_regions, "must be");
   return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
+}
+
+void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
+                                       HeapRegionClaimer* hrclaimer,
+                                       uint worker_id) const {
+  G1CollectedHeap::heap()->par_iterate_regions_array(closure,
+                                                     hrclaimer,
+                                                     _evac_failure_regions,
+                                                     Atomic::load(&_evac_failure_regions_cur_length),
+                                                     worker_id);
 }

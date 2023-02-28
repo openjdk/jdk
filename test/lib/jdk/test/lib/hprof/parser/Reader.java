@@ -84,7 +84,6 @@ public abstract class Reader {
             }
             heapFile = heapFile.substring(0, pos);
         }
-        GzipRandomAccess access = null;
         try (FileInputStream fis = new FileInputStream(heapFile);
              BufferedInputStream bis = new BufferedInputStream(fis);
              PositionDataInputStream in = new PositionDataInputStream(bis)) {

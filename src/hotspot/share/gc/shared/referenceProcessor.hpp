@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
@@ -47,21 +47,22 @@ class RefProcProxyTask;
 // at the point of invocation.
 class EnqueueDiscoveredFieldClosure {
 public:
-  // For the given j.l.ref.Reference reference, set the discovered field to value.
-  virtual void enqueue(oop reference, oop value) = 0;
+  // For the given j.l.ref.Reference discovered field address, set the discovered
+  // field to value and apply any barriers to it.
+  virtual void enqueue(HeapWord* discovered_field_addr, oop value) = 0;
 };
 
 // EnqueueDiscoveredFieldClosure that executes the default barrier on the discovered
-// field of the j.l.ref.Reference reference with the given value.
+// field of the j.l.ref.Reference with the given value.
 class BarrierEnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
 public:
-  void enqueue(oop reference, oop value) override;
+  void enqueue(HeapWord* discovered_field_addr, oop value) override;
 };
 
 // List of discovered references.
 class DiscoveredList {
 public:
-  DiscoveredList() : _oop_head(NULL), _compressed_head(narrowOop::null), _len(0) { }
+  DiscoveredList() : _oop_head(nullptr), _compressed_head(narrowOop::null), _len(0) { }
   inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
@@ -113,7 +114,7 @@ public:
                                 EnqueueDiscoveredFieldClosure* enqueue);
 
   // End Of List.
-  inline bool has_next() const { return _current_discovered != NULL; }
+  inline bool has_next() const { return _current_discovered != nullptr; }
 
   // Get oop to the Reference object.
   inline oop obj() const { return _current_discovered; }
@@ -128,7 +129,7 @@ public:
 
   // Loads data for the current reference.
   // The "allow_null_referent" argument tells us to allow for the possibility
-  // of a NULL referent in the discovered Reference object. This typically
+  // of a null referent in the discovered Reference object. This typically
   // happens in the case of concurrent collectors that may have done the
   // discovery concurrently, or interleaved, with mutator execution.
   void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
@@ -152,7 +153,7 @@ public:
   // Move enqueued references to the reference pending list.
   void complete_enqueue();
 
-  // NULL out referent pointer.
+  // null out referent pointer.
   void clear_referent();
 
   // Statistics
@@ -162,7 +163,7 @@ public:
   inline void move_to_next() {
     if (_current_discovered == _next_discovered) {
       // End of the list.
-      _current_discovered = NULL;
+      _current_discovered = nullptr;
     } else {
       _current_discovered = _next_discovered;
     }
@@ -254,7 +255,7 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Drop Soft/Weak/Final references with a NULL or live referent, and clear
+  // Drop Soft/Weak/Final references with a null or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                     ReferenceProcessorPhaseTimes& phase_times);
@@ -271,7 +272,7 @@ private:
   // removed elements.
 
   // Traverse the list and remove any Refs whose referents are alive,
-  // or NULL if discovery is concurrent. Enqueue and clear the reference for
+  // or null if discovery is concurrent. Enqueue and clear the reference for
   // others if do_enqueue_and_clear is set.
   size_t process_discovered_list_work(DiscoveredList&    refs_list,
                                       BoolObjectClosure* is_alive,
@@ -292,7 +293,7 @@ private:
     _current_soft_ref_policy->setup();   // snapshot the policy threshold
   }
 public:
-  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
+  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_NONE); }
 
   uint num_queues() const                  { return _num_queues; }
   uint max_num_queues() const              { return _max_num_queues; }
@@ -303,19 +304,19 @@ public:
     setup_policy(always_clear);
   }
 
-  // "Preclean" all the discovered reference lists by removing references that
-  // are active (e.g. due to the mutator calling enqueue()) or with NULL or
-  // strongly reachable referents.
-  // The first argument is a predicate on an oop that indicates
-  // its (strong) reachability and the fourth is a closure that
-  // may be used to incrementalize or abort the precleaning process.
-  // The caller is responsible for taking care of potential
-  // interference with concurrent operations on these lists
-  // (or predicates involved) by other threads.
+  // "Preclean" all the discovered reference lists by removing references whose
+  // referents are null or strongly reachable (`is_alive` returns true).
+  // Note: when a referent is strongly reachable, we assume it's already marked
+  // through, so this method doesn't perform (and doesn't need to) any marking
+  // work at all. Currently, this assumption holds because G1 uses SATB and the
+  // marking status of an object is *not* updated when `Reference.get()` is
+  // called.
+  // `yield` is a closure that may be used to incrementalize or abort the
+  // precleaning process. The caller is responsible for taking care of
+  // potential interference with concurrent operations on these lists (or
+  // predicates involved) by other threads.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
-                                      OopClosure*        keep_alive,
                                       EnqueueDiscoveredFieldClosure* enqueue,
-                                      VoidClosure*       complete_gc,
                                       YieldClosure*      yield,
                                       GCTimer*           gc_timer);
 
@@ -330,9 +331,7 @@ private:
   // Returns whether the operation should be aborted.
   bool preclean_discovered_reflist(DiscoveredList&    refs_list,
                                    BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
                                    EnqueueDiscoveredFieldClosure* enqueue,
-                                   VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 
   // round-robin mod _num_queues (not: _not_ mod _max_num_queues)
@@ -375,9 +374,9 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
-                     BoolObjectClosure* is_alive_non_header = NULL);
+                     BoolObjectClosure* is_alive_non_header = nullptr);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -419,22 +418,17 @@ public:
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
 
-  void verify_list(DiscoveredList& ref_list);
-
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
-
-  // Has discovered references that need handling
-  bool has_discovered_references();
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
   process_discovered_references(RefProcProxyTask& proxy_task,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
-  // If a discovery is in process that is being superceded, abandon it: all
+  // If a discovery is in process that is being superseded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
-  // have NULL discovered fields.  Must be called only at a safepoint.
+  // have null discovered fields.  Must be called only at a safepoint.
   void abandon_partial_discovery();
 
   size_t total_reference_count(ReferenceType rt) const;
@@ -588,7 +582,7 @@ public:
  * of RefProcTask that will handle reference processing in a generic way for Serial,
  * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
  */
-class RefProcProxyTask : public AbstractGangTask {
+class RefProcProxyTask : public WorkerTask {
 protected:
   const uint _max_workers;
   RefProcTask* _rp_task;
@@ -597,7 +591,7 @@ protected:
   bool _marks_oops_alive;
 
 public:
-  RefProcProxyTask(const char* name, uint max_workers) : AbstractGangTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
+  RefProcProxyTask(const char* name, uint max_workers) : WorkerTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
 
   void prepare_run_task(RefProcTask& rp_task, uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     _rp_task = &rp_task;

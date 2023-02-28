@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # We might have the original command line if the wrapper was called by some
+  # other script.
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_SHORT)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_FULL)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_LINE)
   # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
   AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
@@ -94,11 +99,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
+])
 
-  # Setup username (for use in adhoc version strings etc)
-  # Outer [ ] to quote m4.
-  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
-  AC_SUBST(USERNAME)
+###############################################################################
+# Setup what kind of build environment type we have (CI or local developer)
+AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
+[
+  if test "x$CI" = "xtrue"; then
+    DEFAULT_BUILD_ENV="ci"
+    AC_MSG_NOTICE([CI environment variable set to $CI])
+  else
+    DEFAULT_BUILD_ENV="dev"
+  fi
+
+  UTIL_ARG_WITH(NAME: build-env, TYPE: literal,
+      RESULT: BUILD_ENV,
+      VALID_VALUES: [auto dev ci], DEFAULT: auto,
+      CHECKING_MSG: [for build environment type],
+      DESC: [select build environment type (affects certain default values)],
+      IF_AUTO: [
+        RESULT=$DEFAULT_BUILD_ENV
+      ]
+  )
+  AC_SUBST(BUILD_ENV)
 ])
 
 ###############################################################################
@@ -118,6 +141,91 @@ AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
 [
   if test "x[$]$1" = x; then
     eval $1="\${$1_${OPENJDK_BUILD_CPU}}"
+  fi
+])
+
+###############################################################################
+AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
+[
+  AC_MSG_CHECKING([for sdk name])
+  AC_ARG_WITH([sdk-name], [AS_HELP_STRING([--with-sdk-name],
+      [use the Xcode platform SDK of the given name. @<:@macosx@:>@])],
+      [SDK_NAME=$with_sdk_name]
+  )
+  if test "x$SDK_NAME" = x; then
+    SDK_NAME=macosx
+  fi
+  AC_MSG_RESULT([$SDK_NAME])
+
+  if test "x$DEVKIT_ROOT" != x; then
+    # We need to use xcodebuild from the devkit, if provided
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $DEVKIT_TOOLCHAIN_PATH)
+    if test "x$XCODEBUILD" = x; then
+      AC_MSG_ERROR([No xcodebuild tool found in the provided devkit])
+    fi
+    XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+    if test $? -ne 0; then
+      AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
+    fi
+  elif test "x$TOOLCHAIN_PATH" != x; then
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
+    fi
+  else
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
+    fi
+  fi
+
+  if test "x$SYSROOT" != x; then
+    if ! test -f "$SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
+      AC_MSG_ERROR([Invalid sysroot, framework headers not found])
+    fi
+    if test "x$with_sdk_name" != x; then
+      AC_MSG_WARN([--with-sdk-name will be ignored since a sysroot or devkit is provided])
+    fi
+    AC_MSG_NOTICE([Setting sysroot from devkit or --with-sysroot])
+  else
+    if test "x$XCODEBUILD" != x; then
+      SYSROOT=`"$XCODEBUILD" -sdk "$SDK_NAME" -version | $GREP '^Path: ' | $SED 's/Path: //'`
+      if test "x$SYSROOT" = x; then
+        AC_MSG_ERROR([No sysroot found for SDK $SDK_NAME from xcodebuild. Check your Xcode installation.])
+      fi
+      if ! test -f "$SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
+        AC_MSG_ERROR([Unable to find required framework headers, provide a path to an SDK via --with-sysroot or --with-sdk-name and be sure Xcode is installed properly])
+      fi
+      AC_MSG_NOTICE([Setting sysroot from xcodebuild with SDK $SDK_NAME])
+    else
+      UTIL_LOOKUP_PROGS(XCRUN, xcrun)
+      if test "x$XCRUN" != x; then
+        XCRUN_SDK_PATH=`"$XCRUN" --show-sdk-path -sdk "$SDK_NAME"`
+      fi
+
+      if test "x$XCRUN_SDK_PATH" != x && test -f "$XCRUN_SDK_PATH/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
+        AC_MSG_NOTICE([Setting sysroot from xcrun with SDK $SDK_NAME])
+        SYSROOT="$XCRUN_SDK_PATH"
+      elif test -f /System/Library/Frameworks/Foundation.framework/Headers/Foundation.h; then
+        AC_MSG_WARN([No devkit provided and no xcodebuild found. Proceeding using system headers.])
+        if test "x$with_sdk_name" != x; then
+          AC_MSG_WARN([--with-sdk-name will be ignored since no xcodebuild could be found])
+        fi
+      else
+        AC_MSG_NOTICE([No devkit provided, no xcodebuild tool and no system headers found in the system.])
+        AC_MSG_NOTICE([Check that Xcode is properly installed, or set a devkit with --with-devkit,])
+        AC_MSG_NOTICE([or override SDK selection using --with-sysroot or --with-sdk-name.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+    fi
   fi
 ])
 
@@ -177,7 +285,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$DEVKIT_TOOLCHAIN_PATH)
 
     # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
-    # places for backwards compatiblity.
+    # places for backwards compatibility.
     if test "x$DEVKIT_SYSROOT" != x; then
       SYSROOT="$DEVKIT_SYSROOT"
     elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
@@ -198,7 +306,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
   AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [alias for --with-sysroot for backwards compatability])],
+      [alias for --with-sysroot for backwards compatibility])],
       [SYSROOT=$with_sys_root]
   )
 
@@ -217,93 +325,40 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
   )
 
+  AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  if test "x$with_xcode_path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],
+          $with_xcode_path/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$with_xcode_path/Contents/Developer/usr/bin)
+    else
+      AC_MSG_WARN([Option --with-xcode-path is only valid on Mac OS, ignoring.])
+    fi
+  fi
+
+  AC_MSG_CHECKING([for toolchain path])
+  AC_MSG_RESULT([$TOOLCHAIN_PATH])
+  AC_SUBST(TOOLCHAIN_PATH)
+
   AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
       [prepend these directories to the default path])],
       [UTIL_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
   )
 
   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
-    # If a devkit has been supplied, find xcodebuild in the toolchain_path.
-    # If not, detect if Xcode is installed by running xcodebuild -version
-    # if no Xcode installed, xcodebuild exits with 1
-    # if Xcode is installed, even if xcode-select is misconfigured, then it exits with 0
-    if test "x$DEVKIT_ROOT" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
-      # We need to use xcodebuild in the toolchain dir provided by the user
-      UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
-      if test x$XCODEBUILD = x; then
-        # fall back on the stub binary in /usr/bin/xcodebuild
-        XCODEBUILD=/usr/bin/xcodebuild
-      fi
-    else
-      # this should result in SYSROOT being empty, unless --with-sysroot is provided
-      # when only the command line tools are installed there are no SDKs, so headers
-      # are copied into the system frameworks
-      XCODEBUILD=
-      AC_SUBST(XCODEBUILD)
-    fi
-
-    AC_MSG_CHECKING([for sdk name])
-    AC_ARG_WITH([sdk-name], [AS_HELP_STRING([--with-sdk-name],
-        [use the platform SDK of the given name. @<:@macosx@:>@])],
-        [SDKNAME=$with_sdk_name]
-    )
-    AC_MSG_RESULT([$SDKNAME])
-
-    # if toolchain path is specified then don't rely on system headers, they may not compile
-    HAVE_SYSTEM_FRAMEWORK_HEADERS=0
-    test -z "$TOOLCHAIN_PATH" && \
-      HAVE_SYSTEM_FRAMEWORK_HEADERS=`test ! -f /System/Library/Frameworks/Foundation.framework/Headers/Foundation.h; echo $?`
-
-    if test -z "$SYSROOT"; then
-      if test -n "$XCODEBUILD"; then
-        # if we don't have system headers, use default SDK name (last resort)
-        if test -z "$SDKNAME" -a $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0; then
-          SDKNAME=${SDKNAME:-macosx}
-        fi
-
-        if test -n "$SDKNAME"; then
-          # Call xcodebuild to determine SYSROOT
-          SYSROOT=`"$XCODEBUILD" -sdk $SDKNAME -version | $GREP '^Path: ' | $SED 's/Path: //'`
-        fi
-      else
-        if test $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0; then
-          AC_MSG_ERROR([No xcodebuild tool and no system framework headers found, use --with-sysroot or --with-sdk-name to provide a path to a valid SDK])
-        fi
-      fi
-    else
-      # warn user if --with-sdk-name was also set
-      if test -n "$with_sdk_name"; then
-        AC_MSG_WARN([Both SYSROOT and --with-sdk-name are set, only SYSROOT will be used])
-      fi
-    fi
-
-    if test $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0 -a -z "$SYSROOT"; then
-      # If no system framework headers, then SYSROOT must be set, or we won't build
-      AC_MSG_ERROR([Unable to determine SYSROOT and no headers found in /System/Library/Frameworks. Check Xcode configuration, --with-sysroot or --with-sdk-name arguments.])
-    fi
-
-    # Perform a basic sanity test
-    if test ! -f "$SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
-      if test -z "$SYSROOT"; then
-        AC_MSG_ERROR([Unable to find required framework headers, provide a path to an SDK via --with-sysroot or --with-sdk-name and be sure Xcode is installed properly])
-      else
-        AC_MSG_ERROR([Invalid SDK or SYSROOT path, dependent framework headers not found])
-      fi
-    fi
-
-    # set SDKROOT too, Xcode tools will pick it up
-    SDKROOT="$SYSROOT"
-    AC_SUBST(SDKROOT)
+    BASIC_SETUP_XCODE_SYSROOT
   fi
 
   # Prepend the extra path to the global path
   UTIL_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
+  UTIL_FIXUP_PATH([SYSROOT])
+
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
-  AC_MSG_CHECKING([for toolchain path])
-  AC_MSG_RESULT([$TOOLCHAIN_PATH])
-  AC_SUBST(TOOLCHAIN_PATH)
+  AC_SUBST(SYSROOT)
+
   AC_MSG_CHECKING([for extra path])
   AC_MSG_RESULT([$EXTRA_PATH])
 ])
@@ -443,9 +498,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 [
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    file_to_test="$TOPDIR/LICENSE"
+    # The choice of file here is somewhat arbitrary, it just needs to be there
+    # in the source tree when configure runs
+    file_to_test="$TOPDIR/Makefile"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
-      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
+      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with non cygwin tools in a directory not created in cygwin.])
     fi
   fi
 ])
@@ -499,7 +556,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_MAKE_TARGET],
 AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
 [
   AC_ARG_WITH(log, [AS_HELP_STRING([--with-log],
-      [[default vaue for make LOG argument [warn]]])])
+      [[default value for make LOG argument [warn]]])])
   AC_MSG_CHECKING([for default LOG value])
   if test "x$with_log" = x; then
     DEFAULT_LOG=""

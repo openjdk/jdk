@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,10 +26,12 @@
 #ifndef CPU_AARCH64_VM_VERSION_AARCH64_HPP
 #define CPU_AARCH64_VM_VERSION_AARCH64_HPP
 
+#include "spin_wait_aarch64.hpp"
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
 class VM_Version : public Abstract_VM_Version {
+  friend class VMStructs;
   friend class JVMCIVMStructs;
 
 protected:
@@ -44,6 +46,10 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+  static bool _rop_protection;
+  static uintptr_t _pac_mask;
+
+  static SpinWait _spin_wait;
 
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
@@ -57,6 +63,9 @@ protected:
 public:
   // Initialization
   static void initialize();
+  static void check_virtualizations();
+
+  static void print_platform_virtualization_info(outputStream*);
 
   // Asserts
   static void assert_is_initialized() {
@@ -96,30 +105,45 @@ public:
     CPU_APPLE     = 'a',
   };
 
-  enum Feature_Flag {
-#define CPU_FEATURE_FLAGS(decl)               \
-    decl(FP,            "fp",            0)   \
-    decl(ASIMD,         "simd",          1)   \
-    decl(EVTSTRM,       "evtstrm",       2)   \
-    decl(AES,           "aes",           3)   \
-    decl(PMULL,         "pmull",         4)   \
-    decl(SHA1,          "sha1",          5)   \
-    decl(SHA2,          "sha256",        6)   \
-    decl(CRC32,         "crc",           7)   \
-    decl(LSE,           "lse",           8)   \
-    decl(DCPOP,         "dcpop",         16)  \
-    decl(SHA3,          "sha3",          17)  \
-    decl(SHA512,        "sha512",        21)  \
-    decl(SVE,           "sve",           22)  \
-    /* flags above must follow Linux HWCAP */ \
-    decl(SVE2,          "sve2",          28)  \
-    decl(STXR_PREFETCH, "stxr_prefetch", 29)  \
-    decl(A53MAC,        "a53mac",        30)
+enum Ampere_CPU_Model {
+    CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
+    CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+};
 
+#define CPU_FEATURE_FLAGS(decl)               \
+    decl(FP,            fp,            0)     \
+    decl(ASIMD,         asimd,         1)     \
+    decl(EVTSTRM,       evtstrm,       2)     \
+    decl(AES,           aes,           3)     \
+    decl(PMULL,         pmull,         4)     \
+    decl(SHA1,          sha1,          5)     \
+    decl(SHA2,          sha256,        6)     \
+    decl(CRC32,         crc32,         7)     \
+    decl(LSE,           lse,           8)     \
+    decl(DCPOP,         dcpop,         16)    \
+    decl(SHA3,          sha3,          17)    \
+    decl(SHA512,        sha512,        21)    \
+    decl(SVE,           sve,           22)    \
+    decl(PACA,          paca,          30)    \
+    /* flags above must follow Linux HWCAP */ \
+    decl(SVEBITPERM,    svebitperm,    27)    \
+    decl(SVE2,          sve2,          28)    \
+    decl(A53MAC,        a53mac,        31)
+
+  enum Feature_Flag {
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
   };
+
+  // Feature identification
+#define CPU_FEATURE_DETECTION(id, name, bit) \
+  static bool supports_##name() { return (_features & CPU_##id) != 0; };
+  CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
+#undef CPU_FEATURE_DETECTION
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
@@ -142,10 +166,24 @@ public:
 
   static void get_compatible_board(char *buf, int buflen);
 
+  static const SpinWait& spin_wait_desc() { return _spin_wait; }
+
+  static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
+
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();
 #endif
+
+  static void initialize_cpu_information(void);
+
+  static bool use_rop_protection() { return _rop_protection; }
+
+  // For common 64/128-bit unpredicated vector operations, we may prefer
+  // emitting NEON instructions rather than the corresponding SVE instructions.
+  static bool use_neon_for_vector(int vector_length_in_bytes) {
+    return vector_length_in_bytes <= 16;
+  }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

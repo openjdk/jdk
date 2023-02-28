@@ -1,0 +1,217 @@
+//
+// Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+// Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+//
+
+source_hpp %{
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+%}
+
+// Weak compareAndSwap operations are treated as strong compareAndSwap operations.
+// This is motivated by the retry logic of ShenandoahBarrierSetAssembler::cmpxchg_oop which is hard to realise
+// using weak CAS operations.
+
+instruct compareAndSwapP_shenandoah(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
+                                    iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
+            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+
+  format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        false, $res$$Register
+    );
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndSwapN_shenandoah(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
+                                    iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
+            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+
+  format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        false, $res$$Register
+    );
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndSwapP_acq_shenandoah(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
+                                       iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
+            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+
+  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        false, $res$$Register
+    );
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      __ isync();
+    } else {
+      __ sync();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndSwapN_acq_shenandoah(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
+                                        iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
+            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+
+  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        false, $res$$Register
+    );
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      __ isync();
+    } else {
+      __ sync();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeP_shenandoah(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
+                                        iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
+            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+
+  format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        true, $res$$Register
+    );
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeN_shenandoah(iRegNdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
+                                        iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
+            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+
+  format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        true, $res$$Register
+    );
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangePAcq_shenandoah(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
+                                           iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
+            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+
+  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        true, $res$$Register
+    );
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      __ isync();
+    } else {
+      __ sync();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeNAcq_shenandoah(iRegNdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
+                                           iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
+  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
+            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+
+  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
+        &_masm,
+        $mem$$Register, $oldval$$Register, $newval$$Register,
+        $tmp1$$Register, $tmp2$$Register,
+        true, $res$$Register
+    );
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      __ isync();
+    } else {
+      __ sync();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/stack.inline.hpp"
 
 static jobject empty_java_util_arraylist = NULL;
@@ -51,7 +51,7 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
+  return new (mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static bool initialize(TRAPS) {
@@ -73,6 +73,10 @@ static bool initialize(TRAPS) {
  */
 static bool is_allowed(const Klass* k) {
   assert(k != NULL, "invariant");
+  if (!JfrTraceId::is_jdk_jfr_event_sub(k)) {
+    // Was excluded during initial class load.
+    return false;
+  }
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
@@ -196,6 +200,10 @@ bool JdkJfrEvent::is_a(const jclass jc) {
   return JfrTraceId::in_jdk_jfr_event_hierarchy(jc);
 }
 
+void JdkJfrEvent::remove(const Klass* k) {
+  JfrTraceId::untag_jdk_jfr_event_sub(k);
+}
+
 bool JdkJfrEvent::is_host(const Klass* k) {
   return JfrTraceId::is_event_host(k);
 }
@@ -219,3 +227,8 @@ bool JdkJfrEvent::is_visible(const Klass* k) {
 bool JdkJfrEvent::is_visible(const jclass jc) {
   return JfrTraceId::in_visible_set(jc);
 }
+
+bool JdkJfrEvent::is_excluded(const jclass jc) {
+  return !JfrTraceId::in_visible_set(jc);
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import sun.net.sdp.SdpSupport;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -192,8 +191,7 @@ public class SdpProvider extends NetHooks.Provider {
     private static List<Rule> loadRulesFromFile(String file)
         throws IOException
     {
-        Scanner scanner = new Scanner(new File(file));
-        try {
+        try (Scanner scanner = new Scanner(new File(file))) {
             List<Rule> result = new ArrayList<>();
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
@@ -279,8 +277,6 @@ public class SdpProvider extends NetHooks.Provider {
                 }
             }
             return result;
-        } finally {
-            scanner.close();
         }
     }
 

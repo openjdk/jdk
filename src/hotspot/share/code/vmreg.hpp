@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,19 +56,29 @@ private:
     BAD_REG = -1
   };
 
-
-
+  // Despite being private, this field is exported to the
+  // serviceability agent and our friends. It's not really a pointer,
+  // but that's fine and dandy as long as no-one tries to dereference
+  // it.
   static VMReg stack0;
+
+  static constexpr VMReg first();
   // Names for registers
   static const char *regName[];
   static const int register_count;
 
-
 public:
 
-  static VMReg  as_VMReg(int val, bool bad_ok = false) { assert(val > BAD_REG || bad_ok, "invalid"); return (VMReg) (intptr_t) val; }
+  static constexpr VMReg stack_0() {
+    return first() + ((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
+  }
 
-  const char*  name() {
+  static VMReg as_VMReg(int val, bool bad_ok = false) {
+    assert(val > BAD_REG || bad_ok, "invalid");
+    return val + first();
+  }
+
+  const char* name() {
     if (is_reg()) {
       return regName[value()];
     } else if (!is_valid()) {
@@ -78,9 +88,10 @@ public:
       return "STACKED REG";
     }
   }
-  static VMReg Bad() { return (VMReg) (intptr_t) BAD_REG; }
-  bool is_valid() const { return ((intptr_t) this) != BAD_REG; }
-  bool is_stack() const { return (intptr_t) this >= (intptr_t) stack0; }
+  intptr_t value() const { return this - first(); }
+  static VMReg Bad() { return BAD_REG+first(); }
+  bool is_valid() const { return value() != BAD_REG; }
+  bool is_stack() const { return this >= stack_0(); }
   bool is_reg()   const { return is_valid() && !is_stack(); }
 
   // A concrete register is a value that returns true for is_reg() and is
@@ -98,20 +109,18 @@ public:
   // we don't try and get the VMReg number of a physical register that doesn't
   // have an expressible part. That would be pd specific code
   VMReg next() {
-    assert((is_reg() && value() < stack0->value() - 1) || is_stack(), "must be");
-    return (VMReg)(intptr_t)(value() + 1);
+    assert((is_reg() && this < stack_0() - 1) || is_stack(), "must be");
+    return this + 1;
   }
   VMReg next(int i) {
-    assert((is_reg() && value() < stack0->value() - i) || is_stack(), "must be");
-    return (VMReg)(intptr_t)(value() + i);
+    assert((is_reg() && this < stack_0() - i) || is_stack(), "must be");
+    return this + i;
   }
   VMReg prev() {
-    assert((is_stack() && value() > stack0->value()) || (is_reg() && value() != 0), "must be");
-    return (VMReg)(intptr_t)(value() - 1);
+    assert((is_stack() && this > stack_0()) || (is_reg() && value() != 0), "must be");
+    return this - 1;
   }
 
-
-  intptr_t value() const         {return (intptr_t) this; }
 
   void print_on(outputStream* st) const;
   void print() const;
@@ -121,7 +130,7 @@ public:
   // amounts that are part of the native abi. The VMReg must be a stack slot
   // and the result must be also.
 
-  VMReg bias(int offset) {
+  VMReg bias(int offset) const {
     assert(is_stack(), "must be");
     // VMReg res = VMRegImpl::as_VMReg(value() + offset);
     VMReg res = stack2reg(reg2stack() + offset);
@@ -130,22 +139,23 @@ public:
   }
 
   // Convert register numbers to stack slots and vice versa
-  static VMReg stack2reg( int idx ) {
-    return (VMReg) (intptr_t) (stack0->value() + idx);
+  static VMReg stack2reg(int idx) {
+    return stack_0() + idx;
   }
 
-  uintptr_t reg2stack() {
-    assert( is_stack(), "Not a stack-based register" );
-    return value() - stack0->value();
+  uintptr_t reg2stack() const {
+    assert(is_stack(), "Not a stack-based register");
+    return this - stack_0();
   }
 
   static void set_regName();
 
-  static VMReg vmStorageToVMReg(int type, int index);
-
 #include CPU_HEADER(vmreg)
 
 };
+
+extern VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1] INTERNAL_VISIBILITY;
+inline constexpr VMReg VMRegImpl::first() { return all_VMRegs + 1; }
 
 //---------------------------VMRegPair-------------------------------------------
 // Pairs of 32-bit registers for arguments.

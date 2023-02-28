@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320
+ * @bug 7021614 8078320 8273244 8284908 8301201 8301813
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -93,7 +93,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: empty
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:1
+    Erroneous[ERRONEOUS, pos:1, prefPos:2
       code: compiler.err.dc.no.tag.name
       body: @_abc
     ]
@@ -141,7 +141,7 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
-    Erroneous[ERRONEOUS, pos:1
+    Erroneous[ERRONEOUS, pos:1, prefPos:3
       code: compiler.err.dc.no.tag.name
       body: {@
     ]
@@ -175,9 +175,46 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
-    Erroneous[ERRONEOUS, pos:1
+    Erroneous[ERRONEOUS, pos:1, prefPos:13
       code: compiler.err.dc.unterminated.inline.tag
       body: {@abc_def_ghi
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * {@code
+     * abc
+     * @def
+     * ghi
+     * }
+     */
+    void inline_text_at() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Literal[CODE, pos:1, |_abc|_@def|_ghi|_]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * {@tag abc
+     * @def
+     * ghi
+     * }
+     */
+    void inline_content_at() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:1
+      tag:tag
+      content: 1
+        Text[TEXT, pos:7, abc|_@def|_ghi|_]
     ]
   body: empty
   block tags: empty

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -150,10 +150,11 @@ import jdk.internal.util.ArraysSupport;
  * values, for example, this class defines:
  *
  * <blockquote><pre>
- * float  {@link #getFloat()}
- * float  {@link #getFloat(int) getFloat(int index)}
- *  void  {@link #putFloat(float) putFloat(float f)}
- *  void  {@link #putFloat(int,float) putFloat(int index, float f)}</pre></blockquote>
+ * float      {@link #getFloat()}
+ * float      {@link #getFloat(int) getFloat(int index)}
+ * ByteBuffer {@link #putFloat(float) putFloat(float f)}
+ * ByteBuffer {@link #putFloat(int,float) putFloat(int index, float f)}
+ * </pre></blockquote>
  *
  * <p> Corresponding methods are defined for the types {@code char,
  * short, int, long}, and {@code double}.  The index
@@ -264,9 +265,19 @@ import jdk.internal.util.ArraysSupport;
  * @since 1.4
  */
 
-public abstract class $Type$Buffer
+public abstract sealed class $Type$Buffer
     extends Buffer
     implements Comparable<$Type$Buffer>{#if[char]?, Appendable, CharSequence, Readable}
+    permits
+#if[byte]
+    Heap$Type$Buffer, MappedByteBuffer
+#else[byte]
+#if[char]
+    StringCharBuffer,
+#end[char]
+    Heap$Type$Buffer, Direct$Type$BufferS, Direct$Type$BufferU,
+    ByteBufferAs$Type$BufferB, ByteBufferAs$Type$BufferL
+#end[byte]
 {
     // Cached array base offset
     private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
@@ -283,7 +294,7 @@ public abstract class $Type$Buffer
     // backing array, and array offset
     //
     $Type$Buffer(int mark, int pos, int lim, int cap,   // package-private
-                 $type$[] hb, int offset, MemorySegmentProxy segment)
+                 $type$[] hb, int offset, MemorySegment segment)
     {
         super(mark, pos, lim, cap, segment);
         this.hb = hb;
@@ -292,13 +303,13 @@ public abstract class $Type$Buffer
 
     // Creates a new buffer with the given mark, position, limit, and capacity
     //
-    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegment segment) { // package-private
         this(mark, pos, lim, cap, null, 0, segment);
     }
 
     // Creates a new buffer with given base, address and capacity
     //
-    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegment segment) { // package-private
         super(addr, cap, segment);
         this.hb = hb;
         this.offset = 0;
@@ -925,12 +936,12 @@ public abstract class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            scope(), null, base(), bufAddr,
+                            session(), null, base(), bufAddr,
                             dst, dstOffset, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            scope(), null, base(), bufAddr,
+                            session(), null, base(), bufAddr,
                             dst, dstOffset, len);
             } finally {
                 Reference.reachabilityFence(this);
@@ -1095,12 +1106,12 @@ public abstract class $Type$Buffer
 #if[!byte]
                 if (this.order() != src.order())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            src.scope(), scope(), srcBase, srcAddr,
+                            src.session(), session(), srcBase, srcAddr,
                             base, addr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            src.scope(), scope(), srcBase, srcAddr,
+                            src.session(), session(), srcBase, srcAddr,
                             base, addr, len);
             } finally {
                 Reference.reachabilityFence(src);
@@ -1315,12 +1326,12 @@ public abstract class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            null, scope(), src, srcOffset,
+                            null, session(), src, srcOffset,
                             base(), bufAddr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            null, scope(), src, srcOffset,
+                            null, session(), src, srcOffset,
                             base(), bufAddr, len);
             } finally {
                 Reference.reachabilityFence(this);
@@ -1506,6 +1517,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1519,6 +1531,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1532,6 +1545,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1545,6 +1559,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1558,6 +1573,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1571,6 +1587,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1584,6 +1601,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 

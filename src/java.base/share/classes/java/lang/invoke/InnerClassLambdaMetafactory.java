@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
@@ -37,7 +36,6 @@ import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -46,8 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 import java.util.Set;
 
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
@@ -57,7 +57,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -86,7 +85,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    // Used to ensure that each spun class name is unique
+    // Used to ensure that dumped class files for failed definitions have a unique class name
     private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
@@ -106,7 +105,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
         // condy to load implMethod from class data
-        MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
+        MethodType classDataMType = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
         Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
                                          classDataMType.descriptorString(), false);
         implMethodCondy = new ConstantDynamic(ConstantDescs.DEFAULT_NAME, MethodHandle.class.descriptorString(), classDataBsm);
@@ -120,7 +119,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private final ClassWriter cw;                    // ASM class writer
     private final String[] argNames;                 // Generated names for the constructor arguments
     private final String[] argDescs;                 // Type descriptors for the constructor arguments
-    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
+    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
     /**
@@ -210,7 +209,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/') + "$$Lambda$" + counter.incrementAndGet();
+        return name.replace('.', '/') + "$$Lambda";
     }
 
     /**
@@ -227,50 +226,28 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     @Override
     CallSite buildCallSite() throws LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
-        if (factoryType.parameterCount() == 0) {
-            // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance,
-            // unless we've suppressed eager initialization
-            if (disableEagerInitialization) {
-                try {
-                    return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
-                            factoryType.returnType()));
-                } catch (ReflectiveOperationException e) {
-                    throw new LambdaConversionException(
-                            "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
-                }
-            } else {
-                @SuppressWarnings("removal")
-                final Constructor<?>[] ctrs = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public Constructor<?>[] run() {
-                                Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
-                                if (ctrs.length == 1) {
-                                    // The lambda implementing inner class constructor is private, set
-                                    // it accessible (by us) before creating the constant sole instance
-                                    ctrs[0].setAccessible(true);
-                                }
-                                return ctrs;
-                            }
-                        });
-                if (ctrs.length != 1) {
-                    throw new LambdaConversionException("Expected one lambda constructor for "
-                            + innerClass.getCanonicalName() + ", got " + ctrs.length);
-                }
-
-                try {
-                    Object inst = ctrs[0].newInstance();
-                    return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
-                } catch (ReflectiveOperationException e) {
-                    throw new LambdaConversionException("Exception instantiating lambda object", e);
-                }
+        if (factoryType.parameterCount() == 0 && disableEagerInitialization) {
+            try {
+                return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
+                                                                    factoryType.returnType()));
+            } catch (ReflectiveOperationException e) {
+                throw new LambdaConversionException(
+                        "Exception finding " + LAMBDA_INSTANCE_FIELD + " static field", e);
             }
         } else {
             try {
                 MethodHandle mh = caller.findConstructor(innerClass, constructorType);
-                return new ConstantCallSite(mh.asType(factoryType));
+                if (factoryType.parameterCount() == 0) {
+                    // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
+                    Object inst = mh.asType(methodType(Object.class)).invokeExact();
+                    return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
+                } else {
+                    return new ConstantCallSite(mh.asType(factoryType));
+                }
             } catch (ReflectiveOperationException e) {
                 throw new LambdaConversionException("Exception finding constructor", e);
+            } catch (Throwable e) {
+                throw new LambdaConversionException("Exception instantiating lambda object", e);
             }
         }
     }
@@ -283,8 +260,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * registers the lambda proxy class for including into the CDS archive.
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
-        // CDS does not handle disableEagerInitialization.
-        if (!disableEagerInitialization) {
+        // CDS does not handle disableEagerInitialization or useImplMethodHandle
+        if (!disableEagerInitialization && !useImplMethodHandle) {
             // include lambda proxy class in CDS archive at dump time
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
@@ -324,7 +301,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */
-    @SuppressWarnings("removal")
     private Class<?> generateInnerClass() throws LambdaConversionException {
         String[] interfaceNames;
         String interfaceName = interfaceClass.getName().replace('.', '/');
@@ -333,7 +309,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             interfaceNames = new String[]{interfaceName};
         } else {
             // Assure no duplicate interfaces (ClassFormatError)
-            Set<String> itfs = new LinkedHashSet<>(altInterfaces.length + 1);
+            Set<String> itfs = LinkedHashSet.newLinkedHashSet(altInterfaces.length + 1);
             itfs.add(interfaceName);
             for (Class<?> i : altInterfaces) {
                 itfs.add(i.getName().replace('.', '/'));
@@ -385,34 +361,51 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // Define the generated class in this VM.
 
         final byte[] classBytes = cw.toByteArray();
-        // If requested, dump out to a file for debugging purposes
-        if (dumper != null) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public Void run() {
-                    dumper.dumpClass(lambdaClassName, classBytes);
-                    return null;
-                }
-            }, null,
-            new FilePermission("<<ALL FILES>>", "read, write"),
-            // createDirectories may need it
-            new PropertyPermission("user.dir", "read"));
-        }
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
-            Lookup lookup;
-            if (useImplMethodHandle) {
-                lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
-                                                               NESTMATE, STRONG);
-            } else {
-                lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
+            Lookup lookup = null;
+            try {
+                if (useImplMethodHandle) {
+                    lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
+                                                                   NESTMATE, STRONG);
+                } else {
+                    lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
+                }
+                return lookup.lookupClass();
+            } finally {
+                // If requested, dump out to a file for debugging purposes
+                if (dumper != null) {
+                    String name;
+                    if (lookup != null) {
+                        String definedName = lookup.lookupClass().getName();
+                        int suffixIdx = definedName.lastIndexOf('/');
+                        assert suffixIdx != -1;
+                        name = lambdaClassName + '.' + definedName.substring(suffixIdx + 1);
+                    } else {
+                        name = lambdaClassName + ".failed-" + counter.incrementAndGet();
+                    }
+                    doDump(name, classBytes);
+                }
             }
-            return lookup.lookupClass();
         } catch (IllegalAccessException e) {
             throw new LambdaConversionException("Exception defining lambda proxy class", e);
         } catch (Throwable t) {
             throw new InternalError(t);
         }
+    }
+
+    @SuppressWarnings("removal")
+    private void doDump(final String className, final byte[] classBytes) {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Void run() {
+                dumper.dumpClass(className, classBytes);
+                return null;
+            }
+        }, null,
+        new FilePermission("<<ALL FILES>>", "read, write"),
+        // createDirectories may need it
+        new PropertyPermission("user.dir", "read"));
     }
 
     /**

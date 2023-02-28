@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ void LRG::dump() const {
   if( _is_oop ) tty->print("Oop ");
   if( _is_float ) tty->print("Float ");
   if( _is_vector ) tty->print("Vector ");
+  if( _is_predicate ) tty->print("Predicate ");
   if( _is_scalable ) tty->print("Scalable ");
   if( _was_spilled1 ) tty->print("Spilled ");
   if( _was_spilled2 ) tty->print("Spilled2 ");
@@ -372,7 +373,7 @@ void PhaseChaitin::Register_Allocate() {
   de_ssa();
 
 #ifdef ASSERT
-  // Veify the graph before RA.
+  // Verify the graph before RA.
   verify(&live_arena);
 #endif
 
@@ -592,7 +593,7 @@ void PhaseChaitin::Register_Allocate() {
   merge_multidefs();
 
 #ifdef ASSERT
-  // Veify the graph after RA.
+  // Verify the graph after RA.
   verify(&live_arena);
 #endif
 
@@ -638,7 +639,8 @@ void PhaseChaitin::Register_Allocate() {
       LRG &lrg = lrgs(_lrg_map.live_range_id(i));
       if (!lrg.alive()) {
         set_bad(i);
-      } else if (lrg.num_regs() == 1) {
+      } else if ((lrg.num_regs() == 1 && !lrg.is_scalable()) ||
+                 (lrg.is_scalable() && lrg.scalable_reg_slots() == 1)) {
         set1(i, lrg.reg());
       } else {                  // Must be a register-set
         if (!lrg._fat_proj) {   // Must be aligned adjacent register set
@@ -653,15 +655,19 @@ void PhaseChaitin::Register_Allocate() {
             // num_regs, which reflects the physical length of scalable registers.
             num_regs = lrg.scalable_reg_slots();
           }
-          OptoReg::Name lo = OptoReg::add(hi, (1-num_regs)); // Find lo
-          // We have to use pair [lo,lo+1] even for wide vectors because
-          // the rest of code generation works only with pairs. It is safe
-          // since for registers encoding only 'lo' is used.
-          // Second reg from pair is used in ScheduleAndBundle on SPARC where
-          // vector max size is 8 which corresponds to registers pair.
-          // It is also used in BuildOopMaps but oop operations are not
-          // vectorized.
-          set2(i, lo);
+          if (num_regs == 1) {
+            set1(i, hi);
+          } else {
+            OptoReg::Name lo = OptoReg::add(hi, (1 - num_regs)); // Find lo
+            // We have to use pair [lo,lo+1] even for wide vectors/vmasks because
+            // the rest of code generation works only with pairs. It is safe
+            // since for registers encoding only 'lo' is used.
+            // Second reg from pair is used in ScheduleAndBundle with vector max
+            // size 8 which corresponds to registers pair.
+            // It is also used in BuildOopMaps but oop operations are not
+            // vectorized.
+            set2(i, lo);
+          }
         } else {                // Misaligned; extract 2 bits
           OptoReg::Name hi = lrg.reg(); // Get hi register
           lrg.Remove(hi);       // Yank from mask
@@ -824,8 +830,22 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg.set_scalable_reg_slots(Matcher::scalable_vector_reg_size(T_FLOAT));
           }
         }
+
+        if (ireg == Op_RegVectMask) {
+          assert(Matcher::has_predicated_vectors(), "predicated vector should be supported");
+          lrg._is_predicate = 1;
+          if (Matcher::supports_scalable_vector()) {
+            lrg._is_scalable = 1;
+            // For scalable predicate, when it is allocated in physical register,
+            // num_regs is RegMask::SlotsPerRegVectMask for reg mask,
+            // which may not be the actual physical register size.
+            // If it is allocated in stack, we need to get the actual
+            // physical length of scalable predicate register.
+            lrg.set_scalable_reg_slots(Matcher::scalable_predicate_reg_slots());
+          }
+        }
         assert(n_type->isa_vect() == NULL || lrg._is_vector ||
-               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVectMask,
+               ireg == Op_RegD || ireg == Op_RegL || ireg == Op_RegVectMask,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -919,6 +939,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           }
           break;
         case Op_RegVectMask:
+          assert(Matcher::has_predicated_vectors(), "sanity");
+          assert(RegMask::num_registers(Op_RegVectMask) == RegMask::SlotsPerRegVectMask, "sanity");
           lrg.set_num_regs(RegMask::SlotsPerRegVectMask);
           lrg.set_reg_pressure(1);
           break;
@@ -1371,6 +1393,11 @@ static OptoReg::Name find_first_set(LRG &lrg, RegMask mask, int chunk) {
         }
       }
       return OptoReg::Bad; // will cause chunk change, and retry next chunk
+    } else if (lrg._is_predicate) {
+      assert(num_regs == RegMask::SlotsPerRegVectMask, "scalable predicate register");
+      num_regs = lrg.scalable_reg_slots();
+      mask.clear_to_sets(num_regs);
+      return mask.find_first_set(lrg, num_regs);
     }
   }
 
@@ -1417,7 +1444,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   }
 
   // If no bias info exists, just go with the register selection ordering
-  if (lrg._is_vector || lrg.num_regs() == 2) {
+  if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
     return OptoReg::add(find_first_set(lrg, lrg.mask(), chunk), chunk);
   }
@@ -1700,6 +1727,19 @@ void PhaseChaitin::fixup_spills() {
           if( cisc->oper_input_base() > 1 && mach->oper_input_base() <= 1 ) {
             assert( cisc->oper_input_base() == 2, "Only adding one edge");
             cisc->ins_req(1,src);         // Requires a memory edge
+          } else {
+            // There is no space reserved for a memory edge before the inputs for
+            // instructions which have "stackSlotX" parameter instead of "memory".
+            // For example, "MoveF2I_stack_reg". We always need a memory edge from
+            // src to cisc, else we might schedule cisc before src, loading from a
+            // spill location before storing the spill. On some platforms, we land
+            // in this else case because mach->oper_input_base() > 1, i.e. we have
+            // multiple inputs. In some rare cases there are even multiple memory
+            // operands, before and after spilling.
+            // (e.g. spilling "addFPR24_reg_mem" to "addFPR24_mem_cisc")
+            // In either case, there is no space in the inputs for the memory edge
+            // so we add an additional precedence / memory edge.
+            cisc->add_prec(src);
           }
           block->map_node(cisc, j);          // Insert into basic block
           n->subsume_by(cisc, C); // Correct graph
@@ -2143,42 +2183,42 @@ void PhaseChaitin::dump_simplified() const {
   tty->cr();
 }
 
-static char *print_reg(OptoReg::Name reg, const PhaseChaitin* pc, char* buf) {
+static char *print_reg(OptoReg::Name reg, const PhaseChaitin* pc, char* buf, size_t buf_size) {
   if ((int)reg < 0)
-    sprintf(buf, "<OptoReg::%d>", (int)reg);
+    os::snprintf_checked(buf, buf_size, "<OptoReg::%d>", (int)reg);
   else if (OptoReg::is_reg(reg))
     strcpy(buf, Matcher::regName[reg]);
   else
-    sprintf(buf,"%s + #%d",OptoReg::regname(OptoReg::c_frame_pointer),
+    os::snprintf_checked(buf, buf_size, "%s + #%d",OptoReg::regname(OptoReg::c_frame_pointer),
             pc->reg2offset(reg));
   return buf+strlen(buf);
 }
 
 // Dump a register name into a buffer.  Be intelligent if we get called
 // before allocation is complete.
-char *PhaseChaitin::dump_register(const Node* n, char* buf) const {
+char *PhaseChaitin::dump_register(const Node* n, char* buf, size_t buf_size) const {
   if( _node_regs ) {
     // Post allocation, use direct mappings, no LRG info available
-    print_reg( get_reg_first(n), this, buf );
+    print_reg( get_reg_first(n), this, buf, buf_size);
   } else {
     uint lidx = _lrg_map.find_const(n); // Grab LRG number
     if( !_ifg ) {
-      sprintf(buf,"L%d",lidx);  // No register binding yet
+      os::snprintf_checked(buf, buf_size, "L%d",lidx);  // No register binding yet
     } else if( !lidx ) {        // Special, not allocated value
       strcpy(buf,"Special");
     } else {
       if (lrgs(lidx)._is_vector) {
         if (lrgs(lidx).mask().is_bound_set(lrgs(lidx).num_regs()))
-          print_reg( lrgs(lidx).reg(), this, buf ); // a bound machine register
+          print_reg( lrgs(lidx).reg(), this, buf, buf_size); // a bound machine register
         else
-          sprintf(buf,"L%d",lidx); // No register binding yet
+          os::snprintf_checked(buf, buf_size, "L%d",lidx); // No register binding yet
       } else if( (lrgs(lidx).num_regs() == 1)
                  ? lrgs(lidx).mask().is_bound1()
                  : lrgs(lidx).mask().is_bound_pair() ) {
         // Hah!  We have a bound machine register
-        print_reg( lrgs(lidx).reg(), this, buf );
+        print_reg( lrgs(lidx).reg(), this, buf, buf_size);
       } else {
-        sprintf(buf,"L%d",lidx); // No register binding yet
+        os::snprintf_checked(buf, buf_size, "L%d",lidx); // No register binding yet
       }
     }
   }

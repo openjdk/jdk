@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,6 @@
 
 class LogDecorations;
 
-class LogFileStreamInitializer {
- public:
-  LogFileStreamInitializer();
-};
-
-// Ensure the default log streams have been initialized (stdout, stderr) using the static initializer below
-static LogFileStreamInitializer log_stream_initializer;
-
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
  private:
@@ -46,7 +38,6 @@ class LogFileStreamOutput : public LogOutput {
   bool                _fold_multilines;
   bool                _write_error_is_shown;
 
-  int write_internal(const char* msg);
  protected:
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
@@ -58,25 +49,26 @@ class LogFileStreamOutput : public LogOutput {
   }
 
   int write_decorations(const LogDecorations& decorations);
+  int write_internal(const LogDecorations& decorations, const char* msg);
   bool flush();
 
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  // Write API used by AsyncLogWriter
+  virtual int write_blocking(const LogDecorations& decorations, const char* msg);
   virtual void describe(outputStream* out);
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {
   friend class LogFileStreamInitializer;
  private:
-  LogStdoutOutput() : LogFileStreamOutput(stdout) {
-    set_config_string("all=warning");
-  }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;
   }
  public:
+  LogStdoutOutput() : LogFileStreamOutput(stdout) {}
   virtual const char* name() const {
     return "stdout";
   }
@@ -85,19 +77,17 @@ class LogStdoutOutput : public LogFileStreamOutput {
 class LogStderrOutput : public LogFileStreamOutput {
   friend class LogFileStreamInitializer;
  private:
-  LogStderrOutput() : LogFileStreamOutput(stderr) {
-    set_config_string("all=off");
-  }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;
   }
  public:
+  LogStderrOutput() : LogFileStreamOutput(stderr) {}
   virtual const char* name() const {
     return "stderr";
   }
 };
 
-extern LogStderrOutput &StderrLog;
-extern LogStdoutOutput &StdoutLog;
+extern LogStderrOutput* StderrLog;
+extern LogStdoutOutput* StdoutLog;
 
 #endif // SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP

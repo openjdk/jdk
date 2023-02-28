@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 
 #ifdef __APPLE__
-#include "jvm.h"
 #include "decoder_machO.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 
 #include <cxxabi.h>
@@ -41,7 +41,7 @@ bool MachODecoder::demangle(const char* symbol, char *buf, int buflen) {
   // Don't pass buf to __cxa_demangle. In case of the 'buf' is too small,
   // __cxa_demangle will call system "realloc" for additional memory, which
   // may use different malloc/realloc mechanism that allocates 'buf'.
-  if ((result = abi::__cxa_demangle(symbol, NULL, NULL, &status)) != NULL) {
+  if ((result = abi::__cxa_demangle(symbol, nullptr, nullptr, &status)) != nullptr) {
     jio_snprintf(buf, buflen, "%s", result);
       // call c library's free
       ::free(result);
@@ -52,9 +52,15 @@ bool MachODecoder::demangle(const char* symbol, char *buf, int buflen) {
 
 bool MachODecoder::decode(address addr, char *buf,
       int buflen, int *offset, const void *mach_base) {
+  if (addr == (address)(intptr_t)-1) {
+    // dladdr() in macOS12/Monterey returns success for -1, but that addr value
+    // won't work in this function. Should have been handled by the caller.
+    ShouldNotReachHere();
+    return false;
+  }
   struct symtab_command * symt = (struct symtab_command *)
     mach_find_command((struct mach_header_64 *)mach_base, LC_SYMTAB);
-  if (symt == NULL) {
+  if (symt == nullptr) {
     DEBUG_ONLY(tty->print_cr("no symtab in mach file at 0x%lx", p2i(mach_base)));
     return false;
   }
@@ -118,13 +124,13 @@ void* MachODecoder::mach_find_command(struct mach_header_64 * mach_base, uint32_
     int cmdsize = this_cmd->cmdsize;
     pos += cmdsize;
   }
-  return NULL;
+  return nullptr;
 }
 
 char* MachODecoder::mach_find_in_stringtable(char *strtab, uint32_t tablesize, int strx_wanted) {
 
   if (strx_wanted == 0) {
-    return NULL;
+    return nullptr;
   }
   char *strtab_end = strtab + tablesize;
 
@@ -134,13 +140,13 @@ char* MachODecoder::mach_find_in_stringtable(char *strtab, uint32_t tablesize, i
       strtab++;
       if (*strtab != 0) {
           DEBUG_ONLY(tty->print_cr("string table has leading space but no following zero."));
-          return NULL;
+          return nullptr;
       }
       strtab++;
   } else {
       if ((uint32_t) *strtab != 0) {
           DEBUG_ONLY(tty->print_cr("string table without leading space or leading int of zero."));
-          return NULL;
+          return nullptr;
       }
       strtab+=4;
   }
@@ -158,7 +164,7 @@ char* MachODecoder::mach_find_in_stringtable(char *strtab, uint32_t tablesize, i
     cur_strx++;
   }
   DEBUG_ONLY(tty->print_cr("string number %d not found.", strx_wanted));
-  return NULL;
+  return nullptr;
 }
 
 

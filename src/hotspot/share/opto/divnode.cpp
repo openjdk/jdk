@@ -842,6 +842,84 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //=============================================================================
+//------------------------------Identity---------------------------------------
+// If the divisor is 1, we are an identity on the dividend.
+Node* UDivINode::Identity(PhaseGVN* phase) {
+  return (phase->type( in(2) )->higher_equal(TypeInt::ONE)) ? in(1) : this;
+}
+//------------------------------Value------------------------------------------
+// A UDivINode divides its inputs.  The third input is a Control input, used to
+// prevent hoisting the divide above an unsafe test.
+const Type* UDivINode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type *t1 = phase->type( in(1) );
+  const Type *t2 = phase->type( in(2) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t2 == Type::TOP ) return Type::TOP;
+
+  // x/x == 1 since we always generate the dynamic divisor check for 0.
+  if (in(1) == in(2)) {
+    return TypeInt::ONE;
+  }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type *bot = bottom_type();
+  if( (t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
+    return bot;
+
+  // Otherwise we give up all hope
+  return TypeInt::INT;
+}
+
+//------------------------------Idealize---------------------------------------
+Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  return NULL;
+}
+
+
+//=============================================================================
+//------------------------------Identity---------------------------------------
+// If the divisor is 1, we are an identity on the dividend.
+Node* UDivLNode::Identity(PhaseGVN* phase) {
+  return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
+}
+//------------------------------Value------------------------------------------
+// A UDivLNode divides its inputs.  The third input is a Control input, used to
+// prevent hoisting the divide above an unsafe test.
+const Type* UDivLNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type *t1 = phase->type( in(1) );
+  const Type *t2 = phase->type( in(2) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t2 == Type::TOP ) return Type::TOP;
+
+  // x/x == 1 since we always generate the dynamic divisor check for 0.
+  if (in(1) == in(2)) {
+    return TypeLong::ONE;
+  }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type *bot = bottom_type();
+  if( (t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
+    return bot;
+
+  // Otherwise we give up all hope
+  return TypeLong::LONG;
+}
+
+//------------------------------Idealize---------------------------------------
+Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  return NULL;
+}
+
+
+//=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
@@ -1005,6 +1083,13 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   return TypeInt::make( i1->get_con() % i2->get_con() );
 }
 
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  return NULL;
+}
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -1216,6 +1301,14 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
   return TypeF::make(jfloat_cast(xr));
 }
 
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  return NULL;
+}
+
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -1310,6 +1403,59 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
 //------------------------------match------------------------------------------
 // return result(s) along with their RegMask info
 Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
+  uint ideal_reg = proj->ideal_reg();
+  RegMask rm;
+  if (proj->_con == div_proj_num) {
+    rm = match->divL_proj_mask();
+  } else {
+    assert(proj->_con == mod_proj_num, "must be div or mod projection");
+    rm = match->modL_proj_mask();
+  }
+  return new MachProjNode(this, proj->_con, rm, ideal_reg);
+}
+
+//------------------------------make------------------------------------------
+UDivModINode* UDivModINode::make(Node* div_or_mod) {
+  Node* n = div_or_mod;
+  assert(n->Opcode() == Op_UDivI || n->Opcode() == Op_UModI,
+         "only div or mod input pattern accepted");
+
+  UDivModINode* divmod = new UDivModINode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  return divmod;
+}
+
+//------------------------------make------------------------------------------
+UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
+  Node* n = div_or_mod;
+  assert(n->Opcode() == Op_UDivL || n->Opcode() == Op_UModL,
+         "only div or mod input pattern accepted");
+
+  UDivModLNode* divmod = new UDivModLNode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  return divmod;
+}
+
+//------------------------------match------------------------------------------
+// return result(s) along with their RegMask info
+Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
+  uint ideal_reg = proj->ideal_reg();
+  RegMask rm;
+  if (proj->_con == div_proj_num) {
+    rm = match->divI_proj_mask();
+  } else {
+    assert(proj->_con == mod_proj_num, "must be div or mod projection");
+    rm = match->modI_proj_mask();
+  }
+  return new MachProjNode(this, proj->_con, rm, ideal_reg);
+}
+
+
+//------------------------------match------------------------------------------
+// return result(s) along with their RegMask info
+Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {

@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_GCCONFIG_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class GCArguments;
 

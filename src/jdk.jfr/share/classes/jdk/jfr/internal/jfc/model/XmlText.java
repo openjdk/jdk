@@ -34,6 +34,14 @@ final class XmlText extends XmlInput {
         sb.append("=<");
         sb.append(getContentType().orElse("text"));
         sb.append(">");
+        sb.append("  (");
+        String content = getContent();
+        if (isTimespan()) {
+            // "20 ms" becomes "20ms"
+            content = content.replaceAll("\\s", "");
+        }
+        sb.append(content);
+        sb.append(")");
         return sb.toString();
     }
 

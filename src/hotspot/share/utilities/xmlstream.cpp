@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,11 +90,11 @@ void xmlStream::write_text(const char* s, size_t len) {
   size_t written = 0;
   // All normally printed material goes inside XML quotes.
   // This leaves the output free to include markup also.
-  // Scan the string looking for inadvertant "<&>" chars
+  // Scan the string looking for inadvertent "<&>" chars
   for (size_t i = 0; i < len; i++) {
     char ch = s[i];
     // Escape special chars.
-    const char* esc = NULL;
+    const char* esc = nullptr;
     switch (ch) {
       // These are important only in attrs, but we do them always:
     case '\'': esc = "&apos;"; break;
@@ -104,7 +104,7 @@ void xmlStream::write_text(const char* s, size_t len) {
       // This is a freebie.
     case '>':  esc = "&gt;";   break;
     }
-    if (esc != NULL) {
+    if (esc != nullptr) {
       if (written < i) {
         out()->write(&s[written], i - written);
         written = i;
@@ -153,7 +153,7 @@ void xmlStream::see_tag(const char* tag, bool push) {
 
   // tag goes up until either null or space:
   const char* tag_end = strchr(tag, ' ');
-  size_t tag_len = (tag_end == NULL) ? strlen(tag) : tag_end - tag;
+  size_t tag_len = (tag_end == nullptr) ? strlen(tag) : tag_end - tag;
   assert(tag_len > 0, "tag must not be empty");
   // push the tag onto the stack, pulling down the pointer
   char* old_ptr  = _element_close_stack_ptr;
@@ -355,7 +355,7 @@ void xmlStream::va_done(const char* format, va_list ap) {
   const char* kind = format;
   const char* kind_end = strchr(kind, ' ');
   size_t kind_len;
-  if (kind_end != NULL) {
+  if (kind_end != nullptr) {
     kind_len = kind_end - kind;
     int n = os::snprintf(buffer, sizeof(buffer), "%.*s_done", (int)kind_len, kind);
     assert((size_t)n < sizeof(buffer), "Unexpected number of characters in string");
@@ -388,7 +388,7 @@ void xmlStream::stamp() {
 // This is used only when there is no ciMethod available.
 void xmlStream::method(Method* method) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (method == NULL)  return;
+  if (method == nullptr)  return;
   print_raw(" method='");
   method_text(method);
   print("' bytes='%d'", method->code_size());
@@ -399,7 +399,7 @@ void xmlStream::method(Method* method) {
   int throwouts = method->interpreter_throwout_count();
   if (throwouts != 0)  print(" throwouts='%d'", throwouts);
   MethodData* mdo = method->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     uint cnt;
     cnt = mdo->decompile_count();
     if (cnt != 0)  print(" decompiles='%d'", cnt);
@@ -417,7 +417,7 @@ void xmlStream::method(Method* method) {
 void xmlStream::method_text(Method* method) {
   ResourceMark rm;
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (method == NULL)  return;
+  if (method == nullptr)  return;
   text()->print("%s", method->method_holder()->external_name());
   print_raw(" ");  // " " is easier for tools to parse than "::"
   method->name()->print_symbol_on(text());
@@ -431,7 +431,7 @@ void xmlStream::method_text(Method* method) {
 // This is used only when there is no ciKlass available.
 void xmlStream::klass(Klass* klass) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (klass == NULL) return;
+  if (klass == nullptr) return;
   print_raw(" klass='");
   klass_text(klass);
   print_raw("'");
@@ -439,14 +439,14 @@ void xmlStream::klass(Klass* klass) {
 
 void xmlStream::klass_text(Klass* klass) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (klass == NULL) return;
+  if (klass == nullptr) return;
   //klass->print_short_name(log->out());
   klass->name()->print_symbol_on(out());
 }
 
 void xmlStream::name(const Symbol* name) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (name == NULL)  return;
+  if (name == nullptr)  return;
   print_raw(" name='");
   name_text(name);
   print_raw("'");
@@ -454,14 +454,14 @@ void xmlStream::name(const Symbol* name) {
 
 void xmlStream::name_text(const Symbol* name) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (name == NULL)  return;
+  if (name == nullptr)  return;
   //name->print_short_name(text());
   name->print_symbol_on(text());
 }
 
 void xmlStream::object(const char* attr, Handle x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x == NULL)  return;
+  if (x == nullptr)  return;
   print_raw(" ");
   print_raw(attr);
   print_raw("='");
@@ -471,14 +471,14 @@ void xmlStream::object(const char* attr, Handle x) {
 
 void xmlStream::object_text(Handle x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x == NULL)  return;
+  if (x == nullptr)  return;
   x->print_value_on(text());
 }
 
 
 void xmlStream::object(const char* attr, Metadata* x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x == NULL)  return;
+  if (x == nullptr)  return;
   print_raw(" ");
   print_raw(attr);
   print_raw("='");
@@ -488,7 +488,7 @@ void xmlStream::object(const char* attr, Metadata* x) {
 
 void xmlStream::object_text(Metadata* x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x == NULL)  return;
+  if (x == nullptr)  return;
   //x->print_value_on(text());
   if (x->is_method())
     method_text((Method*)x);
@@ -505,12 +505,12 @@ void xmlStream::flush() {
 }
 
 void xmlTextStream::flush() {
-  if (_outer_xmlStream == NULL)  return;
+  if (_outer_xmlStream == nullptr)  return;
   _outer_xmlStream->flush();
 }
 
 void xmlTextStream::write(const char* str, size_t len) {
-  if (_outer_xmlStream == NULL)  return;
+  if (_outer_xmlStream == nullptr)  return;
   _outer_xmlStream->write_text(str, len);
   update_position(str, len);
 }

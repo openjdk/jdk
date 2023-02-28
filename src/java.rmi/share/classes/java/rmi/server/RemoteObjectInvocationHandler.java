@@ -221,8 +221,7 @@ public class RemoteObjectInvocationHandler
                     method = cl.getMethod(method.getName(),
                                           method.getParameterTypes());
                 } catch (NoSuchMethodException nsme) {
-                    throw (IllegalArgumentException)
-                        new IllegalArgumentException().initCause(nsme);
+                    throw new IllegalArgumentException(nsme);
                 }
                 Class<?> thrownType = e.getClass();
                 for (Class<?> declaredType : method.getExceptionTypes()) {

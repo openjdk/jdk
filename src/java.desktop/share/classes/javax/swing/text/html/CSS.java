@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -891,8 +890,8 @@ public class CSS implements Serializable {
                               (CSS.Attribute.VERTICAL_ALIGN);
         if ((vAlignV != null)) {
             String vAlign = vAlignV.toString();
-            if ((vAlign.indexOf("sup") >= 0) ||
-                (vAlign.indexOf("sub") >= 0)) {
+            if ((vAlign.contains("sup")) ||
+                (vAlign.contains("sub"))) {
                 size -= 2;
             }
         }
@@ -908,7 +907,7 @@ public class CSS implements Serializable {
             style |= Font.BOLD;
         }
         Object fs = a.getAttribute(CSS.Attribute.FONT_STYLE);
-        if ((fs != null) && (fs.toString().indexOf("italic") >= 0)) {
+        if ((fs != null) && (fs.toString().contains("italic"))) {
             style |= Font.ITALIC;
         }
         if (family.equalsIgnoreCase("monospace")) {
@@ -1063,7 +1062,7 @@ public class CSS implements Serializable {
     private static final Hashtable<String, Value> valueMap = new Hashtable<String, Value>();
 
     /**
-     * The hashtable and the static initalization block below,
+     * The hashtable and the static initialization block below,
      * set up a mapping from well-known HTML attributes to
      * CSS attributes.  For the most part, there is a 1-1 mapping
      * between the two.  However in the case of certain HTML
@@ -1294,6 +1293,7 @@ public class CSS implements Serializable {
         }
         // Absolute first
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL(cssString);
             if (url != null) {
                 return url;
@@ -1304,6 +1304,7 @@ public class CSS implements Serializable {
         if (base != null) {
             // Relative URL, try from base
             try {
+                @SuppressWarnings("deprecation")
                 URL url = new URL(base, cssString);
                 return url;
             }
@@ -1609,8 +1610,8 @@ public class CSS implements Serializable {
             if (key instanceof HTML.Tag) {
                 HTML.Tag tag = (HTML.Tag)key;
                 Object o = htmlAttrSet.getAttribute(tag);
-                if (o != null && o instanceof AttributeSet) {
-                    translateAttributes(tag, (AttributeSet)o, cssAttrSet);
+                if (o instanceof AttributeSet as) {
+                    translateAttributes(tag, as, cssAttrSet);
                 }
             } else if (key instanceof CSS.Attribute) {
                 cssAttrSet.addAttribute(key, htmlAttrSet.getAttribute(key));
@@ -1773,13 +1774,13 @@ public class CSS implements Serializable {
 
     /**
      * Base class to CSS values in the attribute sets.  This
-     * is intended to act as a convertor to/from other attribute
+     * is intended to act as a converter to/from other attribute
      * formats.
      * <p>
      * The CSS parser uses the parseCssValue method to convert
-     * a string to whatever format is appropriate a given key
-     * (i.e. these convertors are stored in a map using the
-     * CSS.Attribute as a key and the CssValue as the value).
+     * a string to whatever format is appropriate for a given key
+     * (i.e. these converters are stored in a map using the
+     * CSS.Attribute as the key and the CssValue as the value).
      * <p>
      * The HTML to CSS conversion process first converts the
      * HTML.Attribute to a CSS.Attribute, and then calls
@@ -1965,12 +1966,12 @@ public class CSS implements Serializable {
          */
         Object toStyleConstants(StyleConstants key, View v) {
             if (key == StyleConstants.Italic) {
-                if (svalue.indexOf("italic") >= 0) {
+                if (svalue.contains("italic")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Underline) {
-                if (svalue.indexOf("underline") >= 0) {
+                if (svalue.contains("underline")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -1984,17 +1985,17 @@ public class CSS implements Serializable {
                 }
                 return StyleConstants.ALIGN_LEFT;
             } else if (key == StyleConstants.StrikeThrough) {
-                if (svalue.indexOf("line-through") >= 0) {
+                if (svalue.contains("line-through")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Superscript) {
-                if (svalue.indexOf("super") >= 0) {
+                if (svalue.contains("super")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Subscript) {
-                if (svalue.indexOf("sub") >= 0) {
+                if (svalue.contains("sub")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -2004,23 +2005,23 @@ public class CSS implements Serializable {
 
         // Used by ViewAttributeSet
         boolean isItalic() {
-            return (svalue.indexOf("italic") != -1);
+            return (svalue.contains("italic"));
         }
 
         boolean isStrike() {
-            return (svalue.indexOf("line-through") != -1);
+            return (svalue.contains("line-through"));
         }
 
         boolean isUnderline() {
-            return (svalue.indexOf("underline") != -1);
+            return (svalue.contains("underline"));
         }
 
         boolean isSub() {
-            return (svalue.indexOf("sub") != -1);
+            return (svalue.contains("sub"));
         }
 
         boolean isSup() {
-            return (svalue.indexOf("sup") != -1);
+            return (svalue.contains("sup"));
         }
     }
 
@@ -3252,7 +3253,7 @@ public class CSS implements Serializable {
         /**
          * Parses the shorthand margin/padding/border string
          * <code>value</code>, placing the result in <code>attr</code>.
-         * <code>names</code> give the 4 instrinsic property names.
+         * <code>names</code> give the 4 intrinsic property names.
          */
         static void parseShorthandMargin(CSS css, String value,
                                          MutableAttributeSet attr,
@@ -3623,7 +3624,7 @@ public class CSS implements Serializable {
 
 
     /*
-     * we need StyleSheet for resolving lenght units. (see
+     * we need StyleSheet for resolving length units. (see
      * isW3CLengthUnits)
      * we can not pass stylesheet for handling relative sizes. (do not
      * think changing public API is necessary)

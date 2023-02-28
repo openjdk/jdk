@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,14 +66,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p> The following is an example of a GET request that prints the response
  * body as a String:
  *
- * <pre>{@code    HttpClient client = HttpClient.newHttpClient();
+ * {@snippet :
+ *   HttpClient client = HttpClient.newHttpClient();
+ *
  *   HttpRequest request = HttpRequest.newBuilder()
  *         .uri(URI.create("http://foo.com/"))
  *         .build();
+ *
  *   client.sendAsync(request, BodyHandlers.ofString())
  *         .thenApply(HttpResponse::body)
  *         .thenAccept(System.out::println)
- *         .join(); }</pre>
+ *         .join(); }
  *
  * <p>The class {@link BodyPublishers BodyPublishers} provides implementations
  * of many common publishers. Alternatively, a custom {@code BodyPublisher}
@@ -257,6 +260,19 @@ public abstract class HttpRequest {
         public Builder DELETE();
 
         /**
+         * Sets the request method of this builder to HEAD.
+         *
+         * @implSpec The default implementation is expected to have the same behaviour as:
+         * {@code return method("HEAD", BodyPublishers.noBody());}
+         *
+         * @return this builder
+         * @since 18
+         */
+        default Builder HEAD() {
+            return method("HEAD", BodyPublishers.noBody());
+        }
+
+        /**
          * Sets the request method and request body of this builder to the
          * given values.
          *
@@ -278,6 +294,10 @@ public abstract class HttpRequest {
 
         /**
          * Builds and returns an {@link HttpRequest}.
+         *
+         * @implSpec This method returns a new {@code HttpRequest} each time it is
+         * invoked. Once built, the {@code HttpRequest} is immutable and can be
+         * sent multiple times.
          *
          * @return a new {@code HttpRequest}
          * @throws IllegalStateException if a URI has not been set
@@ -324,13 +344,16 @@ public abstract class HttpRequest {
      * <br><br>
      * <ul>
      *  <li> Retain all headers:
-     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> true)}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> true) }
      *
      *  <li> Remove all headers:
-     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> false)}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> false) }
      *
      *  <li> Remove a particular header (e.g. Foo-Bar):
-     *  <pre>{@code HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar"))}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar")) }
      * </ul>
      *
      * @param request the original request
@@ -360,12 +383,13 @@ public abstract class HttpRequest {
         request.bodyPublisher().ifPresentOrElse(
                 // if body is present, set it
                 bodyPublisher -> builder.method(method, bodyPublisher),
-                // otherwise, the body is absent, special case for GET/DELETE,
+                // otherwise, the body is absent, special case for GET/DELETE/HEAD,
                 // or else use empty body
                 () -> {
                     switch (method) {
                         case "GET" -> builder.GET();
                         case "DELETE" -> builder.DELETE();
+                        case "HEAD" -> builder.HEAD();
                         default -> builder.method(method, HttpRequest.BodyPublishers.noBody());
                     }
                 }
@@ -543,25 +567,28 @@ public abstract class HttpRequest {
      * convert common high-level Java objects into a flow of data suitable for
      * sending as a request body:
      *
-     *  <pre>{@code    // Request body from a String
+     * {@snippet :
+     *   // Request body from a String
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "text/plain; charset=UTF-8")
      *        .POST(BodyPublishers.ofString("some body text"))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a File
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "application/json")
      *        .POST(BodyPublishers.ofFile(Paths.get("file.json")))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a byte array
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .POST(BodyPublishers.ofByteArray(new byte[] { ... }))
-     *        .build(); }</pre>
+     *        .build(); }
      *
      * @since 11
      */

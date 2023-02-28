@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_CONSTANT_POOL;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DEFAULT_VALUE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DIMENSION;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_GMT_OFFSET;
+import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DST;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_ID;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_LOCALE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_NAME;
@@ -72,15 +73,16 @@ final class MetadataWriter {
         Element region = new Element("region");
         region.addAttribute(ATTRIBUTE_LOCALE, descriptor.locale);
         region.addAttribute(ATTRIBUTE_GMT_OFFSET, descriptor.gmtOffset);
+        region.addAttribute(ATTRIBUTE_DST, descriptor.dst);
         root.add(region);
     }
 
     public void writeBinary(DataOutput output) throws IOException {
-        Set<String> stringPool = new HashSet<>(1000);
+        Set<String> stringPool = HashSet.newHashSet(2500);
         // Possible improvement, sort string by how often they occur.
         // and assign low number to the most frequently used.
         buildStringPool(root, stringPool);
-        HashMap<String, Integer> lookup = new LinkedHashMap<>(stringPool.size());
+        HashMap<String, Integer> lookup = LinkedHashMap.newLinkedHashMap(stringPool.size());
         int index = 0;
         int poolSize = stringPool.size();
         writeInt(output, poolSize);
@@ -137,8 +139,8 @@ final class MetadataWriter {
     private void buildStringPool(Element element, Set<String> pool) {
         pool.add(element.name);
         for (Attribute a : element.attributes) {
-            pool.add(a.name);
-            pool.add(a.value);
+            pool.add(a.name());
+            pool.add(a.value());
         }
         for (Element child : element.elements) {
             buildStringPool(child, pool);
@@ -149,8 +151,8 @@ final class MetadataWriter {
         writeInt(output, lookup.get(element.name));
         writeInt(output, element.attributes.size());
         for (Attribute a : element.attributes) {
-            writeInt(output, lookup.get(a.name));
-            writeInt(output, lookup.get(a.value));
+            writeInt(output, lookup.get(a.name()));
+            writeInt(output, lookup.get(a.value()));
         }
         writeInt(output, element.elements.size());
         for (Element child : element.elements) {

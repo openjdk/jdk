@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,16 +182,10 @@ public final class ModelByteBufferWavetable implements ModelWavetable {
         if (format == null) {
             if (buffer == null)
                 return null;
-            InputStream is = buffer.getInputStream();
             AudioFormat format = null;
-            try {
+            try (InputStream is = buffer.getInputStream()) {
                 format = AudioSystem.getAudioFileFormat(is).getFormat();
             } catch (Exception e) {
-                //e.printStackTrace();
-            }
-            try {
-                is.close();
-            } catch (IOException e) {
                 //e.printStackTrace();
             }
             return format;

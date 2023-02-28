@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQueries;
@@ -736,7 +737,7 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-    public default long epochSecond(int prolepticYear, int month, int dayOfMonth,
+    default long epochSecond(int prolepticYear, int month, int dayOfMonth,
                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(zoneOffset, "zoneOffset");
         HOUR_OF_DAY.checkValidValue(hour);
@@ -765,11 +766,38 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-    public default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
+    default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(era, "era");
         return epochSecond(prolepticYear(era, yearOfEra), month, dayOfMonth, hour, minute, second, zoneOffset);
     }
+
+    /**
+     * Checks if this chronology is ISO based.
+     * <p>
+     * An ISO based chronology has the same basic structure as the {@link IsoChronology
+     * ISO chronology}, i.e., the chronology has the same number of months, the number
+     * of days in each month, and day-of-year and leap years are the same as ISO chronology.
+     * It also supports the concept of week-based-year of ISO chronology.
+     * For example, the {@link MinguoChronology Minguo}, {@link ThaiBuddhistChronology
+     * ThaiThaiBuddhist} and {@link JapaneseChronology Japanese} chronologies are ISO based.
+     *
+     * @implSpec
+     * The default implementation returns {@code false}.
+     *
+     * @return {@code true} only if all the fields of {@link IsoFields} are supported by
+     *          this chronology. Otherwise, returns {@code false}.
+     * @see IsoChronology
+     * @see JapaneseChronology
+     * @see MinguoChronology
+     * @see ThaiBuddhistChronology
+     * @see IsoFields
+     * @since 19
+     */
+    default boolean isIsoBased() {
+        return false;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this chronology to another chronology.

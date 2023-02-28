@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock", Monitor::_safepoint_check_never);
+    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock");
     // Lock during space creation, since this is what happens in the VM too
     //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
     {
@@ -118,11 +118,7 @@ public:
       size_t used_words_after = _used_words_counter.get();
       size_t committed_words_after = limiter().committed_words();
       ASSERT_0(used_words_after);
-      if (Settings::uncommit_free_chunks()) {
-        ASSERT_LE(committed_words_after, committed_words_before);
-      } else {
-        ASSERT_EQ(committed_words_after, committed_words_before);
-      }
+      ASSERT_LE(committed_words_after, committed_words_before);
     }
   }
 
@@ -177,12 +173,7 @@ public:
 
     if (p == NULL) {
       // Allocation failed.
-      if (Settings::new_chunks_are_fully_committed()) {
-        ASSERT_LT(possible_expansion, MAX_CHUNK_WORD_SIZE);
-      } else {
-        ASSERT_LT(possible_expansion, word_size);
-      }
-
+      ASSERT_LT(possible_expansion, word_size);
       ASSERT_EQ(used, used2);
       ASSERT_EQ(committed, committed2);
       ASSERT_EQ(capacity, capacity2);
@@ -457,10 +448,6 @@ TEST_VM(metaspace, MetaspaceArena_deallocate) {
 
 static void test_recover_from_commit_limit_hit() {
 
-  if (Settings::new_chunks_are_fully_committed()) {
-    return; // This would throw off the commit counting in this test.
-  }
-
   // Test:
   // - Multiple MetaspaceArena allocate (operating under the same commit limiter).
   // - One, while attempting to commit parts of its current chunk on demand,
@@ -565,12 +552,23 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
 
   ASSERT_EQ(capacity, expected_starting_capacity);
 
-  if (!(Settings::new_chunks_are_fully_committed() && type == Metaspace::BootMetaspaceType)) {
-    // Initial commit charge for the whole context should be one granule
-    ASSERT_EQ(context.committed_words(), Settings::commit_granule_words());
-    // Initial commit number for the arena should be less since - apart from boot loader - no
-    //  space type has large initial chunks.
-    ASSERT_LE(committed, Settings::commit_granule_words());
+  // What happens when we allocate, commit wise:
+  // Arena allocates from current chunk, committing needed memory from the chunk on demand.
+  // The chunk asks the underlying vsnode to commit the area it is located in. Since the
+  // chunk may be smaller than one commit granule, this may result in surrounding memory
+  // also getting committed.
+  // In reality we will commit in granule granularity, but arena can only know what its first
+  // chunk did commit. So what it thinks was committed depends on the size of its first chunk,
+  // which depends on ArenaGrowthPolicy.
+  {
+    const chunklevel_t expected_level_for_first_chunk =
+        ArenaGrowthPolicy::policy_for_space_type(type, is_class)->get_level_at_step(0);
+    const size_t what_arena_should_think_was_committed =
+        MIN2(Settings::commit_granule_words(), word_size_for_level(expected_level_for_first_chunk));
+    const size_t what_should_really_be_committed = Settings::commit_granule_words();
+
+    ASSERT_EQ(committed, what_arena_should_think_was_committed);
+    ASSERT_EQ(context.committed_words(), what_should_really_be_committed);
   }
 
   ///// subsequent allocations //
@@ -615,7 +613,7 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     ASSERT_GE(committed2, used2);
     ASSERT_GE(committed2, committed);
     const size_t committed_jump = committed2 - committed;
-    if (committed_jump > 0 && !Settings::new_chunks_are_fully_committed()) {
+    if (committed_jump > 0) {
       ASSERT_LE(committed_jump, Settings::commit_granule_words());
     }
     committed = committed2;
@@ -739,3 +737,48 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
                          word_size_for_level(CHUNK_LEVEL_4M), false);
 }
 */
+
+// Test that repeated allocation-deallocation cycles with the same block size
+//  do not increase metaspace usage after the initial allocation (the deallocated
+//  block should be reused by the next allocation).
+static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
+  // Test various sizes, including (important) the max. possible block size = 1 root chunk
+  for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+    size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
+    MetaWord* p = NULL, *p2 = NULL;
+
+    MetaspaceGtestContext context;
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+
+    // First allocation
+    helper.allocate_from_arena_with_tests_expect_success(&p, blocksize);
+    if (!is_topmost) {
+      // another one on top, size does not matter.
+      helper.allocate_from_arena_with_tests_expect_success(0x10);
+    }
+
+    // Measure
+    helper.usage_numbers_with_test(&used1, &committed1, NULL);
+
+    // Dealloc, alloc several times with the same size.
+    for (int i = 0; i < 5; i ++) {
+      helper.deallocate_with_tests(p, blocksize);
+      helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
+      // We should get the same pointer back.
+      EXPECT_EQ(p2, p);
+    }
+
+    // Measure again
+    helper.usage_numbers_with_test(&used2, &committed2, NULL);
+    EXPECT_EQ(used2, used1);
+    EXPECT_EQ(committed1, committed2);
+  }
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_top_allocation) {
+  test_repeatedly_allocate_and_deallocate(true);
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop_allocation) {
+  test_repeatedly_allocate_and_deallocate(false);
+}

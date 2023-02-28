@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,203 +39,48 @@ import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
 
 /**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * HTML-specific information about a link.
  */
 public class HtmlLinkInfo extends LinkInfo {
 
     public enum Kind {
-        DEFAULT,
-
         /**
-         * Indicate that the link appears in a class documentation.
+         * Link with just the element name as label.
          */
-        CLASS,
-
+        PLAIN,
         /**
-         * Indicate that the link appears in member documentation.
+         * Link with additional preview flag if appropriate.
          */
-        MEMBER,
-
+        SHOW_PREVIEW,
         /**
-         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         * Link with additional type parameters as plain text if appropriate.
          */
-        MEMBER_DEPRECATED_PREVIEW,
-
+        SHOW_TYPE_PARAMS,
         /**
-         * Indicate that the link appears in class use documentation.
+         * Link with additional type parameters and bounds as plain text if appropriate.
          */
-        CLASS_USE,
-
+        SHOW_TYPE_PARAMS_AND_BOUNDS,
         /**
-         * Indicate that the link appears in index documentation.
+         * Link with additional type parameters as separate link if appropriate.
          */
-        INDEX,
-
+        LINK_TYPE_PARAMS,
         /**
-         * Indicate that the link appears in constant value summary.
+         * Link with additional type parameters and bounds as separate links if approprate.
          */
-        CONSTANT_SUMMARY,
-
-        /**
-         * Indicate that the link appears in serialized form documentation.
-         */
-        SERIALIZED_FORM,
-
-        /**
-         * Indicate that the link appears in serial member documentation.
-         */
-        SERIAL_MEMBER,
-
-        /**
-         * Indicate that the link appears in package documentation.
-         */
-        PACKAGE,
-
-        /**
-         * Indicate that the link appears in see tag documentation.
-         */
-        SEE_TAG,
-
-        /**
-         * Indicate that the link appears in value tag documentation.
-         */
-        VALUE_TAG,
-
-        /**
-         * Indicate that the link appears in tree documentation.
-         */
-        TREE,
-
-        /**
-         * The header in the class documentation.
-         */
-        CLASS_HEADER,
-
-        /**
-         * The signature in the class documentation.
-         */
-        CLASS_SIGNATURE,
-
-        /**
-         * The return type of a method.
-         */
-        RETURN_TYPE,
-
-        /**
-         * The return type of a method in a member summary.
-         */
-        SUMMARY_RETURN_TYPE,
-
-        /**
-         * The type of a method/constructor parameter.
-         */
-        EXECUTABLE_MEMBER_PARAM,
-
-        /**
-         * Super interface links.
-         */
-        SUPER_INTERFACES,
-
-        /**
-         * Implemented interface links.
-         */
-        IMPLEMENTED_INTERFACES,
-
-        /**
-         * Implemented class links.
-         */
-        IMPLEMENTED_CLASSES,
-
-        /**
-         * Subinterface links.
-         */
-        SUBINTERFACES,
-
-        /**
-         * Subclasses links.
-         */
-        SUBCLASSES,
-
-        /**
-         * The signature in the class documentation (implements/extends portion).
-         */
-        CLASS_SIGNATURE_PARENT_NAME,
-
-        /**
-         * Permitted subclasses of a sealed type.
-         */
-        PERMITTED_SUBCLASSES,
-
-        /**
-         * The header for method documentation copied from parent.
-         */
-        EXECUTABLE_ELEMENT_COPY,
-
-        /**
-         * Method "specified by" link.
-         */
-        METHOD_SPECIFIED_BY,
-
-        /**
-         * Method "overrides" link.
-         */
-        METHOD_OVERRIDES,
-
-        /**
-         * Annotation link.
-         */
-        ANNOTATION,
-
-        /**
-         * The parent nodes in the class tree.
-         */
-        CLASS_TREE_PARENT,
-
-        /**
-         * The type parameters of a method or constructor.
-         */
-        MEMBER_TYPE_PARAMS,
-
-        /**
-         * Indicate that the link appears in class use documentation.
-         */
-        CLASS_USE_HEADER,
-
-        /**
-         * The header for property documentation copied from parent.
-         */
-        PROPERTY_COPY,
-
-        /**
-         * A receiver type.
-         */
-        RECEIVER_TYPE,
-
-        /**
-         * A record component within a class signature.
-         */
-        RECORD_COMPONENT,
-
-        /**
-         * A type thrown from a method.
-         */
-        THROWS_TYPE
+        LINK_TYPE_PARAMS_AND_BOUNDS;
     }
 
     public final HtmlConfiguration configuration;
 
     /**
-     * The location of the link.
+     * The context of the link.
      */
-    public Kind context = Kind.DEFAULT;
+    public Kind context = Kind.PLAIN;
 
     /**
-     * The value of the marker #.
+     * The fragment of the link.
      */
-    public String where = "";
+    public String fragment = "";
 
     /**
      * The member this link points to (if any).
@@ -332,8 +177,8 @@ public class HtmlLinkInfo extends LinkInfo {
     /**
      * Set the fragment specifier for the link.
      */
-    public HtmlLinkInfo where(String where) {
-        this.where = where;
+    public HtmlLinkInfo fragment(String fragment) {
+        this.fragment = fragment;
         return this;
     }
 
@@ -364,34 +209,8 @@ public class HtmlLinkInfo extends LinkInfo {
      * @param c the context id to set.
      */
     public final void setContext(Kind c) {
-        switch (c) {
-            case ANNOTATION:
-            case IMPLEMENTED_INTERFACES:
-            case SUPER_INTERFACES:
-            case SUBINTERFACES:
-            case CLASS_TREE_PARENT:
-            case TREE:
-            case CLASS_SIGNATURE_PARENT_NAME:
-            case PERMITTED_SUBCLASSES:
-                excludeTypeParameterLinks = true;
-                excludeTypeBounds = true;
-                break;
-
-            case PACKAGE:
-            case CLASS_USE:
-            case CLASS_HEADER:
-            case CLASS_SIGNATURE:
-            case RECEIVER_TYPE:
-                excludeTypeParameterLinks = true;
-                break;
-
-            case RETURN_TYPE:
-            case SUMMARY_RETURN_TYPE:
-            case EXECUTABLE_MEMBER_PARAM:
-            case THROWS_TYPE:
-                excludeTypeBounds = true;
-                break;
-        }
+        linkTypeParameters = c == Kind.LINK_TYPE_PARAMS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
+        showTypeBounds = c == Kind.SHOW_TYPE_PARAMS_AND_BOUNDS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
         context = c;
     }
 
@@ -408,37 +227,15 @@ public class HtmlLinkInfo extends LinkInfo {
     }
 
     @Override
-    public boolean includeTypeParameterLinks() {
-        return switch (context) {
-            case IMPLEMENTED_INTERFACES,
-                 SUPER_INTERFACES,
-                 SUBINTERFACES,
-                 CLASS_TREE_PARENT,
-                 TREE,
-                 CLASS_SIGNATURE_PARENT_NAME,
-                 PERMITTED_SUBCLASSES,
-                 PACKAGE,
-                 CLASS_USE,
-                 CLASS_HEADER,
-                 CLASS_SIGNATURE,
-                 RECEIVER_TYPE,
-                 MEMBER_TYPE_PARAMS -> true;
-
-            case IMPLEMENTED_CLASSES,
-                 SUBCLASSES,
-                 EXECUTABLE_ELEMENT_COPY,
-                 PROPERTY_COPY,
-                 CLASS_USE_HEADER -> false;
-
-            default -> label == null || label.isEmpty();
-        };
+    public boolean showTypeParameters() {
+        return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW;
     }
 
     @Override
     public String toString() {
         return "HtmlLinkInfo{" +
                 "context=" + context +
-                ", where=" + where +
+                ", fragment=" + fragment +
                 ", style=" + style +
                 super.toString() + '}';
     }

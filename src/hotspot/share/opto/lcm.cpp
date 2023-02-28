@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "opto/machnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/chaitin.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // Optimization - Graph Style
@@ -52,7 +53,7 @@ static bool accesses_heap_base_zone(Node *val) {
         }
       }
       // Must recognize load operation with Decode matched in memory operand.
-      // We should not reach here exept for PPC/AIX, as os::zero_page_read_protected()
+      // We should not reach here except for PPC/AIX, as os::zero_page_read_protected()
       // returns true everywhere else. On PPC, no such memory operands
       // exist, therefore we did not yet implement a check for such operands.
       NOT_AIX(Unimplemented());
@@ -200,10 +201,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
-    case Op_HasNegatives:
+    case Op_CountPositives:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
       continue;
@@ -276,7 +278,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // Give up if offset is not a compile-time constant.
         if (offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot)
           continue;
-        offset += tptr->_offset; // correct if base is offseted
+        offset += tptr->_offset; // correct if base is offsetted
         // Give up if reference is beyond page size.
         if (MacroAssembler::needs_explicit_null_check(offset))
           continue;
@@ -326,25 +328,27 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Block *mb = get_block_for_node(mach);
     // Hoisting stores requires more checks for the anti-dependence case.
     // Give up hoisting if we have to move the store past any load.
-    if( was_store ) {
-      Block *b = mb;            // Start searching here for a local load
-      // mach use (faulting) trying to hoist
-      // n might be blocker to hoisting
-      while( b != block ) {
-        uint k;
-        for( k = 1; k < b->number_of_nodes(); k++ ) {
-          Node *n = b->get_node(k);
-          if( n->needs_anti_dependence_check() &&
-              n->in(LoadNode::Memory) == mach->in(StoreNode::Memory) )
-            break;              // Found anti-dependent load
-        }
-        if( k < b->number_of_nodes() )
-          break;                // Found anti-dependent load
-        // Make sure control does not do a merge (would have to check allpaths)
-        if( b->num_preds() != 2 ) break;
-        b = get_block_for_node(b->pred(1)); // Move up to predecessor block
-      }
-      if( b != block ) continue;
+    if (was_store) {
+       // Make sure control does not do a merge (would have to check allpaths)
+       if (mb->num_preds() != 2) {
+         continue;
+       }
+       // mach is a store, hence block is the immediate dominator of mb.
+       // Due to the null-check shape of block (where its successors cannot re-join),
+       // block must be the direct predecessor of mb.
+       assert(get_block_for_node(mb->pred(1)) == block, "Unexpected predecessor block");
+       uint k;
+       uint num_nodes = mb->number_of_nodes();
+       for (k = 1; k < num_nodes; k++) {
+         Node *n = mb->get_node(k);
+         if (n->needs_anti_dependence_check() &&
+             n->in(LoadNode::Memory) == mach->in(StoreNode::Memory)) {
+           break;              // Found anti-dependent load
+         }
+       }
+       if (k < num_nodes) {
+         continue;             // Found anti-dependent load
+       }
     }
 
     // Make sure this memory op is not already being used for a NullCheck
@@ -488,9 +492,12 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
 
 //------------------------------select-----------------------------------------
-// Select a nice fellow from the worklist to schedule next. If there is only
-// one choice, then use it. Projections take top priority for correctness
-// reasons - if I see a projection, then it is next.  There are a number of
+// Select a nice fellow from the worklist to schedule next. If there is only one
+// choice, then use it. CreateEx nodes that are initially ready must start their
+// blocks and are given the highest priority, by being placed at the beginning
+// of the worklist. Next after initially-ready CreateEx nodes are projections,
+// which must follow their parents, and CreateEx nodes with local input
+// dependencies. Next are constants and CheckCastPP nodes. There are a number of
 // other special cases, for instructions that consume condition codes, et al.
 // These are chosen immediately. Some instructions are required to immediately
 // precede the last instruction in the block, and these are taken last. Of the
@@ -528,13 +535,26 @@ Node* PhaseCFG::select(
     Node *n = worklist[i];      // Get Node on worklist
 
     int iop = n->is_Mach() ? n->as_Mach()->ideal_Opcode() : 0;
-    if( n->is_Proj() ||         // Projections always win
-        n->Opcode()== Op_Con || // So does constant 'Top'
-        iop == Op_CreateEx ||   // Create-exception must start block
-        iop == Op_CheckCastPP
-        ) {
+    if (iop == Op_CreateEx || n->is_Proj()) {
+      // CreateEx nodes that are initially ready must start the block (after Phi
+      // and Parm nodes which are pre-scheduled) and get top priority. This is
+      // currently enforced by placing them at the beginning of the initial
+      // worklist and selecting them eagerly here. After these, projections and
+      // other CreateEx nodes are selected with equal priority.
       worklist.map(i,worklist.pop());
       return n;
+    }
+
+    if (n->Opcode() == Op_Con || iop == Op_CheckCastPP) {
+      // Constants and CheckCastPP nodes have higher priority than the rest of
+      // the nodes tested below. Record as current winner, but keep looking for
+      // higher-priority nodes in the worklist.
+      choice  = 4;
+      // Latency and score are only used to break ties among low-priority nodes.
+      latency = 0;
+      score   = 0;
+      idx     = i;
+      continue;
     }
 
     // Final call in a block must be adjacent to 'catch'
@@ -555,7 +575,7 @@ Node* PhaseCFG::select(
       }
     }
 
-    uint n_choice  = 2;
+    uint n_choice = 2;
 
     // See if this instruction is consumed by a branch. If so, then (as the
     // branch is the last instruction in the basic block) force it to the
@@ -610,7 +630,7 @@ Node* PhaseCFG::select(
         _regalloc->_scratch_float_pressure.init(_regalloc->_sched_float_pressure.high_pressure_limit());
         // simulate the notion that we just picked this node to schedule
         n->add_flag(Node::Flag_is_scheduled);
-        // now caculate its effect upon the graph if we did
+        // now calculate its effect upon the graph if we did
         adjust_register_pressure(n, block, recalc_pressure_nodes, false);
         // return its state for finalize in case somebody else wins
         n->remove_flag(Node::Flag_is_scheduled);
@@ -702,8 +722,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
-        case Op_StoreVectorScatter:
         case Op_StoreVectorMasked:
+        case Op_StoreVectorScatter:
+        case Op_StoreVectorScatterMasked:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);
@@ -880,12 +901,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // Calling Java code so use Java calling convention
       save_policy = _matcher._register_save_policy;
       break;
-    case Op_CallNative:
-      // We use the c reg save policy here since Foreign Linker
-      // only supports the C ABI currently.
-      // TODO compute actual save policy based on nep->abi
-      save_policy = _matcher._c_reg_save_policy;
-      break;
 
     default:
       ShouldNotReachHere();
@@ -899,14 +914,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   // done for oops since idealreg2debugmask takes care of debug info
   // references but there no way to handle oops differently than other
   // pointers as far as the kill mask goes.
-  //
-  // Also, native callees can not save oops, so we kill the SOE registers
-  // here in case a native call has a safepoint. This doesn't work for
-  // RBP though, which seems to be special-cased elsewhere to always be
-  // treated as alive, so we instead manually save the location of RBP
-  // before doing the native call (see NativeInvokerGenerator::generate).
-  bool exclude_soe = op == Op_CallRuntime
-    || (op == Op_CallNative && mcall->guaranteed_safepoint());
+  bool exclude_soe = op == Op_CallRuntime;
 
   // If the call is a MethodHandle invoke, we need to exclude the
   // register which is used to save the SP value over MH invokes from
@@ -937,7 +945,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       tty->print_cr("# --- schedule_local B%d, before: ---", block->_pre_order);
       for (uint i = 0;i < block->number_of_nodes(); i++) {
         tty->print("# ");
-        block->get_node(i)->fast_dump();
+        block->get_node(i)->dump();
       }
       tty->print_cr("#");
     }
@@ -951,7 +959,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
-  // we know when a given instruction is avialable to be scheduled.
+  // we know when a given instruction is available to be scheduled.
   uint i;
   if (OptoRegScheduling && block_size_threshold_ok) {
     for (i = 1; i < block->number_of_nodes(); i++) { // setup nodes for pressure calc
@@ -1060,8 +1068,8 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
         // ties in scheduling by worklist order.
         delay.push(m);
       } else if (m->is_Mach() && m->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-        // Force the CreateEx to the top of the list so it's processed
-        // first and ends up at the start of the block.
+        // Place CreateEx nodes that are initially ready at the beginning of the
+        // worklist so they are selected first and scheduled at the block start.
         worklist.insert(0, m);
       } else {
         worklist.push(m);         // Then on to worklist!
@@ -1205,7 +1213,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     tty->print_cr("# after schedule_local");
     for (uint i = 0;i < block->number_of_nodes();i++) {
       tty->print("# ");
-      block->get_node(i)->fast_dump();
+      block->get_node(i)->dump();
     }
     tty->print_cr("# ");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -37,7 +37,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -47,16 +46,18 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -121,7 +122,6 @@ mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
 volatile uint64_t         os::Bsd::_max_abstime   = 0;
 #endif
 pthread_t os::Bsd::_main_thread;
-int os::Bsd::_page_size = -1;
 
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
@@ -164,9 +164,9 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   mib[0] = CTL_KERN;
   mib[1] = KERN_BOOTTIME;
 
-  if (sysctl(mib, 2, &boottime, &len, NULL, 0) >= 0) {
+  if (sysctl(mib, 2, &boottime, &len, nullptr, 0) >= 0) {
     time_t bootsec = boottime.tv_sec;
-    time_t currsec = time(NULL);
+    time_t currsec = time(nullptr);
     os::print_dhm(st, "OS uptime:", (long) difftime(currsec, bootsec));
   }
 }
@@ -212,7 +212,7 @@ void os::Bsd::initialize_system_info() {
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;
   len = sizeof(cpu_val);
-  if (sysctl(mib, 2, &cpu_val, &len, NULL, 0) != -1 && cpu_val >= 1) {
+  if (sysctl(mib, 2, &cpu_val, &len, nullptr, 0) != -1 && cpu_val >= 1) {
     assert(len == sizeof(cpu_val), "unexpected data size");
     set_processor_count(cpu_val);
   } else {
@@ -241,7 +241,7 @@ void os::Bsd::initialize_system_info() {
 #endif
 
   len = sizeof(mem_val);
-  if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
+  if (sysctl(mib, 2, &mem_val, &len, nullptr, 0) != -1) {
     assert(len == sizeof(mem_val), "unexpected data size");
     _physical_memory = mem_val;
   } else {
@@ -262,9 +262,9 @@ void os::Bsd::initialize_system_info() {
 #ifdef __APPLE__
 static const char *get_home() {
   const char *home_dir = ::getenv("HOME");
-  if ((home_dir == NULL) || (*home_dir == '\0')) {
+  if ((home_dir == nullptr) || (*home_dir == '\0')) {
     struct passwd *passwd_info = getpwuid(geteuid());
-    if (passwd_info != NULL) {
+    if (passwd_info != nullptr) {
       home_dir = passwd_info->pw_dir;
     }
   }
@@ -320,7 +320,7 @@ void os::init_system_properties_values() {
 
 #ifndef __APPLE__
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -337,31 +337,31 @@ void os::init_system_properties_values() {
     // Now cut the path to <java_home>/jre if we can.
     *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
     pslash = strrchr(buf, '/');
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
     Arguments::set_dll_dir(buf);
 
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
-      if (pslash != NULL) {
+      if (pslash != nullptr) {
         *pslash = '\0';          // Get rid of /<arch>.
         pslash = strrchr(buf, '/');
-        if (pslash != NULL) {
+        if (pslash != nullptr) {
           *pslash = '\0';        // Get rid of /lib.
         }
       }
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting boot class path.", NULL);
+      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
 
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -374,19 +374,18 @@ void os::init_system_properties_values() {
     // addressed).
     const char *v = ::getenv("LD_LIBRARY_PATH");
     const char *v_colon = ":";
-    if (v == NULL) { v = ""; v_colon = ""; }
+    if (v == nullptr) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 +
-                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    const size_t ld_library_path_size = strlen(v) + 1 + sizeof(SYS_EXT_DIR) +
+            sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -401,7 +400,7 @@ void os::init_system_properties_values() {
   size_t system_ext_size = strlen(user_home_dir) + sizeof(SYS_EXTENSIONS_DIR) +
     sizeof(SYS_EXTENSIONS_DIRS);
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -418,7 +417,7 @@ void os::init_system_properties_values() {
     // Now cut the path to <java_home>/jre if we can.
     *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
     pslash = strrchr(buf, '/');
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
 #ifdef STATIC_BUILD
@@ -427,22 +426,22 @@ void os::init_system_properties_values() {
 
     Arguments::set_dll_dir(buf);
 
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
-      if (pslash != NULL) {
+      if (pslash != nullptr) {
         *pslash = '\0';          // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
-        vm_exit_during_initialization("Failed setting boot class path.", NULL);
+        vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
 
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -457,11 +456,11 @@ void os::init_system_properties_values() {
     // can specify a directory inside an app wrapper
     const char *l = ::getenv("JAVA_LIBRARY_PATH");
     const char *l_colon = ":";
-    if (l == NULL) { l = ""; l_colon = ""; }
+    if (l == nullptr) { l = ""; l_colon = ""; }
 
     const char *v = ::getenv("DYLD_LIBRARY_PATH");
     const char *v_colon = ":";
-    if (v == NULL) { v = ""; v_colon = ""; }
+    if (v == nullptr) { v = ""; v_colon = ""; }
 
     // Apple's Java6 has "." at the beginning of java.library.path.
     // OpenJDK on Windows has "." at the end of java.library.path.
@@ -471,11 +470,9 @@ void os::init_system_properties_values() {
     // could cause a change in behavior, but Apple's Java6 behavior
     // can be achieved by putting "." at the beginning of the
     // JAVA_LIBRARY_PATH environment variable.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 + strlen(l) + 1 +
-                                             system_ext_size + 3,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
+    const size_t ld_library_path_size = strlen(v) + 1 + strlen(l) + 1 + system_ext_size + 3;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
@@ -486,7 +483,7 @@ void os::init_system_properties_values() {
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
-  sprintf(buf, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
+  os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
           user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
@@ -522,7 +519,7 @@ extern "C" void breakpoint() {
   #define OBJC_GCREGISTER "objc_registerThreadWithCollector"
 typedef void (*objc_registerThreadWithCollector_t)();
 extern "C" objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction;
-objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NULL;
+objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = nullptr;
 #endif
 
 // Thread start routine for all newly created threads
@@ -549,7 +546,7 @@ static void *thread_native_entry(Thread *thread) {
 
 #ifdef __APPLE__
   // register thread with objc gc
-  if (objc_registerThreadWithCollectorFunction != NULL) {
+  if (objc_registerThreadWithCollectorFunction != nullptr) {
     objc_registerThreadWithCollectorFunction();
   }
 #endif
@@ -576,7 +573,7 @@ static void *thread_native_entry(Thread *thread) {
 
   // Note: at this point the thread object may already have deleted itself.
   // Prevent dereferencing it from here on out.
-  thread = NULL;
+  thread = nullptr;
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
@@ -586,11 +583,11 @@ static void *thread_native_entry(Thread *thread) {
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
                        size_t req_stack_size) {
-  assert(thread->osthread() == NULL, "caller responsible");
+  assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
-  if (osthread == NULL) {
+  OSThread* osthread = new OSThread();
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -642,7 +639,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
     if (ret != 0) {
       // Need to clean up stuff we've allocated so far
-      thread->set_osthread(NULL);
+      thread->set_osthread(nullptr);
       delete osthread;
       return false;
     }
@@ -682,9 +679,9 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
-  if (osthread == NULL) {
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -710,9 +707,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
-
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) pthread_self(),
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
   return true;
 }
 
@@ -726,7 +724,7 @@ void os::pd_start_thread(Thread* thread) {
 
 // Free Bsd resources related to the OSThread
 void os::free_thread(OSThread* osthread) {
-  assert(osthread != NULL, "osthread not set");
+  assert(osthread != nullptr, "osthread not set");
 
   // We are told to free resources of the argument thread,
   // but we can only really operate on the current thread.
@@ -735,7 +733,7 @@ void os::free_thread(OSThread* osthread) {
 
   // Restore caller's signal mask
   sigset_t sigmask = osthread->caller_sigmask();
-  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
+  pthread_sigmask(SIG_SETMASK, &sigmask, nullptr);
 
   delete osthread;
 }
@@ -835,8 +833,16 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
+static int local_dladdr(const void* addr, Dl_info* info) {
+#ifdef __APPLE__
+  if (addr == (void*)-1) {
+    // dladdr() in macOS12/Monterey returns success for -1, but that addr
+    // value should not be allowed to work to avoid confusion.
+    return 0;
+  }
+#endif
+  return dladdr(addr, info);
+}
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
@@ -844,8 +850,8 @@ const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
 // macosx has a secure per-user temporary directory
 char temp_path_storage[PATH_MAX];
 const char* os::get_temp_directory() {
-  static char *temp_path = NULL;
-  if (temp_path == NULL) {
+  static char *temp_path = nullptr;
+  if (temp_path == nullptr) {
     int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, temp_path_storage, PATH_MAX);
     if (pathSize == 0 || pathSize > PATH_MAX) {
       strlcpy(temp_path_storage, "/tmp/", sizeof(temp_path_storage));
@@ -863,11 +869,11 @@ bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
   Dl_info dlinfo;
 
-  if (libjvm_base_addr == NULL) {
+  if (libjvm_base_addr == nullptr) {
     if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
       libjvm_base_addr = (address)dlinfo.dli_fbase;
     }
-    assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
+    assert(libjvm_base_addr !=nullptr, "Cannot obtain base address for libjvm");
   }
 
   if (dladdr((void *)addr, &dlinfo) != 0) {
@@ -877,37 +883,45 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
-
-#define MACH_MAXSYMLEN 256
-
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
   Dl_info dlinfo;
-  char localbuf[MACH_MAXSYMLEN];
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
-    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+    if (dlinfo.dli_saddr != nullptr && dlinfo.dli_sname != nullptr) {
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
-      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      if (offset != nullptr) *offset = addr - (address)dlinfo.dli_saddr;
       return true;
     }
+
+#ifndef __APPLE__
+    // The 6-parameter Decoder::decode() function is not implemented on macOS.
+    // The Mach-O binary format does not contain a "list of files" with address
+    // ranges like ELF. That makes sense since Mach-O can contain binaries for
+    // than one instruction set so there can be more than one address range for
+    // each "file".
+
     // no matching symbol so try for just file info
-    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+    if (dlinfo.dli_fname != nullptr && dlinfo.dli_fbase != nullptr) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
                           buf, buflen, offset, dlinfo.dli_fname, demangle)) {
         return true;
       }
     }
 
+#else  // __APPLE__
+    #define MACH_MAXSYMLEN 256
+
+    char localbuf[MACH_MAXSYMLEN];
     // Handle non-dynamic manually:
-    if (dlinfo.dli_fbase != NULL &&
+    if (dlinfo.dli_fbase != nullptr &&
         Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
                         dlinfo.dli_fbase)) {
       if (!(demangle && Decoder::demangle(localbuf, buf, buflen))) {
@@ -915,25 +929,27 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       }
       return true;
     }
+
+    #undef MACH_MAXSYMLEN
+#endif  // __APPLE__
   }
   buf[0] = '\0';
-  if (offset != NULL) *offset = -1;
+  if (offset != nullptr) *offset = -1;
   return false;
 }
 
-// ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
-    if (dlinfo.dli_fname != NULL) {
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != nullptr) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+    if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
     }
     return true;
@@ -956,26 +972,26 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
 
   void * result= ::dlopen(filename, RTLD_LAZY);
-  if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
   }
 
   const char* error_report = ::dlerror();
-  if (error_report == NULL) {
+  if (error_report == nullptr) {
     error_report = "dlerror returned no error description";
   }
-  if (ebuf != NULL && ebuflen > 0) {
+  if (ebuf != nullptr && ebuflen > 0) {
     // Read system error message into ebuf
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
-  return NULL;
+  return nullptr;
 #endif // STATIC_BUILD
 }
 #else
@@ -985,8 +1001,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   log_info(os)("attempting shared library load of %s", filename);
   void * result= ::dlopen(filename, RTLD_LAZY);
-  if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -995,15 +1011,15 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   Elf32_Ehdr elf_head;
 
   const char* const error_report = ::dlerror();
-  if (error_report == NULL) {
+  if (error_report == nullptr) {
     error_report = "dlerror returned no error description";
   }
-  if (ebuf != NULL && ebuflen > 0) {
+  if (ebuf != nullptr && ebuflen > 0) {
     // Read system error message into ebuf
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1011,7 +1027,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   if (diag_msg_max_length==0) {
     // No more space in ebuf for additional diagnostics message
-    return NULL;
+    return nullptr;
   }
 
 
@@ -1019,7 +1035,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   if (file_descriptor < 0) {
     // Can't open library, report dlerror() message
-    return NULL;
+    return nullptr;
   }
 
   bool failed_to_read_elf_head=
@@ -1029,7 +1045,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   ::close(file_descriptor);
   if (failed_to_read_elf_head) {
     // file i/o error - report dlerror() msg
-    return NULL;
+    return nullptr;
   }
 
   typedef struct {
@@ -1109,10 +1125,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
          IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
-  // Identify compatability class for VM's architecture and library's architecture
+  // Identify compatibility class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures
 
-  arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], NULL};
+  arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], nullptr};
   int running_arch_index=-1;
 
   for (unsigned int i=0; i < ARRAY_SIZE(arch_array); i++) {
@@ -1130,23 +1146,23 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (running_arch_index == -1) {
     // Even though running architecture detection failed
     // we may still continue with reporting dlerror() message
-    return NULL;
+    return nullptr;
   }
 
   if (lib_arch.endianess != arch_array[running_arch_index].endianess) {
     ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
-    return NULL;
+    return nullptr;
   }
 
 #ifndef S390
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
     ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
-    return NULL;
+    return nullptr;
   }
 #endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
-    if (lib_arch.name!=NULL) {
+    if (lib_arch.name!=nullptr) {
       ::snprintf(diag_msg_buf, diag_msg_max_length-1,
                  " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
                  lib_arch.name, arch_array[running_arch_index].name);
@@ -1158,26 +1174,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
   }
 
-  return NULL;
+  return nullptr;
 #endif // STATIC_BUILD
 }
 #endif // !__APPLE__
-
-void* os::get_default_process_handle() {
-#ifdef __APPLE__
-  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
-  // to avoid finding unexpected symbols on second (or later)
-  // loads of a library.
-  return (void*)::dlopen(NULL, RTLD_FIRST);
-#else
-  return (void*)::dlopen(NULL, RTLD_LAZY);
-#endif
-}
-
-// XXX: Do we need a lock around this as per Linux?
-void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
-}
 
 int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
   outputStream * out = (outputStream *) param;
@@ -1200,23 +1200,23 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
   Link_map *p;
 
   if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
-      dli.dli_fname == NULL) {
+      dli.dli_fname == nullptr) {
     return 1;
   }
   handle = dlopen(dli.dli_fname, RTLD_LAZY);
-  if (handle == NULL) {
+  if (handle == nullptr) {
     return 1;
   }
   dlinfo(handle, RTLD_DI_LINKMAP, &map);
-  if (map == NULL) {
+  if (map == nullptr) {
     dlclose(handle);
     return 1;
   }
 
-  while (map->l_prev != NULL)
+  while (map->l_prev != nullptr)
     map = map->l_prev;
 
-  while (map != NULL) {
+  while (map != nullptr) {
     // Value for top_address is returned as 0 since we don't have any information about module size
     if (callback(map->l_name, (address)map->l_addr, (address)0, param)) {
       dlclose(handle);
@@ -1245,7 +1245,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   char os[100];
   size_t size = sizeof(os);
   int mib_kern[] = { CTL_KERN, KERN_OSTYPE };
-  if (sysctl(mib_kern, 2, os, &size, NULL, 0) < 0) {
+  if (sysctl(mib_kern, 2, os, &size, nullptr, 0) < 0) {
 #ifdef __APPLE__
     strncpy(os, "Darwin", sizeof(os));
 #elif __OpenBSD__
@@ -1258,7 +1258,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   char release[100];
   size = sizeof(release);
   int mib_release[] = { CTL_KERN, KERN_OSRELEASE };
-  if (sysctl(mib_release, 2, release, &size, NULL, 0) < 0) {
+  if (sysctl(mib_release, 2, release, &size, nullptr, 0) < 0) {
     // if error, leave blank
     strncpy(release, "", sizeof(release));
   }
@@ -1266,12 +1266,12 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 #ifdef __APPLE__
   char osproductversion[100];
   size_t sz = sizeof(osproductversion);
-  int ret = sysctlbyname("kern.osproductversion", osproductversion, &sz, NULL, 0);
+  int ret = sysctlbyname("kern.osproductversion", osproductversion, &sz, nullptr, 0);
   if (ret == 0) {
     char build[100];
     size = sizeof(build);
     int mib_build[] = { CTL_KERN, KERN_OSVERSION };
-    if (sysctl(mib_build, 2, build, &size, NULL, 0) < 0) {
+    if (sysctl(mib_build, 2, build, &size, nullptr, 0) < 0) {
       snprintf(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
     } else {
       snprintf(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
@@ -1299,15 +1299,41 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+#ifdef __APPLE__
+static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, char* buf, size_t size) {
+  if (sysctlbyname(sysctlkey, buf, &size, nullptr, 0) >= 0) {
+    st->print_cr("%s:%s", sysctlkey, buf);
+  }
+}
+
+static void print_sysctl_info_uint64(const char* sysctlkey, outputStream* st) {
+  uint64_t val;
+  size_t size=sizeof(uint64_t);
+  if (sysctlbyname(sysctlkey, &val, &size, nullptr, 0) >= 0) {
+    st->print_cr("%s:%llu", sysctlkey, val);
+  }
+}
+#endif
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+#ifdef __APPLE__
+  print_sysctl_info_string("machdep.cpu.brand_string", st, buf, buflen);
+  print_sysctl_info_uint64("hw.cpufrequency", st);
+  print_sysctl_info_uint64("hw.cpufrequency_min", st);
+  print_sysctl_info_uint64("hw.cpufrequency_max", st);
+  print_sysctl_info_uint64("hw.cachelinesize", st);
+  print_sysctl_info_uint64("hw.l1icachesize", st);
+  print_sysctl_info_uint64("hw.l1dcachesize", st);
+  print_sysctl_info_uint64("hw.l2cachesize", st);
+  print_sysctl_info_uint64("hw.l3cachesize", st);
+#endif
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   unsigned int mhz;
   size_t size = sizeof(mhz);
   int mib[] = { CTL_HW, HW_CPU_FREQ };
-  if (sysctl(mib, 2, &mhz, &size, NULL, 0) < 0) {
+  if (sysctl(mib, 2, &mhz, &size, nullptr, 0) < 0) {
     mhz = 1;  // looks like an error but can be divided by
   } else {
     mhz /= 1000000;  // reported in millions
@@ -1316,24 +1342,28 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   char model[100];
   size = sizeof(model);
   int mib_model[] = { CTL_HW, HW_MODEL };
-  if (sysctl(mib_model, 2, model, &size, NULL, 0) < 0) {
+  if (sysctl(mib_model, 2, model, &size, nullptr, 0) < 0) {
     strncpy(model, cpu_arch, sizeof(model));
   }
 
   char machine[100];
   size = sizeof(machine);
   int mib_machine[] = { CTL_HW, HW_MACHINE };
-  if (sysctl(mib_machine, 2, machine, &size, NULL, 0) < 0) {
+  if (sysctl(mib_machine, 2, machine, &size, nullptr, 0) < 0) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  const char* emulated = "";
 #if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
-    emulated = " (EMULATED)";
+    snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
+  } else {
+    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    // aarch64 CPU doesn't report its speed
+    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
   }
+#else
+  snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
 #endif
-  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -1341,14 +1371,14 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
   st->print("(" UINT64_FORMAT "k free)",
             os::available_memory() >> 10);
 
-  if((sysctlbyname("vm.swapusage", &swap_usage, &size, NULL, 0) == 0) || (errno == ENOMEM)) {
+  if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {
     if (size >= offset_of(xsw_usage, xsu_used)) {
       st->print(", swap " UINT64_FORMAT "k",
                 ((julong) swap_usage.xsu_total) >> 10);
@@ -1380,13 +1410,13 @@ void os::jvm_path(char *buf, jint buflen) {
   dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
-                                         dli_fname, sizeof(dli_fname), NULL);
+                                         dli_fname, sizeof(dli_fname), nullptr);
   assert(ret, "cannot locate libjvm");
-  char *rp = NULL;
+  char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
     rp = os::Posix::realpath(dli_fname, buf, buflen);
   }
-  if (rp == NULL) {
+  if (rp == nullptr) {
     return;
   }
 
@@ -1408,7 +1438,7 @@ void os::jvm_path(char *buf, jint buflen) {
     if (strncmp(p, "/jre/lib/", 9) != 0) {
       // Look for JAVA_HOME in the environment.
       char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != NULL && java_home_var[0] != 0) {
+      if (java_home_var != nullptr && java_home_var[0] != 0) {
         char* jrelib_p;
         int len;
 
@@ -1417,7 +1447,7 @@ void os::jvm_path(char *buf, jint buflen) {
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
         rp = os::Posix::realpath(java_home_var, buf, buflen);
-        if (rp == NULL) {
+        if (rp == nullptr) {
           return;
         }
 
@@ -1451,7 +1481,7 @@ void os::jvm_path(char *buf, jint buflen) {
         } else {
           // Fall back to path of current library
           rp = os::Posix::realpath(dli_fname, buf, buflen);
-          if (rp == NULL) {
+          if (rp == nullptr) {
             return;
           }
         }
@@ -1463,28 +1493,8 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
-
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
@@ -1501,7 +1511,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
   }
@@ -1541,7 +1551,7 @@ bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
                                   const char* mesg) {
-  assert(mesg != NULL, "mesg must be specified");
+  assert(mesg != nullptr, "mesg must be specified");
   if (!pd_commit_memory(addr, size, exec)) {
     // add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
@@ -1591,7 +1601,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 
@@ -1603,7 +1613,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
+  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   return ::mprotect(addr, size, PROT_NONE) == 0;
 #elif defined(__APPLE__)
   if (exec) {
@@ -1635,7 +1645,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
-// function returns NULL to indicate failure.
+// function returns null to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
   const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
@@ -1646,7 +1656,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
 
-  return addr == MAP_FAILED ? NULL : addr;
+  return addr == MAP_FAILED ? nullptr : addr;
 }
 
 static int anon_munmap(char * addr, size_t size) {
@@ -1654,7 +1664,7 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return anon_mmap(NULL /* addr */, bytes, exec);
+  return anon_mmap(nullptr /* addr */, bytes, exec);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -1663,7 +1673,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Bsd::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -1672,8 +1682,8 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
-  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
+  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 
@@ -1715,7 +1725,7 @@ void os::large_page_init() {
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on BSD.");
-  return NULL;
+  return nullptr;
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {
@@ -1740,8 +1750,8 @@ bool os::can_execute_large_page_memory() {
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
-  if (result != NULL) {
-    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
+  if (result != nullptr) {
+    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == nullptr) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
     }
   }
@@ -1769,19 +1779,12 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
     return requested_addr;
   }
 
-  if (addr != NULL) {
+  if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
     anon_munmap(addr, bytes);
   }
 
-  return NULL;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
+  return nullptr;
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -1933,11 +1936,13 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  Bsd::set_page_size(getpagesize());
-  if (Bsd::page_size() == -1) {
-    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
+  size_t page_size = (size_t)getpagesize();
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() == 0) {
+    fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
-  _page_sizes.add(Bsd::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Bsd::initialize_system_info();
 
@@ -1970,7 +1975,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -2027,7 +2032,7 @@ jint os::init_2(void) {
 #ifdef __APPLE__
   // dynamically link to objective c gc registration
   void *handleLibObjc = dlopen(OBJC_LIB, RTLD_LAZY);
-  if (handleLibObjc != NULL) {
+  if (handleLibObjc != nullptr) {
     objc_registerThreadWithCollectorFunction = (objc_registerThreadWithCollector_t) dlsym(handleLibObjc, OBJC_GCREGISTER);
   }
 #endif
@@ -2090,7 +2095,7 @@ uint os::processor_id() {
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
   // This is only supported in Snow Leopard and beyond
-  if (name != NULL) {
+  if (name != nullptr) {
     // Add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
     snprintf(buf, sizeof(buf), "Java: %s", name);
@@ -2107,18 +2112,18 @@ bool os::find(address addr, outputStream* st) {
   memset(&dlinfo, 0, sizeof(dlinfo));
   if (dladdr(addr, &dlinfo) != 0) {
     st->print(INTPTR_FORMAT ": ", (intptr_t)addr);
-    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
+    if (dlinfo.dli_sname != nullptr && dlinfo.dli_saddr != nullptr) {
       st->print("%s+%#x", dlinfo.dli_sname,
                 (uint)((uintptr_t)addr - (uintptr_t)dlinfo.dli_saddr));
-    } else if (dlinfo.dli_fbase != NULL) {
+    } else if (dlinfo.dli_fbase != nullptr) {
       st->print("<offset %#x>", (uint)((uintptr_t)addr - (uintptr_t)dlinfo.dli_fbase));
     } else {
       st->print("<absolute address>");
     }
-    if (dlinfo.dli_fname != NULL) {
+    if (dlinfo.dli_fname != nullptr) {
       st->print(" in %s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase != NULL) {
+    if (dlinfo.dli_fbase != nullptr) {
       st->print(" at " INTPTR_FORMAT, (intptr_t)dlinfo.dli_fbase);
     }
     st->cr();
@@ -2154,28 +2159,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
@@ -2197,25 +2180,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
   return diff;
 }
 
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
-}
-
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
@@ -2223,28 +2187,6 @@ int os::open(const char *path, int oflag, int mode) {
   if (strlen(path) > MAX_PATH - 1) {
     errno = ENAMETOOLONG;
     return -1;
-  }
-  int fd;
-
-  fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
-  // If the open succeeded, the file might still be a directory
-  {
-    struct stat buf;
-    int ret = ::fstat(fd, &buf);
-    int st_mode = buf.st_mode;
-
-    if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ::close(fd);
-        return -1;
-      }
-    } else {
-      ::close(fd);
-      return -1;
-    }
   }
 
   // All file descriptors that are opened in the JVM and not
@@ -2268,14 +2210,27 @@ int os::open(const char *path, int oflag, int mode) {
   // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
-#ifdef FD_CLOEXEC
+
+  int fd = ::open(path, oflag | O_CLOEXEC, mode);
+  if (fd == -1) return -1;
+
+  // If the open succeeded, the file might still be a directory
   {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
     }
   }
-#endif
 
   return fd;
 }
@@ -2298,35 +2253,6 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat buf;
-
-  if (::fstat(fd, &buf) >= 0) {
-    mode = buf.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
-}
-
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
@@ -2346,14 +2272,14 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     prot |= PROT_EXEC;
   }
 
-  if (addr != NULL) {
+  if (addr != nullptr) {
     flags |= MAP_FIXED;
   }
 
   char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
                                      fd, file_offset);
   if (mapped_address == MAP_FAILED) {
-    return NULL;
+    return nullptr;
   }
   return mapped_address;
 }
@@ -2465,27 +2391,6 @@ int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
 }
 
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
-}
-
 // Get the kern.corefile setting, or otherwise the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -2493,13 +2398,13 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 #ifdef __APPLE__
   char coreinfo[MAX_PATH];
   size_t sz = sizeof(coreinfo);
-  int ret = sysctlbyname("kern.corefile", coreinfo, &sz, NULL, 0);
+  int ret = sysctlbyname("kern.corefile", coreinfo, &sz, nullptr, 0);
   if (ret == 0) {
     char *pid_pos = strstr(coreinfo, "%P");
     // skip over the "%P" to preserve any optional custom user pattern
-    const char* tail = (pid_pos != NULL) ? (pid_pos + 2) : "";
+    const char* tail = (pid_pos != nullptr) ? (pid_pos + 2) : "";
 
-    if (pid_pos != NULL) {
+    if (pid_pos != nullptr) {
       *pid_pos = '\0';
       n = jio_snprintf(buffer, bufferSize, "%s%d%s", coreinfo, os::current_process_id(), tail);
     } else {

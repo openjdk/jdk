@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -43,8 +44,9 @@ InlineTree::InlineTree(Compile* c,
                        JVMState* caller_jvms, int caller_bci,
                        int max_inline_level) :
   C(c),
-  _caller_jvms(caller_jvms),
+  _caller_jvms(NULL),
   _method(callee),
+  _late_inline(false),
   _caller_tree((InlineTree*) caller_tree),
   _count_inline_bcs(method()->code_size_for_inlining()),
   _max_inline_level(max_inline_level),
@@ -55,13 +57,13 @@ InlineTree::InlineTree(Compile* c,
   _count_inlines = 0;
   _forced_inline = false;
 #endif
-  if (_caller_jvms != NULL) {
+  if (caller_jvms != NULL) {
     // Keep a private copy of the caller_jvms:
     _caller_jvms = new (C) JVMState(caller_jvms->method(), caller_tree->caller_jvms());
     _caller_jvms->set_bci(caller_jvms->bci());
     assert(!caller_jvms->should_reexecute(), "there should be no reexecute bytecode with inlining");
+    assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   }
-  assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   assert((caller_tree == NULL ? 0 : caller_tree->stack_depth() + 1) == stack_depth(), "correct (redundant) depth parameter");
   assert(caller_bci == this->caller_bci(), "correct (redundant) bci parameter");
   // Update hierarchical counts, count_inline_bcs() and count_inlines()
@@ -85,7 +87,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
     return false; // EA is off
   }
   if (callee_method->is_initializer()) {
-    return true; // constuctor
+    return true; // constructor
   }
   if (caller_method->is_initializer() &&
       caller_method != C->method() &&
@@ -112,7 +114,7 @@ static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
 
 // positive filter: should callee be inlined?
 bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
-                               int caller_bci, ciCallProfile& profile) {
+                               int caller_bci, bool& should_delay, ciCallProfile& profile) {
   // Allows targeted inlining
   if (C->directive()->should_inline(callee_method)) {
     set_msg("force inline by CompileCommand");
@@ -126,14 +128,16 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     return true;
   }
 
-#ifndef PRODUCT
-  int inline_depth = inline_level()+1;
-  if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth)) {
-    set_msg("force inline by ciReplay");
+  int inline_depth = inline_level() + 1;
+  if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
+    if (should_delay) {
+      set_msg("force (incremental) inline by ciReplay");
+    } else {
+      set_msg("force inline by ciReplay");
+    }
     _forced_inline = true;
     return true;
   }
-#endif
 
   int size = callee_method->code_size_for_inlining();
 
@@ -152,8 +156,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   int inline_small_code_size  = InlineSmallCode / 4;
   int max_inline_size         = default_max_inline_size;
 
-  int call_site_count  = method()->scale_count(profile.count());
-  int invoke_count     = method()->interpreter_invocation_count();
+  int call_site_count  = caller_method->scale_count(profile.count());
+  int invoke_count     = caller_method->interpreter_invocation_count();
 
   assert(invoke_count != 0, "require invocation count greater than zero");
   double freq = (double)call_site_count / (double)invoke_count;
@@ -174,7 +178,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.
     if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size() > inline_small_code_size) {
+        callee_method->inline_instructions_size() > inline_small_code_size) {
       set_msg("already compiled into a medium method");
       return false;
     }
@@ -192,10 +196,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 
 // negative filter: should callee NOT be inlined?
-bool InlineTree::should_not_inline(ciMethod *callee_method,
-                                   ciMethod* caller_method,
-                                   JVMState* jvms) {
-
+bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
+                                   int caller_bci, bool& should_delay, ciCallProfile& profile) {
   const char* fail_msg = NULL;
 
   // First check all inlining restrictions which are required for correctness
@@ -209,6 +211,13 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     fail_msg = "native method";
   } else if (callee_method->dont_inline()) {
     fail_msg = "don't inline by annotation";
+  }
+
+  // Don't inline a method that changes Thread.currentThread() except
+  // into another method that is annotated @ChangesCurrentThread.
+  if (callee_method->changes_current_thread()
+      && ! C->method()->changes_current_thread()) {
+    fail_msg = "method changes current thread";
   }
 
   // one more inlining restriction
@@ -232,11 +241,13 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     return true;
   }
 
-#ifndef PRODUCT
-  int caller_bci = jvms->bci();
-  int inline_depth = inline_level()+1;
-  if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth)) {
-    set_msg("force inline by ciReplay");
+  int inline_depth = inline_level() + 1;
+  if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
+    if (should_delay) {
+      set_msg("force (incremental) inline by ciReplay");
+    } else {
+      set_msg("force inline by ciReplay");
+    }
     return false;
   }
 
@@ -249,7 +260,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     set_msg("disallowed by ciReplay");
     return true;
   }
-#endif
 
   if (callee_method->force_inline()) {
     set_msg("force inline by annotation");
@@ -264,7 +274,7 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   }
 
   if (callee_method->has_compiled_code() &&
-      callee_method->instructions_size() > InlineSmallCode) {
+      callee_method->inline_instructions_size() > InlineSmallCode) {
     set_msg("already compiled into a big method");
     return true;
   }
@@ -289,7 +299,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
 
   // don't use counts with -Xcomp
   if (UseInterpreter) {
-
     if (!callee_method->has_compiled_code() &&
         !callee_method->was_executed_more_than(0)) {
       set_msg("never executed");
@@ -299,17 +308,17 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     if (is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis: inline all executed constructors
       return false;
-    } else {
-      intx counter_high_value;
-      // Tiered compilation uses a different "high value" than non-tiered compilation.
-      // Determine the right value to use.
-      if (TieredCompilation) {
-        counter_high_value = InvocationCounter::count_limit / 2;
-      } else {
-        counter_high_value = CompileThreshold / 2;
-      }
-      if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, counter_high_value))) {
-        set_msg("executed < MinInliningThreshold times");
+    }
+
+    if (MinInlineFrequencyRatio > 0) {
+      int call_site_count  = caller_method->scale_count(profile.count());
+      int invoke_count     = caller_method->interpreter_invocation_count();
+      assert(invoke_count != 0, "require invocation count greater than zero");
+      double freq = (double)call_site_count / (double)invoke_count;
+      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / CompilationPolicy::min_invocations());
+
+      if (freq < min_freq) {
+        set_msg("low call site frequency");
         return true;
       }
     }
@@ -364,10 +373,13 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   }
 
   _forced_inline = false; // Reset
-  if (!should_inline(callee_method, caller_method, caller_bci, profile)) {
+
+  // 'should_delay' can be overridden during replay compilation
+  if (!should_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
-  if (should_not_inline(callee_method, caller_method, jvms)) {
+  // 'should_delay' can be overridden during replay compilation
+  if (should_not_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
 
@@ -552,9 +564,8 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
 //------------------------------ok_to_inline-----------------------------------
 bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallProfile& profile,
                               bool& should_delay) {
-  assert(callee_method != NULL, "caller checks for optimized virtual!");
-  assert(!should_delay, "should be initialized to false");
 #ifdef ASSERT
+  assert(callee_method != NULL, "caller checks for optimized virtual!");
   // Make sure the incoming jvms has the same information content as me.
   // This means that we can eventually make this whole class AllStatic.
   if (jvms->caller() == NULL) {
@@ -590,7 +601,11 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
       set_msg("inline (hot)");
     }
     print_inlining(callee_method, caller_bci, caller_method, true /* success */);
-    build_inline_tree_for_callee(callee_method, jvms, caller_bci);
+    InlineTree* callee_tree = build_inline_tree_for_callee(callee_method, jvms, caller_bci);
+    if (should_delay) {
+      // Record late inlining decision in order to dump it for compiler replay
+      callee_tree->set_late_inline();
+    }
     return true;
   } else {
     // Do not inline
@@ -694,11 +709,11 @@ int InlineTree::count() const {
   return result;
 }
 
-void InlineTree::dump_replay_data(outputStream* out) {
-  out->print(" %d %d ", inline_level(), caller_bci());
+void InlineTree::dump_replay_data(outputStream* out, int depth_adjust) {
+  out->print(" %d %d %d ", inline_level() + depth_adjust, caller_bci(), _late_inline);
   method()->dump_name_as_ascii(out);
   for (int i = 0 ; i < _subtrees.length(); i++) {
-    _subtrees.at(i)->dump_replay_data(out);
+    _subtrees.at(i)->dump_replay_data(out, depth_adjust);
   }
 }
 

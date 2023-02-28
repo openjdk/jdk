@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       Formatter buf = new Formatter(genHTML);
       buf.append(genMethodLink(m));
       buf.append(" of ");
-      buf.append(genKlassLink((InstanceKlass) m.getMethodHolder()));
+      buf.append(genKlassLink(m.getMethodHolder()));
       return buf.toString();
    }
 
@@ -453,13 +453,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       buf.headerCell("Constant Value");
       buf.endTag("tr");
 
-      final int length = (int) cpool.getLength();
+      final int length = cpool.getLength();
       // zero'th pool entry is always invalid. ignore it.
       for (int index = 1; index < length; index++) {
          buf.beginTag("tr");
          buf.cell(Integer.toString(index));
 
-         int ctag = (int) cpool.getTags().at((int) index);
+         int ctag = cpool.getTags().at(index);
          switch (ctag) {
             case JVM_CONSTANT_Integer:
                buf.cell("JVM_CONSTANT_Integer");
@@ -497,7 +497,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
             case JVM_CONSTANT_Class:
                buf.cell("JVM_CONSTANT_Class");
-               Klass klass = (Klass) cpool.getKlassAt(index);
+               Klass klass = cpool.getKlassAt(index);
                if (klass instanceof InstanceKlass) {
                   buf.cell(genKlassLink((InstanceKlass) klass));
                } else {
@@ -586,7 +586,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          Formatter buf = new Formatter(genHTML);
          buf.genHTMLPrologue(genConstantPoolTitle(cpool));
          buf.h3("Holder Class");
-         buf.append(genKlassLink((InstanceKlass) cpool.getPoolHolder()));
+         buf.append(genKlassLink(cpool.getPoolHolder()));
          buf.h3("Constants");
          buf.append(genHTMLTableForConstantPool(cpool));
          buf.genHTMLEpilogue();
@@ -603,7 +603,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    protected String genConstantPoolTitle(ConstantPool cpool) {
       Formatter buf = new Formatter(genHTML);
       buf.append("Constant Pool of [");
-      buf.append(genKlassTitle((InstanceKlass) cpool.getPoolHolder()));
+      buf.append(genKlassTitle(cpool.getPoolHolder()));
       buf.append("] @");
       buf.append(cpool.getAddress().toString());
       return buf.toString();
@@ -621,7 +621,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.genHTMLPrologue(genMethodTitle(method));
 
          buf.h3("Holder Class");
-         buf.append(genKlassLink((InstanceKlass) method.getMethodHolder()));
+         buf.append(genKlassLink(method.getMethodHolder()));
 
          NMethod nmethod = method.getNativeMethod();
          if (nmethod != null) {
@@ -630,7 +630,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          }
 
          boolean hasThrows = method.hasCheckedExceptions();
-         ConstantPool cpool = ((InstanceKlass) method.getMethodHolder()).getConstants();
+         ConstantPool cpool = method.getMethodHolder().getConstants();
          if (hasThrows) {
             buf.h3("Checked Exception(s)");
             CheckedExceptionElement[] exceptions = method.getCheckedExceptions();
@@ -675,9 +675,9 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                              buf.beginTag("tr");
                              if (hasLineNumbers) {
                                 int lineNumber = method.getLineNumberFromBCI(curBci);
-                                buf.cell(Integer.toString(lineNumber) + spaces);
+                                buf.cell(lineNumber + spaces);
                              }
-                             buf.cell(Integer.toString(curBci) + spaces);
+                             buf.cell(curBci + spaces);
 
                              buf.beginTag("td");
                              String instrStr = null;
@@ -708,7 +708,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                                   if (m != null) {
                                     buf.link(genMethodHref(m), instrStr);
                                     buf.append(" of ");
-                                    InstanceKlass klass = (InstanceKlass) m.getMethodHolder();
+                                    InstanceKlass klass = m.getMethodHolder();
                                     buf.link(genKlassHref(klass), genKlassTitle(klass));
                                   } else {
                                     buf.append(instrStr);
@@ -815,7 +815,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       CodeBlob blob = null;
 
       try {
-         blob = (CodeBlob)VM.getVM().getCodeCache().findBlobUnsafe(pc);
+         blob = VM.getVM().getCodeCache().findBlobUnsafe(pc);
       } catch (Exception exp) {
          // ignore
       }
@@ -949,7 +949,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       }
 
       public void endInstruction(long endPc) {
-         instrSize += endPc - pc;
+         instrSize += (int) (endPc - pc);
          if (genHTML) buf.br();
 
          if (nmethod != null) {
@@ -983,7 +983,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
       public void epilogue() {
       }
-   };
+   }
 
    protected String genHTMLForRawDisassembly(sun.jvm.hotspot.debugger.Address addr,
                                              int size,
@@ -1007,7 +1007,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          Formatter tmpBuf = new Formatter(genHTML);
          long startPc = addressToLong(addr);
          tmpBuf.append("0x");
-         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()).toString());
+         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()));
          tmpBuf.append(",0x");
          tmpBuf.append(Long.toHexString(startPc));
          if (prevPCs != null) {
@@ -1121,7 +1121,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 int flen = ov.fieldsSize();
 
                 U2Array klfields = kls.getFields();
-                int klen = (int) klfields.length();
+                int klen = klfields.length();
                 int findex = 0;
                 for (int index = 0; index < klen; index++) {
                     int accsFlags = kls.getFieldAccessFlags(index);
@@ -1281,8 +1281,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          if (w == Location.Where.ON_STACK) {
             buf.append("stack[" + loc.getStackOffset() + "]");
          } else if (w == Location.Where.IN_REGISTER) {
-            boolean isFloat = (type == Location.Type.FLOAT_IN_DBL ||
-                               type == Location.Type.DBL);
             int regNum = loc.getRegisterNumber();
             VMReg vmReg = new VMReg(regNum);
             buf.append(VMRegImpl.getRegisterName(vmReg.getValue()));

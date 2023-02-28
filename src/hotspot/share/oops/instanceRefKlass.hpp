@@ -50,10 +50,10 @@ class ClassFileParser;
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
  public:
-  static const KlassID ID = InstanceRefKlassID;
+  static const KlassKind Kind = InstanceRefKlassKind;
 
  private:
-  InstanceRefKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_reference, ID) {}
+  InstanceRefKlass(const ClassFileParser& parser);
 
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -96,9 +96,6 @@ class InstanceRefKlass: public InstanceKlass {
   // Building blocks for specialized handling.
   template <typename T, class OopClosureType, class Contains>
   static void do_referent(oop obj, OopClosureType* closure, Contains& contains);
-
-  template <typename T, class OopClosureType, class Contains>
-  static void do_next(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType, class Contains>
   static void do_discovered(oop obj, OopClosureType* closure, Contains& contains);

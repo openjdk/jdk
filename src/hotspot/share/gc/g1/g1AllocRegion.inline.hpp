@@ -31,9 +31,9 @@
 
 #define assert_alloc_region(p, message)                                  \
   do {                                                                   \
-    assert((p), "[%s] %s c: %u b: %s r: " PTR_FORMAT " u: " SIZE_FORMAT, \
-           _name, (message), _count, BOOL_TO_STR(_bot_updates),          \
-           p2i(_alloc_region), _used_bytes_before);                      \
+    assert((p), "[%s] %s c: %u r: " PTR_FORMAT " u: " SIZE_FORMAT,       \
+           _name, (message), _count, p2i(_alloc_region),                 \
+           _used_bytes_before);                                          \
   } while (0)
 
 
@@ -45,11 +45,7 @@ inline HeapWord* G1AllocRegion::allocate(HeapRegion* alloc_region,
                                          size_t word_size) {
   assert(alloc_region != NULL, "pre-condition");
 
-  if (!_bot_updates) {
-    return alloc_region->allocate_no_bot_updates(word_size);
-  } else {
-    return alloc_region->allocate(word_size);
-  }
+  return alloc_region->allocate(word_size);
 }
 
 inline HeapWord* G1AllocRegion::par_allocate(HeapRegion* alloc_region, size_t word_size) {
@@ -64,11 +60,7 @@ inline HeapWord* G1AllocRegion::par_allocate(HeapRegion* alloc_region,
   assert(alloc_region != NULL, "pre-condition");
   assert(!alloc_region->is_empty(), "pre-condition");
 
-  if (!_bot_updates) {
-    return alloc_region->par_allocate_no_bot_updates(min_word_size, desired_word_size, actual_word_size);
-  } else {
-    return alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
-  }
+  return alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
 }
 
 inline HeapWord* G1AllocRegion::attempt_allocation(size_t word_size) {

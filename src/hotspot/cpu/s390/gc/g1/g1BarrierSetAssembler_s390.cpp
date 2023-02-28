@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -305,7 +306,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   // calculate address of card
   __ load_const_optimized(Rbase, (address)ct->card_table()->byte_map_base());      // Card table base.
-  __ z_srlg(Rcard_addr, Rstore_addr, CardTable::card_shift);         // Index into card table.
+  __ z_srlg(Rcard_addr, Rstore_addr, CardTable::card_shift());         // Index into card table.
   __ z_algr(Rcard_addr, Rbase);                                      // Explicit calculation needed for cli.
   Rbase = noreg; // end of lifetime
 
@@ -396,10 +397,10 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_ltgr(tmp1, value);
   __ z_bre(Ldone);          // Use NULL result as-is.
 
-  __ z_nill(value, ~JNIHandles::weak_tag_mask);
+  __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
-  __ z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
+  __ z_tmll(tmp1, JNIHandles::TypeTag::weak_global); // Test for jweak tag.
   __ z_braz(Lnot_weak);
   __ verify_oop(value, FILE_AND_LINE);
   DecoratorSet decorators = IN_NATIVE | ON_PHANTOM_OOP_REF;
@@ -548,7 +549,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   // Calculate address of card corresponding to the updated oop slot.
   AddressLiteral rs(byte_map_base);
-  __ z_srlg(addr_card, addr_oop, CardTable::card_shift);
+  __ z_srlg(addr_card, addr_oop, CardTable::card_shift());
   addr_oop = noreg; // dead now
   __ load_const_optimized(cardtable, rs); // cardtable := <card table base>
   __ z_agr(addr_card, cardtable); // addr_card := addr_oop>>card_shift + cardtable

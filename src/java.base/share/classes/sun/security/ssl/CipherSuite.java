@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ enum CipherSuite {
     //    changed later, see below).
     // 2. Prefer forward secrecy cipher suites.
     // 3. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
-    //    AES_128(GCM), AES_256, AES_128, 3DES-EDE.
+    //    AES_128(GCM), AES_256, AES_128.
     // 4. Prefer the stronger MAC algorithm, in the order of SHA384,
-    //    SHA256, SHA, MD5.
+    //    SHA256, SHA.
     // 5. Prefer the better performance of key exchange and digital
     //    signature algorithm, in the order of ECDHE-ECDSA, ECDHE-RSA,
     //    DHE-RSA, DHE-DSS, ECDH-ECDSA, ECDH-RSA, RSA.
@@ -327,41 +327,6 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_TO_12,
             K_RSA, B_AES_128, M_SHA, H_SHA256),
 
-    // 3DES_EDE, forward secrecy.
-    TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA(
-            0xC008, true, "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDHE_ECDSA, B_3DES, M_SHA, H_SHA256),
-    TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA(
-            0xC012, true, "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDHE_RSA, B_3DES, M_SHA, H_SHA256),
-    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA(
-            0x0016, true, "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-                          "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_DHE_RSA, B_3DES, M_SHA, H_SHA256),
-    SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA(
-            0x0013, true, "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-                          "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_DHE_DSS, B_3DES, M_SHA, H_SHA256),
-
-    // 3DES_EDE, not forward secrecy.
-    TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA(
-            0xC003, true, "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_ECDSA, B_3DES, M_SHA, H_SHA256),
-    TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA(
-            0xC00D, true, "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_RSA, B_3DES, M_SHA, H_SHA256),
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA(
-            0x000A, true, "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-                          "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_RSA, B_3DES, M_SHA, H_SHA256),
-
     // Renegotiation protection request Signalling Cipher Suite Value (SCSV).
     TLS_EMPTY_RENEGOTIATION_INFO_SCSV(        //  RFC 5746, TLS 1.2 and prior
             0x00FF, true, "TLS_EMPTY_RENEGOTIATION_INFO_SCSV", "",
@@ -413,6 +378,41 @@ enum CipherSuite {
             0x0034, false, "TLS_DH_anon_WITH_AES_128_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_DH_ANON, B_AES_128, M_SHA, H_SHA256),
+
+    // 3DES_EDE, forward secrecy.
+    TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA(
+            0xC008, false, "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDHE_ECDSA, B_3DES, M_SHA, H_SHA256),
+    TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA(
+            0xC012, false, "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDHE_RSA, B_3DES, M_SHA, H_SHA256),
+    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA(
+            0x0016, false, "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+                           "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_DHE_RSA, B_3DES, M_SHA, H_SHA256),
+    SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA(
+            0x0013, false, "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+                           "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_DHE_DSS, B_3DES, M_SHA, H_SHA256),
+
+    // 3DES_EDE, not forward secrecy.
+    TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA(
+            0xC003, false, "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_ECDSA, B_3DES, M_SHA, H_SHA256),
+    TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA(
+            0xC00D, false, "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_RSA, B_3DES, M_SHA, H_SHA256),
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA(
+            0x000A, false, "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
+                           "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_RSA, B_3DES, M_SHA, H_SHA256),
     TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA(
             0xC017, false, "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
@@ -887,20 +887,20 @@ enum CipherSuite {
     }
 
     // known but unsupported cipher suite
-    private CipherSuite(String name, int id) {
+    CipherSuite(String name, int id) {
         this(id, false, name, "",
                 ProtocolVersion.PROTOCOLS_EMPTY, null, null, null, null);
     }
 
     // TLS 1.3 cipher suite
-    private CipherSuite(int id, boolean isDefaultEnabled,
+    CipherSuite(int id, boolean isDefaultEnabled,
             String name, ProtocolVersion[] supportedProtocols,
             SSLCipher bulkCipher, HashAlg hashAlg) {
         this(id, isDefaultEnabled, name, "",
                 supportedProtocols, null, bulkCipher, M_NULL, hashAlg);
     }
 
-    private CipherSuite(int id, boolean isDefaultEnabled,
+    CipherSuite(int id, boolean isDefaultEnabled,
             String name, String aliases,
             ProtocolVersion[] supportedProtocols,
             KeyExchange keyExchange, SSLCipher cipher,
@@ -1081,7 +1081,7 @@ enum CipherSuite {
     /**
      * An SSL/TLS key exchange algorithm.
      */
-    static enum KeyExchange {
+    enum KeyExchange {
         K_NULL          ("NULL",           false, true,   NAMED_GROUP_NONE),
         K_RSA           ("RSA",            true,  false,  NAMED_GROUP_NONE),
         K_RSA_EXPORT    ("RSA_EXPORT",     true,  false,  NAMED_GROUP_NONE),
@@ -1152,7 +1152,7 @@ enum CipherSuite {
      * Also contains a factory method to obtain an initialized MAC
      * for this algorithm.
      */
-    static enum MacAlg {
+    enum MacAlg {
         M_NULL      ("NULL",     0,   0,   0),
         M_MD5       ("MD5",     16,  64,   9),
         M_SHA       ("SHA",     20,  64,   9),
@@ -1191,7 +1191,7 @@ enum CipherSuite {
      * Note that TLS 1.1- uses a single MD5/SHA1-based PRF algorithm for
      * generating the necessary material.
      */
-    static enum HashAlg {
+    enum HashAlg {
         H_NONE      ("NONE",    0,    0),
         H_SHA256    ("SHA-256", 32,  64),
         H_SHA384    ("SHA-384", 48, 128);

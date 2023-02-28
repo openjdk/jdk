@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 ifndef _ZIP_ARCHIVE_GMK
 _ZIP_ARCHIVE_GMK := 1
 
+# Depends on build tools for MakeZipReproducible
+include ../ToolsJdk.gmk
+
 ifeq (,$(_MAKEBASE_GMK))
   $(error You must include MakeBase.gmk prior to including ZipArchive.gmk)
 endif
@@ -51,6 +54,8 @@ endif
 #   FOLLOW_SYMLINKS - Set to explicitly follow symlinks. Affects performance of
 #                     finding files.
 #   ZIP_OPTIONS extra options to pass to zip
+#   REPRODUCIBLE set to false to disable the step that makes zip reproducible
+
 SetupZipArchive = $(NamedParamsMacroTemplate)
 define SetupZipArchiveBody
 
@@ -124,16 +129,22 @@ define SetupZipArchiveBody
     ) \
   )
 
+  ifeq ($$($1_REPRODUCIBLE), )
+    $1_REPRODUCIBLE := true
+  endif
+
   # Use a slightly shorter name for logging, but with enough path to identify this zip.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_ZIP))
 
   # Now $1_ALL_SRCS should contain all sources that are going to be put into the zip.
   # I.e. the zip -i and -x options should match the filtering done in the makefile.
   # Explicitly excluded files can be given with absolute path. The patsubst solution
-  # isn't perfect but the likelyhood of an absolute path to match something in a src
+  # isn't perfect but the likelihood of an absolute path to match something in a src
   # dir is very small.
   # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
   # and only fail if it's not.
+  # For reproducible builds set the zip access & modify times to SOURCE_DATE_EPOCH
+  # by using a ziptmp folder to generate final zip from using MakeZipReproducible.
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$$(call LogWarn, Updating $$($1_NAME))
 	$$(call MakeTargetDir)
@@ -163,7 +174,18 @@ define SetupZipArchiveBody
 	        $$($1_ZIP_EXCLUDES_$$s) \
 	        || test "$$$$?" = "12" \
 	    ))$$(NEWLINE) \
-	) true \
+	) true
+        ifeq ($$($1_REPRODUCIBLE), true)
+	    $$(call ExecuteWithLog, \
+		$$(SUPPORT_OUTPUTDIR)/makezipreproducible/$$(patsubst $$(OUTPUTDIR)/%,%, $$@), \
+		($(RM) $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip && \
+		 $(MKDIR) -p $$(SUPPORT_OUTPUTDIR)/ziptmp/$1 && \
+		 $(TOOL_MAKEZIPREPRODUCIBLE) -f $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip \
+			 		     -t $(SOURCE_DATE_EPOCH) $$@ && \
+		 $(RM) $$@ && \
+		 $(MV) $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip $$@ \
+		))
+        endif
 	$(TOUCH) $$@
 
   # Add zip to target list

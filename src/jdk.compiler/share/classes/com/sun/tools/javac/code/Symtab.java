@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,8 @@ public class Symtab {
     public final Type assertionErrorType;
     public final Type incompatibleClassChangeErrorType;
     public final Type cloneNotSupportedExceptionType;
+    public final Type matchExceptionType;
+    public final Type nullPointerExceptionType;
     public final Type annotationType;
     public final TypeSymbol enumSym;
     public final Type listType;
@@ -223,6 +225,14 @@ public class Symtab {
     public final Type switchBootstrapsType;
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
+
+    // For serialization lint checking
+    public final Type objectStreamFieldType;
+    public final Type objectInputStreamType;
+    public final Type objectOutputStreamType;
+    public final Type ioExceptionType;
+    public final Type objectStreamExceptionType;
+    public final Type externalizableType;
 
     /** The symbol representing the length field of an array.
      */
@@ -545,6 +555,8 @@ public class Symtab {
         assertionErrorType = enterClass("java.lang.AssertionError");
         incompatibleClassChangeErrorType = enterClass("java.lang.IncompatibleClassChangeError");
         cloneNotSupportedExceptionType = enterClass("java.lang.CloneNotSupportedException");
+        matchExceptionType = enterClass("java.lang.MatchException");
+        nullPointerExceptionType = enterClass("java.lang.NullPointerException");
         annotationType = enterClass("java.lang.annotation.Annotation");
         classLoaderType = enterClass("java.lang.ClassLoader");
         enumSym = enterClass(java_base, names.java_lang_Enum);
@@ -590,6 +602,13 @@ public class Symtab {
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
+        // For serialization lint checking
+        objectStreamFieldType = enterClass("java.io.ObjectStreamField");
+        objectInputStreamType = enterClass("java.io.ObjectInputStream");
+        objectOutputStreamType = enterClass("java.io.ObjectOutputStream");
+        ioExceptionType = enterClass("java.io.IOException");
+        objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
+        externalizableType = enterClass("java.io.Externalizable");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
@@ -656,7 +675,8 @@ public class Symtab {
         if (c == null) {
             c = defineClass(name, owner);
             doEnterClass(msym, c);
-        } else if ((c.name != name || c.owner != owner) && owner.kind == TYP && c.owner.kind == PCK) {
+        } else if ((c.name != name || c.owner != owner) && owner.kind == TYP &&
+                   c.owner.kind == PCK && ((c.flags_field & FROM_SOURCE) == 0)) {
             // reassign fields of classes that might have been loaded with
             // their flat names.
             c.owner.members().remove(c);

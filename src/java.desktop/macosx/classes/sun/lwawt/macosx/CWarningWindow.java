@@ -56,7 +56,7 @@ public final class CWarningWindow extends CPlatformWindow
     /**
      * Animation stage.
      */
-    private volatile int currentIcon = 0;
+    private volatile int currentIcon;
 
     /* -1 - uninitialized.
      * 0 - 16x16

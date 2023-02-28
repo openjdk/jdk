@@ -194,11 +194,11 @@ public class TestRecordingFile {
                    rotator.stop();
                }
                r2.stop();
-               r2.dump(twoEventTypes);;
+               r2.dump(twoEventTypes);
            }
            FlightRecorder.register(Event3.class);
            r1.stop();
-           r1.dump(threeEventTypes);;
+           r1.dump(threeEventTypes);
        }
        try (RecordingFile f = new RecordingFile(twoEventTypes)) {
            List<EventType> types = f.readEventTypes();

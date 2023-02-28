@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import jdk.internal.access.JavaNetHttpCookieAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.net.*;
+import sun.net.NetProperties;
+import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
@@ -278,7 +279,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         allowRestrictedHeaders = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.allowRestrictedHeaders"));
         if (!allowRestrictedHeaders) {
-            restrictedHeaderSet = new HashSet<>(restrictedHeaders.length);
+            restrictedHeaderSet = HashSet.newHashSet(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
                 restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
             }
@@ -288,8 +289,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     static final String httpVersion = "HTTP/1.1";
-    static final String acceptString =
-        "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2";
+    static final String acceptString = "*/*";
 
     // the following http request headers should NOT have their values
     // returned for security reasons.
@@ -384,9 +384,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     boolean isUserProxyAuth;
 
     String serverAuthKey, proxyAuthKey;
-
-    /* Progress source */
-    protected ProgressSource pi;
 
     /* all the response headers we get back */
     private MessageHeader responses;
@@ -601,7 +598,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
-    /* adds the standard key/val pairs to reqests if necessary & write to
+    /* adds the standard key/val pairs to requests if necessary & write to
      * given PrintStream
      */
     private void writeRequests() throws IOException {
@@ -627,10 +624,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * to last and last, respectively, in the case of a POST
              * request.
              */
-            if (!failedOnce) {
+            final String requestLine = method + " " + getRequestURI()+ " " + httpVersion;
+            final int requestLineIndex = requests.getKey(requestLine);
+            if (requestLineIndex != 0) {
+                // we expect the request line to be at index 0. we set it here
+                // if we don't find the request line at that index.
                 checkURLFile();
-                requests.prepend(method + " " + getRequestURI()+" "  +
-                                 httpVersion, null);
+                requests.prepend(requestLine, null);
             }
             if (!getUseCaches()) {
                 requests.setIfNotSet ("Cache-Control", "no-cache");
@@ -657,8 +657,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * or if keep alive is disabled via a system property
              */
 
-            // Try keep-alive only on first attempt
-            if (!failedOnce && http.getHttpKeepAliveSet()) {
+            if (http.getHttpKeepAliveSet()) {
                 if (http.usingProxy && tunnelState() != TunnelState.TUNNELING) {
                     requests.setIfNotSet("Proxy-Connection", "keep-alive");
                 } else {
@@ -986,7 +985,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     String loc = http.getHeaderField("Location");
                     URL target = null;
                     if (loc != null) {
-                        target = new URL(base, loc);
+                        target = newURL(base, loc);
                     }
                     http.disconnect();
                     if (target == null
@@ -1330,7 +1329,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             try {
-                http.parseHTTP(responses, pi, this);
+                http.parseHTTP(responses, this);
             } catch (SocketTimeoutException se) {
                 if (!enforceTimeOut) {
                     throw se;
@@ -1466,9 +1465,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 return poster;
             }
-        } catch (RuntimeException e) {
-            disconnectInternal();
-            throw e;
         } catch (ProtocolException e) {
             // Save the response code which may have been set while enforcing
             // the 100-continue. disconnectInternal() forces it to -1
@@ -1476,7 +1472,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             disconnectInternal();
             responseCode = i;
             throw e;
-        } catch (IOException e) {
+        } catch (RuntimeException | IOException e) {
             disconnectInternal();
             throw e;
         }
@@ -1538,11 +1534,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         }
                         List<String> l = entry.getValue();
                         if (l != null && !l.isEmpty()) {
-                            StringJoiner cookieValue = new StringJoiner("; ");
-                            for (String value : l) {
-                                cookieValue.add(value);
-                            }
-                            requests.add(key, cookieValue.toString());
+                            requests.add(key, String.join("; ", l));
                         }
                     }
                 }
@@ -1668,14 +1660,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     return cachedInputStream;
                 }
 
-                // Check if URL should be metered
-                boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, method);
-
-                if (meteredInput)   {
-                    pi = new ProgressSource(url, method);
-                    pi.beginTracking();
-                }
-
                 /* REMIND: This exists to fix the HttpsURLConnection subclass.
                  * Hotjava needs to run on JDK1.1FCS.  Do proper fix once a
                  * proper solution for SSL can be found.
@@ -1685,7 +1669,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 if (!streaming()) {
                     writeRequests();
                 }
-                http.parseHTTP(responses, pi, this);
+                http.parseHTTP(responses, this);
                 if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                     logger.fine(responses.toString());
                 }
@@ -1740,7 +1724,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -1815,7 +1799,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     srvHdr = new AuthenticationHeader (
                             "WWW-Authenticate", responses,
-                            new HttpCallerInfo(url, authenticator),
+                            getHttpCallerInfo(url, authenticator),
                             dontUseNegotiate
                     );
 
@@ -1891,7 +1875,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             String path = tok.nextToken();
                             try {
                                 /* path could be an abs_path or a complete URI */
-                                URL u = new URL (url, path);
+                                URL u = newURL (url, path);
                                 DigestAuthentication d = new DigestAuthentication (
                                                    false, u, realm, "Digest", pw,
                                                    digestparams, srv.authenticatorKey);
@@ -1903,7 +1887,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 // some flags should be reset to its initialized form so that
                 // even after a redirect the necessary checks can still be
-                // preformed.
+                // performed.
                 inNegotiate = false;
                 inNegotiateProxy = false;
 
@@ -1938,18 +1922,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     continue;
                 }
 
-                try {
-                    cl = Long.parseLong(responses.findValue("content-length"));
-                } catch (Exception exc) { };
+                final String contentLengthVal = responses.findValue("content-length");
+                if (contentLengthVal != null) {
+                    try {
+                        cl = Long.parseLong(contentLengthVal);
+                    } catch (NumberFormatException nfe) { }
+                }
 
                 if (method.equals("HEAD") || cl == 0 ||
                     respCode == HTTP_NOT_MODIFIED ||
                     respCode == HTTP_NO_CONTENT) {
 
-                    if (pi != null) {
-                        pi.finishTracking();
-                        pi = null;
-                    }
                     http.finished();
                     http = null;
                     inputStream = new EmptyInputStream();
@@ -2002,8 +1985,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 return inputStream;
             } while (redirects < maxRedirects);
 
-            throw new ProtocolException("Server redirected too many " +
-                                        " times ("+ redirects + ")");
+            throw new ProtocolException("Server redirected too many times (" +
+                    redirects + ")");
         } catch (RuntimeException e) {
             disconnectInternal();
             rememberedException = e;
@@ -2169,9 +2152,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 sendCONNECTRequest();
                 responses.reset();
 
-                // There is no need to track progress in HTTP Tunneling,
-                // so ProgressSource is null.
-                http.parseHTTP(responses, null, this);
+                http.parseHTTP(responses, this);
 
                 /* Log the response to the CONNECT */
                 if (logger.isLoggable(PlatformLogger.Level.FINE)) {
@@ -2211,7 +2192,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader(
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -2278,6 +2259,21 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         // reset responses
         responses.reset();
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
+                                               Authenticator authenticator) {
+        return new HttpCallerInfo(url, proxy, port, authenticator);
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator) {
+        return new HttpCallerInfo(url, authenticator);
     }
 
     static String connectRequestURI(URL url) {
@@ -2493,6 +2489,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (ret == null && defaultAuth != null
                 && defaultAuth.schemeSupported(scheme)) {
                 try {
+                    @SuppressWarnings("deprecation")
                     URL u = new URL("http", host, port, "/");
                     String a = defaultAuth.authString(u, scheme, realm);
                     if (a != null) {
@@ -2607,7 +2604,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (NTLMAuthenticationProxy.supported) {
                         URL url1;
                         try {
-                            url1 = new URL (url, "/"); /* truncate the path */
+                            url1 = newURL (url, "/"); /* truncate the path */
                         } catch (Exception e) {
                             url1 = url;
                         }
@@ -2765,14 +2762,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         URL locUrl;
         try {
-            locUrl = new URL(loc);
+            locUrl = newURL(loc);
             if (!url.getProtocol().equalsIgnoreCase(locUrl.getProtocol())) {
                 return false;
             }
 
         } catch (MalformedURLException mue) {
-          // treat loc as a relative URI to conform to popular browsers
-          locUrl = new URL(url, loc);
+            // treat loc as a relative URI to conform to popular browsers
+           locUrl = newURL(url, loc);
         }
 
         final URL locUrl0 = locUrl;
@@ -3032,10 +3029,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private void disconnectInternal() {
         responseCode = -1;
         inputStream = null;
-        if (pi != null) {
-            pi.finishTracking();
-            pi = null;
-        }
         if (http != null) {
             http.closeServer();
             http = null;
@@ -3049,10 +3042,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     public void disconnect() {
 
         responseCode = -1;
-        if (pi != null) {
-            pi.finishTracking();
-            pi = null;
-        }
 
         if (http != null) {
             /*
@@ -3073,7 +3062,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * can be considered an approximation in that we may close a
              * different idle connection to that used by the request.
              * Additionally it's possible that we close two connections
-             * - the first becuase it wasn't an EOF (and couldn't be
+             * - the first because it wasn't an EOF (and couldn't be
              * hurried) - the second, another idle connection to the
              * same server. The is okay because "disconnect" is an
              * indication that the application doesn't intend to access
@@ -3101,7 +3090,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 
             } else {
-                // We are deliberatly being disconnected so HttpClient
+                // We are deliberately being disconnected so HttpClient
                 // should not try to resend the request no matter what stage
                 // of the connection we are in.
                 http.setDoNotRetry(true);
@@ -3984,6 +3973,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 is.close();
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(URL context, String spec) throws MalformedURLException {
+        return new URL(context, spec);
     }
 }
 

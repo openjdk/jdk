@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,14 @@ import jdk.jfr.consumer.EventStream;
  * @library /test/lib /test/jdk
  * @modules jdk.jfr jdk.attach java.base/jdk.internal.misc
  *
- * @run main/othervm jdk.jfr.api.consumer.streaming.TestJVMCrash
+ * @run main/othervm -Dsun.tools.attach.attachTimeout=100000 jdk.jfr.api.consumer.streaming.TestJVMCrash
  */
 public class TestJVMCrash {
 
     public static void main(String... args) throws Exception  {
         int id = 1;
         while (true) {
-            try (TestProcess process = new TestProcess("crash-application-" + id++))  {
+            try (TestProcess process = new TestProcess("crash-application-" + id++, false /* createCore */))  {
                 AtomicInteger eventCounter = new AtomicInteger();
                 try (EventStream es = EventStream.openRepository(process.getRepository())) {
                     // Start from first event in repository

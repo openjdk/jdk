@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 6646411
  * @summary Tests that full screen window and its children receive resize
             event when display mode changes
- * @author Dmitri.Trembovetski@sun.com: area=Graphics
  * @run main/othervm NoResizeEventOnDMChangeTest
  * @run main/othervm -Dsun.java2d.d3d=false NoResizeEventOnDMChangeTest
  */
@@ -151,9 +150,22 @@ public class NoResizeEventOnDMChangeTest {
                             System.err.printf("----------- Setting DM %dx%d:\n",
                                               dm1.getWidth(), dm1.getHeight());
                             try {
+                                Frame f = fsWin instanceof Frame ? (Frame) fsWin : (Frame) fsWin.getOwner();
+                                DisplayMode oldMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
                                 gd.setDisplayMode(dm1);
-                                r1.incDmChanges();
-                                r2.incDmChanges();
+                                sleep(2000);
+                                // Check if setting new display mode actually results in frame being
+                                // placed onto display with different resolution.
+                                DisplayMode newMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
+                                if (oldMode.getWidth() != newMode.getWidth()
+                                        || oldMode.getHeight() != newMode.getHeight()) {
+                                    r1.incDmChanges();
+                                    r2.incDmChanges();
+                                } else {
+                                    System.out.println("Skipping this iteration. Details:");
+                                    System.out.println("Requested device = " + gd);
+                                    System.out.println("Actual device = " + f.getGraphicsConfiguration().getDevice());
+                                }
                             } catch (IllegalArgumentException iae) {}
                         }
                     });
@@ -166,6 +178,7 @@ public class NoResizeEventOnDMChangeTest {
             fsWin.removeComponentListener(r1);
             c.removeComponentListener(r2);
         }
+
         try {
            EventQueue.invokeAndWait(new Runnable() {
                public void run() {
@@ -191,10 +204,14 @@ public class NoResizeEventOnDMChangeTest {
     }
 
     static void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ex) {}
+        long targetTime = System.currentTimeMillis() + ms;
+        do {
+            try {
+                Thread.sleep(targetTime - System.currentTimeMillis());
+            } catch (InterruptedException ex) {}
+        } while (System.currentTimeMillis() < targetTime);
     }
+
     static class ResizeEventChecker extends ComponentAdapter {
         int dmChanges;
         int resizes;

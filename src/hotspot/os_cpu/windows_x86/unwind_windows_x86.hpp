@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,6 @@
 #ifdef AMD64
 typedef unsigned char UBYTE;
 
-#if _MSC_VER < 1700
-
-/* Not needed for VS2012 compiler, comes from winnt.h. */
-#define UNW_FLAG_EHANDLER  0x01
-#define UNW_FLAG_UHANDLER  0x02
-#define UNW_FLAG_CHAININFO 0x04
-
-#endif
-
 // This structure is used to define an UNWIND_INFO that
 // only has an ExceptionHandler.  There are no UnwindCodes
 // declared.
@@ -55,7 +46,6 @@ typedef struct _UNWIND_INFO_EH_ONLY {
     OPTIONAL ULONG ExceptionData[1];
 } UNWIND_INFO_EH_ONLY, *PUNWIND_INFO_EH_ONLY;
 
-
 /*
 typedef struct _RUNTIME_FUNCTION {
     ULONG BeginAddress;
@@ -63,35 +53,6 @@ typedef struct _RUNTIME_FUNCTION {
     ULONG UnwindData;
 } RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 */
-
-#if _MSC_VER < 1700
-
-/* Not needed for VS2012 compiler, comes from winnt.h. */
-typedef struct _DISPATCHER_CONTEXT {
-    ULONG64 ControlPc;
-    ULONG64 ImageBase;
-    PRUNTIME_FUNCTION FunctionEntry;
-    ULONG64 EstablisherFrame;
-    ULONG64 TargetIp;
-    PCONTEXT ContextRecord;
-//    PEXCEPTION_ROUTINE LanguageHandler;
-    char * LanguageHandler; // double dependency problem
-    PVOID HandlerData;
-} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
-
-#endif
-
-#if _MSC_VER < 1500
-
-/* Not needed for VS2008 compiler, comes from winnt.h. */
-typedef EXCEPTION_DISPOSITION (*PEXCEPTION_ROUTINE) (
-    IN PEXCEPTION_RECORD ExceptionRecord,
-    IN ULONG64 EstablisherFrame,
-    IN OUT PCONTEXT ContextRecord,
-    IN OUT PDISPATCHER_CONTEXT DispatcherContext
-);
-
-#endif
 
 #endif // AMD64
 

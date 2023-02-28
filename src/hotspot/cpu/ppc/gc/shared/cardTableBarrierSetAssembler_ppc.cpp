@@ -54,8 +54,8 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ addi(count, count, -BytesPerHeapOop);
   __ add(count, addr, count);
   // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
-  __ srdi(addr, addr, CardTable::card_shift);
-  __ srdi(count, count, CardTable::card_shift);
+  __ srdi(addr, addr, CardTable::card_shift());
+  __ srdi(count, count, CardTable::card_shift());
   __ subf(count, addr, count);
   __ add_const_optimized(addr, addr, (address)ct->byte_map_base(), R0);
   __ addi(count, count, 1);
@@ -74,7 +74,7 @@ void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
                                                     Register tmp, Register obj) {
   assert_different_registers(obj, tmp, R0);
   __ load_const_optimized(tmp, (address)byte_map_base, R0);
-  __ srdi(obj, obj, CardTable::card_shift);
+  __ srdi(obj, obj, CardTable::card_shift());
   __ li(R0, CardTable::dirty_card_val());
   __ stbx(R0, tmp, obj);
 }

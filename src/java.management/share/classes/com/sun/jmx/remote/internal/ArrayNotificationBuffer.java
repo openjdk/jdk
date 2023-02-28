@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private static final Object globalLock = new Object();
     private static final
         HashMap<MBeanServer,ArrayNotificationBuffer> mbsToBuffer =
-        new HashMap<MBeanServer,ArrayNotificationBuffer>(1);
-    private final Collection<ShareBuffer> sharers = new HashSet<ShareBuffer>(1);
+        new HashMap<>(1);
+    private final Collection<ShareBuffer> sharers = new HashSet<>(1);
 
     public static NotificationBuffer getNotificationBuffer(
             MBeanServer mbs, Map<String, ?> env) {
@@ -251,7 +251,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
         this.mBeanServer = mbs;
         this.queueSize = queueSize;
-        this.queue = new ArrayQueue<NamedNotification>(queueSize);
+        this.queue = new ArrayQueue<>(queueSize);
         this.earliestSequenceNumber = System.currentTimeMillis();
         this.nextSequenceNumber = this.earliestSequenceNumber;
 
@@ -353,8 +353,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
            to the earliest notification we examined.  */
         long earliestSeq = -1;
         long nextSeq = startSequenceNumber;
-        List<TargetedNotification> notifs =
-            new ArrayList<TargetedNotification>();
+        List<TargetedNotification> notifs = new ArrayList<>();
 
         /* On exit from this loop, notifs, earliestSeq, and nextSeq must
            all be correct values for the returned NotificationResult.  */
@@ -437,7 +436,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                     if (isDisposed()) {
                         if (logger.debugOn())
                             logger.debug("fetchNotifications",
-                                         "dispose callled, no wait");
+                                         "dispose called, no wait");
                         return new NotificationResult(earliestSequenceNumber(),
                                                   nextSequenceNumber(),
                                                   new TargetedNotification[0]);
@@ -459,8 +458,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                potentially slow filters.  */
             ObjectName name = candidate.getObjectName();
             Notification notif = candidate.getNotification();
-            List<TargetedNotification> matchedNotifs =
-                new ArrayList<TargetedNotification>();
+            List<TargetedNotification> matchedNotifs = new ArrayList<>();
             logger.debug("fetchNotifications",
                          "applying filter to candidate");
             filter.apply(matchedNotifs, name, notif);
@@ -601,7 +599,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         logger.debug("createListeners", "starts");
 
         synchronized (this) {
-            createdDuringQuery = new HashSet<ObjectName>();
+            createdDuringQuery = new HashSet<>();
         }
 
         try {
@@ -610,17 +608,15 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
             logger.debug("createListeners", "added creationListener");
         } catch (Exception e) {
             final String msg = "Can't add listener to MBean server delegate: ";
-            RuntimeException re = new IllegalArgumentException(msg + e);
-            EnvHelp.initCause(re, e);
             logger.fine("createListeners", msg + e);
             logger.debug("createListeners", e);
-            throw re;
+            throw new IllegalArgumentException(msg + e, e);
         }
 
         /* Spec doesn't say whether Set returned by QueryNames can be modified
            so we clone it. */
         Set<ObjectName> names = queryNames(null, broadcasterQuery);
-        names = new HashSet<ObjectName>(names);
+        names = new HashSet<>(names);
 
         synchronized (this) {
             names.addAll(createdDuringQuery);
@@ -698,7 +694,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private Set<ObjectName> queryNames(final ObjectName name,
                                        final QueryExp query) {
         PrivilegedAction<Set<ObjectName>> act =
-            new PrivilegedAction<Set<ObjectName>>() {
+            new PrivilegedAction<>() {
                 public Set<ObjectName> run() {
                     return mBeanServer.queryNames(name, query);
                 }
@@ -717,7 +713,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                                         final ObjectName name,
                                         final String className) {
         PrivilegedExceptionAction<Boolean> act =
-            new PrivilegedExceptionAction<Boolean>() {
+            new PrivilegedExceptionAction<>() {
                 public Boolean run() throws InstanceNotFoundException {
                     return mbs.isInstanceOf(name, className);
                 }

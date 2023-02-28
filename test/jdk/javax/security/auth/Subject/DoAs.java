@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
  * @bug 8214583
  * @summary Check that getSubject works after JIT compiler escape analysis.
  */
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,9 +40,8 @@ public class DoAs {
 
         for (int i = 0; i < 100_000; ++i) {
             final int index = i;
-            Subject.doAs(subject, (PrivilegedExceptionAction<Integer>)() -> {
-                AccessControlContext c1 = AccessController.getContext();
-                Subject s = Subject.getSubject(c1);
+            Subject.callAs(subject, () -> {
+                Subject s = Subject.current();
                 if (s != subject) {
                     throw new AssertionError("outer Oops! " + "iteration " + index + " " + s + " != " + subject);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,24 +36,26 @@ import java.lang.reflect.Type;
 public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersProvider, AnnotatedElement {
 
     /**
-     * Returns the bytecode of this method, if the method has code. The returned byte array does not
-     * contain breakpoints or non-Java bytecodes. This may return null if the
-     * {@linkplain #getDeclaringClass() declaring class} is not
-     * {@linkplain ResolvedJavaType#isLinked() linked}.
+     * Returns the method's bytecode. The returned bytecode does not contain breakpoints or non-Java
+     * bytecodes. This will return {@code null} if {@link #getCodeSize()} returns {@code <= 0} or if
+     * {@link #hasBytecodes()} returns {@code false}.
      *
-     * The contained constant pool indices may not be the ones found in the original class file but
+     * The contained constant pool indexes may not be the ones found in the original class file but
      * they can be used with the JVMCI API (e.g. methods in {@link ConstantPool}).
      *
-     * @return the bytecode of the method, or {@code null} if {@code getCodeSize() == 0} or if the
-     *         code is not ready.
+     * @return {@code null} if {@code getLinkedCodeSize() <= 0} otherwise the bytecode of the method
+     *         whose length is guaranteed to be {@code > 0}
      */
     byte[] getCode();
 
     /**
-     * Returns the size of the bytecode of this method, if the method has code. This is equivalent
-     * to {@link #getCode()}. {@code length} if the method has code.
+     * Returns the size of the method's bytecode. If this method returns a value {@code > 0} then
+     * {@link #getCode()} will not return {@code null}.
      *
-     * @return the size of the bytecode in bytes, or 0 if no bytecode is available
+     * @return 0 if the method has no bytecode, {@code -1} if the method does have bytecode but its
+     *         {@linkplain #getDeclaringClass() declaring class} is not
+     *         {@linkplain ResolvedJavaType#isLinked() linked} otherwise the size of the bytecode in
+     *         bytes (guaranteed to be {@code > 0})
      */
     int getCodeSize();
 
@@ -85,20 +87,18 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     boolean isSynthetic();
 
     /**
-     * Checks that the method is a
-     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">varargs</a>
-     * method.
+     * Checks if the method is a varargs method.
      *
      * @return whether the method is a varargs method
+     * @jvms 4.6
      */
     boolean isVarArgs();
 
     /**
-     * Checks that the method is a
-     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">bridge</a>
-     * method.
+     * Checks if the method is a bridge method.
      *
      * @return whether the method is a bridge method
+     * @jvms 4.6
      */
     boolean isBridge();
 
@@ -439,15 +439,11 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
-     * Checks whether the method has bytecodes associated with it. Note that even if this method
-     * returns {@code true}, {@link #getCode} can return {@code null} if
-     * {@linkplain #getDeclaringClass() declaring class} is not
-     * {@linkplain ResolvedJavaType#isLinked() linked}.
-     *
-     * @return {@code this.getCodeSize() != 0}
+     * @see #getCodeSize()
+     * @return {@code getCodeSize() > 0}
      */
     default boolean hasBytecodes() {
-        return getCodeSize() != 0;
+        return getCodeSize() > 0;
     }
 
     /**

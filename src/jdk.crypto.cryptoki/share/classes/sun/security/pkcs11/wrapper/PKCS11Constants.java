@@ -51,7 +51,7 @@ package sun.security.pkcs11.wrapper;
  * This interface holds constants of the PKCS#11 v3.00 standard.
  * This is mainly the content of the 'pkcs11t.h' header file.
  *
- * Mapping of primitiv data types to Java types:
+ * Mapping of primitive data types to Java types:
  * <pre>
  *   TRUE .......................................... true
  *   FALSE ......................................... false

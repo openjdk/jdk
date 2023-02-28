@@ -45,7 +45,7 @@ public class  XMSelection {
      * number and the new owning window when onwership is established, or
      * None if the owner is gone.
      *
-     * Events in extra_mask are selected for on owning windows (exsiting
+     * Events in extra_mask are selected for on owning windows (existing
      * ones and on new owners when established) and otherEvent of the
      * XMWSelectionListener will be called with the screen number and an event.
      *
@@ -206,7 +206,7 @@ public class  XMSelection {
         XClientMessageEvent xce = xev.get_xclient();
         if (xce.get_message_type() == XA_MANAGER.getAtom()) {
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                log.fine("client messags = " + xce);
+                log.fine("client messages = " + xce);
             }
             long timestamp = xce.get_data(0) & 0xFFFFFFFFL;
             long atom = xce.get_data(1);
@@ -318,9 +318,7 @@ public class  XMSelection {
             log.fine("Selection Changed : Screen = " + screen + "Event =" + ev);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.selectionChanged(screen, this, ev.get_window(), ev);
             }
         }
@@ -331,11 +329,8 @@ public class  XMSelection {
             log.fine("Owner dead : Screen = " + screen + "Event =" + de);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.ownerDeath(screen, this, de.get_window());
-
             }
         }
     }
@@ -357,10 +352,8 @@ public class  XMSelection {
 
     synchronized void dispatchOwnerChangedEvent(XEvent ev, int screen, long owner, long data, long timestamp) {
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
-                disp.ownerChanged(screen,this, owner, data, timestamp);
+            for (XMSelectionListener disp : listeners) {
+                disp.ownerChanged(screen, this, owner, data, timestamp);
             }
         }
     }

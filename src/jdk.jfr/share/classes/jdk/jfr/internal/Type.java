@@ -89,6 +89,8 @@ public class Type implements Comparable<Type> {
     private Boolean simpleType; // calculated lazy
     private boolean remove = true;
     private long id;
+    private boolean visible = true;
+    private boolean internal;
 
     /**
      * Creates a type
@@ -336,5 +338,21 @@ public class Type implements Comparable<Type> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setInternal(boolean internal) {
+        this.internal = internal;
+    }
+
+    public boolean isInternal() {
+        return internal;
     }
 }

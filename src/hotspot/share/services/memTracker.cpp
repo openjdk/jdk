@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,8 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
-#include "services/mallocTracker.inline.hpp"
+#include "services/mallocLimit.hpp"
+#include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/nmtPreInit.hpp"
@@ -46,8 +48,7 @@
 #include <windows.h>
 #endif
 
-volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
-NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
+NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
@@ -73,11 +74,15 @@ void MemTracker::initialize() {
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
       return;
     }
+  } else {
+    if (MallocLimit != nullptr) {
+      warning("MallocLimit will be ignored since NMT is disabled.");
+    }
   }
 
   NMTPreInit::pre_to_post();
 
-  _tracking_level = _cmdline_tracking_level = level;
+  _tracking_level = level;
 
   // Log state right after NMT initialization
   if (log_is_enabled(Info, nmt)) {
@@ -86,12 +91,8 @@ void MemTracker::initialize() {
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
     NMTPreInit::print_state(&ls);
-    ls.cr();
+    MallocLimitHandler::print_on(&ls);
   }
-}
-
-void* MemTracker::malloc_base(void* memblock) {
-  return MallocTracker::get_base(memblock);
 }
 
 void Tracker::record(address addr, size_t size) {
@@ -108,44 +109,13 @@ void Tracker::record(address addr, size_t size) {
   }
 }
 
-
-// Shutdown can only be issued via JCmd, and NMT JCmd is serialized by lock
-void MemTracker::shutdown() {
-  // We can only shutdown NMT to minimal tracking level if it is ever on.
-  if (tracking_level() > NMT_minimal) {
-    transition_to(NMT_minimal);
-  }
-}
-
-bool MemTracker::transition_to(NMT_TrackingLevel level) {
-  NMT_TrackingLevel current_level = tracking_level();
-
-  assert(level != NMT_off || current_level == NMT_off, "Cannot transition NMT to off");
-
-  if (current_level == level) {
-    return true;
-  } else if (current_level > level) {
-    // Downgrade tracking level, we want to lower the tracking level first
-    _tracking_level = level;
-    // Make _tracking_level visible immediately.
-    OrderAccess::fence();
-    VirtualMemoryTracker::transition(current_level, level);
-    MallocTracker::transition(current_level, level);
-    ThreadStackTracker::transition(current_level, level);
-  } else {
-    // Upgrading tracking level is not supported and has never been supported.
-    // Allocating and deallocating malloc tracking structures is not thread safe and
-    // leads to inconsistencies unless a lot coarser locks are added.
-  }
-  return true;
-}
-
 // Report during error reporting.
 void MemTracker::error_report(outputStream* output) {
-  if (tracking_level() >= NMT_summary) {
+  if (enabled()) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
+    MallocLimitHandler::print_on(output);
   }
 }
 
@@ -157,29 +127,25 @@ void MemTracker::final_report(outputStream* output) {
   // printing the final report during normal VM exit, it should not print
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
-  if (Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
-    NMT_TrackingLevel level = tracking_level();
-    if (level >= NMT_summary) {
-      report(level == NMT_summary, output, 1);
-    }
+  if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
+    report(tracking_level() == NMT_summary, output, 1);
   }
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
- assert(output != NULL, "No output stream");
+ assert(output != nullptr, "No output stream");
   MemBaseline baseline;
-  if (baseline.baseline(summary_only)) {
-    if (summary_only) {
-      MemSummaryReporter rpt(baseline, output, scale);
-      rpt.report();
-    } else {
-      MemDetailReporter rpt(baseline, output, scale);
-      rpt.report();
-      output->print("Metaspace:");
-      // The basic metaspace report avoids any locking and should be safe to
-      // be called at any time.
-      MetaspaceUtils::print_basic_report(output, scale);
-    }
+  baseline.baseline(summary_only);
+  if (summary_only) {
+    MemSummaryReporter rpt(baseline, output, scale);
+    rpt.report();
+  } else {
+    MemDetailReporter rpt(baseline, output, scale);
+    rpt.report();
+    output->print("Metaspace:");
+    // The basic metaspace report avoids any locking and should be safe to
+    // be called at any time.
+    MetaspaceUtils::print_basic_report(output, scale);
   }
 }
 
@@ -189,11 +155,11 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->print_cr("State: %s", NMTUtil::tracking_level_to_string(_tracking_level));
   out->print_cr("Malloc allocation site table size: %d", MallocSiteTable::hash_buckets());
   out->print_cr("             Tracking stack depth: %d", NMT_TrackingStackDepth);
-  NOT_PRODUCT(out->print_cr("Peak concurrent access: %d", MallocSiteTable::access_peak_count());)
   out->cr();
   MallocSiteTable::print_tuning_statistics(out);
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
+  MallocLimitHandler::print_on(out);
   out->cr();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2019
+ * @LastModified: Jul 2022
  */
 public class XPATHErrorResources_ja extends ListResourceBundle
 {
@@ -140,6 +140,7 @@ public class XPATHErrorResources_ja extends ListResourceBundle
          "ER_EXPECTED_SINGLE_QUOTE";
   public static final String ER_EMPTY_EXPRESSION = "ER_EMPTY_EXPRESSION";
   public static final String ER_EXPECTED_BUT_FOUND = "ER_EXPECTED_BUT_FOUND";
+  public static final String ER_UNION_MUST_BE_NODESET = "ER_UNION_MUST_BE_NODESET";
   public static final String ER_INCORRECT_PROGRAMMER_ASSERTION =
          "ER_INCORRECT_PROGRAMMER_ASSERTION";
   public static final String ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL =
@@ -203,9 +204,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "ER_FUNCTION_TOKEN_NOT_FOUND";
   public static final String ER_CANNOT_DEAL_XPATH_TYPE =
          "ER_CANNOT_DEAL_XPATH_TYPE";
-  public static final String ER_NODESET_NOT_MUTABLE = "ER_NODESET_NOT_MUTABLE";
-  public static final String ER_NODESETDTM_NOT_MUTABLE =
-         "ER_NODESETDTM_NOT_MUTABLE";
    /**  Variable not resolvable:   */
   public static final String ER_VAR_NOT_RESOLVABLE = "ER_VAR_NOT_RESOLVABLE";
    /** Null error handler  */
@@ -309,6 +307,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
   public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
+  public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
   public static final String ER_UNSUPPORTED_RETURN_TYPE = "ER_UNSUPPORTED_RETURN_TYPE";
   public static final String ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL = "ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL";
   public static final String ER_ARG_CANNOT_BE_NULL = "ER_ARG_CANNOT_BE_NULL";
@@ -322,6 +322,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_SECUREPROCESSING_FEATURE = "ER_SECUREPROCESSING_FEATURE";
   public static final String ER_NULL_XPATH_FUNCTION_RESOLVER = "ER_NULL_XPATH_FUNCTION_RESOLVER";
   public static final String ER_NULL_XPATH_VARIABLE_RESOLVER = "ER_NULL_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_PROPERTY_NAME_NULL = "ER_PROPERTY_NAME_NULL";
+  public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
+  public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
+  public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
+  public static final String ER_XPATH_GROUP_LIMIT = "ER_XPATH_GROUP_LIMIT";
+  public static final String ER_XPATH_OPERATOR_LIMIT = "ER_XPATH_OPERATOR_LIMIT";
+
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -453,6 +460,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_EXPECTED_BUT_FOUND,
      "{0}\u3067\u306F\u306A\u304F{1}\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F"},
 
+  { ER_UNION_MUST_BE_NODESET,
+     "\u5171\u7528\u4F53\u306E\u30AA\u30DA\u30E9\u30F3\u30C9\u306F\u3001\u30CE\u30FC\u30C9\u30BB\u30C3\u30C8\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
       "\u30D7\u30ED\u30B0\u30E9\u30DE\u30FB\u30A2\u30B5\u30FC\u30B7\u30E7\u30F3\u304C\u4E0D\u6B63\u3067\u3059\u3002- {0}"},
 
@@ -567,12 +577,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_CANNOT_DEAL_XPATH_TYPE,
        "XPath\u30BF\u30A4\u30D7\u3092\u51E6\u7406\u3067\u304D\u307E\u305B\u3093: {0}"},
 
-  { ER_NODESET_NOT_MUTABLE,
-       "\u3053\u306ENodeSet\u306F\u53EF\u5909\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
-
-  { ER_NODESETDTM_NOT_MUTABLE,
-       "\u3053\u306ENodeSetDTM\u306F\u53EF\u5909\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
-
   { ER_VAR_NOT_RESOLVABLE,
         "\u5909\u6570\u3092\u89E3\u6C7A\u3067\u304D\u307E\u305B\u3093: {0}"},
 
@@ -588,7 +592,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "rtf()\u306FXRTreeFragSelectWrapper\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
 
-  { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
+  { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "asNodeIterator()\u306FXRTreeFragSelectWrapper\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
@@ -773,15 +777,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
        "\u5909\u6570{0}\u306EresolveVariable\u304Cnull\u3092\u8FD4\u3057\u3066\u3044\u307E\u3059"},
 
+  { ER_NO_XPATH_VARIABLE_RESOLVER,
+       "\u5909\u6570{0}\u3092\u89E3\u6C7A\u3057\u3088\u3046\u3068\u3057\u3066\u3044\u307E\u3059\u304C\u3001\u5909\u6570\u30EA\u30BE\u30EB\u30D0\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+
+  { ER_NO_XPATH_FUNCTION_PROVIDER,
+       "\u62E1\u5F35\u95A2\u6570{0}\u3092\u547C\u3073\u51FA\u305D\u3046\u3068\u3057\u3066\u3044\u307E\u3059\u304C\u3001\u62E1\u5F35\u30D7\u30ED\u30D0\u30A4\u30C0\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
   { ER_UNSUPPORTED_RETURN_TYPE,
        "\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u306A\u3044\u623B\u308A\u578B: {0}"},
-
-  /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
-
-  { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "\u30BD\u30FC\u30B9\u30FB\u30BF\u30A4\u30D7\u307E\u305F\u306F\u623B\u308A\u578B\u306Fnull\u306B\u3067\u304D\u307E\u305B\u3093"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
@@ -835,6 +840,32 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_NULL_XPATH_VARIABLE_RESOLVER,
        "null\u306EXPathVariableResolver\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#setXPathVariableResolver(null)"},
+
+  /** Field ER_PROPERTY_NAME_NULL                       */
+
+  { ER_PROPERTY_NAME_NULL,
+       "\u30D7\u30ED\u30D1\u30C6\u30A3\u306Bnull\u306E\u540D\u524D\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#setProperty( null, {1})"},
+
+  /** Field ER_PROPERTY_UNKNOWN                       */
+
+  { ER_PROPERTY_UNKNOWN,
+       "\u4E0D\u660E\u306A\u30D7\u30ED\u30D1\u30C6\u30A3\"{0}\"\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F:{1}#setProperty({0},{2})"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_NULL_PROPERTY,
+       "null\u540D\u306E\u30D7\u30ED\u30D1\u30C6\u30A3\u3092\u53D6\u5F97\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#getProperty(null)"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_UNKNOWN_PROPERTY,
+       "\u4E0D\u660E\u306A\u30D7\u30ED\u30D1\u30C6\u30A3\"{0}\"\u3092\u53D6\u5F97\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F:{1}#getProperty({0})"},
+
+  { ER_XPATH_GROUP_LIMIT,
+      "JAXP0801001: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B''{0}''\u30B0\u30EB\u30FC\u30D7\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},
+
+  { ER_XPATH_OPERATOR_LIMIT,
+      "JAXP0801002: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B''{0}''\u6F14\u7B97\u5B50\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

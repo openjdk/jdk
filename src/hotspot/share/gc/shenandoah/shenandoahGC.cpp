@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -51,13 +51,13 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
    }
 }
 
-class ShenandoahUpdateRootsTask : public AbstractGangTask {
+class ShenandoahUpdateRootsTask : public WorkerTask {
 private:
   ShenandoahRootUpdater*  _root_updater;
   bool                    _check_alive;
 public:
   ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
-    AbstractGangTask("Shenandoah Update Roots"),
+    WorkerTask("Shenandoah Update Roots"),
     _root_updater(root_updater),
     _check_alive(check_alive){
   }
@@ -95,7 +95,7 @@ void ShenandoahGC::update_roots(bool full_gc) {
 #endif
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
   ShenandoahRootUpdater root_updater(nworkers, p);

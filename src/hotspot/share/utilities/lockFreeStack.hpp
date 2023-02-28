@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,11 @@ class LockFreeStack {
   NONCOPYABLE(LockFreeStack);
 
 public:
-  LockFreeStack() : _top(NULL) {}
+  LockFreeStack() : _top(nullptr) {}
   ~LockFreeStack() { assert(empty(), "stack not empty"); }
 
   // Atomically removes the top object from this stack and returns a
-  // pointer to that object, or NULL if this stack is empty. Acts as a
+  // pointer to that object, or nullptr if this stack is empty. Acts as a
   // full memory barrier. Subject to ABA behavior; callers must ensure
   // usage is safe.
   T* pop() {
@@ -84,43 +84,43 @@ public:
     T* old;
     do {
       old = result;
-      T* new_top = NULL;
-      if (result != NULL) {
+      T* new_top = nullptr;
+      if (result != nullptr) {
         new_top = next(*result);
       }
-      // CAS even on empty pop, for consistent membar bahavior.
+      // CAS even on empty pop, for consistent membar behavior.
       result = Atomic::cmpxchg(&_top, result, new_top);
     } while (result != old);
-    if (result != NULL) {
-      set_next(*result, NULL);
+    if (result != nullptr) {
+      set_next(*result, nullptr);
     }
     return result;
   }
 
-  // Atomically exchange the list of elements with NULL, returning the old
+  // Atomically exchange the list of elements with nullptr, returning the old
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {
-    return Atomic::xchg(&_top, (T*)NULL);
+    return Atomic::xchg(&_top, (T*)nullptr);
   }
 
   // Atomically adds value to the top of this stack.  Acts as a full
   // memory barrier.
   void push(T& value) {
-    assert(next(value) == NULL, "precondition");
+    assert(next(value) == nullptr, "precondition");
     prepend_impl(&value, &value);
   }
 
   // Atomically adds the list of objects (designated by first and
   // last) before the objects already in this stack, in the same order
   // as in the list. Acts as a full memory barrier.
-  // precondition: next(last) == NULL.
+  // precondition: next(last) == nullptr.
   // postcondition: top() == &first, next(last) == old top().
   void prepend(T& first, T& last) {
-    assert(next(last) == NULL, "precondition");
+    assert(next(last) == nullptr, "precondition");
 #ifdef ASSERT
     for (T* p = &first; p != &last; p = next(*p)) {
-      assert(p != NULL, "invalid prepend list");
+      assert(p != nullptr, "invalid prepend list");
     }
 #endif
     prepend_impl(&first, &last);
@@ -134,16 +134,16 @@ public:
     T* last = &first;
     while (true) {
       T* step_to = next(*last);
-      if (step_to == NULL) break;
+      if (step_to == nullptr) break;
       last = step_to;
     }
     prepend_impl(&first, last);
   }
 
   // Return true if the stack is empty.
-  bool empty() const { return top() == NULL; }
+  bool empty() const { return top() == nullptr; }
 
-  // Return the most recently pushed element, or NULL if the stack is empty.
+  // Return the most recently pushed element, or nullptr if the stack is empty.
   // The returned element is not removed from the stack.
   T* top() const { return Atomic::load(&_top); }
 
@@ -151,7 +151,7 @@ public:
   // pops while the length is being determined.
   size_t length() const {
     size_t result = 0;
-    for (const T* current = top(); current != NULL; current = next(*current)) {
+    for (const T* current = top(); current != nullptr; current = next(*current)) {
       ++result;
     }
     return result;

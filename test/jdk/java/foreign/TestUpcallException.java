@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @library /test/lib
- * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build ThrowingUpcall TestUpcallException
  *
  * @run testng/othervm/native
@@ -33,73 +33,26 @@
  *   TestUpcallException
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.test.lib.Utils;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Paths;
-import java.util.List;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+public class TestUpcallException extends UpcallTestHelper {
 
-public class TestUpcallException {
-
-    @Test
-    public void testExceptionInterpreted() throws InterruptedException, IOException {
-        boolean useSpec = false;
-        run(useSpec);
+    @Test(dataProvider = "cases")
+    public void testException(boolean useSpec, boolean isVoid) throws InterruptedException, IOException {
+        runInNewProcess(ThrowingUpcall.class, useSpec, isVoid ? "void" : "")
+                .assertStdErrContains("Testing upcall exceptions");
     }
 
-    @Test
-    public void testExceptionSpecialized() throws IOException, InterruptedException {
-        boolean useSpec = true;
-        run(useSpec);
-    }
-
-    private void run(boolean useSpec) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder()
-            .command(
-                Paths.get(Utils.TEST_JDK)
-                     .resolve("bin")
-                     .resolve("java")
-                     .toAbsolutePath()
-                     .toString(),
-                "--add-modules", "jdk.incubator.foreign",
-                "--enable-native-access=ALL-UNNAMED",
-                "-Djava.library.path=" + System.getProperty("java.library.path"),
-                "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,
-                "-cp", Utils.TEST_CLASS_PATH,
-                "ThrowingUpcall")
-            .start();
-
-        int result = process.waitFor();
-        assertNotEquals(result, 0);
-
-        List<String> outLines = linesFromStream(process.getInputStream());
-        outLines.forEach(System.out::println);
-        List<String> errLines = linesFromStream(process.getErrorStream());
-        errLines.forEach(System.err::println);
-
-        // Exception message would be found in stack trace
-        String shouldInclude = "Testing upcall exceptions";
-        assertTrue(linesContain(errLines, shouldInclude), "Did not find '" + shouldInclude + "' in stderr");
-    }
-
-    private boolean linesContain(List<String> errLines, String shouldInclude) {
-        return errLines.stream().anyMatch(line -> line.contains(shouldInclude));
-    }
-
-    private static List<String> linesFromStream(InputStream stream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            return reader.lines().toList();
-        }
+    @DataProvider
+    public static Object[][] cases() {
+        return new Object[][]{
+            { false, true,  },
+            { false, false, },
+            { true,  true,  },
+            { true,  false, }
+        };
     }
 }

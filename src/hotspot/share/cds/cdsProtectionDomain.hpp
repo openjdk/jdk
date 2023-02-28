@@ -24,10 +24,11 @@
 
 #ifndef SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
 #define SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
+
+#include "classfile/moduleEntry.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.hpp"
-#include "classfile/moduleEntry.hpp"
+#include "runtime/javaThread.hpp"
 
 class InstanceKlass;
 class Symbol;

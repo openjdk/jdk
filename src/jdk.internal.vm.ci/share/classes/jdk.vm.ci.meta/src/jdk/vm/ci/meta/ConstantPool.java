@@ -22,6 +22,9 @@
  */
 package jdk.vm.ci.meta;
 
+import java.lang.invoke.MethodType;
+import java.util.List;
+
 /**
  * Represents the runtime representation of the constant pool that is used by the compiler when
  * parsing bytecode. Provides methods to look up a constant pool entry without performing
@@ -45,6 +48,24 @@ public interface ConstantPool {
      * @param opcode the opcode of the instruction that references the type
      */
     void loadReferencedType(int cpi, int opcode);
+
+    /**
+     * Ensures that the type referenced by the specified constant pool entry is loaded. This can be
+     * used to compile time resolve a type. It works for field, method, or type constant pool
+     * entries.
+     *
+     * @param cpi the index of the constant pool entry that references the type
+     * @param opcode the opcode of the instruction that references the type
+     * @param initialize if {@code true}, the referenced type is either guaranteed to be initialized
+     *            upon return or an initialization exception is thrown
+     */
+    default void loadReferencedType(int cpi, int opcode, boolean initialize) {
+        if (initialize) {
+            loadReferencedType(cpi, opcode);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     /**
      * Looks up the type referenced by the constant pool entry at {@code cpi} as referenced by the
@@ -82,7 +103,85 @@ public interface ConstantPool {
      * @return a reference to the method at {@code cpi} in this pool
      * @throws ClassFormatError if the entry at {@code cpi} is not a method
      */
-    JavaMethod lookupMethod(int cpi, int opcode);
+    default JavaMethod lookupMethod(int cpi, int opcode) {
+        return lookupMethod(cpi, opcode, null);
+    }
+
+    /**
+     * Looks up a reference to a method. If {@code opcode} is non-negative, then resolution checks
+     * specific to the bytecode it denotes are performed if the method is already resolved. Should
+     * any of these checks fail, an unresolved method reference is returned.
+     *
+     * @param cpi the constant pool index
+     * @param opcode the opcode of the instruction for which the lookup is being performed or
+     *            {@code -1}
+     * @param caller if non-null, do access checks in the context of {@code caller} calling the
+     *            looked up method
+     * @return a reference to the method at {@code cpi} in this pool
+     * @throws ClassFormatError if the entry at {@code cpi} is not a method
+     * @throws IllegalAccessError if {@code caller} is non-null and it cannot link against the
+     *             looked up method
+     */
+    JavaMethod lookupMethod(int cpi, int opcode, ResolvedJavaMethod caller);
+
+    /**
+     * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}
+     * or {@code CONSTANT_InvokeDynamic_info} pool entry .
+     *
+     * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info}
+     *       Structures
+     * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
+     */
+    interface BootstrapMethodInvocation {
+        /**
+         * Gets the bootstrap method that will be invoked.
+         */
+        ResolvedJavaMethod getMethod();
+
+        /**
+         * Returns {@code true} if this bootstrap method invocation is for a
+         * {@code CONSTANT_InvokeDynamic_info} pool entry, {@code false} if it is for a
+         * {@code CONSTANT_Dynamic_info} entry.
+         */
+        boolean isInvokeDynamic();
+
+        /**
+         * Gets the name of the pool entry.
+         */
+        String getName();
+
+        /**
+         * Returns a reference to the {@link MethodType} ({@code this.isInvokeDynamic() == true}) or
+         * {@link Class} ({@code this.isInvokeDynamic() == false}) resolved for the descriptor of
+         * the pool entry.
+         */
+        JavaConstant getType();
+
+        /**
+         * Gets the static arguments with which the bootstrap method will be invoked.
+         *
+         * @jvms 5.4.3.6
+         */
+        List<JavaConstant> getStaticArguments();
+    }
+
+    /**
+     * Gets the details for invoking a bootstrap method associated with the
+     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry {@code cpi}
+     * in the constant pool.
+     *
+     * @param cpi a constant pool index
+     * @param opcode the opcode of the instruction that has {@code cpi} as an operand or -1 if
+     *            {@code cpi} was not decoded from an instruction stream
+     * @return the bootstrap method invocation details or {@code null} if the entry at {@code cpi}
+     *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
+     * @throws IllegalArgumentException if the bootstrap method invocation makes use of
+     *             {@code java.lang.invoke.BootstrapCallInfo}
+     * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
+     */
+    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int cpi, int opcode) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Looks up a reference to a type. If {@code opcode} is non-negative, then resolution checks

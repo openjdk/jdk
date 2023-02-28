@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -33,25 +34,20 @@ public class SelectionModeAction extends AbstractAction {
 
     public SelectionModeAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Selection mode");
+        putValue(SELECTED_KEY, false);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
-    }
-
-    public void setSelected(boolean b) {
-        if (isSelected() != b) {
-            this.putValue(SELECTED_KEY, b);
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.setSelectionMode(selected);
         }
     }
 
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/selection_mode.png";
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
     }
 }

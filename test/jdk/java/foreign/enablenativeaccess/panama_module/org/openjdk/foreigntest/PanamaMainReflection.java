@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,27 @@
 
 package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.*;
+import java.lang.foreign.*;
+import java.lang.foreign.SegmentScope;
 import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
    public static void main(String[] args) throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("getInstance");
-       method.invoke(null);
+       testReflectionnativeLinker();
+       testReflectionMemorySegment();
    }
+
+    public static void testReflectionnativeLinker() throws Throwable {
+        System.out.println("Trying to get Linker");
+        Method method = Linker.class.getDeclaredMethod("nativeLinker");
+        method.invoke(null);
+        System.out.println("Got Linker");
+    }
+
+    public static void testReflectionMemorySegment() throws Throwable {
+        System.out.println("Trying to get MemorySegment");
+        Method method = MemorySegment.class.getDeclaredMethod("ofAddress", long.class, long.class, SegmentScope.class);
+        method.invoke(null, 0L, 4000L, SegmentScope.global());
+        System.out.println("Got MemorySegment");
+    }
 }

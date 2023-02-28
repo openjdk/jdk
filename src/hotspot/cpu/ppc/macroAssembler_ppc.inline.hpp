@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -241,7 +242,7 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
 // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
 inline void MacroAssembler::set_cmp3(Register dst) {
   assert_different_registers(dst, R0);
-  // P10, prefer using setbc intructions
+  // P10, prefer using setbc instructions
   if (VM_Version::has_brw()) {
     setbc(R0, CCR0, Assembler::greater); // Set 1 to R0 if CCR0bi is "greater than", otherwise 0
     setnbc(dst, CCR0, Assembler::less); // Set -1 to dst if CCR0bi is "less than", otherwise 0
@@ -356,7 +357,7 @@ inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorat
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bool as_raw = (decorators & AS_RAW) != 0;
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type,
                                       base, ind_or_offs, val,
@@ -376,7 +377,7 @@ inline void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorato
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type,
@@ -397,11 +398,11 @@ inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, R
                  preservation_level, L_handle_null);
 }
 
-inline void MacroAssembler::store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
+inline void MacroAssembler::store_heap_oop(Register val, RegisterOrConstant offs, Register base,
                                            Register tmp1, Register tmp2, Register tmp3,
                                            MacroAssembler::PreservationLevel preservation_level,
                                            DecoratorSet decorators) {
-  access_store_at(T_OBJECT, decorators | IN_HEAP, s1, offs, d, tmp1, tmp2, tmp3, preservation_level);
+  access_store_at(T_OBJECT, decorators | IN_HEAP, base, offs, val, tmp1, tmp2, tmp3, preservation_level);
 }
 
 inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register src) {

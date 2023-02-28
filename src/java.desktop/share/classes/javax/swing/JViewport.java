@@ -565,7 +565,7 @@ public class JViewport extends JComponent implements Accessible
      * a <code>JViewPort</code>.
      *
      * @param border the <code>Border</code> to set
-     * @exception IllegalArgumentException this method is not implemented
+     * @throws IllegalArgumentException this method is not implemented
      */
     public final void setBorder(Border border) {
         if (border != null) {
@@ -1695,7 +1695,7 @@ public class JViewport extends JComponent implements Accessible
     // NOTE: the code below uses paintForceDoubleBuffered for historical
     // reasons.  If we're going to allow a blit we've already accounted for
     // everything that paintImmediately and _paintImmediately does, for that
-    // reason we call into paintForceDoubleBuffered to diregard whether or
+    // reason we call into paintForceDoubleBuffered to disregard whether or
     // not setDoubleBuffered(true) was invoked on the view.
     //
 

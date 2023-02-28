@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,4 @@ module jdk.management.agent {
     requires java.management.rmi;
 
     exports jdk.internal.agent to jdk.jconsole;
-
-    uses jdk.internal.agent.spi.AgentProvider;
 }

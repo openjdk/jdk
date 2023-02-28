@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,17 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterSetting;
 import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.swing.JComboBox;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
@@ -67,10 +74,12 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     public static final String AFTER_ID = "after";
     public static final String ENABLED_ID = "enabled";
     public static final String PREFERRED_ID = "FilterTopComponent";
+    public static final String JAVASCRIPT_HELPER_ID = "JavaScriptHelper";
     private CheckListView view;
     private ExplorerManager manager;
     private FilterChain filterChain;
     private FilterChain sequence;
+    private ScriptEngine engine;
     private Lookup.Result<FilterChain> result;
     private JComboBox comboBox;
     private List<FilterSetting> filterSettings;
@@ -175,13 +184,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filterSettings.add(setting);
 
             // Sort alphabetically
-            filterSettings.sort(new Comparator<FilterSetting>() {
-
-                @Override
-                public int compare(FilterSetting o1, FilterSetting o2) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+            filterSettings.sort(Comparator.comparing(FilterSetting::getName));
 
             updateComboBox();
         }
@@ -259,13 +262,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
 
         public FilterChildren() {
-            sequence.getChangedEvent().addListener(new ChangedListener<FilterChain>() {
-
-                @Override
-                public void changed(FilterChain source) {
-                    addNotify();
-                }
-            });
+            sequence.getChangedEvent().addListener(source -> addNotify());
 
             setBefore(false);
         }
@@ -300,6 +297,36 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         return filterChain;
     }
 
+    private static String getJsHelperText() {
+        InputStream is = null;
+        StringBuilder sb = new StringBuilder("if (typeof importPackage === 'undefined') { try { load('nashorn:mozilla_compat.js'); } catch (e) {} }"
+                + "importPackage(Packages.com.sun.hotspot.igv.filter);"
+                + "importPackage(Packages.com.sun.hotspot.igv.graph);"
+                + "importPackage(Packages.com.sun.hotspot.igv.data);"
+                + "importPackage(Packages.com.sun.hotspot.igv.util);"
+                + "importPackage(java.awt);");
+        try {
+            FileObject fo = FileUtil.getConfigRoot().getFileObject(JAVASCRIPT_HELPER_ID);
+            is = fo.getInputStream();
+            BufferedReader r = new BufferedReader(new InputStreamReader(is));
+            String s;
+            while ((s = r.readLine()) != null) {
+                sb.append(s);
+                sb.append("\n");
+            }
+
+        } catch (IOException ex) {
+            Logger.getLogger("global").log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+        return sb.toString();
+    }
+
     private FilterTopComponent() {
         filterSettingsChangedEvent = new ChangedEvent<>(this);
         initComponents();
@@ -309,6 +336,14 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         sequence = new FilterChain();
         filterChain = new FilterChain();
+        ScriptEngineManager sem = new ScriptEngineManager();
+        engine = sem.getEngineByName("ECMAScript");
+        try {
+            engine.eval(getJsHelperText());
+        } catch (ScriptException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("IO", System.out);
         initFilters();
         manager = new ExplorerManager();
         manager.setRootContext(new AbstractNode(new FilterChildren()));
@@ -317,8 +352,9 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolBar.setBorder(b);
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         comboBox = new JComboBox();
         toolBar.add(comboBox);
         this.add(toolBar, BorderLayout.NORTH);
@@ -339,7 +375,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     public void newFilter() {
-        CustomFilter cf = new CustomFilter("My custom filter", "");
+        CustomFilter cf = new CustomFilter("My custom filter", "", engine);
         if (cf.openInEditor()) {
             sequence.addFilter(cf);
             FileObject fo = getFileObject(cf);
@@ -437,7 +473,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             String displayName = fo.getName();
 
 
-            final CustomFilter cf = new CustomFilter(displayName, code);
+            final CustomFilter cf = new CustomFilter(displayName, code, engine);
             map.put(displayName, cf);
 
             String after = (String) fo.getAttribute(AFTER_ID);
@@ -498,7 +534,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized FilterTopComponent getDefault() {
         if (instance == null) {
@@ -657,14 +693,5 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filterSettings.add(s);
         }
         updateComboBox();
-    }
-
-    final static class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return FilterTopComponent.getDefault();
-        }
     }
 }

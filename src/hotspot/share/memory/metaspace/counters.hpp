@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 #ifndef SHARE_MEMORY_METASPACE_COUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_COUNTERS_HPP
 
-#include "metaprogramming/isSigned.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 namespace metaspace {
 
@@ -43,7 +44,7 @@ class AbstractCounter {
   T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(IsSigned<T>::value == false);
+  STATIC_ASSERT(std::is_signed<T>::value == false);
 
 public:
 
@@ -70,8 +71,6 @@ public:
     _c -= v;
   }
 
-  void reset()                { _c = 0; }
-
 #ifdef ASSERT
   void check(T expected) const {
     assert(_c == expected, "Counter mismatch: %d, expected: %d.",
@@ -88,7 +87,7 @@ class AbstractAtomicCounter {
   volatile T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(IsSigned<T>::value == false);
+  STATIC_ASSERT(std::is_signed<T>::value == false);
 
 public:
 

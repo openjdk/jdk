@@ -53,6 +53,7 @@ public class DockerBasicTest {
         try {
             testJavaVersion();
             testHelloDocker();
+            testJavaVersionWithCgMounts();
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageNameAndTag);
@@ -80,5 +81,18 @@ public class DockerBasicTest {
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
             .shouldContain("Hello Docker");
+    }
+
+
+    private static void testJavaVersionWithCgMounts() throws Exception {
+        DockerRunOptions opts =
+            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
+            .addDockerOpts("-v", "/sys/fs/cgroup:/cgroups-in:ro");
+
+        // Duplicated cgroup mounts should be handled by the container detection
+        // code and should not cause any error/warning output.
+        DockerTestUtils.dockerRunJava(opts)
+            .shouldHaveExitValue(0)
+            .shouldNotMatch("\\[os,container *\\]");
     }
 }

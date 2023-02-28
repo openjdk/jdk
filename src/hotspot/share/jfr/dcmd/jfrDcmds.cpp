@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
@@ -55,57 +56,6 @@ bool register_jfr_dcmds() {
   return true;
 }
 
-// JNIHandle management
-
-// ------------------------------------------------------------------
-// push_jni_handle_block
-//
-// Push on a new block of JNI handles.
-static void push_jni_handle_block(JavaThread* const thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  // Allocate a new block for JNI handles.
-  // Inlined code from jni_PushLocalFrame()
-  JNIHandleBlock* prev_handles = thread->active_handles();
-  JNIHandleBlock* entry_handles = JNIHandleBlock::allocate_block(thread);
-  assert(entry_handles != NULL && prev_handles != NULL, "should not be NULL");
-  entry_handles->set_pop_frame_link(prev_handles);  // make sure prev handles get gc'd.
-  thread->set_active_handles(entry_handles);
-}
-
-// ------------------------------------------------------------------
-// pop_jni_handle_block
-//
-// Pop off the current block of JNI handles.
-static void pop_jni_handle_block(JavaThread* const thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  // Release our JNI handle block
-  JNIHandleBlock* entry_handles = thread->active_handles();
-  JNIHandleBlock* prev_handles = entry_handles->pop_frame_link();
-  // restore
-  thread->set_active_handles(prev_handles);
-  entry_handles->set_pop_frame_link(NULL);
-  JNIHandleBlock::release_block(entry_handles, thread); // may block
-}
-
-class JNIHandleBlockManager : public StackObj {
- private:
-  JavaThread* const _thread;
- public:
-  JNIHandleBlockManager(JavaThread* thread) : _thread(thread) {
-    push_jni_handle_block(_thread);
-  }
-
-  ~JNIHandleBlockManager() {
-    pop_jni_handle_block(_thread);
-  }
-};
-
-static bool is_module_available(outputStream* output, TRAPS) {
-  return JfrJavaSupport::is_jdk_jfr_module_available(output, THREAD);
-}
-
 static bool is_disabled(outputStream* output) {
   if (Jfr::is_disabled()) {
     if (output != NULL) {
@@ -118,7 +68,28 @@ static bool is_disabled(outputStream* output) {
 
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  return is_disabled(out) || !is_module_available(out, THREAD);
+  if (is_disabled(out)) {
+    return true;
+  }
+  if (!JfrJavaSupport::is_jdk_jfr_module_available()) {
+    JfrJavaSupport::load_jdk_jfr_module(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // Log exception here, but let is_jdk_jfr_module_available(out, THREAD)
+      // handle output to the user.
+      ResourceMark rm(THREAD);
+      oop throwable = PENDING_EXCEPTION;
+      assert(throwable != nullptr, "invariant");
+      oop msg = java_lang_Throwable::message(throwable);
+      if (msg != nullptr) {
+        char* text = java_lang_String::as_utf8_string(msg);
+        if (text != nullptr) {
+          log_debug(jfr, startup)("Flight Recorder can not be enabled. %s", text);
+        }
+      }
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
+  return !JfrJavaSupport::is_jdk_jfr_module_available(out, THREAD);
 }
 
 static void handle_pending_exception(outputStream* output, bool startup, oop throwable) {
@@ -179,7 +150,7 @@ static void handle_dcmd_result(outputStream* output,
   const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
     handle_pending_exception(output, startup, PENDING_EXCEPTION);
-    // Don't clear excption on startup, JVM should fail initialization.
+    // Don't clear exception on startup, JVM should fail initialization.
     if (!startup) {
       CLEAR_PENDING_EXCEPTION;
     }
@@ -223,7 +194,7 @@ void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   constructor_args.set_klass(javaClass(), CHECK);
 
   HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
+  JNIHandleMark jni_handle_management(THREAD);
 
   const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
 
@@ -285,7 +256,7 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
                                                         false,
                                                         true, // a DcmdFramework "option"
                                                         false);
-  for (int i = 0; i < array->max_length(); ++i) {
+  for (int i = 0; i < array->capacity(); ++i) {
     array->append(dummy);
   }
 }
@@ -294,12 +265,10 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
 // we keep them in a thread local arena. The arena is reset between invocations.
 static THREAD_LOCAL Arena* dcmd_arena = NULL;
 
-static void prepare_dcmd_string_arena() {
-  if (dcmd_arena == NULL) {
-    dcmd_arena = new (mtTracing) Arena(mtTracing);
-  } else {
-    dcmd_arena->destruct_contents(); // will grow on next allocation
-  }
+static void prepare_dcmd_string_arena(JavaThread* jt) {
+  dcmd_arena = JfrThreadLocal::dcmd_arena(jt);
+  assert(dcmd_arena != nullptr, "invariant");
+  dcmd_arena->destruct_contents(); // will grow on next allocation
 }
 
 static char* dcmd_arena_allocate(size_t size) {
@@ -307,7 +276,7 @@ static char* dcmd_arena_allocate(size_t size) {
   return (char*)dcmd_arena->Amalloc(size);
 }
 
-static const char* get_as_dcmd_arena_string(oop string, JavaThread* t) {
+static const char* get_as_dcmd_arena_string(oop string) {
   char* str = NULL;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != NULL) {
@@ -328,7 +297,7 @@ static const char* read_string_field(oop argument, const char* field_name, TRAPS
   args.set_receiver(argument);
   JfrJavaSupport::get_field(&args, THREAD);
   const oop string_oop = result.get_oop();
-  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop, (JavaThread*)THREAD) : NULL;
+  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop) : NULL;
 }
 
 static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
@@ -377,7 +346,7 @@ GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
   assert(arguments->is_array(), "must be array");
   const int num_arguments = arguments->length();
   assert(num_arguments == _num_arguments, "invariant");
-  prepare_dcmd_string_arena();
+  prepare_dcmd_string_arena(thread);
   for (int i = 0; i < num_arguments; ++i) {
     DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
     assert(dai != NULL, "invariant");
@@ -426,21 +395,21 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("  globalbuffercount  (Optional) Number of global buffers. This option is a legacy");
   out->print_cr("                     option: change the memorysize parameter to alter the number of");
   out->print_cr("                     global buffers. This value cannot be changed once JFR has been");
-  out->print_cr("                     initalized. (STRING, default determined by the value for");
+  out->print_cr("                     initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
   out->print_cr("  globalbuffersize   (Optional) Size of the global buffers, in bytes. This option is a");
   out->print_cr("                     legacy option: change the memorysize parameter to alter the size");
   out->print_cr("                     of the global buffers. This value cannot be changed once JFR has");
-  out->print_cr("                     been initalized. (STRING, default determined by the value for");
+  out->print_cr("                     been initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
-  out->print_cr("   maxchunksize      (Optional) Maximum size of an individual data chunk in bytes if");
+  out->print_cr("  maxchunksize       (Optional) Maximum size of an individual data chunk in bytes if");
   out->print_cr("                     one of the following suffixes is not used: 'm' or 'M' for");
   out->print_cr("                     megabytes OR 'g' or 'G' for gigabytes. This value cannot be");
   out->print_cr("                     changed once JFR has been initialized. (STRING, 12M)");
   out->print_cr("");
-  out->print_cr("   memorysize        (Optional) Overall memory size, in bytes if one of the following");
+  out->print_cr("  memorysize         (Optional) Overall memory size, in bytes if one of the following");
   out->print_cr("                     suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for");
   out->print_cr("                     gigabytes. This value cannot be changed once JFR has been");
   out->print_cr("                     initialized. (STRING, 10M)");
@@ -450,7 +419,11 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     location is the temporary directory for the operating system. On");
   out->print_cr("                     Linux operating systems, the temporary directory is /tmp. On");
   out->print_cr("                     Windows, the temporary directory is specified by the TMP");
-  out->print_cr("                     environment variable.)");
+  out->print_cr("                     environment variable)");
+  out->print_cr("");
+  out->print_cr("  dumppath           (Optional) Path to the location where a recording file is written");
+  out->print_cr("                     in case the VM runs into a critical error, such as a system");
+  out->print_cr("                     crash. (STRING, The default location is the current directory)");
   out->print_cr("");
   out->print_cr("  stackdepth         (Optional) Stack depth for stack traces. Setting this value");
   out->print_cr("                     greater than the default of 64 may cause a performance");
@@ -462,8 +435,6 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     'm' or 'M' for megabytes. Overriding this parameter could reduce");
   out->print_cr("                     performance and is not recommended. This value cannot be changed");
   out->print_cr("                     once JFR has been initialized. (STRING, 8k)");
-  out->print_cr("");
-  out->print_cr("  samplethreads      (Optional) Flag for activating thread sampling. (BOOLEAN, true)");
   out->print_cr("");
   out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
   out->print_cr("");
@@ -494,7 +465,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
+  JNIHandleMark jni_handle_management(THREAD);
 
   JavaValue result(T_OBJECT);
   JfrJavaArguments constructor_args(&result);
@@ -514,45 +485,47 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   jobject stack_depth = NULL;
-  if (_stack_depth.is_set()) {
-    stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
-  }
-
   jobject global_buffer_count = NULL;
-  if (_global_buffer_count.is_set()) {
-    global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
-  }
-
   jobject global_buffer_size = NULL;
-  if (_global_buffer_size.is_set()) {
-    global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value()._size, CHECK);
-  }
-
   jobject thread_buffer_size = NULL;
-  if (_thread_buffer_size.is_set()) {
-    thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value()._size, CHECK);
-  }
-
   jobject max_chunk_size = NULL;
-  if (_max_chunk_size.is_set()) {
-    max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value()._size, CHECK);
-  }
-
   jobject memory_size = NULL;
-  if (_memory_size.is_set()) {
-    memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
-  }
 
-  jobject sample_threads = NULL;
-  if (_sample_threads.is_set()) {
-    sample_threads = JfrJavaSupport::new_java_lang_Boolean(_sample_threads.value(), CHECK);
+  if (!JfrRecorder::is_created()) {
+    if (_stack_depth.is_set()) {
+      stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
+    }
+    if (_global_buffer_count.is_set()) {
+      global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
+    }
+    if (_global_buffer_size.is_set()) {
+      global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value()._size, CHECK);
+    }
+    if (_thread_buffer_size.is_set()) {
+      thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value()._size, CHECK);
+    }
+    if (_max_chunk_size.is_set()) {
+      max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value()._size, CHECK);
+    }
+    if (_memory_size.is_set()) {
+      memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
+    }
+    if (_sample_threads.is_set()) {
+      bool startup = DCmd_Source_Internal == source;
+      if (startup) {
+        log_warning(jfr,startup)("%s", "Option samplethreads is deprecated. Use -XX:StartFlightRecording:method-profiling=<off|normal|high|max>");
+      } else {
+        output()->print_cr("%s", "Option samplethreads is deprecated. Use JFR.start method-profiling=<off|normal|high|max>");
+        output()->print_cr("");
+      }
+    }
   }
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdConfigure";
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
     "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
-    "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
+    "Ljava/lang/Long;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -567,7 +540,6 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(thread_buffer_size);
   execute_args.push_jobject(memory_size);
   execute_args.push_jobject(max_chunk_size);
-  execute_args.push_jobject(sample_threads);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);

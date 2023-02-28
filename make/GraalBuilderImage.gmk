@@ -23,7 +23,7 @@
 # questions.
 #
 
-# This makefile creates a jdk image overlayed with statically linked core
+# This makefile creates a jdk image overlaid with statically linked core
 # libraries.
 
 default: all

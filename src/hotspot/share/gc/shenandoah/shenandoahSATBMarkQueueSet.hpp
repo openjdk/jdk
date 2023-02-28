@@ -27,8 +27,8 @@
 
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/thread.hpp"
 
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
 public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.spi.ToolProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
@@ -51,7 +50,7 @@ import static org.testng.Assert.*;
 @Test
 public class SetDefaultProvider {
 
-    private static String SET_DEFAULT_FSP =
+    private static final String SET_DEFAULT_FSP =
         "-Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider";
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -73,7 +72,7 @@ public class SetDefaultProvider {
         String testClasses = System.getProperty("test.classes");
         String classpath = moduleClasses + File.pathSeparator + testClasses;
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -88,7 +87,7 @@ public class SetDefaultProvider {
         String classpath = jar + File.pathSeparator + testClasses
                 + File.separator + "modules" + File.separator + "m";
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -112,7 +111,7 @@ public class SetDefaultProvider {
             }
         }
         int ret = JAR_TOOL.run(System.out, System.out, args.toArray(new String[0]));
-        assertTrue(ret == 0);
+        assertEquals(ret, 0);
     }
 
     /**
@@ -128,7 +127,7 @@ public class SetDefaultProvider {
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath,
             "-Dtest.classes=" + testClasses, "-Djava.security.manager",
             "-Djava.security.policy==" + policyFile, "p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -138,7 +137,7 @@ public class SetDefaultProvider {
     public void testExplodedModule() throws Exception {
         String modulePath = System.getProperty("jdk.module.path");
         int exitValue = exec(SET_DEFAULT_FSP, "-p", modulePath, "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -148,7 +147,7 @@ public class SetDefaultProvider {
     public void testModularJar() throws Exception {
         String jarFile = createModularJar();
         int exitValue = exec(SET_DEFAULT_FSP, "-p", jarFile, "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -162,7 +161,7 @@ public class SetDefaultProvider {
                              "--patch-module", "m=" + patchdir,
                              "-p", modulePath,
                              "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -178,7 +177,7 @@ public class SetDefaultProvider {
                              "--patch-module", "m=" + patch,
                              "-p", modulePath,
                              "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -190,7 +189,7 @@ public class SetDefaultProvider {
             Path m = Paths.get(dir, "m");
             if (Files.exists(m)) return m.toString();
         }
-        assertFalse(true);
+        fail();
         return null;
     }
 
@@ -210,7 +209,7 @@ public class SetDefaultProvider {
         Path jar = createTempDirectory("tmp").resolve("m.jar");
         String[] args = { "--create", "--file=" + jar, "-C", dir.toString(), "." };
         int ret = JAR_TOOL.run(System.out, System.out, args);
-        assertTrue(ret == 0);
+        assertEquals(ret, 0);
         return jar;
     }
 

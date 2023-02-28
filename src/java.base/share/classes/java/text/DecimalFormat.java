@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormat}. If you need to customize the format object, do
  * something like this:
  *
- * <blockquote><pre>
- * NumberFormat f = NumberFormat.getInstance(loc);
- * if (f instanceof DecimalFormat) {
- *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+ * <blockquote>{@snippet lang=java :
+ * NumberFormat numFormat = NumberFormat.getInstance(loc);
+ * if (numFormat instanceof DecimalFormat decFormat) {
+ *     decFormat.setDecimalSeparatorAlwaysShown(true);
  * }
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
  * <em>symbols</em>.  The pattern may be set directly using
@@ -338,31 +338,27 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre><strong>{@code
+ * <blockquote>{@snippet lang=java :
  * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale}</strong>{@code
+ * // and percent format for each locale
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;
  * for (int j = 0; j < 4; ++j) {
  *     System.out.println("FORMAT");
- *     for (int i = 0; i < locales.length; ++i) {
- *         if (locales[i].getCountry().length() == 0) {
- *            continue; // Skip language-only locales
+ *     for (Locale locale : locales) {
+ *         if (locale.getCountry().length() == 0) {
+ *             continue; // Skip language-only locales
  *         }
- *         System.out.print(locales[i].getDisplayName());
- *         switch (j) {
- *         case 0:
- *             form = NumberFormat.getInstance(locales[i]); break;
- *         case 1:
- *             form = NumberFormat.getIntegerInstance(locales[i]); break;
- *         case 2:
- *             form = NumberFormat.getCurrencyInstance(locales[i]); break;
- *         default:
- *             form = NumberFormat.getPercentInstance(locales[i]); break;
- *         }
- *         if (form instanceof DecimalFormat) {
- *             System.out.print(": " + ((DecimalFormat) form).toPattern());
+ *         System.out.print(locale.getDisplayName());
+ *         form = switch (j) {
+ *             case 0 -> NumberFormat.getInstance(locale);
+ *             case 1 -> NumberFormat.getIntegerInstance(locale);
+ *             case 2 -> NumberFormat.getCurrencyInstance(locale);
+ *             default -> NumberFormat.getPercentInstance(locale);
+ *         };
+ *         if (form instanceof DecimalFormat decForm) {
+ *             System.out.print(": " + decForm.toPattern());
  *         }
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
@@ -370,7 +366,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         } catch (ParseException e) {}
  *     }
  * }
- * }</pre></blockquote>
+ * }</blockquote>
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
@@ -1532,7 +1528,7 @@ public class DecimalFormat extends NumberFormat {
              cursor--) {
             if (digitsCounter != 0) {
                 // This is a digit char, we must localize it.
-                digitsBuffer[cursor] += fastPathData.zeroDelta;
+                digitsBuffer[cursor] += (char)fastPathData.zeroDelta;
                 digitsCounter--;
             } else {
                 // Decimal separator or grouping char. Reinit counter only.
@@ -1723,7 +1719,7 @@ public class DecimalFormat extends NumberFormat {
         }
     }
 
-    // ======== End fast-path formating logic for double =========================
+    // ======== End fast-path formatting logic for double =========================
 
     /**
      * Complete the formatting of a finite number.  On entry, the digitList must
@@ -2961,8 +2957,8 @@ public class DecimalFormat extends NumberFormat {
      * the expanded affix strings up to date.
      */
     private void expandAffixes() {
-        // Reuse one StringBuffer for better performance
-        StringBuffer buffer = new StringBuffer();
+        // Reuse one StringBuilder for better performance
+        StringBuilder buffer = new StringBuilder();
         if (posPrefixPattern != null) {
             positivePrefix = expandAffix(posPrefixPattern, buffer);
             positivePrefixFieldPositions = null;
@@ -2992,10 +2988,10 @@ public class DecimalFormat extends NumberFormat {
      * itself at the end of the pattern.
      *
      * @param pattern the non-null, possibly empty pattern
-     * @param buffer a scratch StringBuffer; its contents will be lost
+     * @param buffer a scratch StringBuilder; its contents will be lost
      * @return the expanded equivalent of pattern
      */
-    private String expandAffix(String pattern, StringBuffer buffer) {
+    private String expandAffix(String pattern, StringBuilder buffer) {
         buffer.setLength(0);
         for (int i=0; i<pattern.length(); ) {
             char c = pattern.charAt(i++);
@@ -3097,7 +3093,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Appends an affix pattern to the given StringBuffer, quoting special
+     * Appends an affix pattern to the given StringBuilder, quoting special
      * characters as needed.  Uses the internal affix pattern, if that exists,
      * or the literal affix, if the internal affix pattern is null.  The
      * appended string will generate the same affix pattern (or literal affix)
@@ -3111,7 +3107,7 @@ public class DecimalFormat extends NumberFormat {
      * @param localized true if the appended pattern should contain localized
      * pattern characters; otherwise, non-localized pattern chars are appended
      */
-    private void appendAffix(StringBuffer buffer, String affixPattern,
+    private void appendAffix(StringBuilder buffer, String affixPattern,
                              String expAffix, boolean localized) {
         if (affixPattern == null) {
             appendAffix(buffer, expAffix, localized);
@@ -3156,11 +3152,11 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Append an affix to the given StringBuffer, using quotes if
+     * Append an affix to the given StringBuilder, using quotes if
      * there are special characters.  Single quotes themselves must be
      * escaped in either case.
      */
-    private void appendAffix(StringBuffer buffer, String affix, boolean localized) {
+    private void appendAffix(StringBuilder buffer, String affix, boolean localized) {
         boolean needQuote;
         if (localized) {
             needQuote = affix.indexOf(symbols.getZeroDigit()) >= 0
@@ -3198,7 +3194,7 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Does the real work of generating a pattern.  */
     private String toPattern(boolean localized) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int j = 1; j >= 0; --j) {
             if (j == 1)
                 appendAffix(result, posPrefixPattern, positivePrefix, localized);
@@ -3210,16 +3206,18 @@ public class DecimalFormat extends NumberFormat {
             for (i = digitCount; i > 0; --i) {
                 if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
                     i % groupingSize == 0) {
-                    result.append(localized ? symbols.getGroupingSeparator() :
-                                  PATTERN_GROUPING_SEPARATOR);
+                    result.append(localized ?
+                        (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
+                        PATTERN_GROUPING_SEPARATOR);
                 }
                 result.append(i <= getMinimumIntegerDigits()
                     ? (localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT)
                     : (localized ? symbols.getDigit() : PATTERN_DIGIT));
             }
             if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown)
-                result.append(localized ? symbols.getDecimalSeparator() :
-                              PATTERN_DECIMAL_SEPARATOR);
+                result.append(localized ?
+                    (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
+                    PATTERN_DECIMAL_SEPARATOR);
             for (i = 0; i < getMaximumFractionDigits(); ++i) {
                 if (i < getMinimumFractionDigits()) {
                     result.append(localized ? symbols.getZeroDigit() :
@@ -3341,8 +3339,8 @@ public class DecimalFormat extends NumberFormat {
         int start = 0;
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
             boolean inQuote = false;
-            StringBuffer prefix = new StringBuffer();
-            StringBuffer suffix = new StringBuffer();
+            StringBuilder prefix = new StringBuilder();
+            StringBuilder suffix = new StringBuilder();
             int decimalPos = -1;
             int multiplier = 1;
             int digitLeftCount = 0, zeroDigitCount = 0, digitRightCount = 0;
@@ -3358,7 +3356,7 @@ public class DecimalFormat extends NumberFormat {
             int phase = 0;
 
             // The affix is either the prefix or the suffix.
-            StringBuffer affix = prefix;
+            StringBuilder affix = prefix;
 
             for (int pos = start; pos < pattern.length(); ++pos) {
                 char ch = pattern.charAt(pos);
@@ -3651,13 +3649,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
-        maximumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+        maximumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             minimumIntegerDigits = maximumIntegerDigits;
-            super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+            super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3672,13 +3668,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
-        minimumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+        minimumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             maximumIntegerDigits = minimumIntegerDigits;
-            super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+            super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3693,13 +3687,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
-        maximumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+        maximumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             minimumFractionDigits = maximumFractionDigits;
-            super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+            super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3714,13 +3706,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
-        minimumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+        minimumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             maximumFractionDigits = minimumFractionDigits;
-            super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+            super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }

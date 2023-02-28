@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @ignore 8249621
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          java.base/jdk.internal.misc
@@ -46,13 +45,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,17 +80,13 @@ public class TestResolvedJavaMethod extends MethodUniverse {
      */
     @Test
     public void getCodeTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
+        for (ResolvedJavaMethod m : joinValues(methods, constructors)) {
+            String ms = m.toString();
             byte[] code = m.getCode();
             if (code == null) {
-                assertTrue(m.getCodeSize() == 0);
+                assertEquals(ms, m.getCodeSize(), 0);
             } else {
-                if (m.isAbstract()) {
-                    assertTrue(code.length == 0);
-                } else if (!m.isNative()) {
-                    assertTrue(code.length > 0);
-                }
+                assertTrue(ms, code.length > 0);
             }
         }
     }
@@ -98,26 +96,37 @@ public class TestResolvedJavaMethod extends MethodUniverse {
      */
     @Test
     public void getCodeSizeTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
+        ResolvedJavaType unlinkedType = metaAccess.lookupJavaType(UnlinkedType.class);
+        assertTrue(!unlinkedType.isLinked());
+        for (ResolvedJavaMethod m : addExecutables(joinValues(methods, constructors), unlinkedType, false)) {
             int codeSize = m.getCodeSize();
-            if (m.isAbstract()) {
-                assertTrue(codeSize == 0);
-            } else if (!m.isNative()) {
-                assertTrue(codeSize > 0);
+            String ms = m.toString();
+            if (m.isAbstract() || m.isNative()) {
+                assertEquals(ms, codeSize, 0);
+            } else if (!m.getDeclaringClass().isLinked()) {
+                assertEquals(ms, -1, codeSize);
+            } else {
+                assertTrue(ms, codeSize > 0);
+            }
+        }
+        assertTrue(!unlinkedType.isLinked());
+    }
+
+    @Test
+    public void equalsTest() {
+        List<ResolvedJavaMethod> executables = joinValues(methods, constructors);
+        for (ResolvedJavaMethod m : executables) {
+            for (ResolvedJavaMethod that : executables) {
+                boolean expect = m == that;
+                boolean actual = m.equals(that);
+                assertEquals(expect, actual);
             }
         }
     }
 
     @Test
     public void getModifiersTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            int expected = e.getKey().getModifiers();
-            int actual = m.getModifiers();
-            assertEquals(String.format("%s: 0x%x != 0x%x", m, expected, actual), expected, actual);
-        }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             int expected = e.getKey().getModifiers();
             int actual = m.getModifiers();
@@ -130,12 +139,8 @@ public class TestResolvedJavaMethod extends MethodUniverse {
      */
     @Test
     public void isClassInitializerTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             // Class initializers are hidden from reflection
-            ResolvedJavaMethod m = e.getValue();
-            assertFalse(m.isClassInitializer());
-        }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             assertFalse(m.isClassInitializer());
         }
@@ -155,11 +160,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
     @Test
     public void isSyntheticTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            assertEquals(e.getKey().isSynthetic(), m.isSynthetic());
-        }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             assertEquals(e.getKey().isSynthetic(), m.isSynthetic());
         }
@@ -179,11 +180,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
     @Test
     public void isVarArgsTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            assertEquals(e.getKey().isVarArgs(), m.isVarArgs());
-        }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             assertEquals(e.getKey().isVarArgs(), m.isVarArgs());
         }
@@ -191,11 +188,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
     @Test
     public void isSynchronizedTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            assertEquals(Modifier.isSynchronized(e.getKey().getModifiers()), m.isSynchronized());
-        }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             assertEquals(Modifier.isSynchronized(e.getKey().getModifiers()), m.isSynchronized());
         }
@@ -209,13 +202,19 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
         for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
             ResolvedJavaMethod m = e.getValue();
-            assertEquals(m.canBeStaticallyBound(), canBeStaticallyBound(e.getKey()));
+            boolean expect = m.canBeStaticallyBound();
+            boolean actual = canBeStaticallyBound(e.getKey());
+            assertEquals(m.toString(), expect, actual);
         }
     }
 
     private static boolean canBeStaticallyBound(Member method) {
         int modifiers = method.getModifiers();
-        return (Modifier.isFinal(modifiers) || Modifier.isPrivate(modifiers) || Modifier.isStatic(modifiers) || Modifier.isFinal(method.getDeclaringClass().getModifiers())) &&
+        return (Modifier.isFinal(modifiers) ||
+                        Modifier.isPrivate(modifiers) ||
+                        Modifier.isStatic(modifiers) ||
+                        method instanceof Constructor ||
+                        Modifier.isFinal(method.getDeclaringClass().getModifiers())) &&
                         !Modifier.isAbstract(modifiers);
     }
 
@@ -256,13 +255,14 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             StackTraceElement expected = e.getStackTrace()[0];
             ResolvedJavaMethod method = metaAccess.lookupJavaMethod(getClass().getDeclaredMethod("nullPointerExceptionOnFirstLine", Object.class, String.class));
             StackTraceElement actual = method.asStackTraceElement(0);
-            assertEquals(expected, actual);
+            // JVMCI StackTraceElements omit the class loader and module info
+            assertEquals(expected.toString(), actual.toString());
         }
     }
 
     @Test
     public void getConstantPoolTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+        for (Map.Entry<Executable, ResolvedJavaMethod> e : join(methods, constructors).entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             ConstantPool cp = m.getConstantPool();
             assertTrue(cp.length() > 0);
@@ -399,16 +399,22 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
+    public static List<ResolvedJavaMethod> addExecutables(List<ResolvedJavaMethod> to, ResolvedJavaType declaringType, boolean forceLink) {
+        to.addAll(List.of(declaringType.getDeclaredMethods(forceLink)));
+        to.addAll(List.of(declaringType.getDeclaredConstructors(forceLink)));
+        return to;
+    }
+
     @Test
     public void hasBytecodesTest() {
-        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            assertTrue(m.hasBytecodes() == (m.isConcrete() && !m.isNative()));
+        ResolvedJavaType unlinkedType = metaAccess.lookupJavaType(UnlinkedType.class);
+        assertTrue(!unlinkedType.isLinked());
+        for (ResolvedJavaMethod m : addExecutables(joinValues(methods, constructors), unlinkedType, false)) {
+            boolean expect = m.getDeclaringClass().isLinked() && m.isConcrete() && !m.isNative();
+            boolean actual = m.hasBytecodes();
+            assertEquals(m.toString(), expect, actual);
         }
-        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
-            ResolvedJavaMethod m = e.getValue();
-            assertTrue(m.hasBytecodes());
-        }
+        assertTrue(!unlinkedType.isLinked());
     }
 
     @Test
@@ -430,7 +436,13 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
-    static class UnlinkedType {
+    abstract static class UnlinkedType {
+        abstract void abstractMethod();
+
+        void concreteMethod() {
+        }
+
+        native void nativeMethod();
     }
 
     /**
@@ -512,5 +524,23 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 assertFalse("test should be removed from untestedApiMethods" + m, known.contains(m.getName()));
             }
         }
+    }
+
+    @SafeVarargs
+    public static <K, V> Map<K, V> join(Map<? extends K, V>... maps) {
+        Map<K, V> res = new HashMap<>();
+        for (Map<? extends K, V> e : maps) {
+            res.putAll(e);
+        }
+        return res;
+    }
+
+    @SafeVarargs
+    public static <V> List<V> joinValues(Map<?, V>... maps) {
+        List<V> res = new ArrayList<>();
+        for (Map<?, V> e : maps) {
+            res.addAll(e.values());
+        }
+        return res;
     }
 }

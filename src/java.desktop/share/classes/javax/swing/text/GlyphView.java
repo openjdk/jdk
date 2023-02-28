@@ -637,7 +637,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * @param b   either <code>Position.Bias.Forward</code>
      *                or <code>Position.Bias.Backward</code>
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not represent a
+     * @throws BadLocationException  if the given position does not represent a
      *   valid location in the associated document
      * @see View#modelToView
      */
@@ -885,9 +885,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
      *  SwingConstants.NORTH, or SwingConstants.SOUTH.
      * @return the location within the model that best represents the next
      *  location visual position.
-     * @exception BadLocationException the given position is not a valid
+     * @throws BadLocationException the given position is not a valid
      *                                 position within the document
-     * @exception IllegalArgumentException for an invalid direction
+     * @throws IllegalArgumentException for an invalid direction
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction,
@@ -1025,7 +1025,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
         boolean hasTab = false;
         BitSet spaceMap = new BitSet(endOffset - startOffset + 1);
 
-        //we parse conent to the right of the rightmost TAB only.
+        //we parse content to the right of the rightmost TAB only.
         //we are looking for the trailing and leading spaces.
         //position after the leading spaces (startContentPosition)
         //position before the trailing spaces (endContentPosition)
@@ -1199,7 +1199,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
          *                  or <code>Position.Bias.Backward</code>
          * @param a     Bounds of the View
          * @return      the bounding box of the given position
-         * @exception BadLocationException  if the given position does not represent a
+         * @throws BadLocationException  if the given position does not represent a
          *   valid location in the associated document
          * @see View#modelToView
          */
@@ -1283,8 +1283,8 @@ public class GlyphView extends View implements TabableView, Cloneable {
          *                 is returned as the zero-th element of this array
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException for a bad location within a document model
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws BadLocationException for a bad location within a document model
+         * @throws IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(GlyphView v, int pos, Position.Bias b, Shape a,
                                              int direction,

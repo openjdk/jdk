@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,11 @@ public class Arguments {
             setOptionValue("resource-dir", resourceDir);
         }),
 
+        DMG_CONTENT ("mac-dmg-content", OptionCategories.PROPERTY, () -> {
+            List<String> content = getArgumentList(popArg());
+            content.forEach(a -> setOptionValue("mac-dmg-content", a));
+        }),
+
         ARGUMENTS ("arguments", OptionCategories.PROPERTY, () -> {
             List<String> arguments = getArgumentList(popArg());
             setOptionValue("arguments", arguments);
@@ -204,6 +209,11 @@ public class Arguments {
         JAVA_OPTIONS ("java-options", OptionCategories.PROPERTY, () -> {
             List<String> args = getArgumentList(popArg());
             args.forEach(a -> setOptionValue("java-options", a));
+        }),
+
+        APP_CONTENT ("app-content", OptionCategories.PROPERTY, () -> {
+            getArgumentList(popArg()).forEach(
+                    a -> setOptionValue("app-content", a));
         }),
 
         FILE_ASSOCIATIONS ("file-associations",
@@ -303,6 +313,10 @@ public class Arguments {
         ADD_MODULES ("add-modules", OptionCategories.MODULAR),
 
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
+
+        LAUNCHER_AS_SERVICE ("launcher-as-service", OptionCategories.PROPERTY, () -> {
+            setOptionValue("launcher-as-service", true);
+        }),
 
         MAC_SIGN ("mac-sign", "s", OptionCategories.PLATFORM_MAC, () -> {
             setOptionValue("mac-sign", true);
@@ -576,6 +590,7 @@ public class Arguments {
         boolean hasRuntime = allOptions.contains(
                 CLIOptions.PREDEFINED_RUNTIME_IMAGE);
         boolean installerOnly = !imageOnly && hasAppImage;
+        boolean isMac = Platform.isMac();
         runtimeInstaller = !imageOnly && hasRuntime && !hasAppImage &&
                 !hasMainModule && !hasMainJar;
 
@@ -585,10 +600,16 @@ public class Arguments {
                 throw new PackagerException("ERR_UnsupportedOption",
                         option.getIdWithPrefix());
             }
-            if (imageOnly) {
+            if ((imageOnly && !isMac) || (imageOnly && !hasAppImage && isMac)) {
                 if (!ValidOptions.checkIfImageSupported(option)) {
                     throw new PackagerException("ERR_InvalidTypeOption",
                         option.getIdWithPrefix(), type);
+                }
+            } else if (imageOnly && hasAppImage && isMac) { // Signing app image
+                if (!ValidOptions.checkIfSigningSupported(option)) {
+                    throw new PackagerException(
+                            "ERR_InvalidOptionWithAppImageSigning",
+                            option.getIdWithPrefix());
                 }
             } else if (installerOnly || runtimeInstaller) {
                 if (!ValidOptions.checkIfInstallerSupported(option)) {
@@ -620,11 +641,16 @@ public class Arguments {
                         CLIOptions.JLINK_OPTIONS.getIdWithPrefix());
             }
         }
+        if (allOptions.contains(CLIOptions.DMG_CONTENT)
+                && !("dmg".equals(type))) {
+            throw new PackagerException("ERR_InvalidTypeOption",
+                    CLIOptions.DMG_CONTENT.getIdWithPrefix(), ptype);
+        }
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");
         }
-        if (imageOnly && !hasMainJar && !hasMainModule) {
-            throw new PackagerException("ERR_NoEntryPoint");
+        if (imageOnly && !hasAppImage && !hasMainJar && !hasMainModule) {
+                throw new PackagerException("ERR_NoEntryPoint");
         }
     }
 

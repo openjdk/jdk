@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@
  *                      z    = (z-x[i])*2**24
  *
  *
- *      y[]     ouput result in an array of double precision numbers.
+ *      y[]     output result in an array of double precision numbers.
  *              The dimension of y[] is:
  *                      24-bit  precision       1
  *                      53-bit  precision       2
@@ -87,7 +87,7 @@
  *
  *      nx      dimension of x[]
  *
- *      prec    an interger indicating the precision:
+ *      prec    an integer indicating the precision:
  *                      0       24  bits (single)
  *                      1       53  bits (double)
  *                      2       64  bits (extended)
@@ -192,7 +192,8 @@ static int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, con
 
   /* compute q[0],q[1],...q[jk] */
   for (i=0;i<=jk;i++) {
-    for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j]; q[i] = fw;
+    for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j];
+    q[i] = fw;
   }
 
   jz = jk;

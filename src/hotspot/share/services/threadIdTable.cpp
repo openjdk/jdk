@@ -1,6 +1,6 @@
 
 /*
-* Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/threadIdTable.hpp"
@@ -42,7 +42,7 @@ static const size_t END_SIZE = 24;
 static const size_t DEFAULT_TABLE_SIZE_LOG = 8;
 // Prefer short chains of avg 2
 static const double PREF_AVG_LIST_LEN = 2.0;
-static ThreadIdTableHash* volatile _local_table = NULL;
+static ThreadIdTableHash* volatile _local_table = nullptr;
 static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
@@ -80,19 +80,13 @@ class ThreadIdTableConfig : public AllStatic {
     }
 };
 
-static size_t ceil_log2(size_t val) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < val; ++ret);
-  return ret;
-}
-
 // Lazily creates the table and populates it with the given
 // thread list
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
   if (!_is_initialized) {
     {
-      // There is no obvious benefits in allowing the thread table
-      // to be concurently populated during the initalization.
+      // There is no obvious benefit in allowing the thread table
+      // to be concurrently populated during initialization.
       MutexLocker ml(ThreadIdTableCreate_lock);
       if (_is_initialized) {
         return;
@@ -103,12 +97,12 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
     for (uint i = 0; i < threads->length(); i++) {
       JavaThread* thread = threads->thread_at(i);
       oop tobj = thread->threadObj();
-      if (tobj != NULL) {
+      if (tobj != nullptr) {
         jlong java_tid = java_lang_Thread::thread_id(tobj);
         MutexLocker ml(Threads_lock);
         if (!thread->is_exiting()) {
           // Must be inside the lock to ensure that we don't add a thread to the table
-          // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+          // that has just passed the removal point in Threads::remove().
           add_thread(java_tid, thread);
         }
       }
@@ -117,12 +111,13 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
 }
 
 void ThreadIdTable::create_table(size_t size) {
-  assert(_local_table == NULL, "Thread table is already created");
+  assert(_local_table == nullptr, "Thread table is already created");
   size_t size_log = ceil_log2(size);
   size_t start_size_log =
       size_log > DEFAULT_TABLE_SIZE_LOG ? size_log : DEFAULT_TABLE_SIZE_LOG;
   _current_size = (size_t)1 << start_size_log;
-  _local_table = new ThreadIdTableHash(start_size_log, END_SIZE);
+  _local_table =
+      new ThreadIdTableHash(start_size_log, END_SIZE, ThreadIdTableHash::DEFAULT_GROW_HINT);
 }
 
 void ThreadIdTable::item_added() {
@@ -205,7 +200,7 @@ class ThreadGet : public StackObj {
 private:
   JavaThread* _return;
 public:
-  ThreadGet(): _return(NULL) {}
+  ThreadGet(): _return(nullptr) {}
   void operator()(ThreadIdTableEntry** val) {
     _return = (*val)->thread();
   }

@@ -37,6 +37,10 @@ public class TestGetElementReferenceData {
         target(TestGetElementReferenceData :: test/*getElement:METHOD:test.nested.TestGetElementReferenceData.test()*/);
         Object/*getElement:CLASS:java.lang.Object*/ o = null;
         if (o/*getElement:LOCAL_VARIABLE:o*/ instanceof String/*getElement:CLASS:java.lang.String*/ str/*getElement:BINDING_VARIABLE:str*/) ;
+        I i = null;
+        i.toString/*getElement:METHOD:test.nested.TestGetElementReferenceData.I.toString()*/();
+        J j = null;
+        j.toString/*getElement:METHOD:test.nested.TestGetElementReferenceData.I.toString()*/();
     }
     private static void target(Runnable r) { r.run(); }
     public static class Base {
@@ -50,4 +54,8 @@ public class TestGetElementReferenceData {
     @Target(ElementType.TYPE_USE)
     @interface TypeAnnotation {
     }
+    interface I {
+        public String toString();
+    }
+    interface J extends I {}
 }

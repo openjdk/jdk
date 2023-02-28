@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,11 @@ public class Object {
     @IntrinsicCandidate
     public final native void notifyAll();
 
-    public final native void wait(long timeout) throws InterruptedException;
+    private final native void wait0(long timeout) throws InterruptedException;
+
+    public final void wait(long timeout) throws InterruptedException {
+        wait0(timeout);
+    }
 
     public final void wait(long timeout, int nanos) throws InterruptedException {
         if (timeout < 0) {
@@ -73,11 +77,11 @@ public class Object {
             timeout++;
         }
 
-        wait(timeout);
+        wait0(timeout);
     }
 
     public final void wait() throws InterruptedException {
-        wait(0);
+        wait0(0);
     }
 
     /**

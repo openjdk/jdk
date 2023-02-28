@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "opto/phase.hpp"
 #include "opto/type.hpp"
 
+class BarrierSetC2;
 class Compile;
 class ConINode;
 class ConLNode;
@@ -238,10 +239,15 @@ public:
     assert(t != NULL, "type must not be null");
     _types.map(n->_idx, t);
   }
+  void    clear_type(const Node* n) {
+    if (n->_idx < _types.Size()) {
+      _types.map(n->_idx, NULL);
+    }
+  }
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
-    // Usually the initialization shoudl be to n->Value(this) instead,
+    // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
     assert(_types[n->_idx] == NULL, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());
@@ -334,6 +340,9 @@ public:
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    return saturate(new_type, type_or_null(n), n->type());
+  }
 
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
@@ -475,6 +484,10 @@ public:
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
   // and dominator info to a fixed point.
   void optimize();
+#ifdef ASSERT
+  void verify_optimize();
+  bool verify_node_value(Node* n);
+#endif
 
 #ifndef PRODUCT
   void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
@@ -530,10 +543,22 @@ public:
     n->set_req_X(i, in, this);
   }
 
+  // Add "in" as input (req) of "n"
+  void add_input_to(Node* n, Node* in) {
+    rehash_node_delayed(n);
+    n->add_req(in);
+  }
+
   // Delete ith edge of "n"
   void delete_input_of(Node* n, int i) {
     rehash_node_delayed(n);
     n->del_req(i);
+  }
+
+  // Delete precedence edge i of "n"
+  void delete_precedence_of(Node* n, int i) {
+    rehash_node_delayed(n);
+    n->rm_prec(i);
   }
 
   bool delay_transform() const { return _delay_transform; }
@@ -551,8 +576,16 @@ public:
   bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
+  static bool is_verify_def_use() {
+    // '-XX:VerifyIterativeGVN=1'
+    return (VerifyIterativeGVN % 10) == 1;
+  }
+  static bool is_verify_Value() {
+    // '-XX:VerifyIterativeGVN=10'
+    return ((VerifyIterativeGVN % 100) / 10) == 1;
+  }
 protected:
-  // Sub-quadratic implementation of VerifyIterativeGVN.
+  // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
   julong _verify_full_passes;
   enum { _verify_window_size = 30 };
@@ -565,15 +598,37 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
+  Unique_Node_List _root_and_safepoints;
   // Non-recursive.  Use analysis to transform single Node.
-  virtual Node *transform_once( Node *n );
+  virtual Node* transform_once(Node* n);
 
-public:
+  Node* fetch_next_node(Unique_Node_List& worklist);
+  static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
+
+  void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
+  void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
+  void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;
+  void push_phis(Unique_Node_List& worklist, const Node* use) const;
+  static void push_catch(Unique_Node_List& worklist, const Node* use);
+  void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
+  static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  void push_loadp(Unique_Node_List& worklist, const Node* use) const;
+  static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
+  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
+
+ public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
   NOT_PRODUCT( ~PhaseCCP(); )
 
   // Worklist algorithm identifies constants
   void analyze();
+#ifdef ASSERT
+  void verify_type(Node* n, const Type* tnew, const Type* told);
+  // For every node n on verify list, check if type(n) == n->Value()
+  void verify_analyze(Unique_Node_List& worklist_verify);
+#endif
   // Recursive traversal of program.  Used analysis to modify program.
   virtual Node *transform( Node *n );
   // Do any transformation after analysis
@@ -584,6 +639,14 @@ public:
   // Returns new_type->widen(old_type), which increments the widen bits until
   // giving up with TypeInt::INT or TypeLong::LONG.
   // Result is clipped to limit_type if necessary.
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    const Type* t = saturate(new_type, type_or_null(n), n->type());
+    if (t != new_type) {
+      // Type was widened in CCP, but IGVN may be able to make it narrower.
+      _worklist.push((Node*)n);
+    }
+    return t;
+  }
 
 #ifndef PRODUCT
   static uint _total_invokes;    // For profiling, count invocations

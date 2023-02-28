@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@
 namespace metaspace {
 
 static const char* describe_spacetype(Metaspace::MetaspaceType st) {
-  const char* s = NULL;
+  const char* s = nullptr;
   switch (st) {
     case Metaspace::StandardMetaspaceType: s = "Standard"; break;
     case Metaspace::BootMetaspaceType: s = "Boot"; break;
@@ -299,6 +299,24 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     non_class_cm_stat.print_on(out, scale);
     out->cr();
   }
+
+  // -- Print Chunkmanager details.
+  if ((flags & (int)Option::ShowChunkFreeList) > 0) {
+    out->cr();
+    out->print_cr("Chunk freelist details:");
+    if (Metaspace::using_class_space()) {
+      out->print_cr("   Non-Class:");
+    }
+    ChunkManager::chunkmanager_nonclass()->print_on(out);
+    out->cr();
+    if (Metaspace::using_class_space()) {
+      out->print_cr("       Class:");
+      ChunkManager::chunkmanager_class()->print_on(out);
+      out->cr();
+    }
+  }
+  out->cr();
+
 
   //////////// Waste section ///////////////////////////
   // As a convenience, print a summary of common waste.

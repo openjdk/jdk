@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "utilities/elfSymbolTable.hpp"
 
 ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf_Shdr& shdr) :
-  _next(NULL), _fd(file), _section(file, shdr) {
-  assert(file != NULL, "null file handle");
+  _next(nullptr), _fd(file), _section(file, shdr) {
+  assert(file != nullptr, "null file handle");
   _status = _section.status();
 
   if (_section.section_header()->sh_size % sizeof(Elf_Sym) != 0) {
@@ -41,7 +41,7 @@ ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf_Shdr& shdr) :
 }
 
 ElfSymbolTable::~ElfSymbolTable() {
-  if (_next != NULL) {
+  if (_next != nullptr) {
     delete _next;
   }
 }
@@ -51,8 +51,8 @@ bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableI
     Elf_Word st_size = sym->st_size;
     const Elf_Shdr* shdr = _section.section_header();
     address sym_addr;
-    if (funcDescTable != NULL && funcDescTable->get_index() == sym->st_shndx) {
-      // We need to go another step trough the function descriptor table (currently PPC64 only)
+    if (funcDescTable != nullptr && funcDescTable->get_index() == sym->st_shndx) {
+      // We need to go another step through the function descriptor table (currently PPC64 only)
       sym_addr = funcDescTable->lookup(sym->st_value);
     } else {
       sym_addr = (address)sym->st_value;
@@ -80,7 +80,7 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
   int count = _section.section_header()->sh_size / sym_size;
   Elf_Sym* symbols = (Elf_Sym*)_section.section_data();
 
-  if (symbols != NULL) {
+  if (symbols != nullptr) {
     for (int index = 0; index < count; index ++) {
       if (compare(&symbols[index], addr, stringtableIndex, posIndex, offset, funcDescTable)) {
         return true;

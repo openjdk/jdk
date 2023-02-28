@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ public class DateFormatRegression extends IntlTest {
         Locale saveLocale = Locale.getDefault();
         TimeZone saveZone = TimeZone.getDefault();
         try {
-            Locale curLocale = new Locale("de","DE");
+            Locale curLocale = Locale.GERMANY;
             Locale.setDefault(curLocale);
             TimeZone.setDefault(TimeZone.getTimeZone("EST"));
             curDate = new Date(98, 0, 1);

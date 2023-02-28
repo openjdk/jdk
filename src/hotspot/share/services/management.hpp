@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,38 +70,28 @@ public:
 
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;
-  static void  record_vm_init_completed() {
-    // Initialize the timestamp to get the current time
-    _vm_init_done_time->set_value(os::javaTimeMillis());
+  static void  record_vm_init_completed() NOT_MANAGEMENT_RETURN;
 
-    // Update the timestamp to the vm init done time
-    _stamp.update();
-  }
-
-  static jlong begin_vm_creation_time() {
-    return _begin_vm_creation_time->get_value();
-  }
-  static jlong vm_init_done_time() {
-    return _vm_init_done_time->get_value();
-  }
+  static jlong begin_vm_creation_time() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong vm_init_done_time() NOT_MANAGEMENT_RETURN_(0L);
 
   // methods to return a Klass*.
   static InstanceKlass* java_lang_management_ThreadInfo_klass(TRAPS);
   static InstanceKlass* java_lang_management_MemoryUsage_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
   static InstanceKlass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
   static InstanceKlass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
   static InstanceKlass* sun_management_ManagementFactoryHelper_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* sun_management_Sensor_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_GcInfo_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, objArrayHandle monitors_array, typeArrayHandle depths_array, objArrayHandle synchronizers_array, TRAPS);

@@ -26,7 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRMETHODLOOKUP_HPP
 
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class InstanceKlass;
 class Method;

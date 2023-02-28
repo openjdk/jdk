@@ -24,6 +24,7 @@
  */
 
 package java.util.prefs;
+
 import java.util.*;
 import java.io.*;
 import java.security.AccessController;
@@ -298,8 +299,8 @@ class FileSystemPreferences extends AbstractPreferences {
      * A temporary file used for saving changes to preferences.  As part of
      * the sync operation, changes are first saved into this file, and then
      * atomically renamed to prefsFile.  This results in an atomic state
-     * change from one valid set of preferences to another.  The
-     * the file-lock is held for the duration of this transformation.
+     * change from one valid set of preferences to another.
+     * The file-lock is held for the duration of this transformation.
      */
     private final File tmpFile;
 
@@ -385,12 +386,12 @@ class FileSystemPreferences extends AbstractPreferences {
     /**
      * Represents a change to a preference.
      */
-    private abstract class Change {
+    private abstract static class Change {
         /**
          * Reapplies the change to prefsCache.
          */
         abstract void replay();
-    };
+    }
 
     /**
      * Represents a preference put.
@@ -426,7 +427,7 @@ class FileSystemPreferences extends AbstractPreferences {
     /**
      * Represents the creation of this node.
      */
-    private class NodeCreate extends Change {
+    private static class NodeCreate extends Change {
         /**
          * Performs no action, but the presence of this object in changeLog
          * will force the node and its ancestors to be made permanent at the

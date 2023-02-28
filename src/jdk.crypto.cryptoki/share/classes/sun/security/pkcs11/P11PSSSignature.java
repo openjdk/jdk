@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 package sun.security.pkcs11;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import java.util.Hashtable;
-import java.util.Arrays;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
@@ -40,7 +40,7 @@ import java.security.interfaces.*;
 import sun.security.pkcs11.wrapper.*;
 import sun.security.util.KnownOIDs;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * RSASSA-PSS Signature implementation class. This class currently supports the
@@ -68,11 +68,12 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
  */
 final class P11PSSSignature extends SignatureSpi {
 
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
-    private static final Hashtable<String, Integer> DIGEST_LENGTHS =
-        new Hashtable<String, Integer>();
+    private static final Hashtable<String, Integer> DIGEST_LENGTHS = new Hashtable<>();
 
     static {
         DIGEST_LENGTHS.put("SHA-1", 20);
@@ -170,35 +171,34 @@ final class P11PSSSignature extends SignatureSpi {
         this.mechanism = new CK_MECHANISM(mechId);
         int idx = algorithm.indexOf("with");
         // convert to stdName
-        this.mdAlg = (idx == -1?
+        this.mdAlg = (idx == -1 ?
                 null : toStdName(algorithm.substring(0, idx)));
 
-        switch ((int)mechId) {
-        case (int)CKM_SHA1_RSA_PKCS_PSS:
-        case (int)CKM_SHA224_RSA_PKCS_PSS:
-        case (int)CKM_SHA256_RSA_PKCS_PSS:
-        case (int)CKM_SHA384_RSA_PKCS_PSS:
-        case (int)CKM_SHA512_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_224_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_256_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_384_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_512_RSA_PKCS_PSS:
-            type = T_UPDATE;
-            this.md = null;
-            break;
-        case (int)CKM_RSA_PKCS_PSS:
-            // check if the digest algo is supported by underlying PKCS11 lib
-            if (this.mdAlg != null && token.getMechanismInfo
-                    (Functions.getHashMechId(this.mdAlg)) == null) {
-                throw new NoSuchAlgorithmException("Unsupported algorithm: " +
-                        algorithm);
+        switch ((int) mechId) {
+            case (int) CKM_SHA1_RSA_PKCS_PSS,
+                 (int) CKM_SHA224_RSA_PKCS_PSS,
+                 (int) CKM_SHA256_RSA_PKCS_PSS,
+                 (int) CKM_SHA384_RSA_PKCS_PSS,
+                 (int) CKM_SHA512_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_224_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_256_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_384_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_512_RSA_PKCS_PSS -> {
+                type = T_UPDATE;
+                this.md = null;
             }
-            this.md = (this.mdAlg == null? null :
-                    MessageDigest.getInstance(this.mdAlg));
-            type = T_DIGEST;
-            break;
-        default:
-            throw new ProviderException("Unsupported mechanism: " + mechId);
+            case (int) CKM_RSA_PKCS_PSS -> {
+                // check if the digest algo is supported by underlying PKCS11 lib
+                if (this.mdAlg != null && token.getMechanismInfo
+                        (Functions.getHashMechId(this.mdAlg)) == null) {
+                    throw new NoSuchAlgorithmException("Unsupported algorithm: " +
+                            algorithm);
+                }
+                this.md = (this.mdAlg == null ? null :
+                        MessageDigest.getInstance(this.mdAlg));
+                type = T_DIGEST;
+            }
+            default -> throw new ProviderException("Unsupported mechanism: " + mechId);
         }
     }
 
@@ -235,7 +235,7 @@ final class P11PSSSignature extends SignatureSpi {
                     this.mdAlg, "MGF1", this.mdAlg, sigParams.getSaltLength()));
         }
 
-        if (initialized == false) {
+        if (!initialized) {
             try {
                 initialize();
             } catch (ProviderException pe) {
@@ -269,9 +269,16 @@ final class P11PSSSignature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
+
         if (DEBUG) System.out.print("Cancelling operation");
 
-        // cancel operation by finishing it; avoid killSession as some
+        if (P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
+            if (DEBUG) System.out.println(" by C_SessionCancel");
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession call as some
         // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
@@ -280,7 +287,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_SignFinal(session.id(), 0);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Sign");
                     token.p11.C_Sign(session.id(), digest);
                 }
@@ -292,13 +299,13 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Verify");
                     token.p11.C_Verify(session.id(), digest, signature);
                 }
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -406,12 +413,11 @@ final class P11PSSSignature extends SignatureSpi {
         if (p == null) {
             throw new InvalidAlgorithmParameterException("PSS Parameter required");
         }
-        if (!(p instanceof PSSParameterSpec)) {
+        if (!(p instanceof PSSParameterSpec params)) {
             throw new InvalidAlgorithmParameterException
                 ("Only PSSParameterSpec is supported");
         }
         // no need to validate again if same as current signature parameters
-        PSSParameterSpec params = (PSSParameterSpec) p;
         if (params == this.sigParams) return;
 
         String digestAlgorithm = params.getDigestAlgorithm();
@@ -569,10 +575,10 @@ final class P11PSSSignature extends SignatureSpi {
         case T_UPDATE:
             try {
                 if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate(session.id(), 0, b, ofs, len);
                 } else {
-                    System.out.println(this + ": Calling C_VerfifyUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_VerfifyUpdate");
                     token.p11.C_VerifyUpdate(session.id(), 0, b, ofs, len);
                 }
                 bytesProcessed += len;
@@ -608,42 +614,46 @@ final class P11PSSSignature extends SignatureSpi {
         }
         isActive = true;
         switch (type) {
-        case T_UPDATE:
-            if (byteBuffer instanceof DirectBuffer == false) {
-                // cannot do better than default impl
-                super.engineUpdate(byteBuffer);
-                return;
-            }
-            long addr = ((DirectBuffer)byteBuffer).address();
-            int ofs = byteBuffer.position();
-            try {
-                if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
-                    token.p11.C_SignUpdate
-                        (session.id(), addr + ofs, null, 0, len);
-                } else {
-                    System.out.println(this + ": Calling C_VerifyUpdate");
-                    token.p11.C_VerifyUpdate
-                        (session.id(), addr + ofs, null, 0, len);
+            case T_UPDATE -> {
+                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+                    // cannot do better than default impl
+                    super.engineUpdate(byteBuffer);
+                    return;
                 }
+                int ofs = byteBuffer.position();
+                NIO_ACCESS.acquireSession(byteBuffer);
+                try {
+                    long addr = dByteBuffer.address();
+                    if (mode == M_SIGN) {
+                        if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
+                        token.p11.C_SignUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    } else {
+                        if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
+                        token.p11.C_VerifyUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    }
+                    bytesProcessed += len;
+                    byteBuffer.position(ofs + len);
+                } catch (PKCS11Exception e) {
+                    reset(false);
+                    throw new ProviderException("Update failed", e);
+                } finally {
+                    NIO_ACCESS.releaseSession(byteBuffer);
+                }
+            }
+            case T_DIGEST -> {
+                // should not happen as this should be covered by earlier checks
+                if (md == null) {
+                    throw new ProviderException("PSS Parameters required");
+                }
+                md.update(byteBuffer);
                 bytesProcessed += len;
-                byteBuffer.position(ofs + len);
-            } catch (PKCS11Exception e) {
+            }
+            default -> {
                 reset(false);
-                throw new ProviderException("Update failed", e);
+                throw new ProviderException("Internal error");
             }
-            break;
-        case T_DIGEST:
-            // should not happen as this should be covered by earlier checks
-            if (md == null) {
-                throw new ProviderException("PSS Parameters required");
-            }
-            md.update(byteBuffer);
-            bytesProcessed += len;
-            break;
-        default:
-            reset(false);
-            throw new ProviderException("Internal error");
         }
     }
 
@@ -705,16 +715,9 @@ final class P11PSSSignature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) {
                 return false;
             }
             throw new ProviderException(pe);

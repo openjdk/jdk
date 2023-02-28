@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class XAException extends Exception {
     public static final int XAER_INVAL = -5;
 
     /**
-     * Routine was invoked in an inproper context.
+     * Routine was invoked in an improper context.
      */
     public static final int XAER_PROTO = -6;
 

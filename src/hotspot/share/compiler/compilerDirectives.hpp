@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
+    cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
@@ -66,7 +67,9 @@
     cflags(PrintIntrinsics,         bool, PrintIntrinsics, PrintIntrinsics) \
 NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipelining)) \
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
+NOT_PRODUCT(cflags(TraceEscapeAnalysis, bool, false, TraceEscapeAnalysis)) \
 NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
+NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
@@ -107,6 +110,7 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
+  uint64_t _ideal_phase_name_mask;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -119,12 +123,14 @@ public:
   bool should_not_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
-  bool is_exclusive_copy() { return _directive == NULL; }
+  bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
   bool is_intrinsic_disabled(const methodHandle& method);
   static ccstrlist canonicalize_control_intrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
+  bool is_c1(CompilerDirectives* directive) const;
+  bool is_c2(CompilerDirectives* directive) const;
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,
@@ -136,7 +142,6 @@ public:
 
  private:
   bool _modified[number_of_flags]; // Records what options where set by a directive
-
  public:
 #define flag_store_definition(name, type, dvalue, cc_flag) type name##Option;
   compilerdirectives_common_flags(flag_store_definition)
@@ -148,6 +153,9 @@ public:
   compilerdirectives_common_flags(set_function_definition)
   compilerdirectives_c2_flags(set_function_definition)
   compilerdirectives_c1_flags(set_function_definition)
+
+  void set_ideal_phase_mask(uint64_t mask) { _ideal_phase_name_mask = mask; };
+  uint64_t ideal_phase_mask() { return _ideal_phase_name_mask; };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
@@ -198,11 +206,11 @@ class ControlIntrinsicValidator {
 
  public:
   ControlIntrinsicValidator(ccstrlist option, bool disable_all) : _valid(true), _bad(nullptr) {
-    for (ControlIntrinsicIter iter(option, disable_all); *iter != NULL && _valid; ++iter) {
+    for (ControlIntrinsicIter iter(option, disable_all); *iter != nullptr && _valid; ++iter) {
       if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all intrinsic names
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nullptrs.
         strncpy(_bad, *iter, len);
         _valid = false;
       }
@@ -210,7 +218,7 @@ class ControlIntrinsicValidator {
   }
 
   ~ControlIntrinsicValidator() {
-    if (_bad != NULL) {
+    if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
   }
@@ -243,7 +251,7 @@ public:
   bool add_match(char* str, const char*& error_msg);
   DirectiveSet* get_for(AbstractCompiler *comp);
   void print(outputStream* st);
-  bool is_default_directive() { return _next == NULL; }
+  bool is_default_directive() { return _next == nullptr; }
   void finalize(outputStream* st);
 
   void inc_refcount();

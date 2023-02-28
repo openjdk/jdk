@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,41 +56,6 @@ public class TypeElementCatalog {
      */
     private final Map<PackageElement, SortedSet<TypeElement>> allClasses;
 
-    /**
-     * Stores ordinary classes (excluding Exceptions and Errors) for each package
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> ordinaryClasses;
-
-    /**
-     * Stores exceptions for each package
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> exceptions;
-
-    /**
-     * Stores enums for each package.
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> enums;
-
-    /**
-     * Stores records for each package.
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> records;
-
-    /**
-     * Stores annotation types for each package.
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> annotationTypes;
-
-    /**
-     * Stores errors for each package
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> errors;
-
-    /**
-     * Stores interfaces for each package
-     */
-    private final Map<PackageElement, SortedSet<TypeElement>> interfaces;
-
     private final BaseConfiguration configuration;
     private final Utils utils;
     private final Comparator<Element> comparator;
@@ -116,13 +81,6 @@ public class TypeElementCatalog {
         this.utils = config.utils;
         comparator = utils.comparators.makeGeneralPurposeComparator();
         allClasses = new HashMap<>();
-        ordinaryClasses = new HashMap<>();
-        exceptions = new HashMap<>();
-        enums = new HashMap<>();
-        records = new HashMap<>();
-        annotationTypes = new HashMap<>();
-        errors = new HashMap<>();
-        interfaces = new HashMap<>();
         packageSet = new TreeSet<>(comparator);
     }
 
@@ -136,21 +94,6 @@ public class TypeElementCatalog {
             return;
         }
         addTypeElement(typeElement, allClasses);
-        if (utils.isOrdinaryClass(typeElement)) {
-            addTypeElement(typeElement, ordinaryClasses);
-        } else if (utils.isException(typeElement)) {
-            addTypeElement(typeElement, exceptions);
-        } else if (utils.isEnum(typeElement)) {
-            addTypeElement(typeElement, enums);
-        } else if (utils.isRecord(typeElement)) {
-            addTypeElement(typeElement, records);
-        } else if (utils.isAnnotationType(typeElement)) {
-            addTypeElement(typeElement, annotationTypes);
-        } else if (utils.isError(typeElement)) {
-            addTypeElement(typeElement, errors);
-        } else if (utils.isInterface(typeElement)) {
-            addTypeElement(typeElement, interfaces);
-        }
     }
 
     /**
@@ -178,13 +121,6 @@ public class TypeElementCatalog {
 
     }
 
-    private SortedSet<TypeElement> getSet(Map<PackageElement, SortedSet<TypeElement>> m, PackageElement key) {
-        SortedSet<TypeElement> s = m.get(key);
-        if (s != null) {
-            return s;
-        }
-        return new TreeSet<>(comparator);
-    }
     /**
      * Return all of the classes specified on the command-line that belong to the given package.
      *
@@ -193,7 +129,7 @@ public class TypeElementCatalog {
     public SortedSet<TypeElement> allClasses(PackageElement packageElement) {
         return utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getEnclosedTypeElements(packageElement))
-                : getSet(allClasses, packageElement);
+                : allClasses.getOrDefault(packageElement, Collections.emptySortedSet());
     }
 
     /**
@@ -213,70 +149,5 @@ public class TypeElementCatalog {
      */
     public SortedSet<PackageElement> packages() {
          return packageSet;
-    }
-
-    /**
-     * Return all of the errors specified on the command-line that belong to the given package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> errors(PackageElement pkg) {
-        return getSet(errors, pkg);
-    }
-
-    /**
-     * Return all of the exceptions specified on the command-line that belong to the given package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> exceptions(PackageElement pkg) {
-        return getSet(exceptions, pkg);
-    }
-
-    /**
-     * Return all of the enums specified on the command-line that belong to the given package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> enums(PackageElement pkg) {
-        return getSet(enums, pkg);
-    }
-
-    /**
-     * Return all of the records specified on the command-line that belong to the given package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> records(PackageElement pkg) {
-        return getSet(records, pkg);
-    }
-
-    /**
-     * Return all of the annotation types specified on the command-line that belong to the given
-     * package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> annotationTypes(PackageElement pkg) {
-        return getSet(annotationTypes, pkg);
-    }
-
-    /**
-     * Return all of the interfaces specified on the command-line that belong to the given package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> interfaces(PackageElement pkg) {
-        return getSet(interfaces, pkg);
-    }
-
-    /**
-     * Return all of the ordinary classes specified on the command-line that belong to the given
-     * package.
-     *
-     * @param pkg the name of the package specified on the command-line.
-     */
-    public SortedSet<TypeElement> ordinaryClasses(PackageElement pkg) {
-        return getSet(ordinaryClasses, pkg);
     }
 }

@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -45,8 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -56,7 +57,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
-  // get_region() provides the bounds-check and returns NULL on OOB.
+  // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
 
@@ -64,11 +65,11 @@ inline bool ShenandoahHeap::has_forwarded_objects() const {
   return _gc_state.is_set(HAS_FORWARDED);
 }
 
-inline WorkGang* ShenandoahHeap::workers() const {
+inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkGang* ShenandoahHeap::safepoint_workers() {
+inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 
@@ -218,8 +219,8 @@ inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr,
   return CompressedOops::decode(Atomic::cmpxchg(addr, c, u, memory_order_release)) == compare;
 }
 
-// The memory ordering discussion above does not apply for methods that store NULLs:
-// then, there is no transitive reads in mutator (as we see NULLs), and we can do
+// The memory ordering discussion above does not apply for methods that store nulls:
+// then, there is no transitive reads in mutator (as we see nulls), and we can do
 // relaxed memory ordering there.
 
 inline void ShenandoahHeap::atomic_clear_oop(oop* addr, oop compare) {
@@ -273,14 +274,14 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   assert(UseTLAB, "TLABs should be enabled");
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-  if (gclab == NULL) {
+  if (gclab == nullptr) {
     assert(!thread->is_Java_thread() && !thread->is_Worker_thread(),
            "Performance: thread should have GCLAB: %s", thread->name());
     // No GCLABs in this thread, fallback to shared allocation
-    return NULL;
+    return nullptr;
   }
   HeapWord* obj = gclab->allocate(size);
-  if (obj != NULL) {
+  if (obj != nullptr) {
     return obj;
   }
   // Otherwise...
@@ -301,18 +302,18 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
   bool alloc_from_gclab = true;
-  HeapWord* copy = NULL;
+  HeapWord* copy = nullptr;
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
       (os::random() & 1) == 0) { // Simulate OOM every ~2nd slow-path call
-        copy = NULL;
+        copy = nullptr;
   } else {
 #endif
     if (UseTLAB) {
       copy = allocate_from_gclab(thread, size);
     }
-    if (copy == NULL) {
+    if (copy == nullptr) {
       ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size);
       copy = allocate_memory(req);
       alloc_from_gclab = false;
@@ -321,7 +322,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 #endif
 
-  if (copy == NULL) {
+  if (copy == nullptr) {
     control_thread()->handle_alloc_failure_evac(size);
 
     _oom_evac_handler.handle_out_of_memory_during_evacuation();
@@ -334,10 +335,12 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
+  ContinuationGCSupport::relativize_stack_chunk(copy_val);
+
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    shenandoah_assert_correct(NULL, copy_val);
+    shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -355,9 +358,9 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
       ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
     } else {
       fill_with_object(copy, size);
-      shenandoah_assert_correct(NULL, copy_val);
+      shenandoah_assert_correct(nullptr, copy_val);
     }
-    shenandoah_assert_correct(NULL, result);
+    shenandoah_assert_correct(nullptr, result);
     return result;
   }
 }
@@ -368,12 +371,12 @@ inline bool ShenandoahHeap::requires_marking(const void* entry) const {
 }
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {
-  assert(collection_set() != NULL, "Sanity");
+  assert(collection_set() != nullptr, "Sanity");
   return collection_set()->is_in(p);
 }
 
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
-  assert(collection_set() != NULL, "Sanity");
+  assert(collection_set() != nullptr, "Sanity");
   return collection_set()->is_in_loc(p);
 }
 
@@ -457,7 +460,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     // touch anything in oop, while it still being prefetched to get enough
     // time for prefetch to work. This is why we try to scan the bitmap linearly,
     // disregarding the object size. However, since we know forwarding pointer
-    // preceeds the object, we can skip over it. Once we cannot trust the bitmap,
+    // precedes the object, we can skip over it. Once we cannot trust the bitmap,
     // there is no point for prefetching the oop contents, as oop->size() will
     // touch it prematurely.
 
@@ -513,7 +516,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    int size = obj->size();
+    size_t size = obj->size();
     cl->do_object(obj);
     cs += size;
   }
@@ -562,7 +565,7 @@ inline ShenandoahHeapRegion* const ShenandoahHeap::get_region(size_t region_idx)
   if (region_idx < _num_regions) {
     return _regions[region_idx];
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

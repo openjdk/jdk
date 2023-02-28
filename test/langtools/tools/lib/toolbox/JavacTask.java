@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
-     * Sets the the annotation processors to be used.
+     * Sets the annotation processors to be used.
      */
     public JavacTask processors(Processor... procs) {
         this.procs = List.of(procs);

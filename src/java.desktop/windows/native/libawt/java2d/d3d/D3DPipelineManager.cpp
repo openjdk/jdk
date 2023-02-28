@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -834,7 +834,7 @@ HWND D3DPipelineManager::SetFSFocusWindow(UINT adapterOrdinal, HWND hWnd)
         // first fs window
         currentFSFocusAdapter = adapterOrdinal;
         // REMIND: we might want to reset the rest of the context here as well
-        // like we do when the an adapter exits fs mode; currently they will
+        // like we do when the adapter exits fs mode; currently they will
         // be reset sometime later
     } else {
         // there's already a fs window
@@ -1010,4 +1010,3 @@ __declspec(dllexport) int preloadD3D()
 }
 
 }
-

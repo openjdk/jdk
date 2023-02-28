@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
@@ -43,6 +43,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
   while ((intx) _masm->pc() - (intx) patch->pc_start() < NativeGeneralJump::instruction_size) {
     _masm->nop();
   }
+  info->set_force_reexecute();
   patch->install(_masm, patch_code, obj, info);
   append_code_stub(patch);
 
@@ -75,6 +76,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
       case Bytecodes::_getstatic:
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
+      case Bytecodes::_ldc2_w:
         break;
       default:
         ShouldNotReachHere();
@@ -102,12 +104,12 @@ PatchingStub::PatchID LIR_Assembler::patching_id(CodeEmitInfo* info) {
 
 LIR_Assembler::LIR_Assembler(Compilation* c):
    _masm(c->masm())
- , _bs(BarrierSet::barrier_set())
  , _compilation(c)
  , _frame_map(c->frame_map())
  , _current_block(NULL)
  , _pending_non_safepoint(NULL)
  , _pending_non_safepoint_offset(0)
+ , _immediate_oops_patched(0)
 {
   _slow_case_stubs = new CodeStubList();
 }
@@ -129,6 +131,7 @@ void LIR_Assembler::check_codespace() {
 
 
 void LIR_Assembler::append_code_stub(CodeStub* stub) {
+  _immediate_oops_patched += stub->nr_immediate_oops_patched();
   _slow_case_stubs->append(stub);
 }
 
@@ -144,7 +147,7 @@ void LIR_Assembler::emit_stubs(CodeStubList* stub_list) {
       stringStream st;
       s->print_name(&st);
       st.print(" slow case");
-      _masm->block_comment(st.as_string());
+      _masm->block_comment(st.freeze());
     }
 #endif
     s->emit_code(this);
@@ -259,7 +262,7 @@ void LIR_Assembler::emit_block(BlockBegin* block) {
   if (CommentedAssembly) {
     stringStream st;
     st.print_cr(" block B%d [%d, %d]", block->block_id(), block->bci(), block->end()->printable_bci());
-    _masm->block_comment(st.as_string());
+    _masm->block_comment(st.freeze());
   }
 #endif
 
@@ -289,7 +292,7 @@ void LIR_Assembler::emit_lir_list(LIR_List* list) {
           (op->code() == lir_leal && op->as_Op1()->patch_code() != lir_patch_none)) {
         stringStream st;
         op->print_on(&st);
-        _masm->block_comment(st.as_string());
+        _masm->block_comment(st.freeze());
       }
     }
     if (PrintLIRWithAssembly) {
@@ -447,15 +450,20 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
   rt_call(op->result_opr(), op->addr(), op->arguments(), op->tmp(), op->info());
 }
 
-
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 
-  // emit the static call stub stuff out of line
-  emit_static_call_stub();
+  if (CodeBuffer::supports_shared_stubs() && op->method()->can_be_statically_bound()) {
+    // Calls of the same statically bound method can share
+    // a stub to the interpreter.
+    CodeBuffer::csize_t call_offset = pc() - _masm->code()->insts_begin();
+    _masm->code()->shared_stub_to_interp_for(op->method(), call_offset);
+  } else {
+    emit_static_call_stub();
+  }
   CHECK_BAILOUT();
 
   switch (op->code()) {
@@ -606,7 +614,7 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
         check_icache();
       }
       offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
-      _masm->verified_entry();
+      _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
       if (needs_clinit_barrier_on_entry(compilation()->method())) {
         clinit_barrier(compilation()->method());
       }
@@ -689,10 +697,6 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       comp_fl2i(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
       break;
 
-    case lir_cmove:
-      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->type());
-      break;
-
     case lir_shl:
     case lir_shr:
     case lir_ushr:
@@ -754,6 +758,17 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
   }
 }
 
+void LIR_Assembler::emit_op4(LIR_Op4* op) {
+  switch(op->code()) {
+    case lir_cmove:
+      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->type(), op->in_opr3(), op->in_opr4());
+      break;
+
+    default:
+      Unimplemented();
+      break;
+  }
+}
 
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());

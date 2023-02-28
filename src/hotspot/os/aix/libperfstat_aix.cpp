@@ -1,5 +1,7 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +32,21 @@
 // Handle to the libperfstat.
 static void* g_libhandle = NULL;
 
+typedef int (*fun_perfstat_cpu_t) (perfstat_id_t *name, PERFSTAT_CPU_T_LATEST* userbuff,
+                                   int sizeof_userbuff, int desired_number);
+
 typedef int (*fun_perfstat_cpu_total_t) (perfstat_id_t *name, PERFSTAT_CPU_TOTAL_T_LATEST* userbuff,
                                          int sizeof_userbuff, int desired_number);
 
 typedef int (*fun_perfstat_memory_total_t) (perfstat_id_t *name, perfstat_memory_total_t* userbuff,
                                             int sizeof_userbuff, int desired_number);
+
+typedef int (*fun_perfstat_netinterface_t) (perfstat_id_t *name, perfstat_netinterface_t* userbuff,
+                                            int sizeof_userbuff, int desired_number);
+
+typedef int (*fun_perfstat_process_t) (perfstat_id_t *name,
+                                       PERFSTAT_PROCESS_T_LATEST* userbuff, int sizeof_userbuff,
+                                       int desired_number);
 
 typedef int (*fun_perfstat_partition_total_t) (perfstat_id_t *name,
     PERFSTAT_PARTITON_TOTAL_T_LATEST* userbuff, int sizeof_userbuff,
@@ -48,12 +60,15 @@ typedef void (*fun_perfstat_reset_t) ();
 
 typedef cid_t (*fun_wpar_getcid_t) ();
 
-static fun_perfstat_cpu_total_t     g_fun_perfstat_cpu_total = NULL;
-static fun_perfstat_memory_total_t  g_fun_perfstat_memory_total = NULL;
+static fun_perfstat_cpu_total_t       g_fun_perfstat_cpu_total       = NULL;
+static fun_perfstat_cpu_t             g_fun_perfstat_cpu             = NULL;
+static fun_perfstat_memory_total_t    g_fun_perfstat_memory_total    = NULL;
+static fun_perfstat_netinterface_t    g_fun_perfstat_netinterface    = NULL;
 static fun_perfstat_partition_total_t g_fun_perfstat_partition_total = NULL;
-static fun_perfstat_wpar_total_t    g_fun_perfstat_wpar_total = NULL;
-static fun_perfstat_reset_t         g_fun_perfstat_reset = NULL;
-static fun_wpar_getcid_t            g_fun_wpar_getcid = NULL;
+static fun_perfstat_process_t         g_fun_perfstat_process         = NULL;
+static fun_perfstat_wpar_total_t      g_fun_perfstat_wpar_total      = NULL;
+static fun_perfstat_reset_t           g_fun_perfstat_reset           = NULL;
+static fun_wpar_getcid_t              g_fun_wpar_getcid              = NULL;
 
 bool libperfstat::init() {
 
@@ -84,7 +99,10 @@ bool libperfstat::init() {
 
   // These functions are required for every release.
   RESOLVE_FUN(perfstat_cpu_total);
+  RESOLVE_FUN(perfstat_cpu);
   RESOLVE_FUN(perfstat_memory_total);
+  RESOLVE_FUN(perfstat_netinterface);
+  RESOLVE_FUN(perfstat_process);
   RESOLVE_FUN(perfstat_reset);
 
   trcVerbose("libperfstat loaded.");
@@ -108,6 +126,22 @@ void libperfstat::cleanup() {
 
 }
 
+int libperfstat::perfstat_cpu_total(perfstat_id_t *name, PERFSTAT_CPU_TOTAL_T_LATEST* userbuff,
+                                    int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_cpu_total == NULL) {
+    return -1;
+  }
+  return g_fun_perfstat_cpu_total(name, userbuff, sizeof_userbuff, desired_number);
+}
+
+int libperfstat::perfstat_cpu(perfstat_id_t *name, PERFSTAT_CPU_T_LATEST* userbuff,
+                              int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_cpu == NULL) {
+    return -1;
+  }
+  return g_fun_perfstat_cpu(name, userbuff, sizeof_userbuff, desired_number);
+}
+
 int libperfstat::perfstat_memory_total(perfstat_id_t *name,
                                        perfstat_memory_total_t* userbuff,
                                        int sizeof_userbuff, int desired_number) {
@@ -117,12 +151,13 @@ int libperfstat::perfstat_memory_total(perfstat_id_t *name,
   return g_fun_perfstat_memory_total(name, userbuff, sizeof_userbuff, desired_number);
 }
 
-int libperfstat::perfstat_cpu_total(perfstat_id_t *name, PERFSTAT_CPU_TOTAL_T_LATEST* userbuff,
-                                    int sizeof_userbuff, int desired_number) {
-  if (g_fun_perfstat_cpu_total == NULL) {
+int libperfstat::perfstat_netinterface(perfstat_id_t *name,
+                                       perfstat_netinterface_t* userbuff,
+                                       int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_netinterface == NULL) {
     return -1;
   }
-  return g_fun_perfstat_cpu_total(name, userbuff, sizeof_userbuff, desired_number);
+  return g_fun_perfstat_netinterface(name, userbuff, sizeof_userbuff, desired_number);
 }
 
 int libperfstat::perfstat_partition_total(perfstat_id_t *name, PERFSTAT_PARTITON_TOTAL_T_LATEST* userbuff,
@@ -131,6 +166,14 @@ int libperfstat::perfstat_partition_total(perfstat_id_t *name, PERFSTAT_PARTITON
     return -1;
   }
   return g_fun_perfstat_partition_total(name, userbuff, sizeof_userbuff, desired_number);
+}
+
+int libperfstat::perfstat_process(perfstat_id_t *name, perfstat_process_t* userbuff,
+                                  int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_process == NULL) {
+    return -1;
+  }
+  return g_fun_perfstat_process(name, userbuff, sizeof_userbuff, desired_number);
 }
 
 int libperfstat::perfstat_wpar_total(perfstat_id_wpar_t *name, PERFSTAT_WPAR_TOTAL_T_LATEST* userbuff,

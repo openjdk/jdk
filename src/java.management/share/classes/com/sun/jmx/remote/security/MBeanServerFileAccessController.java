@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -306,7 +305,7 @@ public class MBeanServerFileAccessController
         final AccessControlContext acc = AccessController.getContext();
         @SuppressWarnings("removal")
         final Subject s =
-            AccessController.doPrivileged(new PrivilegedAction<Subject>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Subject run() {
                         return Subject.getSubject(acc);
                     }
@@ -314,8 +313,7 @@ public class MBeanServerFileAccessController
         if (s == null) return; /* security has not been enabled */
         final Set<Principal> principals = s.getPrincipals();
         String newPropertyValue = null;
-        for (Iterator<Principal> i = principals.iterator(); i.hasNext(); ) {
-            final Principal p = i.next();
+        for (Principal p : principals) {
             Access access = accessMap.get(p.getName());
             if (access != null) {
                 boolean ok;
@@ -390,7 +388,7 @@ public class MBeanServerFileAccessController
     }
 
     private void parseProperties(Properties props) {
-        this.accessMap = new HashMap<String, Access>();
+        this.accessMap = new HashMap<>();
         for (Map.Entry<Object, Object> entry : props.entrySet()) {
             String identity = (String) entry.getKey();
             String accessString = (String) entry.getValue();
@@ -449,7 +447,7 @@ public class MBeanServerFileAccessController
         }
 
         private Access parseReadWrite() {
-            List<String> createClasses = new ArrayList<String>();
+            List<String> createClasses = new ArrayList<>();
             boolean unregister = false;
             while (true) {
                 skipSpace();

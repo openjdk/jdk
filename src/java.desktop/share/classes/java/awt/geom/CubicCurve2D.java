@@ -312,23 +312,6 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
         }
 
         /**
-         * {@inheritDoc}
-         * @since 1.2
-         */
-        public Rectangle2D getBounds2D() {
-            float left   = Math.min(Math.min(x1, x2),
-                                    Math.min(ctrlx1, ctrlx2));
-            float top    = Math.min(Math.min(y1, y2),
-                                    Math.min(ctrly1, ctrly2));
-            float right  = Math.max(Math.max(x1, x2),
-                                    Math.max(ctrlx1, ctrlx2));
-            float bottom = Math.max(Math.max(y1, y2),
-                                    Math.max(ctrly1, ctrly2));
-            return new Rectangle2D.Float(left, top,
-                                         right - left, bottom - top);
-        }
-
-        /**
          * Use serialVersionUID from JDK 1.6 for interoperability.
          */
         @Serial
@@ -556,23 +539,6 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
             this.ctrly2 = ctrly2;
             this.x2     = x2;
             this.y2     = y2;
-        }
-
-        /**
-         * {@inheritDoc}
-         * @since 1.2
-         */
-        public Rectangle2D getBounds2D() {
-            double left   = Math.min(Math.min(x1, x2),
-                                     Math.min(ctrlx1, ctrlx2));
-            double top    = Math.min(Math.min(y1, y2),
-                                     Math.min(ctrly1, ctrly2));
-            double right  = Math.max(Math.max(x1, x2),
-                                     Math.max(ctrlx1, ctrlx2));
-            double bottom = Math.max(Math.max(y1, y2),
-                                     Math.max(ctrly1, ctrly2));
-            return new Rectangle2D.Double(left, top,
-                                          right - left, bottom - top);
         }
 
         /**
@@ -1443,7 +1409,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * @since 1.2
      */
     public boolean intersects(double x, double y, double w, double h) {
-        // Trivially reject non-existant rectangles
+        // Trivially reject non-existent rectangles
         if (w <= 0 || h <= 0) {
             return false;
         }
@@ -1509,6 +1475,15 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
         return contains(r.getX(), r.getY(), r.getWidth(), r.getHeight());
     }
 
+
+    /**
+     * {@inheritDoc}
+     * @since 1.2
+     */
+    public Rectangle2D getBounds2D() {
+        return Path2D.getBounds2D(getPathIterator(null));
+    }
+
     /**
      * {@inheritDoc}
      * @since 1.2
@@ -1564,7 +1539,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * Creates a new object of the same class as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.2
      */

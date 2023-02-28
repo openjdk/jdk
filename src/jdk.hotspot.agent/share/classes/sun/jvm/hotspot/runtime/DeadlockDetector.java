@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,16 +55,14 @@ public class DeadlockDetector {
         heap = VM.getVM().getObjectHeap();
         createThreadTable();
 
-        Iterator i = threadTable.entrySet().iterator();
-        while (i.hasNext()) {
-            Entry e = (Entry)i.next();
-            if (dfn(e) >= 0) {
+        for (Entry<JavaThread, Integer> e : threadTable.entrySet()) {
+            if (e.getValue() >= 0) {
                 // this thread was already visited
                 continue;
             }
 
             thisDfn = globalDfn;
-            JavaThread thread = (JavaThread)e.getKey();
+            JavaThread thread = e.getKey();
             previousThread = thread;
 
             // When there is a deadlock, all the monitors involved in the dependency
@@ -118,7 +116,7 @@ public class DeadlockDetector {
                     break;
                 }
                 previousThread = currentThread;
-                waitingToLockMonitor = (ObjectMonitor)currentThread.getCurrentPendingMonitor();
+                waitingToLockMonitor = currentThread.getCurrentPendingMonitor();
                 if (concurrentLocks) {
                     waitingToLockBlocker = currentThread.getCurrentParkBlocker();
                 }
@@ -160,10 +158,6 @@ public class DeadlockDetector {
             return ((Integer)obj).intValue();
         }
         return -1;
-    }
-
-    private static int dfn(Entry e) {
-        return ((Integer)e.getValue()).intValue();
     }
 
     private static void printOneDeadlock(PrintStream tty, JavaThread thread,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ import sun.security.pkcs.ParsingException;
 
 class MacData {
 
-    private String digestAlgorithmName;
+    private final String digestAlgorithmName;
     private AlgorithmParameters digestAlgorithmParams;
-    private byte[] digest;
-    private byte[] macSalt;
-    private int iterations;
+    private final byte[] digest;
+    private final byte[] macSalt;
+    private final int iterations;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
@@ -55,9 +55,7 @@ class MacData {
     /**
      * Parses a PKCS#12 MAC data.
      */
-    MacData(DerInputStream derin)
-        throws IOException, ParsingException
-    {
+    MacData(DerInputStream derin) throws IOException {
         DerValue[] macData = derin.getSequence(2);
         if (macData.length < 2 || macData.length > 3) {
             throw new ParsingException("Invalid length for MacData");
@@ -118,36 +116,6 @@ class MacData {
 
     }
 
-    MacData(AlgorithmParameters algParams, byte[] digest,
-        byte[] salt, int iterations) throws NoSuchAlgorithmException
-    {
-        if (algParams == null)
-           throw new NullPointerException("the algParams parameter " +
-                                               "must be non-null");
-
-        AlgorithmId algid = AlgorithmId.get(algParams);
-        this.digestAlgorithmName = algid.getName();
-        this.digestAlgorithmParams = algid.getParameters();
-
-        if (digest == null) {
-            throw new NullPointerException("the digest " +
-                                           "parameter must be non-null");
-        } else if (digest.length == 0) {
-            throw new IllegalArgumentException("the digest " +
-                                                "parameter must not be empty");
-        } else {
-            this.digest = digest.clone();
-        }
-
-        this.macSalt = salt;
-        this.iterations = iterations;
-
-        // delay the generation of ASN.1 encoding until
-        // getEncoded() is called
-        this.encoded = null;
-
-    }
-
     String getDigestAlgName() {
         return digestAlgorithmName;
     }
@@ -170,7 +138,7 @@ class MacData {
      * @exception IOException if error occurs when constructing its
      * ASN.1 encoding.
      */
-    public byte[] getEncoded() throws NoSuchAlgorithmException, IOException
+    public byte[] getEncoded() throws NoSuchAlgorithmException
     {
         if (this.encoded != null)
             return this.encoded.clone();

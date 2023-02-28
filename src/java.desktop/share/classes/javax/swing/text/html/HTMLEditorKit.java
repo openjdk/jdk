@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
 import javax.swing.Action;
-import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JViewport;
 import javax.swing.SizeRequirements;
@@ -180,7 +179,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * loaded asynchronously if loaded using <code>JEditorPane.setPage</code>.
  * This is controlled by a property on the document.  The method
  * {@link #createDefaultDocument createDefaultDocument} can
- * be overriden to change this.  The batching of work is done
+ * be overridden to change this.  The batching of work is done
  * by the <code>HTMLDocument.HTMLReader</code> class.  The actual
  * work is done by the <code>DefaultStyledDocument</code> and
  * <code>AbstractDocument</code> classes in the text package.
@@ -217,7 +216,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *
  * @author  Timothy Prinzing
  */
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     private JEditorPane theEditor;
@@ -299,10 +298,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param doc the destination for the insertion
      * @param pos the location in the document to place the
      *   content
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
@@ -338,7 +337,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @throws BadLocationException if {@code offset} is invalid
      * @throws IOException on I/O error
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void insertHTML(HTMLDocument doc, int offset, String html,
@@ -368,8 +367,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param pos the location in the document to fetch the
      *   content
      * @param len the amount to write out
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if {@code pos} represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if {@code pos} represents an invalid
      *   location within the document
      */
     public void write(Writer out, Document doc, int pos, int len)
@@ -456,12 +455,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         if (defaultStyles == null) {
             defaultStyles = new StyleSheet();
             appContext.put(DEFAULT_STYLES_KEY, defaultStyles);
-            try {
-                InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
-                Reader r = new BufferedReader(
-                        new InputStreamReader(is, ISO_8859_1));
+            try (InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
+                 InputStreamReader isr = new InputStreamReader(is, ISO_8859_1);
+                 Reader r = new BufferedReader(isr))
+            {
                 defaultStyles.loadRules(r, null);
-                r.close();
             } catch (Throwable e) {
                 // on error we simply have no styles... the html
                 // will look mighty wrong but still function.
@@ -842,19 +840,18 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                                   Element elem, AttributeSet attr, int offset,
                                   int x, int y) {
             Object useMap = attr.getAttribute(HTML.Attribute.USEMAP);
-            if (useMap != null && (useMap instanceof String)) {
-                Map m = hdoc.getMap((String)useMap);
+            if (useMap instanceof String s) {
+                Map m = hdoc.getMap(s);
                 if (m != null && offset < hdoc.getLength()) {
                     Rectangle bounds;
                     TextUI ui = html.getUI();
                     try {
-                        Shape lBounds = ui.modelToView(html, offset,
+                        Rectangle lBounds = ui.modelToView(html, offset,
                                                    Position.Bias.Forward);
-                        Shape rBounds = ui.modelToView(html, offset + 1,
+                        Rectangle rBounds = ui.modelToView(html, offset + 1,
                                                    Position.Bias.Backward);
-                        bounds = lBounds.getBounds();
-                        bounds.add((rBounds instanceof Rectangle) ?
-                                    (Rectangle)rBounds : rBounds.getBounds());
+                        bounds = lBounds;
+                        bounds.add(rBounds);
                     } catch (BadLocationException ble) {
                         bounds = null;
                     }
@@ -885,18 +882,14 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             if (e != null && offset > 0 && e.getStartOffset() == offset) {
                 try {
                     TextUI ui = editor.getUI();
-                    Shape s1 = ui.modelToView(editor, offset,
-                                              Position.Bias.Forward);
-                    if (s1 == null) {
+                    Rectangle r1 = ui.modelToView(editor, offset,
+                                                  Position.Bias.Forward);
+                    if (r1 == null) {
                         return false;
                     }
-                    Rectangle r1 = (s1 instanceof Rectangle) ? (Rectangle)s1 :
-                                    s1.getBounds();
-                    Shape s2 = ui.modelToView(editor, e.getEndOffset(),
-                                              Position.Bias.Backward);
-                    if (s2 != null) {
-                        Rectangle r2 = (s2 instanceof Rectangle) ? (Rectangle)s2 :
-                                    s2.getBounds();
+                    Rectangle r2 = ui.modelToView(editor, e.getEndOffset(),
+                                                  Position.Bias.Backward);
+                    if (r2 != null) {
                         r1.add(r2);
                     }
                     return r1.contains(x, y);
@@ -976,7 +969,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             URL u;
             try {
                 URL base = hdoc.getBase();
-                u = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = u = new URL(base, href);
                 // Following is a workaround for 1.2, in which
                 // new URL("file://...", "#...") causes the filename to
                 // be lost.
@@ -986,7 +980,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     String newFile = u.getFile();
                     if (baseFile != null && newFile != null &&
                         !newFile.startsWith(baseFile)) {
-                        u = new URL(base, baseFile + href);
+                        @SuppressWarnings("deprecation")
+                        var _unused2 = u = new URL(base, baseFile + href);
                     }
                 }
             } catch (MalformedURLException m) {
@@ -1020,7 +1015,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an exited event on the old link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), this.href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), this.href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1033,7 +1029,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an entered event on the new link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1306,6 +1303,29 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container is editable:
+     *     <ul>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
+     *         <li>The content within the tags will be handled by the editor as
+     *         regular text.</li>
+     *     </ul>
+     * </li>
+     * <li>When the container is not editable:
+     *     <ul>
+     *         <li>If the tag is recognized but not supported, such as script tags,
+     *         the tag and its contents will be hidden.</li>
+     *         <li>If the tag is unknown, the tag will be hidden but its contents
+     *         will display as regular text.</li>
+     *     </ul>
+     * </li>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**
@@ -1332,7 +1352,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.IMPLIED) {
                     String ws = (String) elem.getAttributes().getAttribute(
                         CSS.Attribute.WHITE_SPACE);
-                    if ((ws != null) && ws.equals("pre")) {
+                    if ("pre".equals(ws)) {
                         return new LineView(elem);
                     }
                     return new javax.swing.text.html.ParagraphView(elem);
@@ -1400,7 +1420,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.HEAD) {
                     // Make the head never visible, and never load its
                     // children. For Cursor positioning,
-                    // getNextVisualPositionFrom is overriden to always return
+                    // getNextVisualPositionFrom is overridden to always return
                     // the end offset of the element.
                     return new BlockView(elem, View.X_AXIS) {
                         public float getPreferredSpan(int axis) {
@@ -1473,12 +1493,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
             protected void layoutMinorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
                 Container container = getContainer();
-                Container parentContainer;
-                if (container != null
-                    && (container instanceof javax.swing.JEditorPane)
-                    && (parentContainer = container.getParent()) != null
-                    && (parentContainer instanceof javax.swing.JViewport)) {
-                    JViewport viewPort = (JViewport)parentContainer;
+                if ((container instanceof JEditorPane)
+                        && (container.getParent() instanceof JViewport viewPort)) {
                     if (cachedViewPort != null) {
                         JViewport cachedObject = cachedViewPort.get();
                         if (cachedObject != null) {
@@ -1517,9 +1533,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 //if parent == null unregister component listener
                 if (parent == null) {
                     if (cachedViewPort != null) {
-                        Object cachedObject;
+                        JViewport cachedObject;
                         if ((cachedObject = cachedViewPort.get()) != null) {
-                            ((JComponent)cachedObject).removeComponentListener(this);
+                            cachedObject.removeComponentListener(this);
                         }
                         cachedViewPort = null;
                     }
@@ -1694,6 +1710,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * Returns <code>HTMLDocument</code> of the given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLDocument of <code>e</code>.
          */
@@ -1706,6 +1724,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * Returns <code>HTMLEditorKit</code> of the given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLEditorKit for <code>e</code>.
          */
@@ -1888,10 +1908,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 getHTMLEditorKit(editor).insertHTML(doc, offset, html,
                                                     popDepth, pushDepth,
                                                     addTag);
-            } catch (IOException ioe) {
-                throw new RuntimeException("Unable to insert: " + ioe);
-            } catch (BadLocationException ble) {
-                throw new RuntimeException("Unable to insert: " + ble);
+            } catch (IOException | BadLocationException e) {
+                throw new RuntimeException("Unable to insert: " + e);
             }
         }
 
@@ -2378,6 +2396,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 URL page =
                     (URL)doc.getProperty(Document.StreamDescriptionProperty);
+                @SuppressWarnings("deprecation")
                 URL url = new URL(page, href);
                 HyperlinkEvent linkEvent = new HyperlinkEvent
                     (editor, HyperlinkEvent.EventType.
@@ -2393,9 +2412,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          */
         private void doObjectAction(JEditorPane editor, Element elem) {
             View view = getView(editor, elem);
-            if (view != null && view instanceof ObjectView) {
-                Component comp = ((ObjectView)view).getComponent();
-                if (comp != null && comp instanceof Accessible) {
+            if (view instanceof ObjectView objectView) {
+                Component comp = objectView.getComponent();
+                if (comp instanceof Accessible) {
                     AccessibleContext ac = comp.getAccessibleContext();
                     if (ac != null) {
                         AccessibleAction aa = ac.getAccessibleAction();
@@ -2445,7 +2464,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
         /*
          * If possible acquires a lock on the Document.  If a lock has been
-         * obtained a key will be retured that should be passed to
+         * obtained a key will be returned that should be passed to
          * <code>unlock</code>.
          */
         private Object lock(JEditorPane editor) {
@@ -2479,10 +2498,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             JEditorPane editor = (JEditorPane)c;
 
             Document d = editor.getDocument();
-            if (d == null || !(d instanceof HTMLDocument)) {
+            if (!(d instanceof HTMLDocument doc)) {
                 return;
             }
-            HTMLDocument doc = (HTMLDocument)d;
 
             ElementIterator ei = new ElementIterator(doc);
             int currentOffset = editor.getCaretPosition();

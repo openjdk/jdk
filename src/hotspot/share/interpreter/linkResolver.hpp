@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@ class CallInfo : public StackObj {
                    const methodHandle& resolved_method,
                    const methodHandle& selected_method,
                    int vtable_index, TRAPS);
-  void set_handle(const methodHandle& resolved_method,
-                  Handle resolved_appendix, TRAPS);
   void set_handle(Klass* resolved_klass,
                   const methodHandle& resolved_method,
                   Handle resolved_appendix, TRAPS);
@@ -156,26 +154,29 @@ class LinkInfo : public StackObj {
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_klass), _current_method(methodHandle()),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+      _name(name),
+      _signature(signature),
+      _resolved_klass(resolved_klass),
+      _current_klass(current_klass),
+      _current_method(methodHandle()),
+      _check_access(check_access == AccessCheck::required),
+      _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required),
+      _tag(tag) {
+    assert(_resolved_klass != nullptr, "must always have a resolved_klass");
+  }
 
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_method->method_holder()), _current_method(current_method),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+    LinkInfo(resolved_klass, name, signature, current_method->method_holder(), check_access, check_loader_constraints, tag) {
+    _current_method = current_method;
+  }
 
-
-  // Case where we just find the method and don't check access against the current class
+  // Case where we just find the method and don't check access against the current class, used by JavaCalls
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(NULL), _current_method(methodHandle()),
-    _check_access(false), _check_loader_constraints(false), _tag(JVM_CONSTANT_Invalid) {}
+    LinkInfo(resolved_klass, name, signature, nullptr, AccessCheck::skip, LoaderConstraintCheck::skip,
+             JVM_CONSTANT_Invalid) {}
 
   // accessors
   Symbol* name() const                  { return _name; }
@@ -249,6 +250,11 @@ class LinkResolver: AllStatic {
                                                  Klass* recv_klass,
                                                  bool check_null_and_abstract, TRAPS);
 
+  static bool resolve_previously_linked_invokehandle(CallInfo& result,
+                                                     const LinkInfo& link_info,
+                                                     const constantPoolHandle& pool,
+                                                     int index, TRAPS);
+
   static void check_field_accessability(Klass* ref_klass,
                                         Klass* resolved_klass,
                                         Klass* sel_klass,
@@ -280,6 +286,8 @@ class LinkResolver: AllStatic {
   static Method* resolve_method_statically(Bytecodes::Code code,
                                            const constantPoolHandle& pool,
                                            int index, TRAPS);
+
+  static void resolve_continuation_enter(CallInfo& callinfo, TRAPS);
 
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,
@@ -337,10 +345,9 @@ class LinkResolver: AllStatic {
                              const methodHandle& attached_method,
                              Bytecodes::Code byte, TRAPS);
 
- public:
   // Only resolved method known.
   static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
-    throw_abstract_method_error(resolved_method, methodHandle(), NULL, CHECK);
+    throw_abstract_method_error(resolved_method, methodHandle(), nullptr, CHECK);
   }
   // Resolved method and receiver klass know.
   static void throw_abstract_method_error(const methodHandle& resolved_method, Klass *recv_klass, TRAPS) {

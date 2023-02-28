@@ -30,10 +30,13 @@
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
 
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter) {
+inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter, uint region_idx) {
   if (!_inject_evacuation_failure_for_current_gc) {
+    return false;
+  }
+  if (!_evac_failure_regions.at(region_idx)) {
     return false;
   }
   if (++counter < G1EvacuationFailureALotCount) {
@@ -43,7 +46,7 @@ inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter
   return true;
 }
 
-#endif  // #ifndef PRODUCT
+#endif  // #if EVAC_FAILURE_INJECTOR
 
 #endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
 

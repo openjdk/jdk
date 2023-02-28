@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -62,6 +64,10 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   // if this method contains a methodHandle call site
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
+
+  // Insert nmethod entry barrier into frame.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
 }
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
@@ -69,8 +75,8 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   raw_pop(FP, LR);
 }
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) {
     breakpoint();
   }
 }
@@ -81,7 +87,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register obj_end, Register tm
   if (UseTLAB) {
     tlab_allocate(obj, obj_end, tmp1, size_expression, slow_case);
   } else {
-    eden_allocate(obj, obj_end, tmp1, tmp2, size_expression, slow_case);
+    b(slow_case);
   }
 }
 
@@ -189,7 +195,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   const Register tmp2 = Rtemp; // Rtemp should be free at c1 LIR level
   assert_different_registers(hdr, obj, disp_hdr, tmp2);
 
-  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "ajust this code");
+  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "adjust this code");
   const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
   const int mark_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -247,7 +253,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert_different_registers(hdr, obj, disp_hdr, Rtemp);
   Register tmp2 = Rtemp;
 
-  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "ajust this code");
+  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "adjust this code");
   const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
   const int mark_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -257,7 +263,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   // Load displaced header and object from the lock
   ldr(hdr, Address(disp_hdr, mark_offset));
-  // If hdr is NULL, we've got recursive locking and there's nothing more to do
+  // If hdr is null, we've got recursive locking and there's nothing more to do
   cbz(hdr, done);
 
   // load object

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ package java.util;
 
 import java.io.Serializable;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
@@ -62,9 +63,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * along with a time zone ID. For instance, the time zone ID for the
  * U.S. Pacific Time zone is "America/Los_Angeles". So, you can get a
  * U.S. Pacific Time {@code TimeZone} object with:
- * <blockquote><pre>
+ * <blockquote>
+ * {@snippet lang=java :
  * TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
- * </pre></blockquote>
+ * }
+ * </blockquote>
  * You can use the {@code getAvailableIDs} method to iterate through
  * all the supported time zone IDs. You can then choose a
  * supported ID to get a {@code TimeZone}.
@@ -74,6 +77,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <blockquote><pre>
  * <a id="CustomID"><i>CustomID:</i></a>
+ *         {@code GMT} <i>Sign</i> <i>Hours</i> {@code :} <i>Minutes</i> {@code :} <i>Seconds</i>
  *         {@code GMT} <i>Sign</i> <i>Hours</i> {@code :} <i>Minutes</i>
  *         {@code GMT} <i>Sign</i> <i>Hours</i> <i>Minutes</i>
  *         {@code GMT} <i>Sign</i> <i>Hours</i>
@@ -84,11 +88,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *         <i>Digit</i> <i>Digit</i>
  * <i>Minutes:</i>
  *         <i>Digit</i> <i>Digit</i>
+ * <i>Seconds:</i>
+ *         <i>Digit</i> <i>Digit</i>
  * <i>Digit:</i> one of
  *         {@code 0 1 2 3 4 5 6 7 8 9}
  * </pre></blockquote>
  *
- * <i>Hours</i> must be between 0 to 23 and <i>Minutes</i> must be
+ * <i>Hours</i> must be between 0 to 23 and <i>Minutes</i>/<i>Seconds</i> must be
  * between 00 to 59.  For example, "GMT+10" and "GMT+0010" mean ten
  * hours and ten minutes ahead of GMT, respectively.
  * <p>
@@ -102,17 +108,20 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * zone ID is normalized in the following syntax:
  * <blockquote><pre>
  * <a id="NormalizedCustomID"><i>NormalizedCustomID:</i></a>
- *         {@code GMT} <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i>
+ *         {@code GMT} <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i> [<i>ColonSeconds</i>]
  * <i>Sign:</i> one of
  *         {@code + -}
  * <i>TwoDigitHours:</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Minutes:</i>
  *         <i>Digit</i> <i>Digit</i>
+ * <i>ColonSeconds:</i>
+ *         {@code :} <i>Digit</i> <i>Digit</i>
  * <i>Digit:</i> one of
  *         {@code 0 1 2 3 4 5 6 7 8 9}
  * </pre></blockquote>
  * For example, TimeZone.getTimeZone("GMT-8").getID() returns "GMT-08:00".
+ * <i>ColonSeconds</i> part only appears if the seconds value is non-zero.
  *
  * <h2>Three-letter time zone IDs</h2>
  *
@@ -286,7 +295,11 @@ public abstract class TimeZone implements Serializable, Cloneable {
     /**
      * Sets the time zone ID. This does not change any other data in
      * the time zone object.
+     * @implSpec The default implementation throws a
+     * {@code NullPointerException} if {@code ID} is {@code null}
      * @param ID the new time zone ID.
+     * @throws NullPointerException This method may throw a
+     * {@code NullPointerException} if {@code ID} is {@code null}
      */
     public void setID(String ID)
     {
@@ -302,10 +315,14 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the default locale.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG},
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     * <blockquote>
+     * {@snippet lang=java :
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG,
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY));
+     * }
+     * </blockquote>
      *
      * @return the human-readable name of this time zone in the default locale.
      * @since 1.2
@@ -323,9 +340,12 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the specified {@code locale}.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG}, locale)
-     * </pre></blockquote>
+     * <blockquote>
+     * {@snippet lang=java :
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG, locale);
+     * }
+     * </blockquote>
      *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
@@ -345,10 +365,13 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Time). Otherwise, a Standard Time name is returned.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
+     * <blockquote>
+     * {@snippet lang=java :
      * getDisplayName(daylight, style,
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY));
+     * }
+     * </blockquote>
      *
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name
@@ -384,13 +407,18 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * found, the name is returned. Otherwise, a string in the
      * <a href="#NormalizedCustomID">normalized custom ID format</a> is returned.
      *
+     * @implSpec The default implementation throws an
+     * {@code IllegalArgumentException} if {@code style} is invalid or a
+     * {@code NullPointerException} if {@code ID} is {@code null}.
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name
      * @param style either {@link #LONG} or {@link #SHORT}
      * @param locale   the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
-     * @throws    IllegalArgumentException if {@code style} is invalid.
-     * @throws    NullPointerException if {@code locale} is {@code null}.
+     * @throws IllegalArgumentException This method may throw an
+     * {@code IllegalArgumentException} if {@code style} is invalid.
+     * @throws NullPointerException This method may throw a
+     * {@code NullPointerException} if {@code ID} is {@code null}
      * @since 1.2
      * @see java.text.DateFormatSymbols#getZoneStrings()
      */
@@ -500,6 +528,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @param date the given Date.
      * @return {@code true} if the given date is in Daylight Saving Time,
      *         {@code false}, otherwise.
+     * @throws NullPointerException This method may throw a
+     * {@code NullPointerException} if {@code date} is {@code null}
      */
     public abstract boolean inDaylightTime(Date date);
 
@@ -513,6 +543,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * @return the specified {@code TimeZone}, or the GMT zone if the given ID
      * cannot be understood.
+     * @throws NullPointerException if {@code ID} is {@code null}
      */
     public static synchronized TimeZone getTimeZone(String ID) {
         return getTimeZone(ID, true);
@@ -529,11 +560,11 @@ public abstract class TimeZone implements Serializable, Cloneable {
      */
     public static TimeZone getTimeZone(ZoneId zoneId) {
         String tzid = zoneId.getId(); // throws an NPE if null
-        char c = tzid.charAt(0);
-        if (c == '+' || c == '-') {
-            tzid = "GMT" + tzid;
-        } else if (c == 'Z' && tzid.length() == 1) {
-            tzid = "UTC";
+        if (zoneId instanceof ZoneOffset zo) {
+            var totalMillis = zo.getTotalSeconds() * 1_000;
+            return new ZoneInfo(totalMillis == 0 ? "UTC" : GMT_ID + tzid, totalMillis);
+        } else if (tzid.startsWith("UT") && !tzid.equals("UTC")) {
+            tzid = tzid.replaceFirst("(UTC|UT)(.*)", "GMT$2");
         }
         return getTimeZone(tzid, true);
     }
@@ -624,7 +655,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * time zone.
      *
      * <ul>
-     * <li>Use the {@code user.timezone} property value as the default
+     * <li>Use the {@systemProperty user.timezone} property value as the default
      * time zone ID if it's available.</li>
      * <li>Detect the platform time zone ID. The source of the
      * platform time zone and ID mapping may vary with implementation.</li>
@@ -667,13 +698,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = StaticProperty.javaHome();
-            try {
-                zoneID = getSystemTimeZoneID(javaHome);
-                if (zoneID == null) {
-                    zoneID = GMT_ID;
-                }
-            } catch (NullPointerException e) {
+            zoneID = getSystemTimeZoneID(StaticProperty.javaHome());
+            if (zoneID == null) {
                 zoneID = GMT_ID;
             }
         }
@@ -823,19 +849,24 @@ public abstract class TimeZone implements Serializable, Cloneable {
         }
 
         int hours = 0;
+        int minutes = 0;
         int num = 0;
         int countDelim = 0;
         int len = 0;
         while (index < length) {
             c = id.charAt(index++);
             if (c == ':') {
-                if (countDelim > 0) {
+                if (countDelim > 1) {
                     return null;
                 }
-                if (len > 2) {
+                if (len == 0 || len > 2) {
                     return null;
                 }
-                hours = num;
+                if (countDelim == 0) {
+                    hours = num;
+                } else if (countDelim == 1){
+                    minutes = num;
+                }
                 countDelim++;
                 num = 0;
                 len = 0;
@@ -853,20 +884,31 @@ public abstract class TimeZone implements Serializable, Cloneable {
         if (countDelim == 0) {
             if (len <= 2) {
                 hours = num;
+                minutes = 0;
+                num = 0;
+            } else if (len <= 4) {
+                hours = num / 100;
+                minutes = num % 100;
                 num = 0;
             } else {
-                hours = num / 100;
-                num %= 100;
+                return null;
+            }
+        } else if (countDelim == 1){
+            if (len == 2) {
+                minutes = num;
+                num = 0;
+            } else {
+                return null;
             }
         } else {
             if (len != 2) {
                 return null;
             }
         }
-        if (hours > 23 || num > 59) {
+        if (hours > 23 || minutes > 59 || num > 59) {
             return null;
         }
-        int gmtOffset =  (hours * 60 + num) * 60 * 1000;
+        int gmtOffset =  (hours * 3_600 + minutes * 60 + num) * 1_000;
 
         if (gmtOffset == 0) {
             zi = ZoneInfoFile.getZoneInfo(GMT_ID);

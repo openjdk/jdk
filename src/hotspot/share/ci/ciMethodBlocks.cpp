@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,15 @@
 
 
 ciBlock *ciMethodBlocks::block_containing(int bci) {
+  assert(bci >= 0 && bci < _code_size, "valid bytecode range");
   ciBlock *blk = _bci_to_block[bci];
   return blk;
 }
 
 bool ciMethodBlocks::is_block_start(int bci) {
-  assert(bci >=0 && bci < _code_size, "valid bytecode range");
+  assert(bci >= 0 && bci < _code_size, "valid bytecode range");
   ciBlock *b = _bci_to_block[bci];
-  assert(b != NULL, "must have block for bytecode");
+  assert(b != nullptr, "must have block for bytecode");
   return b->start_bci() == bci;
 }
 
@@ -54,7 +55,7 @@ ciBlock *ciMethodBlocks::split_block_at(int bci) {
   ciBlock *former_block = block_containing(bci);
   ciBlock *new_block = new(_arena) ciBlock(_method, _num_blocks++, former_block->start_bci());
   _blocks->append(new_block);
-  assert(former_block != NULL, "must not be NULL");
+  assert(former_block != nullptr, "must not be nullptr");
   new_block->set_limit_bci(bci);
   former_block->set_start_bci(bci);
   for (int pos=bci-1; pos >= 0; pos--) {
@@ -62,7 +63,7 @@ ciBlock *ciMethodBlocks::split_block_at(int bci) {
     if (current_block == former_block) {
       // Replace it.
       _bci_to_block[pos] = new_block;
-    } else if (current_block == NULL) {
+    } else if (current_block == nullptr) {
       // Non-bytecode start.  Skip.
       continue;
     } else {
@@ -83,7 +84,7 @@ ciBlock *ciMethodBlocks::split_block_at(int bci) {
 
 ciBlock *ciMethodBlocks::make_block_at(int bci) {
   ciBlock *cb = block_containing(bci);
-  if (cb == NULL ) {
+  if (cb == nullptr ) {
     // This is our first time visiting this bytecode.  Create
     // a fresh block and assign it this starting point.
     ciBlock *nb = new(_arena) ciBlock(_method, _num_blocks++, bci);
@@ -116,9 +117,9 @@ void ciMethodBlocks::do_analysis() {
     // Determine if a new block has been made at the current bci.  If
     // this block differs from our current range, switch to the new
     // one and end the old one.
-    assert(cur_block != NULL, "must always have a current block");
+    assert(cur_block != nullptr, "must always have a current block");
     ciBlock *new_block = block_containing(bci);
-    if (new_block == NULL || new_block == cur_block) {
+    if (new_block == nullptr || new_block == cur_block) {
       // We have not marked this bci as the start of a new block.
       // Keep interpreting the current_range.
       _bci_to_block[bci] = cur_block;
@@ -146,7 +147,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_ifnonnull   :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *fall_through = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *fall_through = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
@@ -166,7 +169,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_jsr         :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *ret = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *ret = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
@@ -224,7 +229,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_jsr_w       :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *ret = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *ret = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_far_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
@@ -258,7 +265,7 @@ ciMethodBlocks::ciMethodBlocks(Arena *arena, ciMethod *meth): _method(meth),
                           _arena(arena), _num_blocks(0), _code_size(meth->code_size()) {
   int block_estimate = _code_size / 8;
 
-  _blocks =  new(_arena) GrowableArray<ciBlock *>(_arena, block_estimate, 0, NULL);
+  _blocks =  new(_arena) GrowableArray<ciBlock *>(_arena, block_estimate, 0, nullptr);
   int b2bsize = _code_size * sizeof(ciBlock **);
   _bci_to_block = (ciBlock **) arena->Amalloc(b2bsize);
   Copy::zero_to_words((HeapWord*) _bci_to_block, b2bsize / sizeof(HeapWord));

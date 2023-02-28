@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return NULL;
   }
 
-  // Bail out if 'n' is a Div or Mod node whose zero check was removed earlier (i.e. control is NULL) and its divisor is an induction variable
-  // phi p of a trip-counted (integer) loop whose inputs could be zero (include zero in their type range). p could have a more precise type
-  // range that does not necessarily include all values of its inputs. Since each of these inputs will be a divisor of the newly cloned nodes
-  // of 'n', we need to bail out of one of these divisors could be zero (zero in its type range).
-  if ((n->Opcode() == Op_DivI || n->Opcode() == Op_ModI) && n->in(0) == NULL
-      && region->is_CountedLoop() && n->in(2) == region->as_CountedLoop()->phi()) {
-    Node* phi = region->as_CountedLoop()->phi();
-    for (uint i = 1; i < phi->req(); i++) {
-      if (_igvn.type(phi->in(i))->filter_speculative(TypeInt::ZERO) != Type::TOP) {
-        // Zero could be a possible value but we already removed the zero check. Bail out to avoid a possible division by zero at a later point.
-        return NULL;
-      }
-    }
+  if (cannot_split_division(n, region)) {
+    return NULL;
   }
 
   int wins = 0;
@@ -225,15 +214,50 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   return phi;
 }
 
+// Return true if 'n' is a Div or Mod node (without zero check If node which was removed earlier) with a loop phi divisor
+// of a trip-counted (integer or long) loop with a backedge input that could be zero (include zero in its type range). In
+// this case, we cannot split the division to the backedge as it could freely float above the loop exit check resulting in
+// a division by zero. This situation is possible because the type of an increment node of an iv phi (trip-counter) could
+// include zero while the iv phi does not (see PhiNode::Value() for trip-counted loops where we improve types of iv phis).
+// We also need to check other loop phis as they could have been created in the same split-if pass when applying
+// PhaseIdealLoop::split_thru_phi() to split nodes through an iv phi.
+bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) const {
+  const Type* zero;
+  switch (n->Opcode()) {
+    case Op_DivI:
+    case Op_ModI:
+      zero = TypeInt::ZERO;
+      break;
+    case Op_DivL:
+    case Op_ModL:
+      zero = TypeLong::ZERO;
+      break;
+    default:
+      return false;
+  }
+
+  assert(n->in(0) == NULL, "divisions with zero check should already have bailed out earlier in split-if");
+  Node* divisor = n->in(2);
+  return is_divisor_counted_loop_phi(divisor, region) &&
+         loop_phi_backedge_type_contains_zero(divisor, zero);
+}
+
+bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+}
+
+bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {
+    return _igvn.type(phi_divisor->in(LoopNode::LoopBackControl))->filter_speculative(zero) != Type::TOP;
+}
+
 //------------------------------dominated_by------------------------------------
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool exclude_loop_predicate) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert(iff->is_If(), "must be");
   assert(iff->Opcode() == Op_If ||
          iff->Opcode() == Op_CountedLoopEnd ||
          iff->Opcode() == Op_LongCountedLoopEnd ||
@@ -263,7 +287,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   // Make control-dependent data Nodes on the live path (path that will remain
   // once the dominated IF is removed) become control-dependent on the
   // dominating projection.
-  Node* dp = iff->as_If()->proj_out_or_null(pop == Op_IfTrue);
+  Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
   // Loop predicates may have depending checks which should not
   // be skipped. For example, range check predicate has two checks
@@ -272,7 +296,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
     return;
 
   ProjNode* dp_proj  = dp->as_Proj();
-  ProjNode* unc_proj = iff->as_If()->proj_out(1 - dp_proj->_con)->as_Proj();
+  ProjNode* unc_proj = iff->proj_out(1 - dp_proj->_con)->as_Proj();
   if (exclude_loop_predicate &&
       (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL ||
        unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != NULL ||
@@ -334,9 +358,11 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
       // We allow the special case of AddP's with no local inputs.
       // This allows us to split-up address expressions.
       if (m->is_AddP() &&
-          get_ctrl(m->in(2)) != n_ctrl &&
-          get_ctrl(m->in(3)) != n_ctrl) {
-        // Move the AddP up to dominating point
+          get_ctrl(m->in(AddPNode::Base)) != n_ctrl &&
+          get_ctrl(m->in(AddPNode::Address)) != n_ctrl &&
+          get_ctrl(m->in(AddPNode::Offset)) != n_ctrl) {
+        // Move the AddP up to the dominating point. That's fine because control of m's inputs
+        // must dominate get_ctrl(m) == n_ctrl and we just checked that the input controls are != n_ctrl.
         Node* c = find_non_split_ctrl(idom(n_ctrl));
         if (c->is_OuterStripMinedLoop()) {
           c->as_Loop()->verify_strip_mined(1);
@@ -353,139 +379,158 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
   return n_ctrl;
 }
 
-//------------------------------remix_address_expressions----------------------
-// Rework addressing expressions to get the most loop-invariant stuff
-// moved out.  We'd like to do all associative operators, but it's especially
-// important (common) to do address expressions.
-Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
-  if (!has_ctrl(n))  return NULL;
-  Node *n_ctrl = get_ctrl(n);
-  IdealLoopTree *n_loop = get_loop(n_ctrl);
-
-  // See if 'n' mixes loop-varying and loop-invariant inputs and
-  // itself is loop-varying.
-
-  // Only interested in binary ops (and AddP)
-  if( n->req() < 3 || n->req() > 4 ) return NULL;
-
-  Node *n1_ctrl = get_ctrl(n->in(                    1));
-  Node *n2_ctrl = get_ctrl(n->in(                    2));
-  Node *n3_ctrl = get_ctrl(n->in(n->req() == 3 ? 2 : 3));
-  IdealLoopTree *n1_loop = get_loop( n1_ctrl );
-  IdealLoopTree *n2_loop = get_loop( n2_ctrl );
-  IdealLoopTree *n3_loop = get_loop( n3_ctrl );
-
-  // Does one of my inputs spin in a tighter loop than self?
-  if( (n_loop->is_member( n1_loop ) && n_loop != n1_loop) ||
-      (n_loop->is_member( n2_loop ) && n_loop != n2_loop) ||
-      (n_loop->is_member( n3_loop ) && n_loop != n3_loop) )
-    return NULL;                // Leave well enough alone
-
-  // Is at least one of my inputs loop-invariant?
-  if( n1_loop == n_loop &&
-      n2_loop == n_loop &&
-      n3_loop == n_loop )
-    return NULL;                // No loop-invariant inputs
-
-
+// Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
+Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for integers");
   int n_op = n->Opcode();
 
-  // Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
-  if( n_op == Op_LShiftI ) {
+  if (n_op == Op_LShift(bt)) {
     // Scale is loop invariant
-    Node *scale = n->in(2);
-    Node *scale_ctrl = get_ctrl(scale);
-    IdealLoopTree *scale_loop = get_loop(scale_ctrl );
-    if( n_loop == scale_loop || !scale_loop->is_member( n_loop ) )
+    Node* scale = n->in(2);
+    Node* scale_ctrl = get_ctrl(scale);
+    IdealLoopTree* scale_loop = get_loop(scale_ctrl);
+    if (n_loop == scale_loop || !scale_loop->is_member(n_loop)) {
       return NULL;
-    const TypeInt *scale_t = scale->bottom_type()->isa_int();
-    if( scale_t && scale_t->is_con() && scale_t->get_con() >= 16 )
+    }
+    const TypeInt* scale_t = scale->bottom_type()->isa_int();
+    if (scale_t != NULL && scale_t->is_con() && scale_t->get_con() >= 16) {
       return NULL;              // Dont bother with byte/short masking
+    }
     // Add must vary with loop (else shift would be loop-invariant)
-    Node *add = n->in(1);
-    Node *add_ctrl = get_ctrl(add);
-    IdealLoopTree *add_loop = get_loop(add_ctrl);
-    //assert( n_loop == add_loop, "" );
-    if( n_loop != add_loop ) return NULL;  // happens w/ evil ZKM loops
+    Node* add = n->in(1);
+    Node* add_ctrl = get_ctrl(add);
+    IdealLoopTree* add_loop = get_loop(add_ctrl);
+    if (n_loop != add_loop) {
+      return NULL;  // happens w/ evil ZKM loops
+    }
 
     // Convert I-V into I+ (0-V); same for V-I
-    if( add->Opcode() == Op_SubI &&
-        _igvn.type( add->in(1) ) != TypeInt::ZERO ) {
-      Node *zero = _igvn.intcon(0);
+    if (add->Opcode() == Op_Sub(bt) &&
+        _igvn.type(add->in(1)) != TypeInteger::zero(bt)) {
+      assert(add->Opcode() == Op_SubI || add->Opcode() == Op_SubL, "");
+      Node* zero = _igvn.integercon(0, bt);
       set_ctrl(zero, C->root());
-      Node *neg = new SubINode( _igvn.intcon(0), add->in(2) );
-      register_new_node( neg, get_ctrl(add->in(2) ) );
-      add = new AddINode( add->in(1), neg );
-      register_new_node( add, add_ctrl );
+      Node* neg = SubNode::make(zero, add->in(2), bt);
+      register_new_node(neg, get_ctrl(add->in(2)));
+      add = AddNode::make(add->in(1), neg, bt);
+      register_new_node(add, add_ctrl);
     }
-    if( add->Opcode() != Op_AddI ) return NULL;
+    if (add->Opcode() != Op_Add(bt)) return NULL;
+    assert(add->Opcode() == Op_AddI || add->Opcode() == Op_AddL, "");
     // See if one add input is loop invariant
-    Node *add_var = add->in(1);
-    Node *add_var_ctrl = get_ctrl(add_var);
-    IdealLoopTree *add_var_loop = get_loop(add_var_ctrl );
-    Node *add_invar = add->in(2);
-    Node *add_invar_ctrl = get_ctrl(add_invar);
-    IdealLoopTree *add_invar_loop = get_loop(add_invar_ctrl );
-    if( add_var_loop == n_loop ) {
-    } else if( add_invar_loop == n_loop ) {
+    Node* add_var = add->in(1);
+    Node* add_var_ctrl = get_ctrl(add_var);
+    IdealLoopTree* add_var_loop = get_loop(add_var_ctrl);
+    Node* add_invar = add->in(2);
+    Node* add_invar_ctrl = get_ctrl(add_invar);
+    IdealLoopTree* add_invar_loop = get_loop(add_invar_ctrl);
+    if (add_invar_loop == n_loop) {
       // Swap to find the invariant part
       add_invar = add_var;
       add_invar_ctrl = add_var_ctrl;
       add_invar_loop = add_var_loop;
       add_var = add->in(2);
-      Node *add_var_ctrl = get_ctrl(add_var);
-      IdealLoopTree *add_var_loop = get_loop(add_var_ctrl );
-    } else                      // Else neither input is loop invariant
+    } else if (add_var_loop != n_loop) { // Else neither input is loop invariant
       return NULL;
-    if( n_loop == add_invar_loop || !add_invar_loop->is_member( n_loop ) )
+    }
+    if (n_loop == add_invar_loop || !add_invar_loop->is_member(n_loop)) {
       return NULL;              // No invariant part of the add?
+    }
 
     // Yes!  Reshape address expression!
-    Node *inv_scale = new LShiftINode( add_invar, scale );
-    Node *inv_scale_ctrl =
-      dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
-      add_invar_ctrl : scale_ctrl;
-    register_new_node( inv_scale, inv_scale_ctrl );
-    Node *var_scale = new LShiftINode( add_var, scale );
-    register_new_node( var_scale, n_ctrl );
-    Node *var_add = new AddINode( var_scale, inv_scale );
-    register_new_node( var_add, n_ctrl );
-    _igvn.replace_node( n, var_add );
+    Node* inv_scale = LShiftNode::make(add_invar, scale, bt);
+    Node* inv_scale_ctrl =
+            dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
+            add_invar_ctrl : scale_ctrl;
+    register_new_node(inv_scale, inv_scale_ctrl);
+    Node* var_scale = LShiftNode::make(add_var, scale, bt);
+    register_new_node(var_scale, n_ctrl);
+    Node* var_add = AddNode::make(var_scale, inv_scale, bt);
+    register_new_node(var_add, n_ctrl);
+    _igvn.replace_node(n, var_add);
     return var_add;
   }
+  return NULL;
+}
 
+//------------------------------remix_address_expressions----------------------
+// Rework addressing expressions to get the most loop-invariant stuff
+// moved out.  We'd like to do all associative operators, but it's especially
+// important (common) to do address expressions.
+Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
+  if (!has_ctrl(n))  return NULL;
+  Node* n_ctrl = get_ctrl(n);
+  IdealLoopTree* n_loop = get_loop(n_ctrl);
+
+  // See if 'n' mixes loop-varying and loop-invariant inputs and
+  // itself is loop-varying.
+
+  // Only interested in binary ops (and AddP)
+  if (n->req() < 3 || n->req() > 4) return NULL;
+
+  Node* n1_ctrl = get_ctrl(n->in(                    1));
+  Node* n2_ctrl = get_ctrl(n->in(                    2));
+  Node* n3_ctrl = get_ctrl(n->in(n->req() == 3 ? 2 : 3));
+  IdealLoopTree* n1_loop = get_loop(n1_ctrl);
+  IdealLoopTree* n2_loop = get_loop(n2_ctrl);
+  IdealLoopTree* n3_loop = get_loop(n3_ctrl);
+
+  // Does one of my inputs spin in a tighter loop than self?
+  if ((n_loop->is_member(n1_loop) && n_loop != n1_loop) ||
+      (n_loop->is_member(n2_loop) && n_loop != n2_loop) ||
+      (n_loop->is_member(n3_loop) && n_loop != n3_loop)) {
+    return NULL;                // Leave well enough alone
+  }
+
+  // Is at least one of my inputs loop-invariant?
+  if (n1_loop == n_loop &&
+      n2_loop == n_loop &&
+      n3_loop == n_loop) {
+    return NULL;                // No loop-invariant inputs
+  }
+
+  Node* res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_INT);
+  if (res != NULL) {
+    return res;
+  }
+  res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_LONG);
+  if (res != NULL) {
+    return res;
+  }
+
+  int n_op = n->Opcode();
   // Replace (I+V) with (V+I)
-  if( n_op == Op_AddI ||
+  if (n_op == Op_AddI ||
       n_op == Op_AddL ||
       n_op == Op_AddF ||
       n_op == Op_AddD ||
       n_op == Op_MulI ||
       n_op == Op_MulL ||
       n_op == Op_MulF ||
-      n_op == Op_MulD ) {
-    if( n2_loop == n_loop ) {
-      assert( n1_loop != n_loop, "" );
+      n_op == Op_MulD) {
+    if (n2_loop == n_loop) {
+      assert(n1_loop != n_loop, "");
       n->swap_edges(1, 2);
     }
   }
 
   // Replace ((I1 +p V) +p I2) with ((I1 +p I2) +p V),
   // but not if I2 is a constant.
-  if( n_op == Op_AddP ) {
-    if( n2_loop == n_loop && n3_loop != n_loop ) {
-      if( n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con() ) {
-        Node *n22_ctrl = get_ctrl(n->in(2)->in(2));
-        Node *n23_ctrl = get_ctrl(n->in(2)->in(3));
-        IdealLoopTree *n22loop = get_loop( n22_ctrl );
-        IdealLoopTree *n23_loop = get_loop( n23_ctrl );
-        if( n22loop != n_loop && n22loop->is_member(n_loop) &&
-            n23_loop == n_loop ) {
-          Node *add1 = new AddPNode( n->in(1), n->in(2)->in(2), n->in(3) );
+  if (n_op == Op_AddP) {
+    if (n2_loop == n_loop && n3_loop != n_loop) {
+      if (n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con()) {
+        Node* n22_ctrl = get_ctrl(n->in(2)->in(2));
+        Node* n23_ctrl = get_ctrl(n->in(2)->in(3));
+        IdealLoopTree* n22loop = get_loop(n22_ctrl);
+        IdealLoopTree* n23_loop = get_loop(n23_ctrl);
+        if (n22loop != n_loop && n22loop->is_member(n_loop) &&
+            n23_loop == n_loop) {
+          Node* add1 = new AddPNode(n->in(1), n->in(2)->in(2), n->in(3));
           // Stuff new AddP in the loop preheader
-          register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
-          Node *add2 = new AddPNode( n->in(1), add1, n->in(2)->in(3) );
-          register_new_node( add2, n_ctrl );
-          _igvn.replace_node( n, add2 );
+          register_new_node(add1, n_loop->_head->in(LoopNode::EntryControl));
+          Node* add2 = new AddPNode(n->in(1), add1, n->in(2)->in(3));
+          register_new_node(add2, n_ctrl);
+          _igvn.replace_node(n, add2);
           return add2;
         }
       }
@@ -494,17 +539,17 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
     // Replace (I1 +p (I2 + V)) with ((I1 +p I2) +p V)
     if (n2_loop != n_loop && n3_loop == n_loop) {
       if (n->in(3)->Opcode() == Op_AddX) {
-        Node *V = n->in(3)->in(1);
-        Node *I = n->in(3)->in(2);
+        Node* V = n->in(3)->in(1);
+        Node* I = n->in(3)->in(2);
         if (is_member(n_loop,get_ctrl(V))) {
         } else {
           Node *tmp = V; V = I; I = tmp;
         }
         if (!is_member(n_loop,get_ctrl(I))) {
-          Node *add1 = new AddPNode(n->in(1), n->in(2), I);
+          Node* add1 = new AddPNode(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->in(LoopNode::EntryControl));
-          Node *add2 = new AddPNode(n->in(1), add1, V);
+          Node* add2 = new AddPNode(n->in(1), add1, V);
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;
@@ -772,8 +817,8 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
   for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
     Node* u = m->fast_out(i);
     if (u->is_CFG()) {
-      if (u->Opcode() == Op_NeverBranch) {
-        u = ((NeverBranchNode*)u)->proj_out(0);
+      if (u->is_NeverBranch()) {
+        u = u->as_NeverBranch()->proj_out(0);
         enqueue_cfg_uses(u, wq);
       } else {
         wq.push(u);
@@ -956,7 +1001,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->Opcode() == Op_NeverBranch, "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1003,8 +1048,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   if (n->is_CFG() || n->is_LoadStore()) {
     return n;
   }
-  if (n->is_Opaque1() ||     // Opaque nodes cannot be mod'd
-      n_op == Op_Opaque2) {
+  if (n->is_Opaque1()) { // Opaque nodes cannot be mod'd
     if (!C->major_progress()) {   // If chance of no more loop opts...
       _igvn._worklist.push(n);  // maybe we'll remove them
     }
@@ -1053,8 +1097,13 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_inner_loop())) && n->Opcode() == Op_AddI) ||
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_loop_nest_inner_loop())) && n->Opcode() == Op_AddI) ||
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
+    return n;
+  }
+  // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
+  if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
+      n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
     return n;
   }
 
@@ -1074,7 +1123,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
-  if (n_blk->is_CountedLoop()) {
+  if (n_blk->is_BaseCountedLoop()) {
     IdealLoopTree *lp = get_loop(n_blk);
     if (lp && lp->_rce_candidate) {
       return n;
@@ -1157,7 +1206,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
     Node* dom = idom(useblock);
     if (loop->is_member(get_loop(dom)) ||
         // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->Opcode() == Op_NeverBranch && loop->is_member(get_loop(dom->in(0))))) {
+        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
       break;
     }
     useblock = dom;
@@ -1174,6 +1223,7 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
   if (!n->in(0)->is_Region()) {
     return false;
   }
+
   Node* region = n->in(0);
   Node* dom = idom(region);
   if (!dom->is_If() || dom->in(1) != n->in(1)) {
@@ -1349,28 +1399,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 
   // Two identical ifs back to back can be merged
-  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
-    Node *n_ctrl = n->in(0);
-    PhiNode* bolphi = PhiNode::make_blank(n_ctrl, n->in(1));
-    IfNode* dom_if = idom(n_ctrl)->as_If();
-    Node* proj_true = dom_if->proj_out(1);
-    Node* proj_false = dom_if->proj_out(0);
-    Node* con_true = _igvn.makecon(TypeInt::ONE);
-    Node* con_false = _igvn.makecon(TypeInt::ZERO);
-
-    for (uint i = 1; i < n_ctrl->req(); i++) {
-      if (is_dominator(proj_true, n_ctrl->in(i))) {
-        bolphi->init_req(i, con_true);
-      } else {
-        assert(is_dominator(proj_false, n_ctrl->in(i)), "bad if");
-        bolphi->init_req(i, con_false);
-      }
-    }
-    register_new_node(bolphi, n_ctrl);
-    _igvn.replace_input_of(n, 1, bolphi);
-
-    // Now split the IF
-    do_split_if(n);
+  if (try_merge_identical_ifs(n)) {
     return;
   }
 
@@ -1392,7 +1421,8 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       Node *prevdom = n;
       Node *dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom) {
+        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom &&
+            safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
           //  1) break validation of LoopNode::verify_strip_mined()
@@ -1405,7 +1435,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom, n, false, true);
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
 #ifndef PRODUCT
           if( VerifyLoopOptimizations ) verify();
 #endif
@@ -1420,14 +1450,137 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   try_sink_out_of_loop(n);
 
   try_move_store_after_loop(n);
+}
 
-  // Check for Opaque2's who's loop has disappeared - who's input is in the
-  // same loop nest as their output.  Remove 'em, they are no longer useful.
-  if( n_op == Op_Opaque2 &&
-      n->in(1) != NULL &&
-      get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
-    _igvn.replace_node( n, n->in(1) );
+// Transform:
+//
+// if (some_condition) {
+//   // body 1
+// } else {
+//   // body 2
+// }
+// if (some_condition) {
+//   // body 3
+// } else {
+//   // body 4
+// }
+//
+// into:
+//
+//
+// if (some_condition) {
+//   // body 1
+//   // body 3
+// } else {
+//   // body 2
+//   // body 4
+// }
+bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
+  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
+    Node *n_ctrl = n->in(0);
+    IfNode* dom_if = idom(n_ctrl)->as_If();
+    ProjNode* dom_proj_true = dom_if->proj_out(1);
+    ProjNode* dom_proj_false = dom_if->proj_out(0);
+
+    // Now split the IF
+    RegionNode* new_false_region;
+    RegionNode* new_true_region;
+    do_split_if(n, &new_false_region, &new_true_region);
+    assert(new_false_region->req() == new_true_region->req(), "");
+#ifdef ASSERT
+    for (uint i = 1; i < new_false_region->req(); ++i) {
+      assert(new_false_region->in(i)->in(0) == new_true_region->in(i)->in(0), "unexpected shape following split if");
+      assert(i == new_false_region->req() - 1 || new_false_region->in(i)->in(0)->in(1) == new_false_region->in(i + 1)->in(0)->in(1), "unexpected shape following split if");
+    }
+#endif
+    assert(new_false_region->in(1)->in(0)->in(1) == dom_if->in(1), "dominating if and dominated if after split must share test");
+
+    // We now have:
+    // if (some_condition) {
+    //   // body 1
+    //   if (some_condition) {
+    //     body3: // new_true_region
+    //     // body3
+    //   } else {
+    //     goto body4;
+    //   }
+    // } else {
+    //   // body 2
+    //  if (some_condition) {
+    //     goto body3;
+    //   } else {
+    //     body4:   // new_false_region
+    //     // body4;
+    //   }
+    // }
+    //
+
+    // clone pinned nodes thru the resulting regions
+    push_pinned_nodes_thru_region(dom_if, new_true_region);
+    push_pinned_nodes_thru_region(dom_if, new_false_region);
+
+    // Optimize out the cloned ifs. Because pinned nodes were cloned, this also allows a CastPP that would be dependent
+    // on a projection of n to have the dom_if as a control dependency. We don't want the CastPP to end up with an
+    // unrelated control dependency.
+    for (uint i = 1; i < new_false_region->req(); i++) {
+      if (is_dominator(dom_proj_true, new_false_region->in(i))) {
+        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+      } else {
+        assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
+        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+      }
+    }
+    return true;
   }
+  return false;
+}
+
+void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
+  for (DUIterator i = region->outs(); region->has_out(i); i++) {
+    Node* u = region->out(i);
+    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test() || !_igvn.no_dependent_zero_check(u)) {
+      continue;
+    }
+    assert(u->in(0) == region, "not a control dependent node?");
+    uint j = 1;
+    for (; j < u->req(); ++j) {
+      Node* in = u->in(j);
+      if (!is_dominator(ctrl_or_self(in), dom_if)) {
+        break;
+      }
+    }
+    if (j == u->req()) {
+      Node *phi = PhiNode::make_blank(region, u);
+      for (uint k = 1; k < region->req(); ++k) {
+        Node* clone = u->clone();
+        clone->set_req(0, region->in(k));
+        register_new_node(clone, region->in(k));
+        phi->init_req(k, clone);
+      }
+      register_new_node(phi, region);
+      _igvn.replace_node(u, phi);
+      --i;
+    }
+  }
+}
+
+bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
+  if (!dom->is_CountedLoopEnd()) {
+    return true;
+  }
+  CountedLoopEndNode* le = dom->as_CountedLoopEnd();
+  CountedLoopNode* cl = le->loopnode();
+  if (cl == NULL) {
+    return true;
+  }
+  if (!cl->is_main_loop()) {
+    return true;
+  }
+  if (cl->is_canonical_loop_entry() == NULL) {
+    return true;
+  }
+  // Further unrolling is possible so loop exit condition might change
+  return false;
 }
 
 // See if a shared loop-varying computation has no loop-varying uses.
@@ -1435,16 +1588,12 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
-  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
-                            n->in(1)->bottom_type()->isa_rawptr() &&
-                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
       n->Opcode() != Op_Opaque4 &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
@@ -1573,6 +1722,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
   }
 }
 
+// Compute the early control of a node by following its inputs until we reach
+// nodes that are pinned. Then compute the LCA of the control of all pinned nodes.
 Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
   Node* early_ctrl = NULL;
   ResourceMark rm;
@@ -1588,17 +1739,14 @@ Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
     } else {
       for (uint j = 0; j < m->req(); j++) {
         Node* in = m->in(j);
-        if (in == NULL) {
-          continue;
+        if (in != NULL) {
+          wq.push(in);
         }
-        wq.push(in);
       }
     }
     if (c != NULL) {
-      assert(is_dominator(c, n_ctrl), "");
-      if (early_ctrl == NULL) {
-        early_ctrl = c;
-      } else if (is_dominator(early_ctrl, c)) {
+      assert(is_dominator(c, n_ctrl), "control input must dominate current control");
+      if (early_ctrl == NULL || is_dominator(early_ctrl, c)) {
         early_ctrl = c;
       }
     }
@@ -1610,7 +1758,7 @@ Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
 bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* u = n->fast_out(i);
-    if (u->Opcode() == Op_Opaque1) {
+    if (u->is_Opaque1()) {
       return false;  // Found loop limit, bugfix for 4677003
     }
     // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
@@ -1706,14 +1854,14 @@ void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
 // through the Phi recursively, and return a Bool.
-Node* PhaseIdealLoop::clone_iff(PhiNode *phi, IdealLoopTree *loop) {
+Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
 
   // Convert this Phi into a Phi merging Bools
   uint i;
   for (i = 1; i < phi->req(); i++) {
     Node *b = phi->in(i);
     if (b->is_Phi()) {
-      _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi(), loop));
+      _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
       assert(b->is_Bool() || b->Opcode() == Op_Opaque4, "");
     }
@@ -1793,13 +1941,13 @@ Node* PhaseIdealLoop::clone_iff(PhiNode *phi, IdealLoopTree *loop) {
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
 // through the Phi recursively, and return a Bool.
-CmpNode *PhaseIdealLoop::clone_bool( PhiNode *phi, IdealLoopTree *loop ) {
+CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   uint i;
   // Convert this Phi into a Phi merging Bools
   for( i = 1; i < phi->req(); i++ ) {
     Node *b = phi->in(i);
     if( b->is_Phi() ) {
-      _igvn.replace_input_of(phi, i, clone_bool( b->as_Phi(), loop ));
+      _igvn.replace_input_of(phi, i, clone_bool(b->as_Phi()));
     } else {
       assert( b->is_Cmp() || b->is_top(), "inputs are all Cmp or TOP" );
     }
@@ -1901,7 +2049,13 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // in the loop to break the loop, then test is again outside of the
       // loop to determine which way the loop exited.
       // Loop predicate If node connects to Bool node through Opaque1 node.
-      if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4) {
+      //
+      // If the use is an AllocateArray through its ValidLengthTest input,
+      // make sure the Bool/Cmp input is cloned down to avoid a Phi between
+      // the AllocateArray node and its ValidLengthTest input that could cause
+      // split if to break.
+      if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4 ||
+          (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
         if (!split_if_set) {
@@ -1996,6 +2150,10 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         set_ctrl(phi, prev);
       }
       // Make 'use' use the Phi instead of the old loop body exit value
+      assert(use->in(idx) == old, "old is still input of use");
+      // We notify all uses of old, including use, and the indirect uses,
+      // that may now be optimized because we have replaced old with phi.
+      _igvn.add_users_to_worklist(old);
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
         // Not needed for correctness, but prevents a weak assert
@@ -2014,21 +2172,30 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
-static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
-                                    const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
-                                    bool check_old_new) {
+static void collect_nodes_in_outer_loop_not_reachable_from_sfpt(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
+                                                                const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
+                                                                bool check_old_new) {
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == NULL)) {
       Node* c = phase->get_ctrl(u);
       IdealLoopTree* u_loop = phase->get_loop(c);
-      assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
-      if (outer_loop->is_member(u_loop) ||
+      assert(!loop->is_member(u_loop) || !loop->_body.contains(u), "can be in outer loop or out of both loops only");
+      if (!loop->is_member(u_loop)) {
+        if (outer_loop->is_member(u_loop)) {
+          wq.push(u);
+        } else {
           // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
           // the outer loop too
-          (u->in(0) != NULL && outer_loop->is_member(phase->get_loop(u->in(0))))) {
-        wq.push(u);
+          Node* u_c = u->in(0);
+          if (u_c != NULL) {
+            IdealLoopTree* u_c_loop = phase->get_loop(u_c);
+            if (outer_loop->is_member(u_c_loop) && !loop->is_member(u_c_loop)) {
+              wq.push(u);
+            }
+          }
+        }
       }
     }
   }
@@ -2138,19 +2305,24 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       _igvn.register_new_node_with_optimizer(new_sfpt);
       _igvn.register_new_node_with_optimizer(new_cle_out);
     }
-    // Some other transformation may have pessimistically assign some
+    // Some other transformation may have pessimistically assigned some
     // data nodes to the outer loop. Set their control so they are out
     // of the outer loop.
     ResourceMark rm;
     Unique_Node_List wq;
     for (uint i = 0; i < extra_data_nodes.size(); i++) {
       Node* old = extra_data_nodes.at(i);
-      clone_outer_loop_helper(old, loop, outer_loop, old_new, wq, this, true);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(old, loop, outer_loop, old_new, wq, this, true);
+    }
+
+    for (uint i = 0; i < loop->_body.size(); i++) {
+      Node* old = loop->_body.at(i);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(old, loop, outer_loop, old_new, wq, this, true);
     }
 
     Node* inner_out = sfpt->in(0);
     if (inner_out->outcnt() > 1) {
-      clone_outer_loop_helper(inner_out, loop, outer_loop, old_new, wq, this, true);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(inner_out, loop, outer_loop, old_new, wq, this, true);
     }
 
     Node* new_ctrl = cl->outer_loop_exit();
@@ -2161,7 +2333,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       if (n->in(0) != NULL) {
         _igvn.replace_input_of(n, 0, new_ctrl);
       }
-      clone_outer_loop_helper(n, loop, outer_loop, old_new, wq, this, false);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(n, loop, outer_loop, old_new, wq, this, false);
     }
   } else {
     Node *newhead = old_new[loop->_head->_idx];
@@ -2210,7 +2382,6 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   }
 
   CloneMap& cm = C->clone_map();
-  Dict* dict = cm.dict();
   if (C->do_vector_loop()) {
     cm.set_clone_idx(cm.max_gen()+1);
 #ifndef PRODUCT
@@ -2222,49 +2393,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   }
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
-  uint i;
-  for (i = 0; i < loop->_body.size(); i++) {
-    Node* old = loop->_body.at(i);
-    Node* nnn = old->clone();
-    old_new.map(old->_idx, nnn);
-    if (old->is_reduction()) {
-      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
-      nnn->add_flag(Node::Flag_is_reduction);
-    }
-    if (C->do_vector_loop()) {
-      cm.verify_insert_and_clone(old, nnn, cm.clone_idx());
-    }
-    _igvn.register_new_node_with_optimizer(nnn);
-  }
+  clone_loop_body(loop->_body, old_new, &cm);
 
   IdealLoopTree* outer_loop = (head->is_strip_mined() && mode != IgnoreStripMined) ? get_loop(head->as_CountedLoop()->outer_loop()) : loop;
 
   // Step 2: Fix the edges in the new body.  If the old input is outside the
   // loop use it.  If the old input is INside the loop, use the corresponding
   // new node instead.
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node *old = loop->_body.at(i);
-    Node *nnn = old_new[old->_idx];
-    // Fix CFG/Loop controlling the new node
-    if (has_ctrl(old)) {
-      set_ctrl(nnn, old_new[get_ctrl(old)->_idx]);
-    } else {
-      set_loop(nnn, outer_loop->_parent);
-      if (old->outcnt() > 0) {
-        set_idom( nnn, old_new[idom(old)->_idx], dd );
-      }
-    }
-    // Correct edges to the new node
-    for( uint j = 0; j < nnn->req(); j++ ) {
-        Node *n = nnn->in(j);
-        if( n ) {
-          IdealLoopTree *old_in_loop = get_loop( has_ctrl(n) ? get_ctrl(n) : n );
-          if( loop->is_member( old_in_loop ) )
-            nnn->set_req(j, old_new[n->_idx]);
-        }
-    }
-    _igvn.hash_find_insert(nnn);
-  }
+  fix_body_edges(loop->_body, loop, old_new, dd, outer_loop->_parent, false);
 
   Node_List extra_data_nodes; // data nodes in the outer strip mined loop
   clone_outer_loop(head, mode, loop, outer_loop, dd, old_new, extra_data_nodes);
@@ -2276,22 +2412,94 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   // refer to this.
   Node_List worklist;
   uint new_counter = C->unique();
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node* old = loop->_body.at(i);
+  fix_ctrl_uses(loop->_body, loop, old_new, mode, side_by_side_idom, &cm, worklist);
+
+  // Step 4: If loop-invariant use is not control, it must be dominated by a
+  // loop exit IfFalse/IfTrue.  Find "proper" loop exit.  Make a Region
+  // there if needed.  Make a Phi there merging old and new used values.
+  Node_List *split_if_set = NULL;
+  Node_List *split_bool_set = NULL;
+  Node_List *split_cex_set = NULL;
+  fix_data_uses(loop->_body, loop, mode, outer_loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+
+  for (uint i = 0; i < extra_data_nodes.size(); i++) {
+    Node* old = extra_data_nodes.at(i);
+    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
+                                split_bool_set, split_cex_set, worklist, new_counter,
+                                mode);
+  }
+
+  // Check for IFs that need splitting/cloning.  Happens if an IF outside of
+  // the loop uses a condition set in the loop.  The original IF probably
+  // takes control from one or more OLD Regions (which in turn get from NEW
+  // Regions).  In any case, there will be a set of Phis for each merge point
+  // from the IF up to where the original BOOL def exists the loop.
+  finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
+
+}
+
+void PhaseIdealLoop::finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set) {
+  if (split_if_set) {
+    while (split_if_set->size()) {
+      Node *iff = split_if_set->pop();
+      uint input = iff->Opcode() == Op_AllocateArray ? AllocateNode::ValidLengthTest : 1;
+      if (iff->in(input)->is_Phi()) {
+        Node *b = clone_iff(iff->in(input)->as_Phi());
+        _igvn.replace_input_of(iff, input, b);
+      }
+    }
+  }
+  if (split_bool_set) {
+    while (split_bool_set->size()) {
+      Node *b = split_bool_set->pop();
+      Node *phi = b->in(1);
+      assert(phi->is_Phi(), "");
+      CmpNode *cmp = clone_bool((PhiNode*) phi);
+      _igvn.replace_input_of(b, 1, cmp);
+    }
+  }
+  if (split_cex_set) {
+    while (split_cex_set->size()) {
+      Node *b = split_cex_set->pop();
+      assert(b->in(0)->is_Region(), "");
+      assert(b->in(1)->is_Phi(), "");
+      assert(b->in(0)->in(0) == b->in(1)->in(0), "");
+      split_up(b, b->in(0), NULL);
+    }
+  }
+}
+
+void PhaseIdealLoop::fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
+                                   uint new_counter, Node_List &old_new, Node_List &worklist, Node_List*& split_if_set,
+                                   Node_List*& split_bool_set, Node_List*& split_cex_set) {
+  for(uint i = 0; i < body.size(); i++ ) {
+    Node* old = body.at(i);
+    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
+                                split_bool_set, split_cex_set, worklist, new_counter,
+                                mode);
+  }
+}
+
+void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
+                                   Node* side_by_side_idom, CloneMap* cm, Node_List &worklist) {
+  LoopNode* head = loop->_head->as_Loop();
+  for(uint i = 0; i < body.size(); i++ ) {
+    Node* old = body.at(i);
     if( !old->is_CFG() ) continue;
 
     // Copy uses to a worklist, so I can munge the def-use info
     // with impunity.
-    for (DUIterator_Fast jmax, j = old->fast_outs(jmax); j < jmax; j++)
+    for (DUIterator_Fast jmax, j = old->fast_outs(jmax); j < jmax; j++) {
       worklist.push(old->fast_out(j));
+    }
 
-    while( worklist.size() ) {  // Visit all uses
+    while (worklist.size()) {  // Visit all uses
       Node *use = worklist.pop();
       if (!has_node(use))  continue; // Ignore dead nodes
-      IdealLoopTree *use_loop = get_loop( has_ctrl(use) ? get_ctrl(use) : use );
-      if( !loop->is_member( use_loop ) && use->is_CFG() ) {
+      IdealLoopTree *use_loop = get_loop(has_ctrl(use) ? get_ctrl(use) : use );
+      if (!loop->is_member(use_loop) && use->is_CFG()) {
         // Both OLD and USE are CFG nodes here.
-        assert( use->is_Proj(), "" );
+        assert(use->is_Proj(), "" );
         Node* nnn = old_new[old->_idx];
 
         Node* newuse = NULL;
@@ -2315,8 +2523,8 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         }
 
         // Clone the loop exit control projection
-        if (C->do_vector_loop()) {
-          cm.verify_insert_and_clone(use, newuse, cm.clone_idx());
+        if (C->do_vector_loop() && cm != NULL) {
+          cm->verify_insert_and_clone(use, newuse, cm->clone_idx());
         }
         newuse->set_req(0,nnn);
         _igvn.register_new_node_with_optimizer(newuse);
@@ -2328,18 +2536,18 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         RegionNode *r = new RegionNode(3);
         // Map the old use to the new merge point
         old_new.map( use->_idx, r );
-        uint dd_r = MIN2(dom_depth(newuse),dom_depth(use));
-        assert( dd_r >= dom_depth(dom_lca(newuse,use)), "" );
+        uint dd_r = MIN2(dom_depth(newuse), dom_depth(use));
+        assert(dd_r >= dom_depth(dom_lca(newuse, use)), "" );
 
         // The original user of 'use' uses 'r' instead.
         for (DUIterator_Last lmin, l = use->last_outs(lmin); l >= lmin;) {
           Node* useuse = use->last_out(l);
           _igvn.rehash_node_delayed(useuse);
           uint uses_found = 0;
-          if( useuse->in(0) == use ) {
+          if (useuse->in(0) == use) {
             useuse->set_req(0, r);
             uses_found++;
-            if( useuse->is_CFG() ) {
+            if (useuse->is_CFG()) {
               // This is not a dom_depth > dd_r because when new
               // control flow is constructed by a loop opt, a node and
               // its dominator can end up at the same dom_depth
@@ -2347,7 +2555,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
               set_idom(useuse, r, dom_depth(useuse));
             }
           }
-          for( uint k = 1; k < useuse->req(); k++ ) {
+          for (uint k = 1; k < useuse->req(); k++) {
             if( useuse->in(k) == use ) {
               useuse->set_req(k, r);
               uses_found++;
@@ -2364,68 +2572,67 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         }
 
         // Now finish up 'r'
-        r->set_req( 1, newuse );
-        r->set_req( 2,    use );
+        r->set_req(1, newuse);
+        r->set_req(2,    use);
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
-        set_idom(r, !side_by_side_idom ? newuse->in(0) : side_by_side_idom, dd_r);
+        set_idom(r, (side_by_side_idom == NULL) ? newuse->in(0) : side_by_side_idom, dd_r);
       } // End of if a loop-exit test
     }
   }
+}
 
-  // Step 4: If loop-invariant use is not control, it must be dominated by a
-  // loop exit IfFalse/IfTrue.  Find "proper" loop exit.  Make a Region
-  // there if needed.  Make a Phi there merging old and new used values.
-  Node_List *split_if_set = NULL;
-  Node_List *split_bool_set = NULL;
-  Node_List *split_cex_set = NULL;
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node* old = loop->_body.at(i);
-    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
-                                split_bool_set, split_cex_set, worklist, new_counter,
-                                mode);
-  }
-
-  for (i = 0; i < extra_data_nodes.size(); i++) {
-    Node* old = extra_data_nodes.at(i);
-    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
-                                split_bool_set, split_cex_set, worklist, new_counter,
-                                mode);
-  }
-
-  // Check for IFs that need splitting/cloning.  Happens if an IF outside of
-  // the loop uses a condition set in the loop.  The original IF probably
-  // takes control from one or more OLD Regions (which in turn get from NEW
-  // Regions).  In any case, there will be a set of Phis for each merge point
-  // from the IF up to where the original BOOL def exists the loop.
-  if (split_if_set) {
-    while (split_if_set->size()) {
-      Node *iff = split_if_set->pop();
-      if (iff->in(1)->is_Phi()) {
-        Node *b = clone_iff(iff->in(1)->as_Phi(), loop);
-        _igvn.replace_input_of(iff, 1, b);
+void PhaseIdealLoop::fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+                                    IdealLoopTree* parent, bool partial) {
+  for(uint i = 0; i < body.size(); i++ ) {
+    Node *old = body.at(i);
+    Node *nnn = old_new[old->_idx];
+    // Fix CFG/Loop controlling the new node
+    if (has_ctrl(old)) {
+      set_ctrl(nnn, old_new[get_ctrl(old)->_idx]);
+    } else {
+      set_loop(nnn, parent);
+      if (old->outcnt() > 0) {
+        Node* dom = idom(old);
+        if (old_new[dom->_idx] != NULL) {
+          dom = old_new[dom->_idx];
+          set_idom(nnn, dom, dd );
+        }
       }
     }
-  }
-  if (split_bool_set) {
-    while (split_bool_set->size()) {
-      Node *b = split_bool_set->pop();
-      Node *phi = b->in(1);
-      assert(phi->is_Phi(), "");
-      CmpNode *cmp = clone_bool((PhiNode*)phi, loop);
-      _igvn.replace_input_of(b, 1, cmp);
+    // Correct edges to the new node
+    for (uint j = 0; j < nnn->req(); j++) {
+        Node *n = nnn->in(j);
+        if (n != NULL) {
+          IdealLoopTree *old_in_loop = get_loop(has_ctrl(n) ? get_ctrl(n) : n);
+          if (loop->is_member(old_in_loop)) {
+            if (old_new[n->_idx] != NULL) {
+              nnn->set_req(j, old_new[n->_idx]);
+            } else {
+              assert(!body.contains(n), "");
+              assert(partial, "node not cloned");
+            }
+          }
+        }
     }
+    _igvn.hash_find_insert(nnn);
   }
-  if (split_cex_set) {
-    while (split_cex_set->size()) {
-      Node *b = split_cex_set->pop();
-      assert(b->in(0)->is_Region(), "");
-      assert(b->in(1)->is_Phi(), "");
-      assert(b->in(0)->in(0) == b->in(1)->in(0), "");
-      split_up(b, b->in(0), NULL);
-    }
-  }
+}
 
+void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm) {
+  for (uint i = 0; i < body.size(); i++) {
+    Node* old = body.at(i);
+    Node* nnn = old->clone();
+    old_new.map(old->_idx, nnn);
+    if (old->is_reduction()) {
+      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
+      nnn->add_flag(Node::Flag_is_reduction);
+    }
+    if (C->do_vector_loop() && cm != NULL) {
+      cm->verify_insert_and_clone(old, nnn, cm->clone_idx());
+    }
+    _igvn.register_new_node_with_optimizer(nnn);
+  }
 }
 
 
@@ -3640,73 +3847,282 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   return true;
 }
 
-//------------------------------reorg_offsets----------------------------------
-// Reorganize offset computations to lower register pressure.  Mostly
-// prevent loop-fallout uses of the pre-incremented trip counter (which are
-// then alive with the post-incremented trip counter forcing an extra
-// register move)
-void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
-  // Perform it only for canonical counted loops.
-  // Loop's shape could be messed up by iteration_split_impl.
-  if (!loop->_head->is_CountedLoop())
-    return;
-  if (!loop->_head->as_Loop()->is_valid_counted_loop(T_INT))
-    return;
+// Transform:
+//
+// loop<-----------------+
+//  |                    |
+// stmt1 stmt2 .. stmtn  |
+//  |     |        |     |
+//  \     |       /      |
+//    v   v     v        |
+//       region          |
+//         |             |
+//     shared_stmt       |
+//         |             |
+//         v             |
+//         if            |
+//         / \           |
+//        |   -----------+
+//        v
+//
+// into:
+//
+//    loop<-------------------+
+//     |                      |
+//     v                      |
+// +->loop                    |
+// |   |                      |
+// |  stmt1 stmt2 .. stmtn    |
+// |   |     |        |       |
+// |   |      \       /       |
+// |   |       v     v        |
+// |   |        region1       |
+// |   |           |          |
+// |  shared_stmt shared_stmt |
+// |   |           |          |
+// |   v           v          |
+// |   if          if         |
+// |   /\          / \        |
+// +--   |         |   -------+
+//       \         /
+//        v       v
+//         region2
+//
+// (region2 is shown to merge mirrored projections of the loop exit
+// ifs to make the diagram clearer but they really merge the same
+// projection)
+//
+// Conditions for this transformation to trigger:
+// - the path through stmt1 is frequent enough
+// - the inner loop will be turned into a counted loop after transformation
+bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new) {
+  if (!DuplicateBackedge) {
+    return false;
+  }
+  assert(!loop->_head->is_CountedLoop() || StressDuplicateBackedge, "Non-counted loop only");
+  if (!loop->_head->is_Loop()) {
+    return false;
+  }
 
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  CountedLoopEndNode *cle = cl->loopexit();
-  Node *exit = cle->proj_out(false);
-  Node *phi = cl->phi();
+  uint estimate = loop->est_loop_clone_sz(1);
+  if (exceeding_node_budget(estimate)) {
+    return false;
+  }
 
-  // Check for the special case when using the pre-incremented trip-counter on
-  // the fall-out  path (forces the pre-incremented  and post-incremented trip
-  // counter to be live  at the same time).  Fix this by  adjusting to use the
-  // post-increment trip counter.
+  LoopNode *head = loop->_head->as_Loop();
 
-  bool progress = true;
-  while (progress) {
-    progress = false;
-    for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-      Node* use = phi->fast_out(i);   // User of trip-counter
-      if (!has_ctrl(use))  continue;
-      Node *u_ctrl = get_ctrl(use);
-      if (use->is_Phi()) {
-        u_ctrl = NULL;
-        for (uint j = 1; j < use->req(); j++)
-          if (use->in(j) == phi)
-            u_ctrl = dom_lca(u_ctrl, use->in(0)->in(j));
+  Node* region = NULL;
+  IfNode* exit_test = NULL;
+  uint inner;
+  float f;
+  if (StressDuplicateBackedge) {
+    if (head->is_strip_mined()) {
+      return false;
+    }
+    Node* c = head->in(LoopNode::LoopBackControl);
+
+    while (c != head) {
+      if (c->is_Region()) {
+        region = c;
       }
-      IdealLoopTree *u_loop = get_loop(u_ctrl);
-      // Look for loop-invariant use
-      if (u_loop == loop) continue;
-      if (loop->is_member(u_loop)) continue;
-      // Check that use is live out the bottom.  Assuming the trip-counter
-      // update is right at the bottom, uses of of the loop middle are ok.
-      if (dom_lca(exit, u_ctrl) != exit) continue;
-      // Hit!  Refactor use to use the post-incremented tripcounter.
-      // Compute a post-increment tripcounter.
-      Node* c = exit;
-      if (cl->is_strip_mined()) {
-        IdealLoopTree* outer_loop = get_loop(cl->outer_loop());
-        if (!outer_loop->is_member(u_loop)) {
-          c = cl->outer_loop_exit();
+      c = idom(c);
+    }
+
+    if (region == NULL) {
+      return false;
+    }
+
+    inner = 1;
+  } else {
+    // Is the shape of the loop that of a counted loop...
+    Node* back_control = loop_exit_control(head, loop);
+    if (back_control == NULL) {
+      return false;
+    }
+
+    BoolTest::mask bt = BoolTest::illegal;
+    float cl_prob = 0;
+    Node* incr = NULL;
+    Node* limit = NULL;
+    Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
+    if (cmp == NULL || cmp->Opcode() != Op_CmpI) {
+      return false;
+    }
+
+    // With an extra phi for the candidate iv?
+    // Or the region node is the loop head
+    if (!incr->is_Phi() || incr->in(0) == head) {
+      return false;
+    }
+
+    PathFrequency pf(head, this);
+    region = incr->in(0);
+
+    // Go over all paths for the extra phi's region and see if that
+    // path is frequent enough and would match the expected iv shape
+    // if the extra phi is removed
+    inner = 0;
+    for (uint i = 1; i < incr->req(); ++i) {
+      Node* in = incr->in(i);
+      Node* trunc1 = NULL;
+      Node* trunc2 = NULL;
+      const TypeInteger* iv_trunc_t = NULL;
+      Node* orig_in = in;
+      if (!(in = CountedLoopNode::match_incr_with_optional_truncation(in, &trunc1, &trunc2, &iv_trunc_t, T_INT))) {
+        continue;
+      }
+      assert(in->Opcode() == Op_AddI, "wrong increment code");
+      Node* xphi = NULL;
+      Node* stride = loop_iv_stride(in, loop, xphi);
+
+      if (stride == NULL) {
+        continue;
+      }
+
+      PhiNode* phi = loop_iv_phi(xphi, NULL, head, loop);
+      if (phi == NULL ||
+          (trunc1 == NULL && phi->in(LoopNode::LoopBackControl) != incr) ||
+          (trunc1 != NULL && phi->in(LoopNode::LoopBackControl) != trunc1)) {
+        return false;
+      }
+
+      f = pf.to(region->in(i));
+      if (f > 0.5) {
+        inner = i;
+        break;
+      }
+    }
+
+    if (inner == 0) {
+      return false;
+    }
+
+    exit_test = back_control->in(0)->as_If();
+  }
+
+  if (idom(region)->is_Catch()) {
+    return false;
+  }
+
+  // Collect all control nodes that need to be cloned (shared_stmt in the diagram)
+  Unique_Node_List wq;
+  wq.push(head->in(LoopNode::LoopBackControl));
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* c = wq.at(i);
+    assert(get_loop(c) == loop, "not in the right loop?");
+    if (c->is_Region()) {
+      if (c != region) {
+        for (uint j = 1; j < c->req(); ++j) {
+          wq.push(c->in(j));
         }
       }
-      Node *opaq = new Opaque2Node(C, cle->incr());
-      register_new_node(opaq, c);
-      Node *neg_stride = _igvn.intcon(-cle->stride_con());
-      set_ctrl(neg_stride, C->root());
-      Node *post = new AddINode(opaq, neg_stride);
-      register_new_node(post, c);
-      _igvn.rehash_node_delayed(use);
-      for (uint j = 1; j < use->req(); j++) {
-        if (use->in(j) == phi)
-          use->set_req(j, post);
+    } else {
+      wq.push(c->in(0));
+    }
+    assert(!is_dominator(c, region) || c == region, "shouldn't go above region");
+  }
+
+  Node* region_dom = idom(region);
+
+  // Can't do the transformation if this would cause a membar pair to
+  // be split
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* c = wq.at(i);
+    if (c->is_MemBar() && (c->as_MemBar()->trailing_store() || c->as_MemBar()->trailing_load_store())) {
+      assert(c->as_MemBar()->leading_membar()->trailing_membar() == c, "bad membar pair");
+      if (!wq.member(c->as_MemBar()->leading_membar())) {
+        return false;
       }
-      // Since DU info changed, rerun loop
-      progress = true;
-      break;
     }
   }
 
+  // Collect data nodes that need to be clones as well
+  int dd = dom_depth(head);
+
+  for (uint i = 0; i < loop->_body.size(); ++i) {
+    Node* n = loop->_body.at(i);
+    if (has_ctrl(n)) {
+      Node* c = get_ctrl(n);
+      if (wq.member(c)) {
+        wq.push(n);
+      }
+    } else {
+      set_idom(n, idom(n), dd);
+    }
+  }
+
+  // clone shared_stmt
+  clone_loop_body(wq, old_new, NULL);
+
+  Node* region_clone = old_new[region->_idx];
+  region_clone->set_req(inner, C->top());
+  set_idom(region, region->in(inner), dd);
+
+  // Prepare the outer loop
+  Node* outer_head = new LoopNode(head->in(LoopNode::EntryControl), old_new[head->in(LoopNode::LoopBackControl)->_idx]);
+  register_control(outer_head, loop->_parent, outer_head->in(LoopNode::EntryControl));
+  _igvn.replace_input_of(head, LoopNode::EntryControl, outer_head);
+  set_idom(head, outer_head, dd);
+
+  fix_body_edges(wq, loop, old_new, dd, loop->_parent, true);
+
+  // Make one of the shared_stmt copies only reachable from stmt1, the
+  // other only from stmt2..stmtn.
+  Node* dom = NULL;
+  for (uint i = 1; i < region->req(); ++i) {
+    if (i != inner) {
+      _igvn.replace_input_of(region, i, C->top());
+    }
+    Node* in = region_clone->in(i);
+    if (in->is_top()) {
+      continue;
+    }
+    if (dom == NULL) {
+      dom = in;
+    } else {
+      dom = dom_lca(dom, in);
+    }
+  }
+
+  set_idom(region_clone, dom, dd);
+
+  // Set up the outer loop
+  for (uint i = 0; i < head->outcnt(); i++) {
+    Node* u = head->raw_out(i);
+    if (u->is_Phi()) {
+      Node* outer_phi = u->clone();
+      outer_phi->set_req(0, outer_head);
+      Node* backedge = old_new[u->in(LoopNode::LoopBackControl)->_idx];
+      if (backedge == NULL) {
+        backedge = u->in(LoopNode::LoopBackControl);
+      }
+      outer_phi->set_req(LoopNode::LoopBackControl, backedge);
+      register_new_node(outer_phi, outer_head);
+      _igvn.replace_input_of(u, LoopNode::EntryControl, outer_phi);
+    }
+  }
+
+  // create control and data nodes for out of loop uses (including region2)
+  Node_List worklist;
+  uint new_counter = C->unique();
+  fix_ctrl_uses(wq, loop, old_new, ControlAroundStripMined, outer_head, NULL, worklist);
+
+  Node_List *split_if_set = NULL;
+  Node_List *split_bool_set = NULL;
+  Node_List *split_cex_set = NULL;
+  fix_data_uses(wq, loop, ControlAroundStripMined, head->is_strip_mined() ? loop->_parent : loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+
+  finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
+
+  if (exit_test != NULL) {
+    float cnt = exit_test->_fcnt;
+    if (cnt != COUNT_UNKNOWN) {
+      exit_test->_fcnt = cnt * f;
+      old_new[exit_test->_idx]->as_If()->_fcnt = cnt * (1 - f);
+    }
+  }
+
+  C->set_major_progress();
+
+  return true;
 }

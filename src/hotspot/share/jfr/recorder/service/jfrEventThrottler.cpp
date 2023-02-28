@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,7 @@ bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
 
 /*
  * The window_lookback_count defines the history in number of windows to take into account
- * when the JfrAdaptiveSampler engine is calcualting an expected weigthed moving average (EWMA) over the population.
+ * when the JfrAdaptiveSampler engine is calculating an expected weighted moving average (EWMA) over the population.
  * Technically, it determines the alpha coefficient in the EMWA formula.
  */
 constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)

@@ -30,17 +30,11 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
   Atomic::store(&_polling_page, poll_value);
-}
-
-// The acquire makes sure reading of polling page is done before
-// the reading the handshake operation or the global state
-inline uintptr_t SafepointMechanism::ThreadData::get_polling_page() {
-  return Atomic::load_acquire(&_polling_page);
 }
 
 // Caller is responsible for using a memory barrier if needed.
@@ -62,41 +56,38 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
-  if (global_poll() || thread->handshake_state()->has_a_non_suspend_operation()) {
-    return true;
-  } else {
-    // We ignore suspend requests if any and just check before returning if we need
-    // to fix the thread's oops and first few frames due to a possible safepoint.
-    StackWatermarkSet::on_safepoint(thread);
-    update_poll_values(thread);
-    OrderAccess::cross_modify_fence();
-    return false;
-  }
-}
-
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
   if (!local_poll_armed(thread)) {
     return false;
-  } else if (allow_suspend) {
+  }
+
+  if (global_poll() || // Safepoint
+      thread->handshake_state()->has_operation(allow_suspend, false /* check_async_exception */) || // Handshake
+      !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
     return true;
   }
-  return should_process_no_suspend(thread);
+
+  // It has boiled down to two possibilities:
+  // 1: We have nothing to process, this just a disarm poll.
+  // 2: We have a suspend or async exception handshake, which cannot be processed.
+  // We update the poll value in case of a disarm, to reduce false positives.
+  update_poll_values(thread);
+  return false;
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend) {
+void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend, bool check_async_exception) {
   // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
   thread->check_possible_safepoint();
 
   if (local_poll_armed(thread)) {
-    process(thread, allow_suspend);
+    process(thread, allow_suspend, check_async_exception);
   }
 }
 
-void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs) {
-  process_if_requested(thread);
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_async_exception) {
+  process_if_requested(thread, true /* allow_suspend */, check_async_exception);
   if (thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition(check_asyncs);
+    thread->handle_special_runtime_exit_condition();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
                 return equals(proxy, args[0]);
             else {
                 /* Either someone is calling invoke by hand, or
-                   it is a non-final method from Object overriden
+                   it is a non-final method from Object overridden
                    by the generated Proxy.  At the time of writing,
                    the only non-final methods in Object that are not
                    handled above are finalize and clone, and these

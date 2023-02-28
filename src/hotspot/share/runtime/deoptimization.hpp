@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class Deoptimization : AllStatic {
 
  public:
   // What condition caused the deoptimization?
+  // Note: Keep this enum in sync. with Deoptimization::_trap_reason_name.
   enum DeoptReason {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
@@ -98,20 +99,22 @@ class Deoptimization : AllStatic {
     Reason_jsr_mismatch,
 #endif
 
+    // Used to define MethodData::_trap_hist_limit where Reason_tenured isn't included
+    Reason_TRAP_HISTORY_LENGTH,
+
     // Reason_tenured is counted separately, add normal counted Reasons above.
-    // Related to MethodData::_trap_hist_limit where Reason_tenured isn't included
-    Reason_tenured,               // age of the code has reached the limit
+    Reason_tenured = Reason_TRAP_HISTORY_LENGTH, // age of the code has reached the limit
     Reason_LIMIT,
 
-    // Note:  Keep this enum in sync. with _trap_reason_name.
-    Reason_RECORDED_LIMIT = Reason_profile_predicate  // some are not recorded per bc
     // Note:  Reason_RECORDED_LIMIT should fit into 31 bits of
     // DataLayout::trap_bits.  This dependency is enforced indirectly
     // via asserts, to avoid excessive direct header-to-header dependencies.
     // See Deoptimization::trap_state_reason and class DataLayout.
+    Reason_RECORDED_LIMIT = Reason_profile_predicate,  // some are not recorded per bc
   };
 
   // What action must be taken by the runtime?
+  // Note: Keep this enum in sync. with Deoptimization::_trap_action_name.
   enum DeoptAction {
     Action_none,                  // just interpret, do not invalidate nmethod
     Action_maybe_recompile,       // recompile the nmethod; need not invalidate
@@ -119,7 +122,6 @@ class Deoptimization : AllStatic {
     Action_make_not_entrant,      // invalidate the nmethod, recompile (probably)
     Action_make_not_compilable,   // invalidate the nmethod and do not compile
     Action_LIMIT
-    // Note:  Keep this enum in sync. with _trap_action_name.
   };
 
   enum {
@@ -150,7 +152,7 @@ class Deoptimization : AllStatic {
   // activations using those nmethods.  If an nmethod is passed as an argument then it is
   // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to
   // find all marked nmethods and they are made not_entrant.
-  static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
+  static void deoptimize_all_marked(nmethod* nmethod_only = nullptr);
 
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
@@ -158,9 +160,8 @@ class Deoptimization : AllStatic {
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-#endif
-
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
+#endif
 
   private:
   // Does the actual work for deoptimizing a single frame
@@ -226,14 +227,9 @@ class Deoptimization : AllStatic {
                 int unpack_kind);
     ~UnrollBlock();
 
-    // Returns where a register is located.
-    intptr_t* value_addr_at(int register_number) const;
-
     // Accessors
     intptr_t* frame_sizes()  const { return _frame_sizes; }
     int number_of_frames()  const { return _number_of_frames; }
-    address*  frame_pcs()   const { return _frame_pcs ; }
-    int  unpack_kind()   const { return _unpack_kind; }
 
     // Returns the total size of frames
     int size_of_frames() const;
@@ -249,8 +245,6 @@ class Deoptimization : AllStatic {
     static int frame_sizes_offset_in_bytes()               { return offset_of(UnrollBlock, _frame_sizes);               }
     static int total_frame_sizes_offset_in_bytes()         { return offset_of(UnrollBlock, _total_frame_sizes);         }
     static int frame_pcs_offset_in_bytes()                 { return offset_of(UnrollBlock, _frame_pcs);                 }
-    static int register_block_offset_in_bytes()            { return offset_of(UnrollBlock, _register_block);            }
-    static int return_type_offset_in_bytes()               { return offset_of(UnrollBlock, _return_type);               }
     static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
     static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
     static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
@@ -433,6 +427,7 @@ class Deoptimization : AllStatic {
                                          int trap_request);
 
   static jint total_deoptimization_count();
+  static jint deoptimization_count(const char* reason_str, const char* action_str);
 
   // JVMTI PopFrame support
 
@@ -469,15 +464,6 @@ class Deoptimization : AllStatic {
 
  public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
-};
-
-
-class DeoptimizationMarker : StackObj {  // for profiling
-  static bool _is_active;
-public:
-  DeoptimizationMarker()  { _is_active = true; }
-  ~DeoptimizationMarker() { _is_active = false; }
-  static bool is_active() { return _is_active; }
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

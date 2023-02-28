@@ -63,7 +63,7 @@ public interface InputMethodDescriptor {
      * unavailable.
      *
      * @return the locales supported by the input method
-     * @exception AWTException if it can be determined that the input method
+     * @throws AWTException if it can be determined that the input method
      * is inoperable, for example, because of incomplete installation.
      */
     Locale[] getAvailableLocales() throws AWTException;
@@ -122,7 +122,7 @@ public interface InputMethodDescriptor {
      * Creates a new instance of the corresponding input method.
      *
      * @return a new instance of the corresponding input method
-     * @exception Exception any exception that may occur while creating the
+     * @throws Exception any exception that may occur while creating the
      * input method instance
      */
     InputMethod createInputMethod() throws Exception;

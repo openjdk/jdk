@@ -1072,7 +1072,7 @@ public class TCKZoneRules {
                                            );
 
          OffsetDateTime before_time_of_stdOffsetTransition1 = OffsetDateTime.of(time_of_stdOffsetTransition1, stdOffset1).minusSeconds(1);
-         OffsetDateTime after_time_of_stdOffsetTransition1 = OffsetDateTime.of(time_of_stdOffsetTransition1, stdOffset1).plusSeconds(1);;
+         OffsetDateTime after_time_of_stdOffsetTransition1 = OffsetDateTime.of(time_of_stdOffsetTransition1, stdOffset1).plusSeconds(1);
          assertEquals(zoneRule.getStandardOffset(before_time_of_stdOffsetTransition1.toInstant()), stdOffset1);
          assertEquals(zoneRule.getStandardOffset(after_time_of_stdOffsetTransition1.toInstant()), stdOffset2);
 

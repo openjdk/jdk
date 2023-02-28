@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,31 +26,27 @@
 package javax.net.ssl;
 
 import java.security.AlgorithmConstraints;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * Encapsulates parameters for an SSL/TLS/DTLS connection. The parameters
  * are the list of ciphersuites to be accepted in an SSL/TLS/DTLS handshake,
  * the list of protocols to be allowed, the endpoint identification
  * algorithm during SSL/TLS/DTLS handshaking, the Server Name Indication (SNI),
- * the maximum network packet size, the algorithm constraints and whether
- * SSL/TLS/DTLS servers should request or require client authentication, etc.
+ * the maximum network packet size, the algorithm constraints, the signature
+ * schemes, the key exchange named groups and whether SSL/TLS/DTLS servers
+ * should request or require client authentication, etc.
  * <p>
- * SSLParameters can be created via the constructors in this class.
- * Objects can also be obtained using the {@code getSSLParameters()}
- * methods in
+ * {@code SSLParameter} objects can be created via the constructors in this
+ * class, and can be described as pre-populated objects. {@code SSLParameter}
+ * objects can also be obtained using the {@code getSSLParameters()} methods in
  * {@link SSLSocket#getSSLParameters SSLSocket} and
  * {@link SSLServerSocket#getSSLParameters SSLServerSocket} and
  * {@link SSLEngine#getSSLParameters SSLEngine} or the
  * {@link SSLContext#getDefaultSSLParameters getDefaultSSLParameters()} and
  * {@link SSLContext#getSupportedSSLParameters getSupportedSSLParameters()}
- * methods in {@code SSLContext}.
+ * methods in {@code SSLContext}, and can be described as connection populated
+ * objects.
  * <p>
  * SSLParameters can be applied to a connection via the methods
  * {@link SSLSocket#setSSLParameters SSLSocket.setSSLParameters()} and
@@ -82,22 +78,24 @@ public class SSLParameters {
     private boolean needClientAuth;
     private String identificationAlgorithm;
     private AlgorithmConstraints algorithmConstraints;
-    private Map<Integer, SNIServerName> sniNames = null;
-    private Map<Integer, SNIMatcher> sniMatchers = null;
+    private List<SNIServerName> sniNames = null;        // immutable list
+    private Collection<SNIMatcher> sniMatchers = null;  // immutable collection
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = new String[0];
+    private String[] signatureSchemes = null;
+    private String[] namedGroups = null;
 
     /**
      * Constructs SSLParameters.
      * <p>
      * The values of cipherSuites, protocols, cryptographic algorithm
-     * constraints, endpoint identification algorithm, server names and
-     * server name matchers are set to {@code null}; useCipherSuitesOrder,
-     * wantClientAuth and needClientAuth are set to {@code false};
-     * enableRetransmissions is set to {@code true}; maximum network packet
-     * size is set to {@code 0}.
+     * constraints, endpoint identification algorithm, signature schemes,
+     * server names and server name matchers are set to {@code null};
+     * useCipherSuitesOrder, wantClientAuth and needClientAuth are set
+     * to {@code false}; enableRetransmissions is set to {@code true};
+     * maximum network packet size is set to {@code 0}.
      */
     public SSLParameters() {
         // empty
@@ -111,9 +109,9 @@ public class SSLParameters {
      * {@code setCipherSuites(cipherSuites);}.  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      */
@@ -131,9 +129,9 @@ public class SSLParameters {
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
@@ -154,9 +152,9 @@ public class SSLParameters {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher suites
+     * that the provider supports.
      *
      * @return a copy of the array of ciphersuites or null if none
      * have been set.
@@ -171,10 +169,10 @@ public class SSLParameters {
      * @param cipherSuites the array of ciphersuites (or null).  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      */
     public void setCipherSuites(String[] cipherSuites) {
         this.cipherSuites = clone(cipherSuites);
@@ -332,22 +330,29 @@ public class SSLParameters {
      * @since 1.8
      */
     public final void setServerNames(List<SNIServerName> serverNames) {
-        if (serverNames != null) {
-            if (!serverNames.isEmpty()) {
-                sniNames = new LinkedHashMap<>(serverNames.size());
-                for (SNIServerName serverName : serverNames) {
-                    if (sniNames.put(serverName.getType(),
-                                                serverName) != null) {
-                        throw new IllegalArgumentException(
-                                    "Duplicated server name of type " +
-                                    serverName.getType());
-                    }
-                }
-            } else {
-                sniNames = Collections.<Integer, SNIServerName>emptyMap();
-            }
-        } else {
+        if (this.sniNames == serverNames) {
+            return;
+        }
+
+        if (serverNames == null) {
             sniNames = null;
+        } else if (serverNames.isEmpty()) {
+            sniNames = Collections.emptyList();
+        } else {
+            List<Integer> sniTypes = new ArrayList<>(serverNames.size());
+            List<SNIServerName> sniValues = new ArrayList<>(serverNames.size());
+            for (SNIServerName serverName : serverNames) {
+                if (sniTypes.contains(serverName.getType())) {
+                    throw new IllegalArgumentException(
+                            "Duplicated server name of type " +
+                                    serverName.getType());
+                } else {
+                    sniTypes.add(serverName.getType());
+                    sniValues.add(serverName);
+                }
+            }
+
+            sniNames = Collections.unmodifiableList(sniValues);
         }
     }
 
@@ -366,7 +371,7 @@ public class SSLParameters {
      * <P>
      * It is recommended that providers initialize default Server Name
      * Indications when creating {@code SSLSocket}/{@code SSLEngine}s.
-     * In the following examples, the server name could be represented by an
+     * In the following examples, the server name may be represented by an
      * instance of {@link SNIHostName} which has been initialized with the
      * hostname "www.example.com" and type
      * {@link StandardConstants#SNI_HOST_NAME}.
@@ -389,16 +394,7 @@ public class SSLParameters {
      * @since 1.8
      */
     public final List<SNIServerName> getServerNames() {
-        if (sniNames != null) {
-            if (!sniNames.isEmpty()) {
-                return Collections.<SNIServerName>unmodifiableList(
-                                        new ArrayList<>(sniNames.values()));
-            } else {
-                return Collections.<SNIServerName>emptyList();
-            }
-        }
-
-        return null;
+        return sniNames;
     }
 
     /**
@@ -426,22 +422,29 @@ public class SSLParameters {
      * @since 1.8
      */
     public final void setSNIMatchers(Collection<SNIMatcher> matchers) {
-        if (matchers != null) {
-            if (!matchers.isEmpty()) {
-                sniMatchers = new HashMap<>(matchers.size());
-                for (SNIMatcher matcher : matchers) {
-                    if (sniMatchers.put(matcher.getType(),
-                                                matcher) != null) {
-                        throw new IllegalArgumentException(
-                                    "Duplicated server name of type " +
-                                    matcher.getType());
-                    }
-                }
-            } else {
-                sniMatchers = Collections.<Integer, SNIMatcher>emptyMap();
-            }
+        if (this.sniMatchers == matchers) {
+            return;
+        }
+
+        if (matchers == null) {
+            this.sniMatchers = null;
+        } else if (matchers.isEmpty()) {
+            sniMatchers = Collections.emptyList();
         } else {
-            sniMatchers = null;
+            List<Integer> matcherTypes = new ArrayList<>(matchers.size());
+            List<SNIMatcher> matcherValues = new ArrayList<>(matchers.size());
+            for (SNIMatcher matcher : matchers) {
+                if (matcherTypes.contains(matcher.getType())) {
+                    throw new IllegalArgumentException(
+                                "Duplicated server name of type " +
+                                matcher.getType());
+                } else {
+                    matcherTypes.add(matcher.getType());
+                    matcherValues.add(matcher);
+                }
+            }
+
+            this.sniMatchers = Collections.unmodifiableList(matcherValues);
         }
     }
 
@@ -464,16 +467,7 @@ public class SSLParameters {
      * @since 1.8
      */
     public final Collection<SNIMatcher> getSNIMatchers() {
-        if (sniMatchers != null) {
-            if (!sniMatchers.isEmpty()) {
-                return Collections.<SNIMatcher>unmodifiableList(
-                                        new ArrayList<>(sniMatchers.values()));
-            } else {
-                return Collections.<SNIMatcher>emptyList();
-            }
-        }
-
-        return null;
+        return sniMatchers;
     }
 
     /**
@@ -617,7 +611,7 @@ public class SSLParameters {
      *
      * @return a non-null, possibly zero-length array of application protocol
      *         {@code String}s.  The array is ordered based on protocol
-     *         preference, with {@code protocols[0]} being the most preferred.
+     *         preference, with the first entry being the most preferred.
      * @see #setApplicationProtocols
      * @since 9
      */
@@ -695,5 +689,252 @@ public class SSLParameters {
             }
         }
         applicationProtocols = tempProtocols;
+    }
+
+    /**
+     * Returns a prioritized array of signature scheme names that can be used
+     * over the SSL/TLS/DTLS protocols.
+     * <p>
+     * Note that the standard list of signature scheme names are defined in
+     * the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
+     * Signature Schemes</a> section of the Java Security Standard Algorithm
+     * Names Specification.  Providers may support signature schemes not defined
+     * in this list or may not use the recommended name for a certain
+     * signature scheme.
+     * <p>
+     * The set of signature schemes that will be used over the SSL/TLS/DTLS
+     * connections is determined by the returned array of this method and the
+     * underlying provider-specific default signature schemes.
+     * <p>
+     * If the returned array is {@code null}, then the underlying
+     * provider-specific default signature schemes will be used over the
+     * SSL/TLS/DTLS connections.
+     * <p>
+     * If the returned array is empty (zero-length), then the signature scheme
+     * negotiation mechanism is turned off for SSL/TLS/DTLS protocols, and
+     * the connections may not be able to be established if the negotiation
+     * mechanism is required by a certain SSL/TLS/DTLS protocol.  This
+     * parameter will override the underlying provider-specific default
+     * signature schemes.
+     * <p>
+     * If the returned array is not {@code null} or empty (zero-length),
+     * then the signature schemes in the returned array will be used over
+     * the SSL/TLS/DTLS connections.  This parameter will override the
+     * underlying provider-specific default signature schemes.
+     * <p>
+     * This method returns the most recent value passed to
+     * {@link #setSignatureSchemes} if that method has been called and
+     * otherwise returns the default signature schemes for connection
+     * populated objects, or {@code null} for pre-populated objects.
+     *
+     * @apiNote
+     * Note that a provider may not have been updated to support this method
+     * and in that case may return {@code null} instead of the default
+     * signature schemes for connection populated objects.
+     *
+     * @implNote
+     * The SunJSSE provider supports this method.
+     *
+     * @implNote
+     * Note that applications may use the
+     * {@systemProperty jdk.tls.client.SignatureSchemes} and/or
+     * {@systemProperty jdk.tls.server.SignatureSchemes} system properties
+     * with the SunJSSE provider to override the provider-specific default
+     * signature schemes.
+     *
+     * @return an array of signature scheme {@code Strings} or {@code null} if
+     *         none have been set.  For non-null returns, this method will
+     *         return a new array each time it is invoked.  The array is
+     *         ordered based on signature scheme preference, with the first
+     *         entry being the most preferred.  Providers should ignore unknown
+     *         signature scheme names while establishing the SSL/TLS/DTLS
+     *         connections.
+     * @see #setSignatureSchemes
+     *
+     * @since 19
+     */
+    public String[] getSignatureSchemes() {
+        return clone(signatureSchemes);
+    }
+
+    /**
+     * Sets the prioritized array of signature scheme names that
+     * can be used over the SSL/TLS/DTLS protocols.
+     * <p>
+     * Note that the standard list of signature scheme names are defined in
+     * the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
+     * Signature Schemes</a> section of the Java Security Standard Algorithm
+     * Names Specification.  Providers may support signature schemes not
+     * defined in this list or may not use the recommended name for a certain
+     * signature scheme.
+     * <p>
+     * The set of signature schemes that will be used over the SSL/TLS/DTLS
+     * connections is determined by the input parameter {@code signatureSchemes}
+     * array and the underlying provider-specific default signature schemes.
+     * See {@link #getSignatureSchemes} for specific details on how the
+     * parameters are used in SSL/TLS/DTLS connections.
+     *
+     * @apiNote
+     * Note that a provider may not have been updated to support this method
+     * and in that case may ignore the schemes that are set.
+     *
+     * @implNote
+     * The SunJSSE provider supports this method.
+     *
+     * @param signatureSchemes an ordered array of signature scheme names with
+     *        the first entry being the most preferred, or {@code null}.  This
+     *        method will make a copy of this array.  Providers should ignore
+     *        unknown signature scheme names while establishing the
+     *        SSL/TLS/DTLS connections.
+     * @throws IllegalArgumentException if any element in the
+     *        {@code signatureSchemes} array is {@code null} or
+     *        {@linkplain String#isBlank() blank}.
+     *
+     * @see #getSignatureSchemes
+     *
+     * @since 19
+     */
+    public void setSignatureSchemes(String[] signatureSchemes) {
+        String[] tempSchemes = null;
+
+        if (signatureSchemes != null) {
+            tempSchemes = signatureSchemes.clone();
+            for (String scheme : tempSchemes) {
+                if (scheme == null || scheme.isBlank()) {
+                    throw new IllegalArgumentException(
+                        "An element of signatureSchemes is null or blank");
+                }
+            }
+        }
+
+        this.signatureSchemes = tempSchemes;
+    }
+
+    /**
+     * Returns a prioritized array of key exchange named groups names that
+     * can be used over the SSL/TLS/DTLS protocols.
+     * <p>
+     * Note that the standard list of key exchange named groups are defined
+     * in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#named-groups">
+     * Named Groups</a> section of the Java Security Standard Algorithm
+     * Names Specification.  Providers may support named groups not defined
+     * in this list or may not use the recommended name for a certain named
+     * group.
+     * <p>
+     * The set of named groups that will be used over the SSL/TLS/DTLS
+     * connections is determined by the returned array of this method and the
+     * underlying provider-specific default named groups.
+     * <p>
+     * If the returned array is {@code null}, then the underlying
+     * provider-specific default named groups will be used over the
+     * SSL/TLS/DTLS connections.
+     * <p>
+     * If the returned array is empty (zero-length), then the named group
+     * negotiation mechanism is turned off for SSL/TLS/DTLS protocols, and
+     * the connections may not be able to be established if the negotiation
+     * mechanism is required by a certain SSL/TLS/DTLS protocol.  This
+     * parameter will override the underlying provider-specific default
+     * name groups.
+     * <p>
+     * If the returned array is not {@code null} or empty (zero-length),
+     * then the named groups in the returned array will be used over
+     * the SSL/TLS/DTLS connections.  This parameter will override the
+     * underlying provider-specific default named groups.
+     * <p>
+     * This method returns the most recent value passed to
+     * {@link #setNamedGroups} if that method has been called and otherwise
+     * returns the default named groups for connection populated objects,
+     * or {@code null} for pre-populated objects.
+     *
+     * @apiNote
+     * Note that a provider may not have been updated to support this method
+     * and in that case may return {@code null} instead of the default
+     * named groups for connection populated objects.
+     *
+     * @implNote
+     * The SunJSSE provider supports this method.
+     *
+     * @implNote
+     * Note that applications may use the
+     * {@systemProperty jdk.tls.namedGroups} system property with the SunJSSE
+     * provider to override the provider-specific default named groups.
+     *
+     * @return an array of key exchange named group names {@code Strings} or
+     *         {@code null} if none have been set.  For non-null returns, this
+     *         method will return a new array each time it is invoked.  The
+     *         array is ordered based on named group preference, with the first
+     *         entry being the most preferred.  Providers should ignore unknown
+     *         named group names while establishing the SSL/TLS/DTLS
+     *         connections.
+     * @see #setNamedGroups
+     *
+     * @since 20
+     */
+    public String[] getNamedGroups() {
+        return clone(namedGroups);
+    }
+
+    /**
+     * Sets the prioritized array of key exchange named groups names that
+     * can be used over the SSL/TLS/DTLS protocols.
+     * <p>
+     * Note that the standard list of key exchange named groups are defined in
+     * the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#named-groups">
+     * Named Groups</a> section of the Java Security Standard Algorithm
+     * Names Specification.  Providers may support named groups not defined
+     * in this list or may not use the recommended name for a certain named
+     * group.
+     * <p>
+     * The set of named groups that will be used over the SSL/TLS/DTLS
+     * connections is determined by the input parameter {@code namedGroups}
+     * array and the underlying provider-specific default named groups.
+     * See {@link #getNamedGroups} for specific details on how the
+     * parameters are used in SSL/TLS/DTLS connections.
+     *
+     * @apiNote
+     * Note that a provider may not have been updated to support this method
+     * and in that case may ignore the named groups that are set.
+     *
+     * @implNote
+     * The SunJSSE provider supports this method.
+     *
+     * @param namedGroups an ordered array of key exchange named group names
+     *        with the first entry being the most preferred, or {@code null}.
+     *        This method will make a copy of this array. Providers should
+     *        ignore unknown named group scheme names while establishing the
+     *        SSL/TLS/DTLS connections.
+     * @throws IllegalArgumentException if any element in the
+     *        {@code namedGroups} array is a duplicate, {@code null} or
+     *        {@linkplain String#isBlank() blank}.
+     *
+     * @see #getNamedGroups
+     *
+     * @since 20
+     */
+    public void setNamedGroups(String[] namedGroups) {
+        String[] tempGroups = null;
+
+        if (namedGroups != null) {
+            tempGroups = namedGroups.clone();
+            Set<String> groupsSet = new HashSet<>();
+            for (String namedGroup : tempGroups) {
+                if (namedGroup == null || namedGroup.isBlank()) {
+                    throw new IllegalArgumentException(
+                        "An element of namedGroups is null or blank");
+                }
+
+                if (groupsSet.contains(namedGroup)) {
+                    throw new IllegalArgumentException(
+                        "Duplicate element of namedGroups: " + namedGroup);
+                }
+                groupsSet.add(namedGroup);
+            }
+        }
+
+        this.namedGroups = tempGroups;
     }
 }

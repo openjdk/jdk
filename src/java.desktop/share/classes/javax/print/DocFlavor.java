@@ -537,10 +537,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *         {@code false} otherwise
      */
     public boolean equals(Object obj) {
-        return
-            obj != null &&
-            obj instanceof DocFlavor &&
-            getStringValue().equals (((DocFlavor) obj).getStringValue());
+        return obj instanceof DocFlavor other &&
+                getStringValue().equals(other.getStringValue());
     }
 
     /**

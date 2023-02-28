@@ -270,19 +270,6 @@ public class UnreferencedMulticastSockets {
                 fileDescriptorField.setAccessible(true);
                 FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(datagramSocketImpl);
                 extractRefs(fileDescriptor, name);
-
-                Class<?> socketImplClass = datagramSocketImpl.getClass();
-                System.out.printf("socketImplClass: %s%n", socketImplClass);
-                if (socketImplClass.getName().equals("java.net.TwoStacksPlainDatagramSocketImpl")) {
-                    Field fileDescriptor1Field = socketImplClass.getDeclaredField("fd1");
-                    fileDescriptor1Field.setAccessible(true);
-                    FileDescriptor fileDescriptor1 = (FileDescriptor) fileDescriptor1Field.get(datagramSocketImpl);
-                    extractRefs(fileDescriptor1, name + "::twoStacksFd1");
-
-                } else {
-                    System.out.printf("socketImpl class name not matched: %s != %s%n",
-                            socketImplClass.getName(), "java.net.TwoStacksPlainDatagramSocketImpl");
-                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();

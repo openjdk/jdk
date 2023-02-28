@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -193,7 +194,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Address dst,
                                     Register src,
                                     Register tmp1,
-                                    Register tmp2) {
+                                    Register tmp2,
+                                    Register tmp3) {
   BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
 
   // Verify oop store
@@ -211,7 +213,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, src, tmp1, tmp2, tmp3);
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
@@ -452,7 +454,7 @@ private:
 
   void opmask_register_save(KRegister reg) {
     _spill_offset -= 8;
-    __ kmovql(Address(rsp, _spill_offset), reg);
+    __ kmov(Address(rsp, _spill_offset), reg);
   }
 
   void gp_register_restore(Register reg) {
@@ -461,14 +463,10 @@ private:
   }
 
   void opmask_register_restore(KRegister reg) {
-    __ kmovql(reg, Address(rsp, _spill_offset));
+    __ kmov(reg, Address(rsp, _spill_offset));
     _spill_offset += 8;
   }
 
-// Register is a class, but it would be assigned numerical value.
-// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
   void initialize(ZLoadBarrierStubC2* stub) {
     // Create mask of caller saved registers that need to
     // be saved/restored if live
@@ -544,7 +542,6 @@ PRAGMA_NONNULL_IGNORED
     // Stack pointer must be 16 bytes aligned for the call
     _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
   }
-PRAGMA_DIAG_POP
 
 public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
@@ -701,6 +698,16 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   __ jmp(*stub->continuation());
 }
 
-#undef __
-
 #endif // COMPILER2
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if metadata bits indicate a bad oop
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
+  __ jcc(Assembler::notZero, error);
+  BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
+}
+
+#undef __

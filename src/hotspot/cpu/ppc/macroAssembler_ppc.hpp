@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 // MacroAssembler extends Assembler by a few frequently used macros.
 
 class ciTypeArray;
+class OopMap;
 
 class MacroAssembler: public Assembler {
  public:
@@ -416,6 +417,8 @@ class MacroAssembler: public Assembler {
   inline address call_stub(Register function_entry);
   inline void call_stub_and_return_to(Register function_entry, Register return_pc);
 
+  void post_call_nop();
+
   //
   // Java utilities
   //
@@ -599,15 +602,12 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
+
   // allocation (for C1)
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Register t2,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -661,6 +661,8 @@ class MacroAssembler: public Assembler {
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2,
+                              MacroAssembler::PreservationLevel preservation_level);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
@@ -698,7 +700,6 @@ class MacroAssembler: public Assembler {
 
   // Access heap oop, handle encoding and GC barriers.
   // Some GC barriers call C so use needs_frame = true if an extra frame is needed at the current call site.
- private:
   inline void access_store_at(BasicType type, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs, Register val,
                               Register tmp1, Register tmp2, Register tmp3,
@@ -731,6 +732,7 @@ class MacroAssembler: public Assembler {
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
+  void load_klass_check_null(Register dst, Register src, Label* is_null = NULL);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
@@ -893,9 +895,6 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg);
   }
 
-  // Verify R16_thread contents.
-  void verify_thread();
-
   // Calls verify_oop. If UseCompressedOops is on, decodes the oop.
   // Preserves reg.
   void verify_coop(Register reg, const char*);
@@ -908,7 +907,7 @@ class MacroAssembler: public Assembler {
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
 
   // Convenience method returning function entry. For the ELFv1 case
-  // creates function descriptor at the current address and returs
+  // creates function descriptor at the current address and returns
   // the pointer to it. For the ELFv2 case returns the current address.
   inline address function_entry();
 

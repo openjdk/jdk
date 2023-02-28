@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,16 +58,20 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   // Heal oops
   ZNMethod::nmethod_oops_barrier(nm);
 
+
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
+
   // Disarm
   disarm(nm);
 
   return true;
 }
 
-int* ZBarrierSetNMethod::disarmed_value_address() const {
+int* ZBarrierSetNMethod::disarmed_guard_value_address() const {
   return (int*)ZAddressBadMaskHighOrderBitsAddr;
 }
 
-ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {
+ByteSize ZBarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return ZThreadLocalData::nmethod_disarmed_offset();
 }

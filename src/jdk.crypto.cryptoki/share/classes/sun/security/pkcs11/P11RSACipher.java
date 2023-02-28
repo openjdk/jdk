@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.crypto.spec.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 import sun.security.util.KeyUtil;
 
@@ -121,7 +122,7 @@ final class P11RSACipher extends CipherSpi {
     // modes do not make sense for RSA, but allow ECB
     // see JCE spec
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        if (mode.equalsIgnoreCase("ECB") == false) {
+        if (!mode.equalsIgnoreCase("ECB")) {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
     }
@@ -204,7 +205,7 @@ final class P11RSACipher extends CipherSpi {
         } else if (opmode == Cipher.DECRYPT_MODE) {
             encrypt = false;
         } else if (opmode == Cipher.WRAP_MODE) {
-            if (p11Key.isPublic() == false) {
+            if (!p11Key.isPublic()) {
                 throw new InvalidKeyException
                                 ("Wrap has to be used with public keys");
             }
@@ -212,7 +213,7 @@ final class P11RSACipher extends CipherSpi {
             // we can't use C_Wrap().
             return;
         } else if (opmode == Cipher.UNWRAP_MODE) {
-            if (p11Key.isPrivate() == false) {
+            if (!p11Key.isPrivate()) {
                 throw new InvalidKeyException
                                 ("Unwrap has to be used with private keys");
             }
@@ -266,7 +267,21 @@ final class P11RSACipher extends CipherSpi {
     // state variables such as "initialized"
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
+
+        long flags = switch(mode) {
+            case MODE_ENCRYPT -> CKF_ENCRYPT;
+            case MODE_DECRYPT -> CKF_DECRYPT;
+            case MODE_SIGN -> CKF_SIGN;
+            case MODE_VERIFY -> CKF_VERIFY;
+            default -> {
+                throw new AssertionError("Unexpected value: " + mode);
+            }
+        };
+        if (P11Util.trySessionCancel(token, session, flags)) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         try {
             PKCS11 p11 = token.p11;
@@ -274,22 +289,15 @@ final class P11RSACipher extends CipherSpi {
             int outLen = buffer.length;
             long sessId = session.id();
             switch (mode) {
-            case MODE_ENCRYPT:
-                p11.C_Encrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
-                break;
-            case MODE_DECRYPT:
-                p11.C_Decrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
-                break;
-            case MODE_SIGN:
-                byte[] tmpBuffer = new byte[maxInputSize];
-                p11.C_Sign(sessId, tmpBuffer);
-                break;
-            case MODE_VERIFY:
-                p11.C_VerifyRecover(sessId, buffer, 0, inLen, buffer,
+                case MODE_ENCRYPT -> p11.C_Encrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
+                case MODE_DECRYPT -> p11.C_Decrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
+                case MODE_SIGN -> {
+                    byte[] tmpBuffer = new byte[maxInputSize];
+                    p11.C_Sign(sessId, tmpBuffer);
+                }
+                case MODE_VERIFY -> p11.C_VerifyRecover(sessId, buffer, 0, inLen, buffer,
                         0, outLen);
-                break;
-            default:
-                throw new ProviderException("internal error");
+                default -> throw new ProviderException("internal error");
             }
         } catch (PKCS11Exception e) {
             // XXX ensure this always works, ignore error
@@ -317,20 +325,11 @@ final class P11RSACipher extends CipherSpi {
             PKCS11 p11 = token.p11;
             CK_MECHANISM ckMechanism = new CK_MECHANISM(mechanism);
             switch (mode) {
-            case MODE_ENCRYPT:
-                p11.C_EncryptInit(session.id(), ckMechanism, keyID);
-                break;
-            case MODE_DECRYPT:
-                p11.C_DecryptInit(session.id(), ckMechanism, keyID);
-                break;
-            case MODE_SIGN:
-                p11.C_SignInit(session.id(), ckMechanism, keyID);
-                break;
-            case MODE_VERIFY:
-                p11.C_VerifyRecoverInit(session.id(), ckMechanism, keyID);
-                break;
-            default:
-                throw new AssertionError("internal error");
+                case MODE_ENCRYPT -> p11.C_EncryptInit(session.id(), ckMechanism, keyID);
+                case MODE_DECRYPT -> p11.C_DecryptInit(session.id(), ckMechanism, keyID);
+                case MODE_SIGN -> p11.C_SignInit(session.id(), ckMechanism, keyID);
+                case MODE_VERIFY -> p11.C_VerifyRecoverInit(session.id(), ckMechanism, keyID);
+                default -> throw new AssertionError("internal error");
             }
             bufOfs = 0;
             initialized = true;
@@ -368,36 +367,27 @@ final class P11RSACipher extends CipherSpi {
         try {
             ensureInitialized();
             PKCS11 p11 = token.p11;
-            int n;
-            switch (mode) {
-            case MODE_ENCRYPT:
-                n = p11.C_Encrypt
+            return switch (mode) {
+                case MODE_ENCRYPT -> p11.C_Encrypt
                         (session.id(), 0, buffer, 0, bufOfs, 0, out, outOfs, outLen);
-                break;
-            case MODE_DECRYPT:
-                n = p11.C_Decrypt
+                case MODE_DECRYPT ->  p11.C_Decrypt
                         (session.id(), 0, buffer, 0, bufOfs, 0, out, outOfs, outLen);
-                break;
-            case MODE_SIGN:
-                byte[] tmpBuffer = new byte[bufOfs];
-                System.arraycopy(buffer, 0, tmpBuffer, 0, bufOfs);
-                tmpBuffer = p11.C_Sign(session.id(), tmpBuffer);
-                if (tmpBuffer.length > outLen) {
-                    throw new BadPaddingException(
-                        "Output buffer (" + outLen + ") is too small to " +
-                        "hold the produced data (" + tmpBuffer.length + ")");
+                case MODE_SIGN -> {
+                    byte[] tmpBuffer = new byte[bufOfs];
+                    System.arraycopy(buffer, 0, tmpBuffer, 0, bufOfs);
+                    tmpBuffer = p11.C_Sign(session.id(), tmpBuffer);
+                    if (tmpBuffer.length > outLen) {
+                        throw new BadPaddingException(
+                                "Output buffer (" + outLen + ") is too small to " +
+                                        "hold the produced data (" + tmpBuffer.length + ")");
+                    }
+                    System.arraycopy(tmpBuffer, 0, out, outOfs, tmpBuffer.length);
+                    yield tmpBuffer.length;
                 }
-                System.arraycopy(tmpBuffer, 0, out, outOfs, tmpBuffer.length);
-                n = tmpBuffer.length;
-                break;
-            case MODE_VERIFY:
-                n = p11.C_VerifyRecover
+                case MODE_VERIFY -> p11.C_VerifyRecover
                         (session.id(), buffer, 0, bufOfs, out, outOfs, outLen);
-                break;
-            default:
-                throw new ProviderException("internal error");
-            }
-            return n;
+                default -> throw new ProviderException("internal error");
+            };
         } catch (PKCS11Exception e) {
             throw (BadPaddingException)new BadPaddingException
                 ("doFinal() failed").initCause(e);
@@ -635,7 +625,7 @@ final class ConstructKeys {
      *
      * @return a public key constructed from the encodedKey.
      */
-    private static final PublicKey constructPublicKey(byte[] encodedKey,
+    private static PublicKey constructPublicKey(byte[] encodedKey,
             String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         try {
@@ -662,7 +652,7 @@ final class ConstructKeys {
      *
      * @return a private key constructed from the encodedKey.
      */
-    private static final PrivateKey constructPrivateKey(byte[] encodedKey,
+    private static PrivateKey constructPrivateKey(byte[] encodedKey,
             String encodedKeyAlgorithm) throws InvalidKeyException,
             NoSuchAlgorithmException {
         try {
@@ -689,22 +679,18 @@ final class ConstructKeys {
      *
      * @return a secret key constructed from the encodedKey.
      */
-    private static final SecretKey constructSecretKey(byte[] encodedKey,
+    private static SecretKey constructSecretKey(byte[] encodedKey,
             String encodedKeyAlgorithm) {
         return new SecretKeySpec(encodedKey, encodedKeyAlgorithm);
     }
 
-    static final Key constructKey(byte[] encoding, String keyAlgorithm,
+    static Key constructKey(byte[] encoding, String keyAlgorithm,
             int keyType) throws InvalidKeyException, NoSuchAlgorithmException {
-        switch (keyType) {
-        case Cipher.SECRET_KEY:
-            return constructSecretKey(encoding, keyAlgorithm);
-        case Cipher.PRIVATE_KEY:
-            return constructPrivateKey(encoding, keyAlgorithm);
-        case Cipher.PUBLIC_KEY:
-            return constructPublicKey(encoding, keyAlgorithm);
-        default:
-            throw new InvalidKeyException("Unknown keytype " + keyType);
-        }
+        return switch (keyType) {
+            case Cipher.SECRET_KEY -> constructSecretKey(encoding, keyAlgorithm);
+            case Cipher.PRIVATE_KEY -> constructPrivateKey(encoding, keyAlgorithm);
+            case Cipher.PUBLIC_KEY -> constructPublicKey(encoding, keyAlgorithm);
+            default -> throw new InvalidKeyException("Unknown keytype " + keyType);
+        };
     }
 }

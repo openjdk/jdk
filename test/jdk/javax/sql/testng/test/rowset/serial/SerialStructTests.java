@@ -134,7 +134,7 @@ public class SerialStructTests extends BaseTest {
     @Test
     public void test08() throws Exception {
         SerialStruct ss = new SerialStruct(struct, map);
-        SerialStruct ss1 = serializeDeserializeObject(ss);;
+        SerialStruct ss1 = serializeDeserializeObject(ss);
         assertTrue(ss.equals(ss1));
     }
 }

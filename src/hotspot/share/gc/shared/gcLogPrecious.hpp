@@ -26,7 +26,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "logging/logHandle.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
 class Mutex;

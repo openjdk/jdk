@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ import static java.lang.Math.min;
 
 /**
  * A mutable sequence of individually styleable characters.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public class StyledText {
 
@@ -74,8 +69,8 @@ public class StyledText {
     }
 
     /*
-     * For each character of this text adds the provided objects to a set of
-     * objects associated with that character.
+     * For each character of this text adds the provided styles to a set of
+     * styles associated with that character.
      */
     public void addStyle(Set<? extends Style> additionalStyles) {
         styles.add(0, length(), additionalStyles);
@@ -87,7 +82,7 @@ public class StyledText {
 
     /*
      * Replaces all characters of this text with the provided sequence of
-     * characters, each of which is associated with all the provided objects.
+     * characters, each of which is associated with all the provided styles.
      */
     public void replace(Set<? extends Style> styles, CharSequence plaintext) {
         replace(0, length(), styles, plaintext);

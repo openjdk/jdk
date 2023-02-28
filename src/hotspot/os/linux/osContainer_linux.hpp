@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "memory/allocation.hpp"
+#include "utilities/ostream.hpp"
+#include "memory/allStatic.hpp"
 
 #define OSCONTAINER_ERROR (-2)
 
@@ -43,6 +44,9 @@ class OSContainer: AllStatic {
 
  public:
   static void init();
+  static void print_version_specific_info(outputStream* st);
+  static void print_container_helper(outputStream* st, jlong j, const char* metrics);
+
   static inline bool is_containerized();
   static const char * container_type();
 

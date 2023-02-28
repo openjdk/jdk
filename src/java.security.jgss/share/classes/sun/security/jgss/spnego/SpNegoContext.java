@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.security.jgss.spnego;
 
 import java.io.*;
 import java.security.Provider;
+import java.util.Objects;
+
 import org.ietf.jgss.*;
 import sun.security.action.GetBooleanAction;
 import sun.security.jgss.*;
@@ -66,14 +68,14 @@ public class SpNegoContext implements GSSContextSpi {
 
     private GSSNameSpi peerName = null;
     private GSSNameSpi myName = null;
-    private SpNegoCredElement myCred = null;
+    private final SpNegoCredElement myCred;
 
     private GSSContext mechContext = null;
     private byte[] DER_mechTypes = null;
 
     private int lifetime;
     private ChannelBinding channelBinding;
-    private boolean initiator;
+    private final boolean initiator;
 
     // the underlying negotiated mechanism
     private Oid internal_mech = null;
@@ -241,8 +243,11 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     public final void dispose() throws GSSException {
-        mechContext = null;
         state = STATE_DELETED;
+        if (mechContext != null) {
+            mechContext.dispose();
+            mechContext = null;
+        }
     }
 
     /**
@@ -285,7 +290,7 @@ public class SpNegoContext implements GSSContextSpi {
         throws GSSException {
 
         byte[] retVal = null;
-        NegTokenInit initToken = null;
+        NegTokenInit initToken;
         byte[] mechToken = null;
         int errorCode = GSSException.FAILURE;
 
@@ -356,7 +361,7 @@ public class SpNegoContext implements GSSContextSpi {
                 // pull out mechanism
                 internal_mech = targToken.getSupportedMech();
                 if (internal_mech == null) {
-                    // return wth failure
+                    // return with failure
                     throw new GSSException(errorCode, -1,
                                 "supported mechanism from server is null");
                 }
@@ -582,7 +587,6 @@ public class SpNegoContext implements GSSContextSpi {
                         state = STATE_IN_PROCESS;
                     }
                 } else {
-                    negoResult = SpNegoToken.NegoResult.REJECT;
                     state = STATE_DELETED;
                     throw new GSSException(GSSException.FAILURE);
                 }
@@ -642,7 +646,6 @@ public class SpNegoContext implements GSSContextSpi {
                         state = STATE_IN_PROCESS;
                     }
                 } else {
-                    negoResult = SpNegoToken.NegoResult.REJECT;
                     state = STATE_DELETED;
                     throw new GSSException(GSSException.FAILURE);
                 }
@@ -696,7 +699,7 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     /**
-     * get ther DER encoded MechList
+     * get the DER encoded MechList
      */
     private byte[] getEncodedMechs(Oid[] mechSet)
         throws IOException, GSSException {
@@ -709,8 +712,7 @@ public class SpNegoContext implements GSSContextSpi {
         // insert in SEQUENCE
         DerOutputStream mechTypeList = new DerOutputStream();
         mechTypeList.write(DerValue.tag_Sequence, mech);
-        byte[] encoded = mechTypeList.toByteArray();
-        return encoded;
+        return mechTypeList.toByteArray();
     }
 
     /**
@@ -730,7 +732,7 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     // Only called on acceptor side. On the initiator side, most flags
-    // are already set at request. For those that might get chanegd,
+    // are already set at request. For those that might get changed,
     // state from mech below is used.
     private void setContextFlags() {
 
@@ -824,7 +826,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
 
         // now verify the token
-        boolean valid = false;
+        boolean valid;
         try {
             MessageProp prop = new MessageProp(0, true);
             verifyMIC(token, 0, token.length, mechTypes,
@@ -844,7 +846,7 @@ public class SpNegoContext implements GSSContextSpi {
      * call gss_init_sec_context for the corresponding underlying mechanism
      */
     private byte[] GSS_initSecContext(byte[] token) throws GSSException {
-        byte[] tok = null;
+        byte[] tok;
 
         if (mechContext == null) {
             // initialize mech context
@@ -866,6 +868,7 @@ public class SpNegoContext implements GSSContextSpi {
             mechContext.requestMutualAuth(mutualAuthState);
             mechContext.requestReplayDet(replayDetState);
             mechContext.requestSequenceDet(sequenceDetState);
+            mechContext.setChannelBinding(channelBinding);
             if (mechContext instanceof GSSContextImpl) {
                 ((GSSContextImpl)mechContext).requestDelegPolicy(
                         delegPolicyState);
@@ -873,11 +876,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
 
         // pass token
-        if (token != null) {
-            tok = token;
-        } else {
-            tok = new byte[0];
-        }
+        tok = Objects.requireNonNullElseGet(token, () -> new byte[0]);
 
         // pass token to mechanism initSecContext
         byte[] init_token = mechContext.initSecContext(tok, 0, tok.length);
@@ -899,6 +898,7 @@ public class SpNegoContext implements GSSContextSpi {
                 myCred.getInternalCred());
             }
             mechContext = factory.manager.createContext(cred);
+            mechContext.setChannelBinding(channelBinding);
         }
 
         // pass token to mechanism acceptSecContext
@@ -909,7 +909,7 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     /**
-     * This routine compares the recieved mechset to the mechset that
+     * This routine compares the received mechset to the mechset that
      * this server can support. It looks sequentially through the mechset
      * and the first one that matches what the server can support is
      * chosen as the negotiated mechanism. If one is found, negResult
@@ -1097,10 +1097,7 @@ public class SpNegoContext implements GSSContextSpi {
                 return null;
             }
             // determine delegated cred element usage
-            boolean initiate = false;
-            if (delegCred.getUsage() == GSSCredential.INITIATE_ONLY) {
-                initiate = true;
-            }
+            boolean initiate = delegCred.getUsage() == GSSCredential.INITIATE_ONLY;
             GSSCredentialSpi mechCred =
                     delegCred.getElement(internal_mech, initiate);
             SpNegoCredElement cred = new SpNegoCredElement(mechCred);
@@ -1121,7 +1118,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
-    public final byte[] wrap(byte inBuf[], int offset, int len,
+    public final byte[] wrap(byte[] inBuf, int offset, int len,
                              MessageProp msgProp) throws GSSException {
         if (mechContext != null) {
             return mechContext.wrap(inBuf, offset, len, msgProp);
@@ -1142,7 +1139,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
-    public final byte[] unwrap(byte inBuf[], int offset, int len,
+    public final byte[] unwrap(byte[] inBuf, int offset, int len,
                                MessageProp msgProp)
         throws GSSException {
         if (mechContext != null) {

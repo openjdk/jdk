@@ -30,10 +30,12 @@ import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
 
-@Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.ssl=ALL-UNNAMED", "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.ssl=ALL-UNNAMED", "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode(Mode.Throughput)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class CipherSuiteBench {
 
     Method nameOf;
@@ -53,6 +55,6 @@ public class CipherSuiteBench {
 
     @Benchmark
     public Object benchmarkCipherSuite() throws InvocationTargetException, IllegalAccessException {
-        return nameOf.invoke(null,cipherSuite);
+        return nameOf.invoke(null, cipherSuite);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,7 +108,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // significant 2 bits cleared and page_size is a power of 2
   mov(rscratch1, sp);
   sub(hdr, hdr, rscratch1);
-  ands(hdr, hdr, aligned_mask - os::vm_page_size());
+  ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
   str(hdr, Address(disp_hdr, 0));
@@ -116,6 +116,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   cbnz(hdr, slow_case);
   // done
   bind(done);
+  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -147,6 +148,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
   // done
   bind(done);
+  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 
@@ -155,7 +157,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    b(slow_case);
   }
 }
 
@@ -197,9 +199,12 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   mov(rscratch1, len_in_bytes);
   lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
-  zero_words(t1, t2);
+  address tpc = zero_words(t1, t2);
 
   bind(done);
+  if (tpc == nullptr) {
+    Compilation::current()->bailout("no space for trampoline stub");
+  }
 }
 
 
@@ -226,10 +231,17 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
        initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
+       if (Compilation::current()->bailed_out()) {
+         return;
+       }
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
-       zero_words(t1, con_size_in_bytes / BytesPerWord);
+       address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
+       if (tpc == nullptr) {
+         Compilation::current()->bailout("no space for trampoline stub");
+         return;
+       }
      }
   }
 
@@ -265,6 +277,9 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   // clear rest of allocated space
   initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  if (Compilation::current()->bailed_out()) {
+    return;
+  }
 
   membar(StoreStore);
 
@@ -296,7 +311,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
@@ -304,7 +319,7 @@ void C1_MacroAssembler::remove_frame(int framesize) {
 }
 
 
-void C1_MacroAssembler::verified_entry() {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.  For this action to be legal we
   // must ensure that this first instruction is a B, BL, NOP, BKPT,
@@ -313,7 +328,7 @@ void C1_MacroAssembler::verified_entry() {
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
-  // rbp, + 0: link
+  // rfp, + 0: link
   //     + 1: return address
   //     + 2: argument with offset 0
   //     + 3: argument with offset 1
@@ -326,7 +341,7 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
   if (!VerifyOops) return;
-  verify_oop_addr(Address(sp, stack_offset), "oop");
+  verify_oop_addr(Address(sp, stack_offset));
 }
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {

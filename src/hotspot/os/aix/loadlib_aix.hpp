@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +32,9 @@
 
 #ifndef OS_AIX_LOADLIB_AIX_HPP
 #define OS_AIX_LOADLIB_AIX_HPP
+
+#include "misc_aix.hpp"
+#include "runtime/os.hpp"
 
 #include <stddef.h>
 
@@ -66,6 +70,9 @@ struct loaded_module_t {
   // True if this module is part of the vm.
   bool is_in_vm;
 
+  // Next item in the list, or NULL if no such item exits
+  loaded_module_t* next;
+
 };
 
 // This class is a singleton holding a map of all loaded binaries
@@ -99,6 +106,11 @@ class LoadedLibraries
     // Output debug info
     static void print(outputStream* os);
 
+    // Apply the callback to each loaded_module_t in the list
+    // Return false if module table is empty and cannot be loaded.
+    static bool for_each(os::LoadedModulesCallbackFunc cb, void* param);
+
 };
+
 
 #endif // OS_AIX_LOADLIB_AIX_HPP

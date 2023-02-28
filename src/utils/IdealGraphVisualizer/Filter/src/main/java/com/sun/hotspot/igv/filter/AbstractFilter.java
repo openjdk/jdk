@@ -38,7 +38,7 @@ public abstract class AbstractFilter implements Filter {
     private Properties properties;
 
     public AbstractFilter() {
-        changedEvent = new ChangedEvent<Filter>(this);
+        changedEvent = new ChangedEvent<>(this);
         properties = new Properties();
     }
 

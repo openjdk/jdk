@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,13 +78,13 @@ public class Promiscuous {
     }
 
     /**
-     * Wait (with timeout) for datagram. The {@code datagramExepcted}
+     * Wait (with timeout) for datagram. The {@code datagramExpected}
      * parameter indicates whether a datagram is expected, and if
      * {@true} then {@code id} is the identifier in the payload.
      */
     static void receiveDatagram(DatagramChannel dc,
                                 String name,
-                                boolean datagramExepcted,
+                                boolean datagramExpected,
                                 int id)
         throws IOException
     {
@@ -103,7 +103,7 @@ public class Promiscuous {
 
                 // no datagram received
                 if (sa == null) {
-                    if (datagramExepcted) {
+                    if (datagramExpected) {
                         throw new RuntimeException("Expected message not received");
                     }
                     System.out.println("No message received (correct)");
@@ -126,7 +126,7 @@ public class Promiscuous {
                     System.out.format("Received message from %s (msg=%s)\n", sender, s);
                 }
 
-                if (!datagramExepcted) {
+                if (!datagramExpected) {
                     if (receivedId == id)
                         throw new RuntimeException("Message not expected");
                     System.out.println("Message ignored (has wrong id)");

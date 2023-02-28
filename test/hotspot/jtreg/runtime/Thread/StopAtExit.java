@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 8167108 8266130
- * @summary Stress test java.lang.Thread.stop() at thread exit.
- * @run main/othervm StopAtExit
+ * @bug 8167108 8266130 8283467 8284632 8286830
+ * @summary Stress test JVM/TI StopThread() at thread exit.
+ * @requires vm.jvmti
+ * @run main/othervm/native -agentlib:StopAtExit StopAtExit
  */
 
 import java.util.concurrent.CountDownLatch;
@@ -34,9 +35,12 @@ import java.util.concurrent.TimeUnit;
 public class StopAtExit extends Thread {
     private final static int DEF_TIME_MAX = 30;  // default max # secs to test
     private final static String PROG_NAME = "StopAtExit";
+    private final static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
     public CountDownLatch exitSyncObj = new CountDownLatch(1);
     public CountDownLatch startSyncObj = new CountDownLatch(1);
+
+    native static int stopThread(StopAtExit thr, Throwable exception);
 
     @Override
     public void run() {
@@ -50,9 +54,9 @@ public class StopAtExit extends Thread {
                 throw new RuntimeException("Unexpected: " + e);
             }
         } catch (ThreadDeath td) {
-            // ignore because we're testing Thread.stop() which throws it
+            // ignore because we're testing JVM/TI StopThread() which throws it
         } catch (NoClassDefFoundError ncdfe) {
-            // ignore because we're testing Thread.stop() which can cause it
+            // ignore because we're testing JVM/TI StopThread() which can cause it
         }
     }
 
@@ -68,7 +72,32 @@ public class StopAtExit extends Thread {
                 usage();
             }
         }
+        timeMax /= 2;  // Split time between the two sub-tests.
 
+        test(timeMax);
+
+        // Fire-up deamon that just creates new threads. This generates contention on
+        // Threads_lock while worker tries to exit, creating more places where target
+        // can be seen as handshake safe.
+        Thread threadCreator = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    Thread dummyThread = new Thread(() -> {});
+                    dummyThread.start();
+                    try {
+                        dummyThread.join();
+                    } catch(InterruptedException ie) {
+                    }
+                }
+            }
+        };
+        threadCreator.setDaemon(true);
+        threadCreator.start();
+        test(timeMax);
+    }
+
+    public static void test(int timeMax) {
         System.out.println("About to execute for " + timeMax + " seconds.");
 
         long count = 0;
@@ -76,19 +105,44 @@ public class StopAtExit extends Thread {
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
 
+            int retCode;
             StopAtExit thread = new StopAtExit();
             thread.start();
             try {
                 // Wait for the worker thread to get going.
                 thread.startSyncObj.await();
                 // Tell the worker thread to race to the exit and the
-                // Thread.stop() calls will come in during thread exit.
+                // JVM/TI StopThread() calls will come in during thread exit.
                 thread.exitSyncObj.countDown();
+                long inner_count = 0;
                 while (true) {
-                    thread.stop();
+                    inner_count++;
+
+                    // Throw RuntimeException before ThreadDeath since a
+                    // ThreadDeath can also be queued up when there's already
+                    // a non-ThreadDeath async execution queued up.
+                    Throwable myException;
+                    if ((inner_count % 1) == 1) {
+                        myException = new RuntimeException();
+                    } else {
+                        myException = new ThreadDeath();
+                    }
+
+                    retCode = stopThread(thread, myException);
+
+                    if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                        // Done with JVM/TI StopThread() calls since
+                        // thread is not alive.
+                        break;
+                    } else if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": stopThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
+                    }
 
                     if (!thread.isAlive()) {
-                        // Done with Thread.stop() calls since
+                        // Done with JVM/TI StopThread() calls since
                         // thread is not alive.
                         break;
                     }
@@ -96,7 +150,7 @@ public class StopAtExit extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             } catch (NoClassDefFoundError ncdfe) {
-                // Ignore because we're testing Thread.stop() which can
+                // Ignore because we're testing JVM/TI StopThread() which can
                 // cause it. Yes, a NoClassDefFoundError that happens
                 // in a worker thread can subsequently be seen in the
                 // main thread.
@@ -107,7 +161,19 @@ public class StopAtExit extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             }
-            thread.stop();
+            // This JVM/TI StopThread() happens after the join() so it
+            // should do nothing, but let's make sure.
+            retCode = stopThread(thread, new ThreadDeath());
+
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName()
+                                           + ": stopThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value; " +
+                                           "expected JVMTI_ERROR_THREAD_NOT_ALIVE(" +
+                                           JVMTI_ERROR_THREAD_NOT_ALIVE + ").");
+            }
+
         }
 
         System.out.println("Executed " + count + " loops in " + timeMax +

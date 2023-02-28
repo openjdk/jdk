@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class GCPolicyCounters;
 class GenerationSpec;
 class StrongRootsScope;
 class SubTasksDone;
-class WorkGang;
+class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -48,7 +48,6 @@ class GenCollectedHeap : public CollectedHeap {
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
-  friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;
@@ -126,7 +125,7 @@ protected:
 
   // Callback from VM_GenCollectFull operation.
   // Perform a full collection of the first max_level+1 generations.
-  virtual void do_full_collection(bool clear_all_soft_refs);
+  void do_full_collection(bool clear_all_soft_refs) override;
   void do_full_collection(bool clear_all_soft_refs, GenerationType max_generation);
 
   // Does the "cause" of GC indicate that
@@ -140,7 +139,7 @@ protected:
 public:
 
   // Returns JNI_OK on success
-  virtual jint initialize();
+  jint initialize() override;
   virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   void initialize_size_policy(size_t init_eden_size,
@@ -148,7 +147,7 @@ public:
                               size_t init_survivor_size);
 
   // Does operations required after initialization has been done.
-  void post_initialize();
+  void post_initialize() override;
 
   Generation* young_gen() const { return _young_gen; }
   Generation* old_gen()   const { return _old_gen; }
@@ -162,7 +161,7 @@ public:
   GenerationSpec* young_gen_spec() const;
   GenerationSpec* old_gen_spec() const;
 
-  virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_gen_policy; }
+  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_gen_policy; }
 
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {
@@ -172,60 +171,47 @@ public:
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
-  size_t capacity() const;
-  size_t used() const;
+  size_t capacity() const override;
+  size_t used() const override;
 
   // Save the "used_region" for both generations.
   void save_used_regions();
 
-  size_t max_capacity() const;
+  size_t max_capacity() const override;
 
-  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded);
-
-  // We may support a shared contiguous allocation area, if the youngest
-  // generation does.
-  bool supports_inline_contig_alloc() const;
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
+  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
 
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
-  virtual void collect(GCCause::Cause cause);
-
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
-
-  // Perform a full collection of generations up to and including max_generation.
-  // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
-  void collect(GCCause::Cause cause, GenerationType max_generation);
+  void collect(GCCause::Cause cause) override;
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in() and is_in_youngest() may be expensive to compute
   // in general, so, to prevent their inadvertent use in product jvm's, we
   // restrict their use to assertion checking or verification only.
-  bool is_in(const void* p) const;
+  bool is_in(const void* p) const override;
 
-  // Returns true if the reference is to an object in the reserved space
-  // for the young generation.
-  // Assumes the the young gen address range is less than that of the old gen.
-  bool is_in_young(oop p);
+  // Returns true if p points into the reserved space for the young generation.
+  // Assumes the young gen address range is less than that of the old gen.
+  bool is_in_young(const void* p) const;
+
+  bool requires_barriers(stackChunkOop obj) const override;
 
 #ifdef ASSERT
   bool is_in_partial_collection(const void* p);
 #endif
 
   // Optimized nmethod scanning support routines
-  virtual void register_nmethod(nmethod* nm);
-  virtual void unregister_nmethod(nmethod* nm);
-  virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
+  void register_nmethod(nmethod* nm) override;
+  void unregister_nmethod(nmethod* nm) override;
+  void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
 
   // Iteration functions.
   void oop_iterate(OopIterateClosure* cl);
-  void object_iterate(ObjectClosure* cl);
+  void object_iterate(ObjectClosure* cl) override;
   Space* space_containing(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
@@ -250,12 +236,12 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  virtual size_t tlab_capacity(Thread* thr) const;
-  virtual size_t tlab_used(Thread* thr) const;
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t min_size,
-                                      size_t requested_size,
-                                      size_t* actual_size);
+  size_t tlab_capacity(Thread* thr) const override;
+  size_t tlab_used(Thread* thr) const override;
+  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  HeapWord* allocate_new_tlab(size_t min_size,
+                              size_t requested_size,
+                              size_t* actual_size) override;
 
   // The "requestor" generation is performing some garbage collection
   // action for which it would be useful to have scratch space.  The
@@ -268,8 +254,8 @@ public:
   // contributed as it needs.
   void release_scratch();
 
-  // Ensure parsability: override
-  virtual void ensure_parsability(bool retire_tlabs);
+  // Ensure parsability
+  void ensure_parsability(bool retire_tlabs) override;
 
   // Total number of full collections completed.
   unsigned int total_full_collections_completed() {
@@ -288,19 +274,15 @@ public:
 
   bool no_gc_in_progress() { return !is_gc_active(); }
 
-  // Override.
-  void prepare_for_verify();
+  void prepare_for_verify() override;
+  void verify(VerifyOption option) override;
 
-  // Override.
-  void verify(VerifyOption option);
-
-  // Override.
-  virtual void print_on(outputStream* st) const;
-  virtual void gc_threads_do(ThreadClosure* tc) const;
-  virtual void print_tracing_info() const;
+  void print_on(outputStream* st) const override;
+  void gc_threads_do(ThreadClosure* tc) const override;
+  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
-  virtual bool print_location(outputStream* st, void* addr) const;
+  bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
@@ -320,7 +302,7 @@ public:
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
-  virtual bool is_maximal_no_gc() const;
+  virtual bool is_maximal_no_gc() const override;
 
   // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.
@@ -340,21 +322,16 @@ public:
   };
 
  protected:
+  virtual void gc_prologue(bool full);
+  virtual void gc_epilogue(bool full);
+
+ public:
+  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
-
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
- public:
-  void full_process_roots(bool is_adjust_phase,
-                          ScanningOption so,
-                          bool only_strong_roots,
-                          OopClosure* root_closure,
-                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.
   // These include JNI weak roots, string table,
@@ -393,15 +370,6 @@ public:
     _incremental_collection_failed = false;
   }
 
-  // Promotion of obj into gen failed.  Try to promote obj to higher
-  // gens in ascending order; return the new location of obj if successful.
-  // Otherwise, try expand-and-allocate for obj in both the young and old
-  // generation; return the new location of obj if successful.  Otherwise, return NULL.
-  oop handle_failed_promotion(Generation* old_gen,
-                              oop obj,
-                              size_t obj_size);
-
-
 private:
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -420,11 +388,6 @@ private:
   // iterating over spaces.
   void prepare_for_compaction();
 #endif
-
-  // Perform a full collection of the generations up to and including max_generation.
-  // This is the low level interface used by the public versions of
-  // collect() and collect_locked(). Caller holds the Heap_lock on entry.
-  void collect_locked(GCCause::Cause cause, GenerationType max_generation);
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;

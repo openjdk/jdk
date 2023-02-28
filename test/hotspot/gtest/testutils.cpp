@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ void GtestUtils::mark_range_with(void* p, size_t s, uint8_t mark) {
   }
 }
 
-bool GtestUtils::check_range(const void* p, size_t s, uint8_t expected) {
+bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
   if (p == NULL || s == 0) {
     return true;
   }
@@ -57,7 +57,8 @@ bool GtestUtils::check_range(const void* p, size_t s, uint8_t expected) {
   }
 
   if (first_wrong != NULL) {
-    tty->print_cr("wrong pattern around " PTR_FORMAT, p2i(first_wrong));
+    tty->print_cr("check_range [" PTR_FORMAT ".." PTR_FORMAT "), 0x%X, : wrong pattern around " PTR_FORMAT,
+                  p2i(p), p2i(p) + s, expected, p2i(first_wrong));
     // Note: We deliberately print the surroundings too without bounds check. Might be interesting,
     // and os::print_hex_dump uses SafeFetch, so this is fine without bounds checks.
     os::print_hex_dump(tty, (address)(align_down(p2, 0x10) - 0x10),

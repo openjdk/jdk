@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,29 +35,49 @@ class MemoryPool;
 class OopIterateClosure;
 class TenuredGeneration;
 
+// SerialHeap is the implementation of CollectedHeap for Serial GC.
+//
+// The heap is reserved up-front in a single contiguous block, split into two
+// parts, the young and old generation. The young generation resides at lower
+// addresses, the old generation at higher addresses. The boundary address
+// between the generations is fixed. Within a generation, committed memory
+// grows towards higher addresses.
+//
+//
+// low                                                                              high
+//
+//                                              +-- generation boundary (fixed after startup)
+//                                              |
+// |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
+// +-----------------+--------+--------+--------+---------------+-------------------+
+// |       eden      |  from  |   to   |        |      old      |                   |
+// |                 |  (to)  | (from) |        |               |                   |
+// +-----------------+--------+--------+--------+---------------+-------------------+
+// |<-          committed            ->|        |<- committed ->|
+//
 class SerialHeap : public GenCollectedHeap {
 private:
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
-  virtual void initialize_serviceability();
+  void initialize_serviceability() override;
 
 public:
   static SerialHeap* heap();
 
   SerialHeap();
 
-  virtual Name kind() const {
+  Name kind() const override {
     return CollectedHeap::Serial;
   }
 
-  virtual const char* name() const {
+  const char* name() const override {
     return "Serial";
   }
 
-  virtual GrowableArray<GCMemoryManager*> memory_managers();
-  virtual GrowableArray<MemoryPool*> memory_pools();
+  GrowableArray<GCMemoryManager*> memory_managers() override;
+  GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
     assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
@@ -77,17 +97,20 @@ public:
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
 
-  void young_process_roots(OopIterateClosure* root_closure,
+  void young_process_roots(OopClosure* root_closure,
                            OopIterateClosure* old_gen_closure,
                            CLDClosure* cld_closure);
 
-  virtual void safepoint_synchronize_begin();
-  virtual void safepoint_synchronize_end();
+  void safepoint_synchronize_begin() override;
+  void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const { return true; }
-  HeapWord* allocate_loaded_archive_space(size_t size);
-  void complete_loaded_archive_space(MemRegion archive_space);
+  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size) override;
+  void complete_loaded_archive_space(MemRegion archive_space) override;
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

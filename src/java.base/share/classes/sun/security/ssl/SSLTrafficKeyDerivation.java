@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,13 +154,13 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                         ks.getKeyLength(cs),
                         ks.getAlgorithm(cs, algorithm));
             } catch (GeneralSecurityException gse) {
-                throw (SSLHandshakeException)(new SSLHandshakeException(
-                    "Could not generate secret").initCause(gse));
+                throw new SSLHandshakeException(
+                        "Could not generate secret", gse);
             }
         }
 
         private static byte[] createHkdfInfo(
-                byte[] label, int length) throws IOException {
+                byte[] label, int length) {
             byte[] info = new byte[4 + label.length];
             ByteBuffer m = ByteBuffer.wrap(info);
             try {
@@ -185,7 +185,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         private final byte[] label;
         private final boolean isIv;
 
-        private KeySchedule(String label, boolean isIv) {
+        KeySchedule(String label, boolean isIv) {
             this.label = ("tls13 " + label).getBytes();
             this.isIv = isIv;
         }

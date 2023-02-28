@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -46,6 +48,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.Architecture;
@@ -58,6 +62,8 @@ import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
@@ -66,6 +72,7 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.services.Services;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -200,28 +207,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     @VMEntryPoint
-    static Throwable decodeThrowable(String encodedThrowable) throws Throwable {
-        return TranslatedException.decodeThrowable(encodedThrowable);
-    }
-
-    @VMEntryPoint
-    static String encodeThrowable(Throwable throwable) throws Throwable {
-        return TranslatedException.encodeThrowable(throwable);
-    }
-
-    @VMEntryPoint
     static String callToString(Object o) {
         return o.toString();
     }
 
     /**
-     * Set of recognized {@code "jvmci.*"} system properties. Entries not associated with an
-     * {@link Option} have this object as their value.
+     * Set of recognized {@code "jvmci.*"} system properties.
      */
     static final Map<String, Object> options = new HashMap<>();
-    static {
-        options.put("jvmci.class.path.append", options);
-    }
 
     /**
      * A list of all supported JVMCI options.
@@ -235,6 +228,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Note: The following one is not used (see InitTimer.ENABLED). It is added here
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
+        CodeSerializationTypeInfo(Boolean.class, false, "Prepend the size and label of each element to the stream when " +
+                "serializing HotSpotCompiledCode to verify both ends of the protocol agree on the format. " +
+                "Defaults to true in non-product builds."),
+        DumpSerializedCode(String.class, null, "Dump serialized code during code installation for code whose simple " +
+                "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
+        ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
+                "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
+                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
+                "correct handling of translation failure."),
         PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
         AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
                 "to debug issue with a wrapper being used after its scope has closed."),
@@ -258,7 +260,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         private final Class<?> type;
         @NativeImageReinitialize private Object value;
         private final Object defaultValue;
-        private boolean isDefault = true;
+        boolean isDefault = true;
         private final String[] helpLines;
 
         Option(Class<?> type, Object defaultValue, String... helpLines) {
@@ -668,7 +670,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer, String signature) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
         }
@@ -679,7 +681,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
         }
         if (javaType == null) {
-            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, signature);
+            String name = compilerToVm.getSignatureName(klassPointer);
+            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
             resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
         }
         return javaType;
@@ -730,7 +733,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Get the {@link Class} corresponding to {@code type}.
+     * Gets the {@link Class} corresponding to {@code type}.
      *
      * @param type the type for which a {@link Class} is requested
      * @return the original Java class corresponding to {@code type} or {@code null} if this runtime
@@ -740,6 +743,36 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     public Class<?> getMirror(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType && reflection instanceof HotSpotJDKReflection) {
             return ((HotSpotJDKReflection) reflection).getMirror((HotSpotResolvedJavaType) type);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Executable} corresponding to {@code method}.
+     *
+     * @param method the method for which an {@link Executable} is requested
+     * @return the original Java method or constructor corresponding to {@code method} or
+     *         {@code null} if this runtime does not support mapping {@link ResolvedJavaMethod}
+     *         instances to {@link Executable} instances
+     */
+    public Executable getMirror(ResolvedJavaMethod method) {
+        if (method instanceof HotSpotResolvedJavaMethodImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getMethod((HotSpotResolvedJavaMethodImpl) method);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Field} corresponding to {@code field}.
+     *
+     * @param field the field for which a {@link Field} is requested
+     * @return the original Java field corresponding to {@code field} or {@code null} if this
+     *         runtime does not support mapping {@link ResolvedJavaField} instances to {@link Field}
+     *         instances
+     */
+    public Field getMirror(ResolvedJavaField field) {
+        if (field instanceof HotSpotResolvedJavaFieldImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getField((HotSpotResolvedJavaFieldImpl) field);
         }
         return null;
     }
@@ -1180,7 +1213,88 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @see "https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#global_and_local_references"
      */
     public long translate(Object obj) {
-        return compilerToVm.translate(obj);
+        return compilerToVm.translate(obj, Option.ForceTranslateFailure.getString() != null);
+    }
+
+    private static final Pattern FORCE_TRANSLATE_FAILURE_FILTER_RE = Pattern.compile("(?:(method|type|nmethod)/)?([^:]+)(?::(hotspot|native))?");
+
+    /**
+     * Forces translation failure based on {@code translatedObject} and the value of
+     * {@link Option#ForceTranslateFailure}. The value is zero or more filters separated by a comma.
+     * The syntax for a filter is:
+     *
+     * <pre>
+     *   Filter = [ TypeSelector "/" ] Substring [ ":" JVMCIEnvSelector ] .
+     *   TypeSelector = "type" | "method" | "nmethod"
+     *   JVMCIEnvSelector = "native" | "hotspot"
+     * </pre>
+     *
+     * For example:
+     *
+     * <pre>
+     *   -Djvmci.ForceTranslateFailure=nmethod/StackOverflowError:native,method/computeHash,execute
+     * </pre>
+     *
+     * will cause failure of:
+     * <ul>
+     * <li>translating a {@link HotSpotNmethod} to the libjvmci heap whose fully qualified name
+     * contains "StackOverflowError"</li>
+     * <li>translating a {@link HotSpotResolvedJavaMethodImpl} to the libjvmci or HotSpot heap whose
+     * fully qualified name contains "computeHash"</li>
+     * <li>translating a {@link HotSpotNmethod}, {@link HotSpotResolvedJavaMethodImpl} or
+     * {@link HotSpotResolvedObjectTypeImpl} to the libjvmci or HotSpot heap whose fully qualified
+     * name contains "execute"</li>
+     * </ul>
+     */
+    @VMEntryPoint
+    static void postTranslation(Object translatedObject) {
+        String value = Option.ForceTranslateFailure.getString();
+        String toMatch;
+        String type;
+        if (translatedObject instanceof HotSpotResolvedJavaMethodImpl) {
+            toMatch = ((HotSpotResolvedJavaMethodImpl) translatedObject).format("%H.%n");
+            type = "method";
+        } else if (translatedObject instanceof HotSpotResolvedObjectTypeImpl) {
+            toMatch = ((HotSpotResolvedObjectTypeImpl) translatedObject).toJavaName();
+            type = "type";
+        } else if (translatedObject instanceof HotSpotNmethod) {
+            HotSpotNmethod nmethod = (HotSpotNmethod) translatedObject;
+            if (nmethod.getMethod() != null) {
+                toMatch = nmethod.getMethod().format("%H.%n");
+            } else {
+                toMatch = String.valueOf(nmethod.getName());
+            }
+            type = "nmethod";
+        } else {
+            return;
+        }
+        String[] filters = value.split(",");
+        for (String filter : filters) {
+            Matcher m = FORCE_TRANSLATE_FAILURE_FILTER_RE.matcher(filter);
+            if (!m.matches()) {
+                throw new IllegalArgumentException(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
+            }
+            String typeSelector = m.group(1);
+            String substring = m.group(2);
+            String jvmciEnvSelector = m.group(3);
+            if (jvmciEnvSelector != null) {
+                if (jvmciEnvSelector.equals("native")) {
+                    if (!Services.IS_IN_NATIVE_IMAGE) {
+                        continue;
+                    }
+                } else {
+                    if (Services.IS_IN_NATIVE_IMAGE) {
+                        continue;
+                    }
+                }
+            }
+            if (typeSelector != null && !typeSelector.equals(type)) {
+                continue;
+            }
+            if (toMatch.contains(substring)) {
+                throw new RuntimeException("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
+            }
+        }
     }
 
     /**
@@ -1224,6 +1338,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * Ensures the current thread is attached to the peer runtime.
      *
      * @param asDaemon if the thread is not yet attached, should it be attached as a daemon
+     * @param javaVMInfo if non-null, the JavaVM info as returned by {@link #registerNativeMethods}
+     *            is returned in this array
      * @return {@code true} if this call attached the current thread, {@code false} if the current
      *         thread was already attached
      * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
@@ -1233,21 +1349,25 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @throws ArrayIndexOutOfBoundsException if {@code javaVMInfo} is non-null and is shorter than
      *             the length of the array returned by {@link #registerNativeMethods}
      */
-    public boolean attachCurrentThread(boolean asDaemon) {
+    public boolean attachCurrentThread(boolean asDaemon, long[] javaVMInfo) {
         byte[] name = IS_IN_NATIVE_IMAGE ? Thread.currentThread().getName().getBytes() : null;
-        return compilerToVm.attachCurrentThread(name, asDaemon);
+        return compilerToVm.attachCurrentThread(name, asDaemon, javaVMInfo);
     }
 
     /**
      * Detaches the current thread from the peer runtime.
      *
+     * @param release if {@code true} and this is the last thread attached to the peer runtime, the
+     *            {@code JavaVM} associated with the peer runtime is destroyed if possible
+     * @return {@code true} if the {@code JavaVM} associated with the peer runtime was destroyed as
+     *         a result of this call
      * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
      *             {@code -XX:-UseJVMCINativeLibrary})
      * @throws IllegalStateException if the peer runtime has not been initialized or if the current
      *             thread is not attached or if there is an error while trying to detach the thread
      */
-    public void detachCurrentThread() {
-        compilerToVm.detachCurrentThread();
+    public boolean detachCurrentThread(boolean release) {
+        return compilerToVm.detachCurrentThread(release);
     }
 
     /**

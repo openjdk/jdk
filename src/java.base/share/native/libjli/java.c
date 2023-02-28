@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@
  * the CreateExecutionEnviroment will remove the -d<n> flags.
  */
 
+
+#include <assert.h>
 
 #include "java.h"
 #include "jni.h"
@@ -121,7 +123,7 @@ static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, 
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
 static void SetApplicationClassPath(const char**);
 
-static void PrintJavaVersion(JNIEnv *env, jboolean extraLF);
+static void PrintJavaVersion(JNIEnv *env);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
 static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
@@ -439,7 +441,7 @@ JavaMain(void* _args)
     }
 
     if (printVersion || showVersion) {
-        PrintJavaVersion(env, showVersion);
+        PrintJavaVersion(env);
         CHECK_EXCEPTION_LEAVE(0);
         if (printVersion) {
             LEAVE();
@@ -964,13 +966,9 @@ SelectVersion(int argc, char **argv, char **main_class)
 {
     char    *arg;
     char    *operand;
-    char    *version = NULL;
-    char    *jre = NULL;
     int     jarflag = 0;
     int     headlessflag = 0;
-    int     restrict_search = -1;               /* -1 implies not known */
     manifest_info info;
-    char    env_entry[MAXNAMELEN + 24] = ENV_ENTRY "=";
     char    *splash_file_name = NULL;
     char    *splash_jar_name = NULL;
     char    *env_in;
@@ -1376,6 +1374,8 @@ ParseArguments(int *pargc, char ***pargv,
             JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
+        } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
+            ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */
         } else {
@@ -1626,7 +1626,8 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
     for (i = 0; i < jargc; i++) {
         const char *arg = jargv[i];
         if (arg[0] == '-' && arg[1] == 'J') {
-            *nargv++ = ((arg + 2) == NULL) ? NULL : JLI_StringDup(arg + 2);
+            assert(arg[2] != '\0' && "Invalid JAVA_ARGS or EXTRA_JAVA_ARGS defined by build");
+            *nargv++ = JLI_StringDup(arg + 2);
         }
     }
 
@@ -1801,7 +1802,7 @@ static void SetJavaLauncherProp() {
  * Prints the version information from the java.version and other properties.
  */
 static void
-PrintJavaVersion(JNIEnv *env, jboolean extraLF)
+PrintJavaVersion(JNIEnv *env)
 {
     jclass ver;
     jmethodID print;
@@ -1809,7 +1810,7 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
     NULL_CHECK(ver = FindBootStrapClass(env, "java/lang/VersionProps"));
     NULL_CHECK(print = (*env)->GetStaticMethodID(env,
                                                  ver,
-                                                 (extraLF == JNI_TRUE) ? "println" : "print",
+                                                 "print",
                                                  "(Z)V"
                                                  )
               );
@@ -2004,7 +2005,6 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
     int vmType;
     char *tmpPtr;
     char *altVMName = NULL;
-    char *serverClassVMName = NULL;
     static char *whiteSpace = " \t";
     if (JLI_IsTraceLauncher()) {
         start = CurrentTimeMicros();

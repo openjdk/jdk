@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.jvmci.compilerToVM.DisassembleCodeBlobTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -52,7 +52,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.util.List;
 
@@ -83,6 +83,11 @@ public class DisassembleCodeBlobTest {
                 + " : non-null return value for invalid installCode");
     }
 
+    private void checkLineStart(CompileCodeTestCase testCase, String line, String match) {
+        Asserts.assertTrue(line.startsWith(match),
+                testCase + " : line \"" + line + "\" does not start with: \"" + match +"\"");
+    }
+
     private void check(CompileCodeTestCase testCase) {
         System.out.println(testCase);
         // to have a clean state
@@ -98,10 +103,33 @@ public class DisassembleCodeBlobTest {
         }
         // The very first call to the disassembler contains a string specifying the
         // architecture: [Disassembling for mach='i386:x86-64']
-        // Therefore compare strings 2 and 3.
+        // so discard it and try again.
         String str2 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        String str3 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        Asserts.assertEQ(str2, str3,
-                testCase + " : 3nd invocation returned different value from 2nd");
+        String[] strLines = str2.split("\\R");
+        // Check some basic layout
+        int MIN_LINES = 5;
+        Asserts.assertTrue(strLines.length > 2,
+            testCase + " : read " + strLines.length + " lines, " + MIN_LINES + " expected");
+        int l = 1;
+        checkLineStart(testCase, strLines[l++], "Compiled method "); // 2
+        checkLineStart(testCase, strLines[l++], " total in heap  "); // 3
+        int foundDisassemblyLine = -1;
+        int foundEntryPointLine = -1;
+        for (; l < strLines.length; ++l) {
+            String line = strLines[l];
+            if (line.equals("[Disassembly]") || line.equals("[MachCode]")) {
+                Asserts.assertTrue(foundDisassemblyLine == -1,
+                    testCase + " : Duplicate disassembly section markers found at lines " + foundDisassemblyLine + " and " + l);
+                foundDisassemblyLine = l;
+            }
+            if (line.equals("[Entry Point]") || line.equals("[Verified Entry Point]")) {
+                Asserts.assertTrue(foundDisassemblyLine != -1,
+                    testCase + " : entry point found but [Disassembly] section missing ");
+                foundEntryPointLine = l;
+                break;
+            }
+        }
+        Asserts.assertTrue(foundDisassemblyLine != -1, testCase + " : no disassembly section found");
+        Asserts.assertTrue(foundEntryPointLine != -1, testCase + " : no entry point found");
     }
 }

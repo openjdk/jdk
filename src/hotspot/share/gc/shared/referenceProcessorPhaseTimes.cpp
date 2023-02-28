@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ static const char* PhaseNames[ReferenceProcessor::RefPhaseMax] = {
        };
 
 static const char* ReferenceTypeNames[REF_PHANTOM + 1] = {
-       "None", "Other", "SoftReference", "WeakReference", "FinalReference", "PhantomReference"
+       "None", "SoftReference", "WeakReference", "FinalReference", "PhantomReference"
        };
 
 STATIC_ASSERT((REF_PHANTOM + 1) == ARRAY_SIZE(ReferenceTypeNames));
@@ -90,7 +90,7 @@ static const char* ref_type_2_string(ReferenceType ref_type) {
 
 RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id) :
   _worker_time(worker_time), _start_time(os::elapsedTime()), _worker_id(worker_id) {
-  assert(worker_time != NULL, "Invariant");
+  assert(worker_time != nullptr, "Invariant");
 }
 
 RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
@@ -101,17 +101,14 @@ RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                                                      ReferenceProcessorPhaseTimes* phase_times,
                                                                      uint worker_id) :
-  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
-}
-
-RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
+  _tracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
                                                          ReferenceProcessor::RefProcPhases phase_number,
                                                          ReferenceProcessorPhaseTimes* phase_times) :
   _phase_times(phase_times), _start_ticks(), _end_ticks(), _phase_number(phase_number) {
-  assert(_phase_times != NULL, "Invariant");
+  assert(_phase_times != nullptr, "Invariant");
 
   _start_ticks.stamp();
   _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
@@ -146,16 +143,6 @@ RefProcBalanceQueuesTimeTracker::~RefProcBalanceQueuesTimeTracker() {
   phase_times()->set_balance_queues_time_ms(_phase_number, elapsed);
 }
 
-RefProcPhaseTimeTracker::RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
-                                                       ReferenceProcessorPhaseTimes* phase_times) :
-  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
-}
-
-RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
-  double elapsed = elapsed_time();
-  phase_times()->set_phase_time_ms(_phase_number, elapsed);
-}
-
 RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
                                                              ReferenceProcessorPhaseTimes* phase_times) :
   RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
@@ -170,9 +157,9 @@ ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, ui
   _processing_is_mt(false), _gc_timer(gc_timer) {
   assert(gc_timer != nullptr, "pre-condition");
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
-    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
+    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(nullptr, SubPhasesParWorkTitle[i], max_gc_threads);
   }
-  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(NULL, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
+  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(nullptr, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
 
   reset();
 }
@@ -200,7 +187,6 @@ void ReferenceProcessorPhaseTimes::set_phase_time_ms(ReferenceProcessor::RefProc
 void ReferenceProcessorPhaseTimes::reset() {
   for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i]->reset();
-    _sub_phases_total_time_ms[i] = uninitialized();
   }
 
   for (int i = 0; i < ReferenceProcessor::RefPhaseMax; i++) {
@@ -211,7 +197,7 @@ void ReferenceProcessorPhaseTimes::reset() {
   _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    _ref_cleared[i] = 0;
+    _ref_dropped[i] = 0;
     _ref_discovered[i] = 0;
   }
 
@@ -227,25 +213,19 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
   delete _soft_weak_final_refs_phase_worker_time_sec;
 }
 
-double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
-  ASSERT_SUB_PHASE(sub_phase);
-  return _sub_phases_total_time_ms[sub_phase];
-}
-
-void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase,
-                                                                     double time_ms) {
-  ASSERT_SUB_PHASE(sub_phase);
-  _sub_phases_total_time_ms[sub_phase] = time_ms;
-}
-
-void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
+void ReferenceProcessorPhaseTimes::add_ref_dropped(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count, memory_order_relaxed);
+  Atomic::add(&_ref_dropped[ref_type_2_index(ref_type)], count, memory_order_relaxed);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
   _ref_discovered[ref_type_2_index(ref_type)] = count;
+}
+
+size_t ReferenceProcessorPhaseTimes::ref_discovered(ReferenceType ref_type) {
+  ASSERT_REF_TYPE(ref_type);
+  return _ref_discovered[ref_type_2_index(ref_type)];
 }
 
 double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const {
@@ -290,13 +270,16 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
     LogStream ls(lt);
     ResourceMark rm;
 
-    ls.print_cr("%s%s:", Indents[base_indent], ref_type_2_string(ref_type));
-
-    uint const next_indent = base_indent + 1;
     int const ref_type_index = ref_type_2_index(ref_type);
 
-    ls.print_cr("%sDiscovered: " SIZE_FORMAT, Indents[next_indent], _ref_discovered[ref_type_index]);
-    ls.print_cr("%sCleared: " SIZE_FORMAT, Indents[next_indent], _ref_cleared[ref_type_index]);
+    size_t discovered = _ref_discovered[ref_type_index];
+    size_t dropped = _ref_dropped[ref_type_index];
+    assert(discovered >= dropped, "invariant");
+    size_t processed = discovered - dropped;
+
+    ls.print_cr("%s%s Discovered: %zu, Dropped: %zu, Processed: %zu",
+                Indents[base_indent], ref_type_2_string(ref_type),
+                discovered, dropped, processed);
   }
 }
 

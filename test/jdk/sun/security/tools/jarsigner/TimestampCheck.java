@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.KeyStoreUtils;
 import jdk.test.lib.security.timestamp.*;
 import jdk.test.lib.util.JarUtils;
+import jdk.security.jarsigner.JarSigner;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.SignerInfo;
@@ -55,13 +56,14 @@ import sun.security.timestamp.TimestampToken;
 /*
  * @test
  * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
- *      8247960 8242068 8269039
+ *      8247960 8242068 8269039 8275887 8267319
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
  *          java.base/sun.security.x509
  *          java.base/sun.security.util
  *          java.base/sun.security.tools.keytool
+ *          jdk.jartool/jdk.security.jarsigner
  * @library /lib/testlibrary
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
@@ -80,6 +82,18 @@ public class TimestampCheck {
     private static final String PASSWORD = "changeit";
     private static final String defaultPolicyId = "2.3.4";
     private static String host = null;
+    private static final String getDefaultSigAlg(String keyAlg) {
+        switch(keyAlg) {
+            case "DSA":
+                return "SHA256withDSA";
+            case "RSA":
+                return "SHA384withRSA";
+            case "EC":
+                return "SHA384withECDSA";
+            default:
+                throw new RuntimeException("Error: unsupported algo " + keyAlg);
+        }
+    }
 
     private static class Interceptor implements RespInterceptor {
 
@@ -291,7 +305,8 @@ public class TimestampCheck {
 
                 sign("policy", "-tsapolicyid",  "1.2.3")
                         .shouldHaveExitValue(0);
-                checkTimestamp("policy.jar", "1.2.3", "SHA-256");
+                checkTimestamp("policy.jar", "1.2.3",
+                        JarSigner.Builder.getDefaultDigestAlgorithm());
 
                 sign("diffpolicy", "-tsapolicyid", "1.2.3")
                         .shouldContain("TSAPolicyID changed in timestamp token")
@@ -340,6 +355,7 @@ public class TimestampCheck {
                 verify("tsdisabled2.jar", "-verbose")
                         .shouldHaveExitValue(16)
                         .shouldContain("treated as unsigned")
+                        .shouldNotMatch("Signature.*(disabled)")
                         .shouldMatch("Timestamp.*512.*(disabled)");
 
                 // Algorithm used in signing is disabled
@@ -356,6 +372,8 @@ public class TimestampCheck {
                 // sign with RSAkeysize < 1024
                 signVerbose("normal", "sign1.jar", "sign2.jar", "disabledkeysize")
                         .shouldContain("Algorithm constraints check failed on keysize")
+                        .shouldNotContain("option is considered a security " +
+                            "risk and is disabled")
                         .shouldHaveExitValue(4);
                 checkMultiple("sign2.jar");
 
@@ -375,9 +393,11 @@ public class TimestampCheck {
                         .shouldHaveExitValue(0)
                         .shouldContain("Signature algorithm: SHA3-256withRSA")
                         .shouldContain("Signature algorithm: RSASSA-PSS")
-                        .shouldContain("Signature algorithm: SHA256withECDSA")
+                        .shouldContain("Signature algorithm: " +
+                                getDefaultSigAlg("EC"))
                         .shouldContain("Signature algorithm: Ed25519")
-                        .shouldContain("Signature algorithm: SHA256withDSA");
+                        .shouldContain("Signature algorithm: " +
+                                getDefaultSigAlg("DSA"));
 
                 // Disabled algorithms
                 sign("tsweak", "-digestalg", "SHA1",
@@ -419,6 +439,17 @@ public class TimestampCheck {
                 // sign with RSAkeysize < 2048
                 signVerbose("normal", "sign1.jar", "sign2.jar", "weakkeysize")
                         .shouldNotContain("Algorithm constraints check failed on keysize")
+                        .shouldNotContain("The SHA-256 algorithm specified " +
+                            "for the -digestalg option is considered a " +
+                            "security risk")
+                        .shouldNotContain("The SHA256withRSA algorithm " +
+                            "specified for the -sigalg option is considered " +
+                            "a security risk")
+                        .shouldNotContain("The SHA-256 algorithm specified " +
+                            "for the -tsadigestalg option is considered a " +
+                            "security risk")
+                        .shouldContain("The RSA signing key has a keysize " +
+                            "of 1024 which is considered a security risk")
                         .shouldHaveExitValue(0);
                 checkMultipleWeak("sign2.jar");
 
@@ -673,7 +704,7 @@ public class TimestampCheck {
                 .shouldMatch("Timestamp signature algorithm: .*key.*(disabled)");
         verify(file, "-J-Djava.security.debug=jar")
                 .shouldHaveExitValue(16)
-                .shouldMatch("SignatureException:.*keysize");
+                .shouldMatch("SignatureException:.*MD5");
 
         // For 8171319: keytool should print out warnings when reading or
         //              generating cert/cert req using disabled algorithms.
@@ -720,51 +751,6 @@ public class TimestampCheck {
                 .shouldMatch("Signed by .*CN=dsakey")
                 .shouldMatch("Signed by .*CN=disabledkeysize")
                 .shouldMatch("Signature algorithm: .*key.*(disabled)");
-    }
-
-    static void checkWeak(String file) throws Exception {
-        verify(file)
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned");
-        verify(file, "-verbose")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned")
-                .shouldMatch("Digest algorithm: .*(weak)")
-                .shouldMatch("Signature algorithm: .*(weak)")
-                .shouldMatch("Timestamp digest algorithm: .*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(weak).*(weak)")
-                .shouldMatch("Timestamp signature algorithm: .*key.*(weak)");
-        verify(file, "-J-Djava.security.debug=jar")
-                .shouldHaveExitValue(0)
-                .shouldNotMatch("SignatureException:.*disabled");
-
-        // keytool should print out warnings when reading or
-        // generating cert/cert req using legacy algorithms.
-        String sout = SecurityTools.keytool("-printcert -jarfile " + file)
-                .stderrShouldContain("The TSA certificate uses a 1024-bit RSA key" +
-                        " which is considered a security risk." +
-                        " This key size will be disabled in a future update.")
-                .getStdout();
-        if (sout.indexOf("weak", sout.indexOf("Timestamp:")) < 0) {
-            throw new RuntimeException("timestamp not weak: " + sout);
-        }
-    }
-
-    static void checkHalfWeak(String file) throws Exception {
-        verify(file)
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned");
-        verify(file, "-verbose")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned")
-                .shouldMatch("Digest algorithm: .*(weak)")
-                .shouldNotMatch("Signature algorithm: .*(weak)")
-                .shouldNotMatch("Signature algorithm: .*(disabled)")
-                .shouldNotMatch("Timestamp digest algorithm: .*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(weak).*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(disabled).*(disabled)")
-                .shouldNotMatch("Timestamp signature algorithm: .*key.*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*key.*(disabled)");
     }
 
     static void checkMultipleWeak(String file) throws Exception {
@@ -890,7 +876,7 @@ public class TimestampCheck {
         gencert("weakkeysize");
         gencert("disabledkeysize");
         gencert("badku", "-ext ku:critical=keyAgreement");
-        gencert("ts", "-ext eku:critical=ts -validity 500");
+        gencert("ts", "-ext eku:critical=ts -ext ku=nonrep -validity 500");
 
         gencert("expired", "-validity 10 -startdate -12d");
         gencert("expiring", "-validity 178");

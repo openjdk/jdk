@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package gc.stress;
 
 import java.util.concurrent.TimeoutException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test TestStressRSetCoarsening.java
@@ -37,8 +37,8 @@ import sun.hotspot.WhiteBox;
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
@@ -240,7 +240,7 @@ public class TestStressRSetCoarsening {
         final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
-        // at the the end of iteration.
+        // at the end of iteration.
         // The number of test iterations is array length - 1.
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.
@@ -293,10 +293,7 @@ public class TestStressRSetCoarsening {
                 if (pre > cur) {
                     // Number of references went down.
                     // Need to provoke recalculation of RSet.
-                    WB.g1StartConcMarkCycle();
-                    while (WB.g1InConcurrentMark()) {
-                        Thread.sleep(1);
-                    }
+                    WB.g1RunConcurrentGC(false);
                 }
 
                 // To force the use of rememebered set entries we need to provoke a GC.

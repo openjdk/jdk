@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -58,7 +58,7 @@ inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
   if (is_interface()) {
     return (InstanceKlass* volatile*)end_of_nonstatic_oop_maps();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -84,7 +84,7 @@ inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
 
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* p         = (T*)obj->obj_field_addr<T>(map->offset());
+  T* p         = obj->field_addr<T>(map->offset());
   T* const end = p + map->count();
 
   for (; p < end; ++p) {
@@ -94,7 +94,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop o
 
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* const start = (T*)obj->obj_field_addr<T>(map->offset());
+  T* const start = obj->field_addr<T>(map->offset());
   T*       p     = start + map->count();
 
   while (start < p) {
@@ -105,7 +105,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* ma
 
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr) {
-  T* p   = (T*)obj->obj_field_addr<T>(map->offset());
+  T* p   = obj->field_addr<T>(map->offset());
   T* end = p + map->count();
 
   T* const l   = (T*)mr.start();
@@ -187,9 +187,9 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
 
 inline instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
   Klass* k = java_lang_Class::as_Klass(java_class);
-  if (k == NULL) {
+  if (k == nullptr) {
     ResourceMark rm(THREAD);
-    THROW_(vmSymbols::java_lang_InstantiationException(), NULL);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
   }
   InstanceKlass* ik = cast(k);
   ik->check_valid_for_instantiation(false, CHECK_NULL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memoryPool.hpp"
 
 class G1GenerationCounters : public GenerationCounters {
@@ -87,12 +88,13 @@ public:
 
 G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
-  _incremental_memory_manager("G1 Young Generation", "end of minor GC"),
+  _young_gc_memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _conc_gc_memory_manager("G1 Concurrent GC", "end of concurrent GC pause"),
   _eden_space_pool(NULL),
   _survivor_space_pool(NULL),
   _old_gen_pool(NULL),
-  _incremental_collection_counters(NULL),
+  _young_collection_counters(NULL),
   _full_collection_counters(NULL),
   _conc_collection_counters(NULL),
   _young_gen_counters(NULL),
@@ -119,7 +121,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   //
   //  name "collector.0".  In a generational collector this would be the
   // young generation collection.
-  _incremental_collection_counters =
+  _young_collection_counters =
     new CollectorCounters("G1 young collection pauses", 0);
   //   name "collector.1".  In a generational collector this would be the
   // old generation collection.
@@ -198,9 +200,11 @@ void G1MonitoringSupport::initialize_serviceability() {
   _full_gc_memory_manager.add_pool(_survivor_space_pool);
   _full_gc_memory_manager.add_pool(_old_gen_pool);
 
-  _incremental_memory_manager.add_pool(_eden_space_pool);
-  _incremental_memory_manager.add_pool(_survivor_space_pool);
-  _incremental_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
+  _conc_gc_memory_manager.add_pool(_old_gen_pool);
+
+  _young_gc_memory_manager.add_pool(_eden_space_pool);
+  _young_gc_memory_manager.add_pool(_survivor_space_pool);
+  _young_gc_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
 }
 
 MemoryUsage G1MonitoringSupport::memory_usage() {
@@ -209,9 +213,10 @@ MemoryUsage G1MonitoringSupport::memory_usage() {
 }
 
 GrowableArray<GCMemoryManager*> G1MonitoringSupport::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(&_incremental_memory_manager);
+  GrowableArray<GCMemoryManager*> memory_managers(3);
+  memory_managers.append(&_young_gc_memory_manager);
   memory_managers.append(&_full_gc_memory_manager);
+  memory_managers.append(&_conc_gc_memory_manager);
   return memory_managers;
 }
 
@@ -236,7 +241,7 @@ void G1MonitoringSupport::recalculate_sizes() {
 
   // _overall_used and _eden_space_used are obtained concurrently so
   // may be inconsistent with each other. To prevent _old_gen_used going negative,
-  // use smaller value to substract.
+  // use smaller value to subtract.
   _old_gen_used = _overall_used - MIN2(_overall_used, _eden_space_used + _survivor_space_used);
 
   uint survivor_list_length = _g1h->survivor_regions_count();
@@ -293,7 +298,7 @@ void G1MonitoringSupport::update_sizes() {
   if (UsePerfData) {
     _eden_space_counters->update_capacity(pad_capacity(_eden_space_committed));
     _eden_space_counters->update_used(_eden_space_used);
-   // only the "to" survivor space is active, so we don't need to
+    // only the "to" survivor space is active, so we don't need to
     // update the counters for the "from" survivor space
     _to_space_counters->update_capacity(pad_capacity(_survivor_space_committed));
     _to_space_counters->update_used(_survivor_space_used);
@@ -343,10 +348,13 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
                      max_size);
 }
 
-G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support, bool full_gc, bool all_memory_pools_affected) :
+G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                                     CollectorCounters* collection_counters,
+                                     GCMemoryManager* gc_memory_manager,
+                                     bool all_memory_pools_affected) :
   _monitoring_support(monitoring_support),
-  _tcs(full_gc ? monitoring_support->_full_collection_counters : monitoring_support->_incremental_collection_counters),
-  _tms(full_gc ? &monitoring_support->_full_gc_memory_manager : &monitoring_support->_incremental_memory_manager,
+  _tcs(collection_counters),
+  _tms(gc_memory_manager,
        G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
 }
 
@@ -354,4 +362,24 @@ G1MonitoringScope::~G1MonitoringScope() {
   _monitoring_support->update_sizes();
   // Needs to be called after updating pool sizes.
   MemoryService::track_memory_usage();
+}
+
+G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
+                                                   bool all_memory_pools_affected) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_young_collection_counters,
+                    &monitoring_support->_young_gc_memory_manager,
+                    all_memory_pools_affected) {
+}
+
+G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_full_collection_counters,
+                    &monitoring_support->_full_gc_memory_manager) {
+}
+
+G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_conc_collection_counters,
+                    &monitoring_support->_conc_gc_memory_manager) {
 }

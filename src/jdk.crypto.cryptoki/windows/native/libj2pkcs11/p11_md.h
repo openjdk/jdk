@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -50,7 +50,7 @@
  */
 
 /*
- * platoform.h
+ * platform.h
  * 10.12.2001
  *
  * declaration of all platform dependent functions used by pkcs11wrapper.c
@@ -69,7 +69,7 @@
 #define CK_PTR *
 #define CK_DEFINE_FUNCTION(returnType, name) returnType __declspec(dllexport) name
 #define CK_DECLARE_FUNCTION(returnType, name) returnType __declspec(dllimport) name
-#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType __declspec(dllimport) (* name)
+#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType (* name)
 #define CK_CALLBACK_FUNCTION(returnType, name) returnType (* name)
 #ifndef NULL_PTR
 #define NULL_PTR 0
@@ -93,8 +93,9 @@ struct ModuleData {
 
     HINSTANCE hModule;
 
-    /* The pointer to the PKCS#11 functions of this module. */
+    /* The pointers to the PKCS#11 functions of this module. */
     CK_FUNCTION_LIST_PTR ckFunctionListPtr;
+    CK_FUNCTION_LIST_3_0_PTR ckFunctionList30Ptr;
 
     /* Reference to the object to use for mutex handling. NULL, if not used. */
     jobject applicationMutexHandler;

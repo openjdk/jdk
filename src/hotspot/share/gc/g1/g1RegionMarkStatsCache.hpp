@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
 //
 // This includes
 // * the number of live words gathered during marking for the area from bottom
-// to ntams. This is an exact measure.
-// The code corrects later for the live data between ntams and top.
+// to tams. This is an exact measure.
+// The code corrects later for the live data between tams and top.
 struct G1RegionMarkStats {
   size_t _live_words;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,26 +62,14 @@ import java.util.Map;
  * java recursion.
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace006Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>expectedMethod</code> array.</p>
+ * correct stack frames.</p>
  * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
  */
-public class strace006 {
+public class strace006 extends StraceBase {
 
     static final int DEPTH = 500;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.ThreadGroup.remove",
-            "java.lang.ThreadGroup.threadTerminated",
-            "nsk.stress.strace.strace006Thread.run",
-            "nsk.stress.strace.strace006Thread.recursiveMethod1",
-            "nsk.stress.strace.strace006Thread.recursiveMethod2"
-    };
 
 
     static volatile boolean isLocked = false;
@@ -234,17 +222,6 @@ public class strace006 {
             }
         }
         return res;
-    }
-
-    boolean checkElement(StackTraceElement element) {
-        if (element.getClassName().equals("java.lang.ClassLoader"))
-            return true;
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
-                return true;
-        }
-        return false;
     }
 
     void finishThreads() {

@@ -111,7 +111,7 @@ public interface IIOParamController {
      * @return {@code true} if the {@code IIOParam} has been
      * modified, {@code false} otherwise.
      *
-     * @exception IllegalArgumentException if {@code param} is
+     * @throws IllegalArgumentException if {@code param} is
      * {@code null} or is not an instance of the correct class.
      */
     boolean activate(IIOParam param);

@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2023 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -257,70 +257,72 @@ register %{
 // ----------------------------
 // Vector-Scalar Registers
 // ----------------------------
-  reg_def VSR0 ( SOC, SOC, Op_VecX, 0, NULL);
-  reg_def VSR1 ( SOC, SOC, Op_VecX, 1, NULL);
-  reg_def VSR2 ( SOC, SOC, Op_VecX, 2, NULL);
-  reg_def VSR3 ( SOC, SOC, Op_VecX, 3, NULL);
-  reg_def VSR4 ( SOC, SOC, Op_VecX, 4, NULL);
-  reg_def VSR5 ( SOC, SOC, Op_VecX, 5, NULL);
-  reg_def VSR6 ( SOC, SOC, Op_VecX, 6, NULL);
-  reg_def VSR7 ( SOC, SOC, Op_VecX, 7, NULL);
-  reg_def VSR8 ( SOC, SOC, Op_VecX, 8, NULL);
-  reg_def VSR9 ( SOC, SOC, Op_VecX, 9, NULL);
-  reg_def VSR10 ( SOC, SOC, Op_VecX, 10, NULL);
-  reg_def VSR11 ( SOC, SOC, Op_VecX, 11, NULL);
-  reg_def VSR12 ( SOC, SOC, Op_VecX, 12, NULL);
-  reg_def VSR13 ( SOC, SOC, Op_VecX, 13, NULL);
-  reg_def VSR14 ( SOC, SOC, Op_VecX, 14, NULL);
-  reg_def VSR15 ( SOC, SOC, Op_VecX, 15, NULL);
-  reg_def VSR16 ( SOC, SOC, Op_VecX, 16, NULL);
-  reg_def VSR17 ( SOC, SOC, Op_VecX, 17, NULL);
-  reg_def VSR18 ( SOC, SOC, Op_VecX, 18, NULL);
-  reg_def VSR19 ( SOC, SOC, Op_VecX, 19, NULL);
-  reg_def VSR20 ( SOC, SOC, Op_VecX, 20, NULL);
-  reg_def VSR21 ( SOC, SOC, Op_VecX, 21, NULL);
-  reg_def VSR22 ( SOC, SOC, Op_VecX, 22, NULL);
-  reg_def VSR23 ( SOC, SOC, Op_VecX, 23, NULL);
-  reg_def VSR24 ( SOC, SOC, Op_VecX, 24, NULL);
-  reg_def VSR25 ( SOC, SOC, Op_VecX, 25, NULL);
-  reg_def VSR26 ( SOC, SOC, Op_VecX, 26, NULL);
-  reg_def VSR27 ( SOC, SOC, Op_VecX, 27, NULL);
-  reg_def VSR28 ( SOC, SOC, Op_VecX, 28, NULL);
-  reg_def VSR29 ( SOC, SOC, Op_VecX, 29, NULL);
-  reg_def VSR30 ( SOC, SOC, Op_VecX, 30, NULL);
-  reg_def VSR31 ( SOC, SOC, Op_VecX, 31, NULL);
-  reg_def VSR32 ( SOC, SOC, Op_VecX, 32, NULL);
-  reg_def VSR33 ( SOC, SOC, Op_VecX, 33, NULL);
-  reg_def VSR34 ( SOC, SOC, Op_VecX, 34, NULL);
-  reg_def VSR35 ( SOC, SOC, Op_VecX, 35, NULL);
-  reg_def VSR36 ( SOC, SOC, Op_VecX, 36, NULL);
-  reg_def VSR37 ( SOC, SOC, Op_VecX, 37, NULL);
-  reg_def VSR38 ( SOC, SOC, Op_VecX, 38, NULL);
-  reg_def VSR39 ( SOC, SOC, Op_VecX, 39, NULL);
-  reg_def VSR40 ( SOC, SOC, Op_VecX, 40, NULL);
-  reg_def VSR41 ( SOC, SOC, Op_VecX, 41, NULL);
-  reg_def VSR42 ( SOC, SOC, Op_VecX, 42, NULL);
-  reg_def VSR43 ( SOC, SOC, Op_VecX, 43, NULL);
-  reg_def VSR44 ( SOC, SOC, Op_VecX, 44, NULL);
-  reg_def VSR45 ( SOC, SOC, Op_VecX, 45, NULL);
-  reg_def VSR46 ( SOC, SOC, Op_VecX, 46, NULL);
-  reg_def VSR47 ( SOC, SOC, Op_VecX, 47, NULL);
-  reg_def VSR48 ( SOC, SOC, Op_VecX, 48, NULL);
-  reg_def VSR49 ( SOC, SOC, Op_VecX, 49, NULL);
-  reg_def VSR50 ( SOC, SOC, Op_VecX, 50, NULL);
-  reg_def VSR51 ( SOC, SOC, Op_VecX, 51, NULL);
-  reg_def VSR52 ( SOC, SOC, Op_VecX, 52, NULL);
-  reg_def VSR53 ( SOC, SOC, Op_VecX, 53, NULL);
-  reg_def VSR54 ( SOC, SOC, Op_VecX, 54, NULL);
-  reg_def VSR55 ( SOC, SOC, Op_VecX, 55, NULL);
-  reg_def VSR56 ( SOC, SOC, Op_VecX, 56, NULL);
-  reg_def VSR57 ( SOC, SOC, Op_VecX, 57, NULL);
-  reg_def VSR58 ( SOC, SOC, Op_VecX, 58, NULL);
-  reg_def VSR59 ( SOC, SOC, Op_VecX, 59, NULL);
-  reg_def VSR60 ( SOC, SOC, Op_VecX, 60, NULL);
-  reg_def VSR61 ( SOC, SOC, Op_VecX, 61, NULL);
-  reg_def VSR62 ( SOC, SOC, Op_VecX, 62, NULL);
-  reg_def VSR63 ( SOC, SOC, Op_VecX, 63, NULL);
+  // 1st 32 VSRs are aliases for the FPRs which are already defined above.
+  reg_def VSR0 ( SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+  reg_def VSR1 ( SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+  reg_def VSR2 ( SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+  reg_def VSR3 ( SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+  reg_def VSR4 ( SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+  reg_def VSR5 ( SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+  reg_def VSR6 ( SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+  reg_def VSR7 ( SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+  reg_def VSR8 ( SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+  reg_def VSR9 ( SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+  reg_def VSR10 ( SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+  reg_def VSR11 ( SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+  reg_def VSR12 ( SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+  reg_def VSR13 ( SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+  reg_def VSR14 ( SOC, SOE, Op_VecX, 14, VMRegImpl::Bad());
+  reg_def VSR15 ( SOC, SOE, Op_VecX, 15, VMRegImpl::Bad());
+  reg_def VSR16 ( SOC, SOE, Op_VecX, 16, VMRegImpl::Bad());
+  reg_def VSR17 ( SOC, SOE, Op_VecX, 17, VMRegImpl::Bad());
+  reg_def VSR18 ( SOC, SOE, Op_VecX, 18, VMRegImpl::Bad());
+  reg_def VSR19 ( SOC, SOE, Op_VecX, 19, VMRegImpl::Bad());
+  reg_def VSR20 ( SOC, SOE, Op_VecX, 20, VMRegImpl::Bad());
+  reg_def VSR21 ( SOC, SOE, Op_VecX, 21, VMRegImpl::Bad());
+  reg_def VSR22 ( SOC, SOE, Op_VecX, 22, VMRegImpl::Bad());
+  reg_def VSR23 ( SOC, SOE, Op_VecX, 23, VMRegImpl::Bad());
+  reg_def VSR24 ( SOC, SOE, Op_VecX, 24, VMRegImpl::Bad());
+  reg_def VSR25 ( SOC, SOE, Op_VecX, 25, VMRegImpl::Bad());
+  reg_def VSR26 ( SOC, SOE, Op_VecX, 26, VMRegImpl::Bad());
+  reg_def VSR27 ( SOC, SOE, Op_VecX, 27, VMRegImpl::Bad());
+  reg_def VSR28 ( SOC, SOE, Op_VecX, 28, VMRegImpl::Bad());
+  reg_def VSR29 ( SOC, SOE, Op_VecX, 29, VMRegImpl::Bad());
+  reg_def VSR30 ( SOC, SOE, Op_VecX, 30, VMRegImpl::Bad());
+  reg_def VSR31 ( SOC, SOE, Op_VecX, 31, VMRegImpl::Bad());
+  // 2nd 32 VSRs are aliases for the VRs which are only defined here.
+  reg_def VSR32 ( SOC, SOC, Op_VecX, 32, VSR32->as_VMReg());
+  reg_def VSR33 ( SOC, SOC, Op_VecX, 33, VSR33->as_VMReg());
+  reg_def VSR34 ( SOC, SOC, Op_VecX, 34, VSR34->as_VMReg());
+  reg_def VSR35 ( SOC, SOC, Op_VecX, 35, VSR35->as_VMReg());
+  reg_def VSR36 ( SOC, SOC, Op_VecX, 36, VSR36->as_VMReg());
+  reg_def VSR37 ( SOC, SOC, Op_VecX, 37, VSR37->as_VMReg());
+  reg_def VSR38 ( SOC, SOC, Op_VecX, 38, VSR38->as_VMReg());
+  reg_def VSR39 ( SOC, SOC, Op_VecX, 39, VSR39->as_VMReg());
+  reg_def VSR40 ( SOC, SOC, Op_VecX, 40, VSR40->as_VMReg());
+  reg_def VSR41 ( SOC, SOC, Op_VecX, 41, VSR41->as_VMReg());
+  reg_def VSR42 ( SOC, SOC, Op_VecX, 42, VSR42->as_VMReg());
+  reg_def VSR43 ( SOC, SOC, Op_VecX, 43, VSR43->as_VMReg());
+  reg_def VSR44 ( SOC, SOC, Op_VecX, 44, VSR44->as_VMReg());
+  reg_def VSR45 ( SOC, SOC, Op_VecX, 45, VSR45->as_VMReg());
+  reg_def VSR46 ( SOC, SOC, Op_VecX, 46, VSR46->as_VMReg());
+  reg_def VSR47 ( SOC, SOC, Op_VecX, 47, VSR47->as_VMReg());
+  reg_def VSR48 ( SOC, SOC, Op_VecX, 48, VSR48->as_VMReg());
+  reg_def VSR49 ( SOC, SOC, Op_VecX, 49, VSR49->as_VMReg());
+  reg_def VSR50 ( SOC, SOC, Op_VecX, 50, VSR50->as_VMReg());
+  reg_def VSR51 ( SOC, SOC, Op_VecX, 51, VSR51->as_VMReg());
+  reg_def VSR52 ( SOC, SOE, Op_VecX, 52, VSR52->as_VMReg());
+  reg_def VSR53 ( SOC, SOE, Op_VecX, 53, VSR53->as_VMReg());
+  reg_def VSR54 ( SOC, SOE, Op_VecX, 54, VSR54->as_VMReg());
+  reg_def VSR55 ( SOC, SOE, Op_VecX, 55, VSR55->as_VMReg());
+  reg_def VSR56 ( SOC, SOE, Op_VecX, 56, VSR56->as_VMReg());
+  reg_def VSR57 ( SOC, SOE, Op_VecX, 57, VSR57->as_VMReg());
+  reg_def VSR58 ( SOC, SOE, Op_VecX, 58, VSR58->as_VMReg());
+  reg_def VSR59 ( SOC, SOE, Op_VecX, 59, VSR59->as_VMReg());
+  reg_def VSR60 ( SOC, SOE, Op_VecX, 60, VSR60->as_VMReg());
+  reg_def VSR61 ( SOC, SOE, Op_VecX, 61, VSR61->as_VMReg());
+  reg_def VSR62 ( SOC, SOE, Op_VecX, 62, VSR62->as_VMReg());
+  reg_def VSR63 ( SOC, SOE, Op_VecX, 63, VSR63->as_VMReg());
 
 // ----------------------------
 // Specify priority of register selection within phases of register
@@ -980,6 +982,7 @@ source_hpp %{
 
 source %{
 
+#include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1123,11 +1126,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   assert(rule() == CallLeafDirect_rule, "unexpected node with rule %u", rule());
   // CallLeafDirectNode uses bl.
   return 4;
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
 }
 
 //=============================================================================
@@ -1619,7 +1617,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
       __ relocate(relocInfo::poll_return_type);
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
@@ -1944,7 +1944,7 @@ uint MachNopNode::size(PhaseRegAlloc *ra_) const {
 void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   char reg_str[128];
-  ra_->dump_register(this, reg_str);
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
   st->print("ADDI    %s, SP, %d \t// box node", reg_str, offset);
 }
 #endif
@@ -2170,6 +2170,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
@@ -2177,11 +2181,19 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -3400,6 +3412,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       emit_call_with_trampoline_stub(_masm, entry_point, relocInfo::runtime_call_type);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
@@ -3438,6 +3451,7 @@ encode %{
         return;
       }
     }
+    __ post_call_nop();
   %}
 
   // Second node of expanded dynamic call - the call.
@@ -3478,6 +3492,7 @@ encode %{
     // and the entry point might be too far away for bl. Pc() serves
     // as dummy and bl will be patched later.
     __ bl((address) __ pc());
+    __ post_call_nop();
   %}
 
   // postalloc expand emitter for virtual calls.
@@ -3568,6 +3583,7 @@ encode %{
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
@@ -3592,6 +3608,7 @@ encode %{
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     }
+    __ post_call_nop();
   %}
 
   // a runtime call
@@ -3603,6 +3620,7 @@ encode %{
 #if defined(ABI_ELFv2)
     address entry= !($meth$$method) ? NULL : (address)$meth$$method;
     __ call_c(entry, relocInfo::runtime_call_type);
+    __ post_call_nop();
 #else
     // The function we're going to call.
     FunctionDescriptor fdtemp;
@@ -3618,6 +3636,7 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
+    __ post_call_nop();
 #endif
 
     // Check the ret_addr_offset.
@@ -4132,7 +4151,7 @@ operand immP_NM() %{
   interface(CONST_INTER);
 %}
 
-// costant 'pointer 0'.
+// constant 'pointer 0'.
 operand immP_0() %{
   predicate(n->get_ptr() == 0);
   match(ConP);
@@ -4907,7 +4926,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format. The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap.
@@ -5531,7 +5550,7 @@ instruct loadN2P_klass_unscaled(iRegPdst dst, memory mem) %{
 // Load Pointer
 instruct loadP(iRegPdst dst, memoryAlg4 mem) %{
   match(Set dst (LoadP mem));
-  predicate(n->as_Load()->is_unordered() || followed_by_acquire(n));
+  predicate((n->as_Load()->is_unordered() || followed_by_acquire(n)) && n->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LD      $dst, $mem \t// ptr" %}
@@ -5545,6 +5564,8 @@ instruct loadP_ac(iRegPdst dst, memoryAlg4 mem) %{
   match(Set dst (LoadP mem));
   ins_cost(3*MEMORY_REF_COST);
 
+  predicate(n->as_Load()->barrier_data() == 0);
+
   format %{ "LD      $dst, $mem \t// ptr acquire\n\t"
             "TWI     $dst\n\t"
             "ISYNC" %}
@@ -5556,7 +5577,7 @@ instruct loadP_ac(iRegPdst dst, memoryAlg4 mem) %{
 // LoadP + CastP2L
 instruct loadP2X(iRegLdst dst, memoryAlg4 mem) %{
   match(Set dst (CastP2X (LoadP mem)));
-  predicate(_kids[0]->_leaf->as_Load()->is_unordered());
+  predicate(_kids[0]->_leaf->as_Load()->is_unordered() && _kids[0]->_leaf->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LD      $dst, $mem \t// ptr + p2x" %}
@@ -5947,7 +5968,7 @@ instruct loadConN_hi(iRegNdst dst, immN src) %{
   format %{ "LIS     $dst, $src \t// narrow oop hi" %}
   size(4);
   ins_encode %{
-    __ lis($dst$$Register, (int)(short)(($src$$constant >> 16) & 0xffff));
+    __ lis($dst$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5960,11 +5981,9 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
   size(4);
   ins_encode %{
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int oop_index = __ oop_recorder()->find_index((jobject)$src2$$constant);
-    RelocationHolder rspec = oop_Relocation::spec(oop_index);
-    __ relocate(rspec, 1);
-    __ ori($dst$$Register, $src1$$Register, $src2$$constant & 0xffff);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6079,12 +6098,9 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src1$$constant);
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
-    RelocationHolder rspec = metadata_Relocation::spec(klass_index);
-
-    __ relocate(rspec, 1);
+    // Notify OOP recorder (don't need the relocation)
+    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
+    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
     __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
   %}
   ins_pipe(pipe_class_default);
@@ -6523,6 +6539,7 @@ instruct storeNKlass(memory dst, iRegN_P2N src) %{
 // Store Pointer
 instruct storeP(memoryAlg4 dst, iRegPsrc src) %{
   match(Set dst (StoreP dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STD     $src, $dst \t// ptr" %}
@@ -6835,6 +6852,9 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
     n2->_opnds[1] = op_src;
     n2->_opnds[2] = op_dst;
     n2->_bottom_type = _bottom_type;
+
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n2, true);
 
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -7151,6 +7171,7 @@ instruct membar_release() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(4*MEMORY_REF_COST);
 
   format %{ "MEMBAR-store-store" %}
@@ -7446,61 +7467,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success. Implemented with a CASA on Sparc.
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLsrc oldVal, iRegLsrc newVal, flagsRegCR0 cr0) %{
-  match(Set crx (StoreLConditional mem_ptr (Binary oldVal newVal)));
-  effect(TEMP cr0);
-  format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarAcq, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storePConditional_regP_regP_regP(flagsRegCR0 cr0, indirect mem_ptr, iRegPsrc oldVal, iRegPsrc newVal) %{
-  match(Set cr0 (StorePConditional mem_ptr (Binary oldVal newVal)));
-  ins_cost(2*MEMORY_REF_COST);
-
-  format %{ "STDCX_  if ($cr0 = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ stdcx_($newVal$$Register, $mem_ptr$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegPdst dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(2*MEMORY_REF_COST);
-
-  format %{ "LDARX   $dst, $mem \t// loadPLocked\n\t" %}
-  size(4);
-  ins_encode %{
-    __ ldarx($dst$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Compare-And-Swap---------------------------------------------------
 
 // CompareAndSwap{P,I,L} have more than one output, therefore "CmpI
@@ -7642,6 +7608,7 @@ instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc
 instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapP mem_ptr (Binary src1 src2)));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
@@ -7864,7 +7831,7 @@ instruct weakCompareAndSwapL_acq_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, 
 
 instruct weakCompareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapP mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst) && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
@@ -7878,7 +7845,7 @@ instruct weakCompareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iReg
 
 instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapP mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
@@ -8134,7 +8101,8 @@ instruct compareAndExchangeL_acq_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, 
 
 instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst)
+            && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
@@ -8148,7 +8116,8 @@ instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iReg
 
 instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst)
+            && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
@@ -8370,6 +8339,7 @@ instruct getAndSetL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr
 
 instruct getAndSetP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetP mem_ptr src));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetP $res, $mem_ptr, $src" %}
   ins_encode %{
@@ -8999,6 +8969,50 @@ instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
     cmovL_bne_negL_reg(tmp2, tmp1, src1);        // cmove tmp2 = neg(src1) if src2 == -1
     mulL_reg_reg(tmp3, src2, tmp2);              // tmp3 = src2 * tmp2
     subL_reg_reg(dst, src1, tmp3);               // dst = src1 - tmp3
+  %}
+%}
+
+instruct udivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UDivI src1 src2));
+  format %{ "DIVWU   $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ divwu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct umodI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UModI src1 src2));
+  expand %{
+    iRegIdst tmp1;
+    iRegIdst tmp2;
+    udivI_reg_reg(tmp1, src1, src2);
+    // Compute lower 32 bit result using signed instructions as suggested by ISA.
+    // Upper 32 bit will contain garbage.
+    mulI_reg_reg(tmp2, src2, tmp1);
+    subI_reg_reg(dst, src1, tmp2);
+  %}
+%}
+
+instruct udivL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (UDivL src1 src2));
+  format %{ "DIVDU   $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ divdu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct umodL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (UModL src1 src2));
+  expand %{
+    iRegLdst tmp1;
+    iRegLdst tmp2;
+    udivL_reg_reg(tmp1, src1, src2);
+    mulL_reg_reg(tmp2, src2, tmp1);
+    subL_reg_reg(dst, src1, tmp2);
   %}
 %}
 
@@ -12126,7 +12140,7 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
   ins_encode %{
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                  $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
-    // If locking was successfull, crx should indicate 'EQ'.
+    // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
   %}
@@ -12146,7 +12160,7 @@ instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1
                                  _rtm_counters, _stack_rtm_counters,
                                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                                  /*RTM*/ true, ra_->C->profile_rtm());
-    // If locking was successfull, crx should indicate 'EQ'.
+    // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
   %}
@@ -12163,7 +12177,7 @@ instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, 
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    false);
-    // If unlocking was successfull, crx should indicate 'EQ'.
+    // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
   %}
@@ -12180,7 +12194,7 @@ instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    /*RTM*/ true);
-    // If unlocking was successfull, crx should indicate 'EQ'.
+    // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
   %}
@@ -12772,16 +12786,16 @@ instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc l
 %}
 
 // StringCoding.java intrinsics
-instruct has_negatives(rarg1RegP ary1, iRegIsrc len, iRegIdst result, iRegLdst tmp1, iRegLdst tmp2,
-                       regCTR ctr, flagsRegCR0 cr0)
+instruct count_positives(iRegPsrc ary1, iRegIsrc len, iRegIdst result, iRegLdst tmp1, iRegLdst tmp2,
+                         regCTR ctr, flagsRegCR0 cr0)
 %{
-  match(Set result (HasNegatives ary1 len));
-  effect(TEMP_DEF result, USE_KILL ary1, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0);
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0);
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
+  format %{ "count positives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register, $result$$Register,
-                     $tmp1$$Register, $tmp2$$Register);
+    __ count_positives($ary1$$Register, $len$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12794,30 +12808,26 @@ instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst r
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
          USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
   ins_cost(300);
-  format %{ "Encode array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  format %{ "Encode iso array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    Label Lslow, Lfailure1, Lfailure2, Ldone;
-    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
-                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Lfailure1);
-    __ rldicl_($result$$Register, $len$$Register, 0, 64-3); // Remaining characters.
-    __ beq(CCR0, Ldone);
-    __ bind(Lslow);
-    __ string_compress($src$$Register, $dst$$Register, $result$$Register, $tmp2$$Register, Lfailure2);
-    __ li($result$$Register, 0);
-    __ b(Ldone);
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, false);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
-    __ bind(Lfailure1);
-    __ mr($result$$Register, $len$$Register);
-    __ mfctr($tmp1$$Register);
-    __ rldimi_($result$$Register, $tmp1$$Register, 3, 0); // Remaining characters.
-    __ beq(CCR0, Ldone);
-    __ b(Lslow);
-
-    __ bind(Lfailure2);
-    __ mfctr($result$$Register); // Remaining characters.
-
-    __ bind(Ldone);
-    __ subf($result$$Register, $result$$Register, $len$$Register);
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+                          iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "Encode ascii array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14056,13 +14066,28 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
 
 // Vector Population Count Instructions
 
-instruct vpopcnt4I_reg(vecX dst, vecX src) %{
+instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
-  predicate(n->as_Vector()->length() == 4);
-  format %{ "VPOPCNTW $dst,$src\t// pop count packed4I" %}
+  format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
-    __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vpopcntb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vpopcnth($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14355,6 +14380,12 @@ instruct safePoint_poll(iRegPdst poll) %{
 
 // Call Java Static Instruction
 
+source %{
+
+#include "runtime/continuation.hpp"
+
+%}
+
 // Schedulable version of call static node.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
@@ -14364,7 +14395,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14385,7 +14416,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14463,15 +14494,16 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode %{
     __ bctrl();
+    __ post_call_nop();
   %}
   ins_pipe(pipe_class_call);
 %}
 
 // postalloc expand of CallLeafDirect.
-// Load adress to call from TOC, then bl to it.
+// Load address to call from TOC, then bl to it.
 instruct CallLeafDirect_Ex(method meth) %{
   match(CallLeaf);
   effect(USE meth);
@@ -14487,7 +14519,7 @@ instruct CallLeafDirect_Ex(method meth) %{
 
 // Call runtime without safepoint - same as CallLeaf.
 // postalloc expand of CallLeafNoFPDirect.
-// Load adress to call from TOC, then bl to it.
+// Load address to call from TOC, then bl to it.
 instruct CallLeafNoFPDirect_Ex(method meth) %{
   match(CallLeafNoFP);
   effect(USE meth);
@@ -14787,7 +14819,7 @@ instruct cacheWBPostSync()
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

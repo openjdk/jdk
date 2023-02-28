@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,31 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.ImageUtilities;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class EnableBlockLayoutAction extends AbstractAction {
+public class EnableBlockLayoutAction extends EnableLayoutAction {
 
-    private boolean state;
-    public static final String STATE = "state";
-
-    public EnableBlockLayoutAction() {
-        state = false;
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(STATE, state);
-        putValue(Action.SHORT_DESCRIPTION, "Cluster nodes into blocks");
+    public EnableBlockLayoutAction(EditorTopComponent etc) {
+        super(etc);
     }
 
-    public void actionPerformed(ActionEvent ev) {
-        this.state = !state;
-        this.putValue(STATE, state);
-    }
-
+    @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/blocks.gif";
+        return "com/sun/hotspot/igv/view/images/blocks.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Cluster nodes into blocks";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowBlocks(this.isSelected());
     }
 }

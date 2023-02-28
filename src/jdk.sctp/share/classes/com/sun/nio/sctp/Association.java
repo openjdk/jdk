@@ -39,7 +39,7 @@ package com.sun.nio.sctp;
  * shutdown. An association ID is not unique across multiple SCTP channels.
  * An Association's local and remote addresses may change if the SCTP
  * implementation supports <I>Dynamic Address Reconfiguration</I> as defined by
- * <A HREF="http://tools.ietf.org/html/rfc5061">RFC5061</A>, see the
+ * <A HREF="https://tools.ietf.org/html/rfc5061">RFC5061</A>, see the
  * {@code bindAddress} and {@code unbindAddress} methods of {@link SctpChannel},
  * {@link SctpServerChannel}, and {@link SctpMultiChannel}.
  *

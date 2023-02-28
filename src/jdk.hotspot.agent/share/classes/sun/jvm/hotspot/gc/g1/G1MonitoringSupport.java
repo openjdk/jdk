@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,17 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class G1MonitoringSupport extends VMObject {
     // size_t _eden_space_committed;
-    static private CIntegerField edenSpaceCommittedField;
+    private static CIntegerField edenSpaceCommittedField;
     // size_t _eden_space_used;
-    static private CIntegerField edenSpaceUsedField;
+    private static CIntegerField edenSpaceUsedField;
     // size_t _survivor_space_committed;
-    static private CIntegerField survivorSpaceCommittedField;
+    private static CIntegerField survivorSpaceCommittedField;
     // size_t _survivor_space_used;
-    static private CIntegerField survivorSpaceUsedField;
+    private static CIntegerField survivorSpaceUsedField;
     // size_t _old_gen_committed;
-    static private CIntegerField oldGenCommittedField;
+    private static CIntegerField oldGenCommittedField;
     // size_t _old_gen_used;
-    static private CIntegerField oldGenUsedField;
+    private static CIntegerField oldGenUsedField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -58,7 +58,7 @@ public class G1MonitoringSupport extends VMObject {
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("G1MonitoringSupport");
 
         edenSpaceCommittedField = type.getCIntegerField("_eden_space_committed");

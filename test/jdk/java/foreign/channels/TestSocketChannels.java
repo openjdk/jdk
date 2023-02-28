@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
+ * @enablePreview
  * @library /test/lib
  * @modules java.base/sun.nio.ch
- *          jdk.incubator.foreign/jdk.internal.foreign
  * @key randomness
  * @run testng/othervm TestSocketChannels
  */
 
+import java.lang.foreign.Arena;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -40,10 +41,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+
+import java.lang.foreign.MemorySegment;
+
 import org.testng.annotations.*;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 /**
@@ -52,17 +55,18 @@ import static org.testng.Assert.*;
 public class TestSocketChannels extends AbstractChannelsTest {
 
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
+    static final Class<WrongThreadException> WTE = WrongThreadException.class;
 
-    @Test(dataProvider = "closeableScopes")
-    public void testBasicIOWithClosedSegment(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIOWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
-            ResourceScope scope = scopeSupplier.get();
-            ByteBuffer bb = segmentBufferOfSize(scope, 16);
-            scope.close();
+            Arena drop = arenaSupplier.get();
+            ByteBuffer bb = segmentBufferOfSize(drop.scope(), 16);
+            drop.close();
             assertMessage(expectThrows(ISE, () -> channel.read(bb)),                           "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb})),        "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb}, 0, 1)),  "Already closed");
@@ -72,16 +76,16 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "closeableScopes")
-    public void testScatterGatherWithClosedSegment(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testScatterGatherWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
-            ResourceScope scope = scopeSupplier.get();
-            ByteBuffer[] buffers = segmentBuffersOfSize(8, scope, 16);
-            scope.close();
+            Arena drop = arenaSupplier.get();
+            ByteBuffer[] buffers = segmentBuffersOfSize(8, drop.scope(), 16);
+            drop.close();
             assertMessage(expectThrows(ISE, () -> channel.write(buffers)),       "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(buffers)),        "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.write(buffers, 0 ,8)), "Already closed");
@@ -89,19 +93,19 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "allScopes")
-    public void testBasicIO(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
-        ResourceScope scope;
+        Arena drop;
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var scp = closeableScopeOrNull(scope = scopeSupplier.get())) {
-            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, scope);
-            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, scope);
+             var scp = drop = arenaSupplier.get()) {
+            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, drop.scope());
+            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, drop.scope());
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtOffset(segment1, i, (byte) i);
+                segment1.set(JAVA_BYTE, i, (byte) i);
             }
             ByteBuffer bb1 = segment1.asByteBuffer();
             ByteBuffer bb2 = segment2.asByteBuffer();
@@ -112,14 +116,14 @@ public class TestSocketChannels extends AbstractChannelsTest {
     }
 
     @Test
-    public void testBasicHeapIOWithGlobalScope() throws Exception {
+    public void testBasicHeapIOWithGlobalSession() throws Exception {
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1)) {
             var segment1 = MemorySegment.ofArray(new byte[10]);
             var segment2 = MemorySegment.ofArray(new byte[10]);
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtOffset(segment1, i, (byte) i);
+                segment1.set(JAVA_BYTE, i, (byte) i);
             }
             ByteBuffer bb1 = segment1.asByteBuffer();
             ByteBuffer bb2 = segment2.asByteBuffer();
@@ -129,15 +133,15 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "confinedScopes")
-    public void testIOOnConfinedFromAnotherThread(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "confinedArenas")
+    public void testIOOnConfinedFromAnotherThread(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connected = connectChannels(server, channel);
-             var scope = scopeSupplier.get()) {
-            var segment = MemorySegment.allocateNative(10, 1, scope);
+             var drop = arenaSupplier.get()) {
+            var segment = MemorySegment.allocateNative(10, 1, drop.scope());
             ByteBuffer bb = segment.asByteBuffer();
             List<ThrowingRunnable> ioOps = List.of(
                     () -> channel.write(bb),
@@ -149,7 +153,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
             );
             for (var ioOp : ioOps) {
                 AtomicReference<Exception> exception = new AtomicReference<>();
-                Runnable task = () -> exception.set(expectThrows(ISE, ioOp));
+                Runnable task = () -> exception.set(expectThrows(WTE, ioOp));
                 var t = new Thread(task);
                 t.start();
                 t.join();
@@ -158,17 +162,17 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "allScopes")
-    public void testScatterGatherIO(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testScatterGatherIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
-        ResourceScope scope;
+        Arena drop;
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var scp = closeableScopeOrNull(scope = scopeSupplier.get())) {
-            var writeBuffers = mixedBuffersOfSize(32, scope, 64);
-            var readBuffers = mixedBuffersOfSize(32, scope, 64);
+             var scp = drop = arenaSupplier.get()) {
+            var writeBuffers = mixedBuffersOfSize(32, drop.scope(), 64);
+            var readBuffers = mixedBuffersOfSize(32, drop.scope(), 64);
             long expectedCount = remaining(writeBuffers);
             assertEquals(writeNBytes(sc1, writeBuffers, 0, 32, expectedCount), expectedCount);
             assertEquals(readNBytes(sc2, readBuffers, 0, 32, expectedCount), expectedCount);
@@ -176,19 +180,19 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "closeableScopes")
-    public void testBasicIOWithDifferentScopes(Supplier<ResourceScope> scopeSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIOWithDifferentSessions(Supplier<Arena> arenaSupplier)
          throws Exception
     {
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var scope1 = scopeSupplier.get();
-             var scope2 = scopeSupplier.get()) {
-            var writeBuffers = Stream.of(mixedBuffersOfSize(16, scope1, 64), mixedBuffersOfSize(16, scope2, 64))
+             var drop1 = arenaSupplier.get();
+             var drop2 = arenaSupplier.get()) {
+            var writeBuffers = Stream.of(mixedBuffersOfSize(16, drop1.scope(), 64), mixedBuffersOfSize(16, drop2.scope(), 64))
                                      .flatMap(Arrays::stream)
                                      .toArray(ByteBuffer[]::new);
-            var readBuffers = Stream.of(mixedBuffersOfSize(16, scope1, 64), mixedBuffersOfSize(16, scope2, 64))
+            var readBuffers = Stream.of(mixedBuffersOfSize(16, drop1.scope(), 64), mixedBuffersOfSize(16, drop2.scope(), 64))
                                     .flatMap(Arrays::stream)
                                     .toArray(ByteBuffer[]::new);
 

@@ -51,8 +51,8 @@ import java.beans.ConstructorProperties;
  *   ...
  *   TreePath selectedPath = tree.getSelectionPath();
  *   DefaultMutableTreeNode selectedNode =
- *       ((DefaultMutableTreeNode)selectedPath.getLastPathComponent()).
- *       getUserObject();
+ *       ((DefaultMutableTreeNode)selectedPath.getLastPathComponent());
+ *   Object myObject= selectedNode.getUserObject();
  * </pre>
  * Subclasses typically need override only {@code
  * getLastPathComponent}, and {@code getParentPath}. As {@code JTree}

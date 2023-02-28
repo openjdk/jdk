@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,15 @@ CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
 # The current directory when configure was run
 CONFIGURE_START_DIR:=@CONFIGURE_START_DIR@
 
+# How configure was originally called, if not called directly
+REAL_CONFIGURE_COMMAND_EXEC_SHORT := @REAL_CONFIGURE_COMMAND_EXEC_SHORT@
+REAL_CONFIGURE_COMMAND_EXEC_FULL := @REAL_CONFIGURE_COMMAND_EXEC_FULL@
+REAL_CONFIGURE_COMMAND_LINE := @REAL_CONFIGURE_COMMAND_LINE@
+
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
-# Path to autoconf if overriden by the user, to be used by "make reconfigure"
+# Path to autoconf if overridden by the user, to be used by "make reconfigure"
 AUTOCONF := @AUTOCONF@
 
 # SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
@@ -129,7 +134,13 @@ RELEASE_FILE_OS_ARCH:=@RELEASE_FILE_OS_ARCH@
 RELEASE_FILE_LIBC:=@RELEASE_FILE_LIBC@
 
 SOURCE_DATE := @SOURCE_DATE@
-ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
+ISO_8601_FORMAT_STRING := @ISO_8601_FORMAT_STRING@
+
+ifneq ($(SOURCE_DATE), updated)
+  # For "updated" source date value, these are set in InitSupport.gmk
+  export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
+  SOURCE_DATE_ISO_8601 := @SOURCE_DATE_ISO_8601@
+endif
 
 LIBM:=@LIBM@
 LIBDL:=@LIBDL@
@@ -141,7 +152,7 @@ ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
   # Tell WSL to convert PATH between linux and windows
   export WSLENV := PATH/l
 else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
-  # Prohibit msys2 from attemping any path wrangling
+  # Prohibit msys2 from attempting any path wrangling
   export MSYS2_ARG_CONV_EXCL := "*"
 endif
 
@@ -239,7 +250,7 @@ VERSION_DOCS_API_SINCE := @VERSION_DOCS_API_SINCE@
 JDK_SOURCE_TARGET_VERSION := @JDK_SOURCE_TARGET_VERSION@
 
 # Convenience CFLAGS settings for passing version information into native programs.
-VERSION_CFLAGS := \
+VERSION_CFLAGS = \
     -DVERSION_FEATURE=$(VERSION_FEATURE) \
     -DVERSION_INTERIM=$(VERSION_INTERIM) \
     -DVERSION_UPDATE=$(VERSION_UPDATE) \
@@ -359,6 +370,12 @@ ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
+HSDIS_BACKEND := @HSDIS_BACKEND@
+ENABLE_HSDIS_BUNDLING := @ENABLE_HSDIS_BUNDLING@
+HSDIS_CFLAGS := @HSDIS_CFLAGS@
+HSDIS_LDFLAGS := @HSDIS_LDFLAGS@
+HSDIS_LIBS := @HSDIS_LIBS@
+
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
 BOOT_JDK:=@BOOT_JDK@
@@ -366,6 +383,9 @@ BOOT_JDK:=@BOOT_JDK@
 BUILD_JDK:=@BUILD_JDK@
 CREATE_BUILDJDK:=@CREATE_BUILDJDK@
 EXTERNAL_BUILDJDK:=@EXTERNAL_BUILDJDK@
+
+# Whether the boot jdk jar supports --date=TIMESTAMP
+BOOT_JDK_JAR_SUPPORTS_DATE:=@BOOT_JDK_JAR_SUPPORTS_DATE@
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -399,6 +419,7 @@ LIBFFI_CFLAGS:=@LIBFFI_CFLAGS@
 ENABLE_LIBFFI_BUNDLING:=@ENABLE_LIBFFI_BUNDLING@
 LIBFFI_LIB_FILE:=@LIBFFI_LIB_FILE@
 FILE_MACRO_CFLAGS := @FILE_MACRO_CFLAGS@
+BRANCH_PROTECTION_CFLAGS := @BRANCH_PROTECTION_CFLAGS@
 
 STATIC_LIBS_CFLAGS := @STATIC_LIBS_CFLAGS@
 
@@ -412,6 +433,8 @@ GTEST_FRAMEWORK_SRC := @GTEST_FRAMEWORK_SRC@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
+# Source folder for user provided cacerts PEM files
+CACERTS_SRC=@CACERTS_SRC@
 
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
@@ -423,14 +446,15 @@ JCOV_INPUT_JDK=@JCOV_INPUT_JDK@
 JCOV_FILTERS=@JCOV_FILTERS@
 
 # AddressSanitizer
-export ASAN_ENABLED:=@ASAN_ENABLED@
-export DEVKIT_LIB_DIR:=@DEVKIT_LIB_DIR@
-ifeq ($(ASAN_ENABLED), yes)
-  export ASAN_OPTIONS=handle_segv=0 detect_leaks=0
-  ifneq ($(DEVKIT_LIB_DIR),)
-    export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(DEVKIT_LIB_DIR)
-  endif
-endif
+ASAN_ENABLED:=@ASAN_ENABLED@
+
+# LeakSanitizer
+LSAN_ENABLED:=@LSAN_ENABLED@
+
+# UndefinedBehaviorSanitizer
+UBSAN_ENABLED:=@UBSAN_ENABLED@
+UBSAN_CFLAGS:=@UBSAN_CFLAGS@
+UBSAN_LDFLAGS:=@UBSAN_LDFLAGS@
 
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@
@@ -441,7 +465,8 @@ MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 # The highest allowed version of macosx
 MACOSX_VERSION_MAX=@MACOSX_VERSION_MAX@
 
-# The macosx code signing identity to use
+# The macosx code signing configuration
+MACOSX_CODESIGN_MODE:=@MACOSX_CODESIGN_MODE@
 MACOSX_CODESIGN_IDENTITY=@MACOSX_CODESIGN_IDENTITY@
 
 # Toolchain type: gcc, clang, xlc, microsoft...
@@ -529,8 +554,7 @@ CPP := @CPP@
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD := @LD@
 
-# Xcode SDK path
-SDKROOT:=@SDKROOT@
+SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
@@ -572,7 +596,6 @@ AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
-GNM:=@GNM@
 STRIP:=@STRIP@
 OBJDUMP:=@OBJDUMP@
 CXXFILT:=@CXXFILT@
@@ -605,7 +628,7 @@ SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
 
 SHARED_LIBRARY_FLAGS=@SHARED_LIBRARY_FLAGS@
 
-# Set origin using the linker, ie use the relative path to the dependent library to find the dependees.
+# Set origin using the linker, ie use the relative path to the dependent library to find the dependencies.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_ORIGIN=@SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN=@SET_EXECUTABLE_ORIGIN@
@@ -648,7 +671,7 @@ JAVAC = $(JAVAC_CMD)
 JAVADOC = $(JAVADOC_CMD)
 JAR = $(JAR_CMD)
 JLINK = $(JLINK_CMD)
-JMOD = $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
+JMOD = $(JMOD_CMD)
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
@@ -685,6 +708,7 @@ JAVADOC_MAIN_CLASS = -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
 NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
+JMOD_COMPRESS:=@JMOD_COMPRESS@
 JLINK_KEEP_PACKAGED_MODULES:=@JLINK_KEEP_PACKAGED_MODULES@
 
 RCFLAGS := @RCFLAGS@
@@ -701,6 +725,7 @@ CODESIGN:=@CODESIGN@
 CP:=@CP@
 CUT:=@CUT@
 DATE:=@DATE@
+IS_GNU_DATE:=@IS_GNU_DATE@
 DIFF:=@DIFF@
 DIRNAME:=@DIRNAME@
 DSYMUTIL:=@DSYMUTIL@
@@ -750,14 +775,12 @@ READELF:=@READELF@
 EXPR:=@EXPR@
 FILE:=@FILE@
 DOT:=@DOT@
-HG:=@HG@
 GIT:=@GIT@
 OBJCOPY:=@OBJCOPY@
 SETFILE:=@SETFILE@
 XATTR:=@XATTR@
 JT_HOME:=@JT_HOME@
 JIB_HOME:=@JIB_HOME@
-XCODEBUILD=@XCODEBUILD@
 DTRACE := @DTRACE@
 FIXPATH := @FIXPATH@
 FIXPATH_BASE := @FIXPATH_BASE@
@@ -919,7 +942,12 @@ JDK_MACOSX_CONTENTS_DIR=$(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)
 JRE_MACOSX_CONTENTS_DIR=$(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_CONTENTS_SUBDIR)
 
 # Bundle names
-BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+ifneq ($(VERSION_BUILD), )
+  BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+else
+  BASE_NAME := $(VERSION_SHORT)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+endif
+
 ifeq ($(DEBUG_LEVEL), fastdebug)
   DEBUG_PART := -debug
 else ifneq ($(DEBUG_LEVEL), release)

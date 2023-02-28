@@ -113,8 +113,10 @@ void ShenandoahDegenGC::op_degenerated() {
       op_mark();
 
     case _degenerated_mark:
-      // No fallthrough. Continue mark, handed over from concurrent mark
-      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark) {
+      // No fallthrough. Continue mark, handed over from concurrent mark if
+      // concurrent mark has yet completed
+      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark &&
+          heap->is_concurrent_mark_in_progress()) {
         op_finish_mark();
       }
       assert(!heap->cancelled_gc(), "STW mark can not OOM");
@@ -148,7 +150,7 @@ void ShenandoahDegenGC::op_degenerated() {
           heap->collection_set()->clear_current_index();
 
           ShenandoahHeapRegion* r;
-          while ((r = heap->collection_set()->next()) != NULL) {
+          while ((r = heap->collection_set()->next()) != nullptr) {
             if (r->is_pinned()) {
               heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
               op_degenerated_fail();

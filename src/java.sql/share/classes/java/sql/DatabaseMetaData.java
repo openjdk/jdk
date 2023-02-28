@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1513,7 +1513,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
      * @param types a list of table types, which must be from the list of table types
-     *         returned from {@link #getTableTypes},to include; {@code null} returns
+     *         returned from {@link #getTableTypes}, to include; {@code null} returns
      * all types
      * @return {@code ResultSet} - each row is a table description
      * @throws SQLException if a database access error occurs
@@ -3044,7 +3044,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>SCOPE_TABLE</B> String {@code =>} table name that is the scope of a
      *      reference attribute ({@code null} if the DATA_TYPE isn't REF)
      * <LI><B>SOURCE_DATA_TYPE</B> short {@code =>} source type of a distinct type or user-generated
-     *      Ref type,SQL type from java.sql.Types ({@code null} if DATA_TYPE
+     *      Ref type, SQL type from java.sql.Types ({@code null} if DATA_TYPE
      *      isn't DISTINCT or user-generated REF)
      *  </OL>
      * @param catalog a catalog name; must match the catalog name as it

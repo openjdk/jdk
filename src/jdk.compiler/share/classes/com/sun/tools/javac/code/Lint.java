@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class Lint
      */
     public Lint augment(Symbol sym) {
         Lint l = augmentor.augment(this, sym.getDeclarationAttributes());
-        if (sym.isDeprecated()) {
+        if (sym.isDeprecated() && sym.isDeprecatableViaAnnotation()) {
             if (l == this)
                 l = new Lint(this);
             l.values.remove(LintCategory.DEPRECATION);
@@ -213,6 +213,11 @@ public class Lint
          * Warn about finally clauses that do not terminate normally.
          */
         FINALLY("finally"),
+
+        /**
+          * Warn about compiler possible lossy conversions.
+          */
+        LOSSY_CONVERSIONS("lossy-conversions"),
 
         /**
           * Warn about compiler generation of a default constructor.

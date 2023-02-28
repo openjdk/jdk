@@ -172,7 +172,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         dispose();
         super.finalize();
@@ -258,7 +258,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
             getClientComponent() != needResetXICClient.get()){
             resetXIC();
 
-            // needs to reset the last xic focussed component.
+            // needs to reset the last xic focused component.
             lastXICFocussedComponent = null;
             isLastXICActive = false;
 

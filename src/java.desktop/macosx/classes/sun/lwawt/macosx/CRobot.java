@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,9 +168,9 @@ final class CRobot implements RobotPeer {
      */
     @Override
     public int getRGBPixel(int x, int y) {
-        int[] c = new int[1];
-        double scale = fDevice.getScaleFactor();
-        getScreenPixels(new Rectangle(x, y, (int) scale, (int) scale), c);
+        int scale = fDevice.getScaleFactor();
+        int[] c = new int[scale * scale];
+        getScreenPixels(new Rectangle(x, y, scale, scale), c);
         return c[0];
     }
 

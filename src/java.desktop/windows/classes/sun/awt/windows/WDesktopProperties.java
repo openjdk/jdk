@@ -106,7 +106,7 @@ final class WDesktopProperties {
     private synchronized void setBooleanProperty(String key, boolean value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Boolean.valueOf(value));
     }
@@ -117,7 +117,7 @@ final class WDesktopProperties {
     private synchronized void setIntegerProperty(String key, int value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Integer.valueOf(value));
     }
@@ -268,7 +268,7 @@ final class WDesktopProperties {
 
         Boolean smoothingOn = (Boolean)map.get("win.text.fontSmoothingOn");
 
-        if (smoothingOn != null && smoothingOn.equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(smoothingOn)) {
             Integer typeID = (Integer)map.get("win.text.fontSmoothingType");
             /* "1" is GASP/Standard but we'll also use that if the return
              * value is anything other than "2" for LCD.

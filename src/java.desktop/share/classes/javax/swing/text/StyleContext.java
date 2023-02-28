@@ -579,7 +579,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Context-specific handling of writing out attributes
      * @param out the output stream
      * @param a the attribute set
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     public void writeAttributes(ObjectOutputStream out,
                                   AttributeSet a) throws IOException {
@@ -591,9 +591,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * @param in the object stream to read the attribute data from.
      * @param a  the attribute set to place the attribute
      *   definitions in.
-     * @exception ClassNotFoundException passed upward if encountered
+     * @throws ClassNotFoundException passed upward if encountered
      *  when reading the object stream.
-     * @exception IOException passed upward if encountered when
+     * @throws IOException passed upward if encountered when
      *  reading the object stream.
      */
     public void readAttributes(ObjectInputStream in,
@@ -605,7 +605,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Writes a set of attributes to the given object stream
      * for the purpose of serialization.  This will take
      * special care to deal with static attribute keys that
-     * have been registered wit the
+     * have been registered with the
      * <code>registerStaticAttributeKey</code> method.
      * Any attribute key not registered as a static key
      * will be serialized directly.  All values are expected
@@ -613,7 +613,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      *
      * @param out the output stream
      * @param a the attribute set
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     public static void writeAttributeSet(ObjectOutputStream out,
                                          AttributeSet a) throws IOException {
@@ -660,9 +660,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * @param in the object stream to read the attribute data from.
      * @param a  the attribute set to place the attribute
      *   definitions in.
-     * @exception ClassNotFoundException passed upward if encountered
+     * @throws ClassNotFoundException passed upward if encountered
      *  when reading the object stream.
-     * @exception IOException passed upward if encountered when
+     * @throws IOException passed upward if encountered when
      *  reading the object stream.
      */
     public static void readAttributeSet(ObjectInputStream in,
@@ -804,7 +804,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * The storage format is key, value, key, value, etc.  The size
      * of the set is the length of the array divided by two.  By
      * default, this is the class that will be used to store attributes
-     * when held in the compact sharable form.
+     * when held in the compact shareable form.
      */
     public class SmallAttributeSet implements AttributeSet {
 
@@ -1035,7 +1035,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         }
 
         /**
-         * If not overriden, the resolving parent defaults to
+         * If not overridden, the resolving parent defaults to
          * the parent element.
          *
          * @return the attributes from the parent
@@ -1055,7 +1055,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * An enumeration of the keys in a SmallAttributeSet.
      */
-    class KeyEnumeration implements Enumeration<Object> {
+    static class KeyEnumeration implements Enumeration<Object> {
 
         KeyEnumeration(Object[] attr) {
             this.attr = attr;
@@ -1077,7 +1077,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * Returns the next element of this enumeration.
          *
          * @return     the next element of this enumeration.
-         * @exception  NoSuchElementException  if no more elements exist.
+         * @throws  NoSuchElementException  if no more elements exist.
          * @since      1.0
          */
         public Object nextElement() {
@@ -1097,7 +1097,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Sorts the key strings so that they can be very quickly compared
      * in the attribute set searches.
      */
-    class KeyBuilder {
+    static class KeyBuilder {
 
         public void initialize(AttributeSet a) {
             if (a instanceof SmallAttributeSet) {
@@ -1532,7 +1532,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
 
         /**
          * Gets attributes from the parent.
-         * If not overriden, the resolving parent defaults to
+         * If not overridden, the resolving parent defaults to
          * the parent element.
          *
          * @return the attributes from the parent

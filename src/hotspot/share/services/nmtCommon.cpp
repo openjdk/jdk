@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 #include "services/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
-  human_readable,
+STATIC_ASSERT(NMT_off > NMT_unknown);
+STATIC_ASSERT(NMT_summary > NMT_off);
+STATIC_ASSERT(NMT_detail > NMT_summary);
 
-const char* NMTUtil::_memory_type_names[] = {
+#define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
+  { #type, human_readable },
+
+NMTUtil::S NMTUtil::_strings[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
-
 
 const char* NMTUtil::scale_name(size_t scale) {
   switch(scale) {
@@ -41,11 +44,11 @@ const char* NMTUtil::scale_name(size_t scale) {
     case G: return "GB";
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 size_t NMTUtil::scale_from_name(const char* scale) {
-  assert(scale != NULL, "Null pointer check");
+  assert(scale != nullptr, "Null pointer check");
   if (strcasecmp(scale, "1") == 0 || strcasecmp(scale, "b") == 0) {
     return 1;
   } else if (strcasecmp(scale, "kb") == 0 || strcasecmp(scale, "k") == 0) {
@@ -64,7 +67,6 @@ const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
   switch(lvl) {
     case NMT_unknown: return "unknown"; break;
     case NMT_off:     return "off"; break;
-    case NMT_minimal: return "minimal"; break;
     case NMT_summary: return "summary"; break;
     case NMT_detail:  return "detail"; break;
     default:          return "invalid"; break;
@@ -73,7 +75,7 @@ const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
 
 // Returns the parsed level; NMT_unknown if string is invalid
 NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
-  if (s != NULL) {
+  if (s != nullptr) {
     if (strcmp(s, "summary") == 0) {
       return NMT_summary;
     } else if (strcmp(s, "detail") == 0) {
@@ -83,4 +85,17 @@ NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
     }
   }
   return NMT_unknown;
+}
+
+MEMFLAGS NMTUtil::string_to_flag(const char* s) {
+  for (int i = 0; i < mt_number_of_types; i ++) {
+    assert(::strlen(_strings[i].enum_s) > 2, "Sanity"); // should always start with "mt"
+    if (::strcasecmp(_strings[i].human_readable, s) == 0 ||
+        ::strcasecmp(_strings[i].enum_s, s) == 0 ||
+        ::strcasecmp(_strings[i].enum_s + 2, s) == 0) // "mtXXX" -> match also "XXX" or "xxx"
+    {
+      return (MEMFLAGS)i;
+    }
+  }
+  return mtNone;
 }

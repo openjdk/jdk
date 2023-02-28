@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class CompilerToVM {
     static CardTable::CardValue* cardtable_start_address;
     static int cardtable_shift;
 
-    static int vm_page_size;
+    static size_t vm_page_size;
 
     static int sizeof_vtableEntry;
     static int sizeof_ExceptionTableElement;
@@ -91,12 +91,19 @@ class CompilerToVM {
     static address symbol_init;
     static address symbol_clinit;
 
+    // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
+    static int data_section_item_alignment;
+
    public:
      static void initialize(JVMCI_TRAPS);
 
     static int max_oop_map_stack_offset() {
       assert(_max_oop_map_stack_offset > 0, "must be initialized");
       return Data::_max_oop_map_stack_offset;
+    }
+
+    static int get_data_section_item_alignment() {
+      return data_section_item_alignment;
     }
   };
 
@@ -171,17 +178,6 @@ class JavaArgumentUnboxer : public SignatureIterator {
     default:            ShouldNotReachHere();
     }
   }
-};
-
-class JNIHandleMark : public StackObj {
-  JavaThread* _thread;
-  public:
-    JNIHandleMark(JavaThread* thread) : _thread(thread) { push_jni_handle_block(thread); }
-    ~JNIHandleMark() { pop_jni_handle_block(_thread); }
-
-  private:
-    static void push_jni_handle_block(JavaThread* thread);
-    static void pop_jni_handle_block(JavaThread* thread);
 };
 
 #endif // SHARE_JVMCI_JVMCICOMPILERTOVM_HPP

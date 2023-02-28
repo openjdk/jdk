@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -38,7 +38,7 @@
 class BufferNode::TestSupport : AllStatic {
 public:
   static bool try_transfer_pending(Allocator* allocator) {
-    return allocator->try_transfer_pending();
+    return allocator->_free_list.try_transfer_pending();
   }
 
   class CompletedList;
@@ -71,13 +71,6 @@ TEST_VM(PtrQueueBufferAllocatorTest, test) {
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(&allocator));
   ASSERT_EQ(node_count, allocator.free_count());
-  for (size_t i = 0; i < node_count; ++i) {
-    if (i == 0) {
-      ASSERT_EQ((BufferNode*)NULL, nodes[i]->next());
-    } else {
-      ASSERT_EQ(nodes[i - 1], nodes[i]->next());
-    }
-  }
 
   // Allocate nodes from the free list.
   for (size_t i = 0; i < node_count; ++i) {
@@ -92,13 +85,6 @@ TEST_VM(PtrQueueBufferAllocatorTest, test) {
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(&allocator));
   ASSERT_EQ(node_count, allocator.free_count());
-
-  // Destroy some nodes in the free list.
-  // We don't have a way to verify destruction, but we can at
-  // least verify we don't crash along the way.
-  size_t count = allocator.free_count();
-  ASSERT_EQ(count, allocator.reduce_free_list(count));
-  // destroy allocator.
 }
 
 // Stress test with lock-free allocator and completed buffer list.
@@ -180,12 +166,18 @@ public:
   {}
 
   virtual void main_run() {
+    bool shutdown_requested = false;
     while (true) {
       BufferNode* node = _cbl->pop();
       if (node != NULL) {
         _allocator->release(node);
-      } else if (!Atomic::load_acquire(_continue_running)) {
+      } else if (shutdown_requested) {
         return;
+      } else if (!Atomic::load_acquire(_continue_running)) {
+        // To avoid a race that could leave buffers in the list after this
+        // thread has shut down, continue processing until the list is empty
+        // *after* the shut down request has been received.
+        shutdown_requested = true;
       }
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }

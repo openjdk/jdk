@@ -66,9 +66,9 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private static final SortByOffset fieldSortingMethod = new SortByOffset();
 
     /**
-     * The Java class this type represents.
+     * The {@code Klass*} of this type.
      */
-    private final long metadataPointer;
+    private final long klassPointer;
 
     private HotSpotResolvedJavaMethodImpl[] methodCacheArray;
     private HashMap<Long, HotSpotResolvedJavaMethodImpl> methodCacheHashMap;
@@ -77,6 +77,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private HotSpotConstantPool constantPool;
     private final JavaConstant mirror;
     private HotSpotResolvedObjectTypeImpl superClass;
+
+    /**
+     * Lazily initialized cache for {@link #getComponentType()}. Set to {@code this}, if this has no
+     * component type (i.e., this is an non-array type).
+     */
     private HotSpotResolvedJavaType componentType;
 
     /**
@@ -98,8 +103,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     @SuppressWarnings("unused")
     @VMEntryPoint
-    private static HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer, String signature) {
-        return runtime().fromMetaspace(klassPointer, signature);
+    private static HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
+        return runtime().fromMetaspace(klassPointer);
     }
 
     /**
@@ -109,13 +114,13 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * {@link Class} type.
      * </p>
      *
-     * @param metadataPointer the Klass* to create the mirror for
+     * @param klass the {@code Klass*} for the type
      */
     @SuppressWarnings("try")
-    HotSpotResolvedObjectTypeImpl(long metadataPointer, String name) {
+    HotSpotResolvedObjectTypeImpl(long klass, String name) {
         super(name);
-        assert metadataPointer != 0;
-        this.metadataPointer = metadataPointer;
+        assert klass != 0;
+        this.klassPointer = klass;
 
         // The mirror object must be in the global scope since
         // this object will be cached in HotSpotJVMCIRuntime.resolvedJavaTypes
@@ -127,9 +132,9 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     /**
-     * Gets the metaspace Klass for this type.
+     * Gets the {@code Klass*} for this type.
      */
-    long getMetaspaceKlass() {
+    long getKlassPointer() {
         long metaspacePointer = getMetaspacePointer();
         if (metaspacePointer == 0) {
             throw new NullPointerException("Klass* is null");
@@ -139,7 +144,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public long getMetaspacePointer() {
-        return metadataPointer;
+        return klassPointer;
     }
 
     @Override
@@ -153,7 +158,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     public int getAccessFlags() {
         HotSpotVMConfig config = config();
-        return UNSAFE.getInt(getMetaspaceKlass() + config.klassAccessFlagsOffset);
+        return UNSAFE.getInt(getKlassPointer() + config.klassAccessFlagsOffset);
     }
 
     @Override
@@ -216,7 +221,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             HotSpotResolvedObjectTypeImpl type = this;
             while (type.isAbstract()) {
                 HotSpotResolvedObjectTypeImpl subklass = type.getSubklass();
-                if (subklass == null || UNSAFE.getAddress(subklass.getMetaspaceKlass() + config.nextSiblingOffset) != 0) {
+                if (subklass == null || UNSAFE.getAddress(subklass.getKlassPointer() + config.nextSiblingOffset) != 0) {
                     return null;
                 }
                 type = subklass;
@@ -248,7 +253,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @return true if the type is a leaf class
      */
     private boolean isLeafClass() {
-        return UNSAFE.getLong(this.getMetaspaceKlass() + config().subklassOffset) == 0;
+        return UNSAFE.getLong(this.getKlassPointer() + config().subklassOffset) == 0;
     }
 
     /**
@@ -390,14 +395,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public boolean hasDefaultMethods() {
         HotSpotVMConfig config = config();
-        int miscFlags = UNSAFE.getChar(getMetaspaceKlass() + config.instanceKlassMiscFlagsOffset);
+        int miscFlags = UNSAFE.getChar(getKlassPointer() + config.instanceKlassMiscFlagsOffset);
         return (miscFlags & config.jvmMiscFlagsHasDefaultMethods) != 0;
     }
 
     @Override
     public boolean declaresDefaultMethods() {
         HotSpotVMConfig config = config();
-        int miscFlags = UNSAFE.getChar(getMetaspaceKlass() + config.instanceKlassMiscFlagsOffset);
+        int miscFlags = UNSAFE.getChar(getKlassPointer() + config.instanceKlassMiscFlagsOffset);
         return (miscFlags & config.jvmMiscFlagsDeclaresDefaultMethods) != 0;
     }
 
@@ -409,7 +414,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     private int getInitState() {
         assert !isArray() : "_init_state only exists in InstanceKlass";
-        return UNSAFE.getByte(getMetaspaceKlass() + config().instanceKlassInitStateOffset) & 0xFF;
+        return UNSAFE.getByte(getKlassPointer() + config().instanceKlassInitStateOffset) & 0xFF;
     }
 
     @Override
@@ -483,7 +488,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public HotSpotConstantPool getConstantPool() {
-        if (constantPool == null || !isArray() && UNSAFE.getAddress(getMetaspaceKlass() + config().instanceKlassConstantsOffset) != constantPool.getMetaspaceConstantPool()) {
+        if (constantPool == null || !isArray() && UNSAFE.getAddress(getKlassPointer() + config().instanceKlassConstantsOffset) != constantPool.getConstantPoolPointer()) {
             /*
              * If the pointer to the ConstantPool has changed since this was last read refresh the
              * HotSpotConstantPool wrapper object. This ensures that uses of the constant pool are
@@ -521,13 +526,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public int layoutHelper() {
         HotSpotVMConfig config = config();
-        assert getMetaspaceKlass() != 0 : getName();
-        return UNSAFE.getInt(getMetaspaceKlass() + config.klassLayoutHelperOffset);
-    }
-
-    @Override
-    public long getFingerprint() {
-        return compilerToVM().getFingerprint(getMetaspaceKlass());
+        assert getKlassPointer() != 0 : getName();
+        return UNSAFE.getInt(getKlassPointer() + config.klassLayoutHelperOffset);
     }
 
     synchronized HotSpotResolvedJavaMethod createMethod(long metaspaceHandle) {
@@ -544,7 +544,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 HotSpotResolvedJavaMethodImpl newMethod = new HotSpotResolvedJavaMethodImpl(this, metaspaceHandle);
                 methodCacheArray[i] = newMethod;
                 return newMethod;
-            } else if (curMethod.getMetaspaceMethod() == metaspaceMethod) {
+            } else if (curMethod.getMethodPointer() == metaspaceMethod) {
                 return curMethod;
             }
         }
@@ -571,12 +571,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             /* Everything has the core vtable of java.lang.Object */
             return config.baseVtableLength();
         }
-        int result = UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
-        assert result >= config.baseVtableLength() : UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) + " " + config.vtableEntrySize;
+        int result = UNSAFE.getInt(getKlassPointer() + config.klassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
+        assert result >= config.baseVtableLength() : UNSAFE.getInt(getKlassPointer() + config.klassVtableLengthOffset) + " " + config.vtableEntrySize;
         return result;
     }
 
-    HotSpotResolvedJavaField createField(JavaType type, long offset, int rawFlags, int index) {
+    HotSpotResolvedJavaField createField(JavaType type, int offset, int rawFlags, int index) {
         return new HotSpotResolvedJavaFieldImpl(this, type, offset, rawFlags, index);
     }
 
@@ -640,12 +640,17 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             return false;
         }
         HotSpotResolvedObjectTypeImpl that = (HotSpotResolvedObjectTypeImpl) obj;
-        return getMetaspaceKlass() == that.getMetaspaceKlass();
+        return getKlassPointer() == that.getKlassPointer();
     }
 
     @Override
     JavaConstant getJavaMirror() {
         return mirror;
+    }
+
+    @Override
+    HotSpotResolvedObjectTypeImpl getArrayType() {
+        return runtime().compilerToVm.getArrayType((char) 0, this);
     }
 
     /**
@@ -666,7 +671,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         FieldInfo(int index) {
             HotSpotVMConfig config = config();
             // Get Klass::_fields
-            final long metaspaceFields = UNSAFE.getAddress(getMetaspaceKlass() + config.instanceKlassFieldsOffset);
+            final long metaspaceFields = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassFieldsOffset);
             assert config.fieldInfoFieldSlots == 6 : "revisit the field parsing code";
             int offset = config.fieldInfoFieldSlots * Short.BYTES * index;
             metaspaceData = metaspaceFields + config.arrayU2DataOffset + offset;
@@ -682,6 +687,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
         private int getSignatureIndex() {
             return readFieldSlot(config().fieldInfoSignatureIndexOffset);
+        }
+
+        private int getConstantValueIndex() {
+            return readFieldSlot(config().fieldInfoConstantValueIndexOffset);
         }
 
         public int getOffset() {
@@ -717,6 +726,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         public String getSignature() {
             final int signatureIndex = getSignatureIndex();
             return isInternal() ? config().symbolAt(signatureIndex) : getConstantPool().lookupUtf8(signatureIndex);
+        }
+
+        /**
+         * Gets the {@link JavaConstant} for the {@code ConstantValue} attribute of this field.
+         *
+         * @return {@code null} if this field has no {@code ConstantValue} attribute
+         */
+        public JavaConstant getConstantValue() {
+            int cvIndex = getConstantValueIndex();
+            if (cvIndex == 0) {
+                return null;
+            }
+            return constantPool.getStaticFieldConstantValue(cvIndex);
         }
 
         public JavaType getType() {
@@ -798,7 +820,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     private HotSpotResolvedJavaField[] getFields(boolean retrieveStaticFields, HotSpotResolvedJavaField[] prepend) {
         HotSpotVMConfig config = config();
-        final long metaspaceFields = UNSAFE.getAddress(getMetaspaceKlass() + config.instanceKlassFieldsOffset);
+        final long metaspaceFields = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassFieldsOffset);
         int metaspaceFieldsLength = UNSAFE.getInt(metaspaceFields + config.arrayU1LengthOffset);
         int resultCount = 0;
         int index = 0;
@@ -888,8 +910,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     private boolean hasSameClassLoader(HotSpotResolvedObjectTypeImpl otherMirror) {
-        return UnsafeAccess.UNSAFE.getAddress(getMetaspaceKlass() + config().classLoaderDataOffset) == UnsafeAccess.UNSAFE.getAddress(
-                        otherMirror.getMetaspaceKlass() + config().classLoaderDataOffset);
+        return UnsafeAccess.UNSAFE.getAddress(getKlassPointer() + config().classLoaderDataOffset) == UnsafeAccess.UNSAFE.getAddress(
+                        otherMirror.getKlassPointer() + config().classLoaderDataOffset);
     }
 
     @Override
@@ -917,7 +939,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public int superCheckOffset() {
         HotSpotVMConfig config = config();
-        return UNSAFE.getInt(getMetaspaceKlass() + config.superCheckOffsetOffset);
+        return UNSAFE.getInt(getKlassPointer() + config.superCheckOffsetOffset);
     }
 
     @Override
@@ -974,11 +996,28 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaMethod[] getDeclaredConstructors() {
+        link();
+        return runtime().compilerToVm.getDeclaredConstructors(this);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredConstructors(this);
     }
 
     @Override
     public ResolvedJavaMethod[] getDeclaredMethods() {
+        return getDeclaredMethods(true);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredMethods(this);
     }
 
@@ -1023,9 +1062,4 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     public boolean isCloneableWithAllocation() {
         return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
     }
-
-    private int getMiscFlags() {
-        return UNSAFE.getInt(getMetaspaceKlass() + config().instanceKlassMiscFlagsOffset);
-    }
-
 }

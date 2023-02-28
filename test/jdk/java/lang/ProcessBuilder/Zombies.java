@@ -49,17 +49,20 @@ public class Zombies {
         final Runtime rt = Runtime.getRuntime();
 
         try {
-            rt.exec("no-such-file");
+            String[] cmd = {"no-such-file"};
+            rt.exec(cmd);
             throw new Error("expected IOException not thrown");
         } catch (IOException expected) {/* OK */}
 
         try {
-            rt.exec(".");
+            String[] cmd = {"."};
+            rt.exec(cmd);
             throw new Error("expected IOException not thrown");
         } catch (IOException expected) {/* OK */}
 
         try {
-            rt.exec(TrueCommand, null, new File("no-such-dir"));
+            String[] cmd = {TrueCommand};
+            rt.exec(cmd, null, new File("no-such-dir"));
             throw new Error("expected IOException not thrown");
         } catch (IOException expected) {/* OK */}
 

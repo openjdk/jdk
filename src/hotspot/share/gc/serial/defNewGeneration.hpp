@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
@@ -38,8 +39,9 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class DefNewYoungerGenClosure;
-class DefNewScanClosure;
+class OldGenScanClosure;
+class YoungGenScanClosure;
+class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
@@ -98,12 +100,6 @@ protected:
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
 
-  // Promotion failure handling
-  OopIterateClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
-    _promo_failure_scan_stack_closure = scan_stack_closure;
-  }
-
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
   bool _promo_failure_drain_in_progress;
@@ -140,6 +136,8 @@ protected:
 
   STWGCTimer* _gc_timer;
 
+  DefNewTracer* _gc_tracer;
+
   StringDedup::Requests _string_dedup_requests;
 
   enum SomeProtectedConstants {
@@ -155,54 +153,12 @@ protected:
     return n > alignment ? align_down(n, alignment) : alignment;
   }
 
- public:  // was "protected" but caused compile error on win32
-  class IsAliveClosure: public BoolObjectClosure {
-    Generation* _young_gen;
-  public:
-    IsAliveClosure(Generation* young_gen);
-    bool do_object_b(oop p);
-  };
-
-  class KeepAliveClosure: public OopClosure {
-  protected:
-    ScanWeakRefClosure* _cl;
-    CardTableRS* _rs;
-    template <class T> void do_oop_work(T* p);
-  public:
-    KeepAliveClosure(ScanWeakRefClosure* cl);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
-  class FastKeepAliveClosure: public KeepAliveClosure {
-  protected:
-    HeapWord* _boundary;
-    template <class T> void do_oop_work(T* p);
-  public:
-    FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
-  class FastEvacuateFollowersClosure: public VoidClosure {
-    SerialHeap* _heap;
-    DefNewScanClosure* _scan_cur_or_nonheap;
-    DefNewYoungerGenClosure* _scan_older;
-  public:
-    FastEvacuateFollowersClosure(SerialHeap* heap,
-                                 DefNewScanClosure* cur,
-                                 DefNewYoungerGenClosure* older);
-    void do_void();
-  };
-
  public:
   DefNewGeneration(ReservedSpace rs,
                    size_t initial_byte_size,
                    size_t min_byte_size,
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
-
-  virtual void ref_processor_init();
 
   virtual Generation::Name kind() { return Generation::DefNew; }
 
@@ -224,10 +180,6 @@ protected:
 
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
-
-  bool supports_inline_contig_alloc() const { return true; }
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
 
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }
@@ -280,7 +232,7 @@ protected:
 
   // Accessing marks
   void save_marks();
-  void reset_saved_marks();
+
   bool no_allocs_since_save_marks();
 
   // Need to declare the full complement of closures, whether we'll
@@ -331,6 +283,8 @@ protected:
   bool promo_failure_scan_is_complete() const {
     return _promo_failure_scan_stack.is_empty();
   }
+
+  DefNewTracer* gc_tracer() const { return _gc_tracer; }
 
  protected:
   // If clear_space is true, clear the survivor spaces.  Eden is
