@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ public class SerialFilterTest implements Serializable {
                     filter.depth(), filter.streamBytes());
             count++;
             if (serialClass != null) {
-                if (serialClass.getName().contains("$$Lambda$")) {
+                if (serialClass.getName().contains("$$Lambda")) {
                     // TBD: proper identification of serialized Lambdas?
                     // Fold the serialized Lambda into the SerializedLambda type
                     classes.add(SerializedLambda.class);
