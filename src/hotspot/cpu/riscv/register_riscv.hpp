@@ -41,7 +41,7 @@
 #define CSR_VLENB    0xC22        // VLEN/8 (vector register length in bytes)
 #define CSR_CYCLE    0xc00        // Cycle counter for RDCYCLE instruction.
 #define CSR_TIME     0xc01        // Timer for RDTIME instruction.
-#define CSR_INSTERT  0xc02        // Instructions-retired counter for RDINSTRET instruction.
+#define CSR_INSTRET  0xc02        // Instructions-retired counter for RDINSTRET instruction.
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;

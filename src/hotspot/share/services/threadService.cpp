@@ -372,7 +372,7 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
 
 bool ThreadService::is_virtual_or_carrier_thread(JavaThread* jt) {
   oop threadObj = jt->threadObj();
-  if (threadObj != nullptr && threadObj->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (threadObj != nullptr && threadObj->is_a(vmClasses::BaseVirtualThread_klass())) {
     // a virtual thread backed by JavaThread
     return true;
   }
@@ -1090,7 +1090,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
 
 ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
                                              bool include_jvmti_agent_threads,
-                                             bool include_jni_attaching_threads) {
+                                             bool include_jni_attaching_threads,
+                                             bool include_bound_virtual_threads) {
   assert(cur_thread == Thread::current(), "Check current thread");
 
   int init_size = ThreadService::get_live_thread_count();
@@ -1115,6 +1116,11 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 
     // skip jni threads in the process of attaching
     if (!include_jni_attaching_threads && jt->is_attaching_via_jni()) {
+      continue;
+    }
+
+    // skip instances of BoundVirtualThread
+    if (!include_bound_virtual_threads && jt->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
       continue;
     }
 

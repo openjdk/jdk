@@ -275,21 +275,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     }
 
     /**
-     * Called right before the userSubscriber::onSubscribe is called.
-     * @apiNote
-     * This method may be used by subclasses to perform cleanup
-     * related actions after a subscription has been successfully
-     * accepted.
-     * This method is called while holding a subscription
-     * lock.
-     * @implSpec
-     * This method calls {@link #tryRegister()}
-     */
-    protected void onSubscribed() {
-        tryRegister();
-    }
-
-    /**
      * Complete the subscriber, either normally or exceptionally
      * ensure that the subscriber is completed only once.
      * @param t a throwable, or {@code null}
@@ -381,8 +366,8 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         // subscription is finished before calling onError;
         subscriptionLock.lock();
         try {
+            tryRegister();
             if (markSubscribed()) {
-                onSubscribed();
                 SubscriptionWrapper wrapped = new SubscriptionWrapper(subscription);
                 userSubscriber.onSubscribe(this.subscription = wrapped);
             } else {

@@ -127,6 +127,11 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
+  if (FLAG_IS_CMDLINE(InitialHeapSize) && FLAG_IS_CMDLINE(MinHeapSize) &&
+      InitialHeapSize < MinHeapSize) {
+    vm_exit_during_initialization("Incompatible minimum and initial heap sizes specified");
+  }
+
   // Check heap parameter properties
   if (MaxHeapSize < 2 * M) {
     vm_exit_during_initialization("Too small maximum heap");
@@ -148,11 +153,6 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   }
   if (!is_aligned(MaxHeapSize, HeapAlignment)) {
     FLAG_SET_ERGO(MaxHeapSize, align_up(MaxHeapSize, HeapAlignment));
-  }
-
-  if (FLAG_IS_CMDLINE(InitialHeapSize) && FLAG_IS_CMDLINE(MinHeapSize) &&
-      InitialHeapSize < MinHeapSize) {
-    vm_exit_during_initialization("Incompatible minimum and initial heap sizes specified");
   }
 
   if (!FLAG_IS_DEFAULT(InitialHeapSize) && InitialHeapSize > MaxHeapSize) {

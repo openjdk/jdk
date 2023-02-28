@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -154,7 +154,7 @@ public class LinuxRISCV64CallArranger {
         // Aggregates or scalars passed on the stack are aligned to the greater of
         // the type alignment and XLEN bits, but never more than the stack alignment.
         void alignStack(long alignment) {
-            alignment = Utils.alignUp(Math.min(Math.max(alignment, STACK_SLOT_SIZE), 16), STACK_SLOT_SIZE);
+            alignment = Utils.alignUp(Math.clamp(alignment, STACK_SLOT_SIZE, 16), STACK_SLOT_SIZE);
             stackOffset = Utils.alignUp(stackOffset, alignment);
         }
 
