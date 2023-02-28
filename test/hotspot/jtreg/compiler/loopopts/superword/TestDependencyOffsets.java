@@ -25,7 +25,7 @@
  * @test
  * @bug 8298935
  * @summary Test SuperWord vectorization with different access offsets
- *          and various SuperWordMaxVectorSize values, and +- AlignVector.
+ *          and various MaxVectorSize values, and +- AlignVector.
  *          Note: CompileCommand Option Vectorize is enabled.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
  *
  * Checking if we should vectorize is a bit complicated. It depends on
  * Matcher::vector_width_in_bytes, of the respective platforms (eg. x86.ad)
- * This vector_width can be further constrained by SuperWordMaxVectorSize.
+ * This vector_width can be further constrained by MaxVectorSize.
  *
  * Generally, we vectorize if:
  *  - Vectors have at least 4 bytes:    vector_width >= 4
@@ -777,7 +777,7 @@ public class TestDependencyOffsets {
         for (int maxVectorSize : new int[] {1, 2, 4, 8, 16, 32, 64, 128}) {
             for (String alignVectorSign : new String[] {"-"}) { // TODO
                 scenarios[i] = new Scenario(i, "-XX:" + alignVectorSign + "AlignVector",
-                                               "-XX:SuperWordMaxVectorSize=" + maxVectorSize);
+                                               "-XX:MaxVectorSize=" + maxVectorSize);
                 i++;
             }
         }
@@ -790,31 +790,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP0(int[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -834,31 +834,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM1(int[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -879,34 +879,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP1(int[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -926,31 +926,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM2(int[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -971,34 +971,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP2(int[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -1018,31 +1018,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM3(int[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -1063,34 +1063,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP3(int[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -1110,31 +1110,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM4(int[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -1154,34 +1154,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP4(int[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -1201,31 +1201,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM7(int[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -1245,34 +1245,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP7(int[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -1292,31 +1292,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM8(int[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -1336,32 +1336,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP8(int[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -1381,31 +1381,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM15(int[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -1425,32 +1425,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 60 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 60"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 60"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 60"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP15(int[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -1470,31 +1470,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM16(int[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -1514,31 +1514,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP16(int[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -1558,31 +1558,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM31(int[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -1602,31 +1602,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP31(int[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -1646,31 +1646,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM32(int[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -1690,31 +1690,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP32(int[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -1734,31 +1734,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM63(int[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -1778,31 +1778,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP63(int[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -1822,31 +1822,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM64(int[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -1866,31 +1866,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP64(int[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -1910,31 +1910,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM65(int[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -1954,31 +1954,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP65(int[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -1998,31 +1998,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM128(int[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -2042,31 +2042,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP128(int[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -2086,31 +2086,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM129(int[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -2130,31 +2130,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP129(int[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -2174,31 +2174,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM192(int[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -2218,31 +2218,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP192(int[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -2262,31 +2262,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP0(long[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -2306,31 +2306,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM1(long[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -2351,34 +2351,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP1(long[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -2398,31 +2398,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM2(long[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -2442,34 +2442,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP2(long[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -2489,31 +2489,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM3(long[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -2533,34 +2533,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP3(long[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -2580,31 +2580,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM4(long[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -2624,32 +2624,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP4(long[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -2669,31 +2669,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM7(long[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -2713,32 +2713,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 56"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 56"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 56"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP7(long[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -2758,31 +2758,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM8(long[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -2802,31 +2802,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP8(long[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -2846,31 +2846,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM15(long[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -2890,31 +2890,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP15(long[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -2934,31 +2934,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM16(long[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -2978,31 +2978,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP16(long[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -3022,31 +3022,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM31(long[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -3066,31 +3066,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP31(long[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -3110,31 +3110,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM32(long[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -3154,31 +3154,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP32(long[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -3198,31 +3198,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM63(long[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -3242,31 +3242,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP63(long[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -3286,31 +3286,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM64(long[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -3330,31 +3330,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP64(long[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -3374,31 +3374,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM65(long[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -3418,31 +3418,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP65(long[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -3462,31 +3462,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM128(long[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -3506,31 +3506,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP128(long[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -3550,31 +3550,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM129(long[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -3594,31 +3594,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP129(long[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -3638,31 +3638,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM192(long[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -3682,31 +3682,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP192(long[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -3726,31 +3726,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP0(short[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -3770,31 +3770,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM1(short[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -3815,34 +3815,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP1(short[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -3862,31 +3862,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM2(short[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -3907,34 +3907,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP2(short[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -3954,31 +3954,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM3(short[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -3999,34 +3999,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP3(short[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -4046,31 +4046,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM4(short[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -4091,34 +4091,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP4(short[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -4138,31 +4138,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM7(short[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -4183,34 +4183,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP7(short[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -4230,31 +4230,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM8(short[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -4274,34 +4274,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP8(short[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -4321,31 +4321,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM15(short[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -4365,34 +4365,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP15(short[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -4412,31 +4412,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM16(short[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -4456,32 +4456,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP16(short[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -4501,31 +4501,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM31(short[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -4545,32 +4545,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 62 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 62"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 62"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP31(short[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -4590,31 +4590,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM32(short[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -4634,31 +4634,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP32(short[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -4678,31 +4678,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM63(short[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -4722,31 +4722,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP63(short[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -4766,31 +4766,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM64(short[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -4810,31 +4810,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP64(short[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -4854,31 +4854,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM65(short[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -4898,31 +4898,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP65(short[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -4942,31 +4942,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM128(short[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -4986,31 +4986,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP128(short[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -5030,31 +5030,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM129(short[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -5074,31 +5074,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP129(short[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -5118,31 +5118,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM192(short[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -5162,31 +5162,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP192(short[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -5206,31 +5206,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP0(char[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -5250,31 +5250,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM1(char[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -5295,34 +5295,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP1(char[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -5342,31 +5342,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM2(char[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -5387,34 +5387,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP2(char[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -5434,31 +5434,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM3(char[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -5479,34 +5479,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 6"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 6"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP3(char[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -5526,31 +5526,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM4(char[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -5571,34 +5571,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP4(char[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -5618,31 +5618,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM7(char[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -5663,34 +5663,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 14"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 14"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP7(char[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -5710,31 +5710,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM8(char[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -5754,34 +5754,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP8(char[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -5801,31 +5801,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM15(char[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -5845,34 +5845,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     // positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 30"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 30"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP15(char[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -5892,31 +5892,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM16(char[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -5936,32 +5936,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP16(char[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -5981,31 +5981,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM31(char[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -6025,32 +6025,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     // positive byte_offset 62 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 62"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 62"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP31(char[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -6070,31 +6070,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM32(char[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -6114,31 +6114,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP32(char[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -6158,31 +6158,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM63(char[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -6202,31 +6202,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP63(char[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -6246,31 +6246,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM64(char[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -6290,31 +6290,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP64(char[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -6334,31 +6334,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM65(char[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -6378,31 +6378,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP65(char[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -6422,31 +6422,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM128(char[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -6466,31 +6466,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP128(char[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -6510,31 +6510,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM129(char[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -6554,31 +6554,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP129(char[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -6598,31 +6598,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM192(char[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -6642,31 +6642,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP192(char[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -6686,31 +6686,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP0(byte[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -6730,31 +6730,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM1(byte[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -6775,34 +6775,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 1 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 1"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 1"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 1 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 1"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 1"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 1 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 1"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 1"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 1 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 1"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 1"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP1(byte[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -6822,31 +6822,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM2(byte[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -6867,34 +6867,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 2 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 2"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 2"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP2(byte[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -6914,31 +6914,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM3(byte[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -6959,34 +6959,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 3 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 3"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 3"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 3 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 3"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 3"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 3 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 3"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 3"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 3 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 3"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 3"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP3(byte[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -7006,31 +7006,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM4(byte[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -7051,34 +7051,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP4(byte[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -7098,31 +7098,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM7(byte[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -7143,34 +7143,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 7"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 7"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 7"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 7"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 7"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 7"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 7"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 7"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP7(byte[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -7190,31 +7190,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM8(byte[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -7235,34 +7235,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP8(byte[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -7282,31 +7282,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM15(byte[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -7327,34 +7327,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     // positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 15"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 15"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 15"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 15"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 15"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 15"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 15"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 15"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP15(byte[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -7374,31 +7374,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM16(byte[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -7418,34 +7418,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP16(byte[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -7465,31 +7465,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM31(byte[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -7509,34 +7509,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 31"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 31"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 31"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 31"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     // positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 31"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 31"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP31(byte[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -7556,31 +7556,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM32(byte[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -7600,32 +7600,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP32(byte[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -7645,31 +7645,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM63(byte[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -7689,32 +7689,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     // positive byte_offset 63 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 4", "SuperWordMaxVectorSize", "<= 63"},
+        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 63"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 4", "SuperWordMaxVectorSize", "> 63"},
+        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 63"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP63(byte[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -7734,31 +7734,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM64(byte[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -7778,31 +7778,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP64(byte[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -7822,31 +7822,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM65(byte[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -7866,31 +7866,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP65(byte[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -7910,31 +7910,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM128(byte[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -7954,31 +7954,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP128(byte[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -7998,31 +7998,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM129(byte[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -8042,31 +8042,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP129(byte[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -8086,31 +8086,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM192(byte[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -8130,31 +8130,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 4"},
+        applyIf = {"MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 4"},
+        applyIf = {"MaxVectorSize", "< 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP192(byte[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -8174,31 +8174,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP0(float[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -8218,31 +8218,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM1(float[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -8263,34 +8263,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 4"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 4"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP1(float[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -8310,31 +8310,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM2(float[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -8355,34 +8355,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP2(float[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -8402,31 +8402,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM3(float[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -8447,34 +8447,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 12"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 12"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP3(float[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -8494,31 +8494,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM4(float[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -8538,34 +8538,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP4(float[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -8585,31 +8585,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM7(float[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -8629,34 +8629,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     // positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 28"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 28"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP7(float[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -8676,31 +8676,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM8(float[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -8720,32 +8720,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP8(float[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -8765,31 +8765,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM15(float[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -8809,32 +8809,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     // positive byte_offset 60 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 8", "SuperWordMaxVectorSize", "<= 60"},
+        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 8", "SuperWordMaxVectorSize", "> 60"},
+        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 60"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP15(float[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -8854,31 +8854,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM16(float[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -8898,31 +8898,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP16(float[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -8942,31 +8942,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM31(float[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -8986,31 +8986,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP31(float[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -9030,31 +9030,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM32(float[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -9074,31 +9074,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP32(float[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -9118,31 +9118,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM63(float[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -9162,31 +9162,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP63(float[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -9206,31 +9206,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM64(float[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -9250,31 +9250,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP64(float[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -9294,31 +9294,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM65(float[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -9338,31 +9338,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP65(float[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -9382,31 +9382,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM128(float[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -9426,31 +9426,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP128(float[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -9470,31 +9470,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM129(float[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -9514,31 +9514,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP129(float[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -9558,31 +9558,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM192(float[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -9602,31 +9602,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 8"},
+        applyIf = {"MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 8"},
+        applyIf = {"MaxVectorSize", "< 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP192(float[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -9646,31 +9646,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP0(double[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -9690,31 +9690,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM1(double[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -9735,34 +9735,34 @@ public class TestDependencyOffsets {
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 8"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 8"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP1(double[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
@@ -9782,31 +9782,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM2(double[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -9826,34 +9826,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 16"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 16"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP2(double[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -9873,31 +9873,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM3(double[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -9917,34 +9917,34 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     // positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 24"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 24"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP3(double[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -9964,31 +9964,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM4(double[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -10008,32 +10008,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 32"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 32"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 32"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP4(double[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -10053,31 +10053,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM7(double[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -10097,32 +10097,32 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     // positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"SuperWordMaxVectorSize", ">= 16", "SuperWordMaxVectorSize", "<= 56"},
+        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"SuperWordMaxVectorSize", "< 16", "SuperWordMaxVectorSize", "> 56"},
+        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 56"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP7(double[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -10142,31 +10142,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM8(double[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -10186,31 +10186,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP8(double[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -10230,31 +10230,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM15(double[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -10274,31 +10274,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP15(double[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -10318,31 +10318,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM16(double[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -10362,31 +10362,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP16(double[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -10406,31 +10406,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM31(double[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -10450,31 +10450,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP31(double[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -10494,31 +10494,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM32(double[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -10538,31 +10538,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP32(double[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -10582,31 +10582,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM63(double[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -10626,31 +10626,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP63(double[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -10670,31 +10670,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM64(double[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -10714,31 +10714,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP64(double[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -10758,31 +10758,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM65(double[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -10802,31 +10802,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP65(double[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -10846,31 +10846,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM128(double[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -10890,31 +10890,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP128(double[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -10934,31 +10934,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM129(double[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -10978,31 +10978,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP129(double[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -11022,31 +11022,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM192(double[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -11066,31 +11066,31 @@ public class TestDependencyOffsets {
     @Test
     // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"avx512", "true"})
     // cpu: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"SuperWordMaxVectorSize", ">= 16"},
+        applyIf = {"MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"SuperWordMaxVectorSize", "< 16"},
+        applyIf = {"MaxVectorSize", "< 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP192(double[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
