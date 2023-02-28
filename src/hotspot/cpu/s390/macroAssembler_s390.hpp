@@ -865,7 +865,11 @@ class MacroAssembler: public Assembler {
 
   // Assert on CC (condition code in CPU state).
   void asm_assert(branch_condition cond, const char* msg, int id, bool is_static=true);
-  void asm_assert(bool check_equal, const char* msg, int id);
+
+  // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
+  inline void asm_assert(bool check_equal, const char* msg, int id) {
+    asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
+  }
 
  private:
   // Emit assertions.

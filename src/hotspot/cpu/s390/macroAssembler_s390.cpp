@@ -5322,13 +5322,6 @@ void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, 
 #endif // ASSERT
 }
 
-// Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
-void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
-#ifdef ASSERT
-  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
-#endif // ASSERT
-}
-
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {
 #ifdef ASSERT
