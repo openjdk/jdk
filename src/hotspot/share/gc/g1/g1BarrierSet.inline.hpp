@@ -33,6 +33,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
+#include "runtime/thread.hpp"
 
 inline void G1BarrierSet::enqueue_preloaded(oop pre_val) {
   // Nulls should have been already filtered.
@@ -65,6 +66,18 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
   }
 
   enqueue(field);
+}
+
+inline void G1BarrierSet::invalidate(MemRegion mr) {
+  invalidate(JavaThread::current(), mr);
+}
+
+inline void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
+  invalidate(thread, mr);
+}
+
+inline void G1BarrierSet::write_ref_array_work(MemRegion mr) {
+  invalidate(mr);
 }
 
 template <DecoratorSet decorators, typename T>
