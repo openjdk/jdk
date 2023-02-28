@@ -128,6 +128,11 @@ var red = Color.red;
 var yellow = Color.yellow;
 var white = Color.white;
 
+function editProperty(selector, propertyName, editFunction) {
+    var f = new EditPropertyFilter("", selector, propertyName, editFunction);
+    f.apply(graph);
+}
+
 function or(selectors) {
     return new OrSelector(selectors);
 }

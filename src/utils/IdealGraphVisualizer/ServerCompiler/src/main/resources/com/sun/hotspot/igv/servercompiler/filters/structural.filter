@@ -4,6 +4,21 @@ new RemoveSelfLoopsFilter("Remove Self-Loops").apply(graph);
 // Hide secondary edges.
 remove("short_name", "FP|RA|IO|RP");
 
+// Pretty-print Bool nodes to be shown as output slots.
+function replaceComparisonWithSign(text) {
+  var comparison = text.replace('[','').replace(']','')
+  switch (comparison) {
+    case "eq":  return "=";
+    case "gt":  return ">";
+    case "lt":  return "<";
+    case "ne":  return "≠";
+    case "le":  return "≤";
+    case "ge":  return "≥";
+    default:    return comparison;
+  }
+}
+editProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign);
+
 // Condense inputs for all nodes.
 var anyNode = matches("name", ".*");
 var f = new RemoveInputsFilter("");
