@@ -2492,6 +2492,56 @@ public final class String
     }
 
     /**
+     * Returns the index within this string of the first occurrence of the
+     * specified character, starting the search at {@code fromIndex} and
+     * stopping before {@code toIndex}.
+     *
+     * <p>If a character with value {@code ch} occurs in the
+     * character sequence represented by this {@code String}
+     * object at an index no smaller than {@code fromIndex} but smaller than
+     * {@code toIndex}, then
+     * the index of the first such occurrence is returned. For values
+     * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
+     * this is the smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.charAt(<i>k</i>) == ch) &amp;&amp; (fromIndex &lt;= <i>k</i> &lt; toIndex)
+     * </pre></blockquote>
+     * is true. For other values of {@code ch}, it is the
+     * smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.codePointAt(<i>k</i>) == ch) &amp;&amp; (fromIndex &lt;= <i>k</i> &lt; toIndex)
+     * </pre></blockquote>
+     * is true. In either case, if no such character occurs in this
+     * string at or after position {@code fromIndex} and before position
+     * {@code toIndex}, then {@code -1} is returned.
+     *
+     * <p>All indices are specified in {@code char} values
+     * (Unicode code units).
+     *
+     * @param   ch          a character (Unicode code point).
+     * @param   fromIndex   the index to start the search from (included).
+     * @param   toIndex     the index to stop the search at (excluded).
+     * @return  the index of the first occurrence of the character in the
+     *          character sequence represented by this object that is greater
+     *          than or equal to {@code fromIndex} and less than {@code toIndex},
+     *          or {@code -1} if the character does not occur.
+     * @throws  StringIndexOutOfBoundsException if {@code fromIndex}
+     *          is negative, or {@code toIndex} is larger than the length of
+     *          this {@code String} object, or {@code fromIndex} is larger than
+     *          {@code toIndex}.
+     * @since   21
+     *
+     * @apiNote An invocation of this method on a {@link String} {@code s}
+     * is behaviorally equivalent to first checking {@code fromIndex} and
+     * {@code toIndex} as specified in the {@code @throws} clause, and then,
+     * absent an exception, invoking {@code s.indexOf(ch, fromIndex, toIndex)}.
+     */
+    public int checkedIndexOf(int ch, int fromIndex, int toIndex) {
+        checkBoundsBeginEnd(fromIndex, toIndex, length());
+        return indexOf(ch, fromIndex, toIndex);
+    }
+
+    /**
      * Returns the index within this string of the last occurrence of
      * the specified character. For values of {@code ch} in the
      * range from 0 to 0xFFFF (inclusive), the index (in Unicode code

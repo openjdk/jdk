@@ -25,6 +25,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 /*
  * @test
@@ -150,8 +151,14 @@ public class IndexOfFromTo extends CompactString {
                         Character.toCodePoint('\uD801', '\uDC01'), 2, 3, -1 },
                 new Object[] { STRING_SUPPLEMENTARY,
                         Character.toCodePoint('\uD801', '\uDC01'), 3, 6, -1 },
+
+                new Object[] { STRING_LDUPLICATE, 'A', 1, 0, -1},
+                new Object[] { STRING_UDUPLICATE, 'A', 1, 0, -1},
+                new Object[] { STRING_MDUPLICATE1, 'A', 1, 0, -1},
+                new Object[] { STRING_MDUPLICATE2, 'A', 1, 0, -1},
         };
     }
+
     @Test(dataProvider = "provider")
     public void testIndexOf(String str, int ch, int from, int to, int expected) {
         map.get(str).forEach(
@@ -159,6 +166,21 @@ public class IndexOfFromTo extends CompactString {
                     assertEquals(data.indexOf(ch, from, to), expected, String.format(
                             "testing String(%s).indexOf(%d,%d,%d), source : %s, ",
                             escapeNonASCIIs(data), ch, from, to, source));
+                });
+    }
+
+    @Test(dataProvider = "provider")
+    public void testCheckedIndexOf(String str, int ch, int from, int to, int expected) {
+        map.get(str).forEach(
+                (source, data) -> {
+                    if (0 <= from && from <= to && to <= data.length()) {
+                        assertEquals(data.checkedIndexOf(ch, from, to), expected,
+                                String.format("testing String(%s).checkedIndexOf(%d,%d,%d), source : %s, ",
+                                        escapeNonASCIIs(data), ch, from, to, source));
+                    } else {
+                        assertThrows(StringIndexOutOfBoundsException.class,
+                                () -> data.checkedIndexOf(ch, from, to));
+                    }
                 });
     }
 
