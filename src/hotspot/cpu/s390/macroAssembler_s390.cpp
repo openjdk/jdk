@@ -5313,47 +5313,67 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   z_lmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 }
 
-#ifndef PRODUCT
+void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
+#ifdef ASSERT
+  Label ok;
+  z_brc(cond, ok);
+  is_static ? stop_static(msg, id) : stop(msg, id);
+  bind(ok);
+#endif // ASSERT
+}
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
 void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) {
-    z_bre(ok);
-  } else {
-    z_brne(ok);
-  }
-  stop(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
+//   Label ok;
+//   if (check_equal) {
+//     z_bre(ok);
+//   } else {
+//     z_brne(ok);
+//   }
+//   stop(msg, id);
+//   bind(ok);
+#endif // ASSERT
 }
 
 // Assert if CC indicates "low".
 void MacroAssembler::asm_assert_low(const char *msg, int id) {
-  Label ok;
-  z_brnl(ok);
-  stop(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(bcondNotLow, msg, id);
+//  Label ok;
+//  z_brnl(ok);
+//  stop(msg, id);
+//  bind(ok);
+#endif // ASSERT
 }
 
 // Assert if CC indicates "high".
 void MacroAssembler::asm_assert_high(const char *msg, int id) {
-  Label ok;
-  z_brnh(ok);
-  stop(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(bcondNotHigh, msg, id);
+//  Label ok;
+//  z_brnh(ok);
+//  stop(msg, id);
+//  bind(ok);
+#endif // ASSERT
 }
 
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false)
 // generate non-relocatable code.
 void MacroAssembler::asm_assert_static(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) { z_bre(ok); }
-  else             { z_brne(ok); }
-  stop_static(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, true);
+//  Label ok;
+//  if (check_equal) { z_bre(ok); }
+//  else             { z_brne(ok); }
+//  stop_static(msg, id);
+//  bind(ok);
+#endif // ASSERT
 }
 
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {
+#ifdef ASSERT
   switch (size) {
     case 4:
       load_and_test_int(Z_R0, Address(mem_base, mem_offset));
@@ -5364,8 +5384,9 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
     default:
       ShouldNotReachHere();
   }
-  if (allow_relocation) { asm_assert(check_equal, msg, id); }
-  else                  { asm_assert_static(check_equal, msg, id); }
+  if (allow_relocation) { asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id); }
+  else                  { asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, true); }
+#endif // ASSERT
 }
 
 // Check the condition
@@ -5374,6 +5395,7 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
 //   expected_size - FP + SP == 0
 // Destroys Register expected_size if no tmp register is passed.
 void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
+#ifdef ASSERT
   if (tmp == noreg) {
     tmp = expected_size;
   } else {
@@ -5382,10 +5404,10 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
     }
     z_algr(tmp, Z_SP);
     z_slg(tmp, 0, Z_R0, Z_SP);
-    asm_assert_eq(msg, id);
+    asm_assert(bcondEqual, msg, id);
   }
+#endif // ASSERT
 }
-#endif // !PRODUCT
 
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {

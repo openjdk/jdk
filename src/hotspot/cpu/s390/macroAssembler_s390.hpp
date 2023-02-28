@@ -864,18 +864,19 @@ class MacroAssembler: public Assembler {
   //
 
   // Assert on CC (condition code in CPU state).
-  void asm_assert(bool check_equal, const char* msg, int id) PRODUCT_RETURN;
-  void asm_assert_low(const char *msg, int id) PRODUCT_RETURN;
-  void asm_assert_high(const char *msg, int id) PRODUCT_RETURN;
-  void asm_assert_eq(const char* msg, int id) { asm_assert(true, msg, id); }
-  void asm_assert_ne(const char* msg, int id) { asm_assert(false, msg, id); }
+  void asm_assert(branch_condition cond, const char* msg, int id, bool is_static=true);
+  void asm_assert(bool check_equal, const char* msg, int id);
+  void asm_assert_low(const char *msg, int id);
+  void asm_assert_high(const char *msg, int id);
+  void asm_assert_eq(const char* msg, int id) { asm_assert(bcondEqual, msg, id); }
+  void asm_assert_ne(const char* msg, int id) { asm_assert(bcondNotEqual, msg, id); }
 
-  void asm_assert_static(bool check_equal, const char* msg, int id) PRODUCT_RETURN;
+  void asm_assert_static(bool check_equal, const char* msg, int id);
 
  private:
   // Emit assertions.
   void asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
-                            Register mem_base, const char* msg, int id) PRODUCT_RETURN;
+                            Register mem_base, const char* msg, int id);
 
  public:
   inline void asm_assert_mem4_is_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
@@ -890,7 +891,6 @@ class MacroAssembler: public Assembler {
   inline void asm_assert_mem8_isnot_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(false, true, 8, mem_offset, mem_base, msg, id);
   }
-
   inline void asm_assert_mem4_is_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(true,  false, 4, mem_offset, mem_base, msg, id);
   }
@@ -903,7 +903,7 @@ class MacroAssembler: public Assembler {
   inline void asm_assert_mem8_isnot_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
   }
-  void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) PRODUCT_RETURN;
+  void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
 
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
