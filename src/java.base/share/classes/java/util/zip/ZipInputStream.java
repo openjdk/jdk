@@ -630,7 +630,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     // Returns true if the ZipEntry has a ZIP64 extended information extra field
     private boolean hasZip64Extra(ZipEntry e) throws IOException {
         byte[] extra = e.extra;
-        if (extra != null && extra.length > 4) {
+        int fixedSize = 2 * Short.BYTES; // id + size
+        if (extra != null && extra.length > fixedSize) {
             for (int i = 0; i < extra.length;) {
                 int id = get16(extra, i);
                 int size = get16(extra, i + Short.BYTES);
@@ -644,7 +645,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     }
                     return true;
                 }
-                i += size + (2 * Short.BYTES);
+                i += fixedSize + size;
             }
         }
         return false;
