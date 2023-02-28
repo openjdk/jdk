@@ -1442,12 +1442,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // are handled properly.
     install_secondary_signal_handler();
   } else {
-#if defined(_WINDOWS)
-    if (UseOSErrorReporting && log_done) {
-      raise_fail_fast(_siginfo, _context);
-    }
-#endif
-
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (_first_error_tid != mytid) {
