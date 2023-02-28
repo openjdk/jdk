@@ -5335,8 +5335,8 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
     default:
       ShouldNotReachHere();
   }
-  if (allow_relocation) { asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id); }
-  else                  { asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, true); }
+  // if relocation is not allowed then stop_static() will be called otherwise call stop()
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, !allow_relocation);
 #endif // ASSERT
 }
 
