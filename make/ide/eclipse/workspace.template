@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+    <name>Java</name>
+    <comment></comment>
+    <projects>
+    </projects>
+    <buildSpec>
+        @@BUILD_MANAGERS@@
+    </buildSpec>
+    <natures>
+        @@NATURES@@
+    </natures>
+    <linkedResources>
+        @@LINKED_RESOURCES@@
+    </linkedResources>
+</projectDescription>

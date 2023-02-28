@@ -32,13 +32,10 @@ include Modules.gmk
 
 JVM_VARIANT := $(JVM_VARIANT_MAIN)
 include hotspot/HotspotCommon.gmk
-include lib/JvmFeatures.gmk
-include lib/JvmOverrideFiles.gmk
-include lib/JvmFlags.gmk
+include hotspot/lib/JvmFeatures.gmk
+include hotspot/lib/JvmOverrideFiles.gmk
+include hotspot/lib/JvmFlags.gmk
 
-IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
-
-CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
 WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
 NATIVE_FILE := $(IDE_OUTPUTDIR)/.cproject
 LANGUAGE_SETTINGS := $(IDE_OUTPUTDIR)/.settings/language.settings.xml
@@ -137,6 +134,8 @@ EmitExtractedDefines = \
 # Remaining parameter(s) are named arguments:
 #   NATURE - Which Eclipse Workspace nature to generate for the Workspace. Can
 #       be one of JAVA, HOTSPOT, NATIVE, or FULL.
+#   SHARED - Workspace will share the same directory as the JDK if true. Can be
+#       either true or false. Defaults to false if not specified.
 SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
 define SetupEclipseWorkspaceBody
 
@@ -148,13 +147,26 @@ define SetupEclipseWorkspaceBody
     $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
   endif
 
+  ifeq ($$($1_SHARED), )
+    $$(info Workspace sharing option not given, assuming non-shared Eclipse Workspace)
+    $1_SHARED := false
+  else ifeq ($$(findstring $$($1_SHARED), true false), )
+    $$(error $$($1_NATURE) is not a boolean word)
+  endif
+
+  ifeq ($$($1_SHARED), true)
+    CLASSPATH_FILE := $(TOPDIR)/.classpath
+  else
+    IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
+    CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath\
+    $$(call MakeDir, $(IDE_OUTPUTDIR))
+  endif
+
   # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
   #   ifeq ($(TOOLCHAIN_TYPE), microsoft)
   #     $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
   #   endif
   # endif
-
-  $$(call MakeDir, $(IDE_OUTPUTDIR))
 
   # Start with the Workspace file first
   $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
@@ -185,15 +197,20 @@ define SetupEclipseWorkspaceBody
 
   ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
 
-    $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(CLASSPATH_FILE))
-    $$(call AppendFile,<classpath>, $(CLASSPATH_FILE))
+    $1_CLASSPATH :=
 
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
     $$(foreach src,$(JAVA_DIRS), \
-      $$(call AppendFile,    <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>, $(CLASSPATH_FILE)))
+      $1_CLASSPATH += \
+          <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>)
 
-    $$(call AppendFile,</classpath>, $(CLASSPATH_FILE))
+    $$(eval $$(call SetupTextFileProcessing, $1_CLASSPATH_FILE, \
+      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/classpath.template, \
+      OUTPUT_FILE := $$(CLASSPATH_FILE), \
+      REPLACEMENTS := \
+          @@CLASSPATH@@ => $$($1_CLASSPATH), \
+    ))
 
     $$(call AppendFile,        <nature>org.eclipse.jdt.core.javanature</nature>, $(WORKSPACE_FILE))
 
