@@ -1171,29 +1171,56 @@ class ImmutableCollections {
         @Stable
         final int size; // number of pairs
 
-        MapN(Object... input) {
-            if ((input.length & 1) != 0) { // implicit nullcheck of input
-                throw new InternalError("length is odd");
+        private MapN(Object... table) {
+            this.table = table;
+            this.size = table.length >> 1;
+        }
+
+        @SafeVarargs
+        @SuppressWarnings("varargs")
+        static <K,V> MapN<K,V> ofEntries(Entry<? extends K, ? extends V>... entries) {
+            final Object[] table = table(entries.length << 1);
+            for (Entry<? extends K, ? extends V> entry : entries) {
+                insert(table, entry.getKey(), entry.getValue());
             }
-            size = input.length >> 1;
+            return new MapN<>(table);
+        }
 
-            int len = EXPAND_FACTOR * input.length;
-            len = (len + 1) & ~1; // ensure table is even length
-            table = new Object[len];
-
+        static <K,V> MapN<K,V> ofVararg(Object... input) {
+            Object[] table = table(input.length);
             for (int i = 0; i < input.length; i += 2) {
                 @SuppressWarnings("unchecked")
-                    K k = Objects.requireNonNull((K)input[i]);
+                K key = (K) input[i];
                 @SuppressWarnings("unchecked")
-                    V v = Objects.requireNonNull((V)input[i+1]);
-                int idx = probe(k);
-                if (idx >= 0) {
-                    throw new IllegalArgumentException("duplicate key: " + k);
-                } else {
-                    int dest = -(idx + 1);
-                    table[dest] = k;
-                    table[dest+1] = v;
-                }
+                V value = (V) input[i + 1];
+                insert(table, key, value);
+            }
+            return new MapN<>(table);
+        }
+
+        /**
+         * @param length total number of keys and values i.e. doubled size of pairs
+         * @return objects array of desired {@code length}
+         */
+        private static Object[] table(int length) {
+            if ((length & 1) != 0) { // implicit nullcheck of input
+                throw new InternalError("length is odd");
+            }
+            int len = EXPAND_FACTOR * length;
+            len = (len + 1) & ~1; // ensure table is even length
+            return new Object[len];
+        }
+
+        private static <K, V> void insert(Object[] table, K key, V value) {
+            K k = Objects.requireNonNull(key);
+            V v = Objects.requireNonNull(value);
+            int idx = probe(k, table);
+            if (idx >= 0) {
+                throw new IllegalArgumentException("duplicate key: " + k);
+            } else {
+                int dest = -(idx + 1);
+                table[dest] = k;
+                table[dest + 1] = v;
             }
         }
 
@@ -1319,11 +1346,19 @@ class ImmutableCollections {
         // (-i - 1) where i is location where element should be inserted.
         // Callers are relying on this method to perform an implicit nullcheck
         // of pk.
-        private int probe(Object pk) {
+        private <K, V> int probe(Object pk) {
+            return MapN.<K, V>probe(pk, table);
+        }
+
+        // returns index at which the probe key is present; or if absent,
+        // (-i - 1) where i is location where element should be inserted.
+        // Callers are relying on this method to perform an implicit nullcheck
+        // of pk.
+        private static <K, V> int probe(Object pk, Object[] table) {
             int idx = Math.floorMod(pk.hashCode(), table.length >> 1) << 1;
             while (true) {
                 @SuppressWarnings("unchecked")
-                K ek = (K)table[idx];
+                K ek = (K) table[idx];
                 if (ek == null) {
                     return -idx - 1;
                 } else if (pk.equals(ek)) {
@@ -1509,7 +1544,7 @@ final class CollSer implements Serializable {
                     } else if (array.length == 2) {
                         return new ImmutableCollections.Map1<>(array[0], array[1]);
                     } else {
-                        return new ImmutableCollections.MapN<>(array);
+                        return ImmutableCollections.MapN.ofVararg(array);
                     }
                 default:
                     throw new InvalidObjectException(String.format("invalid flags 0x%x", tag));
