@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2309,8 +2309,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   frame_done_pc = (intptr_t)__ pc();
 
-  __ verify_thread();
-
   // Native nmethod wrappers never take possession of the oop arguments.
   // So the caller will gc the arguments.
   // The only thing we need an oopMap for is if the call is static.
@@ -3094,6 +3092,13 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: (caller_of_deoptee, ...).
 
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = R23_tmp3;
+  __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
+  __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
+
   // Loop through the `UnrollBlock' info and create interpreter frames.
   push_skeleton_frames(masm, true/*deopt*/,
                        unroll_block_reg,
@@ -3228,6 +3233,13 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
   __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
 #endif
+
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = R23_tmp3;
+  __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
+  __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
 
   // Allocate new interpreter frame(s) and possibly a c2i adapter
   // frame.
