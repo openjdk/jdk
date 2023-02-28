@@ -420,7 +420,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
      * InputStream for the socket connection to get target VM
      */
     abstract static class SocketInputStream extends InputStream {
-        private final long fd;
+        private long fd;
 
         public SocketInputStream(long fd) {
             this.fd = fd;
@@ -451,7 +451,9 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
         public synchronized void close() throws IOException {
             if (fd != -1) {
-                close(fd);
+                long toClose = fd;
+                fd = -1;
+                close(toClose);
             }
         }
     }
