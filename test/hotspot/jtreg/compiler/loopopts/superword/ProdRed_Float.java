@@ -81,7 +81,7 @@ public class ProdRed_Float {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.MUL_REDUCTION_VF})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},

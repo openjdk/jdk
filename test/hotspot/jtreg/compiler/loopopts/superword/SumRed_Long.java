@@ -93,11 +93,11 @@ public class SumRed_Long {
        for long and int (SuperWord::implemented).
        Additionally providing a negative test for this. */
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.ADD_REDUCTION_VL})
     @IR(applyIfCPUFeature = {"avx2", "false"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.ADD_REDUCTION_VL, "= 0"})
+        failOn = {IRNode.ADD_REDUCTION_VL})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1"})

@@ -142,7 +142,7 @@ public class RedTest_int {
 
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.ADD_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -161,7 +161,7 @@ public class RedTest_int {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.OR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -180,7 +180,7 @@ public class RedTest_int {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.AND_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -199,7 +199,7 @@ public class RedTest_int {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.XOR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -218,7 +218,7 @@ public class RedTest_int {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "false"},
+    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
         failOn = {IRNode.MUL_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
