@@ -1286,7 +1286,7 @@ class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1296,7 +1296,7 @@ class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
