@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,7 +425,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
             jobject inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-            CHECK_NULL(inputTrust);
+            if (inputTrust == NULL) {
+                CFRelease(trustSettings);
+                goto errOut;
+            }
 
             // Dump everything inside trustSettings into inputTrust
             CFIndex count = CFArrayGetCount(trustSettings);
