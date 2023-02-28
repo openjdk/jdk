@@ -665,7 +665,7 @@ the `ForegroundLockTimeout` value is set to 0.
 
 Additional information about Client UI tests configuration for various operating
 systems can be obtained at [Automated client GUI testing system set up
-requirements] (https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
+requirements](https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
 ## Editing this document
 
