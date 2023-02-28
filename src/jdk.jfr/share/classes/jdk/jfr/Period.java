@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * Event annotation, specifies the default setting value for a periodic event.
  * <p>
  * The following example shows how the {@code Period} annotation can be used
- * to emit an events at different intervals.
+ * to emit events at different intervals.
  *
  * {@snippet class = "Snippets" region = "PeriodOverview"}
  *

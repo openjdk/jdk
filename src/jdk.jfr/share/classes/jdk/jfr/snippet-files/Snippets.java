@@ -356,7 +356,7 @@ public class Snippets {
             System.out.println("Fields: " + eventType.getFields().size());
             System.out.println("Annotations: " + eventType.getAnnotationElements().size());
             System.out.println("Settings: " + eventType.getSettingDescriptors().size());
-            System.out.println("Enabled: " + eventType.isEnabled()); 
+            System.out.println("Enabled: " + eventType.isEnabled());
             System.out.println();
         }
         // @end
@@ -603,7 +603,7 @@ public class Snippets {
      }
  }
  // @end
- 
+
  static class ValueDsecriptorOverview {
      // @start region="ValueDescriptorOverview"
      void printTypes() {
