@@ -91,7 +91,7 @@ public class EqualsIgnoreCaseBenchmark {
                     .and(upperA.compare(LE, (byte) 'Z')); // <= 'Z'
 
             VectorMask<Byte> lat1Letter = upperA.compare(GE, (byte) 0XC0) // >= A-grave
-                    .and(upperA.compare(LE, (byte) 0xEE))  // <= Thorn
+                    .and(upperA.compare(LE, (byte) 0xDE))  // <= Thorn
                     .and(upperA.compare(NE, (byte) 0xD7)); // Excluding multiplication
 
             VectorMask<Byte> letter = asciiLetter.or(lat1Letter);
