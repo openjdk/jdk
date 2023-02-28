@@ -6021,6 +6021,14 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
 #endif
   bfc(u[1]._lo, 52, 64-52);
   DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
+
+  // Multiply bits 26-63 of u2 by 5 and add to u0
+  // FIXME: This is probably unnecessary
+  ubfx(rscratch1, u[2]._lo, 26, 64-26);
+  bfc(u[2]._lo, 26, 64-26);
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  add(u[0]._lo, u[0]._lo, rscratch1);
+  // u2 has no bits set above Bit 26
 }
 
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
