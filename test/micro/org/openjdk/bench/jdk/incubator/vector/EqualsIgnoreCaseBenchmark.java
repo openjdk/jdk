@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
+import static jdk.incubator.vector.VectorOperators.*;
+
 /**
  * Exploration of vectorized latin1 equalsIgnoreCase taking advantage of the fact
  * that ASCII and Latin1 were designed to optimize case-twiddling operations.
@@ -82,26 +84,27 @@ public class EqualsIgnoreCaseBenchmark {
             }
 
             // ASCII and Latin-1 were designed to optimize case-twiddling operations
-            ByteVector lowerA = va.or((byte) 0x20);
+            ByteVector upperA = va.and((byte) 0xDF);
 
             // Determine which bytes represent ASCII or Latin-1 letters:
-            VectorMask<Byte> asciiLetter = lowerA.lt((byte) '{').and(lowerA.lt((byte) 0x60).not());
-            VectorMask<Byte> lat1Letter = lowerA
-                    .lt((byte) 0xFF)  // <= thorn
-                    .and(lowerA.lt((byte) 0XDF).not()) // >= a-grave
-                    .and(lowerA.eq((byte) 0xF7).not()); // Excluding division
+            VectorMask<Byte> asciiLetter = upperA.compare(GE, (byte) 'A') // >= 'a'
+                    .and(upperA.compare(LE, (byte) 'Z')); // <= 'z'
+
+            VectorMask<Byte> lat1Letter = upperA.compare(GE, (byte) 0XC0) // >= A-grave
+                    .and(upperA.compare(LE, (byte) 0xEE))  // <= Thorn
+                    .and(upperA.compare(NE, (byte) 0xD7)); // Excluding multiplication
+
             VectorMask<Byte> letter = asciiLetter.or(lat1Letter);
 
-
-            // Lowercase b
-            ByteVector lowerB = vb.or((byte) 0x20);
+            // Uppercase b
+            ByteVector upperB = vb.and((byte) 0xDF);
 
             // va equalsIgnoreCase vb if:
             // 1: all bytes are equal, or
             // 2: all bytes are letters in the ASCII or latin1 ranges
-            //    AND their lowercase fold is the same
+            //    AND their uppercase is the same
             VectorMask<Byte> equalsIgnoreCase = equal
-                    .or(letter.and(lowerA.eq(lowerB)));
+                    .or(letter.and(upperA.eq(upperB)));
 
             if(equalsIgnoreCase.allTrue()) {
                 continue;
