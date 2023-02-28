@@ -47,6 +47,6 @@ int32_t arrayOopDesc::max_array_length(BasicType type) {
   }
   assert(max_elements_per_size_t <= (size_t)max_jint, "must not overflow unsigned int");
   assert(((jlong)max_elements_per_size_t * elem_size + base_offset_in_bytes(type)) / HeapWordSize <= (jlong)max_jint,
-         "total array size in bytes must not overflow signed int: max_elements_per_size_t");
+         "total array size in words must not overflow signed int: " SIZE_FORMAT, max_elements_per_size_t);
   return (int32_t)max_elements_per_size_t;
 }

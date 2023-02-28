@@ -39,20 +39,20 @@ inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
     // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
-    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    // Use only if top > start && used_words <= max_tlab_size_words.
     const HeapWord* const top = tlab().top_relaxed();
     const HeapWord* const start = tlab().start_relaxed();
     if (top <= start) {
       return allocated_bytes;
     }
-    const size_t used_bytes = pointer_delta(top, start, 1);
-    if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
-      // Comparing used_bytes with the maximum allowed size will ensure
+    const size_t used_words = pointer_delta(top, start);
+    if (used_words <= ThreadLocalAllocBuffer::max_size()) {
+      // Comparing used_words with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB
       // ending up with incorrect values. There is still a race between
       // incrementing _allocated_bytes and clearing the TLAB, that might
       // cause double counting in rare cases.
-      return allocated_bytes + used_bytes;
+      return allocated_bytes + used_words * HeapWordSize;
     }
   }
   return allocated_bytes;
