@@ -161,7 +161,7 @@ void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
   if (CheckMemoryInitialization && ZapUnusedHeapArea) {
     for (size_t slot = 0; slot < size; slot += 1) {
       assert((*(intptr_t*) (addr + slot)) != ((intptr_t) badHeapWordVal),
-             "Found badHeapWordValue in post-allocation check");
+             "Found badHeapWordValue in post-allocation check in slot " SIZE_FORMAT, slot);
     }
   }
 }
@@ -420,7 +420,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     ArrayKlass* array_klass = ArrayKlass::cast(_klass);
-    const size_t hs = arrayOopDesc::base_offset_in_bytes(array_klass->element_type());
+    const size_t hs = arrayOopDesc::header_size_in_bytes();
     mem_clear(mem, hs);
   }
   arrayOopDesc::set_length(mem, _length);
