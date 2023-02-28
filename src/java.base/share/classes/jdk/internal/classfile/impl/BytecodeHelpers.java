@@ -51,9 +51,8 @@ import jdk.internal.classfile.constantpool.NameAndTypeEntry;
  * BytecodeHelpers
  */
 public class BytecodeHelpers {
-//    public static Map<ConstantDesc, Opcode> constantsToOpcodes = new HashMap<>(16);
 
-    public BytecodeHelpers() {
+    private BytecodeHelpers() {
     }
 
     public static Opcode loadOpcode(TypeKind tk, int slot) {
