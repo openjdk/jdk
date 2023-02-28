@@ -1301,7 +1301,7 @@ void os::print_os_info(outputStream* st) {
 
 #ifdef __APPLE__
 static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, char* buf, size_t size) {
-  if (sysctlbyname(sysctlkey, buf, &size, NULL, 0) >= 0) {
+  if (sysctlbyname(sysctlkey, buf, &size, nullptr, 0) >= 0) {
     st->print_cr("%s:%s", sysctlkey, buf);
   }
 }
@@ -1309,7 +1309,7 @@ static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, ch
 static void print_sysctl_info_uint64(const char* sysctlkey, outputStream* st) {
   uint64_t val;
   size_t size=sizeof(uint64_t);
-  if (sysctlbyname(sysctlkey, &val, &size, NULL, 0) >= 0) {
+  if (sysctlbyname(sysctlkey, &val, &size, nullptr, 0) >= 0) {
     st->print_cr("%s:%llu", sysctlkey, val);
   }
 }
