@@ -72,16 +72,17 @@ static int membarrier(int cmd, unsigned int flags, int cpu_id) {
 bool LinuxSystemMemoryBarrier::initialize() {
   int ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
   if (ret < 0) {
-    log_trace(os)("MEMBARRIER_CMD_QUERY unsupported");
+    log_info(os)("MEMBARRIER_CMD_QUERY unsupported");
     return false;
   }
   if (!(ret & MEMBARRIER_CMD_PRIVATE_EXPEDITED) ||
       !(ret & MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED)) {
-    log_trace(os)("MEMBARRIER PRIVATE_EXPEDITED unsupported");
+    log_info(os)("MEMBARRIER PRIVATE_EXPEDITED unsupported");
     return false;
   }
   ret = membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(ret == 0, "MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed");
+  log_info(os)("Using MEMBARRIER PRIVATE_EXPEDITED");
   return true;
 }
 
@@ -89,4 +90,3 @@ void LinuxSystemMemoryBarrier::emit() {
   int s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(s >= 0, "MEMBARRIER_CMD_PRIVATE_EXPEDITED failed");
 }
-

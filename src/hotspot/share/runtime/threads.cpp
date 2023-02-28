@@ -556,7 +556,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (UseSystemMemoryBarrier) {
     if (!SystemMemoryBarrier::initialize()) {
       if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
-        warning("UseSystemMemoryBarrier specified, but not supported on this OS.");
+        warning("UseSystemMemoryBarrier specified, but not supported on this OS. Use -Xlog:os=info for details.");
       }
       FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
     }
