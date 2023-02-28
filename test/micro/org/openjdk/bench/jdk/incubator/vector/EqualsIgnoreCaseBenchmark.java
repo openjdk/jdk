@@ -36,7 +36,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Exploration of vectorized latin1 equalsIgnoreCase applying 'the oldest ASCII trick in the book'
+ * Exploration of vectorized latin1 equalsIgnoreCase taking advantage of the fact
+ * that ASCII and Latin1 were designed to optimize case-twiddling operations.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -80,10 +81,10 @@ public class EqualsIgnoreCaseBenchmark {
                 continue;
             }
 
-            // Lowercase a using the 'oldest ASCII trick in the book'
+            // ASCII and Latin-1 were designed to optimize case-twiddling operations
             ByteVector lowerA = va.or((byte) 0x20);
 
-            // Determine which bytes represent ASCII or latin1 letters:
+            // Determine which bytes represent ASCII or Latin-1 letters:
             VectorMask<Byte> asciiLetter = lowerA.lt((byte) '{').and(lowerA.lt((byte) 0x60).not());
             VectorMask<Byte> lat1Letter = lowerA
                     .lt((byte) 0xFF)  // <= thorn
@@ -108,7 +109,7 @@ public class EqualsIgnoreCaseBenchmark {
                 return false;
             }
         }
-
+        // Process the tail
         while (i < len) {
             byte b1 = a[i];
             byte b2 = b[i];
@@ -139,13 +140,13 @@ public class EqualsIgnoreCaseBenchmark {
         if (b1 == b2) {
             return true;
         }
-        // uppercase b1 using 'the oldest ASCII trick in the book'
-        int U = b1 & 0xDF;
-        if (U < 'A') {
+        // ASCII and Latin-1 were designed to optimize case-twiddling operations
+        int upper = b1 & 0xDF;
+        if (upper < 'A') {
             return false;  // Low ASCII
         }
-        return ( U <= 'Z' // In range A-Z
-                || (U >= 0xC0 && U <= 0XDE && U != 0xD7)) // ..or A-grave-Thorn, excl. multiplication
-                && U == (b2 & 0xDF); // b2 has same uppercase
+        return ( upper <= 'Z' // In range A-Z
+                || (upper >= 0xC0 && upper <= 0XDE && upper != 0xD7)) // ..or A-grave-Thorn, excl. multiplication
+                && upper == (b2 & 0xDF); // b2 has same uppercase
     }
 }
