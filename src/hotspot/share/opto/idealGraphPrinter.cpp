@@ -535,10 +535,6 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop(short_name, "T");
     } else if (strcmp(node->Name(), "IfFalse") == 0) {
       print_prop(short_name, "F");
-    } else if (node->is_Bool()) {
-      stringStream ss(buffer, sizeof(buffer) - 1);
-      node->as_Bool()->_test.dump_on(&ss);
-      print_prop(short_name, buffer);
     } else if (node->is_CatchProj()) {
       if (node->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
         print_prop(short_name, "F");
