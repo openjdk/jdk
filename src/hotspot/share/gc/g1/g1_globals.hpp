@@ -178,14 +178,6 @@
           "Control whether concurrent refinement is performed. "            \
           "Disabling effectively ignores G1RSetUpdatingPauseTimePercent")   \
                                                                             \
-  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
-          "Log base 2 of the length of conc RS hot-card cache.")            \
-          range(0, 27)                                                      \
-                                                                            \
-  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
-          "The threshold that defines (>=) a hot card.")                    \
-          range(0, max_jubyte)                                              \
-                                                                            \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
@@ -221,10 +213,9 @@
           "set container.")                                                 \
           range(1, 100)                                                     \
                                                                             \
-  develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failures to print.  "         \
-          "-1 means print all.")                                            \
-          range(-1, max_jint)                                               \
+  develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
+          "The maximum number of verification failures to print.")          \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \

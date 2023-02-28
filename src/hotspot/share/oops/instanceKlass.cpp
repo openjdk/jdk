@@ -3370,7 +3370,7 @@ static void print_vtable(vtableEntry* start, int len, outputStream* st) {
 }
 
 const char* InstanceKlass::init_state_name() const {
-  return state_names[_init_state];
+  return state_names[init_state()];
 }
 
 void InstanceKlass::print_on(outputStream* st) const {
@@ -3914,7 +3914,7 @@ void InstanceKlass::set_init_state(ClassState state) {
   assert(good_state || state == allocated || link_failed, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  _init_state = state;
+  Atomic::store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI

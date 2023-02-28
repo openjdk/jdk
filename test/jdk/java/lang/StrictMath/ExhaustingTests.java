@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301833
+ * @bug 8301833 8302026 8301444 8302028
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
@@ -73,20 +73,20 @@ public class ExhaustingTests {
             new UnaryTestCase("log10", FdlibmTranslit::log10, StrictMath::log10, DEFAULT_SHIFT),
             new UnaryTestCase("log1p", FdlibmTranslit::log1p, StrictMath::log1p, DEFAULT_SHIFT),
 
-         // new UnaryTestCase("exp",   FdlibmTranslit::exp,   StrictMath::exp,   DEFAULT_SHIFT),
+            new UnaryTestCase("exp",   FdlibmTranslit::exp,   StrictMath::exp,   DEFAULT_SHIFT),
             new UnaryTestCase("expm1", FdlibmTranslit::expm1, StrictMath::expm1, DEFAULT_SHIFT),
 
-         // new UnaryTestCase("sinh",  FdlibmTranslit::sinh,  StrictMath::sinh,  DEFAULT_SHIFT),
-         // new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh,  DEFAULT_SHIFT),
-         // new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh,  DEFAULT_SHIFT),
+            new UnaryTestCase("sinh",  FdlibmTranslit::sinh,  StrictMath::sinh,  DEFAULT_SHIFT),
+            new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh,  DEFAULT_SHIFT),
+            new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh,  DEFAULT_SHIFT),
 
          // new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
          // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
          // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
 
-         // new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
-         // new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
-         // new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
+            new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
+            new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
+            new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {
@@ -122,7 +122,7 @@ public class ExhaustingTests {
      */
     private static long testBinaryMethods() {
         long failures = 0;
-        // Note: pow does _not_ have translit a port
+        // Note: pow does _not_ have a transliteration port.
 
         // Shift of 16 for a binary method gives comparable running
         // time to exhaustive testing of a unary method (testing every
@@ -130,7 +130,7 @@ public class ExhaustingTests {
         // probes).
         BinaryTestCase[] testCases = {
             new BinaryTestCase("hypot", FdlibmTranslit::hypot, StrictMath::hypot, 20, 20),
-         // new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2, 20, 20),
+            new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2, 20, 20),
         };
 
         for (var testCase : testCases) {
