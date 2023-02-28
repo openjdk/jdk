@@ -64,8 +64,11 @@ public class PrintContentCutOffTest {
                     "    - rectangle with paper width is less than height, orientation landscape\n" +
                     "    - rectangle with paper width is greater than height, orientation portrait\n" +
                     "    - rectangle with paper width is greater than height, orientation landscape\n" +
-                    "  Note: PageFormat size returns transformed Paper size according to the set orientation value.\n" +
-                    " 3. Check that 4 printed rectangles have fully drawn 8 vertical areas labeled from 1 to 8.\n" +
+                    "    [Note: PageFormat size returns transformed Paper size according to the set orientation value.\n" +
+                    " 3. Check that 4 printed rectangles (one per page) have fully drawn 8 vertical areas\n" +
+                    "    labeled from 1 to 8, and that the blue diagonal lines end at the corners of the yellow rectangle.\n" +
+                    "    [Note: those are the pass/fail criteria. The messages printed in red are only informative\n" +
+                    "    and should not be used as a reason to file a bug].\n" +
                     " 4. If so, press PASS button, otherwise press FAIL button.\n";
 
 
