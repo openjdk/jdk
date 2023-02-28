@@ -387,7 +387,7 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                     dhParams = (DHParameterSpec) params;
                     privateBits = dhParams.getL();
                     if (privateBits < 0) {
-                        // invalid; override with JDK defaults (or ignore?)
+                        // invalid, override with JDK defaults
                         privateBits = getDefDHPrivateExpSize(dhParams);
                     }
                 }
