@@ -31,7 +31,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -39,7 +39,7 @@
 #include "runtime/java.hpp"
 
 static size_t calculate_heap_alignment(size_t space_alignment) {
-  size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
+  size_t card_table_alignment = CardTable::ct_max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   return MAX3(card_table_alignment, space_alignment, page_size);
 }

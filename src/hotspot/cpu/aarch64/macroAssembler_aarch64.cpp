@@ -4261,6 +4261,11 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_klass_check_null(Register dst, Register src) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src);
+}
+
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2) {
   // OopHandle::resolve is an indirection.

@@ -579,15 +579,14 @@ public:
 
   // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_code_roots(VerifyOption vo, bool* failures) const;
+  // Returns whether there has been a failure.
+  bool verify_code_roots(VerifyOption vo) const;
+  bool verify_liveness_and_remset(VerifyOption vo) const;
 
   void print() const;
   void print_on(outputStream* st) const;
 
-  void verify(VerifyOption vo, bool *failures) const;
-
-  void verify_rem_set(VerifyOption vo, bool *failures) const;
-  void verify_rem_set() const;
+  bool verify(VerifyOption vo) const;
 };
 
 // HeapRegionClosure is used for iterating over regions.

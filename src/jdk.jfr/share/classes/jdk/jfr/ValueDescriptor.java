@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,15 @@ import jdk.jfr.internal.Utils;
  * @since 9
  */
 public final class ValueDescriptor {
-
+    private static final String UNKNOWN = new String();
     private final AnnotationConstruct annotationConstruct;
     private final Type type;
     private final String name;
     private final boolean isArray;
     private final boolean constantPool;
     private final String javaFieldName;
+    private String label = UNKNOWN;
+    private String contentType = UNKNOWN;
 
     // package private, invoked by jdk.internal.
     ValueDescriptor(Type type, String name, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName) {
@@ -165,7 +167,10 @@ public final class ValueDescriptor {
      * @return a human-readable name, or {@code null} if doesn't exist
      */
     public String getLabel() {
-        return annotationConstruct.getLabel();
+        if (label == UNKNOWN) {
+            label = annotationConstruct.getLabel();;
+        }
+        return label;
     }
 
     /**
@@ -216,14 +221,18 @@ public final class ValueDescriptor {
      * @see ContentType
      */
     public String getContentType() {
-        for (AnnotationElement anno : getAnnotationElements()) {
-            for (AnnotationElement meta : anno.getAnnotationElements()) {
-                if (meta.getTypeName().equals(ContentType.class.getName())) {
-                    return anno.getTypeName();
+        if (contentType == UNKNOWN) {
+            for (AnnotationElement anno : getAnnotationElements()) {
+                for (AnnotationElement meta : anno.getAnnotationElements()) {
+                    if (meta.getTypeName().equals(ContentType.class.getName())) {
+                        contentType = anno.getTypeName();
+                        return contentType;
+                    }
                 }
             }
+            contentType = null;
         }
-        return null;
+        return contentType;
     }
 
     /**

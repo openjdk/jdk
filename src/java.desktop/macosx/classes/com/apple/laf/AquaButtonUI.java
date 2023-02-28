@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,57 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.plaf.ButtonUI;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.RootPaneUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicButtonListener;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
+import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import sun.swing.SwingUtilities2;
-
 import apple.laf.JRSUIConstants.Size;
-
 import com.apple.laf.AquaButtonExtendedTypes.TypeSpecifier;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
-import com.apple.laf.AquaUtils.*;
+import com.apple.laf.AquaUtils.RecyclableSingleton;
+import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.SwingUtilities2;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private static final String BUTTON_TYPE = "JButton.buttonType";
@@ -228,7 +261,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     protected void uninstallDefaults(final AbstractButton b) {
-        super.uninstallDefaults(b);
+        LookAndFeel.uninstallBorder(b);
         defaults_initialized = false;
     }
 
@@ -306,9 +339,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
         // performs icon and text rect calculations
         final String text;
+        final Icon icon = b.getIcon();
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-        if (v != null) {
-            // use zero insets for view since layout only handles text calculations
+        if (v != null && icon == null) {
+            // use zero insets for HTML without an icon
+            // since layout only handles text calculations
             text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
                     viewRect, iconRect, textRect);
         } else {
@@ -316,7 +351,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         // Paint the Icon
-        if (b.getIcon() != null) {
+        if (icon != null) {
             paintIcon(g, b, iconRect);
         }
 

@@ -213,10 +213,9 @@
           "set container.")                                                 \
           range(1, 100)                                                     \
                                                                             \
-  develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failures to print.  "         \
-          "-1 means print all.")                                            \
-          range(-1, max_jint)                                               \
+  develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
+          "The maximum number of verification failures to print.")          \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \

@@ -30,6 +30,8 @@
  * @summary Tests for {Math, StrictMath}.{asin, acos, atan}
  */
 
+import static java.lang.Double.longBitsToDouble;
+
 public class InverseTrigTests {
     private InverseTrigTests(){}
 
@@ -64,8 +66,11 @@ public class InverseTrigTests {
     private static int testAsinSpecialCases() {
         int failures = 0;
 
+        for(double nan : Tests.NaNs) {
+            failures += testAsinCase(nan, NaNd);
+        }
+
         double [][] testCases = {
-            {NaNd,                NaNd},
             {Math.nextUp(1.0),    NaNd},
             {Math.nextDown(-1.0), NaNd},
             { InfinityD,          NaNd},
@@ -86,8 +91,8 @@ public class InverseTrigTests {
     private static int testAsinCase(double input, double expected) {
         int failures=0;
 
-        failures+=Tests.test("Math.asin",       input, Math::asin,       expected);
-        failures+=Tests.test("StrictMath.asin", input, StrictMath::asin, expected);
+        failures += Tests.test("Math.asin",       input, Math::asin,       expected);
+        failures += Tests.test("StrictMath.asin", input, StrictMath::asin, expected);
 
         return failures;
     }
@@ -105,8 +110,11 @@ public class InverseTrigTests {
     private static int testAcosSpecialCases() {
         int failures = 0;
 
+        for(double nan : Tests.NaNs) {
+            failures += testAcosCase(nan, NaNd);
+        }
+
         double [][] testCases = {
-            {NaNd,                NaNd},
             {Math.nextUp(1.0),    NaNd},
             {Math.nextDown(-1.0), NaNd},
             {InfinityD,           NaNd},
@@ -126,8 +134,8 @@ public class InverseTrigTests {
     private static int testAcosCase(double input, double expected) {
         int failures=0;
 
-        failures+=Tests.test("Math.acos",       input, Math::acos,       expected);
-        failures+=Tests.test("StrictMath.acos", input, StrictMath::acos, expected);
+        failures += Tests.test("Math.acos",       input, Math::acos,       expected);
+        failures += Tests.test("StrictMath.acos", input, StrictMath::acos, expected);
 
         return failures;
     }
@@ -148,9 +156,11 @@ public class InverseTrigTests {
     private static int testAtanSpecialCases() {
         int failures = 0;
 
-        double [][] testCases = {
-            {NaNd,       NaNd},
+        for(double nan : Tests.NaNs) {
+            failures += testAtanCase(nan, NaNd);
+        }
 
+        double [][] testCases = {
             {-0.0,       -0.0},
             {+0.0,       +0.0},
 
@@ -169,8 +179,8 @@ public class InverseTrigTests {
     private static int testAtanCase(double input, double expected) {
         int failures=0;
 
-        failures+=Tests.test("Math.atan",       input, Math::atan,       expected);
-        failures+=Tests.test("StrictMath.atan", input, StrictMath::atan, expected);
+        failures += Tests.test("Math.atan",       input, Math::atan,       expected);
+        failures += Tests.test("StrictMath.atan", input, StrictMath::atan, expected);
 
         return failures;
     }
