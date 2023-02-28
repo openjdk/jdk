@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -53,7 +54,7 @@
 #include "utilities/macros.hpp"
 
 #undef __
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
@@ -642,14 +643,24 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register cache = R11_scratch1;
   const Register size  = R12_scratch2;
-  __ get_cache_and_index_at_bcp(cache, 1, index_size);
+  if (index_size == sizeof(u4)) {
+    __ get_cache_index_at_bcp(size, 1, index_size);  // Load index.
+    // Get address of invokedynamic array
+    __ ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
+    // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    __ sldi(size, size, log2i_exact(sizeof(ResolvedIndyEntry)));
+    __ add(cache, cache, size);
+    __ lhz(size, Array<ResolvedIndyEntry>::base_offset_in_bytes() + in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
+  } else {
+    __ get_cache_and_index_at_bcp(cache, 1, index_size);
 
-  // Get least significant byte of 64 bit value:
+    // Get least significant byte of 64 bit value:
 #if defined(VM_LITTLE_ENDIAN)
-  __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()), cache);
+    __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()), cache);
 #else
-  __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()) + 7, cache);
+    __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()) + 7, cache);
 #endif
+  }
   __ sldi(size, size, Interpreter::logStackElementSize);
   __ add(R15_esp, R15_esp, size);
 

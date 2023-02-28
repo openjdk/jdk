@@ -444,12 +444,34 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  // Pop N words from the stack
-  __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
-  __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+  const Register temp =  x13;
+  const Register cache = x11;
+  const Register index = x12;
 
-  __ shadd(esp, x11, esp, t0, 3);
+  if (index_size == sizeof(u4)) {
+    // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+    __ get_cache_index_at_bcp(index, 1, sizeof(u4));
+    // Get address of invokedynamic array
+    __ ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+    // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    __ mv(temp, sizeof(ResolvedIndyEntry)); // use appendix as temp
+    __ mul(index, index, temp);
+    __ add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+
+    // __ la(cache, Address(cache, index));
+    __ add(cache, cache, index);
+    __ la(cache, Address(cache, 0));
+
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ shadd(esp, cache, esp, t0, 3);
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
+    __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+
+    __ shadd(esp, x11, esp, t0, 3);
+  }
 
   // Restore machine SP
   __ restore_sp_after_call();

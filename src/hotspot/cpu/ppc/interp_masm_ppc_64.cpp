@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,6 +478,18 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
     lwz(Rdst, offset, Rsrc);
   }
 #endif
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  get_cache_index_at_bcp(index, 1, sizeof(u4));
+
+  // Get address of invokedynamic array
+  ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  sldi(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  addi(index, index, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
 }
 
 // Load object from cpool->resolved_references(index).

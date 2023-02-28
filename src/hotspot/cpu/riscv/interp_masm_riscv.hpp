@@ -299,6 +299,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
     MacroAssembler::_call_Unimplemented(call_site);
   }
 
+  void load_resolved_indy_entry(Register cache, Register index, Register tmp);
+
 #ifdef ASSERT
   void verify_access_flags(Register access_flags, uint32_t flag_bits,
                            const char* msg, bool stop_by_hit = true);
