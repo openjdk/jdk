@@ -120,11 +120,11 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-# Turn off all warnings for debug_mem.c This is needed because the specific warning
-# about initializing a declared 'extern' cannot be turned off individually. Only
-# applies to debug builds. This limitation in gcc is tracked in
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
 ifeq ($(TOOLCHAIN_TYPE), gcc)
+  # Turn off all warnings for debug_mem.c This is needed because the specific warning
+  # about initializing a declared 'extern' cannot be turned off individually. Only
+  # applies to debug builds. This limitation in gcc is tracked in
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
   BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
   # This option improves performance of FillRect/FillOval in Java2D by 15% for some gcc
   LIBAWT_CFLAGS += -fpic
