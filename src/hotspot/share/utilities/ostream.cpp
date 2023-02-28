@@ -1138,9 +1138,12 @@ bool networkStream::connect(const char *ip, short port) {
 
   server.sin_addr.s_addr = inet_addr(ip);
   if (server.sin_addr.s_addr == (uint32_t)-1) {
-    struct hostent* host = os::get_host_by_name((char*)ip);
-    if (host != nullptr) {
-      memcpy(&server.sin_addr, host->h_addr_list[0], host->h_length);
+    struct addrinfo* addrInfo = os::get_host_by_name((char*)ip);
+    if (addrInfo != nullptr) {
+      struct sockaddr_in* saddr = (struct sockaddr_in *)addrInfo->ai_addr;
+      struct in_addr* addr = &saddr->sin_addr;
+      memcpy(&server.sin_addr, addr , sizeof(server.sin_addr));
+      freeaddrinfo(addrInfo);
     } else {
       return false;
     }

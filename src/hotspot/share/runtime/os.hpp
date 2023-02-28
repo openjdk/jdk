@@ -33,6 +33,9 @@
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
+#ifdef _WINDOWS
+#include <Ws2tcpip.h>
+#endif
 
 class AgentLibrary;
 class frame;
@@ -879,7 +882,7 @@ class os: AllStatic {
   static int send(int fd, char* buf, size_t nBytes, uint flags);
   static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static int connect(int fd, struct sockaddr* him, socklen_t len);
-  static struct hostent* get_host_by_name(char* name);
+  static struct addrinfo* get_host_by_name(char* name);
 
   // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);

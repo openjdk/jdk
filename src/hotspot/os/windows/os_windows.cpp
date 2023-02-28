@@ -5475,10 +5475,6 @@ static jint initSock() {
   return JNI_OK;
 }
 
-struct hostent* os::get_host_by_name(char* name) {
-  return (struct hostent*)gethostbyname(name);
-}
-
 int os::socket_close(int fd) {
   return ::closesocket(fd);
 }

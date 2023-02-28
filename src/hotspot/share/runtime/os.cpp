@@ -75,7 +75,10 @@
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
-# include <poll.h>
+#ifdef ASSERT
+#include <arpa/inet.h>
+#endif
+#include <poll.h>
 #endif
 
 # include <signal.h>
@@ -2098,4 +2101,33 @@ jint os::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
   return JNI_OK;
+}
+
+// Converts a hostname to a IPv4 network address. Used only by networkStream.
+// All supported operating systems support the getaddrinfo API so we can share
+// this.
+struct addrinfo* os::get_host_by_name(char* name) {
+  struct addrinfo* addrInfo = NULL;
+  struct addrinfo hints;
+
+  // Use same hints as src/java.base/windows/native/libnet/Inet4AddressImpl.c.
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;     // IPv4 only
+  hints.ai_flags = AI_CANONNAME;
+  int ret = getaddrinfo(name, nullptr, &hints, &addrInfo);
+  if (ret != 0) {
+    log_error(os)("os::get_host_by_name(): error: %s",
+                  gai_strerror(ret));
+    return nullptr;
+  }
+
+#ifdef ASSERT
+  {
+    struct sockaddr_in *inaddr = (struct sockaddr_in *)addrInfo->ai_addr;
+    char* addr = inet_ntoa((struct in_addr)inaddr->sin_addr);
+    log_debug(os)("os::get_host_by_name(): socket addr info: %s -> %s", name, addr);
+  }
+#endif
+
+  return addrInfo;
 }
