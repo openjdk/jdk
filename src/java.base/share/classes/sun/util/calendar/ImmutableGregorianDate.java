@@ -86,10 +86,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addDayOfMonth(int n) {
-        unsupported(); return this;
-    }
-
     public int getDayOfWeek() {
         return date.getDayOfWeek();
     }
@@ -114,10 +110,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addMinutes(int n) {
-        unsupported(); return this;
-    }
-
     public int getSeconds() {
         return date.getSeconds();
     }
@@ -138,10 +130,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addMillis(int n) {
-        unsupported(); return this;
-    }
-
     public long getTimeOfDay() {
         return date.getTimeOfDay();
     }
@@ -150,15 +138,7 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addDate(int year, int month, int dayOfMonth) {
-        unsupported(); return this;
-    }
-
     public CalendarDate setTimeOfDay(int hours, int minutes, int seconds, int millis) {
-        unsupported(); return this;
-    }
-
-    public CalendarDate addTimeOfDay(int hours, int minutes, int seconds, int millis) {
         unsupported(); return this;
     }
 
@@ -172,10 +152,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
 
     public boolean isStandardTime() {
         return date.isStandardTime();
-    }
-
-    public void setStandardTime(boolean standardTime) {
-        unsupported();
     }
 
     public boolean isDaylightTime() {

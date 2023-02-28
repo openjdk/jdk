@@ -152,7 +152,7 @@ public abstract class CalendarDate implements Cloneable {
      * @return <code>true</code> if this <code>CalendarDate</code> is
      * normalized and the year of this <code>CalendarDate</code> is a
      * leap year, or <code>false</code> otherwise.
-     * @see BaseCalendar#isGregorianLeapYear
+     * @see CalendarUtils#isGregorianLeapYear
      */
     public boolean isLeapYear() {
         return leapYear;
@@ -189,14 +189,6 @@ public abstract class CalendarDate implements Cloneable {
     public CalendarDate setDayOfMonth(int date) {
         if (dayOfMonth != date) {
             dayOfMonth = date;
-            normalized = false;
-        }
-        return this;
-    }
-
-    public CalendarDate addDayOfMonth(int n) {
-        if (n != 0) {
-            dayOfMonth += n;
             normalized = false;
         }
         return this;
@@ -247,14 +239,6 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addMinutes(int n) {
-        if (n != 0) {
-            minutes += n;
-            normalized = false;
-        }
-        return this;
-    }
-
     public int getSeconds() {
         return seconds;
     }
@@ -267,14 +251,6 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addSeconds(int n) {
-        if (n != 0) {
-            seconds += n;
-            normalized = false;
-        }
-        return this;
-    }
-
     public int getMillis() {
         return millis;
     }
@@ -282,14 +258,6 @@ public abstract class CalendarDate implements Cloneable {
     public CalendarDate setMillis(int millis) {
         if (this.millis != millis) {
             this.millis = millis;
-            normalized = false;
-        }
-        return this;
-    }
-
-    public CalendarDate addMillis(int n) {
-        if (n != 0) {
-            millis += n;
             normalized = false;
         }
         return this;
@@ -309,26 +277,11 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addDate(int year, int month, int dayOfMonth) {
-        addYear(year);
-        addMonth(month);
-        addDayOfMonth(dayOfMonth);
-        return this;
-    }
-
     public CalendarDate setTimeOfDay(int hours, int minutes, int seconds, int millis) {
         setHours(hours);
         setMinutes(minutes);
         setSeconds(seconds);
         setMillis(millis);
-        return this;
-    }
-
-    public CalendarDate addTimeOfDay(int hours, int minutes, int seconds, int millis) {
-        addHours(hours);
-        addMinutes(minutes);
-        addSeconds(seconds);
-        addMillis(millis);
         return this;
     }
 
@@ -343,10 +296,6 @@ public abstract class CalendarDate implements Cloneable {
 
     public boolean isStandardTime() {
         return forceStandardTime;
-    }
-
-    public void setStandardTime(boolean standardTime) {
-        forceStandardTime = standardTime;
     }
 
     public boolean isDaylightTime() {
@@ -382,10 +331,9 @@ public abstract class CalendarDate implements Cloneable {
     }
 
     public boolean equals(Object obj) {
-        if (!(obj instanceof CalendarDate)) {
+        if (!(obj instanceof CalendarDate that)) {
             return false;
         }
-        CalendarDate that = (CalendarDate) obj;
         if (isNormalized() != that.isNormalized()) {
             return false;
         }

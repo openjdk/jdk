@@ -25,7 +25,6 @@
 
 package sun.util.calendar;
 
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -79,20 +78,6 @@ public abstract class AbstractCalendar extends CalendarSystem {
             System.arraycopy(eras, 0, e, 0, eras.length);
         }
         return e;
-    }
-
-    public void setEra(CalendarDate date, String eraName) {
-        if (eras == null) {
-            return; // should report an error???
-        }
-        for (int i = 0; i < eras.length; i++) {
-            Era e = eras[i];
-            if (e != null && e.getName().equals(eraName)) {
-                date.setEra(e);
-                return;
-            }
-        }
-        throw new IllegalArgumentException("unknown era name: " + eraName);
     }
 
     protected void setEras(Era[] eras) {
@@ -258,15 +243,6 @@ public abstract class AbstractCalendar extends CalendarSystem {
         return cdate;
     }
 
-    /**
-     * Returns 7 in this default implementation.
-     *
-     * @return 7
-     */
-    public int getWeekLength() {
-        return 7;
-    }
-
     protected abstract boolean isLeapYear(CalendarDate date);
 
     public CalendarDate getNthDayOfWeek(int nth, int dayOfWeek, CalendarDate date) {
@@ -341,7 +317,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
      * method stores the calculated calendar field values in the specified
      * <code>CalendarDate</code>.
      *
-     * @param date a <code>CalendarDate</code> to stored the
+     * @param date a <code>CalendarDate</code> to store the
      * calculated calendar fields.
      * @param fixedDate a fixed date to calculate calendar fields
      * @see AbstractCalendar.html#fixed_date
