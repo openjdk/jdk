@@ -28,6 +28,7 @@
  * @run testng CorruptedZipFiles
  */
 
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -46,40 +47,46 @@ import static org.testng.Assert.*;
 
 public class CorruptedZipFiles {
 
-    // Golden ZIP
-    private byte[] good;
-    // Copy of the template for modification in tests
-    private byte[] bad;
-    // Some well-known locations in the golden ZIP
+    // Byte array holding a valid template ZIP
+    private byte[] template;
+
+    // Copy of the template ZIP for modification by each test
+    private byte[] copy;
+
+    // Some well-known locations in the ZIP
     private int endpos, cenpos, locpos;
 
+    // The path used when reading/writing the corrupted ZIP to disk
+    private Path zip = Path.of("corrupted.zip");
+
+    /**
+     * Make a sample ZIP and calculate some known offsets into this ZIP
+     */
     @BeforeTest
     public void setup() throws IOException {
         // Make a ZIP with a single entry
-        Path zip = Path.of("x.zip");
-        try (ZipOutputStream zos = new ZipOutputStream(
-                Files.newOutputStream(zip))) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(out)) {
             ZipEntry e = new ZipEntry("x");
             zos.putNextEntry(e);
             zos.write((int)'x');
         }
+        template = out.toByteArray();
 
-        // Read the contents of the file
-        good = Files.readAllBytes(zip);
-        Files.delete(zip);
+        // Calculate the offset of the End of central directory record
+        endpos = template.length - ENDHDR;
+        // Look up the offet of the Central directory header
+        cenpos = u16(template, endpos+ENDOFF);
+        // Look up the offset of the corresponding Local file header
+        locpos = u16(template, cenpos + CENOFF);
 
-        // Set up some well-known offsets
-        endpos = good.length - ENDHDR;
-        cenpos = u16(good, endpos+ENDOFF);
-        locpos = u16(good, cenpos + CENOFF);
-
-        // Run some sanity checks:
-        assertEquals(u32(good, endpos), ENDSIG, "Where's ENDSIG?");
-        assertEquals(u32(good, cenpos), CENSIG, "Where's CENSIG?");
-        assertEquals(u32(good, locpos), LOCSIG, "Where's LOCSIG?");
-        assertEquals(u16(good, locpos+LOCNAM), u16(good,cenpos+CENNAM),
+        // Run some sanity checks on the valid ZIP:
+        assertEquals(u32(template, endpos), ENDSIG, "Where's ENDSIG?");
+        assertEquals(u32(template, cenpos), CENSIG, "Where's CENSIG?");
+        assertEquals(u32(template, locpos), LOCSIG, "Where's LOCSIG?");
+        assertEquals(u16(template, locpos+LOCNAM), u16(template,cenpos+CENNAM),
             "Name field length mismatch");
-        assertEquals(u16(good, locpos+LOCEXT), u16(good,cenpos+CENEXT),
+        assertEquals(u16(template, locpos+LOCEXT), u16(template,cenpos+CENEXT),
             "Extra field length mismatch");
     }
 
@@ -87,128 +94,178 @@ public class CorruptedZipFiles {
      * Make a copy safe to modify by each test
      */
     @BeforeMethod
-    public void setUp() {
-        bad = Arrays.copyOf(good, good.length);
+    public void beforeMethod() {
+        copy = Arrays.copyOf(template, template.length);
     }
 
-    @Test
-    public void corruptedENDSIZ() {
-        bad[endpos+ENDSIZ]=(byte)0xff;
-        checkZipException(bad, ".*bad central directory size.*");
+    /**
+     * Delete the ZIP file produced after each test method
+     */
+    @AfterMethod
+    public void afterMethod() throws IOException {
+        Files.deleteIfExists(zip);
     }
 
+    /**
+     * An End of Central Directory header with a CEN size exceeding
+     * past the offset of the End record itself should be rejected with
+     * a ZipException.
+     */
     @Test
-    public void corruptedENDOFF() {
-        bad[endpos+ENDOFF]=(byte)0xff;
-        checkZipException(bad, ".*bad central directory offset.*");
+    public void excessiveCENSize() throws IOException {
+        copy[endpos+ENDSIZ]=(byte)0xff;
+        checkZipException(".*bad central directory size.*");
     }
 
+    /**
+     * An End of Central Directory header with a CEN offset incoherent
+     * with the position calculated by subtracting the CEN size from
+     * the End position should be rejected with a ZipException.
+     */
     @Test
-    public void corruptedCENSIG() {
-        bad[cenpos]++;
-        checkZipException(bad, ".*bad signature.*");
+    public void excessiveCENOffset() throws IOException {
+        copy[endpos+ENDOFF]=(byte)0xff;
+        checkZipException(".*bad central directory offset.*");
     }
 
+    /**
+     * A CEN header with an unexpected signature should be rejected
+     * with a ZipException.
+     */
     @Test
-    public void corruptedCENFLG() {
-        bad[cenpos+CENFLG] |= 1;
-        checkZipException(bad, ".*encrypted entry.*");
+    public void invalidCENSignature() throws IOException {
+        copy[cenpos]++;
+        checkZipException(".*bad signature.*");
     }
 
+    /**
+     * A CEN header where the general purpose bit flag 0 ('encrypted')
+     * is set should be rejected with a ZipException
+     */
     @Test
-    public void corruptedCENNAM1() {
-        bad[cenpos+CENNAM]++;
-        checkZipException(bad, ".*bad header size.*");
+    public void encryptedEntry() throws IOException {
+        copy[cenpos+CENFLG] |= 1;
+        checkZipException(".*encrypted entry.*");
     }
 
+    /**
+     * A File name length which makes the CEN header overflow into the
+     * End of central directory record should be rejected with a ZipException.
+     */
     @Test
-    public void corruptedCENNAM2() {
-        bad[cenpos+CENNAM]--;
-        checkZipException(bad, ".*bad header size.*");
-    }
-    @Test
-    public void corruptedCENNAM3() {
-        bad[cenpos+CENNAM]   = (byte)0xfd;
-        bad[cenpos+CENNAM+1] = (byte)0xfd;
-        checkZipException(bad, ".*bad header size.*");
-    }
-    @Test
-    public void corruptedCENEXT1() {
-        bad[cenpos+CENEXT]++;
-        checkZipException(bad, ".*bad header size.*");
-    }
-    @Test
-    public void corruptedCENEXT2() {
-        bad[cenpos+CENEXT]   = (byte)0xfd;
-        bad[cenpos+CENEXT+1] = (byte)0xfd;
-        checkZipException(bad, ".*bad header size.*");
+    public void excessiveFileNameLength() throws IOException {
+        copy[cenpos+CENNAM]++;
+        checkZipException(".*bad header size.*");
     }
 
+    /**
+     * A File name length which makes the CEN header overflow into the
+     * End of central directory record should be rejected with a ZipException.
+     */
     @Test
-    public void corruptedCENCOM() {
-        bad[cenpos+CENCOM]++;
-        checkZipException(bad, ".*bad header size.*");
-    }
-    @Test
-    public void corruptedCENHOW() {
-        bad[cenpos+CENHOW] = 2;
-        checkZipException(bad, ".*bad compression method.*");
+    public void excessiveFileNameLength2() throws IOException {
+        copy[cenpos+CENNAM]   = (byte)0xfd;
+        copy[cenpos+CENNAM+1] = (byte)0xfd;
+        checkZipException(".*bad header size.*");
     }
 
+    /**
+     * If the last CEN header is not immediatly followed by the start
+     * of the End record, this should be rejected with a ZipException.
+     */
     @Test
-    public void corruptedLOCSIG() {
-        bad[locpos]++;
-        checkZipExceptionInGetInputStream(bad, ".*bad signature.*");
+    public void insufficientFilenameLength() throws IOException {
+        copy[cenpos+CENNAM]--;
+        checkZipException(".*bad header size.*");
     }
-    static int uniquifier = 432;
 
-    static void checkZipExceptionImpl(byte[] data,
-                                      String msgPattern,
-                                      boolean getInputStream) {
-        Path zip = Path.of("bad" + (uniquifier++) + ".zip");
-        try {
-            Files.write(zip, data);
+    /**
+     * An Extra field length which makes the CEN header overflow into the
+     * End of central directory record should be rejected with a ZipException.
+     */
+    @Test
+    public void excessiveExtraFieldLength() throws IOException {
+        copy[cenpos+CENEXT]++;
+        checkZipException(".*bad header size.*");
+    }
 
-            ZipException ex = expectThrows(ZipException.class, () -> {
-                try (ZipFile zf = new ZipFile(zip.toFile())) {
-                    if (getInputStream) {
-                        try (InputStream is = zf.getInputStream(new ZipEntry("x"))) {
-                            is.read();
-                        }
+    /**
+     * An Extra field length which makes the CEN header overflow into the
+     * End of central directory record should be rejected with a ZipException.
+     */
+    @Test
+    public void excessiveExtraFieldLength2() throws IOException {
+        copy[cenpos+CENEXT]   = (byte)0xfd;
+        copy[cenpos+CENEXT+1] = (byte)0xfd;
+        checkZipException(".*bad header size.*");
+    }
+
+    /**
+     * A File comment length which makes the CEN header overflow into the
+     * End of central directory record should be rejected with a ZipException.
+     */
+    @Test
+    public void excessiveCommentLength() throws IOException {
+        copy[cenpos+CENCOM]++;
+        checkZipException(".*bad header size.*");
+    }
+
+    /**
+     * A CEN header with an unsupported compression method should be rejected
+     * with a ZipException.
+     */
+    @Test
+    public void unsupportedCompressionMethod() throws IOException {
+        copy[cenpos+CENHOW] = 2;
+        checkZipException(".*bad compression method.*");
+    }
+
+    /**
+     * A LOC header with an unexpected signature should be rejected
+     * with a ZipException.
+     */
+    @Test
+    public void invalidLOCSignature() throws IOException {
+        copy[locpos]++;
+        checkZipExceptionInGetInputStream(".*bad signature.*");
+    }
+
+    void checkZipExceptionImpl(String msgPattern,
+                               boolean getInputStream) throws IOException {
+
+        Files.write(zip, copy);
+
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            try (ZipFile zf = new ZipFile(zip.toFile())) {
+                if (getInputStream) {
+                    try (InputStream is = zf.getInputStream(new ZipEntry("x"))) {
+                        is.transferTo(OutputStream.nullOutputStream());
                     }
                 }
-            });
-            assertTrue(ex.getMessage().matches(msgPattern),
-                    "Unexpected ZipException message: " + ex.getMessage());
-
-        } catch (IOException e) {
-            fail("Unexcpected IOException writing test ZIP", e);
-        } finally {
-            try {
-                Files.delete(zip);
-            } catch (IOException e) {
-ı                fail("Unexcpected IOException deleting test ZIP", e);
             }
-        }
+        });
+        assertTrue(ex.getMessage().matches(msgPattern),
+                "Unexpected ZipException message: " + ex.getMessage());
+
     }
 
-    static void checkZipException(byte[] data, String msgPattern) {
-        checkZipExceptionImpl(data, msgPattern, false);
+    void checkZipException(String msgPattern) throws IOException {
+        checkZipExceptionImpl(msgPattern, false);
     }
 
-    static void checkZipExceptionInGetInputStream(byte[] data, String msgPattern) {
-        checkZipExceptionImpl(data, msgPattern, true);
+    void checkZipExceptionInGetInputStream(String msgPattern) throws IOException {
+        checkZipExceptionImpl(msgPattern, true);
     }
 
     static int u8(byte[] data, int offset) {
-        return data[offset]&0xff;
+        return data[offset] & 0xff;
     }
 
     static int u16(byte[] data, int offset) {
-        return u8(data,offset) + (u8(data,offset+1)<<8);
+        return u8(data,offset) + (u8(data,offset+1) << 8);
     }
 
     static int u32(byte[] data, int offset) {
-        return u16(data,offset) + (u16(data,offset+2)<<16);
+        return u16(data,offset) + (u16(data,offset+2) << 16);
     }
 }
