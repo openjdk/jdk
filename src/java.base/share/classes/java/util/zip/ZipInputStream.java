@@ -627,7 +627,30 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 " but got 0x" + Long.toHexString(crc.getValue()) + ")");
         }
     }
-    // Returns true if the ZipEntry has a ZIP64 extended information extra field
+
+    /**
+     * Returns true if the ZipEntry has a valid Zip64 extended information extra field.
+     *
+     * This method is used by {@link #readEnd(ZipEntry)} to determine whether the
+     * 'size' and 'compressed size' fields of the Data Descriptor record should
+     * be interpreted as 64-bit numbers instead of the regular 32-bit numbers.
+     *
+     * While ZipOutputStream only produces a Zip64 extra field if either the size or
+     * compressed size of the entry exceeds 0XFFFFFFFF, the ZIP APPNOTE.txt format
+     * specification explicitly allows the use of Zip64 format for entries of any size:
+     *
+     * <pre>
+     * When extracting, if the zip64 extended information extra
+     * field is present for the file the compressed and
+     * uncompressed sizes will be 8 byte values.
+     * </pre>
+     *
+     * To guard against invalid or corrupt extra fields, this method validates that
+     * any Zip64 extended field has one of the four valid sizes.
+     *
+     * This method returns false for any invalid extra field lengths, as if the extra
+     * data contained no Zip64 field.
+     */
     private boolean hasZip64Extra(ZipEntry e) throws IOException {
         byte[] extra = e.extra;
         int fixedSize = 2 * Short.BYTES; // id + size
