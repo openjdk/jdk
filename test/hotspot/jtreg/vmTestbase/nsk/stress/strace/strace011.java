@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,25 +62,11 @@ import java.util.Map;
  * Then the test calls <code>java.lang.Thread.getStackTrace()</code> and
  * <code>java.lang.Thread.getAllStackTraces()</code> methods and checks their results.
  * <p>
- * <p>It is expected that these methods return the same stack traces. Each stack frame
- * for both stack traces must be corresponded to invocation of one of the methods
- * defined by the <code>EXPECTED_METHODS</code> array.</p>
  */
-public class strace011 {
+public class strace011 extends StraceBase {
 
     static final int DEPTH = 100;
     static final int THRD_COUNT = 50;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.Thread.sleep",
-            "java.lang.Thread.sleep0",
-            "jdk.internal.event.ThreadSleepEvent.<clinit>",
-            "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
-            "jdk.internal.event.ThreadSleepEvent.isEnabled",
-            "java.lang.Thread.currentCarrierThread",
-            "java.lang.Thread.currentThread",
-            "nsk.stress.strace.strace011Thread.run",
-            "nsk.stress.strace.strace011Thread.recursiveMethod"
-    };
 
 
     static PrintStream out;
@@ -228,15 +214,6 @@ public class strace011 {
             }
         }
         return res;
-    }
-
-    boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (name.startsWith(EXPECTED_METHODS[i]))
-                return true;
-        }
-        return false;
     }
 
     void finishThreads() {
