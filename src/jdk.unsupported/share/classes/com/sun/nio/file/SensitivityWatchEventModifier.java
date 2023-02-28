@@ -42,7 +42,7 @@ import jdk.internal.misc.FileSystemOption;
  * @since 1.7
  */
 
-@Deprecated(since="7", forRemoval = true)
+@Deprecated(since="21", forRemoval = true)
 public enum SensitivityWatchEventModifier implements Modifier {
     /**
      * High sensitivity.
