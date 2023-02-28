@@ -94,7 +94,7 @@ public class CorruptedZipFiles {
      * Make a copy safe to modify by each test
      */
     @BeforeMethod
-    public void beforeMethod() {
+    public void makeCopy() {
         copy = Arrays.copyOf(template, template.length);
     }
 
@@ -102,7 +102,7 @@ public class CorruptedZipFiles {
      * Delete the ZIP file produced after each test method
      */
     @AfterMethod
-    public void afterMethod() throws IOException {
+    public void cleanup() throws IOException {
         Files.deleteIfExists(zip);
     }
 
