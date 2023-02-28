@@ -188,7 +188,7 @@ public class FdlibmTranslit {
 
             /* argument reduction needed */
             else {
-                n = __ieee754_rem_pio2(x,y);
+                n = RemPio2.__ieee754_rem_pio2(x,y);
                 switch(n&3) {
                 case 0: return  Sin.__kernel_sin(y[0],y[1],1);
                 case 1: return  Cos.__kernel_cos(y[0],y[1]);
@@ -298,7 +298,7 @@ public class FdlibmTranslit {
 
             /* argument reduction needed */
             else {
-                n = __ieee754_rem_pio2(x,y);
+                n = RemPio2.__ieee754_rem_pio2(x,y);
                 switch(n&3) {
                 case 0: return  Cos.__kernel_cos(y[0],y[1]);
                 case 1: return -Sin.__kernel_sin(y[0],y[1],1);
@@ -426,7 +426,7 @@ public class FdlibmTranslit {
 
             /* argument reduction needed */
             else {
-                n = __ieee754_rem_pio2(x,y);
+                n = RemPio2.__ieee754_rem_pio2(x,y);
                 return __kernel_tan(y[0],y[1],1-((n&1)<<1)); /*   1 -- n even
                                                                   -1 -- n odd */
             }
@@ -506,7 +506,7 @@ public class FdlibmTranslit {
                             v = y - (z - x);
                             t = a = -one / w;
                             //__LO(t) = 0;
-                            z = __LO(t, 0);
+                            t = __LO(t, 0);
                             s = one + t * z;
                             return t + a * (s + t * v);
                         }
@@ -553,10 +553,6 @@ public class FdlibmTranslit {
         }
     }
 
-    private static int __ieee754_rem_pio2(double x, double[] y) {
-        return RemPio2.__ieee754_rem_pio2(x, y);
-    }
-
     /** __ieee754_rem_pio2(x,y)
      *
      * return the remainder of x rem pi/2 in y[0]+y[1]
@@ -566,7 +562,7 @@ public class FdlibmTranslit {
         /*
          * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
          */
-        private static final int two_over_pi[] = {
+        private static final int[] two_over_pi = {
             0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62,
             0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A,
             0x424DD2, 0xE00649, 0x2EEA09, 0xD1921C, 0xFE1DEB, 0x1CB129,
@@ -580,7 +576,7 @@ public class FdlibmTranslit {
             0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B,
         };
 
-        private static final int npio2_hw[] = {
+        private static final int[] npio2_hw = {
             0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
             0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
             0x40346B9C, 0x4035FDBB, 0x40378FDB, 0x403921FB, 0x403AB41B, 0x403C463A,
@@ -818,9 +814,9 @@ public class FdlibmTranslit {
          * to produce the hexadecimal values shown.
          */
 
-        private static final int init_jk[] = {2,3,4,6}; /* initial value for jk */
+        private static final int[] init_jk = {2,3,4,6}; /* initial value for jk */
 
-        private static final double PIo2[] = {
+        private static final double[] PIo2 = {
             1.57079625129699707031e+00, /* 0x3FF921FB, 0x40000000 */
             7.54978941586159635335e-08, /* 0x3E74442D, 0x00000000 */
             5.39030252995776476554e-15, /* 0x3CF84698, 0x80000000 */
@@ -864,69 +860,69 @@ public class FdlibmTranslit {
             }
 
             jz = jk;
-            recompute: {
-            /* distill q[] into iq[] reversingly */
-            for(i=0,j=jz,z=q[jz];j>0;i++,j--) {
-                fw    =  (double)((int)(twon24* z));
-                iq[i] =  (int)(z-two24*fw);
-                z     =  q[j-1]+fw;
-            }
+            while(true) {
+                /* distill q[] into iq[] reversingly */
+                for(i=0,j=jz,z=q[jz];j>0;i++,j--) {
+                    fw    =  (double)((int)(twon24* z));
+                    iq[i] =  (int)(z-two24*fw);
+                    z     =  q[j-1]+fw;
+                }
 
-            /* compute n */
-            z  = Math.scalb(z,q0);              /* actual value of z */
-            z -= 8.0*Math.floor(z*0.125);           /* trim off integer >= 8 */
-            n  = (int) z;
-            z -= (double)n;
-            ih = 0;
-            if(q0>0) {      /* need iq[jz-1] to determine n */
-                i  = (iq[jz-1]>>(24-q0)); n += i;
-                iq[jz-1] -= i<<(24-q0);
-                ih = iq[jz-1]>>(23-q0);
-            }
-            else if(q0==0) ih = iq[jz-1]>>23;
-            else if(z>=0.5) ih=2;
+                /* compute n */
+                z  = Math.scalb(z,q0);              /* actual value of z */
+                z -= 8.0*Math.floor(z*0.125);           /* trim off integer >= 8 */
+                n  = (int) z;
+                z -= (double)n;
+                ih = 0;
+                if(q0>0) {      /* need iq[jz-1] to determine n */
+                    i  = (iq[jz-1]>>(24-q0)); n += i;
+                    iq[jz-1] -= i<<(24-q0);
+                    ih = iq[jz-1]>>(23-q0);
+                }
+                else if(q0==0) ih = iq[jz-1]>>23;
+                else if(z>=0.5) ih=2;
 
-            if(ih>0) {      /* q > 0.5 */
-                n += 1; carry = 0;
-                for(i=0;i<jz ;i++) {        /* compute 1-q */
-                    j = iq[i];
-                    if(carry==0) {
-                        if(j!=0) {
-                            carry = 1; iq[i] = 0x1000000- j;
+                if(ih>0) {      /* q > 0.5 */
+                    n += 1; carry = 0;
+                    for(i=0;i<jz ;i++) {        /* compute 1-q */
+                        j = iq[i];
+                        if(carry==0) {
+                            if(j!=0) {
+                                carry = 1; iq[i] = 0x1000000- j;
+                            }
+                        } else  iq[i] = 0xffffff - j;
+                    }
+                    if(q0>0) {          /* rare case: chance is 1 in 12 */
+                        switch(q0) {
+                        case 1:
+                            iq[jz-1] &= 0x7fffff; break;
+                        case 2:
+                            iq[jz-1] &= 0x3fffff; break;
                         }
-                    } else  iq[i] = 0xffffff - j;
-                }
-                if(q0>0) {          /* rare case: chance is 1 in 12 */
-                    switch(q0) {
-                    case 1:
-                        iq[jz-1] &= 0x7fffff; break;
-                    case 2:
-                        iq[jz-1] &= 0x3fffff; break;
+                    }
+                    if(ih==2) {
+                        z = one - z;
+                        if(carry!=0) z -= Math.scalb(one,q0);
                     }
                 }
-                if(ih==2) {
-                    z = one - z;
-                    if(carry!=0) z -= Math.scalb(one,q0);
-                }
-            }
-            
-            /* check if recomputation is needed */
-            if(z==zero) {
-                j = 0;
-                for (i=jz-1;i>=jk;i--) j |= iq[i];
-                if(j==0) { /* need recomputation */
-                    for(k=1;iq[jk-k]==0;k++);   /* k = no. of terms needed */
 
-                    for(i=jz+1;i<=jz+k;i++) {   /* add q[jz+1] to q[jz+k] */
-                        f[jx+i] = (double) ipio2[jv+i];
-                        for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j];
-                        q[i] = fw;
-                    }
-                    jz += k;
-                    break recompute;
-                }
+                /* check if recomputation is needed */
+                if(z==zero) {
+                    j = 0;
+                    for (i=jz-1;i>=jk;i--) j |= iq[i];
+                    if(j==0) { /* need recomputation */
+                        for(k=1;iq[jk-k]==0;k++);   /* k = no. of terms needed */
+
+                        for(i=jz+1;i<=jz+k;i++) {   /* add q[jz+1] to q[jz+k] */
+                            f[jx+i] = (double) ipio2[jv+i];
+                            for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j];
+                            q[i] = fw;
+                        }
+                        jz += k;
+                        continue;
+                    } else { break;}
+                } else {break;}
             }
-        }
 
             /* chop off zero terms */
             if(z==0.0) {
