@@ -342,6 +342,11 @@ public class TestCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.ADD_VF, "= 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test7(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
@@ -357,6 +362,11 @@ public class TestCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "= 0", IRNode.ADD_VF, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test8(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
