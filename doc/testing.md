@@ -613,7 +613,7 @@ system. Usually that causes the test failure. So it is highly recommended to
 disable system key shortcuts prior testing. The steps to access and disable
 system key shortcuts for various platforms are provided below.
 
-##### MacOS
+##### macOS
 
 Choose Apple menu; System Preferences, click Keyboard, then click Shortcuts;
 select or deselect desired shortcut.
@@ -642,26 +642,30 @@ Note: restart is required to make the settings take effect.
 
 #### Robot API
 
-Most part of automated Client UI tests use Robot API to control the UI. Usually
-the default operating system settings need to be adjusted for correct work of
-Robot functionality. The detailed steps how to access and update that settings
+Most automated Client UI tests use `Robot` API to control the UI. Usually,
+the default operating system settings need to be adjusted for Robot
+to work correctly. The detailed steps how to access and update these settings
 for different platforms are provided below.
 
-##### MacOS
+##### macOS
 
-Robot functionality is not permitted to control your Mac by default starting
-from MacOS 10.15. To enable it choose Apple menu; System Settings, click
-Privacy & Security; select Accessibility and ensure the following apps are
-allowed to control your computer: `Java` and `Terminal`. If the tests are run
+`Robot` is not permitted to control your Mac by default since
+macOS 10.15. To allow it, choose Apple menu -> System Settings, click
+Privacy & Security; then click Accessibility and ensure the following apps are
+allowed to control your computer: *Java* and *Terminal*. If the tests are run
 from an IDE, the IDE should be granted this permission too.
 
 ##### Windows
 
-On Windows there is a delay in focus transfer. Usually it causes automated
-UI test failure. To discard the delay type `regedit` in the Search and then
-select Registry Editor; navigate to the following key:
-`HKEY_CURRENT_USER\Control Panel\Desktop\ForegroundLockTimeout`; make sure
-its value is set to 0.
+On Windows if Cygwin terminal is used to run the tests, there is a delay in
+focus transfer. Usually it causes automated UI test failure. To disable the
+delay, type `regedit` in the Search and then select Registry Editor; navigate
+to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure
+the `ForegroundLockTimeout` value is set to 0.
+
+Additional information about Client UI tests configuration for vrious operating
+systems can be obtained at [Automated client GUI testing system set up
+requirements] (https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
 ## Editing this document
 

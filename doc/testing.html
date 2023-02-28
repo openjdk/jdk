@@ -584,7 +584,7 @@ operating system. Usually that causes the test failure. So it is highly
 recommended to disable system key shortcuts prior testing. The steps to
 access and disable system key shortcuts for various platforms are
 provided below.</p>
-<h5 id="macos">MacOS</h5>
+<h5 id="macos">macOS</h5>
 <p>Choose Apple menu; System Preferences, click Keyboard, then click
 Shortcuts; select or deselect desired shortcut.</p>
 <p>For example,
@@ -607,25 +607,29 @@ look for "Turn off Windows key hotkeys" and double click on it; enable
 or disable hotkeys.</p>
 <p>Note: restart is required to make the settings take effect.</p>
 <h4 id="robot-api">Robot API</h4>
-<p>Most part of automated Client UI tests use Robot API to control the
-UI. Usually the default operating system settings need to be adjusted
-for correct work of Robot functionality. The detailed steps how to
-access and update that settings for different platforms are provided
+<p>Most automated Client UI tests use <code>Robot</code> API to control
+the UI. Usually, the default operating system settings need to be
+adjusted for Robot to work correctly. The detailed steps how to access
+and update these settings for different platforms are provided
 below.</p>
-<h5 id="macos-1">MacOS</h5>
-<p>Robot functionality is not permitted to control your Mac by default
-starting from MacOS 10.15. To enable it choose Apple menu; System
-Settings, click Privacy &amp; Security; select Accessibility and ensure
-the following apps are allowed to control your computer:
-<code>Java</code> and <code>Terminal</code>. If the tests are run from
-an IDE, the IDE should be granted this permission too.</p>
+<h5 id="macos-1">macOS</h5>
+<p><code>Robot</code> is not permitted to control your Mac by default
+since macOS 10.15. To allow it, choose Apple menu -&gt; System Settings,
+click Privacy &amp; Security; then click Accessibility and ensure the
+following apps are allowed to control your computer: <em>Java</em> and
+<em>Terminal</em>. If the tests are run from an IDE, the IDE should be
+granted this permission too.</p>
 <h5 id="windows-1">Windows</h5>
-<p>On Windows there is a delay in focus transfer. Usually it causes
-automated UI test failure. To discard the delay type
-<code>regedit</code> in the Search and then select Registry Editor;
-navigate to the following key:
-<code>HKEY_CURRENT_USER\Control Panel\Desktop\ForegroundLockTimeout</code>;
-make sure its value is set to 0.</p>
+<p>On Windows if Cygwin terminal is used to run the tests, there is a
+delay in focus transfer. Usually it causes automated UI test failure. To
+disable the delay, type <code>regedit</code> in the Search and then
+select Registry Editor; navigate to the following key:
+<code>HKEY_CURRENT_USER\Control Panel\Desktop</code>; make sure the
+<code>ForegroundLockTimeout</code> value is set to 0.</p>
+<p>Additional information about Client UI tests configuration for vrious
+operating systems can be obtained at [Automated client GUI testing
+system set up requirements]
+(https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)</p>
 <h2 id="editing-this-document">Editing this document</h2>
 <p>If you want to contribute changes to this document, edit
 <code>doc/testing.md</code> and then run
