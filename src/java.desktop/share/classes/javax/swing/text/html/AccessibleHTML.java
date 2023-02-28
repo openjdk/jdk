@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,9 @@ class AccessibleHTML implements Accessible {
             Element root = doc.getDefaultRootElement();
 
             rootElementInfo = new ElementInfo(root);
+            if (rootHTMLAccessibleContext != null) {
+                rootHTMLAccessibleContext.setElementInfo(rootElementInfo);
+            }
             rootElementInfo.validate();
         } finally {
             unlock(lock);
@@ -306,6 +309,10 @@ class AccessibleHTML implements Accessible {
         // begin AccessibleContext implementation ...
         public AccessibleContext getAccessibleContext() {
             return this;
+        }
+
+        public void setElementInfo(ElementInfo elementInfo) {
+            this.elementInfo = elementInfo;
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1661,7 +1661,6 @@ public class JEditorPane extends JTextComponent {
 // Accessibility support
 ////////////////
 
-    private Document doc;
 
     /**
      * Gets the AccessibleContext associated with this JEditorPane.
@@ -1675,11 +1674,9 @@ public class JEditorPane extends JTextComponent {
     @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (getEditorKit() instanceof HTMLEditorKit) {
-            if (accessibleContext == null
-                || accessibleContext.getClass() != AccessibleJEditorPaneHTML.class
-                || doc != JEditorPane.this.getDocument()) {
+            if (accessibleContext == null || accessibleContext.getClass() !=
+                    AccessibleJEditorPaneHTML.class) {
                 accessibleContext = new AccessibleJEditorPaneHTML();
-                doc = JEditorPane.this.getDocument();
             }
         } else if (accessibleContext == null || accessibleContext.getClass() !=
                        AccessibleJEditorPane.class) {

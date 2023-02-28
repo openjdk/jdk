@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,6 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     // ----- Accessibility support -----
     private AccessibleContext accessibleContext;
-    private Document doc;
 
     /**
      * returns the AccessibleContext associated with this editor kit
@@ -685,11 +684,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         if (theEditor == null) {
             return null;
         }
-        if (accessibleContext == null
-            || doc != theEditor.getDocument()) {
+        if (accessibleContext == null) {
             AccessibleHTML a = new AccessibleHTML(theEditor);
             accessibleContext = a.getAccessibleContext();
-            doc = theEditor.getDocument();
         }
         return accessibleContext;
     }
