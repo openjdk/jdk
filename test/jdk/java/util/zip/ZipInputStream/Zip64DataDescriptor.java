@@ -47,7 +47,8 @@ import static org.testng.Assert.expectThrows;
 
 public class Zip64DataDescriptor {
 
-    private byte[] zip;
+    // A byte array holding a small-sized Zip64 ZIP file, described below
+    private byte[] zip64File;
 
     @BeforeMethod
     public void setup() {
@@ -95,7 +96,7 @@ public class Zip64DataDescriptor {
                 0000b20000000000000001000000504b050600000000010001005c000000
                 560000000000""";
 
-        zip = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
+        zip64File = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
     }
 
     /**
@@ -137,14 +138,23 @@ public class Zip64DataDescriptor {
         assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 5 bytes)");
     }
 
-    private void setExtraSize(short invalidSize) {
+    /**
+     * Updates the 16-bit 'data size' field of the Zip64 extended information field,
+     * potentially to an invalid value.
+     * @param size the value to set in the 'data size' field.
+     */
+    private void setExtraSize(short size) {
         int extSizeOffset = 37;
-        ByteBuffer.wrap(zip).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(extSizeOffset, invalidSize);
+        ByteBuffer.wrap(zip64File).order(ByteOrder.LITTLE_ENDIAN)
+                .putShort(extSizeOffset, size);
     }
 
+    /**
+     * Consume all entries in a ZipInputStream, possibly throwing a
+     * ZipException if the reading of any entry stream fails.
+     */
     private void readZipInputStream() throws IOException {
-        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
+        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip64File))) {
             ZipEntry e;
             while ( (e = in.getNextEntry()) != null) {
                 in.transferTo(OutputStream.nullOutputStream());
