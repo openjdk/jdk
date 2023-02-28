@@ -30,6 +30,8 @@
  * @run main EditableComboBoxPopupPos
  */
 
+import java.awt.AWTException;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -47,55 +49,65 @@ public class EditableComboBoxPopupPos {
     private static JFrame frame;
     private static JPanel panel;
     private static JComboBox cb1, cb2;
-    private static String lafName;
+    private static String lafName, cb1Str, cb2Str;
+    private static Point cb1Point, cb2Point;
+    private static int cb1Width, cb1Height, cb2Width, cb2Height;
 
     private static final int BUTTON_OFFSET = 10;
     private static final int POPUP_OFFSET = 5;
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        try {
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
             robot = new Robot();
             robot.setAutoDelay(100);
             robot.setAutoWaitForIdle(true);
 
             for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
-                lafName = laf.getName().equals("CDE/Motif") ? "Motif" : laf.getName();
-                SwingUtilities.invokeAndWait(() -> {
-                    setLookAndFeel(laf);
-                    panel = new JPanel();
-                    String[] comboStrings = {"One", "Two", "Three"};
-                    cb1 = new JComboBox(comboStrings);
-                    cb1.setEditable(true);
-                    cb1.setBorder(BorderFactory.createTitledBorder(
-                            "Editable JComboBox"));
+            lafName = laf.getName();
+            SwingUtilities.invokeAndWait(() -> {
+                setLookAndFeel(laf);
+                panel = new JPanel();
+                String[] comboStrings = {"One", "Two", "Three"};
+                cb1 = new JComboBox(comboStrings);
+                cb1.setEditable(true);
+                cb1.setBorder(BorderFactory.createTitledBorder(
+                        "Editable JComboBox"));
 
-                    cb2 = new JComboBox(comboStrings);
-                    cb2.setEditable(true);
+                cb2 = new JComboBox(comboStrings);
+                cb2.setEditable(true);
 
-                    panel.add(cb1);
-                    panel.add(cb2);
-
-                    frame = new JFrame();
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    frame.add(panel);
-                    frame.pack();
-                    frame.setLocationRelativeTo(null);
-                    frame.setVisible(true);
-                });
+                panel.add(cb1);
+                panel.add(cb2);
 
                 // Change starting selection to check if the position of the
                 // first selection item is in the correct position on screen.
                 cb1.setSelectedIndex(1);
                 cb2.setSelectedIndex(1);
 
-                runTestOnComboBox(cb1);
-                runTestOnComboBox(cb2);
+                frame = new JFrame();
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.add(panel);
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
 
-                checkSelection(cb1, cb2);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
+                cb1Point = cb1.getLocationOnScreen();
+                cb1Width = cb1.getWidth();
+                cb1Height = cb1.getHeight();
+                cb2Point = cb2.getLocationOnScreen();
+                cb2Width = cb2.getWidth();
+                cb2Height = cb2.getHeight();
+            });
+
+            runTestOnComboBox(cb1Point, cb1Width, cb1Height);
+            runTestOnComboBox(cb2Point, cb2Width, cb2Height);
+
+            SwingUtilities.invokeAndWait(() -> {
+                cb1Str = cb1.getSelectedItem().toString();
+                cb2Str = cb2.getSelectedItem().toString();
+            });
+
+            checkSelection(cb1Str, cb2Str);
+
             SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
@@ -111,28 +123,20 @@ public class EditableComboBoxPopupPos {
         }
     }
 
-    private static void runTestOnComboBox(JComboBox cb) {
-        robot.mouseMove(cb.getLocationOnScreen().x + cb.getWidth()
-                - BUTTON_OFFSET, cb.getLocationOnScreen().y
-                + POPUP_OFFSET);
+    private static void runTestOnComboBox(Point p, int width, int height) {
+        robot.mouseMove(p.x + width - BUTTON_OFFSET, p.y + POPUP_OFFSET);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseMove(cb.getLocationOnScreen().x
-                        + (cb.getWidth() / 2) - BUTTON_OFFSET,
-                cb.getLocationOnScreen().y + cb.getHeight()
-                        + POPUP_OFFSET);
+        robot.mouseMove(p.x + (width / 2) - BUTTON_OFFSET,
+                p.y + height + POPUP_OFFSET);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
-    private static void checkSelection(JComboBox c1, JComboBox c2)
-            throws InterruptedException, InvocationTargetException {
-        if (c1.getSelectedItem().toString().equals("One")
-                && c2.getSelectedItem().toString().equals("One")) {
+    private static void checkSelection(String s1, String s2) {
+        if (s1.equals("One") && s2.equals("One")) {
             System.out.println(lafName + " Passed");
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
         } else {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
             throw new RuntimeException(lafName + " Failed");
         }
     }
