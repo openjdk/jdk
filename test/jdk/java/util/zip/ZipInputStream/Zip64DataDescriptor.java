@@ -125,7 +125,7 @@ public class Zip64DataDescriptor {
     }
 
     /**
-     * Validate that an extra size exceeding the extra size is ignored
+     * Validate that an extra data size exceeding the length of the extra field is ignored
      */
     @Test
     public void shouldIgnoreExcessiveExtraSize() {
