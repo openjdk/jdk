@@ -331,6 +331,7 @@ void G1FullCollector::phase2_prepare_compaction() {
   phase2a_determine_worklists();
 
   if (!has_compaction_targets()) {
+    log_debug(gc, phases)("Phase 2: No compaction targets");
     return;
   }
 
