@@ -143,8 +143,11 @@
  * <h3>Custom attributes</h3>
  * Attributes are converted between their classfile form and their corresponding
  * object form via an {@link jdk.internal.classfile.AttributeMapper}.  An {@code
- * AttributeMapper} provides the {@link jdk.internal.classfile.AttributeMapper#readAttribute(AttributedElement, ClassReader, int)} method for mapping from the classfile format
- * to an attribute instance, and the {@link jdk.internal.classfile.AttributeMapper#writeAttribute(jdk.internal.classfile.BufWriter,
+ * AttributeMapper} provides the
+ * {@link jdk.internal.classfile.AttributeMapper#readAttribute(AttributedElement,
+ * ClassReader, int)} method for mapping from the classfile format
+ * to an attribute instance, and the
+ * {@link jdk.internal.classfile.AttributeMapper#writeAttribute(jdk.internal.classfile.BufWriter,
  * java.lang.Object)} method for mapping back to the classfile format.  It also
  * contains metadata including the attribute name, the set of classfile entities
  * where the attribute is applicable, and whether multiple attributes of the
@@ -160,7 +163,8 @@
  * {@code byte[]} contents of the attribute.
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
- * through the use of the {@link jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}}
+ * through the use of the {@link
+ * jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
  * jdk.internal.classfile.CustomAttribute}.
  *
@@ -171,14 +175,21 @@
  * static boolean options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#generateStackmap(boolean)} -- generate stackmaps (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processDebug(boolean)} -- processing of debug information, such as local variable metadata (default is true) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processLineNumbers(boolean)} -- processing of line numbers (default is true) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processUnknownAttributes(boolean)} -- processing of unrecognized attributes (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#constantPoolSharing(boolean)}} -- share constant pool when transforming (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#classHierarchyResolver(jdk.internal.classfile.ClassHierarchyResolver)} -- specify a custom class hierarchy
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#generateStackmap(boolean)}
+ * -- generate stackmaps (default is true)</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#processDebug(boolean)}
+ * -- processing of debug information, such as local variable metadata (default is true) </li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#processLineNumbers(boolean)}
+ * -- processing of line numbers (default is true) </li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#processUnknownAttributes(boolean)}
+ * -- processing of unrecognized attributes (default is true)</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#constantPoolSharing(boolean)}}
+ * -- share constant pool when transforming (default is true)</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#classHierarchyResolver(jdk.internal.classfile.ClassHierarchyResolver)}
+ * -- specify a custom class hierarchy
  * resolver used by stack map generation</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)} -- specify format of custom attributes</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}
+ * -- specify format of custom attributes</li>
  * </ul>
  * <p>
  * Most options allow you to request that certain parts of the classfile be
@@ -210,8 +221,9 @@
  * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
  * jdk.internal.classfile.CodeBuilder#invokeInstruction(jdk.internal.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
- * boolean) CodeBuilder.invokeInstruction}, or
- * {@link jdk.internal.classfile.CodeBuilder#with(jdk.internal.classfile.ClassfileElement) CodeBuilder.with}.
+ * boolean) CodeBuilder.invokeInstruction}, or {@link
+ * jdk.internal.classfile.CodeBuilder#with(jdk.internal.classfile.ClassfileElement)
+ * CodeBuilder.with}.
  * <p>
  * The convenience method {@code CodeBuilder.invokevirtual} behaves as if it calls
  * the convenience method {@code CodeBuilder.invokeInstruction}, which in turn behaves
@@ -340,13 +352,14 @@
  * attributes) and its properties.  For each element kind, there is a
  * corresponding interface to describe that element, and factory methods to
  * create that element.  Some element kinds also have convenience methods on the
- * corresponding builder (e.g., {@link jdk.internal.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
+ * corresponding builder (e.g., {@link
+ * jdk.internal.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc)}).
  * <p>
  * Most symbolic information in elements is represented by constant pool entries
  * (for example, the owner of a field is represented by a {@link
- * jdk.internal.classfile.constantpool.ClassEntry}.) Factories and builders also accept nominal
- * descriptors from {@code java.lang.constant} (e.g., {@link
+ * jdk.internal.classfile.constantpool.ClassEntry}.) Factories and builders also
+ * accept nominal descriptors from {@code java.lang.constant} (e.g., {@link
  * java.lang.constant.ClassDesc}.)
  *
  * <h2><a id="data_model"></a>Data model</h2>

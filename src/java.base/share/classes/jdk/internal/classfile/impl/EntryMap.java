@@ -27,7 +27,7 @@ package jdk.internal.classfile.impl;
 /**
  * An open-chain multimap used to map nonzero hashes to indexes (of either CP
  * elements or BSM entries).  Code transformed from public domain implementation
- * (http://java-performance.info/implementing-world-fastest-java-int-to-int-hash-map/).
+ * (<a href="http://java-performance.info/">http://java-performance.info/</a>).
  *
  * The internal data structure is an array of 2N int elements, where the first
  * element is the hash and the second is the mapped index.  To look something up
@@ -186,7 +186,9 @@ public abstract class EntryMap<T> {
 
     public static int arraySize( final int expected, final float f ) {
         final long s = Math.max( 2, nextPowerOfTwo( (long)Math.ceil( expected / f ) ) );
-        if ( s > (1 << 30) ) throw new IllegalArgumentException( "Too large (" + expected + " expected elements with load factor " + f + ")" );
+        if ( s > (1 << 30) )
+            throw new IllegalArgumentException("Too large (" + expected
+                    + " expected elements with load factor " + f + ")" );
         return (int)s;
     }
 }
