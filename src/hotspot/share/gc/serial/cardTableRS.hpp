@@ -97,4 +97,4 @@ public:
   void do_MemRegion(MemRegion mr) override;
 };
 
-#endif // SHARE_GC_SHARED_CARDTABLERS_HPP
+#endif // SHARE_GC_SERIAL_CARDTABLERS_HPP
