@@ -38,6 +38,8 @@ public class Figure extends Properties.Entity implements Vertex {
     public static final int OVERLAPPING = 6;
     public static final int SLOT_START = 4;
     public static final int SLOT_OFFSET = 8;
+    public static final int TOP_CFG_HEIGHT = 7;
+    public static final int BOTTOM_CFG_HEIGHT = 6;
     public static final int WARNING_WIDTH = 16;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
@@ -70,6 +72,14 @@ public class Figure extends Properties.Entity implements Vertex {
             lines++;
         }
         heightCash = lines * metrics.getHeight() + INSET;
+        if (diagram.isCFG()) {
+            if (hasNamedInputSlot()) {
+                heightCash += TOP_CFG_HEIGHT;
+            }
+            if (hasNamedOutputSlot()) {
+                heightCash += BOTTOM_CFG_HEIGHT;
+            }
+        }
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -262,6 +272,24 @@ public class Figure extends Properties.Entity implements Vertex {
 
     public List<OutputSlot> getOutputSlots() {
         return Collections.unmodifiableList(outputSlots);
+    }
+
+    public boolean hasNamedInputSlot() {
+        for (InputSlot is : getInputSlots()) {
+            if (is.hasSourceNodes() && is.shouldShowName()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasNamedOutputSlot() {
+        for (OutputSlot os : getOutputSlots()) {
+            if (os.hasSourceNodes() && os.shouldShowName()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void removeInputSlot(InputSlot s) {

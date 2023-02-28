@@ -109,7 +109,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         middleWidget.setCheckClipping(true);
 
         dummyTop = new Widget(scene);
-        dummyTop.setMinimumSize(new Dimension(Figure.INSET / 2, 1));
+        int extraTopHeight =
+            getFigure().getDiagram().isCFG() && getFigure().hasNamedInputSlot() ?
+            Figure.TOP_CFG_HEIGHT : 0;
+        dummyTop.setMinimumSize(new Dimension(Figure.INSET / 2, 1 + extraTopHeight));
         middleWidget.addChild(dummyTop);
 
         // This widget includes the node text and possibly a warning sign to the right.
@@ -145,7 +148,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         }
 
         Widget dummyBottom = new Widget(scene);
-        dummyBottom.setMinimumSize(new Dimension(Figure.INSET / 2, 1));
+        int extraBottomHeight =
+            getFigure().getDiagram().isCFG() && getFigure().hasNamedOutputSlot() ?
+            Figure.BOTTOM_CFG_HEIGHT : 0;
+        dummyBottom.setMinimumSize(new Dimension(Figure.INSET / 2, 1  + extraBottomHeight));
         middleWidget.addChild(dummyBottom);
 
         middleWidget.setPreferredBounds(new Rectangle(0, Figure.getVerticalOffset(), f.getWidth(), f.getHeight()));
