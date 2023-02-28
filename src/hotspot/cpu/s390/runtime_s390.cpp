@@ -119,7 +119,7 @@ void OptoRuntime::generate_exception_blob() {
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);
-  __ asm_assert_ne("handler must not be NULL", 0x852);
+  __ asm_assert(Assembler::bcondNotEqual, "handler must not be NULL", 0x852);
 #endif
 
   // Handle_exception contains the handler address. If the associated frame

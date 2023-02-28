@@ -177,7 +177,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   if (preloaded && not_null) {
 #ifdef ASSERT
     __ z_ltgr(Rpre_val, Rpre_val);
-    __ asm_assert_ne("null oop not allowed (G1 pre)", 0x321); // Checked by caller.
+    __ asm_assert(Assembler::bcondNotEqual, "null oop not allowed (G1 pre)", 0x321); // Checked by caller.
 #endif
   } else {
     __ z_ltgr(Rpre_val, Rpre_val);
@@ -289,7 +289,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   if (not_null) {
 #ifdef ASSERT
     __ z_ltgr(Rnew_val, Rnew_val);
-    __ asm_assert_ne("null oop not allowed (G1 post)", 0x322); // Checked by caller.
+    __ asm_assert(Assembler::bcondNotEqual, "null oop not allowed (G1 post)", 0x322); // Checked by caller.
 #endif
   } else {
     __ z_ltgr(Rnew_val, Rnew_val);

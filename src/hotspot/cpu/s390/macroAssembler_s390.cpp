@@ -5337,26 +5337,26 @@ void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
 }
 
 // Assert if CC indicates "low".
-void MacroAssembler::asm_assert_low(const char *msg, int id) {
-#ifdef ASSERT
-  asm_assert(bcondNotLow, msg, id);
-//  Label ok;
-//  z_brnl(ok);
-//  stop(msg, id);
-//  bind(ok);
-#endif // ASSERT
-}
+// void MacroAssembler::asm_assert_low(const char *msg, int id) {
+// #ifdef ASSERT
+//   asm_assert(bcondNotLow, msg, id);
+// //  Label ok;
+// //  z_brnl(ok);
+// //  stop(msg, id);
+// //  bind(ok);
+// #endif // ASSERT
+// }
 
 // Assert if CC indicates "high".
-void MacroAssembler::asm_assert_high(const char *msg, int id) {
-#ifdef ASSERT
-  asm_assert(bcondNotHigh, msg, id);
-//  Label ok;
-//  z_brnh(ok);
-//  stop(msg, id);
-//  bind(ok);
-#endif // ASSERT
-}
+// void MacroAssembler::asm_assert_high(const char *msg, int id) {
+// #ifdef ASSERT
+//   asm_assert(bcondNotHigh, msg, id);
+// //  Label ok;
+// //  z_brnh(ok);
+// //  stop(msg, id);
+// //  bind(ok);
+// #endif // ASSERT
+// }
 
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false) TODO:remove 
 // generate non-relocatable code.

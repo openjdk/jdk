@@ -2476,7 +2476,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // Make sure that there is at least one entry in the array.
   DEBUG_ONLY(__ z_ltgr(number_of_frames_reg, number_of_frames_reg));
-  __ asm_assert_ne("array_size must be > 0", 0x205);
+  __ asm_assert(Assembler::bcondNotEqual, "array_size must be > 0", 0x205);
 
   __ z_bru(loop_entry);
 

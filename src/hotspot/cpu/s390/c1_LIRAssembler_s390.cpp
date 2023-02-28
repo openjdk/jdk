@@ -2982,7 +2982,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ z_bru(next);
     }
   } else {
-    __ asm_assert_ne("unexpected null obj", __LINE__);
+    __ asm_assert(Assembler::bcondNotEqual, "unexpected null obj", __LINE__);
   }
 
   __ bind(update);
