@@ -322,14 +322,11 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
     void generate(String name, boolean error, boolean warn) {
         try {
             JavaFileObject fo = filer.createSourceFile(name);
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 out.write("class " + name + " {\n"
                         + (warn ? "    void m() throws Exception { try (AutoCloseable ac = null) { } }" : "")
                         + (error ? "   ERROR\n" : "")
                         + "}\n");
-            } finally {
-                out.close();
             }
         } catch (IOException e) {
             throw new Error(e);

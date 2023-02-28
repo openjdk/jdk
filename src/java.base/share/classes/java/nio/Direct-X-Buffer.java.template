@@ -270,7 +270,7 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
-                                              rem, 
+                                              rem,
                                               rem,
                                               off,
 #if[byte]

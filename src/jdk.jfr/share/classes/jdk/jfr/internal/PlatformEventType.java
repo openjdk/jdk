@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-
+import jdk.jfr.internal.periodic.PeriodicEvents;
 /**
  * Implementation of event type.
  *
@@ -64,7 +64,6 @@ public final class PlatformEventType extends Type {
     private boolean markForInstrumentation;
     private boolean registered = true;
     private boolean committable = enabled && registered;
-
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -201,6 +200,7 @@ public final class PlatformEventType extends Type {
     }
 
     public void setEnabled(boolean enabled) {
+        boolean changed = enabled != this.enabled;
         this.enabled = enabled;
         updateCommittable();
         if (isJVM) {
@@ -211,6 +211,9 @@ public final class PlatformEventType extends Type {
                 JVM.getJVM().setEnabled(getId(), enabled);
             }
         }
+        if (changed) {
+            PeriodicEvents.setChanged();
+        }
     }
 
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
@@ -220,7 +223,11 @@ public final class PlatformEventType extends Type {
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;
+        boolean changed = period != periodMillis;
         this.period = periodMillis;
+        if (changed) {
+            PeriodicEvents.setChanged();
+        }
     }
 
     public void setStackTraceEnabled(boolean stackTraceEnabled) {
@@ -263,6 +270,7 @@ public final class PlatformEventType extends Type {
 
     public void setEventHook(boolean hasHook) {
         this.hasHook = hasHook;
+        PeriodicEvents.setChanged();
     }
 
     public boolean isBeginChunk() {

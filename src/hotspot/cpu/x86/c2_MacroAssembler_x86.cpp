@@ -559,6 +559,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   if (use_rtm) {
     assert_different_registers(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg);
   } else {
+    assert(cx1Reg == noreg, "");
     assert(cx2Reg == noreg, "");
     assert_different_registers(objReg, boxReg, tmpReg, scrReg);
   }
@@ -581,7 +582,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   Label IsInflated, DONE_LABEL, NO_COUNT, COUNT;
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmpReg, objReg, cx1Reg);
+    load_klass(tmpReg, objReg, scrReg);
     movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
     testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);

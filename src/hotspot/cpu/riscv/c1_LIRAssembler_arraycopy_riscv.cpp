@@ -92,18 +92,17 @@ void LIR_Assembler::arraycopy_simple_check(Register src, Register src_pos, Regis
   // of the arraycopy is an array type, check at runtime if the source or the destination is
   // an instance type.
   if (flags & LIR_OpArrayCopy::type_check) {
+    assert(Klass::_lh_neutral_value == 0, "or replace bgez instructions");
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
       __ load_klass(tmp, dst);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ mv(t1, Klass::_lh_neutral_value);
-      __ bge(t0, t1, *stub->entry(), /* is_far */ true);
+      __ bgez(t0, *stub->entry(), /* is_far */ true);
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
       __ load_klass(tmp, src);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ mv(t1, Klass::_lh_neutral_value);
-      __ bge(t0, t1, *stub->entry(), /* is_far */ true);
+      __ bgez(t0, *stub->entry(), /* is_far */ true);
     }
   }
 
