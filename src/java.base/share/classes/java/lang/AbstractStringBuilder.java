@@ -1833,12 +1833,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      *
      * @since 21
-     * @throws IllegalArgumentException  if {@code count} is less than zero
+     * @throws IllegalArgumentException  if {@code count} is negative
      * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(char c, int count) {
         if (count < 0) {
-            throw new IllegalArgumentException("count is less than zero: " + count);
+            throw new IllegalArgumentException("count is negative: " + count);
         } else if (count == 0) {
             return this;
         }
@@ -1875,12 +1875,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      *
      * @since 21
-     * @throws IllegalArgumentException  if {@code count} is less than zero
+     * @throws IllegalArgumentException  if {@code count} is negative
      * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(CharSequence cs, int count) {
         if (count < 0) {
-            throw new IllegalArgumentException("count is less than zero: " + count);
+            throw new IllegalArgumentException("count is negative: " + count);
         } else if (count == 0) {
             return this;
         } else if (count == 1) {
