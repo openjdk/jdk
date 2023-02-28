@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,10 +97,6 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "[-tsapolicyid <OID>]        TSAPolicyID f\u00FCr Zeitstempelautorit\u00E4t"},
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <Algorithmus>] Algorithmus der Digestdaten in Zeitstempelanforderung"},
-        {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <Klasse>]        Klassenname eines alternativen Signiermechanismus\n                            (Diese Option ist veraltet und wird in einem zuk\u00FCnftigen Release entfernt.)"},
-        {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <Pfadliste>] Speicherort eines alternativen Signiermechanismus\n                            (Diese Option ist veraltet und wird in einem zuk\u00FCnftigen Release entfernt.)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               SF-Datei in Signaturblock aufnehmen"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",

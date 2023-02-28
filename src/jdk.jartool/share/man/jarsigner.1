@@ -1,4 +1,4 @@
-.\" Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -1082,63 +1082,6 @@ name(s) cannot be set in this file.
 .TP
 \f[V]-version\f[R]
 Prints the program version.
-.SH DEPRECATED OPTIONS
-.PP
-The following \f[V]jarsigner\f[R] options are deprecated as of JDK 9 and
-might be removed in a future JDK release.
-.TP
-\f[V]-altsigner\f[R] \f[I]class\f[R]
-This option specifies an alternative signing mechanism.
-The fully qualified class name identifies a class file that extends the
-\f[V]com.sun.jarsigner.ContentSigner\f[R] abstract class.
-The path to this class file is defined by the \f[V]-altsignerpath\f[R]
-option.
-If the \f[V]-altsigner\f[R] option is used, then the \f[V]jarsigner\f[R]
-command uses the signing mechanism provided by the specified class.
-Otherwise, the \f[V]jarsigner\f[R] command uses its default signing
-mechanism.
-.RS
-.PP
-For example, to use the signing mechanism provided by a class named
-\f[V]com.sun.sun.jarsigner.AuthSigner\f[R], use the \f[V]jarsigner\f[R]
-option \f[V]-altsigner com.sun.jarsigner.AuthSigner\f[R].
-.RE
-.TP
-\f[V]-altsignerpath\f[R] \f[I]classpathlist\f[R]
-Specifies the path to the class file and any JAR file it depends on.
-The class file name is specified with the \f[V]-altsigner\f[R] option.
-If the class file is in a JAR file, then this option specifies the path
-to that JAR file.
-.RS
-.PP
-An absolute path or a path relative to the current directory can be
-specified.
-If \f[I]classpathlist\f[R] contains multiple paths or JAR files, then
-they should be separated with a:
-.IP \[bu] 2
-Colon (\f[V]:\f[R]) on Linux and macOS
-.IP \[bu] 2
-Semicolon (\f[V];\f[R]) on Windows
-.PP
-This option isn\[aq]t necessary when the class is already in the search
-path.
-.PP
-The following example shows how to specify the path to a JAR file that
-contains the class file.
-The JAR file name is included.
-.RS
-.PP
-\f[V]-altsignerpath /home/user/lib/authsigner.jar\f[R]
-.RE
-.PP
-The following example shows how to specify the path to the JAR file that
-contains the class file.
-The JAR file name is omitted.
-.RS
-.PP
-\f[V]-altsignerpath /home/user/classes/com/sun/tools/jarsigner/\f[R]
-.RE
-.RE
 .SH ERRORS AND WARNINGS
 .PP
 During the signing or verifying process, the \f[V]jarsigner\f[R] command

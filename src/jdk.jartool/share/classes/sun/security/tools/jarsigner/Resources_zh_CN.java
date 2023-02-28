@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,10 +97,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "[-tsapolicyid <oid>]        \u65F6\u95F4\u6233\u9881\u53D1\u673A\u6784\u7684 TSAPolicyID"},
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <\u7B97\u6CD5>]      \u65F6\u95F4\u6233\u8BF7\u6C42\u4E2D\u7684\u6458\u8981\u6570\u636E\u7684\u7B97\u6CD5"},
-        {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <class>]        \u66FF\u4EE3\u7B7E\u540D\u673A\u5236\u7684\u7C7B\u540D\n                            \uFF08\u8BE5\u9009\u9879\u5DF2\u8FC7\u65F6\uFF0C\u5728\u5C06\u6765\u7684\u53D1\u884C\u7248\u4E2D\u5C06\u88AB\u5220\u9664\u3002\uFF09"},
-        {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <pathlist>] \u66FF\u4EE3\u7B7E\u540D\u673A\u5236\u7684\u4F4D\u7F6E\n                            \uFF08\u8BE5\u9009\u9879\u5DF2\u8FC7\u65F6\uFF0C\u5728\u5C06\u6765\u7684\u53D1\u884C\u7248\u4E2D\u5C06\u88AB\u5220\u9664\u3002\uFF09"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               \u5728\u7B7E\u540D\u5757\u5185\u5305\u542B .SF \u6587\u4EF6"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
