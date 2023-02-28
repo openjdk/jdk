@@ -460,12 +460,6 @@ static bool is_platform_thread(JavaThread* jt) {
   }
 }
 
-// Returns true if the ThreadSnapshot's Java object is a platform thread
-static bool is_platform_thread(ThreadSnapshot* ts) {
-  oop thread_obj = ts->threadObj();
-  return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
-}
-
 #if INCLUDE_MANAGEMENT
 
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
@@ -478,6 +472,11 @@ static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
   }
 }
 
+// Returns true if the ThreadSnapshot's Java object is a platform thread
+static bool is_platform_thread(ThreadSnapshot* ts) {
+  oop thread_obj = ts->threadObj();
+  return (thread_obj != nullptr) && !thread_obj->is_a(vmClasses::BoundVirtualThread_klass());
+}
 
 static MemoryManager* get_memory_manager_from_jobject(jobject obj, TRAPS) {
   if (obj == nullptr) {
