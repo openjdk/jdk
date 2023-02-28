@@ -449,7 +449,6 @@ public final class StringBuilder
     /**
      * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public StringBuilder repeat(char c, int count) {
@@ -460,7 +459,6 @@ public final class StringBuilder
     /**
      * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public StringBuilder repeat(CharSequence cs, int count) {

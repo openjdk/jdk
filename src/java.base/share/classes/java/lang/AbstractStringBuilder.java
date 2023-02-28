@@ -1834,7 +1834,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @since 21
      * @throws IllegalArgumentException  if {@code count} is negative
-     * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(char c, int count) {
         if (count < 0) {
@@ -1868,6 +1867,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * <p>
      * The length of this sequence increases by {@code count} times the
      * {@code CharSequence} length.
+     * <p>
+     * If {@code cs} is {@code null}, then the four characters
+     * {@code "null"} are repeated into this sequence.
      *
      * @param cs     a {@code CharSequence}
      * @param count  number of times to copy
@@ -1876,7 +1878,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @since 21
      * @throws IllegalArgumentException  if {@code count} is negative
-     * @throws IndexOutOfBoundsException  if the result overflows the buffer
      */
     public AbstractStringBuilder repeat(CharSequence cs, int count) {
         if (count < 0) {
