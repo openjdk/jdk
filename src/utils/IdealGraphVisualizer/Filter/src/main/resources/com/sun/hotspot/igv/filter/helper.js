@@ -26,7 +26,11 @@
  *
  * @author Thomas Wuerthinger
  */
- 
+
+function split_string(s) {
+    return s.split(/(\s+)/).filter(function(e) {return e.trim().length > 0;});
+}
+
 function colorize(property, regexp, color) {
     var f = new ColorFilter("");
     f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), color));
@@ -128,8 +132,13 @@ var red = Color.red;
 var yellow = Color.yellow;
 var white = Color.white;
 
-function editProperty(selector, propertyName, editFunction) {
-    var f = new EditPropertyFilter("", selector, propertyName, editFunction);
+function editSameProperty(selector, propertyName, editFunction) {
+    var f = new EditPropertyFilter("", selector, propertyName, propertyName, editFunction);
+    f.apply(graph);
+}
+
+function editProperty(selector, inputPropertyName, outputPropertyName, editFunction) {
+    var f = new EditPropertyFilter("", selector, inputPropertyName, outputPropertyName, editFunction);
     f.apply(graph);
 }
 

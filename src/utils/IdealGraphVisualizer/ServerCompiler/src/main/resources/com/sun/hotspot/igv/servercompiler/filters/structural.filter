@@ -17,7 +17,40 @@ function replaceComparisonWithSign(text) {
     default:    return comparison;
   }
 }
-editProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign);
+editSameProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign);
+
+// Add a more informative text for null-pointer input slots.
+editSameProperty(and([matches("name", "ConP"), matches("dump_spec", "#NULL")]),
+                 "short_name",
+                 function(t) {return "null";});
+
+// Add extra line to method calls with callee information.
+function methodInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 3) {
+    return null;
+  }
+  var tm = /(uncommon_trap\(reason=\'(\w*)\')/.exec(dump_components[2]);
+  if (tm == null || typeof tm[2] == 'undefined') {
+    return dump_components[2];
+  }
+  return "trap: " + tm[2];
+}
+editProperty(matches("name", "CallStaticJava"), "dump_spec", "extra_label", methodInfo);
+
+// Add extra line to exception creation nodes with the name of the exception.
+function exceptionInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 2) {
+    return null;
+  }
+  ex_components = dump_components[1].split(/(:)/);
+  if (ex_components.length < 3) {
+    return null;
+  }
+  return ex_components[2];
+}
+editProperty(matches("name", "CreateEx"), "dump_spec", "extra_label", exceptionInfo);
 
 // Condense inputs for all nodes.
 var anyNode = matches("name", ".*");

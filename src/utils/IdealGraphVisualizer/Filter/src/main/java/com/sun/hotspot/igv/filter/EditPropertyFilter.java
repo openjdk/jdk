@@ -33,13 +33,17 @@ public class EditPropertyFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
-    private final String propertyName;
+    private final String inputPropertyName;
+    private final String outputPropertyName;
     private final UnaryOperator<String> editFunction;
 
-    public EditPropertyFilter(String name, Selector selector, String propertyName, UnaryOperator<String> editFunction) {
+    public EditPropertyFilter(String name, Selector selector,
+                              String inputPropertyName, String outputPropertyName,
+                              UnaryOperator<String> editFunction) {
         this.name = name;
         this.selector = selector;
-        this.propertyName = propertyName;
+        this.inputPropertyName = inputPropertyName;
+        this.outputPropertyName = outputPropertyName;
         this.editFunction = editFunction;
     }
 
@@ -52,10 +56,9 @@ public class EditPropertyFilter extends AbstractFilter {
     public void apply(Diagram diagram) {
         List<Figure> list = selector.selected(diagram);
         for (Figure f : list) {
-            String val = f.getProperties().get(propertyName);
-            String newVal = editFunction.apply(val);
-            f.getProperties().setProperty(propertyName, newVal);
-            f.getInputNode().getProperties().setProperty(propertyName, newVal);
+            String inputVal = f.getProperties().get(inputPropertyName);
+            String outputVal = editFunction.apply(inputVal);
+            f.getProperties().setProperty(outputPropertyName, outputVal);
         }
     }
 }

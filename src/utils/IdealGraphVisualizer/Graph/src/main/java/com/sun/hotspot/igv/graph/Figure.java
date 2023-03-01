@@ -71,6 +71,9 @@ public class Figure extends Properties.Entity implements Vertex {
         if (hasInputList() && lines > 1) {
             lines++;
         }
+        if (getProperties().get("extra_label") != null) {
+            lines++;
+        }
         heightCash = lines * metrics.getHeight() + INSET;
         if (diagram.isCFG()) {
             if (hasNamedInputSlot()) {
@@ -355,6 +358,11 @@ public class Figure extends Properties.Entity implements Vertex {
                 // Multi-line node, add yet another line for input list.
                 result.add(inputList);
             }
+        }
+
+        String extraLabel = getProperties().get("extra_label");
+        if (extraLabel != null) {
+            result.add(extraLabel);
         }
 
         lines = result.toArray(new String[0]);
