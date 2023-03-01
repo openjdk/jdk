@@ -623,11 +623,6 @@ public class VisibleMemberTable {
         return true;
     }
 
-    private boolean isEnclosureInterface(Element e) {
-        TypeElement enclosing = utils.getEnclosingTypeElement(e);
-        return utils.isPlainInterface(enclosing);
-    }
-
     private boolean allowInheritedMethod(ExecutableElement inheritedMethod,
                                          Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
                                          LocalMemberTable lmt) {
@@ -635,7 +630,7 @@ public class VisibleMemberTable {
             return false;
 
         final boolean haveStatic = utils.isStatic(inheritedMethod);
-        final boolean inInterface = isEnclosureInterface(inheritedMethod);
+        final boolean inInterface = isDeclaredInInterface(inheritedMethod);
 
         // Static interface methods are never inherited (JLS 8.4.8 and 9.1.3)
         if (haveStatic && inInterface) {
@@ -654,7 +649,7 @@ public class VisibleMemberTable {
             List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
             if (list != null) {
                 boolean found = list.stream()
-                        .anyMatch(this::isEnclosureInterface);
+                        .anyMatch(this::isDeclaredInInterface);
                 if (found)
                     return false;
             }
@@ -708,6 +703,10 @@ public class VisibleMemberTable {
             }
         }
         return true;
+    }
+
+    private boolean isDeclaredInInterface(ExecutableElement e) {
+        return e.getEnclosingElement().getKind() == ElementKind.INTERFACE;
     }
 
     // Check whether the signature of an overriding method has any changes worth
