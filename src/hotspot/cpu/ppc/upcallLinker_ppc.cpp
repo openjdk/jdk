@@ -353,7 +353,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     blob->print_on(&ls);
   }
 #endif
-  //blob->print_on(tty);
 
   return blob->code_begin();
 }

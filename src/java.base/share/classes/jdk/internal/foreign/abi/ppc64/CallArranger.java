@@ -77,8 +77,8 @@ public abstract class CallArranger {
         new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // FP intput
         new VMStorage[] { r3, r4 }, // GP output
         new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8 }, // FP output
-        new VMStorage[] { r0, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12 }, // volatile GP
-        new VMStorage[] { f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // volatile FP
+        new VMStorage[] { r0, r2, r11, r12 }, // volatile GP (excluding argument registers)
+        new VMStorage[] { f0 }, // volatile FP (excluding argument registers)
         16, // Stack is always 16 byte aligned on PPC64
         useABIv2 ? 32 : 48, // ABI header (excluding argument register spill slots)
         r11, // scratch reg
@@ -201,7 +201,7 @@ public abstract class CallArranger {
         // Note: Can return a GP reg for a float!
         VMStorage nextStorage(int type, boolean is32Bit) {
             VMStorage reg = regAlloc(type);
-            VMStorage stack = null;
+            VMStorage stack;
             if (!useABIv2 && is32Bit) {
                 stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.
                 stack = stackAlloc(4, 4);
@@ -283,7 +283,7 @@ public abstract class CallArranger {
             if (needOverlapping) {
                 // "no partial DW rule": Mark first stack slot to get filled.
                 // Note: Can only happen with forArguments = true.
-                VMStorage overlappingReg = null;
+                VMStorage overlappingReg;
                 if (nRegs[StorageType.INTEGER] <= MAX_REGISTER_ARGUMENTS) {
                     VMStorage allocatedGpReg = C.inputStorage[StorageType.INTEGER][nRegs[StorageType.INTEGER] - 1];
                     overlappingReg = new VMStorage(StorageType.INTEGER_AND_FLOAT,

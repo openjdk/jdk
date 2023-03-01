@@ -340,5 +340,4 @@ void DowncallStubGenerator::generate() {
   //////////////////////////////////////////////////////////////////////////////
 
   __ flush();
-  // Disassembler::decode((u_char*)start, (u_char*)__ pc(), tty);
 }
