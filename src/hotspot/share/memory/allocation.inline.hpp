@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/leak.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -64,6 +65,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
   }
 
   if (os::commit_memory(addr, size, !ExecMem)) {
+    LSAN_REGISTER_ROOT_REGION(addr, size);
     return (E*)addr;
   } else {
     os::release_memory(addr, size);
@@ -82,12 +84,18 @@ E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
 
   os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
 
+  LSAN_REGISTER_ROOT_REGION(addr, size);
+
   return (E*)addr;
 }
 
 template <class E>
 void MmapArrayAllocator<E>::free(E* addr, size_t length) {
-  bool result = os::release_memory((char*)addr, size_for(length));
+  size_t size = size_for(length);
+
+  LSAN_UNREGISTER_ROOT_REGION(addr, size);
+
+  bool result = os::release_memory((char*)addr, size);
   assert(result, "Failed to release memory");
 }
 

@@ -144,6 +144,9 @@ size_t ZPlatformAddressOffsetBits() {
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
 #else
+  // ASan reserves roughly the addresses in the range 2GB through 16TB. This overlaps with layouts 1
+  // and 2 above, causing ZGC to fail to reserve enough memory. To work around this, we force the
+  // use of layout 3 when built with ASan.
   return max_address_offset_bits;
 #endif
 }
