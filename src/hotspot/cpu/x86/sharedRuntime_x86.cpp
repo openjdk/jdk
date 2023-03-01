@@ -84,6 +84,14 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
+#ifdef _WIN64
+const juint  float_sign_mask  = 0x7FFFFFFF;
+const juint  float_infinity   = 0x7F800000;
+const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
+const julong double_infinity  = CONST64(0x7FF0000000000000);
+#endif
+
+#if !defined(_WINDOWS) || defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 // see SharedRuntime::drem
 #ifdef _WIN64
@@ -144,3 +152,4 @@ jne    1b        \n\
   return retval;
 #endif
 JRT_END
+#endif // !defined(_WINDOWS) || defined(_WIN64)

@@ -228,12 +228,7 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
-const juint  float_sign_mask  = 0x7FFFFFFF;
-const juint  float_infinity   = 0x7F800000;
-const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
-const julong double_infinity  = CONST64(0x7FF0000000000000);
-
-#ifndef X86
+#if !defined(X86) || (defined(_WINDOWS) && !defined(_WIN64))
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   return ((jfloat)fmod((double)x,(double)y));
 JRT_END
