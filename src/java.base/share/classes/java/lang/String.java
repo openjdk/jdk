@@ -2431,13 +2431,13 @@ public final class String
      *          if the character does not occur.
      *
      * @apiNote
-     * An invocation of this method returns -1 when {@code fromIndex} happens
-     * to be too large. The result is thus indistinguishable from a genuine
-     * absence of {@code ch} in the string.
+     * Rather than throwing an exception, this method returns -1 when
+     * {@code fromIndex} is larger than the length of the string. This result is
+     * indistinguishable from a genuine absence of {@code ch} in the string.
      * If stricter behavior is needed, {@link #indexOf(int, int, int)}
-     * should be considered instead. For example,
-     * {@code this.indexOf(ch, fromIndex, this.length())} would throw if
-     * {@code fromIndex} were negative or larger than the string length.
+     * should be considered instead. On a string {@code s}, for example,
+     * {@code s.indexOf(ch, fromIndex, s.length())} would throw if
+     * {@code fromIndex} were larger than the string length, or even negative.
      */
     public int indexOf(int ch, int fromIndex) {
         return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, value.length)
