@@ -487,7 +487,6 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
   G1CollectedHeap* _g1h;
   VerifyOption _vo;
-  bool _verify_remsets;
 
   oop _containing_obj;
 
@@ -591,16 +590,15 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     oop obj = CompressedOops::decode_not_null(heap_oop);
 
     bool is_live = verify_liveness(p, obj);
-    if (is_live && _verify_remsets) {
+    if (is_live) {
       verify_remset(p, obj);
     }
   }
 
 public:
-  G1VerifyLiveAndRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo, bool verify_remsets) :
+  G1VerifyLiveAndRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
     _vo(vo),
-    _verify_remsets(verify_remsets),
     _containing_obj(nullptr),
     _num_failures(0),
     _ct(_g1h->card_table()) { }
@@ -618,8 +616,7 @@ public:
 bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  bool verify_rem_sets = !g1h->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC;
-  G1VerifyLiveAndRemSetClosure cl(g1h, vo, verify_rem_sets);
+  G1VerifyLiveAndRemSetClosure cl(g1h, vo);
 
   size_t other_failures = 0;
 
