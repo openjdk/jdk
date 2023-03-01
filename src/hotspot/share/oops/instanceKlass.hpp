@@ -1144,6 +1144,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+  bool methods_contain_jsr_bytecode() const;
 #endif
 
   jint compute_modifier_flags() const;
