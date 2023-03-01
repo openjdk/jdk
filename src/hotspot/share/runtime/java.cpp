@@ -73,6 +73,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -115,7 +116,7 @@ void collect_profiled_methods(Method* m) {
 }
 
 void print_method_profiling_data() {
-  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
+  if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
@@ -416,6 +417,30 @@ void before_exit(JavaThread* thread, bool halt) {
       }
     }
   }
+
+  // At this point only one thread is executing this logic. Any other threads
+  // attempting to invoke before_exit() will wait above and return early once
+  // this thread finishes before_exit().
+
+  // Do not add any additional shutdown logic between the above mutex logic and
+  // leak sanitizer logic below. Any additional shutdown code which performs some
+  // cleanup should be added after the leak sanitizer logic below.
+
+#ifdef LEAK_SANITIZER
+  // If we are built with LSan, we need to perform leak checking. If we are
+  // terminating normally, not halting and no VM error, we perform a normal
+  // leak check which terminates if leaks are found. If we are not terminating
+  // normally, halting or VM error, we perform a recoverable leak check which
+  // prints leaks but will not terminate.
+  if (!halt && !VMError::is_error_reported()) {
+    LSAN_DO_LEAK_CHECK();
+  } else {
+    // Ignore the return value.
+    static_cast<void>(LSAN_DO_RECOVERABLE_LEAK_CHECK());
+  }
+#endif
+
+  // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
