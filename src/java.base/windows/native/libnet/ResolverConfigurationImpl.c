@@ -187,7 +187,6 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     flags |= GAA_FLAG_SKIP_ANYCAST;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_SKIP_FRIENDLY_NAME;
-    flags |= GAA_FLAG_INCLUDE_ALL_INTERFACES;
     ret = getAdapters(env, flags, &adapters);
 
     if (ret != ERROR_SUCCESS) {
