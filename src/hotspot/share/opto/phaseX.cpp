@@ -490,7 +490,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
     _old2new_map.at_put(n->_idx, current_idx);
 
     if (old_node_note_array != NULL) {
-      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx, false);
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
       C->set_node_notes_at(current_idx, nn);
     }
 
