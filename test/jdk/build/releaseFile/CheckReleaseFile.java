@@ -81,7 +81,7 @@ public class CheckReleaseFile {
                     continue;
                 }
 
-                // grab IMPLEMENTOR line
+                // grab JAVA_RUNTIME_VERSION line
                 if (readIn.startsWith("JAVA_RUNTIME_VERSION=")) {
                     runtimeVersion = readIn;
                     continue;
