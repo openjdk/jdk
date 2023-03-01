@@ -2188,7 +2188,7 @@ Node* LibraryCallKit::gen_call_to_svml(int vector_api_op_id, BasicType bt, int n
     return nullptr;
   }
 
-  assert(name != nullptr, "name must not be null");
+  assert(name[0] != '\0', "name must not be null");
   Node* operation = make_runtime_call(RC_VECTOR,
                                       call_type,
                                       addr,
