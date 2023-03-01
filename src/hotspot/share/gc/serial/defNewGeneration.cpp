@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
@@ -30,7 +31,6 @@
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
