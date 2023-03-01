@@ -216,9 +216,11 @@ public final class ProcessTools {
 
         try {
             if (timeout > -1) {
+
+                long timeoutMs = timeout == 0 ? -1: unit.toMillis(Utils.adjustTimeout(timeout));
                 // Every second check if line is printed and if process is still alive
                 Utils.waitForCondition(() -> latch.getCount() == 0 || !p.isAlive(),
-                        unit.toMillis(Utils.adjustTimeout(timeout)), 1000);
+                       timeoutMs , 1000);
 
                 if (latch.getCount() > 0) {
                     if (!p.isAlive()) {
