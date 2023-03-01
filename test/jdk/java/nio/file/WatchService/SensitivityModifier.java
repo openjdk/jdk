@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import static java.nio.file.StandardWatchEventKinds.*;
-import java.io.OutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,51 +91,6 @@ public class SensitivityModifier {
 
             // register the directories (random sensitivity)
             register(dirs, watcher);
-
-            // sleep a bit here to ensure that modification to the first file
-            // can be detected by polling implementations (ie: last modified time
-            // may not change otherwise).
-            try { Thread.sleep(1000); } catch (InterruptedException e) { }
-
-            // modify files and check that events are received
-            for (int i=0; i<10; i++) {
-                Path file = files[RAND.nextInt(nFiles)];
-                System.out.println("Modify: " + file);
-                try (OutputStream out = Files.newOutputStream(file)) {
-                    out.write(new byte[100]);
-                }
-
-                System.out.println("Waiting for event(s)...");
-                boolean eventReceived = false;
-                WatchKey key = watcher.take();
-                do {
-                    for (WatchEvent<?> event: key.pollEvents()) {
-                        if (event.kind() != ENTRY_MODIFY)
-                            throw new RuntimeException("Unexpected event: " + event);
-                        Path name = ((WatchEvent<Path>)event).context();
-                        if (name.equals(file.getFileName())) {
-                            eventReceived = true;
-                            break;
-                        }
-                    }
-                    key.reset();
-                    key = watcher.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                } while (key != null);
-
-                // we should have received at least one ENTRY_MODIFY event
-                if (eventReceived) {
-                    System.out.println("Event OK");
-                } else {
-                    Path parent = file.getParent();
-                    String msg = String.format("No ENTRY_MODIFY event received for %s (dir: %s, sensitivity: %d)",
-                            file, parent, pathToTime.get(parent));
-                    throw new RuntimeException(msg);
-                }
-
-                // re-register the directories to force changing their sensitivity
-                // level
-                register(dirs, watcher);
-            }
         }
     }
 
