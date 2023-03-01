@@ -86,27 +86,33 @@ public class TestDebugInfo {
     static byte b2 = 0;
     static byte b3 = 0;
 
+    @ForceInline
     public static Integer useless3(Integer val) {
         return ++val;
     }
 
+    @ForceInline
     public static Integer useless2(Integer val) {
         return useless3(useless3(useless3(useless3(useless3(useless3(useless3(useless3(val))))))));
     }
 
+    @ForceInline
     public static Integer useless1(Integer val) {
         return useless2(useless2(useless2(useless2(useless2(useless2(useless2(useless2(val))))))));
     }
 
+    @ForceInline
     public static void useful3() {
         b3 = 3;
     }
 
+    @ForceInline
     public static void useful2() {
         useful3();
         b2 = 2;
     }
 
+    @ForceInline
     public static void useful1() {
         useful2();
         b1 = 1;
