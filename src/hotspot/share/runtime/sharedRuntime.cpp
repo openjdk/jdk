@@ -234,40 +234,12 @@ const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 
 #ifndef X86
-JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
-#ifdef _WIN64
-  // 64-bit Windows on amd64 returns the wrong values for
-  // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
-  // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
-    return x;
-  }
-  return ((jfloat)fmod_winx64((double)x, (double)y));
-#else
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   return ((jfloat)fmod((double)x,(double)y));
-#endif
 JRT_END
-#endif
 
-#ifndef X86
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-#ifdef _WIN64
-  union { jdouble d; julong l; } xbits, ybits;
-  xbits.d = x;
-  ybits.d = y;
-  // x Mod Infinity == x unless x is infinity
-  if (((xbits.l & double_sign_mask) != double_infinity) &&
-       ((ybits.l & double_sign_mask) == double_infinity) ) {
-    return x;
-  }
-  return ((jdouble)fmod_winx64((double)x, (double)y));
-#else
   return ((jdouble)fmod((double)x,(double)y));
-#endif
 JRT_END
 #endif
 

@@ -84,8 +84,21 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
-JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 // see SharedRuntime::drem
+#ifdef _WIN64
+  // 64-bit Windows on amd64 returns the wrong values for
+  // infinity operands.
+  union { jfloat f; juint i; } xbits, ybits;
+  xbits.f = x;
+  ybits.f = y;
+  // x Mod Infinity == x unless x is infinity
+  if (((xbits.i & float_sign_mask) != float_infinity) &&
+       ((ybits.i & float_sign_mask) == float_infinity) ) {
+    return x;
+  }
+  return ((jfloat)fmod_winx64((double)x, (double)y));
+#else
   jfloat retval;
   asm ("\
 1:               \n\
@@ -98,11 +111,25 @@ jne    1b        \n\
     :"0"(x), "u"(y)
     :"cc", "ax");
   return retval;
+#endif
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 // Java bytecode drem is defined as C fmod (not C drem==remainder).
-// GCC since 93ba85fdd253b4b9cf2b9e54e8e5969b1a3db098 has slow fmod().
+// GCC had slow fmod():
+// since https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=4f2611b6e872c40e0bf4da38ff05df8c8fe0ee64
+// until https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=8020c9c42349f51f75239b9d35a2be41848a97bd
+#ifdef _WIN64
+  union { jdouble d; julong l; } xbits, ybits;
+  xbits.d = x;
+  ybits.d = y;
+  // x Mod Infinity == x unless x is infinity
+  if (((xbits.l & double_sign_mask) != double_infinity) &&
+       ((ybits.l & double_sign_mask) == double_infinity) ) {
+    return x;
+  }
+  return ((jdouble)fmod_winx64((double)x, (double)y));
+#else
   jdouble retval;
   asm ("\
 1:               \n\
@@ -115,4 +142,5 @@ jne    1b        \n\
     :"0"(x), "u"(y)
     :"cc", "ax");
   return retval;
+#endif
 JRT_END

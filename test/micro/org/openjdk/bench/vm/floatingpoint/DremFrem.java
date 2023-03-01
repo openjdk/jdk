@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -40,8 +38,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests for float and double modulo.
  * Java bytecode drem is defined as C fmod (not C drem==remainder).
- * GCC since 93ba85fdd253b4b9cf2b9e54e8e5969b1a3db098 has slow fmod().
- * Testcase is based on: https://stackoverflow.com/a/55673220/2995591
+ * GCC had slow fmod():
+ * since https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=4f2611b6e872c40e0bf4da38ff05df8c8fe0ee64
+ * until https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=8020c9c42349f51f75239b9d35a2be41848a97bd
+ * Testcase is based on: https://github.com/cirosantilli/java-cheat/blob/c5ffd8ea19c5620ce752b6c98b2d3579be2bef98/Nan.java
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
