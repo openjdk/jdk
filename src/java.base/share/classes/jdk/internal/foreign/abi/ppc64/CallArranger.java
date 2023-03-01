@@ -231,10 +231,10 @@ public abstract class CallArranger {
             return result;
         }
 
-        VMStorage[] hfaAlloc(GroupLayout group) {
+        VMStorage[] hfaAlloc(List<MemoryLayout> scalarLayouts) {
             // Determine count and type.
-            int count = group.memberLayouts().size();
-            Class<?> elementCarrier = ((ValueLayout) (group.memberLayouts().get(0))).carrier();
+            int count = scalarLayouts.size();
+            Class<?> elementCarrier = ((ValueLayout) (scalarLayouts.get(0))).carrier();
             int elementSize = (elementCarrier == float.class) ? 4 : 8;
 
             // Allocate registers.
@@ -357,9 +357,9 @@ public abstract class CallArranger {
                 }
                 case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;
-                    GroupLayout group = (GroupLayout) layout;
-                    VMStorage[] regs = storageCalculator.hfaAlloc(group);
-                    final long baseSize = group.memberLayouts().get(0).byteSize();
+                    List<MemoryLayout> scalarLayouts = TypeClass.scalarLayouts((GroupLayout) layout);
+                    VMStorage[] regs = storageCalculator.hfaAlloc(scalarLayouts);
+                    final long baseSize = scalarLayouts.get(0).byteSize();
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
@@ -429,9 +429,9 @@ public abstract class CallArranger {
                 case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
-                    GroupLayout group = (GroupLayout) layout;
-                    VMStorage[] regs = storageCalculator.hfaAlloc(group);
-                    final long baseSize = group.memberLayouts().get(0).byteSize();
+                    List<MemoryLayout> scalarLayouts = TypeClass.scalarLayouts((GroupLayout) layout);
+                    VMStorage[] regs = storageCalculator.hfaAlloc(scalarLayouts);
+                    final long baseSize = scalarLayouts.get(0).byteSize();
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
