@@ -523,7 +523,7 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     CodeSection* cs = code_section(n);
-    if (cs->is_empty())  continue;  // skip trivial section
+    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     RelocIterator iter(cs);
     while (iter.next()) {
       if (iter.type() == relocInfo::metadata_type) {
@@ -791,7 +791,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     // pull code out of each section
     const CodeSection* cs = code_section(n);
-    if (cs->is_empty()) continue;  // skip trivial section
+    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     CodeSection* dest_cs = dest->code_section(n);
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
