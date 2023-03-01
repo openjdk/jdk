@@ -69,6 +69,7 @@ public class CLDRConverter {
     private static String WINZONES_SOURCE_FILE;
     private static String PLURALS_SOURCE_FILE;
     private static String DAYPERIODRULE_SOURCE_FILE;
+    private static String COVERAGELEVELS_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -258,6 +259,7 @@ public class CLDRConverter {
         WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
         PLURALS_SOURCE_FILE = CLDR_BASE + "/supplemental/plurals.xml";
         DAYPERIODRULE_SOURCE_FILE = CLDR_BASE + "/supplemental/dayPeriods.xml";
+        COVERAGELEVELS_FILE = CLDR_BASE + "/properties/coverageLevels.txt";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -359,13 +361,18 @@ public class CLDRConverter {
     private static List<Bundle> readBundleList() throws Exception {
         List<Bundle> retList = new ArrayList<>();
         Path path = FileSystems.getDefault().getPath(SOURCE_FILE_DIR);
+        var coverageMap = coverageLevelsMap();
         try (DirectoryStream<Path> dirStr = Files.newDirectoryStream(path)) {
             for (Path entry : dirStr) {
                 String fileName = entry.getFileName().toString();
                 if (fileName.endsWith(".xml")) {
                     String id = fileName.substring(0, fileName.indexOf('.'));
                     Locale cldrLoc = Locale.forLanguageTag(toLanguageTag(id));
-                    StringBuilder sb = getCandLocales(cldrLoc);
+                    List<Locale> candList = getCandidateLocales(cldrLoc);
+                    if (!"root".equals(id) && candList.stream().noneMatch(coverageMap::containsKey)) {
+                        continue;
+                    }
+                    StringBuilder sb = getCandLocales(candList);
                     if (sb.indexOf("root") == -1) {
                         sb.append("root");
                     }
@@ -510,8 +517,7 @@ public class CLDRConverter {
         parser.parse(srcfile, handler);
     }
 
-    private static StringBuilder getCandLocales(Locale cldrLoc) {
-        List<Locale> candList = getCandidateLocales(cldrLoc);
+    private static StringBuilder getCandLocales(List<Locale> candList) {
         StringBuilder sb = new StringBuilder();
         for (Locale loc : candList) {
             if (!loc.equals(Locale.ROOT)) {
@@ -1193,6 +1199,25 @@ public class CLDRConverter {
                     .map(String::trim)
                     .collect(Collectors.joining(";"));
             }));
+    }
+
+    private static Map<Locale, String> coverageLevelsMap() throws Exception {
+        // First, parse `coverageLevels.txt` file
+        var covMap = Files.readAllLines(Path.of(COVERAGELEVELS_FILE)).stream()
+            .filter(line -> !line.isBlank() && !line.startsWith("#"))
+            .map(line -> line.split(";", 3))
+            .collect(Collectors.toMap(
+                    a -> Locale.forLanguageTag(a[0].trim().replaceAll("_", "-")),
+                    a -> a[1].trim(),
+                    (v1, v2) -> v2,
+                    HashMap::new));
+
+        // Add other common (non-seed) locales (below `basic` coverage level) as of v42
+        ResourceBundle.getBundle(CLDRConverter.class.getPackageName() + ".OtherCommonLocales")
+            .keySet()
+            .forEach(k -> covMap.put(Locale.forLanguageTag(k), ""));
+
+        return covMap;
     }
 
     // for debug
