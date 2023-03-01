@@ -1090,6 +1090,7 @@ bufferedStream::~bufferedStream() {
 #include <arpa/inet.h>
 #elif defined(_WINDOWS)
 #include <winsock2.h>
+#include <Ws2tcpip.h>
 #endif
 
 // Network access

@@ -75,9 +75,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
-#ifdef ASSERT
 #include <arpa/inet.h>
-#endif
 #include <poll.h>
 #endif
 
