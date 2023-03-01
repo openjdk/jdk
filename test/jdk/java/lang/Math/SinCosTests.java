@@ -108,7 +108,7 @@ public class SinCosTests {
 
         return failures;
     }
-    
+
     private static int testSinCase(double input, double expected) {
         int failures=0;
 
