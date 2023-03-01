@@ -696,6 +696,79 @@ class StubGenerator: public StubCodeGenerator {
     copy_backwards = -1
   } copy_direction;
 
+  // Helper object to reduce noise when telling the GC barriers how to perform loads and stores
+  // for arraycopy stubs.
+  class ArrayCopyBarrierSetHelper : StackObj {
+    BarrierSetAssembler* _bs_asm;
+    MacroAssembler* _masm;
+    DecoratorSet _decorators;
+    BasicType _type;
+    Register _gct1;
+    Register _gct2;
+    Register _gct3;
+    FloatRegister _gcvt1;
+    FloatRegister _gcvt2;
+    FloatRegister _gcvt3;
+
+  public:
+    ArrayCopyBarrierSetHelper(MacroAssembler* masm,
+                              DecoratorSet decorators,
+                              BasicType type,
+                              Register gct1,
+                              Register gct2,
+                              Register gct3,
+                              FloatRegister gcvt1,
+                              FloatRegister gcvt2,
+                              FloatRegister gcvt3)
+      : _bs_asm(BarrierSet::barrier_set()->barrier_set_assembler()),
+        _masm(masm),
+        _decorators(decorators),
+        _type(type),
+        _gct1(gct1),
+        _gct2(gct2),
+        _gct3(gct3),
+        _gcvt1(gcvt1),
+        _gcvt2(gcvt2),
+        _gcvt3(gcvt3) {
+    }
+
+    void copy_load_at_32(FloatRegister dst1, FloatRegister dst2, Address src) {
+      _bs_asm->copy_load_at(_masm, _decorators, _type, 32,
+                            dst1, dst2, src,
+                            _gct1, _gct2, _gcvt1);
+    }
+
+    void copy_store_at_32(Address dst, FloatRegister src1, FloatRegister src2) {
+      _bs_asm->copy_store_at(_masm, _decorators, _type, 32,
+                             dst, src1, src2,
+                             _gct1, _gct2, _gct3, _gcvt1, _gcvt2, _gcvt3);
+    }
+
+    void copy_load_at_16(Register dst1, Register dst2, Address src) {
+      _bs_asm->copy_load_at(_masm, _decorators, _type, 16,
+                            dst1, dst2, src,
+                            _gct1);
+    }
+
+    void copy_store_at_16(Address dst, Register src1, Register src2) {
+      _bs_asm->copy_store_at(_masm, _decorators, _type, 16,
+                             dst, src1, src2,
+                             _gct1, _gct2, _gct3);
+    }
+
+    void copy_load_at_8(Register dst, Address src) {
+      _bs_asm->copy_load_at(_masm, _decorators, _type, 8,
+                            dst, noreg, src,
+                            _gct1);
+    }
+
+    void copy_store_at_8(Address dst, Register src) {
+      _bs_asm->copy_store_at(_masm, _decorators, _type, 8,
+                             dst, src, noreg,
+                             _gct1, _gct2, _gct3);
+    }
+  };
+
   // Bulk copy of blocks of 8 words.
   //
   // count is a count of words.
@@ -719,7 +792,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register stride = r14;
     const Register gct1 = r8, gct2 = r9, gct3 = r10;
     const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
     assert_different_registers(rscratch1, rscratch2, t0, t1, t2, t3, t4, t5, t6, t7);
     assert_different_registers(s, d, count, rscratch1, rscratch2);
@@ -760,25 +833,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // Fill 8 registers
     if (UseSIMDForMemoryOps) {
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v0, v1, Address(s, 4 * unit),
-                           gct1, gct2, gcvt1);
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v2, v3, Address(__ pre(s, 8 * unit)),
-                           gct1, gct2, gcvt1);
+      bs.copy_load_at_32(v0, v1, Address(s, 4 * unit));
+      bs.copy_load_at_32(v2, v3, Address(__ pre(s, 8 * unit)));
     } else {
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(s, 2 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t2, t3, Address(s, 4 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t4, t5, Address(s, 6 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t6, t7, Address(__ pre(s, 8 * unit)),
-                           gct1);
+      bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+      bs.copy_load_at_16(t2, t3, Address(s, 4 * unit));
+      bs.copy_load_at_16(t4, t5, Address(s, 6 * unit));
+      bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
     }
 
     __ subs(count, count, 16);
@@ -798,43 +859,19 @@ class StubGenerator: public StubCodeGenerator {
       __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
     if (UseSIMDForMemoryOps) {
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(d, 4 * unit), v0, v1,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v0, v1, Address(s, 4 * unit),
-                           gct1, gct2, gcvt1);
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(__ pre(d, 8 * unit)), v2, v3,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v2, v3, Address(__ pre(s, 8 * unit)),
-                           gct1, gct2, gcvt1);
+      bs.copy_store_at_32(Address(d, 4 * unit), v0, v1);
+      bs.copy_load_at_32(v0, v1, Address(s, 4 * unit));
+      bs.copy_store_at_32(Address(__ pre(d, 8 * unit)), v2, v3);
+      bs.copy_load_at_32(v2, v3, Address(__ pre(s, 8 * unit)));
     } else {
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 2 * unit), t0, t1,
-                            gct1, gct2, gct3);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(s, 2 * unit),
-                           gct1);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 4 * unit), t2, t3,
-                            gct1, gct2, gct3);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t2, t3, Address(s, 4 * unit),
-                           gct1);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 6 * unit), t4, t5,
-                            gct1, gct2, gct3);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t4, t5, Address(s, 6 * unit),
-                           gct1);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(__ pre(d, 8 * unit)), t6, t7,
-                            gct1, gct2, gct3);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t6, t7, Address(__ pre(s, 8 * unit)),
-                           gct1);
+      bs.copy_store_at_16(Address(d, 2 * unit), t0, t1);
+      bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+      bs.copy_store_at_16(Address(d, 4 * unit), t2, t3);
+      bs.copy_load_at_16(t2, t3, Address(s, 4 * unit));
+      bs.copy_store_at_16(Address(d, 6 * unit), t4, t5);
+      bs.copy_load_at_16(t4, t5, Address(s, 6 * unit));
+      bs.copy_store_at_16(Address(__ pre(d, 8 * unit)), t6, t7);
+      bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
     }
 
     __ subs(count, count, 8);
@@ -843,50 +880,26 @@ class StubGenerator: public StubCodeGenerator {
     // Drain
     __ bind(drain);
     if (UseSIMDForMemoryOps) {
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(d, 4 * unit), v0, v1,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(__ pre(d, 8 * unit)), v2, v3,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+      bs.copy_store_at_32(Address(d, 4 * unit), v0, v1);
+      bs.copy_store_at_32(Address(__ pre(d, 8 * unit)), v2, v3);
     } else {
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 2 * unit), t0, t1,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 4 * unit), t2, t3,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 6 * unit), t4, t5,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(__ pre(d, 8 * unit)), t6, t7,
-                            gct1, gct2, gct3);
+      bs.copy_store_at_16(Address(d, 2 * unit), t0, t1);
+      bs.copy_store_at_16(Address(d, 4 * unit), t2, t3);
+      bs.copy_store_at_16(Address(d, 6 * unit), t4, t5);
+      bs.copy_store_at_16(Address(__ pre(d, 8 * unit)), t6, t7);
     }
 
     {
       Label L1, L2;
       __ tbz(count, exact_log2(4), L1);
       if (UseSIMDForMemoryOps) {
-        bs_asm->copy_load_at(_masm, decorators, type, 32,
-                             v0, v1, Address(__ pre(s, 4 * unit)),
-                             gct1, gct2, gcvt1);
-        bs_asm->copy_store_at(_masm, decorators, type, 32,
-                              Address(__ pre(d, 4 * unit)), v0, v1,
-                              gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+        bs.copy_load_at_32(v0, v1, Address(__ pre(s, 4 * unit)));
+        bs.copy_store_at_32(Address(__ pre(d, 4 * unit)), v0, v1);
       } else {
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(s, 2 * unit),
-                             gct1);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t2, t3, Address(__ pre(s, 4 * unit)),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 2 * unit), t0, t1,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(__ pre(d, 4 * unit)), t2, t3,
-                              gct1, gct2, gct3);
+        bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+        bs.copy_load_at_16(t2, t3, Address(__ pre(s, 4 * unit)));
+        bs.copy_store_at_16(Address(d, 2 * unit), t0, t1);
+        bs.copy_store_at_16(Address(__ pre(d, 4 * unit)), t2, t3);
       }
       __ bind(L1);
 
@@ -896,12 +909,8 @@ class StubGenerator: public StubCodeGenerator {
       }
 
       __ tbz(count, 1, L2);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)),
-                           gct1);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(__ adjust(d, 2 * unit, direction == copy_backwards)), t0, t1,
-                            gct1, gct2, gct3);
+      bs.copy_load_at_16(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
+      bs.copy_store_at_16(Address(__ adjust(d, 2 * unit, direction == copy_backwards)), t0, t1);
       __ bind(L2);
     }
 
@@ -960,18 +969,10 @@ class StubGenerator: public StubCodeGenerator {
       // t4 at offset -48, t5 at offset -40
       // t6 at offset -64, t7 at offset -56
 
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(s, 2 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t2, t3, Address(s, 4 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t4, t5, Address(s, 6 * unit),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t6, t7, Address(__ pre(s, 8 * unit)),
-                           gct1);
+      bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+      bs.copy_load_at_16(t2, t3, Address(s, 4 * unit));
+      bs.copy_load_at_16(t4, t5, Address(s, 6 * unit));
+      bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
 
       __ subs(count, count, 16);
       __ br(Assembler::LO, drain);
@@ -1000,33 +1001,15 @@ class StubGenerator: public StubCodeGenerator {
        // t5 at offset 40, t6 at offset 48
        // t7 at offset 56
 
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(d, 1 * unit), t0, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 2 * unit), t1, t2,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(s, 2 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 4 * unit), t3, t4,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t2, t3, Address(s, 4 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 6 * unit), t5, t6,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t4, t5, Address(s, 6 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(__ pre(d, 8 * unit)), t7, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t6, t7, Address(__ pre(s, 8 * unit)),
-                             gct1);
+        bs.copy_store_at_8(Address(d, 1 * unit), t0);
+        bs.copy_store_at_16(Address(d, 2 * unit), t1, t2);
+        bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+        bs.copy_store_at_16(Address(d, 4 * unit), t3, t4);
+        bs.copy_load_at_16(t2, t3, Address(s, 4 * unit));
+        bs.copy_store_at_16(Address(d, 6 * unit), t5, t6);
+        bs.copy_load_at_16(t4, t5, Address(s, 6 * unit));
+        bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t7);
+        bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
       } else {
        // d was not offset when we started so the registers are
        // written into the 64 bit block preceding d with the following
@@ -1041,33 +1024,15 @@ class StubGenerator: public StubCodeGenerator {
        // note that this matches the offsets previously noted for the
        // loads
 
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(d, 1 * unit), t1, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 3 * unit), t3, t0,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(s, 2 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 5 * unit), t5, t2,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t2, t3, Address(s, 4 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 7 * unit), t7, t4,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t4, t5, Address(s, 6 * unit),
-                             gct1);
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(__ pre(d, 8 * unit)), t6, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t6, t7, Address(__ pre(s, 8 * unit)),
-                             gct1);
+        bs.copy_store_at_8(Address(d, 1 * unit), t1);
+        bs.copy_store_at_16(Address(d, 3 * unit), t3, t0);
+        bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+        bs.copy_store_at_16(Address(d, 5 * unit), t5, t2);
+        bs.copy_load_at_16(t2, t3, Address(s, 4 * unit));
+        bs.copy_store_at_16(Address(d, 7 * unit), t7, t4);
+        bs.copy_load_at_16(t4, t5, Address(s, 6 * unit));
+        bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t6);
+        bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
       }
 
       __ subs(count, count, 8);
@@ -1079,37 +1044,17 @@ class StubGenerator: public StubCodeGenerator {
       // as above
       __ bind(drain);
       if (direction == copy_forwards) {
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(d, 1 * unit), t0, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 2 * unit), t1, t2,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 4 * unit), t3, t4,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 6 * unit), t5, t6,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(__ pre(d, 8 * unit)), t7, noreg,
-                              gct1, gct2, gct3);
+        bs.copy_store_at_8(Address(d, 1 * unit), t0);
+        bs.copy_store_at_16(Address(d, 2 * unit), t1, t2);
+        bs.copy_store_at_16(Address(d, 4 * unit), t3, t4);
+        bs.copy_store_at_16(Address(d, 6 * unit), t5, t6);
+        bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t7);
       } else {
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(d, 1 * unit), t1, noreg,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 3 * unit), t3, t0,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 5 * unit), t5, t2,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(d, 7 * unit), t7, t4,
-                              gct1, gct2, gct3);
-        bs_asm->copy_store_at(_masm, decorators, type, 8,
-                              Address(__ pre(d, 8 * unit)), t6, noreg,
-                              gct1, gct2, gct3);
+        bs.copy_store_at_8(Address(d, 1 * unit), t1);
+        bs.copy_store_at_16(Address(d, 3 * unit), t3, t0);
+        bs.copy_store_at_16(Address(d, 5 * unit), t5, t2);
+        bs.copy_store_at_16(Address(d, 7 * unit), t7, t4);
+        bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t6);
       }
       // now we need to copy any remaining part block which may
       // include a 4 word block subblock and/or a 2 word subblock.
@@ -1122,32 +1067,16 @@ class StubGenerator: public StubCodeGenerator {
        // with only one intervening stp between the str instructions
        // but note that the offsets and registers still follow the
        // same pattern
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(s, 2 * unit),
-                             gct1);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t2, t3, Address(__ pre(s, 4 * unit)),
-                             gct1);
+        bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
+        bs.copy_load_at_16(t2, t3, Address(__ pre(s, 4 * unit)));
         if (direction == copy_forwards) {
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(d, 1 * unit), t0, noreg,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 16,
-                                Address(d, 2 * unit), t1, t2,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(__ pre(d, 4 * unit)), t3, noreg,
-                                gct1, gct2, gct3);
+          bs.copy_store_at_8(Address(d, 1 * unit), t0);
+          bs.copy_store_at_16(Address(d, 2 * unit), t1, t2);
+          bs.copy_store_at_8(Address(__ pre(d, 4 * unit)), t3);
         } else {
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(d, 1 * unit), t1, noreg,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 16,
-                                Address(d, 3 * unit), t3, t0,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(__ pre(d, 4 * unit)), t2, noreg,
-                                gct1, gct2, gct3);
+          bs.copy_store_at_8(Address(d, 1 * unit), t1);
+          bs.copy_store_at_16(Address(d, 3 * unit), t3, t0);
+          bs.copy_store_at_8(Address(__ pre(d, 4 * unit)), t2);
         }
         __ bind(L1);
 
@@ -1156,23 +1085,13 @@ class StubGenerator: public StubCodeGenerator {
        // there is no intervening stp between the str instructions
        // but note that the offset and register patterns are still
        // the same
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(__ pre(s, 2 * unit)),
-                             gct1);
+        bs.copy_load_at_16(t0, t1, Address(__ pre(s, 2 * unit)));
         if (direction == copy_forwards) {
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(d, 1 * unit), t0, noreg,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(__ pre(d, 2 * unit)), t1, noreg,
-                                gct1, gct2, gct3);
+          bs.copy_store_at_8(Address(d, 1 * unit), t0);
+          bs.copy_store_at_8(Address(__ pre(d, 2 * unit)), t1);
         } else {
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(d, 1 * unit), t1, noreg,
-                                gct1, gct2, gct3);
-          bs_asm->copy_store_at(_masm, decorators, type, 8,
-                                Address(__ pre(d, 2 * unit)), t0, noreg,
-                                gct1, gct2, gct3);
+          bs.copy_store_at_8(Address(d, 1 * unit), t1);
+          bs.copy_store_at_8(Address(__ pre(d, 2 * unit)), t0);
         }
         __ bind(L2);
 
@@ -1207,7 +1126,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register t0 = r3;
     const Register gct1 = r8, gct2 = r9, gct3 = r10;
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, fnoreg, fnoreg, fnoreg);
 
     // ??? I don't know if this bit-test-and-branch is the right thing
     // to do.  It does a lot of jumping, resulting in several
@@ -1215,12 +1134,8 @@ class StubGenerator: public StubCodeGenerator {
     // with something like Duff's device with a single computed branch.
 
     __ tbz(count, 3 - exact_log2(granularity), Lword);
-    bs_asm->copy_load_at(_masm, decorators, type, 8,
-                         t0, noreg, Address(__ adjust(s, direction * wordSize, is_backwards)),
-                         gct1);
-    bs_asm->copy_store_at(_masm, decorators, type, 8,
-                          Address(__ adjust(d, direction * wordSize, is_backwards)), t0, noreg,
-                          gct1, gct2, gct3);
+    bs.copy_load_at_8(t0, Address(__ adjust(s, direction * wordSize, is_backwards)));
+    bs.copy_store_at_8(Address(__ adjust(d, direction * wordSize, is_backwards)), t0);
     __ bind(Lword);
 
     if (granularity <= sizeof (jint)) {
@@ -1271,7 +1186,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register send = r17, dend = r16;
     const Register gct1 = r8, gct2 = r9, gct3 = r10;
     const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(Address(s, 0), PLDL1KEEP);
@@ -1292,74 +1207,38 @@ class StubGenerator: public StubCodeGenerator {
 
     // 33..64 bytes
     if (UseSIMDForMemoryOps) {
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v0, v1, Address(s, 0),
-                           gct1, gct2, gcvt1);
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v2, v3, Address(send, -32),
-                           gct1, gct2, gcvt1);
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(d, 0), v0, v1,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(dend, -32), v2, v3,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+      bs.copy_load_at_32(v0, v1, Address(s, 0));
+      bs.copy_load_at_32(v2, v3, Address(send, -32));
+      bs.copy_store_at_32(Address(d, 0), v0, v1);
+      bs.copy_store_at_32(Address(dend, -32), v2, v3);
     } else {
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(s, 0),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t2, t3, Address(s, 16),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t4, t5, Address(send, -32),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t6, t7, Address(send, -16),
-                           gct1);
+      bs.copy_load_at_16(t0, t1, Address(s, 0));
+      bs.copy_load_at_16(t2, t3, Address(s, 16));
+      bs.copy_load_at_16(t4, t5, Address(send, -32));
+      bs.copy_load_at_16(t6, t7, Address(send, -16));
 
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 0), t0, t1,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 16), t2, t3,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(dend, -32), t4, t5,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(dend, -16), t6, t7,
-                            gct1, gct2, gct3);
+      bs.copy_store_at_16(Address(d, 0), t0, t1);
+      bs.copy_store_at_16(Address(d, 16), t2, t3);
+      bs.copy_store_at_16(Address(dend, -32), t4, t5);
+      bs.copy_store_at_16(Address(dend, -16), t6, t7);
     }
     __ b(finish);
 
     // 17..32 bytes
     __ bind(copy32);
-    bs_asm->copy_load_at(_masm, decorators, type, 16,
-                         t0, t1, Address(s, 0),
-                         gct1);
-    bs_asm->copy_load_at(_masm, decorators, type, 16,
-                         t6, t7, Address(send, -16),
-                         gct1);
+    bs.copy_load_at_16(t0, t1, Address(s, 0));
+    bs.copy_load_at_16(t6, t7, Address(send, -16));
 
-    bs_asm->copy_store_at(_masm, decorators, type, 16,
-                          Address(d, 0), t0, t1,
-                          gct1, gct2, gct3);
-    bs_asm->copy_store_at(_masm, decorators, type, 16,
-                          Address(dend, -16), t6, t7,
-                          gct1, gct2, gct3);
+    bs.copy_store_at_16(Address(d, 0), t0, t1);
+    bs.copy_store_at_16(Address(dend, -16), t6, t7);
     __ b(finish);
 
     // 65..80/96 bytes
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
     if (UseSIMDForMemoryOps) {
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v0, v1, Address(s, 0),
-                           gct1, gct2, gcvt1);
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v2, v3, Address(s, 32),
-                           gct1, gct2, gcvt1);
+      bs.copy_load_at_32(v0, v1, Address(s, 0));
+      bs.copy_load_at_32(v2, v3, Address(s, 32));
       // Unaligned pointers can be an issue for copying.
       // The issue has more chances to happen when granularity of data is
       // less than 4(sizeof(jint)). Pointers for arrays of jint are at least
@@ -1371,70 +1250,34 @@ class StubGenerator: public StubCodeGenerator {
         Label copy96;
         __ cmp(count, u1(80/granularity));
         __ br(Assembler::HI, copy96);
-        bs_asm->copy_load_at(_masm, decorators, type, 16,
-                             t0, t1, Address(send, -16),
-                             gct1);
+        bs.copy_load_at_16(t0, t1, Address(send, -16));
 
-        bs_asm->copy_store_at(_masm, decorators, type, 32,
-                              Address(d, 0), v0, v1,
-                              gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-        bs_asm->copy_store_at(_masm, decorators, type, 32,
-                              Address(d, 32), v2, v3,
-                              gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+        bs.copy_store_at_32(Address(d, 0), v0, v1);
+        bs.copy_store_at_32(Address(d, 32), v2, v3);
 
-        bs_asm->copy_store_at(_masm, decorators, type, 16,
-                              Address(dend, -16), t0, t1,
-                              gct1, gct2, gct3);
+        bs.copy_store_at_16(Address(dend, -16), t0, t1);
         __ b(finish);
 
         __ bind(copy96);
       }
-      bs_asm->copy_load_at(_masm, decorators, type, 32,
-                           v4, v5, Address(send, -32),
-                           gct1, gct2, gcvt1);
+      bs.copy_load_at_32(v4, v5, Address(send, -32));
 
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(d, 0), v0, v1,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(d, 32), v2, v3,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+      bs.copy_store_at_32(Address(d, 0), v0, v1);
+      bs.copy_store_at_32(Address(d, 32), v2, v3);
 
-      bs_asm->copy_store_at(_masm, decorators, type, 32,
-                            Address(dend, -32), v4, v5,
-                            gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
+      bs.copy_store_at_32(Address(dend, -32), v4, v5);
     } else {
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t0, t1, Address(s, 0),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t2, t3, Address(s, 16),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t4, t5, Address(s, 32),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t6, t7, Address(s, 48),
-                           gct1);
-      bs_asm->copy_load_at(_masm, decorators, type, 16,
-                           t8, t9, Address(send, -16),
-                           gct1);
+      bs.copy_load_at_16(t0, t1, Address(s, 0));
+      bs.copy_load_at_16(t2, t3, Address(s, 16));
+      bs.copy_load_at_16(t4, t5, Address(s, 32));
+      bs.copy_load_at_16(t6, t7, Address(s, 48));
+      bs.copy_load_at_16(t8, t9, Address(send, -16));
 
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 0), t0, t1,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 16), t2, t3,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 32), t4, t5,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(d, 48), t6, t7,
-                            gct1, gct2, gct3);
-      bs_asm->copy_store_at(_masm, decorators, type, 16,
-                            Address(dend, -16), t8, t9,
-                            gct1, gct2, gct3);
+      bs.copy_store_at_16(Address(d, 0), t0, t1);
+      bs.copy_store_at_16(Address(d, 16), t2, t3);
+      bs.copy_store_at_16(Address(d, 32), t4, t5);
+      bs.copy_store_at_16(Address(d, 48), t6, t7);
+      bs.copy_store_at_16(Address(dend, -16), t8, t9);
     }
     __ b(finish);
 
@@ -1444,18 +1287,10 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::LO, copy8);
 
     // 8..16 bytes
-    bs_asm->copy_load_at(_masm, decorators, type, 8,
-                         t0, noreg, Address(s, 0),
-                         gct1);
-    bs_asm->copy_load_at(_masm, decorators, type, 8,
-                         t1, noreg, Address(send, -8),
-                         gct1);
-    bs_asm->copy_store_at(_masm, decorators, type, 8,
-                          Address(d, 0), t0, noreg,
-                          gct1, gct2, gct3);
-    bs_asm->copy_store_at(_masm, decorators, type, 8,
-                          Address(dend, -8), t1, noreg,
-                          gct1, gct2, gct3);
+    bs.copy_load_at_8(t0, Address(s, 0));
+    bs.copy_load_at_8(t1, Address(send, -8));
+    bs.copy_store_at_8(Address(d, 0), t0);
+    bs.copy_store_at_8(Address(dend, -8), t1);
     __ b(finish);
 
     if (granularity < 8) {
@@ -1507,12 +1342,8 @@ class StubGenerator: public StubCodeGenerator {
     if (is_aligned) {
       // We may have to adjust by 1 word to get s 2-word-aligned.
       __ tbz(s, exact_log2(wordSize), aligned);
-      bs_asm->copy_load_at(_masm, decorators, type, 8,
-                           t0, noreg, Address(__ adjust(s, direction * wordSize, is_backwards)),
-                           gct1);
-      bs_asm->copy_store_at(_masm, decorators, type, 8,
-                            Address(__ adjust(d, direction * wordSize, is_backwards)), t0, noreg,
-                            gct1, gct2, gct3);
+      bs.copy_load_at_8(t0, Address(__ adjust(s, direction * wordSize, is_backwards)));
+      bs.copy_store_at_8(Address(__ adjust(d, direction * wordSize, is_backwards)), t0);
       __ sub(count, count, wordSize/granularity);
     } else {
       if (is_backwards) {
