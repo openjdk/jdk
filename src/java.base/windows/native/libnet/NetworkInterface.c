@@ -56,6 +56,12 @@ jfieldID ni_ibaddressID;        /* InterfaceAddress.address */
 jfieldID ni_ibbroadcastID;      /* InterfaceAddress.broadcast */
 jfieldID ni_ibmaskID;           /* InterfaceAddress.maskLength */
 
+/*
+ * Gets the unicast and anycast IP address tables.
+ * If an error occurs while fetching a table,
+ * any tables already fetched are freed and an exception is set.
+ * It is the caller's responsibility to free the tables when they are no longer needed.
+ */
 static BOOL getAddressTables(
         JNIEnv *env, MIB_UNICASTIPADDRESS_TABLE **uniAddrs,
         MIB_ANYCASTIPADDRESS_TABLE **anyAddrs) {
@@ -80,6 +86,9 @@ static BOOL getAddressTables(
     return TRUE;
 }
 
+/*
+ * Frees a linked list of netaddr structs.
+ */
 static void freeNetaddrs(netaddr *netaddrP) {
     netaddr *curr = netaddrP;
     while (curr != NULL) {
@@ -89,6 +98,14 @@ static void freeNetaddrs(netaddr *netaddrP) {
     }
 }
 
+/*
+ * Builds and returns a java.net.NetworkInterface object from the given MIB_IF_ROW2.
+ * Unlike createNetworkInterfaceForSingleRowWithTables,
+ * this expects that the row is already populated, either by GetIfEntry2 or GetIfTable2.
+ * If anything goes wrong, an exception will be set,
+ * but the address tables are not freed.
+ * Freeing the address tables is always the caller's responsibility.
+ */
 static jobject createNetworkInterface(
         JNIEnv *env, MIB_IF_ROW2 *ifRow, MIB_UNICASTIPADDRESS_TABLE *uniAddrs,
         MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
@@ -107,15 +124,14 @@ static jobject createNetworkInterface(
 
     // set the NetworkInterface's name
     apiRetVal = ConvertInterfaceLuidToNameW(
-            &(ifRow->InterfaceLuid), (PWSTR) &ifName, NDIS_IF_MAX_BUFFER_SIZE);
+            &(ifRow->InterfaceLuid), ifName, NDIS_IF_MAX_BUFFER_SIZE);
     if (apiRetVal != ERROR_SUCCESS) {
         SetLastError(apiRetVal);
         NET_ThrowByNameWithLastError(
                 env, JNU_JAVANETPKG "SocketException", "ConvertInterfaceLuidToNameW");
         return NULL;
     }
-    name = (*env)->NewString(
-            env, (const jchar *) &ifName, (jsize) wcslen((const wchar_t *) &ifName));
+    name = (*env)->NewString(env, ifName, (jsize) wcslen(ifName));
     if (name == NULL) {
         return NULL;
     }
@@ -124,8 +140,7 @@ static jobject createNetworkInterface(
 
     // set the NetworkInterface's display name
     displayName = (*env)->NewString(
-            env, (const jchar *) ifRow->Description,
-            (jsize) wcslen((const wchar_t *) &(ifRow->Description)));
+            env, ifRow->Description, (jsize) wcslen(ifRow->Description));
     if (displayName == NULL) {
         return NULL;
     }
@@ -142,6 +157,11 @@ static jobject createNetworkInterface(
                         uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             addrCount++;
             addrsCurrent = malloc(sizeof(netaddr));
+            if (addrsCurrent == NULL) {
+                freeNetaddrs(addrsHead);
+                JNU_ThrowOutOfMemoryError(env, "native heap");
+                return NULL;
+            }
             addrsCurrent->Address = uniAddrs->Table[i].Address;
             addrsCurrent->PrefixLength = uniAddrs->Table[i].OnLinkPrefixLength;
             addrsCurrent->Next = addrsHead;
@@ -152,6 +172,11 @@ static jobject createNetworkInterface(
         if (anyAddrs->Table[i].InterfaceLuid.Value == ifRow->InterfaceLuid.Value) {
             addrCount++;
             addrsCurrent = malloc(sizeof(netaddr));
+            if (addrsCurrent == NULL) {
+                freeNetaddrs(addrsHead);
+                JNU_ThrowOutOfMemoryError(env, "native heap");
+                return NULL;
+            }
             addrsCurrent->Address = anyAddrs->Table[i].Address;
             addrsCurrent->PrefixLength = NO_PREFIX;
             addrsCurrent->Next = addrsHead;
@@ -285,14 +310,22 @@ static jobject createNetworkInterface(
     return netifObj;
 }
 
+/*
+ * Builds and returns a java.net.NetworkInterface object from the given MIB_IF_ROW2.
+ * This expects that the row is not yet populated, but an index has been set,
+ * so the row is ready to be populated by GetIfEntry2.
+ * If anything goes wrong, an exception will be set,
+ * but the address tables are not freed.
+ * Freeing the address tables is always the caller's responsibility.
+ */
 static jobject createNetworkInterfaceForSingleRowWithTables(
-        JNIEnv *env, BOOL throwIfNotFound, MIB_IF_ROW2 *ifRow,
+        JNIEnv *env, MIB_IF_ROW2 *ifRow,
         MIB_UNICASTIPADDRESS_TABLE *uniAddrs, MIB_ANYCASTIPADDRESS_TABLE *anyAddrs) {
     ULONG apiRetVal;
 
     apiRetVal = GetIfEntry2(ifRow);
     if (apiRetVal != NO_ERROR) {
-        if (throwIfNotFound && apiRetVal == ERROR_FILE_NOT_FOUND) {
+        if (apiRetVal != ERROR_FILE_NOT_FOUND) {
             SetLastError(apiRetVal);
             NET_ThrowByNameWithLastError(
                     env, JNU_JAVANETPKG "SocketException", "GetIfEntry2");
@@ -302,8 +335,16 @@ static jobject createNetworkInterfaceForSingleRowWithTables(
     return createNetworkInterface(env, ifRow, uniAddrs, anyAddrs);
 }
 
+/*
+ * Builds and returns a java.net.NetworkInterface object from the given MIB_IF_ROW2.
+ * This expects that the row is not yet populated, but an index has been set,
+ * so the row is ready to be populated by GetIfEntry2.
+ * Unlike createNetworkInterfaceForSingleRowWithTables, this will get the address
+ * tables at the beginning and free them at the end.
+ * If anything goes wrong, an exception will be set.
+ */
 static jobject createNetworkInterfaceForSingleRow(
-        JNIEnv *env, BOOL throwIfNotFound, MIB_IF_ROW2 *ifRow) {
+        JNIEnv *env, MIB_IF_ROW2 *ifRow) {
     MIB_UNICASTIPADDRESS_TABLE *uniAddrs;
     MIB_ANYCASTIPADDRESS_TABLE *anyAddrs;
     jobject netifObj;
@@ -313,7 +354,7 @@ static jobject createNetworkInterfaceForSingleRow(
     }
 
     netifObj = createNetworkInterfaceForSingleRowWithTables(
-            env, throwIfNotFound, ifRow, uniAddrs, anyAddrs);
+            env, ifRow, uniAddrs, anyAddrs);
 
     FreeMibTable(uniAddrs);
     FreeMibTable(anyAddrs);
@@ -330,8 +371,13 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0(
         JNIEnv *env, jclass cls, jint index) {
     MIB_IF_ROW2 ifRow = {0};
 
+    if (index == 0) {
+        // 0 is never a valid index, and would make GetIfEntry2 think nothing is set
+        return NULL;
+    }
+
     ifRow.InterfaceIndex = index;
-    return createNetworkInterfaceForSingleRow(env, FALSE, &ifRow);
+    return createNetworkInterfaceForSingleRow(env, &ifRow);
 }
 
 /*
@@ -357,7 +403,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0(
         }
         return NULL;
     }
-    return createNetworkInterfaceForSingleRow(env, TRUE, &ifRow);
+    return createNetworkInterfaceForSingleRow(env, &ifRow);
 }
 
 /*
@@ -384,7 +430,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
                         uniAddrs->Table[i].DadState == IpDadStateDeprecated)) {
             ifRow.InterfaceLuid = uniAddrs->Table[i].InterfaceLuid;
             result = createNetworkInterfaceForSingleRowWithTables(
-                    env, TRUE, &ifRow, uniAddrs, anyAddrs);
+                    env, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
@@ -393,7 +439,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0(
                 env, (SOCKETADDRESS*) &(anyAddrs->Table[i].Address), inetAddr)) {
             ifRow.InterfaceLuid = anyAddrs->Table[i].InterfaceLuid;
             result = createNetworkInterfaceForSingleRowWithTables(
-                    env, TRUE, &ifRow, uniAddrs, anyAddrs);
+                    env, &ifRow, uniAddrs, anyAddrs);
             goto done;
         }
     }
@@ -620,30 +666,7 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(
  */
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0(
         JNIEnv *env, jclass cls, jstring name, jint index) {
-    /*
-    In older versions of Windows, multicast could be disabled for individual interfaces.
-    That does not appear to be supported any longer.
-    Now, it seems to be a system-wide setting, but with separate settings for IPv4 vs IPv6.
-    We also have the additional complication that multicast sending
-    can be enabled while receiving is disabled.
-
-    There are no good ways to access these settings.
-    GetAdaptersAddresses has a NO_MULTICAST flag, but I have never seen it set,
-    even when multicast is disabled.
-    The flags appear to be stored in the registry,
-    but the exact location seems to change depending on the Windows version.
-    We could open a socket and try to join a multicast group.
-    If receiving is disabled, that fails. But if enabled, it generates network traffic.
-    I also tried some socket IOCTLs (e.g. SIO_ROUTING_INTERFACE_QUERY)
-    but all of those succeeded even when multicast was disabled.
-    Same for various setsockopt params (e.g. IP_MULTICAST_IF).
-    It's also possible to use COM to execute a WMI query:
-    "SELECT MldLevel FROM MSFT_NetIPv4Protocol" in namespace "ROOT\\StandardCimv2"
-    But during review, we agreed that wasn't great either.
-    So we're just going to unconditionally return true
-    since multicast is unlikely to be disabled,
-    and a boolean can't represent the full range of possibilities anyway.
-    */
+    // we assume that multicast is enabled, because there are no reliable APIs to tell us
     return JNI_TRUE;
 }
 
