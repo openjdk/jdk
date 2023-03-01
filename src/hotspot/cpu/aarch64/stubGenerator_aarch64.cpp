@@ -1337,6 +1337,11 @@ class StubGenerator: public StubCodeGenerator {
     // Now we've got the small case out of the way we can align the
     // source address on a 2-word boundary.
 
+    // Here we will materialize a count in r15, which is used by copy_memory_small
+    // and the various generate_copy_longs stubs that we use for 2 word aligned bytes.
+    // Up until here, we have used t9, which aliases r15, but from here on, that register
+    // can not be used as a temp register, as it contains the count.
+
     Label aligned;
 
     if (is_aligned) {
