@@ -624,7 +624,7 @@ class FdLibm {
                 if (n < 32 && ix != npio2_hw[n - 1]) {
                     y[0] = r - w;     // quick check no cancellation
                 } else {
-                    j  = ix >> 20;
+                    j = ix >> 20;
                     y[0] = r - w;
                     i = j - (((__HI(y[0])) >> 20) & 0x7ff);
                     if (i > 16) {  // 2nd iteration needed, good to 118
