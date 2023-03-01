@@ -88,12 +88,13 @@ public class EqualsIgnoreCaseBenchmark {
             ByteVector upperA = va.and((byte) 0xDF);
 
             // Determine which bytes represent ASCII or Latin-1 letters:
-            VectorMask<Byte> asciiLetter = upperA.compare(GE, (byte) 'A') // >= 'A'
-                    .and(upperA.compare(LE, (byte) 'Z')); // <= 'Z'
+            VectorMask<Byte> asciiLetter = upperA.compare(GT, (byte) '@')
+                    .and(upperA.compare(LT, (byte) '['));
 
-            VectorMask<Byte> lat1Letter = upperA.compare(GE, (byte) 0XC0) // >= A-grave
-                    .and(upperA.compare(LE, (byte) 0xDE))  // <= Thorn
-                    .and(upperA.compare(NE, (byte) 0xD7)); // Excluding multiplication
+            VectorMask<Byte> lat1Letter = upperA
+                    .compare(LT, (byte) 0xDF)  // <= Thorn
+                    .and(upperA.compare(GT, (byte) 0XBF)) // >= A-grave
+                    .and(upperA.compare(EQ, (byte) 0xD7).not()); // Excluding multiplication
 
             VectorMask<Byte> letter = asciiLetter.or(lat1Letter);
 
