@@ -36,7 +36,7 @@ public class SplitFilter extends AbstractFilter {
     private Selector selector;
     private String[] propertyNames;
 
-    public SplitFilter(String name, Selector selector, String... propertyNames) {
+    public SplitFilter(String name, Selector selector, String[] propertyNames) {
         this.name = name;
         this.selector = selector;
         this.propertyNames = propertyNames;

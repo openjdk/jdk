@@ -53,30 +53,25 @@ function exceptionInfo(dump_spec) {
 editProperty(matches("name", "CreateEx"), "dump_spec", "extra_label", exceptionInfo);
 
 // Condense inputs for all nodes.
+
 var anyNode = matches("name", ".*");
-var f = new RemoveInputsFilter("");
-f.addRule(new RemoveInputsFilter.RemoveInputsRule(matches("name", "Root"), anyNode));
-f.apply(graph);
+removeInputs(matches("name", "Root"), anyNode);
 
 var fun = matches("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect");
 var topCon = and([matches("name", "Con"),
                   matches("type", "top")]);
-var f = new RemoveInputsFilter("");
-f.addRule(new RemoveInputsFilter.RemoveInputsRule(fun, or([topCon, matches("short_name", "I")])));
-f.apply(graph);
+removeInputs(fun, or([topCon, matches("short_name", "I")]));
 
 var other = matches("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray");
-var f = new RemoveInputsFilter("");
-f.addRule(new RemoveInputsFilter.RemoveInputsRule(other, topCon));
-f.apply(graph);
+removeInputs(other, topCon);
 
-new RemoveEmptySlotsFilter("", anyNode).apply(graph);
+removeEmptySlots(anyNode);
 
 // Inline Parm and start MachProj nodes, except control ones.
-new SplitFilter("", and([matches("name", "Parm|MachProj"),
-                         not(matches("category", "control")),
-                         successorOf(matches("name", "Start"))]),
-                "[short_name]").apply(graph);
+split(and([matches("name", "Parm|MachProj"),
+           not(matches("category", "control")),
+           successorOf(matches("name", "Start"))]),
+      ["[short_name]"]);
 
 // Combine single-input nodes.
 combine(anyNode, matches("name", "Proj|IfFalse|IfTrue|JProj|MachProj|JumpProj|CatchProj|Parm"));
@@ -90,7 +85,6 @@ combine(anyNode, matches("name", "Conv[ILD]2F"), ["2F"]);
 combine(anyNode, matches("name", "Conv[ILF]2D"), ["2D"]);
 
 // Inline (split) constant nodes.
-split("name", "BoxLock");
-new SplitFilter("", matches("name", "MachTemp"), "T").apply(graph);
-new SplitFilter("", matches("name", "ThreadLocal"), "TL").apply(graph);
-new SplitFilter("", matches("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)"), "[short_name]", "[name]").apply(graph);
+split(matches("name", "MachTemp"), ["T"]);
+split(matches("name", "ThreadLocal"), ["TL"]);
+split(matches("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)"), ["[short_name]", "[name]"]);

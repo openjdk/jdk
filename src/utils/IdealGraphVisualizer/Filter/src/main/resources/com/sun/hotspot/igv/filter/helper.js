@@ -55,12 +55,11 @@ function removeIncludingOrphans(property, regexp) {
     f.apply(graph);
 }
 
-function split(property, regexp, propertyName) {
-    if (propertyName == undefined) {
-        propertyName = graph.getNodeText();
+function split(selector, propertyNames) {
+    if (propertyNames == undefined) {
+        propertyNames = [];
     }
-    var f = new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), propertyName);
-    f.apply(graph);
+    new SplitFilter("", selector, propertyNames).apply(graph);
 }
 
 function combine(first, second, propertyNames) {
@@ -140,6 +139,16 @@ function editSameProperty(selector, propertyName, editFunction) {
 function editProperty(selector, inputPropertyName, outputPropertyName, editFunction) {
     var f = new EditPropertyFilter("", selector, inputPropertyName, outputPropertyName, editFunction);
     f.apply(graph);
+}
+
+function removeInputs(selector1, selector2) {
+    var f = new RemoveInputsFilter("");
+    f.addRule(new RemoveInputsFilter.RemoveInputsRule(selector1, selector2));
+    f.apply(graph);
+}
+
+function removeEmptySlots(selector) {
+    new RemoveEmptySlotsFilter("", selector).apply(graph);
 }
 
 function or(selectors) {
