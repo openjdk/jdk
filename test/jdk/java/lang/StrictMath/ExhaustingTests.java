@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301833 8302026 8301444 8302028
+ * @bug 8301833 8302026 8301444 8302028 8302040
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
@@ -66,7 +66,11 @@ public class ExhaustingTests {
     private static long testUnaryMethods() {
         long failures = 0;
         UnaryTestCase[] testCases = {
-         // new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt,  DEFAULT_SHIFT),
+            // Since sqrt is correctly rounded and thus for each input
+            // there is one well-defined correct result, additional
+            // comparison of the transliteration sqrt or StrictMath
+            // sqrt could be made against Math::sqrt.
+            new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt,  DEFAULT_SHIFT),
             new UnaryTestCase("cbrt",  FdlibmTranslit::cbrt,  StrictMath::cbrt,  DEFAULT_SHIFT),
 
             new UnaryTestCase("log",   FdlibmTranslit::log,   StrictMath::log,   DEFAULT_SHIFT),
