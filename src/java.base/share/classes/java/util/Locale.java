@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
+import java.util.stream.Stream;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -1198,6 +1199,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * {@return an array of installed locales}
+     *
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
@@ -1207,6 +1209,24 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale[] getAvailableLocales() {
         return LocaleServiceProviderPool.getAllAvailableLocales();
+    }
+
+    /**
+     * {@return a stream of installed locales}
+     *
+     * The returned stream represents the union of locales supported
+     * by the Java runtime environment and by installed
+     * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
+     * implementations. At a minimum, the returned stream must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
+     *
+     * @implNote Unlike {@code getAvailableLocales()}, this method does
+     * not create a defensive copy of the Locale array.
+     * @since 21
+     */
+    public static Stream<Locale> availableLocales() {
+        return LocaleServiceProviderPool.streamAllAvailableLocales();
     }
 
     /**
