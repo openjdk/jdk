@@ -1832,8 +1832,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @return  a reference to this object.
      *
-     * @since 21
      * @throws IllegalArgumentException  if {@code count} is negative
+     *
+     * @since 21
      */
     public AbstractStringBuilder repeat(char c, int count) {
         if (count < 0) {
@@ -1876,8 +1877,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @return  a reference to this object.
      *
-     * @since 21
      * @throws IllegalArgumentException  if {@code count} is negative
+     *
+     * @since 21
      */
     public AbstractStringBuilder repeat(CharSequence cs, int count) {
         if (count < 0) {
