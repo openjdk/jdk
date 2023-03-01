@@ -50,6 +50,7 @@ final class BatchManager {
     }
 
     public void refresh(long iteration, List<PeriodicTask> tasks) {
+        Logger.log(LogTag.JFR_SYSTEM_PERIODIC, LogLevel.DEBUG, "Grouping tasks into batches. Iteration " + iteration);
         groupTasksIntoBatches(tasks);
         this.iteration = iteration;
         logBatches();
@@ -107,19 +108,17 @@ final class BatchManager {
     }
 
     private void logBatches() {
-        if (!Logger.shouldLog(LogTag.JFR, LogLevel.TRACE)) {
+        if (!Logger.shouldLog(LogTag.JFR_SYSTEM_PERIODIC, LogLevel.TRACE)) {
             return;
         }
-        String prefix = "Periodic task: settings iteration: " + iteration + ", batch period: ";
         for (Batch batch : batches) {
-            String batchPrefix = prefix + batch.getPeriod();
             for (PeriodicTask task : batch.getTasks()) {
-                logTrace(batchPrefix + ", period: " + task.getPeriod() + ", task: " + task.getName());
+                logTrace("Batched task [0.." + task.getPeriod() + "] step " + batch.getPeriod() + " " + task.getName());
             }
         }
     }
 
     private void logTrace(String text) {
-       Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, text);
+       Logger.log(LogTag.JFR_SYSTEM_PERIODIC, LogLevel.DEBUG, text);
     }
 }
