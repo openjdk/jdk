@@ -877,10 +877,10 @@ public class Proxy implements java.io.Serializable {
             } catch (ClassNotFoundException e) {
             }
             if (type != c) {
-                /**
-                 * If classloader has a name explicitly set then
+                /*
+                 * If the classloader has a name explicitly set then
                  *        <loader-name>@<id>
-                 * If classloader has no name then
+                 * If the classloader has no name then
                  *        <qualified-class-name>@<id>
                  */
                 String nid = (ld.getName() != null) ? ld.getName() + "@" + Integer.toHexString(System.identityHashCode(ld))
