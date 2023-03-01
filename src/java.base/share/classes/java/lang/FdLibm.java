@@ -874,7 +874,7 @@ class FdLibm {
                     ih=2;
                 }
 
-                if ( ih > 0) {      // q > 0.5
+                if (ih > 0) {      // q > 0.5
                     n += 1;
                     carry = 0;
                     for (i=0; i < jz; i++) {        // compute 1-q
