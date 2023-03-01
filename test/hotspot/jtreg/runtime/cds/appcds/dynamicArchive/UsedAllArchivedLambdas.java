@@ -64,7 +64,6 @@ public class UsedAllArchivedLambdas extends DynamicArchiveTestBase {
             "-XX:+WhiteBoxAPI",
             use_whitebox_jar,
             "-Xlog:cds=debug",
-            "-Xshare:auto",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
                 output.shouldContain("Used all archived lambda proxy classes for: UsedAllArchivedLambdasApp run()Ljava/lang/Runnable;")
