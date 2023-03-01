@@ -137,11 +137,15 @@
 //
 
 size_t ZPlatformAddressOffsetBits() {
-  const size_t min_address_offset_bits = 42; // 4TB
   const size_t max_address_offset_bits = 44; // 16TB
+#if !defined(ADDRESS_SANITIZER)
+  const size_t min_address_offset_bits = 42; // 4TB
   const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
+#else
+  return max_address_offset_bits;
+#endif
 }
 
 size_t ZPlatformAddressMetadataShift() {
