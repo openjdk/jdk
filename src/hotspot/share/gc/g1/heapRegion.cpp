@@ -645,7 +645,7 @@ bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
                           p2i(p), p2i(top()));
     return true;
   }
-  return false;
+  return (cl.num_failures() + other_failures) != 0;
 }
 
 bool HeapRegion::verify(VerifyOption vo) const {
