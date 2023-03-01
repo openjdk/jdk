@@ -879,7 +879,7 @@ class FdLibm {
                     carry = 0;
                     for (i=0; i < jz; i++) {        // compute 1-q
                         j = iq[i];
-                        if(carry == 0) {
+                        if (carry == 0) {
                             if (j != 0) {
                                 carry = 1;
                                 iq[i] = 0x100_0000 - j;
