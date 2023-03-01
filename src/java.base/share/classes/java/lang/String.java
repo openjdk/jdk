@@ -2431,17 +2431,21 @@ public final class String
      *          if the character does not occur.
      *
      * @apiNote
-     * Rather than throwing an exception, this method returns -1 when
-     * {@code fromIndex} is larger than the length of the string. This result is
-     * indistinguishable from a genuine absence of {@code ch} in the string.
+     * As opposed to how {@link #substring(int)} behaves, this method does not
+     * throw an exception when {@code fromIndex} is outside the valid range.
+     * Rather, it returns -1 when {@code fromIndex} is larger than the length of
+     * the string.
+     * This result is, by itself, indistinguishable from a genuine absence of
+     * {@code ch} in the string.
      * If stricter behavior is needed, {@link #indexOf(int, int, int)}
-     * should be considered instead. On a string {@code s}, for example,
+     * should be considered instead.
+     * On a {@link String} {@code s}, for example,
      * {@code s.indexOf(ch, fromIndex, s.length())} would throw if
-     * {@code fromIndex} were larger than the string length, or even negative.
+     * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, value.length)
-                : StringUTF16.indexOf(value, ch, fromIndex, value.length >> 1);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
+                : StringUTF16.indexOf(value, ch, fromIndex, length());
     }
 
     /**
