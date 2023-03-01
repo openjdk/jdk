@@ -212,8 +212,8 @@ class BitMap {
   // will CAS the value into the bitmap and is quite a bit slower.
   // The parallel version also returns a value indicating if the
   // calling thread was the one that changed the value of the bit.
-  void at_put(idx_t index, bool value);
-  bool par_at_put(idx_t index, bool value);
+  void at_put(idx_t bit, bool value);
+  bool par_at_put(idx_t bit, bool value);
 
   // Update a range of bits.  Ranges are half-open [beg, end).
   void set_range   (idx_t beg, idx_t end);
@@ -268,11 +268,11 @@ class BitMap {
   idx_t get_next_one_offset (idx_t beg, idx_t end) const;
   idx_t get_next_zero_offset(idx_t beg, idx_t end) const;
 
-  idx_t get_next_one_offset(idx_t offset) const {
-    return get_next_one_offset(offset, size());
+  idx_t get_next_one_offset(idx_t beg) const {
+    return get_next_one_offset(beg, size());
   }
-  idx_t get_next_zero_offset(idx_t offset) const {
-    return get_next_zero_offset(offset, size());
+  idx_t get_next_zero_offset(idx_t beg) const {
+    return get_next_zero_offset(beg, size());
   }
 
   // Like "get_next_one_offset", except requires that "end" is

@@ -53,13 +53,13 @@ inline const BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_
   }
 }
 
-inline bool BitMap::par_at(idx_t index, atomic_memory_order memory_order) const {
-  verify_index(index);
+inline bool BitMap::par_at(idx_t bit, atomic_memory_order memory_order) const {
+  verify_index(bit);
   assert(memory_order == memory_order_acquire ||
          memory_order == memory_order_relaxed,
          "unexpected memory ordering");
-  const volatile bm_word_t* const addr = word_addr(index);
-  return (load_word_ordered(addr, memory_order) & bit_mask(index)) != 0;
+  const volatile bm_word_t* const addr = word_addr(bit);
+  return (load_word_ordered(addr, memory_order) & bit_mask(bit)) != 0;
 }
 
 inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
@@ -166,10 +166,10 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 }
 
 template<BitMap::bm_word_t flip, bool aligned_right>
-inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) const {
+inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
-  verify_range(l_index, r_index);
-  assert(!aligned_right || is_aligned(r_index, BitsPerWord), "r_index not aligned");
+  verify_range(beg, end);
+  assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
   // The first word often contains an interesting bit, either due to
   // density or because of features of the calling algorithm.  So it's
@@ -180,18 +180,18 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
   // The benefit from aligned_right being true is relatively small.
   // It saves an operation in the setup for the word search loop.
   // It also eliminates the range check on the final result.
-  // However, callers often have a comparison with r_index, and
+  // However, callers often have a comparison with end, and
   // inlining often allows the two comparisons to be combined; it is
   // important when !aligned_right that return paths either return
-  // r_index or a value dominated by a comparison with r_index.
+  // end or a value dominated by a comparison with end.
   // aligned_right is still helpful when the caller doesn't have a
   // range check because features of the calling algorithm guarantee
   // an interesting bit will be present.
 
-  if (l_index < r_index) {
-    // Get the word containing l_index, and shift out low bits.
-    idx_t index = to_words_align_down(l_index);
-    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
+  if (beg < end) {
+    // Get the word containing beg, and shift out low bits.
+    idx_t index = to_words_align_down(beg);
+    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(beg);
     if ((cword & 1) != 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
@@ -200,47 +200,47 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
       // relatively expensive, plus there is the additional range check.
       // But when the first bit isn't set, the cost of having tested for
       // it is relatively small compared to the rest of the search.
-      return l_index;
+      return beg;
     } else if (cword != 0) {
       // Flipped and shifted first word is non-zero.
-      idx_t result = l_index + count_trailing_zeros(cword);
-      if (aligned_right || (result < r_index)) return result;
-      // Result is beyond range bound; return r_index.
+      idx_t result = beg + count_trailing_zeros(cword);
+      if (aligned_right || (result < end)) return result;
+      // Result is beyond range bound; return end.
     } else {
       // Flipped and shifted first word is zero.  Word search through
-      // aligned up r_index for a non-zero flipped word.
+      // aligned up end for a non-zero flipped word.
       idx_t limit = aligned_right
-        ? to_words_align_down(r_index) // Minuscule savings when aligned.
-        : to_words_align_up(r_index);
+        ? to_words_align_down(end) // Minuscule savings when aligned.
+        : to_words_align_up(end);
       while (++index < limit) {
         cword = map(index) ^ flip;
         if (cword != 0) {
           idx_t result = bit_index(index) + count_trailing_zeros(cword);
-          if (aligned_right || (result < r_index)) return result;
-          // Result is beyond range bound; return r_index.
+          if (aligned_right || (result < end)) return result;
+          // Result is beyond range bound; return end.
           assert((index + 1) == limit, "invariant");
           break;
         }
       }
-      // No bits in range; return r_index.
+      // No bits in range; return end.
     }
   }
-  return r_index;
+  return end;
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {
-  return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
+BitMap::get_next_one_offset(idx_t beg, idx_t end) const {
+  return get_next_bit_impl<find_ones_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_zero_offset(idx_t l_offset, idx_t r_offset) const {
-  return get_next_bit_impl<find_zeros_flip, false>(l_offset, r_offset);
+BitMap::get_next_zero_offset(idx_t beg, idx_t end) const {
+  return get_next_bit_impl<find_zeros_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const {
-  return get_next_bit_impl<find_ones_flip, true>(l_offset, r_offset);
+BitMap::get_next_one_offset_aligned_right(idx_t beg, idx_t end) const {
+  return get_next_bit_impl<find_ones_flip, true>(beg, end);
 }
 
 template <typename BitMapClosureType>
