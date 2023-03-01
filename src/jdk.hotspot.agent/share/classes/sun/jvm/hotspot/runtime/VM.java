@@ -947,7 +947,11 @@ public class VM {
             // UseSharedSpaces as a symbol in jvm.dll.
             address = VM.getVM().getDebugger().lookup(null, "jvm!UseSharedSpaces");
         }
-        sharingEnabled = address.getJBooleanAt(0);
+        if (address == null) { // INCLUDE_CDS is disabled
+            sharingEnabled = Boolean.FALSE;
+        } else {
+            sharingEnabled = address.getJBooleanAt(0);
+        }
     }
     return sharingEnabled.booleanValue();
   }

@@ -1455,7 +1455,9 @@ static void no_shared_spaces(const char* message) {
     vm_exit_during_initialization("Unable to use shared archive", message);
   } else {
     log_info(cds)("Unable to use shared archive: %s", message);
+#if INCLUDE_CDS
     UseSharedSpaces = false;
+#endif
   }
 }
 
@@ -2653,20 +2655,28 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           set_mode_flags(_comp);
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
+#if INCLUDE_CDS
       DumpSharedSpaces = true;
+#endif
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
+#if INCLUDE_CDS
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
+#endif
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
+#if INCLUDE_CDS
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
+#endif
       xshare_auto_cmd_line = true;
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
+#if INCLUDE_CDS
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+#endif
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -2915,8 +2925,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   //   -Xshare:on
   //   -Xlog:class+path=info
   if (PrintSharedArchiveAndExit) {
+#if INCLUDE_CDS
     UseSharedSpaces = true;
     RequireSharedSpaces = true;
+#endif
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
@@ -3393,7 +3405,9 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
+#if INCLUDE_CDS
     UseSharedSpaces = false;
+#endif
   }
 #if INCLUDE_CDS
   // Initialize shared archive paths which could include both base and dynamic archive paths
@@ -3969,7 +3983,9 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if ((UseSharedSpaces && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
+#if INCLUDE_CDS
     UseSharedSpaces = false;
+#endif
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
   }
   no_shared_spaces("CDS Disabled");

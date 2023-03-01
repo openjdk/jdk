@@ -574,13 +574,25 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
+#if INCLUDE_CDS
 extern bool DumpSharedSpaces;
 extern bool DynamicDumpSharedSpaces;
 extern bool RequireSharedSpaces;
+#else
+extern const bool DumpSharedSpaces;
+extern const bool DynamicDumpSharedSpaces;
+extern const bool RequireSharedSpaces;
+#endif
+
+#if INCLUDE_CDS
 extern "C" {
 // Make sure UseSharedSpaces is accessible to the serviceability agent.
 extern JNIEXPORT jboolean UseSharedSpaces;
 }
+#else
+// in non CDS mode do not export it
+extern const bool UseSharedSpaces;
+#endif
 
 //----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.
