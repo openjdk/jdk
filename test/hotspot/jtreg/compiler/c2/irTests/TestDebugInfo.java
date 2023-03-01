@@ -28,15 +28,15 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8201516
- * @summary Verify that debug info at inlined method exits refers to inlinee.
+ * @summary Verify that debug information in C2 compiled code is correct.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.TestInlineeExitDebugInfo
+ * @run driver compiler.c2.irTests.TestDebugInfo
  */
-public class TestInlineeExitDebugInfo {
+public class TestDebugInfo {
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints");
     }
 
     static class MyClass {
@@ -61,8 +61,8 @@ public class TestInlineeExitDebugInfo {
     // Verify that the MemBarRelease emitted at the MyClass constructor exit
     // does not incorrectly reference the caller method in its debug information.
     @Test
-    @IR(failOn = { "MemBarRelease.*TestInlineeExitDebugInfo::test.*bci:-1" }, phase = CompilePhase.BEFORE_MATCHING)
-    public static void test1() {
+    @IR(failOn = {"MemBarRelease.*test.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static void testFinalFieldInit() {
         array[0] = new MyClass(42);
         array[1] = new MyClass(42);
         array[2] = new MyClass(42);
@@ -71,13 +71,59 @@ public class TestInlineeExitDebugInfo {
     // Verify that the MemBarReleaseLock emitted at the synchronizedMethod exit
     // does not incorrectly reference the caller method in its debug information.
     @Test
-    @IR(failOn = { "MemBarReleaseLock.*TestInlineeExitDebugInfo::test.*bci:-1" }, phase = CompilePhase.BEFORE_MATCHING)
-    public static void test2() {
+    @IR(failOn = {"MemBarReleaseLock.*test.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static void testSynchronized() {
         try {
             myVal.synchronizedMethod(false);
             myVal.synchronizedMethod(true);
         } catch (Exception e) {
             // Ignore
         }
+    }
+
+    static byte b0 = 0;
+    static byte b1 = 0;
+    static byte b2 = 0;
+    static byte b3 = 0;
+
+    public static Integer useless3(Integer val) {
+        return ++val;
+    }
+
+    public static Integer useless2(Integer val) {
+        return useless3(useless3(useless3(useless3(useless3(useless3(useless3(useless3(val))))))));
+    }
+
+    public static Integer useless1(Integer val) {
+        return useless2(useless2(useless2(useless2(useless2(useless2(useless2(useless2(val))))))));
+    }
+
+    public static void useful3() {
+        b3 = 3;
+    }
+
+    public static void useful2() {
+        useful3();
+        b2 = 2;
+    }
+
+    public static void useful1() {
+        useful2();
+        b1 = 1;
+    }
+
+    // Verify that RenumberLiveNodes preserves the debug information side table.
+    @Test
+    @IR(counts = {"StoreB.*name=b3.*useful3.*bci:1.*useful2.*bci:0.*useful1.*bci:0.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b2.*useful2.*bci:4.*useful1.*bci:0.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b1.*useful1.*bci:4.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b0.*test.*bci:13", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static void testRenumberLiveNodes() {
+        // This generates ~3700 useless nodes to trigger RenumberLiveNodes
+        useless1(42);
+
+        // Do something useful
+        useful1();
+        b0 = 0;
     }
 }
