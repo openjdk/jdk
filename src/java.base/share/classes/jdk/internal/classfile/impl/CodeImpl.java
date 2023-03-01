@@ -32,67 +32,13 @@ import java.util.function.Consumer;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-
-import static jdk.internal.classfile.Classfile.ALOAD;
-import static jdk.internal.classfile.Classfile.ANEWARRAY;
-import static jdk.internal.classfile.Classfile.ASTORE;
-import static jdk.internal.classfile.Classfile.BIPUSH;
-import static jdk.internal.classfile.Classfile.CHECKCAST;
-import static jdk.internal.classfile.Classfile.DLOAD;
-import static jdk.internal.classfile.Classfile.DSTORE;
-import static jdk.internal.classfile.Classfile.FLOAD;
-import static jdk.internal.classfile.Classfile.FSTORE;
-import static jdk.internal.classfile.Classfile.GETFIELD;
-import static jdk.internal.classfile.Classfile.GETSTATIC;
-import static jdk.internal.classfile.Classfile.GOTO;
-import static jdk.internal.classfile.Classfile.GOTO_W;
-import static jdk.internal.classfile.Classfile.IFEQ;
-import static jdk.internal.classfile.Classfile.IFGE;
-import static jdk.internal.classfile.Classfile.IFGT;
-import static jdk.internal.classfile.Classfile.IFLE;
-import static jdk.internal.classfile.Classfile.IFLT;
-import static jdk.internal.classfile.Classfile.IFNE;
-import static jdk.internal.classfile.Classfile.IFNONNULL;
-import static jdk.internal.classfile.Classfile.IFNULL;
-import static jdk.internal.classfile.Classfile.IF_ACMPEQ;
-import static jdk.internal.classfile.Classfile.IF_ACMPNE;
-import static jdk.internal.classfile.Classfile.IF_ICMPEQ;
-import static jdk.internal.classfile.Classfile.IF_ICMPGE;
-import static jdk.internal.classfile.Classfile.IF_ICMPGT;
-import static jdk.internal.classfile.Classfile.IF_ICMPLE;
-import static jdk.internal.classfile.Classfile.IF_ICMPLT;
-import static jdk.internal.classfile.Classfile.IF_ICMPNE;
-import static jdk.internal.classfile.Classfile.IINC;
-import static jdk.internal.classfile.Classfile.ILOAD;
-import static jdk.internal.classfile.Classfile.INSTANCEOF;
-import static jdk.internal.classfile.Classfile.INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.INVOKEINTERFACE;
-import static jdk.internal.classfile.Classfile.INVOKESPECIAL;
-import static jdk.internal.classfile.Classfile.INVOKESTATIC;
-import static jdk.internal.classfile.Classfile.INVOKEVIRTUAL;
-import static jdk.internal.classfile.Classfile.ISTORE;
-import static jdk.internal.classfile.Classfile.JSR;
-import static jdk.internal.classfile.Classfile.JSR_W;
-import static jdk.internal.classfile.Classfile.LDC;
-import static jdk.internal.classfile.Classfile.LDC2_W;
-import static jdk.internal.classfile.Classfile.LDC_W;
-import static jdk.internal.classfile.Classfile.LLOAD;
-import static jdk.internal.classfile.Classfile.LOOKUPSWITCH;
-import static jdk.internal.classfile.Classfile.LSTORE;
-import static jdk.internal.classfile.Classfile.MULTIANEWARRAY;
-import static jdk.internal.classfile.Classfile.NEW;
-import static jdk.internal.classfile.Classfile.NEWARRAY;
-import static jdk.internal.classfile.Classfile.PUTFIELD;
-import static jdk.internal.classfile.Classfile.PUTSTATIC;
-import static jdk.internal.classfile.Classfile.RET;
-import static jdk.internal.classfile.Classfile.SIPUSH;
-import static jdk.internal.classfile.Classfile.TABLESWITCH;
-import static jdk.internal.classfile.Classfile.WIDE;
 import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import jdk.internal.classfile.attribute.StackMapTableAttribute;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.instruction.*;
+
+import static jdk.internal.classfile.Classfile.*;
 
 /**
  * CodeAttr
@@ -100,6 +46,63 @@ import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
         implements CodeModel, LabelContext {
+
+    static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
+
+    static {
+        for (Opcode o : List.of(Opcode.NOP))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = NopInstruction.of();
+        for (Opcode o : List.of(Opcode.ACONST_NULL,
+                                Opcode.ICONST_M1,
+                                Opcode.ICONST_0, Opcode.ICONST_1, Opcode.ICONST_2, Opcode.ICONST_3, Opcode.ICONST_4, Opcode.ICONST_5,
+                                Opcode.LCONST_0, Opcode.LCONST_1,
+                                Opcode.FCONST_0, Opcode.FCONST_1, Opcode.FCONST_2,
+                                Opcode.DCONST_0, Opcode.DCONST_1))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ConstantInstruction.ofIntrinsic(o);
+        for (Opcode o : List.of(Opcode.ILOAD_0, Opcode.ILOAD_1, Opcode.ILOAD_2, Opcode.ILOAD_3,
+                                Opcode.LLOAD_0, Opcode.LLOAD_1, Opcode.LLOAD_2, Opcode.LLOAD_3,
+                                Opcode.FLOAD_0, Opcode.FLOAD_1, Opcode.FLOAD_2, Opcode.FLOAD_3,
+                                Opcode.DLOAD_0, Opcode.DLOAD_1, Opcode.DLOAD_2, Opcode.DLOAD_3,
+                                Opcode.ALOAD_0, Opcode.ALOAD_1, Opcode.ALOAD_2, Opcode.ALOAD_3))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = LoadInstruction.of(o, o.slot());
+        for (Opcode o : List.of(Opcode.ISTORE_0, Opcode.ISTORE_1, Opcode.ISTORE_2, Opcode.ISTORE_3,
+                                Opcode.LSTORE_0, Opcode.LSTORE_1, Opcode.LSTORE_2, Opcode.LSTORE_3,
+                                Opcode.FSTORE_0, Opcode.FSTORE_1, Opcode.FSTORE_2, Opcode.FSTORE_3,
+                                Opcode.DSTORE_0, Opcode.DSTORE_1, Opcode.DSTORE_2, Opcode.DSTORE_3,
+                                Opcode.ASTORE_0, Opcode.ASTORE_1, Opcode.ASTORE_2, Opcode.ASTORE_3))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = StoreInstruction.of(o, o.slot());
+        for (Opcode o : List.of(Opcode.IALOAD, Opcode.LALOAD, Opcode.FALOAD, Opcode.DALOAD, Opcode.AALOAD, Opcode.BALOAD, Opcode.CALOAD, Opcode.SALOAD))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ArrayLoadInstruction.of(o);
+        for (Opcode o : List.of(Opcode.IASTORE, Opcode.LASTORE, Opcode.FASTORE, Opcode.DASTORE, Opcode.AASTORE, Opcode.BASTORE, Opcode.CASTORE, Opcode.SASTORE))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ArrayStoreInstruction.of(o);
+        for (Opcode o : List.of(Opcode.POP, Opcode.POP2, Opcode.DUP, Opcode.DUP_X1, Opcode.DUP_X2, Opcode.DUP2, Opcode.DUP2_X1, Opcode.DUP2_X2, Opcode.SWAP))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = StackInstruction.of(o);
+        for (Opcode o : List.of(Opcode.IADD, Opcode.LADD, Opcode.FADD, Opcode.DADD, Opcode.ISUB,
+                                Opcode.LSUB, Opcode.FSUB, Opcode.DSUB,
+                                Opcode.IMUL, Opcode.LMUL, Opcode.FMUL, Opcode.DMUL,
+                                Opcode.IDIV, Opcode.LDIV, Opcode.FDIV, Opcode.DDIV,
+                                Opcode.IREM, Opcode.LREM, Opcode.FREM, Opcode.DREM,
+                                Opcode.INEG, Opcode.LNEG, Opcode.FNEG, Opcode.DNEG,
+                                Opcode.ISHL, Opcode.LSHL, Opcode.ISHR, Opcode.LSHR, Opcode.IUSHR, Opcode.LUSHR,
+                                Opcode.IAND, Opcode.LAND, Opcode.IOR, Opcode.LOR, Opcode.IXOR, Opcode.LXOR,
+                                Opcode.LCMP, Opcode.FCMPL, Opcode.FCMPG, Opcode.DCMPL, Opcode.DCMPG,
+                                Opcode.ARRAYLENGTH))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = OperatorInstruction.of(o);
+
+        for (Opcode o : List.of(Opcode.I2L, Opcode.I2F, Opcode.I2D,
+                                Opcode.L2I, Opcode.L2F, Opcode.L2D,
+                                Opcode.F2I, Opcode.F2L, Opcode.F2D,
+                                Opcode.D2I, Opcode.D2L, Opcode.D2F,
+                                Opcode.I2B, Opcode.I2C, Opcode.I2S))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ConvertInstruction.of(o);
+        for (Opcode o : List.of(Opcode.IRETURN, Opcode.LRETURN, Opcode.FRETURN, Opcode.DRETURN, Opcode.ARETURN, Opcode.RETURN))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ReturnInstruction.of(o);
+        for (Opcode o : List.of(Opcode.ATHROW))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = ThrowInstruction.of();
+        for (Opcode o : List.of(Opcode.MONITORENTER, Opcode.MONITOREXIT))
+            SINGLETON_INSTRUCTIONS[o.bytecode()] = MonitorInstruction.of(o);
+    }
+
     List<ExceptionCatch> exceptionTable;
     List<Attribute<?>> attributes;
 
@@ -143,7 +146,7 @@ public final class CodeImpl
         if (lab.labelContext() != this)
             throw new IllegalArgumentException(String.format("Illegal label reuse; context=%s, label=%s",
                                                              this, lab.labelContext()));
-        return lab.getContextInfo();
+        return lab.getBCI();
     }
 
     private void inflateMetadata() {
@@ -488,7 +491,7 @@ public final class CodeImpl
             case RET -> throw new UnsupportedOperationException("RET instruction not supported");
             case JSR_W -> throw new UnsupportedOperationException("JSR_W instruction not supported");
             default -> {
-                Instruction instr = InstructionData.singletonInstructions[bc];
+                Instruction instr = SINGLETON_INSTRUCTIONS[bc];
                 if (instr == null)
                     throw new UnsupportedOperationException("unknown instruction: " + bc);
                 yield instr;
