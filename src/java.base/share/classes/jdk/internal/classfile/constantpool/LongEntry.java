@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Long_info} constant in the constant pool of a
@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface LongEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits ConcreteEntry.ConcreteLongEntry {
+        permits AbstractPoolEntry.ConcreteLongEntry {
 
     /**
      * {@return the long value}

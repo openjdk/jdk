@@ -55,7 +55,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.jdktypes.ModuleDesc;
 import jdk.internal.classfile.jdktypes.PackageDesc;
 
-public abstract sealed class ConcreteEntry {
+public abstract sealed class AbstractPoolEntry {
     /*
     Invariant: a {CP,BSM} entry for pool P refer only to {CP,BSM} entries
     from P or P's parent.  This is enforced by the various xxxEntry methods
@@ -95,7 +95,7 @@ public abstract sealed class ConcreteEntry {
 
     @SuppressWarnings("unchecked")
     public static <T extends PoolEntry> T maybeClone(ConstantPoolBuilder cp, T entry) {
-        return (T)((ConcreteEntry)entry).clone(cp);
+        return (T)((AbstractPoolEntry)entry).clone(cp);
     }
 
     final ConstantPool constantPool;
@@ -103,7 +103,7 @@ public abstract sealed class ConcreteEntry {
     private final int index;
     private final int hash;
 
-    private ConcreteEntry(ConstantPool constantPool, int tag, int index, int hash) {
+    private AbstractPoolEntry(ConstantPool constantPool, int tag, int index, int hash) {
         this.tag = (byte) tag;
         this.index = index;
         this.hash = hash;
@@ -128,7 +128,7 @@ public abstract sealed class ConcreteEntry {
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
-    public static final class ConcreteUtf8Entry extends ConcreteEntry implements Utf8Entry {
+    public static final class ConcreteUtf8Entry extends AbstractPoolEntry implements Utf8Entry {
         // Processing UTF8 from the constant pool is one of the more expensive
         // operations, and often, we don't actually need access to the constant
         // as a string.  So there are multiple layers of laziness in UTF8
@@ -478,7 +478,7 @@ public abstract sealed class ConcreteEntry {
         }
     }
 
-    static abstract sealed class RefEntry<T extends PoolEntry> extends ConcreteEntry {
+    static abstract sealed class RefEntry<T extends PoolEntry> extends AbstractPoolEntry {
         protected final T ref1;
 
         public RefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
@@ -501,7 +501,7 @@ public abstract sealed class ConcreteEntry {
     }
 
     static abstract sealed class RefsEntry<T extends PoolEntry, U extends PoolEntry>
-            extends ConcreteEntry {
+            extends AbstractPoolEntry {
         protected final T ref1;
         protected final U ref2;
 
@@ -742,7 +742,7 @@ public abstract sealed class ConcreteEntry {
         }
     }
 
-    public static abstract sealed class AbstractDynamicConstantPoolEntry extends ConcreteEntry {
+    public static abstract sealed class AbstractDynamicConstantPoolEntry extends AbstractPoolEntry {
 
         private final int bsmIndex;
         private ConcreteBootstrapMethodEntry bootstrapMethod;
@@ -858,20 +858,20 @@ public abstract sealed class ConcreteEntry {
         }
     }
 
-    public static final class ConcreteMethodHandleEntry extends ConcreteEntry
+    public static final class ConcreteMethodHandleEntry extends AbstractPoolEntry
             implements MethodHandleEntry {
 
         private final int refKind;
-        private final ConcreteEntry.MemberRefEntry reference;
+        private final AbstractPoolEntry.MemberRefEntry reference;
 
-        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int hash, int refKind, ConcreteEntry.MemberRefEntry
+        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.MemberRefEntry
                 reference) {
             super(cpm, Classfile.TAG_METHODHANDLE, index, hash);
             this.refKind = refKind;
             this.reference = reference;
         }
 
-        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int refKind, ConcreteEntry.MemberRefEntry
+        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.MemberRefEntry
                 reference) {
             super(cpm, Classfile.TAG_METHODHANDLE, index, hash2(Classfile.TAG_METHODHANDLE, refKind, reference.index()));
             this.refKind = refKind;
@@ -889,7 +889,7 @@ public abstract sealed class ConcreteEntry {
         }
 
         @Override
-        public ConcreteEntry.MemberRefEntry reference() {
+        public AbstractPoolEntry.MemberRefEntry reference() {
             return reference;
         }
 
@@ -1010,7 +1010,7 @@ public abstract sealed class ConcreteEntry {
     }
 
     static abstract sealed class PrimitiveEntry<T extends ConstantDesc>
-            extends ConcreteEntry {
+            extends AbstractPoolEntry {
         protected final T val;
 
         public PrimitiveEntry(ConstantPool constantPool, int tag, int index, T val) {

@@ -28,14 +28,14 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a constant pool entry for a dynamic call site.
  */
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
-        permits ConcreteEntry.ConcreteInvokeDynamicEntry {
+        permits AbstractPoolEntry.ConcreteInvokeDynamicEntry {
 
     /**
      * {@return a symbolic descriptor for the dynamic call site}

@@ -29,7 +29,7 @@ import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 
@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.Util;
  */
 public sealed interface ClassEntry
         extends LoadableConstantEntry
-        permits ConcreteEntry.ConcreteClassEntry {
+        permits AbstractPoolEntry.ConcreteClassEntry {
 
     @Override
     default ConstantDesc constantValue() {

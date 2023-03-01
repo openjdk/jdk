@@ -613,7 +613,7 @@ public final class DirectCodeBuilder
     public void writeLoadConstant(Opcode opcode, LoadableConstantEntry value) {
         // Make sure Long and Double have LDC2_W and
         // rewrite to _W if index is > 256
-        int index = ConcreteEntry.maybeClone(constantPool, value).index();
+        int index = AbstractPoolEntry.maybeClone(constantPool, value).index();
         Opcode op = opcode;
         if (value instanceof LongEntry || value instanceof DoubleEntry) {
             op = LDC2_W;
@@ -721,7 +721,7 @@ public final class DirectCodeBuilder
         AbstractPseudoInstruction.ExceptionCatchImpl el = (AbstractPseudoInstruction.ExceptionCatchImpl) element;
         ClassEntry type = el.catchTypeEntry();
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
-            el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), ConcreteEntry.maybeClone(constantPool, type));
+            el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), AbstractPoolEntry.maybeClone(constantPool, type));
         handlers.add(el);
     }
 

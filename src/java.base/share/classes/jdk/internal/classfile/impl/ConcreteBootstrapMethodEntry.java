@@ -34,7 +34,7 @@ import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 
-import static jdk.internal.classfile.impl.ConcreteEntry.ConcreteMethodHandleEntry;
+import static jdk.internal.classfile.impl.AbstractPoolEntry.ConcreteMethodHandleEntry;
 
 public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry {
 
@@ -91,7 +91,7 @@ public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry 
         for (LoadableConstantEntry a : arguments) {
             hash = 31 * hash + a.hashCode();
         }
-        return ConcreteEntry.phiMix(hash);
+        return AbstractPoolEntry.phiMix(hash);
     }
 
     @Override

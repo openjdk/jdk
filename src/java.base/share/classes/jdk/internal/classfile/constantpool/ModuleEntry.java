@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.jdktypes.ModuleDesc;
 
 /**
@@ -32,7 +32,7 @@ import jdk.internal.classfile.jdktypes.ModuleDesc;
  * classfile.
  */
 public sealed interface ModuleEntry extends PoolEntry
-        permits ConcreteEntry.ConcreteModuleEntry {
+        permits AbstractPoolEntry.ConcreteModuleEntry {
     /**
      * {@return the name of the module}
      */

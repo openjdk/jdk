@@ -26,7 +26,7 @@ package jdk.internal.classfile.constantpool;
 
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_MethodType_info} constant in the constant pool of a
@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
-        permits ConcreteEntry.ConcreteMethodTypeEntry {
+        permits AbstractPoolEntry.ConcreteMethodTypeEntry {
 
     /**
      * {@return the constant pool entry describing the method type}

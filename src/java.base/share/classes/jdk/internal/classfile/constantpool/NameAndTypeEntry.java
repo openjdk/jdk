@@ -24,14 +24,14 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_NameAndType_info} constant in the constant pool of a
  * classfile.
  */
 public sealed interface NameAndTypeEntry extends PoolEntry
-        permits ConcreteEntry.ConcreteNameAndTypeEntry {
+        permits AbstractPoolEntry.ConcreteNameAndTypeEntry {
 
     /**
      * {@return the field or method name}
