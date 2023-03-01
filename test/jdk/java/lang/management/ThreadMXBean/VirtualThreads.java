@@ -264,6 +264,9 @@ public class VirtualThreads {
      */
     @Test
     void testGetThreadUserTime1() {
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        assumeTrue(bean.isThreadCpuTimeSupported(), "Thread CPU time measurement not supported");
+
         Thread vthread = Thread.startVirtualThread(LockSupport::park);
         try {
             long tid = vthread.threadId();
@@ -280,6 +283,9 @@ public class VirtualThreads {
      */
     @Test
     void testGetThreadUserTime2() throws Exception {
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        assumeTrue(bean.isThreadCpuTimeSupported(), "Thread CPU time measurement not supported");
+
         VThreadRunner.run(() -> {
             long tid = Thread.currentThread().threadId();
             long userTime = ManagementFactory.getThreadMXBean().getThreadUserTime(tid);
@@ -288,50 +294,47 @@ public class VirtualThreads {
     }
 
     /**
-     * Test that ThreadMXBean::isCurrentThreadCpuTimeSupported returns false
-     * when invoked on a virtual thread.
+     * Test that ThreadMXBean::isCurrentThreadCpuTimeSupported returns true when
+     * CPU time measurement for the current thread is supported.
      */
     @Test
     void testIsCurrentThreadCpuTimeSupported() throws Exception {
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        assumeTrue(bean.isCurrentThreadCpuTimeSupported(),
+                "Thread CPU time measurement for the current thread not supported");
+
         VThreadRunner.run(() -> {
-            assertFalse(ManagementFactory.getThreadMXBean().isCurrentThreadCpuTimeSupported());
+            assertTrue(bean.isCurrentThreadCpuTimeSupported());
         });
     }
 
     /**
-     * Test that ThreadMXBean::getCurrentThreadCpuTime throws UOE when invoked
-     * on a virtual thread.
+     * Test that ThreadMXBean::getCurrentThreadCpuTime returns -1 when invoked
+     * from a virtual thread.
      */
     @Test
     void testGetCurrentThreadCpuTime() throws Exception {
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        assumeTrue(bean.isCurrentThreadCpuTimeSupported(),
+                "Thread CPU time measurement for the current thread not supported");
+
         VThreadRunner.run(() -> {
-            assertThrows(UnsupportedOperationException.class,
-                    () -> ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime());
+            assertEquals(-1L, bean.getCurrentThreadCpuTime());
         });
     }
 
     /**
-     * Test that ThreadMXBean::getCurrentThreadUserTime throws UOE when
-     * invoked on a virtual thread.
+     * Test that ThreadMXBean::getCurrentThreadUserTime returns -1 when invoked
+     * from a virtual thread.
      */
     @Test
     void testGetCurrentThreadUserTime() throws Exception {
-        VThreadRunner.run(() -> {
-            assertThrows(UnsupportedOperationException.class,
-                    () -> ManagementFactory.getThreadMXBean().getCurrentThreadUserTime());
-        });
-    }
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        assumeTrue(bean.isCurrentThreadCpuTimeSupported(),
+                "Thread CPU time measurement for the current thread not supported");
 
-    /**
-     * Test that ThreadMXBean::getCurrentThreadAllocatedBytes returns -1 when
-     * invoked on a virtual thread.
-     */
-    @Test
-    void testGetCurrentThreadAllocatedBytes() throws Exception {
         VThreadRunner.run(() -> {
-            long allocated = ManagementFactory.getPlatformMXBean(com.sun.management.ThreadMXBean.class)
-                    .getCurrentThreadAllocatedBytes();
-            assertEquals(-1L, allocated);
+            assertEquals(-1L, bean.getCurrentThreadUserTime());
         });
     }
 

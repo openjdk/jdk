@@ -98,11 +98,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public boolean isCurrentThreadCpuTimeSupported() {
-        if (Thread.currentThread().isVirtual()) {
-            return false;
-        } else {
-            return jvm.isCurrentThreadCpuTimeSupported();
-        }
+        return jvm.isCurrentThreadCpuTimeSupported();
     }
 
     protected boolean isThreadAllocatedMemorySupported() {
@@ -219,10 +215,6 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     private boolean verifyCurrentThreadCpuTime() {
-        // check if Thread CPU time measurement is supported.
-        if (Thread.currentThread().isVirtual()) {
-            throw new UnsupportedOperationException("Not supported by virtual threads");
-        }
         if (!isCurrentThreadCpuTimeSupported()) {
             throw new UnsupportedOperationException(
                 "Current thread CPU time measurement is not supported.");
@@ -232,7 +224,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public long getCurrentThreadCpuTime() {
-        if (verifyCurrentThreadCpuTime()) {
+        if (verifyCurrentThreadCpuTime() && !Thread.currentThread().isVirtual()) {
             return getThreadTotalCpuTime0(0);
         }
         return -1;
@@ -295,7 +287,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public long getCurrentThreadUserTime() {
-        if (verifyCurrentThreadCpuTime()) {
+        if (verifyCurrentThreadCpuTime() && !Thread.currentThread().isVirtual()) {
             return getThreadUserCpuTime0(0);
         }
         return -1;
@@ -367,11 +359,7 @@ public class ThreadImpl implements ThreadMXBean {
         if (verified) {
             Thread thread = Thread.currentThread();
             if (id == thread.threadId()) {
-                if (thread.isVirtual()) {
-                    return -1L;
-                } else {
-                    return getThreadAllocatedMemory0(0);
-                }
+                return thread.isVirtual() ? -1L : getThreadAllocatedMemory0(0);
             } else {
                 return getThreadAllocatedMemory0(id);
             }

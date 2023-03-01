@@ -65,17 +65,18 @@ import java.util.Map;
  * of thread IDs as the input parameter and return per-thread information.
  *
  * <h2>Thread CPU time</h2>
- * A Java virtual machine implementation may support measuring
- * the CPU time for the current thread, for any thread, or for no threads.
+ * A Java virtual machine implementation may support measuring the CPU time
+ * for the current platform thread, for any platform thread, or for no threads.
  *
  * <p>
  * The {@link #isThreadCpuTimeSupported} method can be used to determine
  * if a Java virtual machine supports measuring of the CPU time for any
- * thread.  The {@link #isCurrentThreadCpuTimeSupported} method can
- * be used to determine if a Java virtual machine supports measuring of
- * the CPU time for the current  thread.
+ * platform thread.  The {@link #isCurrentThreadCpuTimeSupported()} method
+ * can be used to determine if a Java virtual machine supports measuring of
+ * the CPU time for the current platform thread.
  * A Java virtual machine implementation that supports CPU time measurement
- * for any thread will also support that for the current thread.
+ * for any platform thread will also support that for the current platform
+ * thread.
  *
  * <p> The CPU time provided by this interface has nanosecond precision
  * but not necessarily nanosecond accuracy.
@@ -412,7 +413,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * </pre></blockquote>
      *
      * @return the total CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} otherwise.
+     * measurement is enabled; {@code -1} if not enabled or the current
+     * thread is a virtual thread
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -439,7 +441,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * </pre></blockquote>
      *
      * @return the user-level CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} otherwise.
+     * measurement is enabled; @code -1} if not enabled or the current
+     * thread is a virtual thread
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -474,8 +477,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @param id the thread ID of a thread
      * @return the total CPU time for a thread of the specified ID
      * if the thread of the specified ID exists, the thread is alive,
-     * and CPU time measurement is enabled;
-     * {@code -1} otherwise.
+     * and CPU time measurement is enabled; {@code -1} if not enabled
+     * or the specified ID is a virtual thread
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws UnsupportedOperationException if the Java
@@ -509,8 +512,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @param id the thread ID of a thread
      * @return the user-level CPU time for a thread of the specified ID
      * if the thread of the specified ID exists, the thread is alive,
-     * and CPU time measurement is enabled;
-     * {@code -1} otherwise.
+     * and CPU time measurement is enabled; {@code -1} if not enabled
+     * or the specified ID is a virtual thread
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws UnsupportedOperationException if the Java
@@ -541,10 +544,11 @@ public interface ThreadMXBean extends PlatformManagedObject {
     public boolean isThreadCpuTimeSupported();
 
     /**
-     * Tests if the Java virtual machine supports CPU time
-     * measurement for the current thread.
+     * Tests if the Java virtual machine supports CPU time measurement with the
+     * {@link #getCurrentThreadCpuTime()} and {@link #getCurrentThreadUserTime()}
+     * methods when called from a platform thread.
      * This method returns {@code true} if {@link #isThreadCpuTimeSupported}
-     * returns {@code true} and the current thread is a platform thread.
+     * returns {@code true}.
      *
      * @return
      *   {@code true}
