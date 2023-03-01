@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.math.BigInteger;
+import java.util.Calendar;
 import java.util.Random;
 import jdk.test.lib.RandomFactory;
 
@@ -621,45 +622,62 @@ public class SymmetricRangeTests {
     }
 
     public static void main(String... args) {
-        testOverflowInMakePositive();
-        testBug8021204();
-        testOverflowInBitSieve();
-        testAdd();
-        testSubtract();
-        testMultiply();
-        testDivide();
-        testDivideAndRemainder();
-        testBug9005933();
-        testRemainder();
-        testPow();
-        testGcd();
-        testAbs();
-        testNegate();
-        testMod();
-        testModPow();
-//        testModInverse();
-        testShiftLeft();
-        testShiftRight();
-        testAnd();
-        testOr();
-        testXor();
-        testNot();
-        testSetBit();
-        testClearBit();
-        testFlipBit();
-        testGetLowestSetBit();
-        testBitLength();
-        testBitCount();
-        testToString();
-        testToByteArrayWithConstructor();
-        testIntValue();
-        testLongValue();
-        testFloatValue();
-        testDoubleValue();
-        testSerialization();
-        testLongValueExact();
-        testIntValueExact();
-        testShortValueExact();
-        testByteValueExact();
+        // select a subset of sub-tests as a function of quarter minute
+        int subset = Integer.valueOf(System.getProperty("subset",
+            String.valueOf(1 + Calendar.getInstance().get(Calendar.SECOND)/15)));
+        System.out.println("Testing subset " + subset);
+
+        switch (subset) {
+        case 1:
+            testOverflowInMakePositive();
+            testBug8021204();
+            testOverflowInBitSieve();
+            testAdd();
+            testSubtract();
+            break;
+        case 2:
+            testMultiply();
+            testDivide();
+            testDivideAndRemainder();
+            testBug9005933();
+            break;
+        case 3:
+            testRemainder();
+            testPow();
+            testGcd();
+            testAbs();
+            testNegate();
+            testMod();
+            testModPow();
+            //        testModInverse();
+            testShiftLeft();
+            testShiftRight();
+            testAnd();
+            testOr();
+            testXor();
+            testNot();
+            testSetBit();
+            testClearBit();
+            testFlipBit();
+            testGetLowestSetBit();
+            testBitLength();
+            testBitCount();
+            break;
+        case 4:
+            testToString();
+            testToByteArrayWithConstructor();
+            testIntValue();
+            testLongValue();
+            testFloatValue();
+            testDoubleValue();
+            testSerialization();
+            testLongValueExact();
+            testIntValueExact();
+            testShortValueExact();
+            testByteValueExact();
+            break;
+        default:
+            throw new RuntimeException("Unknown subset " + subset);
+        }
     }
 }

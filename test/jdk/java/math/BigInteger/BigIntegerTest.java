@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Calendar;
 import java.util.Random;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -1237,52 +1238,69 @@ public class BigIntegerTest {
         if (args.length >3)
             order4 = (int)((Integer.parseInt(args[3]))* 3.333);
 
-        constructor();
+        // select a subset of sub-tests as a function of one third of a minute
+        int subset = Integer.valueOf(System.getProperty("subset",
+            String.valueOf(1 + Calendar.getInstance().get(Calendar.SECOND)/20)));
+        System.out.println("Testing subset " + subset);
 
-        prime();
-        nextProbablePrime();
+        switch (subset) {
+        case 1:
+            constructor();
 
-        arithmetic(order1);   // small numbers
-        arithmetic(order3);   // Karatsuba range
-        arithmetic(order4);   // Toom-Cook / Burnikel-Ziegler range
+            prime();
+            nextProbablePrime();
 
-        divideAndRemainder(order1);   // small numbers
-        divideAndRemainder(order3);   // Karatsuba range
-        divideAndRemainder(order4);   // Toom-Cook / Burnikel-Ziegler range
+            arithmetic(order1);   // small numbers
+            arithmetic(order3);   // Karatsuba range
+            arithmetic(order4);   // Toom-Cook / Burnikel-Ziegler range
 
-        pow(order1);
-        pow(order3);
-        pow(order4);
+            divideAndRemainder(order1);   // small numbers
+            divideAndRemainder(order3);   // Karatsuba range
+            divideAndRemainder(order4);   // Toom-Cook / Burnikel-Ziegler range
 
-        square(ORDER_MEDIUM);
-        square(ORDER_KARATSUBA_SQUARE);
-        square(ORDER_TOOM_COOK_SQUARE);
+            pow(order1);
+            pow(order3);
+            pow(order4);
 
-        squareRoot();
-        squareRootAndRemainder();
+            square(ORDER_MEDIUM);
+            square(ORDER_KARATSUBA_SQUARE);
+            square(ORDER_TOOM_COOK_SQUARE);
 
-        bitCount();
-        bitLength();
-        bitOps(order1);
-        bitwise(order1);
+            squareRoot();
+            squareRootAndRemainder();
 
-        shift(order1);
+            bitCount();
+            bitLength();
+            bitOps(order1);
+            bitwise(order1);
 
-        byteArrayConv(order1);
+            shift(order1);
 
-        modInv(order1);   // small numbers
-        modInv(order3);   // Karatsuba range
-        modInv(order4);   // Toom-Cook / Burnikel-Ziegler range
+            byteArrayConv(order1);
 
-        modExp(order1, order2);
-        modExp2(order1);
+            modInv(order1);   // small numbers
+            modInv(order3);   // Karatsuba range
+            break;
 
-        stringConv();
-        serialize();
+        case 2:
+            modInv(order4);   // Toom-Cook / Burnikel-Ziegler range
 
-        multiplyLarge();
-        squareLarge();
-        divideLarge();
+            modExp(order1, order2);
+            modExp2(order1);
+            break;
+
+        case 3:
+            stringConv();
+            serialize();
+
+            multiplyLarge();
+            squareLarge();
+            divideLarge();
+            break;
+
+        default:
+            throw new RuntimeException("Unknown subset " + subset);
+        }
 
         if (failure)
             throw new RuntimeException("Failure in BigIntegerTest.");
