@@ -837,7 +837,7 @@ public class Depend implements Plugin {
                     !isPrivate(((VariableTree) m).getModifiers()) ||
                     isRecordComponent((VariableTree) m);
                 case BLOCK -> false;
-                default -> throw new IllegalStateException("Unexpected tree kind: " + m.getKind());
+                default -> false;
             };
         }
 
