@@ -101,10 +101,11 @@ public class EqualsIgnoreCaseBenchmark {
             ByteVector upperB = vb.and((byte) 0xDF);
 
             // va equalsIgnoreCase vb if:
-            // 1: all bytes are equal (checked above), or
+            // 1: all bytes are equal, or
             // 2: all bytes are letters in the ASCII or latin1 ranges
             //    AND their uppercase is the same
-            VectorMask<Byte> equalsIgnoreCase = letter.and(upperA.eq(upperB));
+            VectorMask<Byte> equalsIgnoreCase = equal
+                    .or(letter.and(upperA.eq(upperB)));
 
             if(equalsIgnoreCase.allTrue()) {
                 continue;
