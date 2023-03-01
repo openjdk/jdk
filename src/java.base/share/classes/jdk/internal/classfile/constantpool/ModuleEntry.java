@@ -32,7 +32,7 @@ import jdk.internal.classfile.jdktypes.ModuleDesc;
  * classfile.
  */
 public sealed interface ModuleEntry extends PoolEntry
-        permits AbstractPoolEntry.ConcreteModuleEntry {
+        permits AbstractPoolEntry.ModuleEntryImpl {
     /**
      * {@return the name of the module}
      */

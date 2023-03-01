@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
-        permits AbstractPoolEntry.ConcreteConstantDynamicEntry {
+        permits AbstractPoolEntry.ConstantDynamicEntryImpl {
 
     /**
      * {@return the symbolic descriptor for the {@code invokedynamic} constant}

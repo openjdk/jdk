@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry
-        permits AbstractPoolEntry.ConcreteMethodHandleEntry {
+        permits AbstractPoolEntry.MethodHandleEntryImpl {
 
     /**
      * {@return the reference kind of this method handle {@jvms 4.4.8}}

@@ -31,6 +31,6 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  */
 public sealed interface MethodRefEntry extends MemberRefEntry
-        permits AbstractPoolEntry.ConcreteMethodRefEntry {
+        permits AbstractPoolEntry.MethodRefEntryImpl {
 
 }

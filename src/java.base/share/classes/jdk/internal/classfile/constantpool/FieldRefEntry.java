@@ -31,6 +31,6 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  */
 public sealed interface FieldRefEntry extends MemberRefEntry
-        permits AbstractPoolEntry.ConcreteFieldRefEntry {
+        permits AbstractPoolEntry.FieldRefEntryImpl {
 
 }

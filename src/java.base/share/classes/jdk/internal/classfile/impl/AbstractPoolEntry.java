@@ -91,7 +91,7 @@ public abstract sealed class AbstractPoolEntry {
     public static Utf8Entry rawUtf8EntryFromStandardAttributeName(String name) {
         //assuming standard attribute names are all US_ASCII
         var raw = name.getBytes(StandardCharsets.US_ASCII);
-        return new ConcreteUtf8Entry(null, 0, raw, 0, raw.length);
+        return new Utf8EntryImpl(null, 0, raw, 0, raw.length);
     }
 
     @SuppressWarnings("unchecked")
@@ -129,7 +129,7 @@ public abstract sealed class AbstractPoolEntry {
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
-    public static final class ConcreteUtf8Entry extends AbstractPoolEntry implements Utf8Entry {
+    public static final class Utf8EntryImpl extends AbstractPoolEntry implements Utf8Entry {
         // Processing UTF8 from the constant pool is one of the more expensive
         // operations, and often, we don't actually need access to the constant
         // as a string.  So there are multiple layers of laziness in UTF8
@@ -154,7 +154,7 @@ public abstract sealed class AbstractPoolEntry {
         // Only set in STRING state
         private String stringValue;
 
-        ConcreteUtf8Entry(ConstantPool cpm, int index,
+        Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
             super(cpm, Classfile.TAG_UTF8, index, 0);
             this.rawBytes = rawBytes;
@@ -163,7 +163,7 @@ public abstract sealed class AbstractPoolEntry {
             this.state = State.RAW;
         }
 
-        ConcreteUtf8Entry(ConstantPool cpm, int index, String s) {
+        Utf8EntryImpl(ConstantPool cpm, int index, String s) {
             super(cpm, Classfile.TAG_UTF8, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -174,7 +174,7 @@ public abstract sealed class AbstractPoolEntry {
             this.hash = hashString(s.hashCode());
         }
 
-        ConcreteUtf8Entry(ConstantPool cpm, int index, ConcreteUtf8Entry u) {
+        Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
             super(cpm, Classfile.TAG_UTF8, index, 0);
             this.rawBytes = u.rawBytes;
             this.offset = u.offset;
@@ -305,11 +305,11 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public ConcreteUtf8Entry clone(ConstantPoolBuilder cp) {
+        public Utf8EntryImpl clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool))
                 return this;
             return (state == State.STRING && rawBytes == null)
-                   ? (ConcreteUtf8Entry) cp.utf8Entry(stringValue)
+                   ? (Utf8EntryImpl) cp.utf8Entry(stringValue)
                    : ((SplitConstantPool) cp).maybeCloneUtf8Entry(this);
         }
 
@@ -369,7 +369,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteUtf8Entry u) {
+            if (o instanceof Utf8EntryImpl u) {
                 return equalsUtf8(u);
             } else if (o instanceof Utf8Entry u) {
                 return equalsString(u.stringValue());
@@ -377,7 +377,7 @@ public abstract sealed class AbstractPoolEntry {
             return false;
         }
 
-        public boolean equalsUtf8(ConcreteUtf8Entry u) {
+        public boolean equalsUtf8(Utf8EntryImpl u) {
             if (hashCode() != u.hashCode()
                 || length() != u.length())
                 return false;
@@ -532,9 +532,9 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    static abstract sealed class AbstractNamedEntry extends AbstractRefEntry<ConcreteUtf8Entry> {
+    static abstract sealed class AbstractNamedEntry extends AbstractRefEntry<Utf8EntryImpl> {
 
-        public AbstractNamedEntry(ConstantPool constantPool, int tag, int index, ConcreteUtf8Entry ref1) {
+        public AbstractNamedEntry(ConstantPool constantPool, int tag, int index, Utf8EntryImpl ref1) {
             super(constantPool, tag, index, ref1);
         }
 
@@ -555,9 +555,9 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteClassEntry extends AbstractNamedEntry implements ClassEntry {
+    public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {
 
-        ConcreteClassEntry(ConstantPool cpm, int index, ConcreteUtf8Entry name) {
+        ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, Classfile.TAG_CLASS, index, name);
         }
 
@@ -574,7 +574,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteClassEntry cce) {
+            if (o instanceof ClassEntryImpl cce) {
                 return cce.name().equals(this.name());
             } else if (o instanceof ClassEntry c) {
                 return c.asSymbol().equals(this.asSymbol());
@@ -583,9 +583,9 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcretePackageEntry extends AbstractNamedEntry implements PackageEntry {
+    public static final class PackageEntryImpl extends AbstractNamedEntry implements PackageEntry {
 
-        ConcretePackageEntry(ConstantPool cpm, int index, ConcreteUtf8Entry name) {
+        PackageEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, Classfile.TAG_PACKAGE, index, name);
         }
 
@@ -609,9 +609,9 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteModuleEntry extends AbstractNamedEntry implements ModuleEntry {
+    public static final class ModuleEntryImpl extends AbstractNamedEntry implements ModuleEntry {
 
-        ConcreteModuleEntry(ConstantPool cpm, int index, ConcreteUtf8Entry name) {
+        ModuleEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, Classfile.TAG_MODULE, index, name);
         }
 
@@ -628,17 +628,17 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteModuleEntry m) {
+            if (o instanceof ModuleEntryImpl m) {
                 return name().equals(m.name());
             }
             return false;
         }
     }
 
-    public static final class ConcreteNameAndTypeEntry extends AbstractRefsEntry<ConcreteUtf8Entry, ConcreteUtf8Entry>
+    public static final class NameAndTypeEntryImpl extends AbstractRefsEntry<Utf8EntryImpl, Utf8EntryImpl>
             implements NameAndTypeEntry {
 
-        ConcreteNameAndTypeEntry(ConstantPool cpm, int index, ConcreteUtf8Entry name, ConcreteUtf8Entry type) {
+        NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
             super(cpm, Classfile.TAG_NAMEANDTYPE, index, name, type);
         }
 
@@ -660,7 +660,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteNameAndTypeEntry nat) {
+            if (o instanceof NameAndTypeEntryImpl nat) {
                 return name().equals(nat.name()) && type().equals(nat.type());
             }
             return false;
@@ -668,21 +668,21 @@ public abstract sealed class AbstractPoolEntry {
     }
 
     public static abstract sealed class AbstractMemberRefEntry
-            extends AbstractRefsEntry<ConcreteClassEntry, ConcreteNameAndTypeEntry>
+            extends AbstractRefsEntry<ClassEntryImpl, NameAndTypeEntryImpl>
             implements MemberRefEntry {
 
-        AbstractMemberRefEntry(ConstantPool cpm, int tag, int index, ConcreteClassEntry owner,
-                       ConcreteNameAndTypeEntry nameAndType) {
+        AbstractMemberRefEntry(ConstantPool cpm, int tag, int index, ClassEntryImpl owner,
+                       NameAndTypeEntryImpl nameAndType) {
             super(cpm, tag, index, owner, nameAndType);
         }
 
         @Override
-        public ConcreteClassEntry owner() {
+        public ClassEntryImpl owner() {
             return ref1;
         }
 
         @Override
-        public ConcreteNameAndTypeEntry nameAndType() {
+        public NameAndTypeEntryImpl nameAndType() {
             return ref2;
         }
 
@@ -704,10 +704,10 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteFieldRefEntry extends AbstractMemberRefEntry implements FieldRefEntry {
+    public static final class FieldRefEntryImpl extends AbstractMemberRefEntry implements FieldRefEntry {
 
-        ConcreteFieldRefEntry(ConstantPool cpm, int index,
-                              ConcreteClassEntry owner, ConcreteNameAndTypeEntry nameAndType) {
+        FieldRefEntryImpl(ConstantPool cpm, int index,
+                              ClassEntryImpl owner, NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_FIELDREF, index, owner, nameAndType);
         }
 
@@ -717,10 +717,10 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteMethodRefEntry extends AbstractMemberRefEntry implements MethodRefEntry {
+    public static final class MethodRefEntryImpl extends AbstractMemberRefEntry implements MethodRefEntry {
 
-        ConcreteMethodRefEntry(ConstantPool cpm, int index,
-                               ConcreteClassEntry owner, ConcreteNameAndTypeEntry nameAndType) {
+        MethodRefEntryImpl(ConstantPool cpm, int index,
+                               ClassEntryImpl owner, NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_METHODREF, index, owner, nameAndType);
         }
 
@@ -730,10 +730,10 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteInterfaceMethodRefEntry extends AbstractMemberRefEntry implements InterfaceMethodRefEntry {
+    public static final class InterfaceMethodRefEntryImpl extends AbstractMemberRefEntry implements InterfaceMethodRefEntry {
 
-        ConcreteInterfaceMethodRefEntry(ConstantPool cpm, int index, ConcreteClassEntry owner,
-                                        ConcreteNameAndTypeEntry nameAndType) {
+        InterfaceMethodRefEntryImpl(ConstantPool cpm, int index, ClassEntryImpl owner,
+                                        NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_INTERFACEMETHODREF, index, owner, nameAndType);
         }
 
@@ -747,10 +747,10 @@ public abstract sealed class AbstractPoolEntry {
 
         private final int bsmIndex;
         private BootstrapMethodEntryImpl bootstrapMethod;
-        private final ConcreteNameAndTypeEntry nameAndType;
+        private final NameAndTypeEntryImpl nameAndType;
 
         AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
-                                         ConcreteNameAndTypeEntry nameAndType) {
+                                         NameAndTypeEntryImpl nameAndType) {
             super(cpm, tag, index, hash);
             this.bsmIndex = bootstrapMethod.bsmIndex();
             this.bootstrapMethod = bootstrapMethod;
@@ -758,7 +758,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, int bsmIndex,
-                                         ConcreteNameAndTypeEntry nameAndType) {
+                                         NameAndTypeEntryImpl nameAndType) {
             super(cpm, tag, index, hash);
             this.bsmIndex = bsmIndex;
             this.bootstrapMethod = null;
@@ -778,7 +778,7 @@ public abstract sealed class AbstractPoolEntry {
         /**
          * @return the nameAndType
          */
-        public ConcreteNameAndTypeEntry nameAndType() {
+        public NameAndTypeEntryImpl nameAndType() {
             return nameAndType;
         }
 
@@ -806,17 +806,17 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteInvokeDynamicEntry
+    public static final class InvokeDynamicEntryImpl
             extends AbstractDynamicConstantPoolEntry
             implements InvokeDynamicEntry {
 
-        ConcreteInvokeDynamicEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
-                                   ConcreteNameAndTypeEntry nameAndType) {
+        InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
+                                   NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
-        ConcreteInvokeDynamicEntry(ConstantPool cpm, int index, int bsmIndex,
-                                   ConcreteNameAndTypeEntry nameAndType) {
+        InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
+                                   NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_INVOKEDYNAMIC, index, hash2(Classfile.TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
@@ -827,16 +827,16 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteConstantDynamicEntry extends AbstractDynamicConstantPoolEntry
+    public static final class ConstantDynamicEntryImpl extends AbstractDynamicConstantPoolEntry
             implements ConstantDynamicEntry {
 
-        ConcreteConstantDynamicEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
-                                     ConcreteNameAndTypeEntry nameAndType) {
+        ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
+                                     NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
-        ConcreteConstantDynamicEntry(ConstantPool cpm, int index, int bsmIndex,
-                                     ConcreteNameAndTypeEntry nameAndType) {
+        ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
+                                     NameAndTypeEntryImpl nameAndType) {
             super(cpm, Classfile.TAG_CONSTANTDYNAMIC, index, hash2(Classfile.TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
@@ -859,20 +859,20 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteMethodHandleEntry extends AbstractPoolEntry
+    public static final class MethodHandleEntryImpl extends AbstractPoolEntry
             implements MethodHandleEntry {
 
         private final int refKind;
         private final AbstractPoolEntry.AbstractMemberRefEntry reference;
 
-        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
+        MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
             super(cpm, Classfile.TAG_METHODHANDLE, index, hash);
             this.refKind = refKind;
             this.reference = reference;
         }
 
-        ConcreteMethodHandleEntry(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
+        MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
             super(cpm, Classfile.TAG_METHODHANDLE, index, hash2(Classfile.TAG_METHODHANDLE, refKind, reference.index()));
             this.refKind = refKind;
@@ -924,7 +924,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o instanceof ConcreteMethodHandleEntry m) {
+            if (o instanceof MethodHandleEntryImpl m) {
                 return kind() == m.kind()
                 && reference.equals(m.reference());
             }
@@ -932,11 +932,11 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteMethodTypeEntry
-            extends AbstractRefEntry<ConcreteUtf8Entry>
+    public static final class MethodTypeEntryImpl
+            extends AbstractRefEntry<Utf8EntryImpl>
             implements MethodTypeEntry {
 
-        ConcreteMethodTypeEntry(ConstantPool cpm, int index, ConcreteUtf8Entry descriptor) {
+        MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
             super(cpm, Classfile.TAG_METHODTYPE, index, descriptor);
         }
 
@@ -957,23 +957,23 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteMethodTypeEntry m) {
+            if (o instanceof MethodTypeEntryImpl m) {
                 return descriptor().equals(m.descriptor());
             }
             return false;
         }
     }
 
-    public static final class ConcreteStringEntry
-            extends AbstractRefEntry<ConcreteUtf8Entry>
+    public static final class StringEntryImpl
+            extends AbstractRefEntry<Utf8EntryImpl>
             implements StringEntry {
 
-        ConcreteStringEntry(ConstantPool cpm, int index, ConcreteUtf8Entry utf8) {
+        StringEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl utf8) {
             super(cpm, Classfile.TAG_STRING, index, utf8);
         }
 
         @Override
-        public ConcreteUtf8Entry utf8() {
+        public Utf8EntryImpl utf8() {
             return ref1;
         }
 
@@ -1000,7 +1000,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ConcreteStringEntry s) {
+            if (o instanceof StringEntryImpl s) {
                 // check utf8 rather allocating a string
                 return utf8().equals(s.utf8());
             }
@@ -1033,10 +1033,10 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class ConcreteIntegerEntry extends PrimitiveEntry<Integer>
+    public static final class IntegerEntryImpl extends PrimitiveEntry<Integer>
             implements IntegerEntry {
 
-        ConcreteIntegerEntry(ConstantPool cpm, int index, int i) {
+        IntegerEntryImpl(ConstantPool cpm, int index, int i) {
             super(cpm, Classfile.TAG_INTEGER, index, i);
         }
 
@@ -1059,17 +1059,17 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o instanceof ConcreteIntegerEntry e) {
+            if (o instanceof IntegerEntryImpl e) {
                 return intValue() == e.intValue();
             }
             return false;
         }
     }
 
-    public static final class ConcreteFloatEntry extends PrimitiveEntry<Float>
+    public static final class FloatEntryImpl extends PrimitiveEntry<Float>
             implements FloatEntry {
 
-        ConcreteFloatEntry(ConstantPool cpm, int index, float f) {
+        FloatEntryImpl(ConstantPool cpm, int index, float f) {
             super(cpm, Classfile.TAG_FLOAT, index, f);
         }
 
@@ -1092,16 +1092,16 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o instanceof ConcreteFloatEntry e) {
+            if (o instanceof FloatEntryImpl e) {
                 return floatValue() == e.floatValue();
             }
             return false;
         }
     }
 
-    public static final class ConcreteLongEntry extends PrimitiveEntry<Long> implements LongEntry {
+    public static final class LongEntryImpl extends PrimitiveEntry<Long> implements LongEntry {
 
-        ConcreteLongEntry(ConstantPool cpm, int index, long l) {
+        LongEntryImpl(ConstantPool cpm, int index, long l) {
             super(cpm, Classfile.TAG_LONG, index, l);
         }
 
@@ -1124,16 +1124,16 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o instanceof ConcreteLongEntry e) {
+            if (o instanceof LongEntryImpl e) {
                 return longValue() == e.longValue();
             }
             return false;
         }
     }
 
-    public static final class ConcreteDoubleEntry extends PrimitiveEntry<Double> implements DoubleEntry {
+    public static final class DoubleEntryImpl extends PrimitiveEntry<Double> implements DoubleEntry {
 
-        ConcreteDoubleEntry(ConstantPool cpm, int index, double d) {
+        DoubleEntryImpl(ConstantPool cpm, int index, double d) {
             super(cpm, Classfile.TAG_DOUBLE, index, d);
         }
 
@@ -1156,7 +1156,7 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o instanceof ConcreteDoubleEntry e) {
+            if (o instanceof DoubleEntryImpl e) {
                 return doubleValue() == e.doubleValue();
             }
             return false;

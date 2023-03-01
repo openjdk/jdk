@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface LongEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits AbstractPoolEntry.ConcreteLongEntry {
+        permits AbstractPoolEntry.LongEntryImpl {
 
     /**
      * {@return the long value}

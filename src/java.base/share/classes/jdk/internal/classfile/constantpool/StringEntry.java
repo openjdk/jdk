@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface StringEntry
         extends ConstantValueEntry
-        permits AbstractPoolEntry.ConcreteStringEntry {
+        permits AbstractPoolEntry.StringEntryImpl {
     /**
      * {@return the UTF constant pool entry describing the string contents}
      */

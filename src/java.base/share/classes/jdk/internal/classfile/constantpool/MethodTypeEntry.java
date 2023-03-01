@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
-        permits AbstractPoolEntry.ConcreteMethodTypeEntry {
+        permits AbstractPoolEntry.MethodTypeEntryImpl {
 
     /**
      * {@return the constant pool entry describing the method type}

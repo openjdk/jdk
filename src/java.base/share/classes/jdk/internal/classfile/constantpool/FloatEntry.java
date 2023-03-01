@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface FloatEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits AbstractPoolEntry.ConcreteFloatEntry {
+        permits AbstractPoolEntry.FloatEntryImpl {
 
     /**
      * {@return the float value}

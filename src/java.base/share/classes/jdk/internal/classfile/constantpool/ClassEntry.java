@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.Util;
  */
 public sealed interface ClassEntry
         extends LoadableConstantEntry
-        permits AbstractPoolEntry.ConcreteClassEntry {
+        permits AbstractPoolEntry.ClassEntryImpl {
 
     @Override
     default ConstantDesc constantValue() {

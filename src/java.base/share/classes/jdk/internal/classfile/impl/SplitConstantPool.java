@@ -336,13 +336,13 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return null;
     }
 
-    private<T> AbstractPoolEntry.ConcreteUtf8Entry tryFindUtf8(int hash, String target) {
+    private<T> AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, String target) {
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1;
              token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
             if (e.tag() == Classfile.TAG_UTF8
-                && e instanceof AbstractPoolEntry.ConcreteUtf8Entry ce
+                && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && ce.hashCode() == hash
                 && target.equals(ce.stringValue()))
                 return ce;
@@ -354,12 +354,12 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return null;
     }
 
-    private AbstractPoolEntry.ConcreteUtf8Entry tryFindUtf8(int hash, AbstractPoolEntry.ConcreteUtf8Entry target) {
+    private AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, AbstractPoolEntry.Utf8EntryImpl target) {
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
             if (e.tag() == Classfile.TAG_UTF8
-                && e instanceof AbstractPoolEntry.ConcreteUtf8Entry ce
+                && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && target.equalsUtf8(ce))
                 return ce;
         }
@@ -371,82 +371,82 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public AbstractPoolEntry.ConcreteUtf8Entry utf8Entry(String s) {
+    public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
         var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.ConcreteUtf8Entry(this, size, s)) : ce;
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
     }
 
-    AbstractPoolEntry.ConcreteUtf8Entry maybeCloneUtf8Entry(Utf8Entry entry) {
-        AbstractPoolEntry.ConcreteUtf8Entry e = (AbstractPoolEntry.ConcreteUtf8Entry) entry;
+    AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
+        AbstractPoolEntry.Utf8EntryImpl e = (AbstractPoolEntry.Utf8EntryImpl) entry;
         if (e.constantPool == this || e.constantPool == parent)
             return e;
-        AbstractPoolEntry.ConcreteUtf8Entry ce = tryFindUtf8(e.hashCode(), e);
-        return ce == null ? internalAdd(new AbstractPoolEntry.ConcreteUtf8Entry(this, size, e)) : ce;
+        AbstractPoolEntry.Utf8EntryImpl ce = tryFindUtf8(e.hashCode(), e);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, e)) : ce;
     }
 
     @Override
-    public AbstractPoolEntry.ConcreteClassEntry classEntry(Utf8Entry nameEntry) {
-        AbstractPoolEntry.ConcreteUtf8Entry ne = maybeCloneUtf8Entry(nameEntry);
-        var e = (AbstractPoolEntry.ConcreteClassEntry) findEntry(TAG_CLASS, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteClassEntry(this, size, ne)) : e;
+    public AbstractPoolEntry.ClassEntryImpl classEntry(Utf8Entry nameEntry) {
+        AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
+        var e = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, ne)) : e;
     }
 
     @Override
     public PackageEntry packageEntry(Utf8Entry nameEntry) {
-        AbstractPoolEntry.ConcreteUtf8Entry ne = maybeCloneUtf8Entry(nameEntry);
-        var e = (AbstractPoolEntry.ConcretePackageEntry) findEntry(TAG_PACKAGE, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcretePackageEntry(this, size, ne)) : e;
+        AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
+        var e = (AbstractPoolEntry.PackageEntryImpl) findEntry(TAG_PACKAGE, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.PackageEntryImpl(this, size, ne)) : e;
     }
 
     @Override
     public ModuleEntry moduleEntry(Utf8Entry nameEntry) {
-        AbstractPoolEntry.ConcreteUtf8Entry ne = maybeCloneUtf8Entry(nameEntry);
-        var e = (AbstractPoolEntry.ConcreteModuleEntry) findEntry(TAG_MODULE, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteModuleEntry(this, size, ne)) : e;
+        AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
+        var e = (AbstractPoolEntry.ModuleEntryImpl) findEntry(TAG_MODULE, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.ModuleEntryImpl(this, size, ne)) : e;
     }
 
     @Override
-    public AbstractPoolEntry.ConcreteNameAndTypeEntry natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
-        AbstractPoolEntry.ConcreteUtf8Entry ne = maybeCloneUtf8Entry(nameEntry);
-        AbstractPoolEntry.ConcreteUtf8Entry te = maybeCloneUtf8Entry(typeEntry);
-        var e = (AbstractPoolEntry.ConcreteNameAndTypeEntry) findEntry(TAG_NAMEANDTYPE, ne, te);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteNameAndTypeEntry(this, size, ne, te)) : e;
+    public AbstractPoolEntry.NameAndTypeEntryImpl natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
+        AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
+        AbstractPoolEntry.Utf8EntryImpl te = maybeCloneUtf8Entry(typeEntry);
+        var e = (AbstractPoolEntry.NameAndTypeEntryImpl) findEntry(TAG_NAMEANDTYPE, ne, te);
+        return e == null ? internalAdd(new AbstractPoolEntry.NameAndTypeEntryImpl(this, size, ne, te)) : e;
     }
 
     @Override
     public FieldRefEntry fieldRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ConcreteClassEntry oe = (AbstractPoolEntry.ConcreteClassEntry) owner;
-        AbstractPoolEntry.ConcreteNameAndTypeEntry ne = (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType;
+        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
+        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
         if (!canWriteDirect(oe.constantPool))
             oe = classEntry(owner.name());
         if (!canWriteDirect(ne.constantPool))
             ne = natEntry(nameAndType.name(), nameAndType.type());
-        var e = (AbstractPoolEntry.ConcreteFieldRefEntry) findEntry(TAG_FIELDREF, oe, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteFieldRefEntry(this, size, oe, ne)) : e;
+        var e = (AbstractPoolEntry.FieldRefEntryImpl) findEntry(TAG_FIELDREF, oe, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.FieldRefEntryImpl(this, size, oe, ne)) : e;
     }
 
     @Override
     public MethodRefEntry methodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ConcreteClassEntry oe = (AbstractPoolEntry.ConcreteClassEntry) owner;
-        AbstractPoolEntry.ConcreteNameAndTypeEntry ne = (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType;
+        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
+        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
         if (!canWriteDirect(oe.constantPool))
             oe = classEntry(owner.name());
         if (!canWriteDirect(ne.constantPool))
             ne = natEntry(nameAndType.name(), nameAndType.type());
-        var e = (AbstractPoolEntry.ConcreteMethodRefEntry) findEntry(TAG_METHODREF, oe, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteMethodRefEntry(this, size, oe, ne)) : e;
+        var e = (AbstractPoolEntry.MethodRefEntryImpl) findEntry(TAG_METHODREF, oe, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.MethodRefEntryImpl(this, size, oe, ne)) : e;
     }
 
     @Override
     public InterfaceMethodRefEntry interfaceMethodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ConcreteClassEntry oe = (AbstractPoolEntry.ConcreteClassEntry) owner;
-        AbstractPoolEntry.ConcreteNameAndTypeEntry ne = (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType;
+        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
+        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
         if (!canWriteDirect(oe.constantPool))
             oe = classEntry(owner.name());
         if (!canWriteDirect(ne.constantPool))
             ne = natEntry(nameAndType.name(), nameAndType.type());
-        var e = (AbstractPoolEntry.ConcreteInterfaceMethodRefEntry) findEntry(TAG_INTERFACEMETHODREF, oe, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteInterfaceMethodRefEntry(this, size, oe, ne)) : e;
+        var e = (AbstractPoolEntry.InterfaceMethodRefEntryImpl) findEntry(TAG_INTERFACEMETHODREF, oe, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, size, oe, ne)) : e;
     }
 
     @Override
@@ -456,9 +456,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(Utf8Entry descriptor) {
-        AbstractPoolEntry.ConcreteUtf8Entry de = maybeCloneUtf8Entry(descriptor);
-        var e = (AbstractPoolEntry.ConcreteMethodTypeEntry) findEntry(TAG_METHODTYPE, de);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteMethodTypeEntry(this, size, de)) : e;
+        AbstractPoolEntry.Utf8EntryImpl de = maybeCloneUtf8Entry(descriptor);
+        var e = (AbstractPoolEntry.MethodTypeEntryImpl) findEntry(TAG_METHODTYPE, de);
+        return e == null ? internalAdd(new AbstractPoolEntry.MethodTypeEntryImpl(this, size, de)) : e;
     }
 
     @Override
@@ -477,7 +477,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
             if (e.tag() == TAG_METHODHANDLE
-                && e instanceof AbstractPoolEntry.ConcreteMethodHandleEntry ce
+                && e instanceof AbstractPoolEntry.MethodHandleEntryImpl ce
                 && ce.kind() == refKind && ce.reference() == reference)
                 return ce;
         }
@@ -485,7 +485,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             fullScan();
             return methodHandleEntry(refKind, reference);
         }
-        return internalAdd(new AbstractPoolEntry.ConcreteMethodHandleEntry(this, size, hash, refKind, (AbstractPoolEntry.AbstractMemberRefEntry) reference), hash);
+        return internalAdd(new AbstractPoolEntry.MethodHandleEntryImpl(this, size, hash, refKind, (AbstractPoolEntry.AbstractMemberRefEntry) reference), hash);
     }
 
     @Override
@@ -501,7 +501,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
             if (e.tag() == TAG_INVOKEDYNAMIC
-                && e instanceof AbstractPoolEntry.ConcreteInvokeDynamicEntry ce
+                && e instanceof AbstractPoolEntry.InvokeDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
                 return ce;
         }
@@ -510,7 +510,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return invokeDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.ConcreteInvokeDynamicEntry ce = new AbstractPoolEntry.ConcreteInvokeDynamicEntry(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
+        AbstractPoolEntry.InvokeDynamicEntryImpl ce = new AbstractPoolEntry.InvokeDynamicEntryImpl(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
@@ -528,7 +528,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
             if (e.tag() == TAG_CONSTANTDYNAMIC
-                && e instanceof AbstractPoolEntry.ConcreteConstantDynamicEntry ce
+                && e instanceof AbstractPoolEntry.ConstantDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
                 return ce;
         }
@@ -537,7 +537,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return constantDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.ConcreteConstantDynamicEntry ce = new AbstractPoolEntry.ConcreteConstantDynamicEntry(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
+        AbstractPoolEntry.ConstantDynamicEntryImpl ce = new AbstractPoolEntry.ConstantDynamicEntryImpl(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
@@ -545,32 +545,32 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public IntegerEntry intEntry(int value) {
         var e = (IntegerEntry) findPrimitiveEntry(TAG_INTEGER, value);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteIntegerEntry(this, size, value)) : e;
+        return e == null ? internalAdd(new AbstractPoolEntry.IntegerEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public FloatEntry floatEntry(float value) {
         var e = (FloatEntry) findPrimitiveEntry(TAG_FLOAT, value);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteFloatEntry(this, size, value)) : e;
+        return e == null ? internalAdd(new AbstractPoolEntry.FloatEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public LongEntry longEntry(long value) {
         var e = (LongEntry) findPrimitiveEntry(TAG_LONG, value);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteLongEntry(this, size, value)) : e;
+        return e == null ? internalAdd(new AbstractPoolEntry.LongEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public DoubleEntry doubleEntry(double value) {
         var e = (DoubleEntry) findPrimitiveEntry(TAG_DOUBLE, value);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteDoubleEntry(this, size, value)) : e;
+        return e == null ? internalAdd(new AbstractPoolEntry.DoubleEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public StringEntry stringEntry(Utf8Entry utf8) {
-        AbstractPoolEntry.ConcreteUtf8Entry ue = maybeCloneUtf8Entry(utf8);
-        var e = (AbstractPoolEntry.ConcreteStringEntry) findEntry(TAG_STRING, ue);
-        return e == null ? internalAdd(new AbstractPoolEntry.ConcreteStringEntry(this, size, ue)) : e;
+        AbstractPoolEntry.Utf8EntryImpl ue = maybeCloneUtf8Entry(utf8);
+        var e = (AbstractPoolEntry.StringEntryImpl) findEntry(TAG_STRING, ue);
+        return e == null ? internalAdd(new AbstractPoolEntry.StringEntryImpl(this, size, ue)) : e;
     }
 
     @Override
@@ -589,7 +589,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 break;
             }
         }
-        AbstractPoolEntry.ConcreteMethodHandleEntry mre = (AbstractPoolEntry.ConcreteMethodHandleEntry) methodReference;
+        AbstractPoolEntry.MethodHandleEntryImpl mre = (AbstractPoolEntry.MethodHandleEntryImpl) methodReference;
         int hash = BootstrapMethodEntryImpl.computeHashCode(mre, arguments);
         EntryMap<BootstrapMethodEntryImpl> map = bsmMap();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {

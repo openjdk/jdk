@@ -35,7 +35,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
-        permits AbstractPoolEntry.ConcreteInvokeDynamicEntry {
+        permits AbstractPoolEntry.InvokeDynamicEntryImpl {
 
     /**
      * {@return a symbolic descriptor for the dynamic call site}

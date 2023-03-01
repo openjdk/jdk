@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface DoubleEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits AbstractPoolEntry.ConcreteDoubleEntry {
+        permits AbstractPoolEntry.DoubleEntryImpl {
 
     /**
      * {@return the double value}

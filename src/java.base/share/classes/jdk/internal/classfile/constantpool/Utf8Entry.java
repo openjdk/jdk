@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  */
 public sealed interface Utf8Entry
         extends CharSequence, AnnotationConstantValueEntry
-        permits AbstractPoolEntry.ConcreteUtf8Entry {
+        permits AbstractPoolEntry.Utf8EntryImpl {
 
     /**
      * {@return the string value for this entry}

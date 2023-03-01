@@ -32,7 +32,7 @@ import jdk.internal.classfile.jdktypes.PackageDesc;
  * classfile.
  */
 public sealed interface PackageEntry extends PoolEntry
-        permits AbstractPoolEntry.ConcretePackageEntry {
+        permits AbstractPoolEntry.PackageEntryImpl {
     /**
      * {@return the package name}
      */

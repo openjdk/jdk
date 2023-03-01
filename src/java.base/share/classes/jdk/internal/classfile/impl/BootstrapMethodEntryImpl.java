@@ -34,18 +34,18 @@ import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 
-import static jdk.internal.classfile.impl.AbstractPoolEntry.ConcreteMethodHandleEntry;
+import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
 public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
     final int hash;
     private final ConstantPool constantPool;
-    private final ConcreteMethodHandleEntry handle;
+    private final MethodHandleEntryImpl handle;
     private final List<LoadableConstantEntry> arguments;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
-                                 ConcreteMethodHandleEntry handle,
+                                 MethodHandleEntryImpl handle,
                                  List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
         this.hash = hash;
@@ -85,7 +85,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
             return false;
     }
 
-    static int computeHashCode(ConcreteMethodHandleEntry handle,
+    static int computeHashCode(MethodHandleEntryImpl handle,
                                List<? extends LoadableConstantEntry> arguments) {
         int hash = handle.hashCode();
         for (LoadableConstantEntry a : arguments) {

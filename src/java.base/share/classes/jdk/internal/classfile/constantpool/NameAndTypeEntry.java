@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  */
 public sealed interface NameAndTypeEntry extends PoolEntry
-        permits AbstractPoolEntry.ConcreteNameAndTypeEntry {
+        permits AbstractPoolEntry.NameAndTypeEntryImpl {
 
     /**
      * {@return the field or method name}
