@@ -34,7 +34,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.meta.AnnotationData;
-import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;

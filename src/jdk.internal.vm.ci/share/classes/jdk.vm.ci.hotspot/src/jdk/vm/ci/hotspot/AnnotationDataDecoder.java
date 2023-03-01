@@ -20,16 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.hotspot;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
+import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.EnumData;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MetaUtil;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
  * and employs {@link AnnotationData} and {@link EnumData} to represent decoded annotations and enum
  * constants respectively.
  */
-public class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, StringBuilder> {
+class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, StringBuilder> {
 
     public static final AnnotationData[] NO_ANNOTATION_DATA = {};
 

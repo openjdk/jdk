@@ -41,7 +41,6 @@ import java.util.HashMap;
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.AnnotationData;
-import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;

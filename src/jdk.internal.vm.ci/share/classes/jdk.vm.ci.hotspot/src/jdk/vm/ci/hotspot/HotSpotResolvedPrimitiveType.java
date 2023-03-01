@@ -31,7 +31,6 @@ import java.lang.reflect.Modifier;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.AnnotationData;
-import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
