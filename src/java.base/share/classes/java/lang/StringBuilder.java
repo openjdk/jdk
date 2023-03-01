@@ -447,8 +447,9 @@ public final class StringBuilder
     }
 
     /**
-     * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
      */
     @Override
     public StringBuilder repeat(char c, int count) {
@@ -457,8 +458,9 @@ public final class StringBuilder
     }
 
     /**
-     * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
      */
     @Override
     public StringBuilder repeat(CharSequence cs, int count) {

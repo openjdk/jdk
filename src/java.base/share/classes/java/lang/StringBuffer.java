@@ -709,8 +709,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
-     * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
      */
     @Override
     public synchronized StringBuffer repeat(char c, int count) {
@@ -719,8 +720,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
-     * @since 21
      * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
      */
     @Override
     public synchronized StringBuffer repeat(CharSequence cs, int count) {
