@@ -2090,7 +2090,7 @@ jint os::set_minimum_stack_sizes() {
 // Converts a hostname to a IPv4 network address. Used only by networkStream.
 // All supported operating systems support the getaddrinfo API so we can share
 // this.
-struct addrinfo* os::get_host_by_name(char* name) {
+struct addrinfo* os::get_host_by_name(const char* name) {
   struct addrinfo* addrInfo = NULL;
   struct addrinfo hints;
 
@@ -2107,9 +2107,11 @@ struct addrinfo* os::get_host_by_name(char* name) {
 
 #ifdef ASSERT
   {
+    char buf[INET_ADDRSTRLEN];
     struct sockaddr_in *inaddr = (struct sockaddr_in *)addrInfo->ai_addr;
-    char* addr = inet_ntoa((struct in_addr)inaddr->sin_addr);
-    log_debug(os)("os::get_host_by_name(): socket addr info: %s -> %s", name, addr);
+    const char* addr = inet_ntop(AF_INET, &inaddr->sin_addr, buf, sizeof(buf));
+    log_debug(os)("os::get_host_by_name(): IP addr info: %s -> %s",
+                  name, addr != nullptr ? addr : "<invalid address>");
   }
 #endif
 

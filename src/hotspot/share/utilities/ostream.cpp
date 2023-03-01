@@ -1130,15 +1130,15 @@ void networkStream::close() {
   }
 }
 
-bool networkStream::connect(const char *ip, short port) {
-
+// host could be dddd.dddd.dddd.dddd IPv4 address, or a host name
+bool networkStream::connect(const char *host, short port) {
   struct sockaddr_in server;
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
 
-  server.sin_addr.s_addr = inet_addr(ip);
-  if (server.sin_addr.s_addr == (uint32_t)-1) {
-    struct addrinfo* addrInfo = os::get_host_by_name((char*)ip);
+  int ret = inet_pton(AF_INET, host, &server.sin_addr.s_addr);
+  if (ret == 0) { // not IPv4 address so assume a host name
+    struct addrinfo* addrInfo = os::get_host_by_name(host);
     if (addrInfo != nullptr) {
       struct sockaddr_in* saddr = (struct sockaddr_in *)addrInfo->ai_addr;
       struct in_addr* addr = &saddr->sin_addr;
