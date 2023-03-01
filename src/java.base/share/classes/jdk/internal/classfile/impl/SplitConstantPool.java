@@ -304,7 +304,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
             if (e.tag() == tag
-                && e instanceof AbstractPoolEntry.RefEntry<?> re
+                && e instanceof AbstractPoolEntry.AbstractRefEntry<?> re
                 && re.ref1 == ref1)
                 return re;
         }
@@ -323,7 +323,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
             if (e.tag() == tag
-                    && e instanceof AbstractPoolEntry.RefsEntry<?, ?> re
+                    && e instanceof AbstractPoolEntry.AbstractRefsEntry<?, ?> re
                     && re.ref1 == ref1
                     && re.ref2 == ref2) {
                 return re;
@@ -485,7 +485,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             fullScan();
             return methodHandleEntry(refKind, reference);
         }
-        return internalAdd(new AbstractPoolEntry.ConcreteMethodHandleEntry(this, size, hash, refKind, (AbstractPoolEntry.MemberRefEntry) reference), hash);
+        return internalAdd(new AbstractPoolEntry.ConcreteMethodHandleEntry(this, size, hash, refKind, (AbstractPoolEntry.AbstractMemberRefEntry) reference), hash);
     }
 
     @Override

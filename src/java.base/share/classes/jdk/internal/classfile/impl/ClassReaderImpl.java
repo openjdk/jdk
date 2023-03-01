@@ -327,7 +327,7 @@ public final class ClassReaderImpl
                 case TAG_NAMEANDTYPE -> new AbstractPoolEntry.ConcreteNameAndTypeEntry(this, index, (AbstractPoolEntry.ConcreteUtf8Entry) readUtf8Entry(q),
                                                                                    (AbstractPoolEntry.ConcreteUtf8Entry) readUtf8Entry(q + 2));
                 case TAG_METHODHANDLE -> new AbstractPoolEntry.ConcreteMethodHandleEntry(this, index, readU1(q),
-                                                                                     (AbstractPoolEntry.MemberRefEntry) readEntry(q + 1));
+                                                                                     (AbstractPoolEntry.AbstractMemberRefEntry) readEntry(q + 1));
                 case TAG_METHODTYPE -> new AbstractPoolEntry.ConcreteMethodTypeEntry(this, index, (AbstractPoolEntry.ConcreteUtf8Entry) readUtf8Entry(q));
                 case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConcreteConstantDynamicEntry(this, index, readU2(q), (AbstractPoolEntry.ConcreteNameAndTypeEntry) readNameAndTypeEntry(q + 2));
                 case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.ConcreteInvokeDynamicEntry(this, index, readU2(q), (AbstractPoolEntry.ConcreteNameAndTypeEntry) readNameAndTypeEntry(q + 2));
