@@ -73,10 +73,8 @@ import java.util.Map;
  * if a Java virtual machine supports measuring of the CPU time for any
  * platform thread.  The {@link #isCurrentThreadCpuTimeSupported()} method
  * can be used to determine if a Java virtual machine supports measuring of
- * the CPU time for the current platform thread.
- * A Java virtual machine implementation that supports CPU time measurement
- * for any platform thread will also support that for the current platform
- * thread.
+ * the CPU time with the {@link #getCurrentThreadCpuTime()} and
+ * {@link #getCurrentThreadUserTime()} methods from a platform thread.
  *
  * <p> The CPU time provided by this interface has nanosecond precision
  * but not necessarily nanosecond accuracy.
@@ -441,7 +439,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * </pre></blockquote>
      *
      * @return the user-level CPU time for the current thread if CPU time
-     * measurement is enabled; @code -1} if not enabled or the current
+     * measurement is enabled; {@code -1} if not enabled or the current
      * thread is a virtual thread
      *
      * @throws UnsupportedOperationException if the Java
@@ -538,22 +536,22 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @return
      *   {@code true}
      *     if the Java virtual machine supports CPU time
-     *     measurement for any thread;
+     *     measurement for any platform thread;
      *   {@code false} otherwise.
      */
     public boolean isThreadCpuTimeSupported();
 
     /**
-     * Tests if the Java virtual machine supports CPU time measurement with the
-     * {@link #getCurrentThreadCpuTime()} and {@link #getCurrentThreadUserTime()}
-     * methods when called from a platform thread.
+     * Tests if the Java virtual machine supports CPU time measurement from
+     * a platform thread with the {@link #getCurrentThreadCpuTime()} and
+     * {@link #getCurrentThreadUserTime()} methods.
      * This method returns {@code true} if {@link #isThreadCpuTimeSupported}
      * returns {@code true}.
      *
      * @return
      *   {@code true}
-     *     if the Java virtual machine supports CPU time
-     *     measurement for current thread;
+     *     if the Java virtual machine supports CPU time measurement
+     *     of the current platform thread;
      *   {@code false} otherwise.
      */
     public boolean isCurrentThreadCpuTimeSupported();
