@@ -5313,53 +5313,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   z_lmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 }
 
-void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
-#ifdef ASSERT
-  Label ok;
-  z_brc(cond, ok);
-  is_static ? stop_static(msg, id) : stop(msg, id);
-  bind(ok);
-#endif // ASSERT
-}
-
-void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
-                                          Register mem_base, const char* msg, int id) {
-#ifdef ASSERT
-  switch (size) {
-    case 4:
-      load_and_test_int(Z_R0, Address(mem_base, mem_offset));
-      break;
-    case 8:
-      load_and_test_long(Z_R0,  Address(mem_base, mem_offset));
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  // if relocation is not allowed then stop_static() will be called otherwise call stop()
-  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, !allow_relocation);
-#endif // ASSERT
-}
-
-// Check the condition
-//   expected_size == FP - SP
-// after transformation:
-//   expected_size - FP + SP == 0
-// Destroys Register expected_size if no tmp register is passed.
-void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
-#ifdef ASSERT
-  if (tmp == noreg) {
-    tmp = expected_size;
-  } else {
-    if (tmp != expected_size) {
-      z_lgr(tmp, expected_size);
-    }
-    z_algr(tmp, Z_SP);
-    z_slg(tmp, 0, Z_R0, Z_SP);
-    asm_assert(bcondEqual, msg, id);
-  }
-#endif // ASSERT
-}
-
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
   z_stmg(Z_R1, Z_R5, offset, dst); offset += 5 * BytesPerWord;

@@ -864,7 +864,7 @@ class MacroAssembler: public Assembler {
   //
 
   // Assert on CC (condition code in CPU state).
-  void asm_assert(branch_condition cond, const char* msg, int id, bool is_static=true);
+  inline void asm_assert(branch_condition cond, const char* msg, int id, bool is_static=true);
 
   // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
   inline void asm_assert(bool check_equal, const char* msg, int id) {
@@ -873,7 +873,7 @@ class MacroAssembler: public Assembler {
 
  private:
   // Emit assertions.
-  void asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
+  inline void asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                             Register mem_base, const char* msg, int id);
 
  public:
@@ -901,7 +901,7 @@ class MacroAssembler: public Assembler {
   inline void asm_assert_mem8_isnot_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
   }
-  void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
+  inline void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
 
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);

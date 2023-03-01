@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,6 +309,53 @@ inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Registe
 
 inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame_static(Register sp, Register tmp1) {
   set_top_ijava_frame_at_SP_as_last_Java_frame(sp, tmp1, true);
+}
+
+void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
+#ifdef ASSERT
+  Label ok;
+  z_brc(cond, ok);
+  is_static ? stop_static(msg, id) : stop(msg, id);
+  bind(ok);
+#endif // ASSERT
+}
+
+void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
+                                          Register mem_base, const char* msg, int id) {
+#ifdef ASSERT
+  switch (size) {
+    case 4:
+      load_and_test_int(Z_R0, Address(mem_base, mem_offset));
+      break;
+    case 8:
+      load_and_test_long(Z_R0,  Address(mem_base, mem_offset));
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  // if relocation is not allowed then stop_static() will be called otherwise call stop()
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, !allow_relocation);
+#endif // ASSERT
+}
+
+// Check the condition
+//   expected_size == FP - SP
+// after transformation:
+//   expected_size - FP + SP == 0
+// Destroys Register expected_size if no tmp register is passed.
+void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
+#ifdef ASSERT
+  if (tmp == noreg) {
+    tmp = expected_size;
+  } else {
+    if (tmp != expected_size) {
+      z_lgr(tmp, expected_size);
+    }
+    z_algr(tmp, Z_SP);
+    z_slg(tmp, 0, Z_R0, Z_SP);
+    asm_assert(bcondEqual, msg, id);
+  }
+#endif // ASSERT
 }
 
 #endif // CPU_S390_MACROASSEMBLER_S390_INLINE_HPP

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #ifndef CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
 #define CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
 
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 

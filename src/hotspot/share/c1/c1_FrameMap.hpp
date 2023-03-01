@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_C1_C1_FRAMEMAP_HPP
 #define SHARE_C1_C1_FRAMEMAP_HPP
 
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.hpp"
