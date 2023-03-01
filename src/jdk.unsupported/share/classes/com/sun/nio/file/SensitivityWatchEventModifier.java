@@ -33,11 +33,12 @@ import jdk.internal.misc.FileSystemOption;
  * watch service implementation that polls the file system.
  *
  * @deprecated
- * This {@code enum} is only used by the polling implementation of
- * {@link java.nio.file.WatchService WatchService}.  The polling
- * {@code WatchService} is used only on macOS and likely to be removed
- * in a future release when a version based on the native file event
- * notification facility becomes available.
+ * The polling implementation of {@link java.nio.file.WatchService WatchService}
+ * no longer recognizes this {@link java.nio.file.WatchEvent.Modifier
+ * WatchEvent.Modifier}.  This was the only {@code WatchService} in the JDK
+ * which used this {@code WatchEvent.Modifier}.  Therefore this
+ * {@code WatchEvent.Modifier} class is vestigial and should be removed in a
+ * future release.
  *
  * @since 1.7
  */
