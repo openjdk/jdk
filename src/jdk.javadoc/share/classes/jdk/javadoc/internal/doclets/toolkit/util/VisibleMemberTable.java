@@ -281,16 +281,25 @@ public class VisibleMemberTable {
     }
 
     /**
-     * Returns the overridden method, if it is simply overriding or the
-     * method is a member of a package private type, this method is
-     * primarily used to determine the location of a possible comment.
+     * Returns the method overridden by the provided method, or {@code null}.
+     *
+     * Sometimes it's not possible to link to a method that a link, linkplain,
+     * or see tag mentions. This is because the method is a "simple override"
+     * and, thus, has no useful documentation, or because the method is
+     * declared in a type that has package access and, thus, has no visible
+     * documentation.
+     *
+     * Call this method to determine if any of the above is the case. If the
+     * call returns a method element, link to that method element instead of
+     * the provided method.
      *
      * @param e the method to check
-     * @return the method found or null
+     * @return the method found or {@code null}
      */
     public ExecutableElement getOverriddenMethod(ExecutableElement e) {
+        // TODO: consider possible ambiguities: multiple overridden methods
         ensureInitialized();
-
+        assert !overriddenMethodTable.containsKey(null);
         OverrideInfo found = overriddenMethodTable.get(e);
         if (found != null
                 && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
