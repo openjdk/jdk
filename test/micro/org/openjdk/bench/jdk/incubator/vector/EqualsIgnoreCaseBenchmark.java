@@ -62,13 +62,13 @@ public class EqualsIgnoreCaseBenchmark {
         len = a.length;
     }
     @Benchmark
-    public void scalar(Blackhole blackhole) {
-        blackhole.consume(scalarEqualsIgnoreCase(a, b, len));
+    public boolean scalar() {
+        return scalarEqualsIgnoreCase(a, b, len);
     }
 
     @Benchmark
-    public void vectorized(Blackhole blackhole) {
-        blackhole.consume(vectorizedEqualsIgnoreCase(a, b, len));
+    public boolean vectorized() {
+        return vectorizedEqualsIgnoreCase(a, b, len);
     }
 
     private boolean vectorizedEqualsIgnoreCase(byte[] a, byte[] b, int len) {
