@@ -98,7 +98,8 @@ class NativeTrimmerThread : public ConcurrentGCThread {
 
       // 2 - Trimming happens outside of lock protection. GC threads can issue new commands
       //     concurrently.
-      TrimResult result = execute_trim_and_log();
+      const bool explicitly_scheduled = (ntt == 0);
+      TrimResult result = execute_trim_and_log(explicitly_scheduled);
 
       // 3 - Update _next_trim_time; but give concurrent setters preference.
       {
@@ -148,7 +149,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
 
   // Execute the native trim, log results.
   // Return true if trim succeeded *and* we have valid size change data.
-  TrimResult execute_trim_and_log() const {
+  TrimResult execute_trim_and_log(bool explicitly_scheduled) const {
     assert(os::can_trim_native_heap(), "Unexpected");
     const int64_t tnow = now();
     os::size_change_t sc;
@@ -159,7 +160,8 @@ class NativeTrimmerThread : public ConcurrentGCThread {
       if (sc.after != SIZE_MAX) {
         const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
         const char sign = sc.after < sc.before ? '-' : '+';
-        log_info(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+        log_info(gc, trim)("Trim native heap (%s): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+                           (explicitly_scheduled ? "explicit" : "periodic"),
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            trim_time.seconds() * 1000);
         return TrimResult(tnow, now() - tnow, sc.before, sc.after);
@@ -219,9 +221,9 @@ public:
       ml.notify_all();
     }
     if (_periodic_trim_enabled) {
-      log_debug(gc, trim)("NativeTrimmer unpause+trim");
+      log_debug(gc, trim)("NativeTrimmer unpause + request explicit trim");
     } else {
-      log_debug(gc, trim)("NativeTrimmer trim");
+      log_debug(gc, trim)("NativeTrimmer request explicit trim");
     }
   }
 
@@ -247,7 +249,7 @@ void TrimNative::initialize() {
       }
       log_info(gc, trim)("Periodic trimming disabled.");
     } else {
-      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds, dynamic step-down %s",
+      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds, dynamic step-down %s)",
                          TrimNativeHeapInterval, (TrimNativeHeapAdaptiveStepDown ? "enabled" : "disabled"));
     }
     g_trimmer_thread = new NativeTrimmerThread();
