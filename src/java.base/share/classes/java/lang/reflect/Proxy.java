@@ -878,11 +878,11 @@ public class Proxy implements java.io.Serializable {
             }
             if (type != c) {
                 /**
-                * If classloader has a name explicitly set then
-                *        <loader-name>@<id>
-                * If classloader has no name then
-                *        <qualified-class-name>@<id>
-                */
+                 * If classloader has a name explicitly set then
+                 *        <loader-name>@<id>
+                 * If classloader has no name then
+                 *        <qualified-class-name>@<id>
+                 */
                 String nid = (ld.getName() != null) ? ld.getName() + "@" + Integer.toHexString(System.identityHashCode(ld))
                                                     : Objects.toIdentityString(ld);
                 throw new IllegalArgumentException(c.getName() +
