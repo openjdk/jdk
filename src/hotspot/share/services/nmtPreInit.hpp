@@ -181,6 +181,7 @@ class NMTPreInitAllocationTable {
 public:
 
   NMTPreInitAllocationTable();
+  ~NMTPreInitAllocationTable();
 
   // Adds an entry to the table
   void add(NMTPreInitAllocation* a) {
@@ -257,7 +258,7 @@ public:
 
   // Switches from NMT pre-init state to NMT post-init state;
   //  in post-init, no modifications to the lookup table are possible.
-  static void pre_to_post();
+  static void pre_to_post(bool nmt_off);
 
   // Called from os::malloc.
   // Returns true if allocation was handled here; in that case,

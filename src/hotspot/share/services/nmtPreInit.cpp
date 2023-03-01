@@ -101,6 +101,18 @@ NMTPreInitAllocationTable::NMTPreInitAllocationTable() {
   ::memset(_entries, 0, sizeof(_entries));
 }
 
+NMTPreInitAllocationTable::~NMTPreInitAllocationTable() {
+  // clear LU entries, but let payloads live!
+  for (int i = 0; i < table_size; i++) {
+    NMTPreInitAllocation* a = _entries[i];
+    while (a != nullptr) {
+      NMTPreInitAllocation* a2 = a->next;
+      delete a;
+      a = a2;
+    }
+  }
+}
+
 // print a string describing the current state
 void NMTPreInitAllocationTable::print_state(outputStream* st) const {
   // Collect some statistics and print them
@@ -192,10 +204,11 @@ void* NMTPreInit::do_os_malloc(size_t size, MEMFLAGS memflags) {
 
 // Switches from NMT pre-init state to NMT post-init state;
 //  in post-init, no modifications to the lookup table are possible.
-void NMTPreInit::pre_to_post() {
+void NMTPreInit::pre_to_post(bool nmt_off) {
+
   assert(!MemTracker::is_initialized(), "just once");
   DEBUG_ONLY(verify();)
-  if (MemTracker::tracking_level() == NMT_off) {
+  if (nmt_off) {
     // NMT is disabled.
     // Since neither pre- nor post-init-allocations use headers, from now on any pre-init allocation
     // can be handled directly by os::realloc or os::free.
@@ -205,9 +218,8 @@ void NMTPreInit::pre_to_post() {
     // number. This is a compromise to keep the coding simple and startup time short. It could very
     // easily improved by keeping a header pool, similar to metaspace ChunkHeaderPool. But since NMTPreInit
     // had been critizised as "too complicated", I try to keep things short and simple.
-    assert(_table != (NMTPreInitAllocationTable*)-1, "just once");
     delete _table;
-    _table = (NMTPreInitAllocationTable*)-1;
+    _table = nullptr;
   }
 }
 
