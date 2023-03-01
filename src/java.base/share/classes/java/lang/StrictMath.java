@@ -164,7 +164,9 @@ public final class StrictMath {
      * @param   a   the value whose arc sine is to be returned.
      * @return  the arc sine of the argument.
      */
-    public static native double asin(double a);
+    public static double asin(double a) {
+        return FdLibm.Asin.compute(a);
+    }
 
     /**
      * Returns the arc cosine of a value; the returned angle is in the
@@ -177,7 +179,9 @@ public final class StrictMath {
      * @param   a   the value whose arc cosine is to be returned.
      * @return  the arc cosine of the argument.
      */
-    public static native double acos(double a);
+    public static double acos(double a) {
+        return FdLibm.Acos.compute(a);
+    }
 
     /**
      * Returns the arc tangent of a value; the returned angle is in the
@@ -193,7 +197,9 @@ public final class StrictMath {
      * @param   a   the value whose arc tangent is to be returned.
      * @return  the arc tangent of the argument.
      */
-    public static native double atan(double a);
+    public static double atan(double a) {
+        return FdLibm.Atan.compute(a);
+    }
 
     /**
      * Converts an angle measured in degrees to an approximately
@@ -541,7 +547,9 @@ public final class StrictMath {
      *          in polar coordinates that corresponds to the point
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
-    public static native double atan2(double y, double x);
+    public static double atan2(double y, double x) {
+        return FdLibm.Atan2.compute(y, x);
+    }
 
     /**
      * Returns the value of the first argument raised to the power of the
@@ -2075,7 +2083,9 @@ public final class StrictMath {
      * @return  The hyperbolic sine of {@code x}.
      * @since 1.5
      */
-    public static native double sinh(double x);
+    public static double sinh(double x) {
+        return FdLibm.Sinh.compute(x);
+    }
 
     /**
      * Returns the hyperbolic cosine of a {@code double} value.
@@ -2099,7 +2109,9 @@ public final class StrictMath {
      * @return  The hyperbolic cosine of {@code x}.
      * @since 1.5
      */
-    public static native double cosh(double x);
+    public static double cosh(double x) {
+        return FdLibm.Cosh.compute(x);
+    }
 
     /**
      * Returns the hyperbolic tangent of a {@code double} value.
@@ -2130,7 +2142,9 @@ public final class StrictMath {
      * @return  The hyperbolic tangent of {@code x}.
      * @since 1.5
      */
-    public static native double tanh(double x);
+    public static double tanh(double x) {
+        return FdLibm.Tanh.compute(x);
+    }
 
     /**
      * Returns sqrt(<i>x</i><sup>2</sup>&nbsp;+<i>y</i><sup>2</sup>)

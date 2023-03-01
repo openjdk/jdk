@@ -351,12 +351,12 @@ class Stream<T> extends ExchangeImpl<T> {
     // The Http2StreamResponseSubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    private void registerResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
-        client().registerSubscriber(subscriber);
+    private boolean registerResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        return client().registerSubscriber(subscriber);
     }
 
-    private void unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
-        client().unregisterSubscriber(subscriber);
+    private boolean unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        return client().unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -1606,21 +1606,12 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected void onSubscribed() {
+        protected void register() {
             registerResponseSubscriber(this);
         }
 
         @Override
-        protected void complete(Throwable t) {
-            try {
-                unregisterResponseSubscriber(this);
-            } finally {
-                super.complete(t);
-            }
-        }
-
-        @Override
-        protected void onCancel() {
+        protected void unregister() {
             unregisterResponseSubscriber(this);
         }
 

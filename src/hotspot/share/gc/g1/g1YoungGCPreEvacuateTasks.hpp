@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.coordinator.actions;
 
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.services.GraphViewer;
-import org.openide.nodes.Node;
+#ifndef SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+#define SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
 
-public class GraphCloneCookie implements Node.Cookie {
+#include "gc/g1/g1BatchedTask.hpp"
 
-    private final GraphViewer viewer;
-    private final InputGraph graph;
+// Set of pre evacuate collection set tasks containing ("s" means serial):
+// - Retire TLAB and Flush Logs (Java threads)
+// - Flush Logs (s) (Non-Java threads)
+class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
+  class JavaThreadRetireTLABAndFlushLogs;
+  class NonJavaThreadFlushLogs;
 
-    public GraphCloneCookie(GraphViewer viewer, InputGraph graph) {
-        this.viewer = viewer;
-        this.graph = graph;
-    }
+  size_t _old_pending_cards;
 
-    public void openClone() {
-        viewer.view(graph, true);
-    }
-}
+  // References to the tasks to retain access to statistics.
+  JavaThreadRetireTLABAndFlushLogs* _java_retire_task;
+  NonJavaThreadFlushLogs* _non_java_retire_task;
+
+public:
+  G1PreEvacuateCollectionSetBatchTask();
+  ~G1PreEvacuateCollectionSetBatchTask();
+};
+
+#endif // SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+
