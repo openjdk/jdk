@@ -52,9 +52,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // os::commit_memory() or os::uncommit_memory().
   bool _special;
 
-  // Convenience wrapper.
-  inline static size_t pointer_delta(const char* left, const char* right);
-
  public:
   PSVirtualSpace(ReservedSpace rs, size_t alignment);
 
@@ -124,17 +121,13 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 //
 // PSVirtualSpace inlines.
 //
-inline size_t
-PSVirtualSpace::pointer_delta(const char* left, const char* right) {
-  return ::pointer_delta((void *)left, (void*)right, sizeof(char));
-}
 
 inline size_t PSVirtualSpace::committed_size() const {
-  return pointer_delta(committed_high_addr(), committed_low_addr());
+  return pointer_delta(committed_high_addr(), committed_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::reserved_size() const {
-  return pointer_delta(reserved_high_addr(), reserved_low_addr());
+  return pointer_delta(reserved_high_addr(), reserved_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::uncommitted_size() const {

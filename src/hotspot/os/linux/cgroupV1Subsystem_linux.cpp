@@ -111,7 +111,19 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
   }
 }
 
-jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
+/* read_mem_swap
+ *
+ * Determine the memory and swap limit metric. Returns a positive limit value strictly
+ * lower than the physical memory and swap limit iff there is a limit. Otherwise a
+ * negative value is returned indicating the determined status.
+ *
+ * returns:
+ *    * A number > 0 if the limit is available and lower than a physical upper bound.
+ *    * OSCONTAINER_ERROR if the limit cannot be retrieved (i.e. not supported) or
+ *    * -1 if there isn't any limit in place (note: includes values which exceed a physical
+ *      upper bound)
+ */
+jlong CgroupV1Subsystem::read_mem_swap() {
   julong host_total_memsw;
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.limit_in_bytes",
                      "Memory and Swap Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memswlimit);
@@ -126,27 +138,34 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
       if (hier_memswlimit >= host_total_memsw) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
-        jlong swappiness = read_mem_swappiness();
-        if (swappiness == 0) {
-            const char* matchmemline = "hierarchical_memory_limit";
-            GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchmemline,
-                             "Hierarchical Memory Limit is : " JULONG_FORMAT, JULONG_FORMAT, hier_memlimit)
-            log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", hier_memlimit);
-            return (jlong)hier_memlimit;
-        }
         return (jlong)hier_memswlimit;
       }
     }
     return (jlong)-1;
   } else {
-    jlong swappiness = read_mem_swappiness();
-    if (swappiness == 0) {
-      jlong memlimit = read_memory_limit_in_bytes();
-      log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", memlimit);
-      return memlimit;
-    }
     return (jlong)memswlimit;
   }
+}
+
+jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
+  jlong memory_swap = read_mem_swap();
+  if (memory_swap == -1) {
+    return memory_swap;
+  }
+  // If there is a swap limit, but swappiness == 0, reset the limit
+  // to the memory limit. Do the same for cases where swap isn't
+  // supported.
+  jlong swappiness = read_mem_swappiness();
+  if (swappiness == 0 || memory_swap == OSCONTAINER_ERROR) {
+    jlong memlimit = read_memory_limit_in_bytes();
+    if (memory_swap == OSCONTAINER_ERROR) {
+      log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swap is not supported", memlimit);
+    } else {
+      log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swappiness is 0", memlimit);
+    }
+    return memlimit;
+  }
+  return memory_swap;
 }
 
 jlong CgroupV1Subsystem::read_mem_swappiness() {
