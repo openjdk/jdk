@@ -214,6 +214,8 @@ void G1FullCollector::collect() {
 
     phase4_do_compaction();
   } else {
+    // All regions have a high live ratio thus will not be compacted.
+    // The live ratio is only considered if do_maximal_compaction is false.
     log_info(gc, phases) ("No Regions selected for compaction. Skipping Phase 3: Adjust pointers and Phase 4: Compact heap");
   }
 
@@ -331,8 +333,6 @@ void G1FullCollector::phase2_prepare_compaction() {
   phase2a_determine_worklists();
 
   if (!has_compaction_targets()) {
-    // All regions have a high live ratio thus will not be compacted.
-    // The live ratio is only considered if do_maximal_compaction is false.
     log_debug(gc, phases)("Phase 2: No compaction targets");
     return;
   }
