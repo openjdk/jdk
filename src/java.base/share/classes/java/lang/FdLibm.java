@@ -672,7 +672,7 @@ class FdLibm {
             while (tx[nx - 1] == 0.0) { // skip zero term
                 nx--;
             }
-            n  =  KernelRemPio2.__kernel_rem_pio2(tx, y, e0, nx, 2, two_over_pi);
+            n = KernelRemPio2.__kernel_rem_pio2(tx, y, e0, nx, 2, two_over_pi);
             if (hx < 0) {
                 y[0] = -y[0];
                 y[1] = -y[1];
