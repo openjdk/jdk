@@ -826,7 +826,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
   }
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void StringTable::verify_secondary_array_index_bits() {
   int max;
   for (max = 1; ; max++) {
@@ -845,7 +845,7 @@ void StringTable::verify_secondary_array_index_bits() {
          "_secondary_array_index_bits (%d) must be smaller than max possible value (%d)",
          _secondary_array_index_bits, max);
 }
-#endif
+#endif // PRODUCT
 
 // This is called AFTER we enter the CDS safepoint.
 //
