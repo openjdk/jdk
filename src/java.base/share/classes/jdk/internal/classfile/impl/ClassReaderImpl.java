@@ -84,7 +84,7 @@ public final class ClassReaderImpl
     final PoolEntry[] cp;
 
     private ClassModel containedClass;
-    private List<ConcreteBootstrapMethodEntry> bsmEntries;
+    private List<BootstrapMethodEntryImpl> bsmEntries;
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     @SuppressWarnings("unchecked")
@@ -190,7 +190,7 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public ConcreteBootstrapMethodEntry bootstrapMethodEntry(int index) {
+    public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
         return bsmEntries().get(index);
     }
 
@@ -256,7 +256,7 @@ public final class ClassReaderImpl
         return bootstrapMethodsAttribute;
     }
 
-    List<ConcreteBootstrapMethodEntry> bsmEntries() {
+    List<BootstrapMethodEntryImpl> bsmEntries() {
         if (bsmEntries == null) {
             bsmEntries = new ArrayList<>();
             BootstrapMethodsAttribute attr = bootstrapMethodsAttribute();
@@ -265,8 +265,8 @@ public final class ClassReaderImpl
                 for (BootstrapMethodEntry bm : list) {
                     AbstractPoolEntry.ConcreteMethodHandleEntry handle = (AbstractPoolEntry.ConcreteMethodHandleEntry) bm.bootstrapMethod();
                     List<LoadableConstantEntry> args = bm.arguments();
-                    int hash = ConcreteBootstrapMethodEntry.computeHashCode(handle, args);
-                    bsmEntries.add(new ConcreteBootstrapMethodEntry(this, bsmEntries.size(), hash, handle, args));
+                    int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
+                    bsmEntries.add(new BootstrapMethodEntryImpl(this, bsmEntries.size(), hash, handle, args));
                 }
             }
         }

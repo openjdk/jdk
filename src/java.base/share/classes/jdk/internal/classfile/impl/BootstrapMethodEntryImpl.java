@@ -36,7 +36,7 @@ import jdk.internal.classfile.constantpool.MethodHandleEntry;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.ConcreteMethodHandleEntry;
 
-public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry {
+public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
     final int hash;
@@ -44,7 +44,7 @@ public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry 
     private final ConcreteMethodHandleEntry handle;
     private final List<LoadableConstantEntry> arguments;
 
-    ConcreteBootstrapMethodEntry(ConstantPool constantPool, int bsmIndex, int hash,
+    BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
                                  ConcreteMethodHandleEntry handle,
                                  List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;

@@ -765,8 +765,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                             = (AbstractPoolEntry.ConcreteMethodHandleEntry) classReader.readMethodHandleEntry(p);
                     final List<LoadableConstantEntry> args = readEntryList(p + 2);
                     p += 4 + args.size() * 2;
-                    int hash = ConcreteBootstrapMethodEntry.computeHashCode(handle, args);
-                    bs[i] = new ConcreteBootstrapMethodEntry(classReader, i, hash, handle, args);
+                    int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
+                    bs[i] = new BootstrapMethodEntryImpl(classReader, i, hash, handle, args);
                 }
                 bootstraps = List.of(bs);
             }

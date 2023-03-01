@@ -745,10 +745,10 @@ public abstract sealed class AbstractPoolEntry {
     public static abstract sealed class AbstractDynamicConstantPoolEntry extends AbstractPoolEntry {
 
         private final int bsmIndex;
-        private ConcreteBootstrapMethodEntry bootstrapMethod;
+        private BootstrapMethodEntryImpl bootstrapMethod;
         private final ConcreteNameAndTypeEntry nameAndType;
 
-        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, ConcreteBootstrapMethodEntry bootstrapMethod,
+        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                          ConcreteNameAndTypeEntry nameAndType) {
             super(cpm, tag, index, hash);
             this.bsmIndex = bootstrapMethod.bsmIndex();
@@ -767,9 +767,9 @@ public abstract sealed class AbstractPoolEntry {
         /**
          * @return the bootstrapMethod
          */
-        public ConcreteBootstrapMethodEntry bootstrap() {
+        public BootstrapMethodEntryImpl bootstrap() {
             if (bootstrapMethod == null) {
-                bootstrapMethod = (ConcreteBootstrapMethodEntry) constantPool.bootstrapMethodEntry(bsmIndex);
+                bootstrapMethod = (BootstrapMethodEntryImpl) constantPool.bootstrapMethodEntry(bsmIndex);
             }
             return bootstrapMethod;
         }
@@ -809,7 +809,7 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractDynamicConstantPoolEntry
             implements InvokeDynamicEntry {
 
-        ConcreteInvokeDynamicEntry(ConstantPool cpm, int index, int hash, ConcreteBootstrapMethodEntry bootstrapMethod,
+        ConcreteInvokeDynamicEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    ConcreteNameAndTypeEntry nameAndType) {
             super(cpm, Classfile.TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
@@ -829,7 +829,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class ConcreteConstantDynamicEntry extends AbstractDynamicConstantPoolEntry
             implements ConstantDynamicEntry {
 
-        ConcreteConstantDynamicEntry(ConstantPool cpm, int index, int hash, ConcreteBootstrapMethodEntry bootstrapMethod,
+        ConcreteConstantDynamicEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      ConcreteNameAndTypeEntry nameAndType) {
             super(cpm, Classfile.TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }

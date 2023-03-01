@@ -88,10 +88,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private int size, bsmSize;
     private PoolEntry[] myEntries;
-    private ConcreteBootstrapMethodEntry[] myBsmEntries;
+    private BootstrapMethodEntryImpl[] myBsmEntries;
     private boolean doneFullScan;
     private EntryMap<PoolEntry> map;
-    private EntryMap<ConcreteBootstrapMethodEntry> bsmMap;
+    private EntryMap<BootstrapMethodEntryImpl> bsmMap;
 
     public SplitConstantPool() {
         this(new Options(Collections.emptyList()));
@@ -101,7 +101,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.size = 1;
         this.bsmSize = 0;
         this.myEntries = new PoolEntry[1024];
-        this.myBsmEntries = new ConcreteBootstrapMethodEntry[8];
+        this.myBsmEntries = new BootstrapMethodEntryImpl[8];
         this.parent = null;
         this.parentSize = 0;
         this.parentBsmSize = 0;
@@ -116,7 +116,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.size = parentSize;
         this.bsmSize = parentBsmSize;
         this.myEntries = new PoolEntry[8];
-        this.myBsmEntries = new ConcreteBootstrapMethodEntry[8];
+        this.myBsmEntries = new BootstrapMethodEntryImpl[8];
     }
 
     @Override
@@ -137,7 +137,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public ConcreteBootstrapMethodEntry bootstrapMethodEntry(int index) {
+    public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
         return (index < parentBsmSize)
                ? parent.bootstrapMethodEntry(index)
                : myBsmEntries[index - parentBsmSize];
@@ -234,20 +234,20 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         doneFullScan = true;
     }
 
-    private EntryMap<ConcreteBootstrapMethodEntry> bsmMap() {
+    private EntryMap<BootstrapMethodEntryImpl> bsmMap() {
         if (bsmMap == null) {
             bsmMap = new EntryMap<>(Math.max(bsmSize, 16), .75f) {
                 @Override
-                protected ConcreteBootstrapMethodEntry fetchElement(int index) {
+                protected BootstrapMethodEntryImpl fetchElement(int index) {
                     return bootstrapMethodEntry(index);
                 }
             };
             for (int i=0; i<parentBsmSize; i++) {
-                ConcreteBootstrapMethodEntry bsm = parent.bootstrapMethodEntry(i);
+                BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
                 bsmMap.put(bsm.hash, bsm.index);
             }
             for (int i = parentBsmSize; i < bsmSize; ++i) {
-                ConcreteBootstrapMethodEntry bsm = myBsmEntries[i - parentBsmSize];
+                BootstrapMethodEntryImpl bsm = myBsmEntries[i - parentBsmSize];
                 bsmMap.put(bsm.hash, bsm.index);
             }
         }
@@ -269,10 +269,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return cpi;
     }
 
-    private ConcreteBootstrapMethodEntry internalAdd(ConcreteBootstrapMethodEntry bsm, int hash) {
+    private BootstrapMethodEntryImpl internalAdd(BootstrapMethodEntryImpl bsm, int hash) {
         int newIndex = bsmSize-parentBsmSize;
         if (newIndex + 2 > myBsmEntries.length) {
-            myBsmEntries = Arrays.copyOf(myBsmEntries, 2 * newIndex, ConcreteBootstrapMethodEntry[].class);
+            myBsmEntries = Arrays.copyOf(myBsmEntries, 2 * newIndex, BootstrapMethodEntryImpl[].class);
         }
         myBsmEntries[newIndex] = bsm;
         bsmSize += 1;
@@ -510,7 +510,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return invokeDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.ConcreteInvokeDynamicEntry ce = new AbstractPoolEntry.ConcreteInvokeDynamicEntry(this, size, hash, (ConcreteBootstrapMethodEntry) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
+        AbstractPoolEntry.ConcreteInvokeDynamicEntry ce = new AbstractPoolEntry.ConcreteInvokeDynamicEntry(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
@@ -537,7 +537,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return constantDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.ConcreteConstantDynamicEntry ce = new AbstractPoolEntry.ConcreteConstantDynamicEntry(this, size, hash, (ConcreteBootstrapMethodEntry) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
+        AbstractPoolEntry.ConcreteConstantDynamicEntry ce = new AbstractPoolEntry.ConcreteConstantDynamicEntry(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.ConcreteNameAndTypeEntry) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
@@ -590,15 +590,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             }
         }
         AbstractPoolEntry.ConcreteMethodHandleEntry mre = (AbstractPoolEntry.ConcreteMethodHandleEntry) methodReference;
-        int hash = ConcreteBootstrapMethodEntry.computeHashCode(mre, arguments);
-        EntryMap<ConcreteBootstrapMethodEntry> map = bsmMap();
+        int hash = BootstrapMethodEntryImpl.computeHashCode(mre, arguments);
+        EntryMap<BootstrapMethodEntryImpl> map = bsmMap();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            ConcreteBootstrapMethodEntry e = map.getElementByToken(token);
+            BootstrapMethodEntryImpl e = map.getElementByToken(token);
             if (e.bootstrapMethod() == mre && e.arguments().equals(arguments)) {
                 return e;
             }
         }
-        ConcreteBootstrapMethodEntry ne = new ConcreteBootstrapMethodEntry(this, bsmSize, hash, mre, arguments);
+        BootstrapMethodEntryImpl ne = new BootstrapMethodEntryImpl(this, bsmSize, hash, mre, arguments);
         return internalAdd(ne, hash);
     }
 }
