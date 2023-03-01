@@ -108,7 +108,7 @@ public class EqualsIgnoreCaseBenchmark {
             VectorMask<Byte> equalsIgnoreCase = equal
                     .or(letter.and(upperA.eq(upperB)));
 
-            if(equalsIgnoreCase.allTrue()) {
+            if (equalsIgnoreCase.allTrue()) {
                 continue;
             } else {
                 return false;
