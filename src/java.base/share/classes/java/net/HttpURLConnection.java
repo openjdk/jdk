@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,16 +599,18 @@ public abstract class HttpURLConnection extends URLConnection {
     }
 
     @SuppressWarnings("deprecation")
-    public long getHeaderFieldDate(String name, long Default) {
+    public long getHeaderFieldDate(String name, long defaultValue) {
         String dateString = getHeaderField(name);
-        try {
+        if (dateString != null) {
             if (!dateString.contains("GMT")) {
-                dateString = dateString+" GMT";
+                dateString = dateString + " GMT";
             }
-            return Date.parse(dateString);
-        } catch (Exception e) {
+            try {
+                return Date.parse(dateString);
+            } catch (Exception e) {
+            }
         }
-        return Default;
+        return defaultValue;
     }
 
 
