@@ -661,7 +661,7 @@ class FdLibm {
             }
             // set z = scalbn(|x|,ilogb(x)-23)
             z = __LO(z, __LO(x));
-            e0  = (ix >> 20) - 1046;        /* e0 = ilogb(z)-23; */
+            e0 = (ix >> 20) - 1046;        /* e0 = ilogb(z)-23; */
             z = __HI(z, ix - (e0 << 20));
             for (i=0; i < 2; i++) {
                 tx[i] = (double)((int)(z));
