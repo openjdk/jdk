@@ -638,10 +638,10 @@ public final class DirectCodeBuilder
         LabelImpl lab = (LabelImpl) label;
         LabelContext context = lab.labelContext();
         if (context == this) {
-            return lab.getContextInfo();
+            return lab.getBCI();
         }
         else if (context == mruParent) {
-            return mruParentTable[lab.getContextInfo()] - 1;
+            return mruParentTable[lab.getBCI()] - 1;
         }
         else if (context instanceof CodeAttribute parent) {
             if (parentMap == null)
@@ -656,11 +656,11 @@ public final class DirectCodeBuilder
 
             mruParent = parent;
             mruParentTable = table;
-            return mruParentTable[lab.getContextInfo()] - 1;
+            return mruParentTable[lab.getBCI()] - 1;
         }
         else if (context instanceof BufferedCodeBuilder) {
             // Hijack the label
-            return lab.getContextInfo();
+            return lab.getBCI();
         }
         else {
             throw new IllegalStateException(String.format("Unexpected label context %s in =%s", context, this));
@@ -683,12 +683,12 @@ public final class DirectCodeBuilder
         LabelContext context = lab.labelContext();
 
         if (context == this) {
-            if (lab.getContextInfo() != -1)
+            if (lab.getBCI() != -1)
                 throw new IllegalStateException("Setting label target for already-set label");
-            lab.setContextInfo(bci);
+            lab.setBCI(bci);
         }
         else if (context == mruParent) {
-            mruParentTable[lab.getContextInfo()] = bci + 1;
+            mruParentTable[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof CodeAttribute parent) {
             if (parentMap == null)
@@ -702,11 +702,11 @@ public final class DirectCodeBuilder
 
             mruParent = parent;
             mruParentTable = table;
-            mruParentTable[lab.getContextInfo()] = bci + 1;
+            mruParentTable[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof BufferedCodeBuilder) {
             // Hijack the label
-            lab.setContextInfo(bci);
+            lab.setBCI(bci);
         }
         else {
             throw new IllegalStateException(String.format("Unexpected label context %s in =%s", context, this));
