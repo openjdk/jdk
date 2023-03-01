@@ -826,7 +826,7 @@ class FdLibm {
             jp = jk;
 
             // determine jx, jv, q0, note that 3 > q0
-            jx =  nx - 1;
+            jx = nx - 1;
             jv = (e0 - 3)/24;
             if (jv < 0) {
                 jv = 0;
