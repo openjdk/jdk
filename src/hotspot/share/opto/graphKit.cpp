@@ -3624,34 +3624,52 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   return set_output_for_allocation_common(alloc, oop_type, deoptimize_on_exception);
 }
 
-
+//
+// Position-Independent Materialization
+// -------------------------------------
+// When PEA materializes a virtual object, it emits a cluster of nodes in the current position.
+// Unlike ordinary "floating" nodes, they are dependent on JVMState. An allocation is a safePointNode
+// and it also yields an exception. PEA can not use the current JVMState because those nodes are not native.
+//
+// To ensure we can safely embed them into the curren position, we have the following special handling:
+//
+// 1. Debug edges and JVMState of the cloned AllocateNode are not from current GraphKit.
+// We copy them from the original AllocateNode instead.
+//
+// 2. choose deoptimization on exception. A real exception may be accidentally dispatched to
+// the exception handler in current context.
+//
 Node* GraphKit::materialize_object(AllocateNode* alloc, const TypeOopPtr* oop_type) {
   Node *mem = reset_memory();
-  set_all_memory(mem); // Create new memory state
   AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), control(), mem, i_o(),
                                            alloc->in(AllocateNode::AllocSize),
                                            alloc->in(AllocateNode::KlassNode),
                                            alloc->in(AllocateNode::InitialTest));
-
   allocx->set_req(TypeFunc::FramePtr, frameptr());
 
-  JVMState* out_jvms = alloc->jvms()->clone_deep(C);
-  allocx->set_jvms(out_jvms);
-  // same safepoint as original alloc
+  JVMState* out_jvms = alloc->jvms()->clone_shallow(C);
+  out_jvms->bind_map(allocx);
+  // copy all debuginfo edges from the original AllocateNode
   for (uint i=allocx->req(); i < alloc->req(); ++i) {
     allocx->add_req(alloc->in(i));
   }
 
-  while (out_jvms != nullptr) {
-    out_jvms->set_map(allocx);
-    out_jvms = out_jvms->caller();
-  }
-  int saved_bci = bci();
-  set_bci(alloc->jvms()->bci()); // reset to bytecode new because uncommon_trap checks bc() and sp
-  Node* objx = set_output_for_allocation_common(allocx, oop_type, true /*deoptimize_on_ex*/);
-  set_bci(saved_bci);
+  JVMState* jvms = sync_jvms();
+  // We can not use PreserveJVMState here because 'this' is a Parse. We would fail in jvms_in_sync().
+  GraphKit kit(allocx->jvms());
+  kit.set_map_clone(allocx);
+
+  Node* objx = kit.set_output_for_allocation_common(allocx, oop_type, true /*deoptimize_on_ex*/);
+
+  // copy back compile-time state to 'this'.
+  set_jvms(jvms);
+  set_control(kit.control());
+  set_i_o(kit.i_o());
+  set_all_memory(kit.merged_memory());
+
   return objx;
 }
+
 //---------------------------new_instance--------------------------------------
 // This routine takes a klass_node which may be constant (for a static type)
 // or may be non-constant (for reflective code).  It will work equally well
