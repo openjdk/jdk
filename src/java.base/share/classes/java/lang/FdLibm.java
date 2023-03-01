@@ -516,7 +516,7 @@ class FdLibm {
                         could simply return -1.0/(x + r) here */
                 //  compute -1.0/(x + r) accurately
                 double a,t;
-                z  = w;
+                z = w;
                 z = __LO(z, 0);
                 v  = r - (z - x);   // z + v = r + x
                 t = a  = -1.0/w;    // a = -1.0/w
