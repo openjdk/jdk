@@ -546,30 +546,39 @@ public class VisibleMemberTable {
     }
 
     private void computeVisibleMethods(LocalMemberTable lmt) {
-        // A union of visible methods from all parents. Used to compute methods
-        // inherited by this type as the difference of itself and those methods
-        // that aren't inherited.
+        // parentMethods is a union of visible methods from all parents.
+        // It is used to figure out which methods this type should inherit.
+        // Inherited methods are those parent methods that remain after all
+        // methods that cannot be inherited are eliminated.
         Set<Element> parentMethods = new LinkedHashSet<>();
-        // - a key is a method overridden by one or more parent methods
-        // - the value is a list of parent methods that override the key
-        Map<ExecutableElement, List<ExecutableElement>> overriddenByTable = new HashMap<>();
-        for (VisibleMemberTable pvmt : parents) {
-            // Merge the lineage overrides into local table
-            pvmt.overriddenMethodTable.forEach((method, methodInfo) -> {
-                if (!methodInfo.simpleOverride) { // consider only real overrides
-                    List<ExecutableElement> list = overriddenByTable.computeIfAbsent(methodInfo.overriddenMethod,
-                            k -> new ArrayList<>());
-                    list.add(method);
-                }
-            });
+        for (var p : parents) {
             // Lists of visible methods from different parents may share some
-            // methods. These are the methods that such parents inherited from
+            // methods. These are the methods that the parents inherited from
             // their common ancestor.
             //
             // Such methods won't result in duplicates in parentMethods as we
             // purposefully don't track duplicates.
             // FIXME: add a test to assert order (LinkedHashSet)
-            parentMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
+            parentMethods.addAll(p.getAllVisibleMembers(Kind.METHODS));
+        }
+
+        // overriddenByTable maps an ancestor (grandparent and above) method
+        // to parent methods that override it:
+        //
+        // key
+        // : a method overridden by one or more parent methods
+        // value
+        // : a list of parent methods that override the key
+        Map<ExecutableElement, List<ExecutableElement>> overriddenByTable = new HashMap<>();
+        for (var p : parents) {
+            // Merge the lineage overrides into local table
+            p.overriddenMethodTable.forEach((method, methodInfo) -> {
+                if (!methodInfo.simpleOverride) { // consider only real overrides
+                    var list = overriddenByTable.computeIfAbsent(methodInfo.overriddenMethod,
+                            k -> new ArrayList<>());
+                    list.add(method);
+                }
+            });
         }
 
         // filter out methods that aren't inherited
