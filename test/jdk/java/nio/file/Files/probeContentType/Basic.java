@@ -178,7 +178,7 @@ public class Basic {
                 new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
                 new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
                 new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
-                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar", "application/x-rar-compressed")),
                 new ExType("rtf", List.of("application/rtf", "text/rtf")),
                 new ExType("webm", List.of("video/webm")),
                 new ExType("webp", List.of("image/webp")),
