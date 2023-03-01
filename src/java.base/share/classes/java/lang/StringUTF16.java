@@ -419,10 +419,6 @@ final class StringUTF16 {
         };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
-        return indexOf(value, ch, fromIndex, value.length >> 1);
-    }
-
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         fromIndex = Math.max(fromIndex, 0);
         toIndex = Math.min(toIndex, value.length >> 1);

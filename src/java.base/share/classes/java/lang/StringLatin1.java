@@ -196,10 +196,6 @@ final class StringLatin1 {
         };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
-        return indexOf(value, ch, fromIndex, value.length);
-    }
-
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
             return -1;
