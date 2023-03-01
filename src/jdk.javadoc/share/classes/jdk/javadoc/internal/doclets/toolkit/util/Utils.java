@@ -276,8 +276,19 @@ public class Utils {
         return e.getModifiers().contains(Modifier.FINAL);
     }
 
+    /*
+     * A contemporary JLS term for "package private" or "default access" is
+     * "package access". For example: "a member is declared with package
+     * access" or "a member has package access".
+     *
+     * This is to avoid confusion with unrelated _default_ methods which
+     * appeared in JDK 8.
+     */
     public boolean isPackagePrivate(Element e) {
-        return !(isPublic(e) || isPrivate(e) || isProtected(e));
+        var m = e.getModifiers();
+        return !m.contains(Modifier.PUBLIC)
+                && !m.contains(Modifier.PROTECTED)
+                && !m.contains(Modifier.PRIVATE);
     }
 
     public boolean isPrivate(Element e) {
