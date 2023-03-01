@@ -61,6 +61,7 @@ public class EqualsIgnoreCaseBenchmark {
         b = ("A\u00c5".repeat(size/2) + "B").getBytes(StandardCharsets.ISO_8859_1);
         len = a.length;
     }
+
     @Benchmark
     public boolean scalar() {
         return scalarEqualsIgnoreCase(a, b, len);
@@ -125,7 +126,7 @@ public class EqualsIgnoreCaseBenchmark {
         return true;
     }
 
-    public  boolean scalarEqualsIgnoreCase(byte[] a, byte[] b, int len) {
+    public boolean scalarEqualsIgnoreCase(byte[] a, byte[] b, int len) {
         int i = 0;
         while (i < len) {
             byte b1 = a[i];
@@ -148,7 +149,7 @@ public class EqualsIgnoreCaseBenchmark {
         if (upper < 'A') {
             return false;  // Low ASCII
         }
-        return ( upper <= 'Z' // In range A-Z
+        return (upper <= 'Z' // In range A-Z
                 || (upper >= 0xC0 && upper <= 0XDE && upper != 0xD7)) // ..or A-grave-Thorn, excl. multiplication
                 && upper == (b2 & 0xDF); // b2 has same uppercase
     }
