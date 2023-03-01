@@ -61,7 +61,7 @@ public class TestDebugInfo {
     // Verify that the MemBarRelease emitted at the MyClass constructor exit
     // does not incorrectly reference the caller method in its debug information.
     @Test
-    @IR(failOn = {"MemBarRelease.*test.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {"MemBarRelease.*testFinalFieldInit.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
     public static void testFinalFieldInit() {
         array[0] = new MyClass(42);
         array[1] = new MyClass(42);
@@ -71,7 +71,7 @@ public class TestDebugInfo {
     // Verify that the MemBarReleaseLock emitted at the synchronizedMethod exit
     // does not incorrectly reference the caller method in its debug information.
     @Test
-    @IR(failOn = {"MemBarReleaseLock.*test.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {"MemBarReleaseLock.*testSynchronized.*bci:-1"}, phase = CompilePhase.BEFORE_MATCHING)
     public static void testSynchronized() {
         try {
             myVal.synchronizedMethod(false);
@@ -114,10 +114,10 @@ public class TestDebugInfo {
 
     // Verify that RenumberLiveNodes preserves the debug information side table.
     @Test
-    @IR(counts = {"StoreB.*name=b3.*useful3.*bci:1.*useful2.*bci:0.*useful1.*bci:0.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {"StoreB.*name=b2.*useful2.*bci:4.*useful1.*bci:0.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {"StoreB.*name=b1.*useful1.*bci:4.*test.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {"StoreB.*name=b0.*test.*bci:13", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b3.*useful3.*bci:1.*useful2.*bci:0.*useful1.*bci:0.*testRenumberLiveNodes.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b2.*useful2.*bci:4.*useful1.*bci:0.*testRenumberLiveNodes.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b1.*useful1.*bci:4.*testRenumberLiveNodes.*bci:9", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"StoreB.*name=b0.*testRenumberLiveNodes.*bci:13", "= 1"}, phase = CompilePhase.BEFORE_MATCHING)
     public static void testRenumberLiveNodes() {
         // This generates ~3700 useless nodes to trigger RenumberLiveNodes
         useless1(42);
