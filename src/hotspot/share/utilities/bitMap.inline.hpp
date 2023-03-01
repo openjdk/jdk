@@ -190,8 +190,8 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
 
   if (beg < end) {
     // Get the word containing beg, and shift out low bits.
-    idx_t index = to_words_align_down(beg);
-    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(beg);
+    idx_t word_index = to_words_align_down(beg);
+    bm_word_t cword = flipped_word(word_index, flip) >> bit_in_word(beg);
     if ((cword & 1) != 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
@@ -209,16 +209,16 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
     } else {
       // Flipped and shifted first word is zero.  Word search through
       // aligned up end for a non-zero flipped word.
-      idx_t limit = aligned_right
+      idx_t word_limit = aligned_right
         ? to_words_align_down(end) // Minuscule savings when aligned.
         : to_words_align_up(end);
-      while (++index < limit) {
-        cword = map(index) ^ flip;
+      while (++word_index < word_limit) {
+        cword = flipped_word(word_index, flip);
         if (cword != 0) {
-          idx_t result = bit_index(index) + count_trailing_zeros(cword);
+          idx_t result = bit_index(word_index) + count_trailing_zeros(cword);
           if (aligned_right || (result < end)) return result;
           // Result is beyond range bound; return end.
-          assert((index + 1) == limit, "invariant");
+          assert((word_index + 1) == word_limit, "invariant");
           break;
         }
       }
