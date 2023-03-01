@@ -60,6 +60,7 @@ package java.lang;
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
+    private static final double TWO24    = 0x1.0p24; // 1.67772160000000000000e+07
     private static final double TWO54    = 0x1.0p54; // 1.80143985094819840000e+16
     private static final double HUGE     = 1.0e+300;
 
@@ -155,10 +156,10 @@ class FdLibm {
             ix = __HI(x);
 
             // |x| ~< pi/4
-            ix &= 0x7fffffff;
+            ix &= 0x7fff_ffff;
             if (ix <= 0x3fe9_21fb) {
                 return __kernel_sin(x, z, 0);
-            } else if (ix>=0x7ff00000) {  // sin(Inf or NaN) is NaN
+            } else if (ix>=0x7ff0_0000) {  // sin(Inf or NaN) is NaN
                 return x - x;
             } else { // argument reduction needed
                 n = RemPio2.__ieee754_rem_pio2(x, y);
@@ -200,19 +201,18 @@ class FdLibm {
          *              sin(x) = x + (S1*x + (x *(r-y/2)+y))
          */
         private static final double
-            half =  5.00000000000000000000e-01, /* 0x3FE00000, 0x00000000 */
-            S1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */
-            S2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */
-            S3  = -1.98412698298579493134e-04, /* 0xBF2A01A0, 0x19C161D5 */
-            S4  =  2.75573137070700676789e-06, /* 0x3EC71DE3, 0x57B1FE7D */
-            S5  = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */
-            S6  =  1.58969099521155010221e-10; /* 0x3DE5D93A, 0x5ACFD57C */
+            S1  = -0x1.5555555555549p-3,  // -1.66666666666666324348e-01
+            S2  =  0x1.111111110f8a6p-7,  //  8.33333333332248946124e-03
+            S3  = -0x1.a01a019c161d5p-13, // -1.98412698298579493134e-04
+            S4  =  0x1.71de357b1fe7dp-19, //  2.75573137070700676789e-06
+            S5  = -0x1.ae5e68a2b9cebp-26, // -2.50507602534068634195e-08
+            S6  =  0x1.5d93a5acfd57cp-33; //  1.58969099521155010221e-10
 
         static double __kernel_sin(double x, double y, int iy) {
             double z, r, v;
             int ix;
             ix = __HI(x) & 0x7fff_ffff;        // high word of x
-            if(ix < 0x3e40_0000){              // |x| < 2**-27
+            if (ix < 0x3e40_0000) {            // |x| < 2**-27
                 if ((int)x == 0)               // generate inexact
                     return x;
             }
@@ -222,7 +222,7 @@ class FdLibm {
             if (iy == 0) {
                 return x + v*(S1 + z*r);
             } else {
-                return x - ((z*(half*y - v*r) - y) - v*S1);
+                return x - ((z*(0.5*y - v*r) - y) - v*S1);
             }
         }
     }
@@ -294,7 +294,7 @@ class FdLibm {
          *
          * Algorithm
          *      1. Since cos(-x) = cos(x), we need only to consider positive x.
-         *      2. if x < 2^-27 (hx<0x3e400000 0), return 1 with inexact if x!=0.
+         *      2. if x < 2^-27 (hx < 0x3e4000000), return 1 with inexact if x != 0.
          *      3. cos(x) is approximated by a polynomial of degree 14 on
          *         [0,pi/4]
          *                                       4            14
@@ -321,33 +321,31 @@ class FdLibm {
          *         thus, reducing the rounding error in the subtraction.
          */
         private static final double
-            C1  =  4.16666666666666019037e-02, /* 0x3FA55555, 0x5555554C */
-            C2  = -1.38888888888741095749e-03, /* 0xBF56C16C, 0x16C15177 */
-            C3  =  2.48015872894767294178e-05, /* 0x3EFA01A0, 0x19CB1590 */
-            C4  = -2.75573143513906633035e-07, /* 0xBE927E4F, 0x809C52AD */
-            C5  =  2.08757232129817482790e-09, /* 0x3E21EE9E, 0xBDB4B1C4 */
-            C6  = -1.13596475577881948265e-11; /* 0xBDA8FAE9, 0xBE8838D4 */
+            C1  =  0x1.555555555554cp-5,  //  4.16666666666666019037e-02
+            C2  = -0x1.6c16c16c15177p-10, // -1.38888888888741095749e-03
+            C3  =  0x1.a01a019cb159p-16,  //  2.48015872894767294178e-05
+            C4  = -0x1.27e4f809c52adp-22, // -2.75573143513906633035e-07
+            C5  =  0x1.1ee9ebdb4b1c4p-29, //  2.08757232129817482790e-09
+            C6  = -0x1.8fae9be8838d4p-37; // -1.13596475577881948265e-11
 
         static double __kernel_cos(double x, double y) {
             double a, hz, z, r, qx = 0.0;
             int ix;
-            ix = __HI(x) & 0x7fff_ffff;        // ix = |x|'s high word
-            if (ix < 0x3e40_0000) {                     // if x < 2**27
+            ix = __HI(x) & 0x7fff_ffff;       // ix = |x|'s high word
+            if (ix < 0x3e40_0000) {           // if x < 2**27
                 if (((int)x) == 0) {          // generate inexact
                     return 1.0;
                 }
             }
             z  = x*x;
             r  = z*(C1 + z*(C2 + z*(C3 + z*(C4 + z*(C5 + z*C6)))));
-            if (ix < 0x3FD3_3333)                     // if |x| < 0.3
+            if (ix < 0x3FD3_3333) {                    // if |x| < 0.3
                 return 1.0 - (0.5*z - (z*r - x*y));
-            else {
+            } else {
                 if (ix > 0x3fe9_0000) {               // x > 0.78125
                     qx = 0.28125;
                 } else {
-                    // TOOD: Replace with __HI_LO when available.
-                    qx = __HI(qx, ix - 0x0020_0000);
-                    qx = __LO(qx, 0);
+                    qx = __HI_LO(ix - 0x0020_0000, 0);
                 }
                 hz = 0.5*z - qx;
                 a  = 1.0 - qx;
@@ -400,12 +398,11 @@ class FdLibm {
             ix &= 0x7fff_ffff;
             if (ix <= 0x3fe9_21fb) {
                 return __kernel_tan(x, z, 1);
-            } else if (ix>=0x7ff0_0000) { // tan(Inf or NaN) is NaN
+            } else if (ix >= 0x7ff0_0000) { // tan(Inf or NaN) is NaN
                 return x-x;            // NaN
             } else {           // argument reduction needed
                 n = RemPio2.__ieee754_rem_pio2(x, y);
-                return __kernel_tan(y[0], y[1], 1 - ((n & 1) << 1)); /*    1 -- n even
-                                                                          -1 -- n odd */
+                return __kernel_tan(y[0], y[1], 1 - ((n & 1) << 1)); // 1 -- n even; -1 -- n odd
             }
         }
 
@@ -418,9 +415,9 @@ class FdLibm {
          *
          * Algorithm
          *      1. Since tan(-x) = -tan(x), we need only to consider positive x.
-         *      2. if x < 2^-28 (hx<0x3e300000 0), return x with inexact if x!=0.
+         *      2. if x < 2^-28 (hx < 0x3e300000 0), return x with inexact if x != 0.
          *      3. tan(x) is approximated by a odd polynomial of degree 27 on
-         *         [0,0.67434]
+         *         [0, 0.67434]
          *                               3             27
          *              tan(x) ~ x + T1*x + ... + T13*x
          *         where
@@ -443,22 +440,22 @@ class FdLibm {
          *                     = 1 - 2*(tan(y) - (tan(y)^2)/(1+tan(y)))
          */
         private static final double
-            pio4  =  7.85398163397448278999e-01, /* 0x3FE921FB, 0x54442D18 */
-            pio4lo=  3.06161699786838301793e-17, /* 0x3C81A626, 0x33145C07 */
+            pio4  =  0x1.921fb54442d18p-1,  // 7.85398163397448278999e-01
+            pio4lo=  0x1.1a62633145c07p-55, // 3.06161699786838301793e-17
             T[] =  {
-            3.33333333333334091986e-01, /* 0x3FD55555, 0x55555563 */
-            1.33333333333201242699e-01, /* 0x3FC11111, 0x1110FE7A */
-            5.39682539762260521377e-02, /* 0x3FABA1BA, 0x1BB341FE */
-            2.18694882948595424599e-02, /* 0x3F9664F4, 0x8406D637 */
-            8.86323982359930005737e-03, /* 0x3F8226E3, 0xE96E8493 */
-            3.59207910759131235356e-03, /* 0x3F6D6D22, 0xC9560328 */
-            1.45620945432529025516e-03, /* 0x3F57DBC8, 0xFEE08315 */
-            5.88041240820264096874e-04, /* 0x3F4344D8, 0xF2F26501 */
-            2.46463134818469906812e-04, /* 0x3F3026F7, 0x1A8D1068 */
-            7.81794442939557092300e-05, /* 0x3F147E88, 0xA03792A6 */
-            7.14072491382608190305e-05, /* 0x3F12B80F, 0x32F0A7E9 */
-            -1.85586374855275456654e-05, /* 0xBEF375CB, 0xDB605373 */
-            2.59073051863633712884e-05, /* 0x3EFB2A70, 0x74BF7AD4 */
+             0x1.5555555555563p-2,  //  3.33333333333334091986e-01
+             0x1.111111110fe7ap-3,  //  1.33333333333201242699e-01
+             0x1.ba1ba1bb341fep-5,  //  5.39682539762260521377e-02
+             0x1.664f48406d637p-6,  //  2.18694882948595424599e-02
+             0x1.226e3e96e8493p-7,  //  8.86323982359930005737e-03
+             0x1.d6d22c9560328p-9,  //  3.59207910759131235356e-03
+             0x1.7dbc8fee08315p-10, //  1.45620945432529025516e-03
+             0x1.344d8f2f26501p-11, //  5.88041240820264096874e-04
+             0x1.026f71a8d1068p-12, //  2.46463134818469906812e-04
+             0x1.47e88a03792a6p-14, //  7.81794442939557092300e-05
+             0x1.2b80f32f0a7e9p-14, //  7.14072491382608190305e-05
+            -0x1.375cbdb605373p-16, // -1.85586374855275456654e-05
+             0x1.b2a7074bf7ad4p-16, //  2.59073051863633712884e-05
         };
 
         static double __kernel_tan(double x, double y, int iy) {
@@ -513,11 +510,11 @@ class FdLibm {
                 v = (double)iy;
                 return (double)(1-((hx >> 30) & 2))*(v - 2.0*(x - (w*w/(w + v) - r)));
             }
-            if (iy==1) {
+            if (iy == 1) {
                 return w;
-            } else { /* if allow error up to 2 ulp,
-                        simply return -1.0/(x + r) here */
-                //  compute -1.0/(x+r) accurately
+            } else { /* if were to allow error up to 2 ulp,
+                        could simply return -1.0/(x + r) here */
+                //  compute -1.0/(x + r) accurately
                 double a,t;
                 z  = w;
                 z = __LO(z, 0);
@@ -573,14 +570,13 @@ class FdLibm {
          */
 
         private static final double
-            two24 =  1.67772160000000000000e+07, /* 0x41700000, 0x00000000 */
-            invpio2 =  6.36619772367581382433e-01, /* 0x3FE45F30, 0x6DC9C883 */
-            pio2_1  =  1.57079632673412561417e+00, /* 0x3FF921FB, 0x54400000 */
-            pio2_1t =  6.07710050650619224932e-11, /* 0x3DD0B461, 0x1A626331 */
-            pio2_2  =  6.07710050630396597660e-11, /* 0x3DD0B461, 0x1A600000 */
-            pio2_2t =  2.02226624879595063154e-21, /* 0x3BA3198A, 0x2E037073 */
-            pio2_3  =  2.02226624871116645580e-21, /* 0x3BA3198A, 0x2E000000 */
-            pio2_3t =  8.47842766036889956997e-32; /* 0x397B839A, 0x252049C1 */
+            invpio2 =  0x1.45f306dc9c883p-1,   // 6.36619772367581382433e-01
+            pio2_1  =  0x1.921fb544p0,         // 1.57079632673412561417e+00
+            pio2_1t =  0x1.0b4611a626331p-34,  // 6.07710050650619224932e-11
+            pio2_2  =  0x1.0b4611a6p-34,       // 6.07710050630396597660e-11
+            pio2_2t =  0x1.3198a2e037073p-69,  // 2.02226624879595063154e-21
+            pio2_3  =  0x1.3198a2ep-69,        // 2.02226624871116645580e-21
+            pio2_3t =  0x1.b839a252049c1p-104; // 8.47842766036889956997e-32
 
         static int __ieee754_rem_pio2(double x, double[] y) {
             double z = 0.0, w, t, r, fn;
@@ -669,7 +665,7 @@ class FdLibm {
             z = __HI(z, ix - (e0 << 20));
             for (i=0; i < 2; i++) {
                 tx[i] = (double)((int)(z));
-                z     = (z - tx[i])*two24;
+                z     = (z - tx[i])*TWO24;
             }
             tx[2] = z;
             nx = 3;
@@ -804,19 +800,18 @@ class FdLibm {
         private static final int init_jk[] = {2, 3, 4, 6}; // initial value for jk
 
         private static final double PIo2[] = {
-            1.57079625129699707031e+00, /* 0x3FF921FB, 0x40000000 */
-            7.54978941586159635335e-08, /* 0x3E74442D, 0x00000000 */
-            5.39030252995776476554e-15, /* 0x3CF84698, 0x80000000 */
-            3.28200341580791294123e-22, /* 0x3B78CC51, 0x60000000 */
-            1.27065575308067607349e-29, /* 0x39F01B83, 0x80000000 */
-            1.22933308981111328932e-36, /* 0x387A2520, 0x40000000 */
-            2.73370053816464559624e-44, /* 0x36E38222, 0x80000000 */
-            2.16741683877804819444e-51, /* 0x3569F31D, 0x00000000 */
+            0x1.921fb4p0,    // 1.57079625129699707031e+00
+            0x1.4442dp-24,   // 7.54978941586159635335e-08
+            0x1.846988p-48,  // 5.39030252995776476554e-15
+            0x1.8cc516p-72,  // 3.28200341580791294123e-22
+            0x1.01b838p-96,  // 1.27065575308067607349e-29
+            0x1.a25204p-120, // 1.22933308981111328932e-36
+            0x1.382228p-145, // 2.73370053816464559624e-44
+            0x1.9f31dp-169,  // 2.16741683877804819444e-51
         };
 
         static final double
-            two24   =  1.67772160000000000000e+07, /* 0x41700000, 0x00000000 */
-            twon24  =  5.96046447753906250000e-08; /* 0x3E700000, 0x00000000 */
+            twon24  = 0x1.0p-24; // 5.96046447753906250000e-08
 
         static int __kernel_rem_pio2(double[] x, double[] y, int e0, int nx, int prec, final int[] ipio2) {
             int jz, jx, jv, jp, jk, carry, n, i, j, k, m, q0, ih;
@@ -858,7 +853,7 @@ class FdLibm {
                 // distill q[] into iq[] reversingly
                 for(i=0, j=jz, z=q[jz]; j > 0; i++, j--) {
                     fw    =  (double)((int)(twon24* z));
-                    iq[i] =  (int)(z - two24*fw);
+                    iq[i] =  (int)(z - TWO24*fw);
                     z     =  q[j - 1] + fw;
                 }
 
@@ -947,9 +942,9 @@ class FdLibm {
                 }
             } else { // break z into 24-bit if necessary
                 z = Math.scalb(z, -q0);
-                if (z >= two24) {
+                if (z >= TWO24) {
                     fw = (double)((int)(twon24*z));
-                    iq[jz] = (int)(z - two24*fw);
+                    iq[jz] = (int)(z - TWO24*fw);
                     jz += 1;
                     q0 += 24;
                     iq[jz] = (int) fw;
@@ -960,14 +955,14 @@ class FdLibm {
 
             // convert integer "bit" chunk to floating-point value
             fw = Math.scalb(1.0, q0);
-            for(i=jz; i>=0; i--) {
+            for(i = jz; i>=0; i--) {
                 q[i] = fw*(double)iq[i];
                 fw *= twon24;
             }
 
             // compute PIo2[0,...,jp]*q[jz,...,0]
-            for(i=jz; i>=0; i--) {
-                for (fw=0.0, k=0; k <= jp && k <= jz-i; k++) {
+            for(i = jz; i>=0; i--) {
+                for (fw = 0.0, k = 0; k <= jp && k <= jz-i; k++) {
                     fw += PIo2[k]*q[i + k];
                 }
                 fq[jz - i] = fw;
@@ -988,28 +983,28 @@ class FdLibm {
                 for (i = jz; i>=0; i--) {
                     fw += fq[i];
                 }
-                y[0] = (ih==0) ? fw: -fw;
+                y[0] = (ih == 0) ? fw: -fw;
                 fw = fq[0] - fw;
-                for (i=1; i <=jz; i++) {
+                for (i = 1; i <= jz; i++) {
                     fw += fq[i];
                 }
                 y[1] = (ih == 0)? fw: -fw;
                 break;
             case 3:     // painful
-                for (i=jz; i>0; i--) {
+                for (i = jz; i > 0; i--) {
                     fw      = fq[i - 1] + fq[i];
                     fq[i]  += fq[i - 1] - fw;
                     fq[i - 1] = fw;
                 }
-                for (i=jz; i>1; i--) {
+                for (i = jz; i>1; i--) {
                     fw      = fq[i - 1] + fq[i];
                     fq[i]  += fq[i - 1] - fw;
                     fq[i-1] = fw;
                 }
-                for (fw=0.0, i = jz; i>=2; i--) {
+                for (fw = 0.0, i = jz; i >= 2; i--) {
                     fw += fq[i];
                 }
-                if(ih==0) {
+                if (ih == 0) {
                     y[0] =  fq[0];
                     y[1] =  fq[1];
                     y[2] =  fw;
