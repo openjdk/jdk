@@ -521,7 +521,7 @@ class FdLibm {
                 v = r - (z - x);   // z + v = r + x
                 t = a  = -1.0/w;    // a = -1.0/w
                 t = __LO(t, 0);
-                s  = 1.0 + t*z;
+                s = 1.0 + t*z;
                 return t + a*(s + t*v);
             }
         }
