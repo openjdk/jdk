@@ -518,7 +518,7 @@ class FdLibm {
                 double a,t;
                 z = w;
                 z = __LO(z, 0);
-                v  = r - (z - x);   // z + v = r + x
+                v = r - (z - x);   // z + v = r + x
                 t = a  = -1.0/w;    // a = -1.0/w
                 t = __LO(t, 0);
                 s  = 1.0 + t*z;
