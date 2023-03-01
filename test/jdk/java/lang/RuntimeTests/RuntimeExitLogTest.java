@@ -87,7 +87,7 @@ public class RuntimeExitLogTest {
                 Arguments.of(List.of("-DThrowingHandler",
                         "-Djava.util.logging.config.file=" +
                         Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 5,
-                        "Runtime.exit() logging failed: Exception in publish")
+                        "Runtime.exit(5) logging failed: Exception in publish")
                 );
     }
 

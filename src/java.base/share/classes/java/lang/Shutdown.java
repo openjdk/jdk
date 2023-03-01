@@ -183,7 +183,8 @@ class Shutdown {
         } catch (Throwable throwable) {
             try {
                 // Exceptions from the Logger are printed but do not prevent exit
-                System.err.println("Runtime.exit() logging failed: " + throwable.getMessage());
+                System.err.println("Runtime.exit(" + status + ") logging failed: " +
+                        throwable.getMessage());
             } catch (Throwable throwable2) {
                 // Ignore
             }
