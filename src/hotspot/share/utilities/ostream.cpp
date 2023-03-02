@@ -1089,7 +1089,7 @@ bufferedStream::~bufferedStream() {
 #include <netdb.h>
 #include <arpa/inet.h>
 #elif defined(_WINDOWS)
-#include <winsock2.h>
+#include <Ws2tcpip.h>
 #endif
 
 // Network access
@@ -1130,25 +1130,31 @@ void networkStream::close() {
   }
 }
 
-bool networkStream::connect(const char *ip, short port) {
+// host could be IP address, or a host name
+bool networkStream::connect(const char *host, short port) {
 
-  struct sockaddr_in server;
-  server.sin_family = AF_INET;
-  server.sin_port = htons(port);
+  char s_port[6]; // 5 digits max plus terminator
+  int ret = os::snprintf(s_port, sizeof(s_port), "%hu", (unsigned short) port);
+  assert(ret > 0, "snprintf failed: %d", ret);
 
-  server.sin_addr.s_addr = inet_addr(ip);
-  if (server.sin_addr.s_addr == (uint32_t)-1) {
-    struct hostent* host = os::get_host_by_name((char*)ip);
-    if (host != nullptr) {
-      memcpy(&server.sin_addr, host->h_addr_list[0], host->h_length);
-    } else {
-      return false;
-    }
+  struct addrinfo* addr_info = nullptr;
+  struct addrinfo hints;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6
+  hints.ai_socktype = SOCK_STREAM; // TCP only
+
+  // getaddrinfo can resolve both an IP address and a host name
+  ret = getaddrinfo(host, s_port, &hints, &addr_info);
+  if (ret != 0) {
+    warning("networkStream::connect getaddrinfo for host %s and port %s failed: %s",
+            host, s_port, gai_strerror(ret));
+    return false;
   }
 
-
-  int result = os::connect(_socket, (struct sockaddr*)&server, sizeof(struct sockaddr_in));
-  return (result >= 0);
+  ret = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
+  freeaddrinfo(addr_info);
+  return (ret >= 0);
 }
 
 #endif
