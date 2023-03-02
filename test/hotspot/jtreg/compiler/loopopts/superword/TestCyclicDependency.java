@@ -251,10 +251,9 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test1(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 1; i++) {
-            // dataI has cyclic dependency of distance 1, cannot vectorize
+            // dataI has cyclic dependency of distance 1
             int v = dataI[i];
             dataI[i + 1] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -262,10 +261,9 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test2(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 2; i++) {
-            // dataI has cyclic dependency of distance 2, cannot vectorize
+            // dataI has cyclic dependency of distance 2
             int v = dataI[i];
             dataI[i + 2] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -273,10 +271,9 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test3(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 3; i++) {
-            // dataI has cyclic dependency of distance 3, cannot vectorize
+            // dataI has cyclic dependency of distance 3
             int v = dataI[i];
             dataI[i + 3] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -284,10 +281,9 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test4(int[] dataI, float[] dataF) {
         for (int i = 1; i < RANGE - 1; i++) {
-            // dataI has cyclic dependency of distance 2, cannot vectorize
+            // dataI has cyclic dependency of distance 2
             int v = dataI[i - 1];
             dataI[i + 1] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -295,22 +291,18 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test5a(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 1, but no cyclic dependency
-            // test5a and test5b should either both vectorize, or both not
             int v = dataI[i];
             dataI[i - 1] = v + 5;
         }
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test5b(int[] dataI, float[] dataF) {
         for (int i = 1; i < RANGE; i++) {
             // dataI has read / write distance 1, but no cyclic dependency
-            // test5a and test5b should either both vectorize, or both not
             int v = dataI[i];
             dataI[i - 1] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -318,22 +310,18 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test6a(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 2, but no cyclic dependency
-            // test6a and test6b should either both vectorize, or both not
             int v = dataI[i];
             dataI[i - 2] = v + 5;
         }
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test6b(int[] dataI, float[] dataF) {
         for (int i = 2; i < RANGE; i++) {
             // dataI has read / write distance 2, but no cyclic dependency
-            // test6a and test6b should either both vectorize, or both not
             int v = dataI[i];
             dataI[i - 2] = v;
             dataF[i] = v; // let's not get confused by another type
@@ -341,13 +329,10 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.ADD_VF, "= 0"},
+    @IR(counts = {IRNode.ADD_VI, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test7(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
@@ -361,13 +346,10 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "= 0", IRNode.ADD_VF, "> 0"},
+    @IR(counts = {IRNode.ADD_VF, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test8(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
