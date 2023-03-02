@@ -545,6 +545,17 @@ public class VisibleMemberTable {
         visibleMembers.put(kind, list);
     }
 
+    // This method computes data structures related to method members
+    // of a class or an interface.
+    //
+    // TODO The computation is performed manually, by applying JLS rules.
+    //  While jdk.javadoc does need custom and specialized data structures,
+    //  this method does not feel DRY. It should be possible to improve
+    //  it by delegating some, if not most, of the JLS wrestling to
+    //  javax.lang.model. For example, while it cannot help us get the
+    //  structures, such as overriddenMethodTable, javax.lang.model can
+    //  help us get all method members of a class or an interface t by calling
+    //  ElementFilter.methodsIn(Elements.getAllMembers(t)).
     private void computeVisibleMethods(LocalMemberTable lmt) {
         // parentMethods is a union of visible methods from all parents.
         // It is used to figure out which methods this type should inherit.
