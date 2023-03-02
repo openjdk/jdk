@@ -47,36 +47,40 @@ void ZArguments::select_max_gc_threads() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ParallelGCThreads=0");
   }
 
-  // Select number of concurrent threads
-  const uint default_nconcurrent = ZHeuristics::nconcurrent_workers();
+  // The max number of concurrent threads we heuristically want for a generation
+  uint max_nworkers_generation;
 
   if (FLAG_IS_DEFAULT(ConcGCThreads)) {
-    FLAG_SET_DEFAULT(ConcGCThreads, default_nconcurrent);
+    max_nworkers_generation = ZHeuristics::nconcurrent_workers();
 
-    if (!FLAG_IS_DEFAULT(ZYoungGCThreads) && ConcGCThreads < ZYoungGCThreads) {
-      FLAG_SET_DEFAULT(ConcGCThreads, ZYoungGCThreads);
+    // Computed max number of GC threads at a time in the machine
+    uint max_nworkers = max_nworkers_generation;
+
+    if (!FLAG_IS_DEFAULT(ZYoungGCThreads)) {
+      max_nworkers = MAX2(max_nworkers, ZYoungGCThreads);
     }
 
-    if (!FLAG_IS_DEFAULT(ZOldGCThreads) && ConcGCThreads < ZOldGCThreads) {
-      FLAG_SET_DEFAULT(ConcGCThreads, ZOldGCThreads);
+    if (!FLAG_IS_DEFAULT(ZOldGCThreads)) {
+      max_nworkers = MAX2(max_nworkers, ZOldGCThreads);
     }
+
+    FLAG_SET_DEFAULT(ConcGCThreads, max_nworkers);
+  } else {
+    max_nworkers_generation = ConcGCThreads;
   }
-
-  // The max number of concurrent threads we heuristically want
-  const uint max_nconcurrent = MIN2(ConcGCThreads, default_nconcurrent);
 
   if (FLAG_IS_DEFAULT(ZYoungGCThreads)) {
     if (UseDynamicNumberOfGCThreads) {
-      FLAG_SET_ERGO(ZYoungGCThreads, max_nconcurrent);
+      FLAG_SET_ERGO(ZYoungGCThreads, max_nworkers_generation);
     } else {
-      const uint static_young_threads = MAX2(uint(max_nconcurrent * 0.9), 1u);
+      const uint static_young_threads = MAX2(uint(max_nworkers_generation * 0.9), 1u);
       FLAG_SET_ERGO(ZYoungGCThreads, static_young_threads);
     }
   }
 
   if (FLAG_IS_DEFAULT(ZOldGCThreads)) {
     if (UseDynamicNumberOfGCThreads) {
-      FLAG_SET_ERGO(ZOldGCThreads, max_nconcurrent);
+      FLAG_SET_ERGO(ZOldGCThreads, max_nworkers_generation);
     } else {
       const uint static_old_threads = MAX2(ConcGCThreads - ZYoungGCThreads, 1u);
       FLAG_SET_ERGO(ZOldGCThreads, static_old_threads);

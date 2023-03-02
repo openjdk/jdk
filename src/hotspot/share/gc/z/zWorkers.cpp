@@ -155,6 +155,11 @@ void ZWorkers::request_resize_workers(uint nworkers) {
     return;
   }
 
+  if (_workers.active_workers() == nworkers) {
+    // Already the right amount of threads
+    return;
+  }
+
   log_info(gc, task)("Adjusting Workers for %s Generation: %u -> %u",
                      _generation_name, _workers.active_workers(), nworkers);
 
