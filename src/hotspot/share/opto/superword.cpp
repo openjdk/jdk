@@ -711,7 +711,7 @@ void SuperWord::find_adjacent_refs() {
       // First, remove remaining memory ops of the same memory slice from the list.
       for (int i = memops.size() - 1; i >= 0; i--) {
         MemNode* s = memops.at(i)->as_Mem();
-        if (same_memory_slice(s, mem_ref)) {
+        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
           memops.remove(i);
         }
       }
@@ -720,13 +720,13 @@ void SuperWord::find_adjacent_refs() {
       for (int i = _packset.length() - 1; i >= 0; i--) {
         Node_List* p = _packset.at(i);
         MemNode* s = p->at(0)->as_Mem();
-        if (same_memory_slice(s, mem_ref)) {
+        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
           remove_pack_at(i);
         }
       }
 
       // If needed find the best memory reference for loop alignment again.
-      if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+      if (same_memory_slice(mem_ref, best_align_to_mem_ref) || same_velt_type(mem_ref, best_align_to_mem_ref)) {
         // Put memory ops from remaining packs back on memops list for
         // the best alignment search.
         uint orig_msize = memops.size();
