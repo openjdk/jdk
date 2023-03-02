@@ -49,6 +49,7 @@ public class DisabledComboBoxFontTestAuto {
     private static BufferedImage enabledImage, disabledImage, enabledImage2, disabledImage2;
     private static Path testDir;
     private static String lafName;
+    private static StringBuffer failingLafs;
     private static int COMBO_HEIGHT, COMBO_WIDTH, COMBO2_HEIGHT, COMBO2_WIDTH;
 
     private static void createCombo() {
@@ -97,7 +98,6 @@ public class DisabledComboBoxFontTestAuto {
                 + "/" + lafName + "EnabledDLCR.png"));
         ImageIO.write(disabledImage2, "png", new File(testDir
                 + "/" + lafName + "DisabledDLCR.png"));
-        System.out.println("DIR: " + testDir);
 
         boolean isIdentical = true;
         Color eColor1, eColor2, dColor1, dColor2;
@@ -128,8 +128,7 @@ public class DisabledComboBoxFontTestAuto {
         if (isIdentical) {
             System.out.println("PASSED");
         } else {
-            throw new RuntimeException("FAIL: " +
-                    "Enabled and disabled ComboBox matches");
+            failingLafs.append(lafName + ", ");
         }
     }
 
@@ -163,14 +162,21 @@ public class DisabledComboBoxFontTestAuto {
 
     public static void main(String[] args) throws Exception {
         lafName = "null";
+        failingLafs = new StringBuffer();
         testDir = Path.of(System.getProperty("test.classes", "."));
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            // Change Motif LAF name to avoid using slash in saved image file path
             lafName = laf.getName().equals("CDE/Motif") ? "Motif" : laf.getName();
-            System.out.println("LAF is " + lafName);
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             SwingUtilities.invokeAndWait(DisabledComboBoxFontTestAuto::createCombo);
             SwingUtilities.invokeAndWait(DisabledComboBoxFontTestAuto::paintCombo);
             testMethod();
+        }
+        if (!failingLafs.isEmpty()) {
+            // Remove trailing comma and whitespace
+            failingLafs.setLength(failingLafs.length() - 2);
+            throw new RuntimeException("FAIL - Enabled and disabled ComboBox " +
+                    "does not match in these LAFs: " + failingLafs);
         }
     }
 }
