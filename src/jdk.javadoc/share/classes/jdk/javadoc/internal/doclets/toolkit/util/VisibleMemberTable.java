@@ -569,7 +569,7 @@ public class VisibleMemberTable {
             //
             // Such methods won't result in duplicates in parentMethods as we
             // purposefully don't track duplicates.
-            // FIXME: add a test to assert order (LinkedHashSet)
+            // FIXME: add a test to assert the order (LinkedHashSet)
             parentMethods.addAll(p.getAllVisibleMembers(Kind.METHODS));
         }
 
@@ -613,7 +613,8 @@ public class VisibleMemberTable {
                 .filter(nonSimpleOverride);
 
         // Merge the above list and stream, making sure the local methods precede the others
-        // Final filtration of elements // FIXME why is order important?
+        // Final filtration of elements
+        // FIXME add a test to assert the order or remove that part of the comment above ^
         List<Element> list = Stream.concat(localStream, inheritedMethods.stream())
                 .filter(this::mustDocument)
                 .toList();
