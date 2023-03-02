@@ -25,6 +25,7 @@
 /*
  * @test
  * @enablePreview
+ * @requires sun.arch.data.model == "64"
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.aarch64
