@@ -53,6 +53,7 @@ public:
     _collector(collector),
     _claimer(collector->workers()),
     _g1h(G1CollectedHeap::heap()) { }
+
   void work(uint worker_id);
   void serial_compaction();
   void humongous_compaction();

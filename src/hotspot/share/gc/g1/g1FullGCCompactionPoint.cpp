@@ -117,19 +117,6 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
-  assert(hr->is_starts_humongous(), "Sanity!");
-
-  _collector->add_humongous_region(hr);
-
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  do {
-    add(hr);
-    _collector->update_from_skip_compacting_to_compacting(hr->hrm_index());
-    hr = g1h->next_region_in_humongous(hr);
-  } while (hr != nullptr);
-}
-
 void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
   HeapRegion* cur = current_region();
   assert(cur->hrm_index() >= bottom, "Sanity!");
@@ -143,6 +130,19 @@ void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
 
   assert(start_index >= 0, "Should have at least one region");
   _compaction_regions->trunc_to(start_index);
+}
+
+void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
+  assert(hr->is_starts_humongous(), "Sanity!");
+
+  _collector->add_humongous_region(hr);
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  do {
+    add(hr);
+    _collector->update_from_skip_compacting_to_compacting(hr->hrm_index());
+    hr = g1h->next_region_in_humongous(hr);
+  } while (hr != nullptr);
 }
 
 uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
