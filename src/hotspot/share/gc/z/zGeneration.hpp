@@ -263,7 +263,7 @@ private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
-  uint                _total_collections_at_end;
+  uint                _total_collections_at_start;
   uint32_t            _young_seqnum_at_reloc_start;
 
   void flip_mark_start();
@@ -302,7 +302,7 @@ public:
   ReferenceDiscoverer* reference_discoverer();
   void set_soft_reference_policy(bool clear);
 
-  uint total_collections_at_end() const;
+  uint total_collections_at_start() const;
 
   bool active_remset_is_current() const;
 

@@ -59,7 +59,7 @@ struct ZDirectorHeapStats {
 
 struct ZDirectorGenerationGeneralStats {
   size_t _used;
-  uint _total_collections_at_end;
+  uint _total_collections_at_start;
 };
 
 struct ZDirectorGenerationStats {
@@ -502,7 +502,7 @@ static bool rule_major_allocation_rate(ZDirectorStats& stats) {
   // Doing an old collection makes subsequent young collections more efficient.
   // Calculate the number of young collections ahead that we will try to amortize
   // the cost of doing an old collection for.
-  const int lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_end;
+  const int lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_start;
 
   // Calculate extra young collection overhead predicted for a number of future
   // young collections, due to not freeing up memory in the old generation.
@@ -936,7 +936,7 @@ static ZDirectorStats sample_stats() {
   ZStatHeapStats old_stat_heap = old->stat_heap()->stats();
 
   ZDirectorGenerationGeneralStats young_generation = { ZHeap::heap()->used_young(), 0 };
-  ZDirectorGenerationGeneralStats old_generation = { ZHeap::heap()->used_old(), old->total_collections_at_end() };
+  ZDirectorGenerationGeneralStats old_generation = { ZHeap::heap()->used_old(), old->total_collections_at_start() };
 
   return {
     mutator_alloc_rate,

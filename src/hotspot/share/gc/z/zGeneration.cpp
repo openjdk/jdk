@@ -925,7 +925,7 @@ ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allo
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _unload(&_workers),
-    _total_collections_at_end(0),
+    _total_collections_at_start(0),
     _young_seqnum_at_reloc_start(0) {
   ZGeneration::_old = this;
 }
@@ -1176,6 +1176,8 @@ void ZGenerationOld::mark_start() {
   // to be armed, and the thread-local disarm values are lazily updated
   // when JavaThreads wake up from safepoints.
   CodeCache::on_gc_marking_cycle_start();
+
+  _total_collections_at_start = ZCollectedHeap::heap()->total_collections();
 }
 
 void ZGenerationOld::mark_roots() {
@@ -1332,7 +1334,6 @@ void ZGenerationOld::relocate() {
 
   // Update statistics
   stat_heap()->at_relocate_end(_page_allocator->stats(this), should_record_stats());
-  _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 
 class ZRemapOopClosure : public OopClosure {
@@ -1459,6 +1460,6 @@ void ZGenerationOld::remap_young_roots() {
   _workers.set_active_workers(prev_nworkers);
 }
 
-uint ZGenerationOld::total_collections_at_end() const {
-  return _total_collections_at_end;
+uint ZGenerationOld::total_collections_at_start() const {
+  return _total_collections_at_start;
 }
