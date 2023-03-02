@@ -883,8 +883,9 @@ public class Proxy implements java.io.Serializable {
                  * If the classloader has no name then
                  *        <qualified-class-name>@<id>
                  */
-                String nid = (ld.getName() != null) ? ld.getName() + "@" + Integer.toHexString(System.identityHashCode(ld))
-                                                    : Objects.toIdentityString(ld);
+                String nid = (ld.getName() != null)
+                             ? ld.getName() + "@" + Integer.toHexString(System.identityHashCode(ld))
+                             : Objects.toIdentityString(ld);
                 throw new IllegalArgumentException(c.getName() +
                         " referenced from a method is not visible from class loader: " + nid);
             }
