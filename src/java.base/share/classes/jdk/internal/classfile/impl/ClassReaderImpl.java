@@ -87,7 +87,6 @@ public final class ClassReaderImpl
     private List<BootstrapMethodEntryImpl> bsmEntries;
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
-    @SuppressWarnings("unchecked")
     ClassReaderImpl(byte[] classfileBytes,
                     Collection<Classfile.Option> options) {
         this.buffer = classfileBytes;
@@ -112,7 +111,9 @@ public final class ClassReaderImpl
                 case TAG_METHODHANDLE -> p += 3;
 
                 // 4
-                case TAG_CONSTANTDYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER, TAG_INTERFACEMETHODREF, TAG_INVOKEDYNAMIC, TAG_METHODREF, TAG_NAMEANDTYPE -> p += 4;
+                case TAG_CONSTANTDYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
+                     TAG_INTERFACEMETHODREF, TAG_INVOKEDYNAMIC, TAG_METHODREF,
+                     TAG_NAMEANDTYPE -> p += 4;
 
                 // 8
                 case TAG_DOUBLE, TAG_LONG -> {
@@ -129,7 +130,6 @@ public final class ClassReaderImpl
         this.constantPoolCount = constantPoolCount;
         this.cp = new PoolEntry[constantPoolCount];
 
-        p = metadataStart;
         this.flags = readU2(p);
         this.thisClassPos = p + 2;
         p += 6;
@@ -403,27 +403,32 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        return (ModuleEntry) readEntry(pos);
+        if (readEntry(pos) instanceof ModuleEntry me) return me;
+        throw new IllegalArgumentException("Not a module entry at pos: " + pos);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        return (PackageEntry) readEntry(pos);
+        if (readEntry(pos) instanceof PackageEntry pe) return pe;
+        throw new IllegalArgumentException("Not a package entry at pos: " + pos);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        return (ClassEntry) readEntry(pos);
+        if (readEntry(pos) instanceof ClassEntry ce) return ce;
+        throw new IllegalArgumentException("Not a class entry at pos: " + pos);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return (NameAndTypeEntry) readEntry(pos);
+        if (readEntry(pos) instanceof NameAndTypeEntry nate) return nate;
+        throw new IllegalArgumentException("Not a name and type entry at pos: " + pos);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return (MethodHandleEntry) readEntry(pos);
+        if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
+        throw new IllegalArgumentException("Not a method handle entry at pos: " + pos);
     }
 
     @Override

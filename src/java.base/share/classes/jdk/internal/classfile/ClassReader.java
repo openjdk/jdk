@@ -140,7 +140,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a module entry
      */
     ModuleEntry readModuleEntry(int offset);
@@ -151,7 +151,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a package entry
      */
     PackageEntry readPackageEntry(int offset);
@@ -162,7 +162,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a class entry
      */
     ClassEntry readClassEntry(int offset);
@@ -173,7 +173,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a name-and-type entry
      */
     NameAndTypeEntry readNameAndTypeEntry(int offset);
@@ -184,7 +184,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a method handle entry
      */
     MethodHandleEntry readMethodHandleEntry(int offset);
