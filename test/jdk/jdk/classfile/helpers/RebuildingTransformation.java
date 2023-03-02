@@ -451,7 +451,7 @@ class RebuildingTransformation {
                                         }
                                         com.findAttribute(Attributes.STACK_MAP_TABLE).ifPresent(smta ->
                                                     cob.with(StackMapTableAttribute.of(smta.entries().stream().map(fr ->
-                                                            StackMapTableAttribute.StackMapFrameInfo.of(labels.computeIfAbsent(fr.target(), l -> cob.newLabel()),
+                                                            StackMapFrameInfo.of(labels.computeIfAbsent(fr.target(), l -> cob.newLabel()),
                                                                     transformFrameTypeInfos(fr.locals(), cob, labels),
                                                                     transformFrameTypeInfos(fr.stack(), cob, labels))).toList())));
                                     }));
@@ -578,12 +578,12 @@ class RebuildingTransformation {
         };
     }
 
-    static List<StackMapTableAttribute.VerificationTypeInfo> transformFrameTypeInfos(List<StackMapTableAttribute.VerificationTypeInfo> infos, CodeBuilder cob, HashMap<Label, Label> labels) {
+    static List<StackMapFrameInfo.VerificationTypeInfo> transformFrameTypeInfos(List<StackMapFrameInfo.VerificationTypeInfo> infos, CodeBuilder cob, HashMap<Label, Label> labels) {
         return infos.stream().map(ti -> {
             return switch (ti) {
-                case StackMapTableAttribute.SimpleVerificationTypeInfo i -> i;
-                case StackMapTableAttribute.ObjectVerificationTypeInfo i -> StackMapTableAttribute.ObjectVerificationTypeInfo.of(i.classSymbol());
-                case StackMapTableAttribute.UninitializedVerificationTypeInfo i -> StackMapTableAttribute.UninitializedVerificationTypeInfo.of(labels.computeIfAbsent(i.newTarget(), l -> cob.newLabel()));
+                case StackMapFrameInfo.SimpleVerificationTypeInfo i -> i;
+                case StackMapFrameInfo.ObjectVerificationTypeInfo i -> StackMapFrameInfo.ObjectVerificationTypeInfo.of(i.classSymbol());
+                case StackMapFrameInfo.UninitializedVerificationTypeInfo i -> StackMapFrameInfo.UninitializedVerificationTypeInfo.of(labels.computeIfAbsent(i.newTarget(), l -> cob.newLabel()));
             };
         }).toList();
     }

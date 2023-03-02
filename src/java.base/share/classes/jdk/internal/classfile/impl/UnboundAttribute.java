@@ -85,7 +85,7 @@ import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
 import jdk.internal.classfile.attribute.SourceFileAttribute;
 import jdk.internal.classfile.attribute.SourceIDAttribute;
 import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute.StackMapFrameInfo;
+import jdk.internal.classfile.attribute.StackMapFrameInfo;
 import jdk.internal.classfile.attribute.SyntheticAttribute;
 import jdk.internal.classfile.constantpool.ConstantValueEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;

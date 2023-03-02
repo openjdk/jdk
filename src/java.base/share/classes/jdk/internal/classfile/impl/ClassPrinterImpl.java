@@ -54,7 +54,7 @@ import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.TypeAnnotation;
 import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.attribute.StackMapTableAttribute.*;
+import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
 import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.instruction.*;
 
@@ -513,7 +513,7 @@ public final class ClassPrinterImpl {
                 new MapNodeImpl(FLOW, "value").with(elementValueToTree(evp.value())))));
     }
 
-    private static Stream<ConstantDesc> convertVTIs(CodeAttribute lr, List<StackMapTableAttribute.VerificationTypeInfo> vtis) {
+    private static Stream<ConstantDesc> convertVTIs(CodeAttribute lr, List<VerificationTypeInfo> vtis) {
         return vtis.stream().mapMulti((vti, ret) -> {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
