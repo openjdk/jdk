@@ -5563,6 +5563,7 @@ public class Attr extends JCTree.Visitor {
             // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
             chk.checkDefaultMethodClashes(tree.pos(), c.type);
+            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
         }
 
         // Check that class does not import the same parameterized interface

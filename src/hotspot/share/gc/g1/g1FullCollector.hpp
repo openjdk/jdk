@@ -75,6 +75,7 @@ class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
   G1FullGCScope             _scope;
   uint                      _num_workers;
+  bool                      _has_compaction_targets;
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
   OopQueueSet               _oop_queue_set;
@@ -137,6 +138,9 @@ public:
   inline void set_compaction_top(HeapRegion* r, HeapWord* value);
   inline HeapWord* compaction_top(HeapRegion* r) const;
 
+  inline void set_has_compaction_targets();
+  inline bool has_compaction_targets() const;
+
   uint truncate_parallel_cps();
 
 private:
@@ -149,6 +153,7 @@ private:
 
   void phase3_adjust_pointers();
   void phase4_do_compaction();
+  void phase5_reset_metadata();
 
   void restore_marks();
   void verify_after_marking();
