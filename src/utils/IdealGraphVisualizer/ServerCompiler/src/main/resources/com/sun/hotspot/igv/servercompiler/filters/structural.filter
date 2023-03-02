@@ -24,7 +24,7 @@ editSameProperty(and([matches("name", "ConP"), matches("dump_spec", "#NULL")]),
                  function(t) {return "null";});
 
 // Add extra line to method calls with callee information.
-function methodInfo(dump_spec) {
+function callJavaInfo(dump_spec) {
   dump_components = split_string(dump_spec);
   if (dump_components.length < 3) {
     return null;
@@ -35,7 +35,7 @@ function methodInfo(dump_spec) {
   }
   return "trap: " + tm[2];
 }
-editProperty(matches("name", "CallStaticJava"), "dump_spec", "extra_label", methodInfo);
+editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), "dump_spec", "extra_label", callJavaInfo);
 
 // Add extra line to exception creation nodes with the name of the exception.
 function exceptionInfo(dump_spec) {
