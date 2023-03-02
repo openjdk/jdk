@@ -91,6 +91,7 @@
 #include <shlobj.h>
 
 #include <malloc.h>
+#include <powerbase.h>
 #include <signal.h>
 #include <direct.h>
 #include <errno.h>
@@ -131,8 +132,8 @@ static FILETIME process_kernel_time;
 #endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-PVOID  topLevelVectoredExceptionHandler = NULL;
-LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = NULL;
+PVOID  topLevelVectoredExceptionHandler = nullptr;
+LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -154,9 +155,9 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
       timeEndPeriod(1L);
     }
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-    if (topLevelVectoredExceptionHandler != NULL) {
+    if (topLevelVectoredExceptionHandler != nullptr) {
       RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-      topLevelVectoredExceptionHandler = NULL;
+      topLevelVectoredExceptionHandler = nullptr;
     }
 #endif
     break;
@@ -190,10 +191,10 @@ struct PreserveLastError {
 // Logging wrapper for VirtualAlloc
 static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect) {
   LPVOID result = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
-  if (result != NULL) {
+  if (result != nullptr) {
     log_trace(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, p2i(result),
-                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+                  ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
     log_info(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) failed (%u).",
@@ -220,10 +221,10 @@ static BOOL virtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD  dwFreeType) {
 static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType,
                                  DWORD  flProtect, DWORD  nndPreferred) {
   LPVOID result = ::VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred);
-  if (result != NULL) {
+  if (result != nullptr) {
     log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, p2i(result),
-                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+                  ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
     log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) failed (%u).",
@@ -237,10 +238,10 @@ static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess,
                               DWORD  dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress) {
   LPVOID result = ::MapViewOfFileEx(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
                                     dwFileOffsetLow, dwNumberOfBytesToMap, lpBaseAddress);
-  if (result != NULL) {
+  if (result != nullptr) {
     log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") returned " PTR_FORMAT "%s.",
                   p2i(lpBaseAddress), dwNumberOfBytesToMap, p2i(result),
-                  ((lpBaseAddress != NULL && result != lpBaseAddress) ? " <different base!>" : ""));
+                  ((lpBaseAddress != nullptr && result != lpBaseAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
     log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") failed (%u).",
@@ -277,7 +278,7 @@ void os::run_periodic_checks(outputStream* st) {
 }
 
 // previous UnhandledExceptionFilter, if there is one
-static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = NULL;
+static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
 
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo);
 
@@ -291,7 +292,7 @@ void os::init_system_properties_values() {
     char home_dir[MAX_PATH + 1];
     char *alt_home_dir = ::getenv("_ALT_JAVA_HOME_DIR");
 
-    if (alt_home_dir != NULL)  {
+    if (alt_home_dir != nullptr)  {
       strncpy(home_dir, alt_home_dir, MAX_PATH + 1);
       home_dir[MAX_PATH] = '\0';
     } else {
@@ -300,10 +301,10 @@ void os::init_system_properties_values() {
       // Now cut the path to <java_home>/jre if we can.
       *(strrchr(home_dir, '\\')) = '\0';  // get rid of \jvm.dll
       pslash = strrchr(home_dir, '\\');
-      if (pslash != NULL) {
+      if (pslash != nullptr) {
         *pslash = '\0';                   // get rid of \{client|server}
         pslash = strrchr(home_dir, '\\');
-        if (pslash != NULL) {
+        if (pslash != nullptr) {
           *pslash = '\0';                 // get rid of \bin
         }
       }
@@ -322,7 +323,7 @@ void os::init_system_properties_values() {
     FREE_C_HEAP_ARRAY(char, dll_path);
 
     if (!set_boot_path('\\', ';')) {
-      vm_exit_during_initialization("Failed setting boot class path.", NULL);
+      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
 
@@ -349,7 +350,7 @@ void os::init_system_properties_values() {
 
     library_path[0] = '\0';
 
-    GetModuleFileName(NULL, tmp, sizeof(tmp));
+    GetModuleFileName(nullptr, tmp, sizeof(tmp));
     *(strrchr(tmp, '\\')) = '\0';
     strcat(library_path, tmp);
 
@@ -414,9 +415,9 @@ extern "C" void breakpoint() {
 // only supported on Windows XP or later.
 //
 int os::get_native_stack(address* stack, int frames, int toSkip) {
-  int captured = RtlCaptureStackBackTrace(toSkip + 1, frames, (PVOID*)stack, NULL);
+  int captured = RtlCaptureStackBackTrace(toSkip + 1, frames, (PVOID*)stack, nullptr);
   for (int index = captured; index < frames; index ++) {
-    stack[index] = NULL;
+    stack[index] = nullptr;
   }
   return captured;
 }
@@ -459,18 +460,18 @@ size_t os::current_stack_size() {
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
   MEMORY_BASIC_INFORMATION minfo;
-  committed_start = NULL;
+  committed_start = nullptr;
   committed_size = 0;
   address top = start + size;
   const address start_addr = start;
   while (start < top) {
     VirtualQuery(start, &minfo, sizeof(minfo));
     if ((minfo.State & MEM_COMMIT) == 0) {  // not committed
-      if (committed_start != NULL) {
+      if (committed_start != nullptr) {
         break;
       }
     } else {  // committed
-      if (committed_start == NULL) {
+      if (committed_start == nullptr) {
         committed_start = start;
       }
       size_t offset = start - (address)minfo.BaseAddress;
@@ -479,7 +480,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     start = (address)minfo.BaseAddress + minfo.RegionSize;
   }
 
-  if (committed_start == NULL) {
+  if (committed_start == nullptr) {
     assert(committed_size == 0, "Sanity");
     return false;
   } else {
@@ -492,20 +493,20 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
 struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
   const struct tm* time_struct_ptr = localtime(clock);
-  if (time_struct_ptr != NULL) {
+  if (time_struct_ptr != nullptr) {
     *res = *time_struct_ptr;
     return res;
   }
-  return NULL;
+  return nullptr;
 }
 
 struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   const struct tm* time_struct_ptr = gmtime(clock);
-  if (time_struct_ptr != NULL) {
+  if (time_struct_ptr != nullptr) {
     *res = *time_struct_ptr;
     return res;
   }
-  return NULL;
+  return nullptr;
 }
 
 JNIEXPORT
@@ -568,16 +569,16 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
   OSThread* osthread = new OSThread();
-  if (osthread == NULL) return NULL;
+  if (osthread == nullptr) return nullptr;
 
   // Initialize the JDK library's interrupt event.
   // This should really be done when OSThread is constructed,
   // but there is no way for a constructor to report failure to
   // allocate the event.
-  HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
-  if (interrupt_event == NULL) {
+  HANDLE interrupt_event = CreateEvent(nullptr, true, false, nullptr);
+  if (interrupt_event == nullptr) {
     delete osthread;
-    return NULL;
+    return nullptr;
   }
   osthread->set_interrupt_event(interrupt_event);
 
@@ -610,7 +611,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   }
   OSThread* osthread = create_os_thread(thread, thread_h,
                                         (int)current_thread_id());
-  if (osthread == NULL) {
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -631,9 +632,9 @@ bool os::create_main_thread(JavaThread* thread) {
 #ifdef ASSERT
   thread->verify_not_published();
 #endif
-  if (_starting_thread == NULL) {
+  if (_starting_thread == nullptr) {
     _starting_thread = create_os_thread(thread, main_thread, main_thread_id);
-    if (_starting_thread == NULL) {
+    if (_starting_thread == nullptr) {
       return false;
     }
   }
@@ -673,7 +674,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Allocate the OSThread object
   OSThread* osthread = new OSThread();
-  if (osthread == NULL) {
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -684,8 +685,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // This should really be done when OSThread is constructed,
   // but there is no way for a constructor to report failure to
   // allocate the event.
-  HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
-  if (interrupt_event == NULL) {
+  HANDLE interrupt_event = CreateEvent(nullptr, true, false, nullptr);
+  if (interrupt_event == nullptr) {
     delete osthread;
     return false;
   }
@@ -745,17 +746,17 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   int limit = 3;
   do {
     thread_handle =
-      (HANDLE)_beginthreadex(NULL,
+      (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
                              &os::win32::thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
-  } while (thread_handle == NULL && errno == EAGAIN && limit-- > 0);
+  } while (thread_handle == nullptr && errno == EAGAIN && limit-- > 0);
 
   ResourceMark rm;
   char buf[64];
-  if (thread_handle != NULL) {
+  if (thread_handle != nullptr) {
     log_info(os, thread)("Thread \"%s\" started (tid: %u, attributes: %s)",
                          thread->name(), thread_id,
                          describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
@@ -768,9 +769,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     os::print_memory_info(&st);
   }
 
-  if (thread_handle == NULL) {
+  if (thread_handle == nullptr) {
     // Need to clean up stuff we've allocated so far
-    thread->set_osthread(NULL);
+    thread->set_osthread(nullptr);
     delete osthread;
     return false;
   }
@@ -789,7 +790,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
 // Free Win32 resources related to the OSThread
 void os::free_thread(OSThread* osthread) {
-  assert(osthread != NULL, "osthread not set");
+  assert(osthread != nullptr, "osthread not set");
 
   // We are told to free resources of the argument thread,
   // but we can only really operate on the current thread.
@@ -890,8 +891,8 @@ uint os::processor_id() {
 // For dynamic lookup of SetThreadDescription API
 typedef HRESULT (WINAPI *SetThreadDescriptionFnPtr)(HANDLE, PCWSTR);
 typedef HRESULT (WINAPI *GetThreadDescriptionFnPtr)(HANDLE, PWSTR*);
-static SetThreadDescriptionFnPtr _SetThreadDescription = NULL;
-DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = NULL;)
+static SetThreadDescriptionFnPtr _SetThreadDescription = nullptr;
+DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = nullptr;)
 
 // forward decl.
 static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
@@ -902,7 +903,7 @@ void os::set_native_thread_name(const char *name) {
   // for setting the thread name/description:
   // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreaddescription
 
-  if (_SetThreadDescription != NULL) {
+  if (_SetThreadDescription != nullptr) {
     // SetThreadDescription takes a PCWSTR but we have conversion routines that produce
     // LPWSTR. The only difference is that PCWSTR is a pointer to const WCHAR.
     LPWSTR unicode_name;
@@ -1152,13 +1153,13 @@ void os::shutdown() {
 
   // Check for abort hook
   abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
+  if (abort_hook != nullptr) {
     abort_hook();
   }
 }
 
 
-static HANDLE dumpFile = NULL;
+static HANDLE dumpFile = nullptr;
 
 // Check if dump file can be created.
 void os::check_dump_limit(char* buffer, size_t buffsz) {
@@ -1176,16 +1177,16 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
 #endif
 
   if (status) {
-    const char* cwd = get_current_directory(NULL, 0);
+    const char* cwd = get_current_directory(nullptr, 0);
     int pid = current_process_id();
-    if (cwd != NULL) {
+    if (cwd != nullptr) {
       jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
     } else {
       jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
     }
 
-    if (dumpFile == NULL &&
-       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+    if (dumpFile == nullptr &&
+       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
                  == INVALID_HANDLE_VALUE) {
       jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
       status = false;
@@ -1204,8 +1205,8 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
   MINIDUMP_TYPE dumpType;
 
   shutdown();
-  if (!dump_core || dumpFile == NULL) {
-    if (dumpFile != NULL) {
+  if (!dump_core || dumpFile == nullptr) {
+    if (dumpFile != nullptr) {
       CloseHandle(dumpFile);
     }
     win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
@@ -1214,7 +1215,7 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
   dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData |
     MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
 
-  if (siginfo != NULL && context != NULL) {
+  if (siginfo != nullptr && context != nullptr) {
     ep.ContextRecord = (PCONTEXT) context;
     ep.ExceptionRecord = (PEXCEPTION_RECORD) siginfo;
 
@@ -1222,13 +1223,13 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     mei.ExceptionPointers = &ep;
     pmei = &mei;
   } else {
-    pmei = NULL;
+    pmei = nullptr;
   }
 
   // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
-  if (!WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) &&
-      !WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL)) {
+  if (!WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, nullptr, nullptr) &&
+      !WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, nullptr, nullptr)) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);
@@ -1246,11 +1247,11 @@ void  os::dll_unload(void *lib) {
     snprintf(name, MAX_PATH, "<not available>");
   }
   if (::FreeLibrary((HMODULE)lib)) {
-    Events::log_dll_message(NULL, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+    Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
   } else {
     const DWORD errcode = ::GetLastError();
-    Events::log_dll_message(NULL, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+    Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
   }
 }
@@ -1268,7 +1269,7 @@ void* os::dll_lookup(void *lib, const char *name) {
 // duplicate slashes and converts all instances of '/' into '\\'.
 
 DIR * os::opendir(const char *dirname) {
-  assert(dirname != NULL, "just checking");   // hotspot change
+  assert(dirname != nullptr, "just checking");   // hotspot change
   DIR *dirp = (DIR *)malloc(sizeof(DIR), mtInternal);
   DWORD fattr;                                // hotspot change
   char alt_dirname[4] = { 0, 0, 0, 0 };
@@ -1334,9 +1335,9 @@ DIR * os::opendir(const char *dirname) {
 }
 
 struct dirent * os::readdir(DIR *dirp) {
-  assert(dirp != NULL, "just checking");      // hotspot change
+  assert(dirp != nullptr, "just checking");      // hotspot change
   if (dirp->handle == INVALID_HANDLE_VALUE) {
-    return NULL;
+    return nullptr;
   }
 
   strcpy(dirp->dirent.d_name, dirp->find_data.cFileName);
@@ -1344,7 +1345,7 @@ struct dirent * os::readdir(DIR *dirp) {
   if (!FindNextFile(dirp->handle, &dirp->find_data)) {
     if (GetLastError() == ERROR_INVALID_HANDLE) {
       errno = EBADF;
-      return NULL;
+      return nullptr;
     }
     FindClose(dirp->handle);
     dirp->handle = INVALID_HANDLE_VALUE;
@@ -1354,7 +1355,7 @@ struct dirent * os::readdir(DIR *dirp) {
 }
 
 int os::closedir(DIR *dirp) {
-  assert(dirp != NULL, "just checking");      // hotspot change
+  assert(dirp != nullptr, "just checking");      // hotspot change
   if (dirp->handle != INVALID_HANDLE_VALUE) {
     if (!FindClose(dirp->handle)) {
       errno = EBADF;
@@ -1398,7 +1399,7 @@ static bool _addr_in_ntdll(address addr) {
   MODULEINFO minfo;
 
   hmod = GetModuleHandle("NTDLL.DLL");
-  if (hmod == NULL) return false;
+  if (hmod == nullptr) return false;
   if (!GetModuleInformation(GetCurrentProcess(), hmod,
                                           &minfo, sizeof(MODULEINFO))) {
     return false;
@@ -1440,7 +1441,7 @@ static int _locate_module_by_addr(const char * mod_fname, address base_addr,
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
 // NOTE: the reason we don't use SymGetModuleInfo() is it doesn't always
 //       return the full path to the DLL file, sometimes it returns path
@@ -1466,12 +1467,12 @@ bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
   if (Decoder::decode(addr, buf, buflen, offset, demangle)) {
     return true;
   }
-  if (offset != NULL)  *offset  = -1;
+  if (offset != nullptr)  *offset  = -1;
   buf[0] = '\0';
   return false;
 }
@@ -1522,8 +1523,8 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
 
   void * result = LoadLibrary(name);
-  if (result != NULL) {
-    Events::log_dll_message(NULL, "Loaded shared library %s", name);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
@@ -1534,13 +1535,13 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // It may or may not be overwritten below (in the for loop and just above)
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
-  Events::log_dll_message(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+  Events::log_dll_message(nullptr, "Loading shared library %s failed, error code %lu", name, errcode);
   log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
-    return NULL;
+    return nullptr;
   }
 
   // Parsing dll below
@@ -1550,7 +1551,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-    return NULL;
+    return nullptr;
   }
 
   uint32_t signature_offset;
@@ -1576,7 +1577,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
-    return NULL;
+    return nullptr;
   }
 
   typedef struct {
@@ -1604,7 +1605,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // Obtain a string for printf operation
   // lib_arch_str shall contain string what platform this .dll was built for
   // running_arch_str shall string contain what platform Hotspot was built for
-  char *running_arch_str = NULL, *lib_arch_str = NULL;
+  char *running_arch_str = nullptr, *lib_arch_str = nullptr;
   for (unsigned int i = 0; i < ARRAY_SIZE(arch_array); i++) {
     if (lib_arch == arch_array[i].arch_code) {
       lib_arch_str = arch_array[i].arch_name;
@@ -1620,10 +1621,10 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
-    return NULL;
+    return nullptr;
   }
 
-  if (lib_arch_str != NULL) {
+  if (lib_arch_str != nullptr) {
     ::_snprintf(ebuf, ebuflen - 1,
                 "Can't load %s-bit .dll on a %s-bit platform",
                 lib_arch_str, running_arch_str);
@@ -1634,7 +1635,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 lib_arch, running_arch_str);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -1653,7 +1654,7 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
   int pid = os::current_process_id();
   hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                          FALSE, pid);
-  if (hProcess == NULL) return 0;
+  if (hProcess == nullptr) return 0;
 
   DWORD size_needed;
   if (!EnumProcessModules(hProcess, modules, sizeof(modules), &size_needed)) {
@@ -1672,7 +1673,7 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
 
     MODULEINFO modinfo;
     if (!GetModuleInformation(hProcess, modules[i], &modinfo, sizeof(modinfo))) {
-      modinfo.lpBaseOfDll = NULL;
+      modinfo.lpBaseOfDll = nullptr;
       modinfo.SizeOfImage = 0;
     }
 
@@ -1696,7 +1697,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   os::win32::print_windows_version(&sst);
   // chop off newline character
   char* nl = strchr(buf, '\n');
-  if (nl != NULL) *nl = '\0';
+  if (nl != nullptr) *nl = '\0';
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
@@ -1767,19 +1768,19 @@ void os::win32::print_windows_version(outputStream* st) {
   }
   strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
 
-  DWORD version_size = GetFileVersionInfoSize(kernel32_path, NULL);
+  DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
   if (version_size == 0) {
     st->print_cr("Call to GetFileVersionInfoSize failed");
     return;
   }
 
   LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
-  if (version_info == NULL) {
+  if (version_info == nullptr) {
     st->print_cr("Failed to allocate version_info");
     return;
   }
 
-  if (!GetFileVersionInfo(kernel32_path, NULL, version_size, version_info)) {
+  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
     os::free(version_info);
     st->print_cr("Call to GetFileVersionInfo failed");
     return;
@@ -1876,8 +1877,65 @@ void os::win32::print_windows_version(outputStream* st) {
   st->cr();
 }
 
+// Processor Power Information; missing from Windows headers
+typedef struct _PROCESSOR_POWER_INFORMATION {
+    ULONG Number;
+    ULONG MaxMhz;     // max specified clock frequency of the system processor
+    ULONG CurrentMhz; // max specified processor clock frequency mult. by current processor throttle
+    ULONG MhzLimit;   // max specified processor clock frequency mult. by current processor thermal throttle limit
+    ULONG MaxIdleState;
+    ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION;
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+  int proc_count = os::processor_count();
+  // handle potential early cases where processor count is not yet set
+  if (proc_count < 1) {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    proc_count = si.dwNumberOfProcessors;
+  }
+
+  size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, nullptr, 0, buf, (ULONG) buflen);
+  int max_mhz = -1, current_mhz = -1, mhz_limit = -1;
+  bool same_vals_for_all_cpus = true;
+
+  if (status == ERROR_SUCCESS) {
+    PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
+    for (int i = 0; i < proc_count; i++) {
+      if (i == 0) {
+        max_mhz = (int) pppi->MaxMhz;
+        current_mhz = (int) pppi->CurrentMhz;
+        mhz_limit = (int) pppi->MhzLimit;
+      } else {
+        if (max_mhz != (int) pppi->MaxMhz ||
+            current_mhz != (int) pppi->CurrentMhz ||
+            mhz_limit != (int) pppi->MhzLimit) {
+          same_vals_for_all_cpus = false;
+          break;
+        }
+      }
+      // avoid iteration in case buf is too small to hold all proc infos
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+
+    if (same_vals_for_all_cpus && max_mhz != -1) {
+      st->print_cr("Processor Information for all %d processors :", proc_count);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d", max_mhz, current_mhz, mhz_limit);
+      return;
+    }
+    // differing values, iterate again
+    pppi = (PROCESSOR_POWER_INFORMATION*) buf;
+    for (int i = 0; i < proc_count; i++) {
+      st->print_cr("Processor Information for processor %d", (int) pppi->Number);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d",
+                     (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+  }
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
@@ -1886,7 +1944,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
                "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
   if (status == ERROR_SUCCESS) {
     DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", NULL, NULL, (byte*)buf, &size);
+    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
     if (status != ERROR_SUCCESS) {
         strncpy(buf, "## __CPU__", buflen);
     } else {
@@ -1962,7 +2020,7 @@ void os::print_siginfo(outputStream *st, const void* siginfo) {
   st->print("siginfo:");
 
   char tmp[64];
-  if (os::exception_name(er->ExceptionCode, tmp, sizeof(tmp)) == NULL) {
+  if (os::exception_name(er->ExceptionCode, tmp, sizeof(tmp)) == nullptr) {
     strcpy(tmp, "EXCEPTION_??");
   }
   st->print(" %s (0x%x)", tmp, er->ExceptionCode);
@@ -2022,7 +2080,7 @@ void os::jvm_path(char *buf, jint buflen) {
     // looks like jvm.dll is installed there (append a fake suffix
     // hotspot/jvm.dll).
     char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != NULL && java_home_var[0] != 0 &&
+    if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
       strncpy(buf, java_home_var, buflen);
 
@@ -2070,12 +2128,12 @@ size_t os::lasterror(char* buf, size_t len) {
     // DOS error
     size_t n = (size_t)FormatMessage(
                                      FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-                                     NULL,
+                                     nullptr,
                                      errval,
                                      0,
                                      buf,
                                      (DWORD)len,
-                                     NULL);
+                                     nullptr);
     if (n > 3) {
       // Drop final '.', CR, LF
       if (buf[n - 1] == '\n') n--;
@@ -2112,7 +2170,7 @@ int os::get_last_error() {
 // a signal handler for SIGBREAK is installed then that signal handler
 // takes priority over the console control handler for CTRL_CLOSE_EVENT.
 // See bug 4416763.
-static signal_handler_t sigbreakHandler = NULL;
+static signal_handler_t sigbreakHandler = nullptr;
 
 static void UserHandler(int sig) {
   os::signal_notify(sig);
@@ -2167,7 +2225,7 @@ static BOOL WINAPI consoleHandler(DWORD event) {
     return TRUE;
     break;
   case CTRL_BREAK_EVENT:
-    if (sigbreakHandler != NULL) {
+    if (sigbreakHandler != nullptr) {
       (*sigbreakHandler)(SIGBREAK);
     }
     return TRUE;
@@ -2177,9 +2235,9 @@ static BOOL WINAPI consoleHandler(DWORD event) {
     // such as a service process.
     USEROBJECTFLAGS flags;
     HANDLE handle = GetProcessWindowStation();
-    if (handle != NULL &&
+    if (handle != nullptr &&
         GetUserObjectInformation(handle, UOI_FLAGS, &flags,
-        sizeof(USEROBJECTFLAGS), NULL)) {
+        sizeof(USEROBJECTFLAGS), nullptr)) {
       // If it is a non-interactive session, let next handler to deal
       // with it.
       if ((flags.dwFlags & WSF_VISIBLE) == 0) {
@@ -2209,7 +2267,7 @@ int os::sigexitnum_pd() {
 
 // a counter for each possible signal value, including signal_thread exit signal
 static volatile jint pending_signals[NSIG+1] = { 0 };
-static Semaphore* sig_sem = NULL;
+static Semaphore* sig_sem = nullptr;
 
 static void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -2246,7 +2304,7 @@ static void jdk_misc_signal_init() {
 }
 
 void os::signal_notify(int sig) {
-  if (sig_sem != NULL) {
+  if (sig_sem != nullptr) {
     Atomic::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
@@ -2373,7 +2431,7 @@ const char* os::exception_name(int exception_code, char *buf, size_t size) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -2447,7 +2505,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
-  if (prev_uef_handler != NULL) {
+  if (prev_uef_handler != nullptr) {
     // We didn't handle this exception so pass it to the previous
     // UnhandledExceptionFilter.
     return (prev_uef_handler)(exceptionInfo);
@@ -2580,7 +2638,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif
 
-  if (t != NULL && t->is_Java_thread()) {
+  if (t != nullptr && t->is_Java_thread()) {
     JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
@@ -2632,7 +2690,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // We only expect null pointers in the stubs (vtable)
         // the rest are checked explicitly now.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        if (cb != NULL) {
+        if (cb != nullptr) {
           if (SafepointMechanism::is_poll_address(addr)) {
             address stub = SharedRuntime::get_poll_stub(pc);
             return Handle_Exception(exceptionInfo, stub);
@@ -2651,7 +2709,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Null pointer exception.
         if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
-          if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
+          if (stub != nullptr) return Handle_Exception(exceptionInfo, stub);
         }
         report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
@@ -2678,15 +2736,15 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
-      CompiledMethod* nm = NULL;
+      CompiledMethod* nm = nullptr;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+        nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
       }
 
       bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
       if (((in_vm || in_native || is_unsafe_arraycopy) && thread->doing_unsafe_access()) ||
-          (nm != NULL && nm->has_unsafe_access())) {
+          (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
         if (is_unsafe_arraycopy) {
           next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
@@ -2731,7 +2789,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        if (cb != NULL && cb->is_compiled()) {
+        if (cb != nullptr && cb->is_compiled()) {
           CompiledMethod* cm = cb->as_compiled_method();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
           address deopt = cm->is_method_handle_return(pc) ?
@@ -2775,7 +2833,7 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
   // If the exception occurred in the codeCache, pass control
   // to our normal exception handler.
   CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     return topLevelExceptionFilter(exceptionInfo);
   }
 
@@ -2899,7 +2957,7 @@ class NUMANodeListHolder {
  public:
   NUMANodeListHolder() {
     _numa_used_node_count = 0;
-    _numa_used_node_list = NULL;
+    _numa_used_node_list = nullptr;
     // do rest of initialization in build routine (after function pointers are set up)
   }
 
@@ -2940,11 +2998,11 @@ static bool request_lock_memory_privilege() {
                                 os::current_process_id());
 
   bool success = false;
-  HANDLE hToken = NULL;
+  HANDLE hToken = nullptr;
   LUID luid;
-  if (hProcess != NULL &&
+  if (hProcess != nullptr &&
       OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hToken) &&
-      LookupPrivilegeValue(NULL, "SeLockMemoryPrivilege", &luid)) {
+      LookupPrivilegeValue(nullptr, "SeLockMemoryPrivilege", &luid)) {
 
     TOKEN_PRIVILEGES tp;
     tp.PrivilegeCount = 1;
@@ -2953,17 +3011,17 @@ static bool request_lock_memory_privilege() {
 
     // AdjustTokenPrivileges() may return TRUE even when it couldn't change the
     // privilege. Check GetLastError() too. See MSDN document.
-    if (AdjustTokenPrivileges(hToken, false, &tp, sizeof(tp), NULL, NULL) &&
+    if (AdjustTokenPrivileges(hToken, false, &tp, sizeof(tp), nullptr, nullptr) &&
         (GetLastError() == ERROR_SUCCESS)) {
       success = true;
     }
   }
 
   // Cleanup
-  if (hProcess != NULL) {
+  if (hProcess != nullptr) {
     CloseHandle(hProcess);
   }
-  if (hToken != NULL) {
+  if (hToken != nullptr) {
     CloseHandle(hToken);
   }
 
@@ -3023,14 +3081,14 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   const size_t size_of_reserve = bytes + chunk_size;
   if (bytes > size_of_reserve) {
     // Overflowed.
-    return NULL;
+    return nullptr;
   }
   p_buf = (char *) virtualAlloc(addr,
                                 size_of_reserve,  // size of Reserve
                                 MEM_RESERVE,
                                 PAGE_READWRITE);
-  // If reservation failed, return NULL
-  if (p_buf == NULL) return NULL;
+  // If reservation failed, return null
+  if (p_buf == nullptr) return nullptr;
   MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
@@ -3068,7 +3126,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
 #endif
 
     if (inject_error_now) {
-      p_new = NULL;
+      p_new = nullptr;
     } else {
       if (!UseNUMAInterleaving) {
         p_new = (char *) virtualAlloc(next_alloc_addr,
@@ -3083,7 +3141,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       }
     }
 
-    if (p_new == NULL) {
+    if (p_new == nullptr) {
       // Free any allocated pages
       if (next_alloc_addr > p_buf) {
         // Some memory was committed so release it.
@@ -3100,7 +3158,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         log_develop_debug(pagesize)("Reserving pages individually failed.");
       }
 #endif
-      return NULL;
+      return nullptr;
     }
 
     bytes_remaining -= bytes_to_rq;
@@ -3173,7 +3231,7 @@ int os::create_file_for_heap(const char* dir) {
 
   size_t fullname_len = strlen(dir) + strlen(name_template);
   char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
-  if (fullname == NULL) {
+  if (fullname == nullptr) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
@@ -3183,7 +3241,7 @@ int os::create_file_for_heap(const char* dir) {
   os::native_path(fullname);
 
   char *path = _mktemp(fullname);
-  if (path == NULL) {
+  if (path == nullptr) {
     warning("_mktemp could not create file name from template %s (%s)", fullname, os::strerror(errno));
     os::free(fullname);
     return -1;
@@ -3199,19 +3257,19 @@ int os::create_file_for_heap(const char* dir) {
   return fd;
 }
 
-// If 'base' is not NULL, function will return NULL if it cannot get 'base'
-char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
+// If 'base' is not null, function will return null if it cannot get 'base'
+char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
 #ifdef _LP64
-  HANDLE fileMapping = CreateFileMapping(fh, NULL, PAGE_READWRITE,
-    (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), NULL);
+  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
+    (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
 #else
-  HANDLE fileMapping = CreateFileMapping(fh, NULL, PAGE_READWRITE,
-    0, (DWORD)size, NULL);
+  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
+    0, (DWORD)size, nullptr);
 #endif
-  if (fileMapping == NULL) {
+  if (fileMapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
     }
@@ -3219,7 +3277,7 @@ char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
     }
 
-    return NULL;
+    return nullptr;
   }
 
   LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
@@ -3231,7 +3289,7 @@ char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
 
 char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
-  assert(base != NULL, "Base address cannot be NULL");
+  assert(base != nullptr, "Base address cannot be null");
 
   release_memory(base, size);
   return pd_map_memory_to_file(base, size, fd);
@@ -3248,14 +3306,14 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
-  char* aligned_base = NULL;
+  char* aligned_base = nullptr;
   static const int max_attempts = 20;
 
-  for (int attempt = 0; attempt < max_attempts && aligned_base == NULL; attempt ++) {
+  for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::pd_map_memory_to_file(extra_size, file_desc) :
                                          os::pd_reserve_memory(extra_size);
-    if (extra_base == NULL) {
-      return NULL;
+    if (extra_base == nullptr) {
+      return nullptr;
     }
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
@@ -3264,7 +3322,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
                                   os::pd_release_memory(extra_base, extra_size);
     assert(rc, "release failed");
     if (!rc) {
-      return NULL;
+      return nullptr;
     }
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
@@ -3273,7 +3331,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
                                      os::attempt_reserve_memory_at(aligned_base, size);
   }
 
-  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", max_attempts);
+  assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
 
   return aligned_base;
 }
@@ -3294,7 +3352,7 @@ char* os::pd_map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes, exec);
+  return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
@@ -3315,7 +3373,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
     // in numa interleaving, we have to allocate pages individually
     // (well really chunks of NUMAInterleaveGranularity size)
     res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
-    if (res == NULL) {
+    if (res == nullptr) {
       warning("NUMA page allocation failed");
     }
     if (Verbose && PrintMiscellaneous) {
@@ -3324,7 +3382,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }
-  assert(res == NULL || addr == NULL || addr == res,
+  assert(res == nullptr || addr == nullptr || addr == res,
          "Unexpected address from reserve.");
 
   return res;
@@ -3357,7 +3415,7 @@ static char* reserve_large_pages_individually(size_t size, char* req_addr, bool 
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
   char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
-  if (p_buf == NULL) {
+  if (p_buf == nullptr) {
     // give an appropriate warning message
     if (UseNUMAInterleaving) {
       warning("NUMA large page allocation failed, UseLargePages flag ignored");
@@ -3366,7 +3424,7 @@ static char* reserve_large_pages_individually(size_t size, char* req_addr, bool 
       warning("Individually allocated large pages failed, "
               "use -XX:-UseLargePagesIndividualAllocation to turn off");
     }
-    return NULL;
+    return nullptr;
   }
   return p_buf;
 }
@@ -3393,7 +3451,7 @@ static char* reserve_large_pages(size_t size, char* req_addr, bool exec) {
 static char* find_aligned_address(size_t size, size_t alignment) {
   // Temporary reserve memory large enough to ensure we can get the requested
   // alignment and still fit the reservation.
-  char* addr = (char*) virtualAlloc(NULL, size + alignment, MEM_RESERVE, PAGE_NOACCESS);
+  char* addr = (char*) virtualAlloc(nullptr, size + alignment, MEM_RESERVE, PAGE_NOACCESS);
   // Align the address to the requested alignment.
   char* aligned_addr = align_up(addr, alignment);
   // Free the temporary reservation.
@@ -3416,7 +3474,7 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
 
     // Try to do the large page reservation using the aligned address.
     aligned_address = reserve_large_pages(size, aligned_address, exec);
-    if (aligned_address != NULL) {
+    if (aligned_address != nullptr) {
       // Reservation at the aligned address succeeded.
       guarantee(is_aligned(aligned_address, alignment), "Must be aligned");
       return aligned_address;
@@ -3424,7 +3482,7 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
   }
 
   log_debug(pagesize)("Failed reserving large pages at aligned address");
-  return NULL;
+  return nullptr;
 }
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
@@ -3436,14 +3494,14 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
 
   if (!is_aligned(bytes, page_size)) {
     // Fallback to small pages, Windows does not support mixed mappings.
-    return NULL;
+    return nullptr;
   }
 
   // The requested alignment can be larger than the page size, for example with G1
   // the alignment is bound to the heap region size. So this reservation needs to
   // ensure that the requested alignment is met. When there is a requested address
   // this solves it self, since it must be properly aligned already.
-  if (addr == NULL && alignment > page_size) {
+  if (addr == nullptr && alignment > page_size) {
     return reserve_large_pages_aligned(bytes, alignment, exec);
   }
 
@@ -3452,7 +3510,7 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(base != NULL, "Sanity check");
+  assert(base != nullptr, "Sanity check");
   return pd_release_memory(base, bytes);
 }
 
@@ -3479,7 +3537,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   // is always within a reserve covered by a single VirtualAlloc
   // in that case we can just do a single commit for the requested size
   if (!UseNUMAInterleaving) {
-    if (virtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+    if (virtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == nullptr) {
       NOT_PRODUCT(warn_fail_commit_memory(addr, bytes, exec);)
       return false;
     }
@@ -3505,7 +3563,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
       VirtualQuery(next_alloc_addr, &alloc_info, sizeof(alloc_info));
       size_t bytes_to_rq = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
       if (virtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
-                       PAGE_READWRITE) == NULL) {
+                       PAGE_READWRITE) == nullptr) {
         NOT_PRODUCT(warn_fail_commit_memory(next_alloc_addr, bytes_to_rq,
                                             exec);)
         return false;
@@ -3535,7 +3593,7 @@ bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
                                   const char* mesg) {
-  assert(mesg != NULL, "mesg must be specified");
+  assert(mesg != nullptr, "mesg must be specified");
   if (!pd_commit_memory(addr, size, exec)) {
     warn_fail_commit_memory(addr, size, exec);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
@@ -3572,7 +3630,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 
   do {
     // Find mapping and check it
-    const char* err = NULL;
+    const char* err = nullptr;
     if (!os::win32::find_mapping(p, &mi)) {
       err = "no mapping found";
     } else {
@@ -3594,7 +3652,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
       }
     }
     // Handle mapping error. We assert in debug, unconditionally print a warning in release.
-    if (err != NULL) {
+    if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #ifdef ASSERT
       os::print_memory_mappings((char*)start, bytes, tty);
@@ -3929,26 +3987,26 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   char path[MAX_PATH];
   DWORD size;
   DWORD pathLen = (DWORD)sizeof(path);
-  HINSTANCE result = NULL;
+  HINSTANCE result = nullptr;
 
   // only allow library name without path component
-  assert(strchr(name, '\\') == NULL, "path not allowed");
-  assert(strchr(name, ':') == NULL, "path not allowed");
-  if (strchr(name, '\\') != NULL || strchr(name, ':') != NULL) {
+  assert(strchr(name, '\\') == nullptr, "path not allowed");
+  assert(strchr(name, ':') == nullptr, "path not allowed");
+  if (strchr(name, '\\') != nullptr || strchr(name, ':') != nullptr) {
     jio_snprintf(ebuf, ebuflen,
                  "Invalid parameter while calling os::win32::load_windows_dll(): cannot take path: %s", name);
-    return NULL;
+    return nullptr;
   }
 
   // search system directory
   if ((size = GetSystemDirectory(path, pathLen)) > 0) {
     if (size >= pathLen) {
-      return NULL; // truncated
+      return nullptr; // truncated
     }
     if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
-      return NULL; // truncated
+      return nullptr; // truncated
     }
-    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != nullptr) {
       return result;
     }
   }
@@ -3956,19 +4014,19 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   // try Windows directory
   if ((size = GetWindowsDirectory(path, pathLen)) > 0) {
     if (size >= pathLen) {
-      return NULL; // truncated
+      return nullptr; // truncated
     }
     if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
-      return NULL; // truncated
+      return nullptr; // truncated
     }
-    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != nullptr) {
       return result;
     }
   }
 
   jio_snprintf(ebuf, ebuflen,
                "os::win32::load_windows_dll() cannot load %s from system directories.", name);
-  return NULL;
+  return nullptr;
 }
 
 #define MAXIMUM_THREADS_TO_KEEP (16 * MAXIMUM_WAIT_OBJECTS)
@@ -4008,7 +4066,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     bool registered = false;
 
     // The first thread that reached this point, initializes the critical section.
-    if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
+    if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, nullptr)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
     } else if (Atomic::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
@@ -4177,7 +4235,7 @@ void os::wait_for_keypress_at_exit(void) {
 
 
 bool os::message_box(const char* title, const char* message) {
-  int result = MessageBox(NULL, message, title,
+  int result = MessageBox(nullptr, message, title,
                           MB_YESNO | MB_ICONERROR | MB_SYSTEMMODAL | MB_DEFAULT_DESKTOP_ONLY);
   return result == IDYES;
 }
@@ -4337,7 +4395,7 @@ jint os::init_2(void) {
   // Lookup SetThreadDescription - the docs state we must use runtime-linking of
   // kernelbase.dll, so that is what we do.
   HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
-  if (_kernelbase != NULL) {
+  if (_kernelbase != nullptr) {
     _SetThreadDescription =
       reinterpret_cast<SetThreadDescriptionFnPtr>(
                                                   GetProcAddress(_kernelbase,
@@ -4349,7 +4407,7 @@ jint os::init_2(void) {
                                                                  "GetThreadDescription"));
 #endif
   }
-  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == NULL ? " not" : "");
+  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
 
   return JNI_OK;
@@ -4385,7 +4443,7 @@ static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
   int unicode_path_len = MultiByteToWideChar(CP_ACP,
                                              MB_ERR_INVALID_CHARS,
                                              char_path, -1,
-                                             NULL, 0);
+                                             nullptr, 0);
   if (unicode_path_len == 0) {
     return EINVAL;
   }
@@ -4404,7 +4462,7 @@ static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
 static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
   // Get required buffer size to convert to full path. The return
   // value INCLUDES the terminating null character.
-  DWORD full_path_len = GetFullPathNameW(unicode_path, 0, NULL, NULL);
+  DWORD full_path_len = GetFullPathNameW(unicode_path, 0, nullptr, nullptr);
   if (full_path_len == 0) {
     return EINVAL;
   }
@@ -4413,7 +4471,7 @@ static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
 
   // When the buffer has sufficient size, the return value EXCLUDES the
   // terminating null character
-  DWORD result = GetFullPathNameW(unicode_path, full_path_len, *full_path, NULL);
+  DWORD result = GetFullPathNameW(unicode_path, full_path_len, *full_path, nullptr);
   assert(result <= full_path_len, "length already checked above");
 
   return ERROR_SUCCESS;
@@ -4438,15 +4496,15 @@ static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* n
   }
 }
 
-// Returns the given path as an absolute wide path in unc format. The returned path is NULL
+// Returns the given path as an absolute wide path in unc format. The returned path is null
 // on error (with err being set accordingly) and should be freed via os::free() otherwise.
 // additional_space is the size of space, in wchar_t, the function will additionally add to
 // the allocation of return buffer (such that the size of the returned buffer is at least
 // wcslen(buf) + 1 + additional_space).
 static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additional_space = 0) {
-  if ((path == NULL) || (path[0] == '\0')) {
+  if ((path == nullptr) || (path[0] == '\0')) {
     err = ENOENT;
-    return NULL;
+    return nullptr;
   }
 
   // Need to allocate at least room for 3 characters, since os::native_path transforms C: to C:.
@@ -4455,27 +4513,27 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   strncpy(buf, path, buf_len);
   os::native_path(buf);
 
-  LPCWSTR prefix = NULL;
+  LPCWSTR prefix = nullptr;
   int prefix_off = 0;
   bool needs_fullpath = true;
   set_path_prefix(buf, &prefix, &prefix_off, &needs_fullpath);
 
-  LPWSTR unicode_path = NULL;
+  LPWSTR unicode_path = nullptr;
   err = convert_to_unicode(buf, &unicode_path);
   FREE_C_HEAP_ARRAY(char, buf);
   if (err != ERROR_SUCCESS) {
-    return NULL;
+    return nullptr;
   }
 
-  LPWSTR converted_path = NULL;
+  LPWSTR converted_path = nullptr;
   if (needs_fullpath) {
     err = get_full_path(unicode_path, &converted_path);
   } else {
     converted_path = unicode_path;
   }
 
-  LPWSTR result = NULL;
-  if (converted_path != NULL) {
+  LPWSTR result = nullptr;
+  if (converted_path != nullptr) {
     size_t prefix_len = wcslen(prefix);
     size_t result_len = prefix_len - prefix_off + wcslen(converted_path) + additional_space + 1;
     result = NEW_C_HEAP_ARRAY(WCHAR, result_len, mtInternal);
@@ -4501,7 +4559,7 @@ int os::stat(const char *path, struct stat *sbuf) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(path, err);
 
-  if (wide_path == NULL) {
+  if (wide_path == nullptr) {
     errno = err;
     return -1;
   }
@@ -4523,13 +4581,13 @@ static HANDLE create_read_only_file_handle(const char* file) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(file, err);
 
-  if (wide_path == NULL) {
+  if (wide_path == nullptr) {
     errno = err;
     return INVALID_HANDLE_VALUE;
   }
 
   HANDLE handle = ::CreateFileW(wide_path, 0, FILE_SHARE_READ,
-                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                                nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   os::free(wide_path);
 
   return handle;
@@ -4537,11 +4595,11 @@ static HANDLE create_read_only_file_handle(const char* file) {
 
 bool os::same_files(const char* file1, const char* file2) {
 
-  if (file1 == NULL && file2 == NULL) {
+  if (file1 == nullptr && file2 == nullptr) {
     return true;
   }
 
-  if (file1 == NULL || file2 == NULL) {
+  if (file1 == nullptr || file2 == nullptr) {
     return false;
   }
 
@@ -4701,7 +4759,7 @@ int os::open(const char *path, int oflag, int mode) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(path, err);
 
-  if (wide_path == NULL) {
+  if (wide_path == nullptr) {
     errno = err;
     return -1;
   }
@@ -4736,7 +4794,7 @@ bool os::dir_is_empty(const char* path) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(path, err, 2);
 
-  if (wide_path == NULL) {
+  if (wide_path == nullptr) {
     errno = err;
     return false;
   }
@@ -4824,7 +4882,7 @@ ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
 // succeeds.
 char * os::native_path(char *path) {
   char *src = path, *dst = path, *end = path;
-  char *colon = NULL;  // If a drive specifier is found, this will
+  char *colon = nullptr;  // If a drive specifier is found, this will
                        // point to the colon following the drive letter
 
   // Assumption: '/', '\\', ':', and drive letters are never lead bytes
@@ -4958,19 +5016,19 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(file_name, err);
 
-  if (wide_path == NULL) {
-    return NULL;
+  if (wide_path == nullptr) {
+    return nullptr;
   }
 
   HANDLE hFile;
   char* base;
 
-  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, NULL,
-                     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (hFile == INVALID_HANDLE_VALUE) {
     log_info(os)("CreateFileW() failed: GetLastError->%ld.", GetLastError());
     os::free(wide_path);
-    return NULL;
+    return nullptr;
   }
   os::free(wide_path);
 
@@ -4987,9 +5045,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
     base = (char*) virtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
                                 PAGE_READWRITE);
-    if (base == NULL) {
+    if (base == nullptr) {
       CloseHandle(hFile);
-      return NULL;
+      return nullptr;
     }
 
     // Record virtual memory allocation
@@ -4999,7 +5057,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     OVERLAPPED overlapped;
     overlapped.Offset = (DWORD)file_offset;
     overlapped.OffsetHigh = 0;
-    overlapped.hEvent = NULL;
+    overlapped.hEvent = nullptr;
     // ReadFile guarantees that if the return value is true, the requested
     // number of bytes were read before returning.
     bool res = ReadFile(hFile, base, (DWORD)bytes, &bytes_read, &overlapped) != 0;
@@ -5007,24 +5065,24 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
       log_info(os)("ReadFile() failed: GetLastError->%ld.", GetLastError());
       release_memory(base, bytes);
       CloseHandle(hFile);
-      return NULL;
+      return nullptr;
     }
   } else {
-    HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_WRITECOPY, 0, 0,
-                                    NULL /* file_name */);
-    if (hMap == NULL) {
+    HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_WRITECOPY, 0, 0,
+                                    nullptr /* file_name */);
+    if (hMap == nullptr) {
       log_info(os)("CreateFileMapping() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
-      return NULL;
+      return nullptr;
     }
 
     DWORD access = read_only ? FILE_MAP_READ : FILE_MAP_COPY;
     base = (char*)mapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
                                   (DWORD)bytes, addr);
-    if (base == NULL) {
+    if (base == nullptr) {
       CloseHandle(hMap);
       CloseHandle(hFile);
-      return NULL;
+      return nullptr;
     }
 
     if (CloseHandle(hMap) == 0) {
@@ -5068,7 +5126,7 @@ char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
   // it in again with different protections, CDS archives are mapped RW
   // on windows, so this function isn't called.
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 
@@ -5139,7 +5197,7 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 //
 // 1:  When a thread dies return the Event to the EventFreeList, clear the ParkHandle
 //     field, and call CloseHandle() on the win32 event handle.  Unpark() would
-//     need to be modified to tolerate finding a NULL (invalid) win32 event handle.
+//     need to be modified to tolerate finding a null (invalid) win32 event handle.
 //     In addition, an unpark() operation might fetch the handle field, but the
 //     event could recycle between the fetch and the SetEvent() operation.
 //     SetEvent() would either fail because the handle was invalid, or inadvertently work,
@@ -5203,7 +5261,7 @@ int PlatformEvent::park(jlong Millis) {
   //    1 =>  0 : pass - return immediately
   //    0 => -1 : block; then set _Event to 0 before returning
 
-  guarantee(_ParkHandle != NULL , "Invariant");
+  guarantee(_ParkHandle != nullptr , "Invariant");
   guarantee(Millis > 0          , "Invariant");
 
   // CONSIDER: defer assigning a CreateEvent() handle to the Event until
@@ -5241,7 +5299,7 @@ int PlatformEvent::park(jlong Millis) {
     if (Millis > MAXTIMEOUT) {
       prd = MAXTIMEOUT;
     }
-    HighResolutionInterval *phri = NULL;
+    HighResolutionInterval *phri = nullptr;
     if (!ForceTimeHighResolution) {
       phri = new HighResolutionInterval(prd);
     }
@@ -5250,7 +5308,7 @@ int PlatformEvent::park(jlong Millis) {
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
-    delete phri; // if it is NULL, harmless
+    delete phri; // if it is null, harmless
   }
   v = _Event;
   _Event = 0;
@@ -5268,7 +5326,7 @@ void PlatformEvent::park() {
   //    1 =>  0 : pass - return immediately
   //    0 => -1 : block; then set _Event to 0 before returning
 
-  guarantee(_ParkHandle != NULL, "Invariant");
+  guarantee(_ParkHandle != nullptr, "Invariant");
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // Consider: use atomic decrement instead of CAS-loop
@@ -5297,7 +5355,7 @@ void PlatformEvent::park() {
 }
 
 void PlatformEvent::unpark() {
-  guarantee(_ParkHandle != NULL, "Invariant");
+  guarantee(_ParkHandle != nullptr, "Invariant");
 
   // Transitions for _Event:
   //    0 => 1 : just return
@@ -5327,7 +5385,7 @@ void PlatformEvent::unpark() {
 // use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkHandle != NULL, "invariant");
+  guarantee(_ParkHandle != nullptr, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5362,7 +5420,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  guarantee(_ParkHandle != NULL, "invariant");
+  guarantee(_ParkHandle != nullptr, "invariant");
   SetEvent(_ParkHandle);
 }
 
@@ -5400,7 +5458,7 @@ int os::fork_and_exec(const char* cmd) {
   const char * cmd_prefix = "cmd /C ";
   size_t len = strlen(cmd) + strlen(cmd_prefix) + 1;
   cmd_string = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtInternal);
-  if (cmd_string == NULL) {
+  if (cmd_string == nullptr) {
     return -1;
   }
   cmd_string[0] = '\0';
@@ -5409,21 +5467,21 @@ int os::fork_and_exec(const char* cmd) {
 
   // now replace all '\n' with '&'
   char * substring = cmd_string;
-  while ((substring = strchr(substring, '\n')) != NULL) {
+  while ((substring = strchr(substring, '\n')) != nullptr) {
     substring[0] = '&';
     substring++;
   }
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   memset(&pi, 0, sizeof(pi));
-  BOOL rslt = CreateProcess(NULL,   // executable name - use command line
+  BOOL rslt = CreateProcess(nullptr,   // executable name - use command line
                             cmd_string,    // command line
-                            NULL,   // process security attribute
-                            NULL,   // thread security attribute
+                            nullptr,   // process security attribute
+                            nullptr,   // thread security attribute
                             TRUE,   // inherits system handles
                             0,      // no creation flags
-                            NULL,   // use parent's environment block
-                            NULL,   // use parent's starting directory
+                            nullptr,   // use parent's environment block
+                            nullptr,   // use parent's starting directory
                             &si,    // (in) startup information
                             &pi);   // (out) process information
 
@@ -5515,7 +5573,7 @@ int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
 // returns true if thread could be suspended,
 // false otherwise
 static bool do_suspend(HANDLE* h) {
-  if (h != NULL) {
+  if (h != nullptr) {
     if (SuspendThread(*h) != ~0) {
       return true;
     }
@@ -5526,7 +5584,7 @@ static bool do_suspend(HANDLE* h) {
 // resume the thread
 // calling resume on an active thread is a no-op
 static void do_resume(HANDLE* h) {
-  if (h != NULL) {
+  if (h != nullptr) {
     ResumeThread(*h);
   }
 }
@@ -5535,7 +5593,7 @@ static void do_resume(HANDLE* h) {
 // from the tid. Caller validates handle return value.
 void get_thread_handle_for_extended_context(HANDLE* h,
                                             OSThread::thread_id_t tid) {
-  if (h != NULL) {
+  if (h != nullptr) {
     *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
   }
 }
@@ -5544,13 +5602,13 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 //
 void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
-  HANDLE     h = NULL;
+  HANDLE     h = nullptr;
 
   // get context capable handle for thread
   get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
 
   // sanity
-  if (h == NULL || h == INVALID_HANDLE_VALUE) {
+  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
     return;
   }
 
@@ -5597,7 +5655,7 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void* os::get_default_process_handle() {
-  return (void*)GetModuleHandle(NULL);
+  return (void*)GetModuleHandle(nullptr);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -5605,7 +5663,7 @@ void* os::get_default_process_handle() {
 // Additionally for windows, takes into account __stdcall names.
 // Parameters:
 //            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, NULL for shared libs.
+//            lib_name: Name of library to look in, null for shared libs.
 //            is_absolute_path == true if lib_name is absolute path to agent
 //                                     such as "C:/a/b/L.dll"
 //            == false if only the base name of the library is passed in
@@ -5619,33 +5677,33 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   size_t suffix_len = strlen(JNI_LIB_SUFFIX);
   const char *start;
 
-  if (lib_name != NULL) {
+  if (lib_name != nullptr) {
     len = name_len = strlen(lib_name);
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
+      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
         lib_name = ++start;
       } else {
         // Need to check for drive prefix
-        if ((start = strchr(lib_name, ':')) != NULL) {
+        if ((start = strchr(lib_name, ':')) != nullptr) {
           lib_name = ++start;
         }
       }
       if (len <= (prefix_len + suffix_len)) {
-        return NULL;
+        return nullptr;
       }
       lib_name += prefix_len;
       name_len = strlen(lib_name) - suffix_len;
     }
   }
-  len = (lib_name != NULL ? name_len : 0) + strlen(sym_name) + 2;
+  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
   agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == NULL) {
-    return NULL;
+  if (agent_entry_name == nullptr) {
+    return nullptr;
   }
-  if (lib_name != NULL) {
+  if (lib_name != nullptr) {
     const char *p = strrchr(sym_name, '@');
-    if (p != NULL && p != sym_name) {
+    if (p != nullptr && p != sym_name) {
       // sym_name == _Agent_OnLoad@XX
       strncpy(agent_entry_name, sym_name, (p - sym_name));
       agent_entry_name[(p-sym_name)] = '\0';
@@ -5709,7 +5767,7 @@ static void call_wrapper_dummy() {}
 // up the offset from FS of the thread pointer.
 void os::win32::initialize_thread_ptr_offset() {
   os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
-                           NULL, methodHandle(), NULL, NULL);
+                           nullptr, methodHandle(), nullptr, nullptr);
 }
 
 bool os::supports_map_sync() {
@@ -5720,7 +5778,7 @@ bool os::supports_map_sync() {
 static void check_meminfo(MEMORY_BASIC_INFORMATION* minfo) {
   assert(minfo->State == MEM_FREE || minfo->State == MEM_COMMIT || minfo->State == MEM_RESERVE, "Invalid state");
   if (minfo->State != MEM_FREE) {
-    assert(minfo->AllocationBase != NULL && minfo->BaseAddress >= minfo->AllocationBase, "Invalid pointers");
+    assert(minfo->AllocationBase != nullptr && minfo->BaseAddress >= minfo->AllocationBase, "Invalid pointers");
     assert(minfo->RegionSize > 0, "Invalid region size");
   }
 }
@@ -5743,8 +5801,8 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
   //  query all regions, until we either find the next allocation or a free area.
   ZeroMemory(mi, sizeof(mapping_info_t));
   MEMORY_BASIC_INFORMATION minfo;
-  address allocation_base = NULL;
-  address allocation_end = NULL;
+  address allocation_base = nullptr;
+  address allocation_end = nullptr;
   bool rc = false;
   if (checkedVirtualQuery(addr, &minfo)) {
     if (minfo.State != MEM_FREE) {
@@ -5766,7 +5824,7 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
         }
         allocation_end += region_size;
       }
-      if (allocation_base != NULL && allocation_end > allocation_base) {
+      if (allocation_base != nullptr && allocation_end > allocation_base) {
         mi->base = allocation_base;
         mi->size = allocation_end - allocation_base;
         rc = true;
@@ -5889,7 +5947,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
   }
   #undef IS_IN
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {

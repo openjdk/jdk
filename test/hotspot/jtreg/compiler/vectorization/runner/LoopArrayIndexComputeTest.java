@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +105,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
@@ -132,9 +133,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];

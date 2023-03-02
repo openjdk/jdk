@@ -159,8 +159,8 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
     } else {
       stack[frame_idx ++] = fr.pc();
     }
-    if (fr.fp() == NULL || fr.cb() != NULL ||
-        fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) break;
+    if (fr.fp() == nullptr || fr.cb() != nullptr ||
+        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) break;
 
     if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
       fr = os::get_sender_for_C_frame(&fr);
@@ -170,7 +170,7 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   }
   num_of_frames = frame_idx;
   for (; frame_idx < frames; frame_idx ++) {
-    stack[frame_idx] = NULL;
+    stack[frame_idx] = nullptr;
   }
 
   return num_of_frames;
@@ -209,7 +209,7 @@ int os::create_file_for_heap(const char* dir) {
 
 #if defined(LINUX) && defined(O_TMPFILE)
   char* native_dir = os::strdup(dir);
-  if (native_dir == NULL) {
+  if (native_dir == nullptr) {
     vm_exit_during_initialization(err_msg("strdup failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
@@ -224,7 +224,7 @@ int os::create_file_for_heap(const char* dir) {
 
     size_t fullname_len = strlen(dir) + strlen(name_template);
     char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
-    if (fullname == NULL) {
+    if (fullname == nullptr) {
       vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
       return -1;
     }
@@ -254,15 +254,15 @@ int os::create_file_for_heap(const char* dir) {
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
+  DIR *dir = nullptr;
   struct dirent *ptr;
 
   dir = ::opendir(path);
-  if (dir == NULL) return true;
+  if (dir == nullptr) return true;
 
   // Scan the directory
   bool result = true;
-  while (result && (ptr = ::readdir(dir)) != NULL) {
+  while (result && (ptr = ::readdir(dir)) != nullptr) {
     if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
       result = false;
     }
@@ -274,7 +274,7 @@ bool os::dir_is_empty(const char* path) {
 static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
-  if (requested_addr != NULL) {
+  if (requested_addr != nullptr) {
     assert((uintptr_t)requested_addr % os::vm_page_size() == 0, "Requested address should be aligned to OS page size");
     flags |= MAP_FIXED;
   }
@@ -289,7 +289,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
     MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
     return addr;
   }
-  return NULL;
+  return nullptr;
 }
 
 static int util_posix_fallocate(int fd, off_t offset, off_t len) {
@@ -319,32 +319,32 @@ char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
   int ret = util_posix_fallocate(fd, 0, (off_t)size);
   if (ret != 0) {
     vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory. error(%d)", ret));
-    return NULL;
+    return nullptr;
   }
 
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_SHARED;
-  if (base != NULL) {
+  if (base != nullptr) {
     flags |= MAP_FIXED;
   }
   char* addr = (char*)mmap(base, size, prot, flags, fd, 0);
 
   if (addr == MAP_FAILED) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
-    return NULL;
+    return nullptr;
   }
-  if (base != NULL && addr != base) {
+  if (base != nullptr && addr != base) {
     if (!os::release_memory(addr, size)) {
       warning("Could not release memory on unsuccessful file mapping");
     }
-    return NULL;
+    return nullptr;
   }
   return addr;
 }
 
 char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
-  assert(base != NULL, "Base cannot be NULL");
+  assert(base != nullptr, "Base cannot be null");
 
   return pd_map_memory_to_file(base, size, fd);
 }
@@ -391,8 +391,8 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 char* os::pd_reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   char* extra_base = os::reserve_memory(extra_size, exec);
-  if (extra_base == NULL) {
-    return NULL;
+  if (extra_base == nullptr) {
+    return nullptr;
   }
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
@@ -405,13 +405,13 @@ char* os::pd_map_memory_to_file_aligned(size_t size, size_t alignment, int file_
   // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
   //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
   //   chopping off and unmapping excess bits back and front (see below) would not work.
-  char* extra_base = reserve_mmapped_memory(extra_size, NULL);
-  if (extra_base == NULL) {
-    return NULL;
+  char* extra_base = reserve_mmapped_memory(extra_size, nullptr);
+  if (extra_base == nullptr) {
+    return nullptr;
   }
   char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
   // After we have an aligned address, we can replace anonymous mapping with file mapping
-  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == nullptr) {
     vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
@@ -454,7 +454,7 @@ void os::Posix::print_load_average(outputStream* st) {
 // for reboot at least on my test machines
 void os::Posix::print_uptime_info(outputStream* st) {
   int bootsec = -1;
-  int currsec = time(NULL);
+  int currsec = time(nullptr);
   struct utmpx* ent;
   setutxent();
   while ((ent = getutxent())) {
@@ -593,14 +593,14 @@ void os::print_active_locale(outputStream* st) {
   #define XX(cat) { cat, #cat },
   const struct { int c; const char* name; } categories[] = {
       LOCALE_CAT_DO(XX)
-      { -1, NULL }
+      { -1, nullptr }
   };
   #undef XX
   #undef LOCALE_CAT_DO
   for (int i = 0; categories[i].c != -1; i ++) {
-    const char* locale = setlocale(categories[i].c, NULL);
+    const char* locale = setlocale(categories[i].c, nullptr);
     st->print_cr("%s=%s", categories[i].name,
-                 ((locale != NULL) ? locale : "<unknown>"));
+                 ((locale != nullptr) ? locale : "<unknown>"));
   }
 }
 
@@ -627,7 +627,7 @@ static bool is_allocatable(size_t s) {
   }
   // Use raw anonymous mmap here; no need to go through any
   // of our reservation layers. We will unmap right away.
-  void* p = ::mmap(NULL, s, PROT_NONE,
+  void* p = ::mmap(nullptr, s, PROT_NONE,
                    MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
     return false;
@@ -708,9 +708,9 @@ void* os::get_default_process_handle() {
   // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
   // to avoid finding unexpected symbols on second (or later)
   // loads of a library.
-  return (void*)::dlopen(NULL, RTLD_FIRST);
+  return (void*)::dlopen(nullptr, RTLD_FIRST);
 #else
-  return (void*)::dlopen(NULL, RTLD_LAZY);
+  return (void*)::dlopen(nullptr, RTLD_LAZY);
 #endif
 }
 
@@ -722,30 +722,30 @@ void os::dll_unload(void *lib) {
   // os::Linux::dll_path returns a pointer to a string that is owned by the dynamic loader. Upon
   // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
   // copy the string to be able to reference it after dlclose.
-  const char* l_path = NULL;
+  const char* l_path = nullptr;
 #ifdef LINUX
-  char* l_pathdup = NULL;
+  char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
-  if (l_path != NULL) {
+  if (l_path != nullptr) {
     l_path = l_pathdup = os::strdup(l_path);
   }
 #endif  // LINUX
-  if (l_path == NULL) {
+  if (l_path == nullptr) {
     l_path = "<not available>";
   }
   int res = ::dlclose(lib);
 
   if (res == 0) {
-    Events::log_dll_message(NULL, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
+    Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
   } else {
     const char* error_report = ::dlerror();
-    if (error_report == NULL) {
+    if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
 
-    Events::log_dll_message(NULL, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+    Events::log_dll_message(nullptr, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                             l_path, p2i(lib), error_report);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
@@ -790,17 +790,17 @@ void os::funlockfile(FILE* fp) {
 }
 
 DIR* os::opendir(const char* dirname) {
-  assert(dirname != NULL, "just checking");
+  assert(dirname != nullptr, "just checking");
   return ::opendir(dirname);
 }
 
 struct dirent* os::readdir(DIR* dirp) {
-  assert(dirp != NULL, "just checking");
+  assert(dirp != nullptr, "just checking");
   return ::readdir(dirp);
 }
 
 int os::closedir(DIR *dirp) {
-  assert(dirp != NULL, "just checking");
+  assert(dirp != nullptr, "just checking");
   return ::closedir(dirp);
 }
 
@@ -840,7 +840,7 @@ void os::_exit(int num) {
 // which is used to find statically linked in agents.
 // Parameters:
 //            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, NULL for shared libs.
+//            lib_name: Name of library to look in, null for shared libs.
 //            is_absolute_path == true if lib_name is absolute path to agent
 //                                     such as "/a/b/libL.so"
 //            == false if only the base name of the library is passed in
@@ -854,27 +854,27 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   size_t suffix_len = strlen(JNI_LIB_SUFFIX);
   const char *start;
 
-  if (lib_name != NULL) {
+  if (lib_name != nullptr) {
     name_len = strlen(lib_name);
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
+      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
         lib_name = ++start;
       }
       if (strlen(lib_name) <= (prefix_len + suffix_len)) {
-        return NULL;
+        return nullptr;
       }
       lib_name += prefix_len;
       name_len = strlen(lib_name) - suffix_len;
     }
   }
-  len = (lib_name != NULL ? name_len : 0) + strlen(sym_name) + 2;
+  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
   agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == NULL) {
-    return NULL;
+  if (agent_entry_name == nullptr) {
+    return nullptr;
   }
   strcpy(agent_entry_name, sym_name);
-  if (lib_name != NULL) {
+  if (lib_name != nullptr) {
     strcat(agent_entry_name, "_");
     strncat(agent_entry_name, lib_name, name_len);
   }
@@ -893,7 +893,7 @@ void os::naked_short_nanosleep(jlong ns) {
   assert(ns > -1 && ns < NANOUNITS, "Un-interruptable sleep, short time use only");
   req.tv_sec = 0;
   req.tv_nsec = ns;
-  ::nanosleep(&req, NULL);
+  ::nanosleep(&req, nullptr);
   return;
 }
 
@@ -920,19 +920,19 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
 
 char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
-  if (filename == NULL || outbuf == NULL || outbuflen < 1) {
+  if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
     assert(false, "os::Posix::realpath: invalid arguments.");
     errno = EINVAL;
-    return NULL;
+    return nullptr;
   }
 
-  char* result = NULL;
+  char* result = nullptr;
 
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
-  // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
+  // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, NULL);)
-  if (p != NULL) {
+  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
+  if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
       result = outbuf;
@@ -943,13 +943,13 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
-    // that it complains about the NULL we handed down as user buffer.
+    // that it complains about the null we handed down as user buffer.
     // In this case, use the user provided buffer but at least check whether realpath caused
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
       ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
-      if (p != NULL) {
+      if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
       }
@@ -1071,7 +1071,7 @@ static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, con
     // more complex code with compiled code
     assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+    if (cb == nullptr || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
       // Not sure where the pc points to, fallback to default
       // stack overflow handling
       return false;
@@ -1107,7 +1107,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
           assert(fr.is_java_frame(), "Must be a Java frame");
           frame activation =
             SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-          if (activation.sp() != NULL) {
+          if (activation.sp() != nullptr) {
             overflow_state->disable_stack_reserved_zone();
             if (activation.is_interpreted_frame()) {
               overflow_state->set_reserved_stack_activation((address)(activation.fp()
@@ -1211,7 +1211,7 @@ static void pthread_init_common(void) {
   PlatformMutex::init();
 }
 
-static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
+static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = nullptr;
 
 static bool _use_clock_monotonic_condattr = false;
 
@@ -1232,7 +1232,7 @@ void os::Posix::init(void) {
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
     (int (*)(pthread_condattr_t*, clockid_t))dlsym(RTLD_DEFAULT,
                                                    "pthread_condattr_setclock");
-  if (condattr_setclock_func != NULL) {
+  if (condattr_setclock_func != nullptr) {
     _pthread_condattr_setclock = condattr_setclock_func;
   }
 
@@ -1241,7 +1241,7 @@ void os::Posix::init(void) {
   pthread_init_common();
 
   int status;
-  if (_pthread_condattr_setclock != NULL) {
+  if (_pthread_condattr_setclock != nullptr) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
       if (status == EINVAL) {
         _use_clock_monotonic_condattr = false;
@@ -1261,7 +1261,7 @@ void os::Posix::init(void) {
 void os::Posix::init_2(void) {
   log_info(os)("Use of CLOCK_MONOTONIC is supported");
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
-               (_pthread_condattr_setclock != NULL ? "" : " not"));
+               (_pthread_condattr_setclock != nullptr ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
@@ -1639,7 +1639,7 @@ void PlatformEvent::unpark() {
  PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
   int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
-  status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
+  status = pthread_cond_init(&_cond[ABS_INDEX], nullptr);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
@@ -1767,7 +1767,7 @@ void Parker::unpark() {
 
 #if PLATFORM_MONITOR_IMPL_INDIRECT
 
-PlatformMutex::Mutex::Mutex() : _next(NULL) {
+PlatformMutex::Mutex::Mutex() : _next(nullptr) {
   int status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
@@ -1778,7 +1778,7 @@ PlatformMutex::Mutex::~Mutex() {
 }
 
 pthread_mutex_t PlatformMutex::_freelist_lock;
-PlatformMutex::Mutex* PlatformMutex::_mutex_freelist = NULL;
+PlatformMutex::Mutex* PlatformMutex::_mutex_freelist = nullptr;
 
 void PlatformMutex::init() {
   int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
@@ -1801,9 +1801,9 @@ PlatformMutex::PlatformMutex() {
   {
     WithFreeListLocked wfl;
     _impl = _mutex_freelist;
-    if (_impl != NULL) {
+    if (_impl != nullptr) {
       _mutex_freelist = _impl->_next;
-      _impl->_next = NULL;
+      _impl->_next = nullptr;
       return;
     }
   }
@@ -1812,12 +1812,12 @@ PlatformMutex::PlatformMutex() {
 
 PlatformMutex::~PlatformMutex() {
   WithFreeListLocked wfl;
-  assert(_impl->_next == NULL, "invariant");
+  assert(_impl->_next == nullptr, "invariant");
   _impl->_next = _mutex_freelist;
   _mutex_freelist = _impl;
 }
 
-PlatformMonitor::Cond::Cond() : _next(NULL) {
+PlatformMonitor::Cond::Cond() : _next(nullptr) {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
 }
@@ -1827,15 +1827,15 @@ PlatformMonitor::Cond::~Cond() {
   assert_status(status == 0, status, "cond_destroy");
 }
 
-PlatformMonitor::Cond* PlatformMonitor::_cond_freelist = NULL;
+PlatformMonitor::Cond* PlatformMonitor::_cond_freelist = nullptr;
 
 PlatformMonitor::PlatformMonitor() {
   {
     WithFreeListLocked wfl;
     _impl = _cond_freelist;
-    if (_impl != NULL) {
+    if (_impl != nullptr) {
       _cond_freelist = _impl->_next;
-      _impl->_next = NULL;
+      _impl->_next = nullptr;
       return;
     }
   }
@@ -1844,7 +1844,7 @@ PlatformMonitor::PlatformMonitor() {
 
 PlatformMonitor::~PlatformMonitor() {
   WithFreeListLocked wfl;
-  assert(_impl->_next == NULL, "invariant");
+  assert(_impl->_next == nullptr, "invariant");
   _impl->_next = _cond_freelist;
   _cond_freelist = _impl;
 }
@@ -1918,13 +1918,13 @@ char** os::get_environ() { return environ; }
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
 int os::fork_and_exec(const char* cmd) {
-  const char* argv[4] = {"sh", "-c", cmd, NULL};
+  const char* argv[4] = {"sh", "-c", cmd, nullptr};
   pid_t pid = -1;
   char** env = os::get_environ();
   // Note: cast is needed because posix_spawn() requires - for compatibility with ancient
   // C-code - a non-const argv/envp pointer array. But it is fine to hand in literal
   // strings and just cast the constness away. See also ProcessImpl_md.c.
-  int rc = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char**) argv, env);
+  int rc = ::posix_spawn(&pid, "/bin/sh", nullptr, nullptr, (char**) argv, env);
   if (rc == 0) {
     int status;
     // Wait for the child process to exit.  This returns immediately if
@@ -1994,7 +1994,7 @@ void os::shutdown() {
 
   // Check for abort hook
   abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
+  if (abort_hook != nullptr) {
     abort_hook();
   }
 

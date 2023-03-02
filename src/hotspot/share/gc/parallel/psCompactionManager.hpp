@@ -157,16 +157,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   ParCompactionManager();
 
-  // Pushes onto the region stack at the given index.  If the
-  // region stack is full,
-  // pushes onto the region overflow stack.
-  static void verify_region_list_empty(uint stack_index);
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
-
-  // void drain_stacks();
-
-  bool should_update();
-  bool should_copy();
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj);
