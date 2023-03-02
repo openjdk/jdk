@@ -53,7 +53,7 @@ import java.util.List;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
-    private TemporaryConstantPool() {};
+    private TemporaryConstantPool() {}
 
     public static final TemporaryConstantPool INSTANCE = new TemporaryConstantPool();
 
