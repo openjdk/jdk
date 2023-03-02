@@ -88,7 +88,7 @@ public class SumRed_Double {
     }
 
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD})
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},

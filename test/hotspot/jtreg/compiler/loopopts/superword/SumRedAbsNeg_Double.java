@@ -93,7 +93,7 @@ public class SumRedAbsNeg_Double {
     /* Does not vectorize due to profitability heuristic
        (with or without store) in SuperWord::profitable. */
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD, IRNode.ABS_V, IRNode.NEG_V})
     public static double sumReductionImplement(
             double[] a,

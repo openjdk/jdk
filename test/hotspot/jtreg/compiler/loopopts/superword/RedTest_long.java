@@ -145,10 +145,7 @@ public class RedTest_long {
     /* Require avx2 due to filtering out small vector lengths
        for long and int (SuperWord::implemented). */
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
-        failOn = {IRNode.ADD_REDUCTION_VL})
-    @IR(applyIfCPUFeature = {"avx2", "false"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VL})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -167,10 +164,7 @@ public class RedTest_long {
     }
 
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
-        failOn = {IRNode.OR_REDUCTION_V})
-    @IR(applyIfCPUFeature = {"avx2", "false"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.OR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -189,10 +183,7 @@ public class RedTest_long {
     }
 
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
-        failOn = {IRNode.AND_REDUCTION_V})
-    @IR(applyIfCPUFeature = {"avx2", "false"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.AND_REDUCTION_V})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -211,10 +202,7 @@ public class RedTest_long {
     }
 
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
-        failOn = {IRNode.XOR_REDUCTION_V})
-    @IR(applyIfCPUFeature = {"avx2", "false"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.XOR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
@@ -233,10 +221,7 @@ public class RedTest_long {
     }
 
     @Test
-    @IR(applyIfOr = {"SuperWordReductions", "false", "LoopMaxUnroll", "< 8"},
-        failOn = {IRNode.MUL_REDUCTION_VL})
-    @IR(applyIfCPUFeature = {"avx512dq", "false"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+    @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.MUL_REDUCTION_VL})
     @IR(applyIfCPUFeature = {"avx512dq", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
