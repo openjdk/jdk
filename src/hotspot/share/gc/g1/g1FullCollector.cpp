@@ -351,7 +351,9 @@ void G1FullCollector::phase2_prepare_compaction() {
   if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
     phase2c_prepare_serial_compaction();
 
-    if (scope()->do_maximal_compaction() && has_humongous() && serial_compaction_point()->has_regions()) {
+    if (scope()->do_maximal_compaction() &&
+        has_humongous() &&
+        serial_compaction_point()->has_regions()) {
       phase2d_prepare_humongous_compaction();
     }
   }
@@ -430,6 +432,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
 }
 
 void G1FullCollector::phase2d_prepare_humongous_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare humongous compaction", scope()->timer());
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(serial_cp->has_regions(), "Sanity!" );
 

@@ -56,10 +56,9 @@ void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
   assert(obj->forwardee() != obj, "Object must have a new location");
 
   size_t size = obj->size();
-  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
-
   // copy object and reinit its mark
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
   Copy::aligned_conjoint_words(obj_addr, destination, size);
 
   // There is no need to transform stack chunks - marking already did that.
