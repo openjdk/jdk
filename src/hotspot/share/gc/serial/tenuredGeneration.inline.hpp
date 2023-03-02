@@ -49,7 +49,7 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
-inline CompactibleSpace* TenuredGeneration::first_compaction_space() const {
+inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
   return space();
 }
 

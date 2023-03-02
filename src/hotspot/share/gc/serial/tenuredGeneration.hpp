@@ -33,7 +33,7 @@
 
 class BlockOffsetSharedArray;
 class CardTableRS;
-class CompactibleSpace;
+class ContiguousSpace;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -103,7 +103,7 @@ class TenuredGeneration: public Generation {
 
   bool is_in(const void* p) const;
 
-  CompactibleSpace* first_compaction_space() const;
+  ContiguousSpace* first_compaction_space() const;
 
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,

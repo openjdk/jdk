@@ -167,7 +167,7 @@ protected:
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual CompactibleSpace* first_compaction_space() const;
+  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;

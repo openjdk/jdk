@@ -34,7 +34,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class ContiguousSpace extends CompactibleSpace implements LiveRegionsProvider {
+public class ContiguousSpace extends Space implements LiveRegionsProvider {
   private static AddressField topField;
 
   static {
