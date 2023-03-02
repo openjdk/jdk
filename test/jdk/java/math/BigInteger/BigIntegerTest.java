@@ -40,7 +40,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Calendar;
 import java.util.Random;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -1238,9 +1237,8 @@ public class BigIntegerTest {
         if (args.length >3)
             order4 = (int)((Integer.parseInt(args[3]))* 3.333);
 
-        // select a subset of sub-tests as a function of one third of a minute
         int subset = Integer.valueOf(System.getProperty("subset",
-            String.valueOf(1 + Calendar.getInstance().get(Calendar.SECOND)/20)));
+            String.valueOf(1 + random.nextInt(3))));
         System.out.println("Testing subset " + subset);
 
         switch (subset) {

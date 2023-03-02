@@ -38,7 +38,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.math.BigInteger;
-import java.util.Calendar;
 import java.util.Random;
 import jdk.test.lib.RandomFactory;
 
@@ -46,6 +45,8 @@ public class SymmetricRangeTests {
 
     private static final BigInteger MAX_VALUE = makeMaxValue();
     private static final BigInteger MIN_VALUE = MAX_VALUE.negate();
+
+    private static final Random RANDOM = RandomFactory.getRandom();
 
     private static BigInteger makeMaxValue() {
         byte[] ba = new byte[1 << 28];
@@ -118,8 +119,7 @@ public class SymmetricRangeTests {
         System.out.println("Testing overflow in BitSieve.sieveSingle");
         int bitLength = (5 << 27) - 1;
         try {
-            Random random = RandomFactory.getRandom();
-            BigInteger actual = new BigInteger(bitLength, 0, random);
+            BigInteger actual = new BigInteger(bitLength, 0, RANDOM);
             throw new RuntimeException("new BigInteger(bitLength, 0, null).bitLength()=" + actual.bitLength());
         } catch (ArithmeticException e) {
             // expected
@@ -622,9 +622,8 @@ public class SymmetricRangeTests {
     }
 
     public static void main(String... args) {
-        // select a subset of sub-tests as a function of quarter minute
         int subset = Integer.valueOf(System.getProperty("subset",
-            String.valueOf(1 + Calendar.getInstance().get(Calendar.SECOND)/15)));
+            String.valueOf(1 + RANDOM.nextInt(4))));
         System.out.println("Testing subset " + subset);
 
         switch (subset) {
