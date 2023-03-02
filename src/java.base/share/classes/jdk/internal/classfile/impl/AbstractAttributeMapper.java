@@ -24,11 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Set;
-
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.AttributedElement;
 import jdk.internal.classfile.BufWriter;
 
 import static jdk.internal.classfile.Classfile.JAVA_1_VERSION;

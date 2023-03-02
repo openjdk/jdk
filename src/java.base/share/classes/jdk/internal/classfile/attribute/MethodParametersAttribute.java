@@ -25,7 +25,6 @@
 
 package jdk.internal.classfile.attribute;
 
-import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.Attribute;

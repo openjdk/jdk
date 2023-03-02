@@ -31,7 +31,6 @@ import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;

@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 import jdk.internal.classfile.*;

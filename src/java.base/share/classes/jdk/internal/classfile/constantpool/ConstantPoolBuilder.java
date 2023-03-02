@@ -37,7 +37,6 @@ import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassReader;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.Options;

@@ -24,11 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;

@@ -46,7 +46,6 @@ import jdk.internal.classfile.constantpool.MethodRefEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BlockCodeBuilderImpl;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.CatchBuilderImpl;

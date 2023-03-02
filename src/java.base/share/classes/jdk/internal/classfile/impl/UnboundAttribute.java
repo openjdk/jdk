@@ -38,7 +38,6 @@ import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeAnnotation;
 import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
 import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;

@@ -32,9 +32,7 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.constantpool.ClassEntry;

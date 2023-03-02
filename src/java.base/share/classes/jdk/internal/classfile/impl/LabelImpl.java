@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.util.Objects;
 
 import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.instruction.LabelTarget;
 
 /**

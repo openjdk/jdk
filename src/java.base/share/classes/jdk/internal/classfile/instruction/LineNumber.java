@@ -28,7 +28,6 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.PseudoInstruction;
-import jdk.internal.classfile.attribute.CharacterRangeTableAttribute;
 import jdk.internal.classfile.attribute.LineNumberTableAttribute;
 import jdk.internal.classfile.impl.LineNumberImpl;
 

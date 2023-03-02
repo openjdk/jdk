@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.instruction;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.classfile.CodeElement;

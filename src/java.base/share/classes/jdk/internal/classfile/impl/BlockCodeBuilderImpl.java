@@ -26,7 +26,6 @@ package jdk.internal.classfile.impl;
 
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.instruction.LabelTarget;

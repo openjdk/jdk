@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,6 @@ import jdk.internal.classfile.ClassSignature;
 import jdk.internal.classfile.MethodSignature;
 import jdk.internal.classfile.Signature;
 import jdk.internal.classfile.Signature.*;
-import static java.util.Objects.requireNonNull;
 
 public final class SignaturesImpl {
 

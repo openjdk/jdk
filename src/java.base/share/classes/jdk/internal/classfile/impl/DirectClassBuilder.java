@@ -37,7 +37,6 @@ import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.FieldBuilder;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.FieldTransform;

@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.util.Optional;
 
 import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
 /**
  * AbstractDirectBuilder
