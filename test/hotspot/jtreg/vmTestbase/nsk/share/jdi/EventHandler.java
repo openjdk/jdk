@@ -308,7 +308,7 @@ public class EventHandler implements Runnable {
         addListener(
                 new EventListener() {
                     public boolean eventReceived(Event event) {
-                        if (event instanceof VMDisconnectEvent ) {
+                        if (event instanceof VMDisconnectEvent) {
                             display("receieved VMDisconnect");
                             synchronized(EventHandler.this) {
                                 vmDisconnected = true;
@@ -330,10 +330,9 @@ public class EventHandler implements Runnable {
             public boolean eventReceived(Event event) {
                 boolean handled = false;
 
-                if (event instanceof ExceptionEvent &&
-                    defaultExceptionRequest != null &&
-                    defaultExceptionRequest.equals(event.request()))
-                {
+                if (event instanceof ExceptionEvent
+                        && defaultExceptionRequest != null
+                        && defaultExceptionRequest.equals(event.request())) {
                     complain("Unexpected Debuggee Exception: " + event);
                     defaultExceptionCaught = true;
                     handled = true;
@@ -369,8 +368,8 @@ public class EventHandler implements Runnable {
     }
 
     private class EventNotification {
-        volatile Event event = null;
-        volatile EventSet set = null;
+        volatile Event event;
+        volatile EventSet set;
     }
 
     /**
@@ -378,8 +377,7 @@ public class EventHandler implements Runnable {
      */
     private EventNotification waitForRequestedEventCommon(final EventRequest[] requests,
                                                           long timeout,
-                                                          boolean shouldRemoveListeners)
-    {
+                                                          boolean shouldRemoveListeners) {
         final EventNotification en = new EventNotification();
 
         /*
