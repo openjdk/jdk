@@ -470,8 +470,8 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   uint worklist_size = worklist->size();
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
-  if (old_node_note_array != NULL) {
-    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), 8, 0, NULL));
+  if (old_node_note_array != nullptr) {
+    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), 8, 0, nullptr));
   }
 
   // Iterate over the set of live nodes.
@@ -489,7 +489,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
     assert(_old2new_map.at(n->_idx) == -1, "already seen");
     _old2new_map.at_put(n->_idx, current_idx);
 
-    if (old_node_note_array != NULL) {
+    if (old_node_note_array != nullptr) {
       Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
       C->set_node_notes_at(current_idx, nn);
     }
