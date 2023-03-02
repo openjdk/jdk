@@ -502,8 +502,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   }
 
   template <class T>
-  class Checker {
-  public:
+  struct Checker {
     G1CollectedHeap* _g1h;
     G1VerifyLiveAndRemSetClosure* _cl;
     oop _containing_obj;
@@ -531,8 +530,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   };
 
   template <class T>
-  class LiveChecker : public Checker<T> {
-  public:
+  struct LiveChecker : public Checker<T> {
     VerifyOption _vo;
     bool _is_in_heap;
 
@@ -570,8 +568,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   };
 
   template <class T>
-  class RemSetChecker : public Checker<T> {
-  public:
+  struct RemSetChecker : public Checker<T> {
     using CardValue = CardTable::CardValue;
 
     HeapRegion* _from;
