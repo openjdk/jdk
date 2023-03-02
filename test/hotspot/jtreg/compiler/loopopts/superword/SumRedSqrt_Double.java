@@ -59,12 +59,11 @@ public class SumRedSqrt_Double {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
         double[] c = new double[256 * 1024];
-        double[] d = new double[256 * 1024];
         sumReductionInit(a, b, c);
         double total = 0;
         double valid = 2.06157643776E14;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
         if (total == valid) {
             System.out.println("Success");
@@ -99,11 +98,9 @@ public class SumRedSqrt_Double {
             double[] a,
             double[] b,
             double[] c,
-            double[] d,
             double total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
-            total += d[i];
+            total += Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
         }
         return total;
     }

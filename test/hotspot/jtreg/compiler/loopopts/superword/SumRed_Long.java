@@ -59,12 +59,11 @@ public class SumRed_Long {
         long[] a = new long[256 * 1024];
         long[] b = new long[256 * 1024];
         long[] c = new long[256 * 1024];
-        long[] d = new long[256 * 1024];
         sumReductionInit(a, b, c);
         long total = 0;
         long valid = 262144000;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
         total = (int) total;
         if (total == valid) {
@@ -101,11 +100,9 @@ public class SumRed_Long {
             long[] a,
             long[] b,
             long[] c,
-            long[] d,
             long total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }

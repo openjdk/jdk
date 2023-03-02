@@ -59,13 +59,12 @@ public class SumRedAbsNeg_Double {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
         double[] c = new double[256 * 1024];
-        double[] d = new double[256 * 1024];
         sumReductionInit(a, b, c);
         double total = 0;
         double valid = 3.6028590866691944E19;
 
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
 
         if (total == valid) {
@@ -99,11 +98,9 @@ public class SumRedAbsNeg_Double {
             double[] a,
             double[] b,
             double[] c,
-            double[] d,
             double total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
-            total += d[i];
+            total += Math.abs(-a[i] * -b[i]) + Math.abs(-a[i] * -c[i]) + Math.abs(-b[i] * -c[i]);
         }
         return total;
     }

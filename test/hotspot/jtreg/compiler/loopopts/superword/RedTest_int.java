@@ -68,52 +68,36 @@ public class RedTest_int {
         int[] a = new int[NUM];
         int[] b = new int[NUM];
         int[] c = new int[NUM];
-        int[] d = new int[NUM];
         reductionInit1(a, b, c);
         int total = 0;
-        int valid = 0;
+        int valid = -753048064;
         for (int j = 0; j < ITER; j++) {
-            total = sumReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid += d[j];
+            total = sumReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Add Reduction");
 
-        valid = 0;
+        valid = 91586175;
         for (int j = 0; j < ITER; j++) {
-            total = orReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid |= d[j];
+            total = orReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Or Reduction");
 
-        valid = -1;
+        valid = 91492404;
         for (int j = 0; j < ITER; j++) {
-            total = andReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid &= d[j];
+            total = andReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "And Reduction");
 
         valid = -1;
         for (int j = 0; j < ITER; j++) {
-            total = xorReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid ^= d[j];
+            total = xorReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Xor Reduction");
 
         reductionInit2(a, b, c);
-        valid = 1;
+        valid = -801001471;
         for (int j = 0; j < ITER; j++) {
-            total = mulReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid *= d[j];
+            total = mulReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Mul Reduction");
     }
@@ -150,12 +134,10 @@ public class RedTest_int {
     public static int sumReductionImplement(
             int[] a,
             int[] b,
-            int[] c,
-            int[] d) {
+            int[] c) {
         int total = 0;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -169,12 +151,10 @@ public class RedTest_int {
     public static int orReductionImplement(
             int[] a,
             int[] b,
-            int[] c,
-            int[] d) {
+            int[] c) {
         int total = 0;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total |= d[i];
+            total |= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -188,12 +168,10 @@ public class RedTest_int {
     public static int andReductionImplement(
             int[] a,
             int[] b,
-            int[] c,
-            int[] d) {
+            int[] c) {
         int total = -1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total &= d[i];
+            total &= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -207,12 +185,10 @@ public class RedTest_int {
     public static int xorReductionImplement(
             int[] a,
             int[] b,
-            int[] c,
-            int[] d) {
+            int[] c) {
         int total = -1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total ^= d[i];
+            total ^= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -226,12 +202,10 @@ public class RedTest_int {
     public static int mulReductionImplement(
             int[] a,
             int[] b,
-            int[] c,
-            int[] d) {
+            int[] c) {
         int total = 1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total = total*d[i];
+            total *= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }

@@ -58,12 +58,11 @@ public class SumRed_Float {
         float[] a = new float[256 * 1024];
         float[] b = new float[256 * 1024];
         float[] c = new float[256 * 1024];
-        float[] d = new float[256 * 1024];
         sumReductionInit(a, b, c);
         float total = 0;
         float valid = (float) 4.611686E18;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
         if (total == valid) {
             System.out.println("Success");
@@ -97,11 +96,9 @@ public class SumRed_Float {
             float[] a,
             float[] b,
             float[] c,
-            float[] d,
             float total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }

@@ -52,7 +52,8 @@ public class SumRed_Double {
         framework.start();
     }
 
-    @Run(test = {"sumReductionImplement"},
+    @Run(test = {"sumReductionImplement",
+                 "sumReductionWithStoreImplement"},
          mode = RunMode.STANDALONE)
     public static void runTests() throws Exception {
         double[] a = new double[256 * 1024];
@@ -63,15 +64,14 @@ public class SumRed_Double {
         double total = 0;
         double valid = 3.6028590866691944E19;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
-        if (total == valid) {
-            System.out.println("Success");
-        } else {
-            System.out.println("Invalid sum of elements variable in total: " + total);
-            System.out.println("Expected value = " + valid);
-            throw new Exception("Failed");
+        testCorrectness(total, valid, "sumReduction");
+        total = 0;
+        for (int j = 0; j < 2000; j++) {
+            total = sumReductionWithStoreImplement(a, b, c, d, total);
         }
+        testCorrectness(total, valid, "sumReductionWithStore");
     }
 
     public static void sumReductionInit(
@@ -87,13 +87,29 @@ public class SumRed_Double {
         }
     }
 
+    /* Vectorization is expected but not enabled.
+       A positive IR rule should be added later. */
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VD})
+    public static double sumReductionImplement(
+            double[] a,
+            double[] b,
+            double[] c,
+            double total) {
+        for (int i = 0; i < a.length; i++) {
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+        }
+        return total;
+    }
+
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD})
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VD, ">= 1"})
-    public static double sumReductionImplement(
+    public static double sumReductionWithStoreImplement(
             double[] a,
             double[] b,
             double[] c,
@@ -104,6 +120,19 @@ public class SumRed_Double {
             total += d[i];
         }
         return total;
+    }
+
+    public static void testCorrectness(
+            double total,
+            double valid,
+            String op) throws Exception {
+        if (total == valid) {
+            System.out.println(op + ": Success");
+        } else {
+            System.out.println("Invalid total: " + total);
+            System.out.println("Expected value = " + valid);
+            throw new Exception(op + ": Failed");
+        }
     }
 
 }

@@ -69,52 +69,36 @@ public class RedTest_long {
         long[] a = new long[NUM];
         long[] b = new long[NUM];
         long[] c = new long[NUM];
-        long[] d = new long[NUM];
         reductionInit1(a, b, c);
         long total = 0;
-        long valid = 0;
+        long valid = 46868116224L;
         for (int j = 0; j < ITER; j++) {
-            total = sumReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid += d[j];
+            total = sumReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Add Reduction");
 
-        valid = 0;
+        valid = 91586175;
         for (int j = 0; j < ITER; j++) {
-            total = orReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid |= d[j];
+            total = orReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Or Reduction");
 
-        valid = -1;
+        valid = 91492404;
         for (int j = 0; j < ITER; j++) {
-            total = andReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid &= d[j];
+            total = andReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "And Reduction");
 
         valid = -1;
         for (int j = 0; j < ITER; j++) {
-            total = xorReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid ^= d[j];
+            total = xorReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Xor Reduction");
 
         reductionInit2(a, b, c);
-        valid = 1;
+        valid = 2128241047975811073L;
         for (int j = 0; j < ITER; j++) {
-            total = mulReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid *= d[j];
+            total = mulReductionImplement(a, b, c);
         }
         testCorrectness(total, valid, "Mul Reduction");
     }
@@ -153,12 +137,10 @@ public class RedTest_long {
     public static long sumReductionImplement(
             long[] a,
             long[] b,
-            long[] c,
-            long[] d) {
+            long[] c) {
         long total = 0;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -172,12 +154,10 @@ public class RedTest_long {
     public static long orReductionImplement(
             long[] a,
             long[] b,
-            long[] c,
-            long[] d) {
+            long[] c) {
         long total = 0;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total |= d[i];
+            total |= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -191,12 +171,10 @@ public class RedTest_long {
     public static long andReductionImplement(
             long[] a,
             long[] b,
-            long[] c,
-            long[] d) {
+            long[] c) {
         long total = -1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total &= d[i];
+            total &= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -210,12 +188,10 @@ public class RedTest_long {
     public static long xorReductionImplement(
             long[] a,
             long[] b,
-            long[] c,
-            long[] d) {
+            long[] c) {
         long total = -1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total ^= d[i];
+            total ^= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -229,12 +205,10 @@ public class RedTest_long {
     public static long mulReductionImplement(
             long[] a,
             long[] b,
-            long[] c,
-            long[] d) {
+            long[] c) {
         long total = 1;
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total = total*d[i];
+            total *= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
