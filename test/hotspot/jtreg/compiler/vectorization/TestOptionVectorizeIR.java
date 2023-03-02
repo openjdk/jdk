@@ -244,7 +244,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test4(int[] data) {
        for (int j = 0; j < RANGE - 1; j++) {
            // write forward -> cyclic dependency -> cannot vectorize
@@ -254,7 +253,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test5(int[] data) {
        for (int j = 0; j < RANGE - 3; j++) {
            // write forward -> cyclic dependency -> cannot vectorize
@@ -265,7 +263,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test6(int[] data) {
        for (int j = 0; j < RANGE - 3; j++) {
            // write forward -> cyclic dependency -> cannot vectorize
@@ -298,7 +295,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test12(long[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -306,8 +302,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     static void test13(long[] data) {
        // 128-bit vectors -> can vectorize because only 2 elements
        for (int j = 2; j < RANGE - 2; j++) {
@@ -375,7 +369,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test22(short[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -383,7 +376,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test23(short[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 2];
@@ -450,7 +442,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test32(byte[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -458,7 +449,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test33(byte[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 2];
@@ -525,7 +515,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test42(char[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -533,7 +522,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test43(char[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 2];
@@ -599,7 +587,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test52(float[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -607,7 +594,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test53(float[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 2];
@@ -673,7 +659,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR})
     static void test62(double[] data) {
        for (int j = 2; j < RANGE - 2; j++) {
            data[j] += data[j - 1];
@@ -681,8 +666,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     static void test63(double[] data) {
        // 128-bit vectors -> can vectorize because only 2 elements
        for (int j = 2; j < RANGE - 2; j++) {
