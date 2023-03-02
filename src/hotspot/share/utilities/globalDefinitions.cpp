@@ -44,20 +44,12 @@ int BitsPerHeapOop     = 0;
 bool DumpSharedSpaces;
 bool DynamicDumpSharedSpaces;
 bool RequireSharedSpaces;
-#else
-const bool DumpSharedSpaces = false;
-const bool DynamicDumpSharedSpaces = false;
-const bool RequireSharedSpaces = false;
-#endif
 
-#if INCLUDE_CDS
 // export it only in the CDS case, there it is used
 // in SA java code
 extern "C" {
 JNIEXPORT jboolean UseSharedSpaces = true;
 }
-#else
-const bool UseSharedSpaces = false;
 #endif
 
 // Object alignment, in units of HeapWords.
