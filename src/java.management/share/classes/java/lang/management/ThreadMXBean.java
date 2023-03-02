@@ -410,9 +410,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *   {@link #getThreadCpuTime getThreadCpuTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
-     * @return the total CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} if not enabled or the current
-     * thread is a virtual thread
+     * @return the total CPU time for the current thread if the current
+     * thread is a platform thread and if CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -438,9 +438,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *   {@link #getThreadUserTime getThreadUserTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
-     * @return the user-level CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} if not enabled or the current
-     * thread is a virtual thread
+     * @return the user-level CPU time for the current thread if the current
+     * thread is a platform thread and if CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -473,10 +473,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * where CPU time measurement starts.
      *
      * @param id the thread ID of a thread
-     * @return the total CPU time for a thread of the specified ID
-     * if the thread of the specified ID exists, the thread is alive,
-     * and CPU time measurement is enabled; {@code -1} if not enabled
-     * or the specified ID is a virtual thread
+     * @return the total CPU time for a thread of the specified ID if the
+     * thread of the specified ID is a platform thread, the thread is alive,
+     * and CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws UnsupportedOperationException if the Java
@@ -508,10 +508,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * where CPU time measurement starts.
      *
      * @param id the thread ID of a thread
-     * @return the user-level CPU time for a thread of the specified ID
-     * if the thread of the specified ID exists, the thread is alive,
-     * and CPU time measurement is enabled; {@code -1} if not enabled
-     * or the specified ID is a virtual thread
+     * @return the user-level CPU time for a thread of the specified ID if the
+     * thread of the specified ID is a platform thread, the thread is alive,
+     * and CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws UnsupportedOperationException if the Java
