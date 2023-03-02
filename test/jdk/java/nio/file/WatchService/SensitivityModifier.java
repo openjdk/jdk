@@ -26,71 +26,49 @@
  * @summary Sanity test for JDK-specific sensitivity level watch event modifier
  * @modules jdk.unsupported
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
  * @build jdk.test.lib.RandomFactory
  * @run main/timeout=240 SensitivityModifier
  * @key randomness
  */
 
-import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import static java.nio.file.StandardWatchEventKinds.*;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import com.sun.nio.file.SensitivityWatchEventModifier;
-import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 public class SensitivityModifier {
-    // on macOS and other platforms, watch services might be based on polling
-    // requiring a longer timeout to detect events before returning
-    static final long POLL_TIMEOUT_SECONDS =
-        Platform.isLinux() || Platform.isWindows() ? 1 : 2;
 
     static final Random RAND = RandomFactory.getRandom();
 
-    static final Map<Path,Integer> pathToTime = new HashMap<>();
-
-    static void register(Path[] dirs, WatchService watcher) throws IOException {
-        pathToTime.clear();
+    static WatchKey register(Path dir, WatchService watcher)
+        throws IOException {
         SensitivityWatchEventModifier[] sensitivities =
             SensitivityWatchEventModifier.values();
-        for (int i=0; i<dirs.length; i++) {
-            SensitivityWatchEventModifier sensitivity =
-                sensitivities[RAND.nextInt(sensitivities.length)];
-            Path dir = dirs[i];
-            dir.register(watcher, new WatchEvent.Kind<?>[]{ ENTRY_MODIFY },
-                sensitivity);
-            pathToTime.put(dir, sensitivity.sensitivityValueInSeconds());
-        }
+        SensitivityWatchEventModifier sensitivity =
+            sensitivities[RAND.nextInt(sensitivities.length)];
+        return dir.register(watcher, new WatchEvent.Kind<?>[]{ ENTRY_MODIFY },
+                            sensitivity);
     }
 
     @SuppressWarnings("unchecked")
-    static void doTest(Path top) throws Exception {
-        FileSystem fs = top.getFileSystem();
+    static void doTest(Path dir) throws Exception {
+        FileSystem fs = dir.getFileSystem();
         try (WatchService watcher = fs.newWatchService()) {
+            // register the directory (random sensitivity)
+            WatchKey key = register(dir, watcher);
 
-            // create directories and files
-            int nDirs = 5 + RAND.nextInt(20);
-            int nFiles = 50 + RAND.nextInt(50);
-            Path[] dirs = new Path[nDirs];
-            Path[] files = new Path[nFiles];
-            for (int i=0; i<nDirs; i++) {
-                dirs[i] = Files.createDirectory(top.resolve("dir" + i));
-            }
-            for (int i=0; i<nFiles; i++) {
-                Path dir = dirs[RAND.nextInt(nDirs)];
-                files[i] = Files.createFile(dir.resolve("file" + i));
-            }
+            // check validity
+            if (!key.isValid())
+                throw new RuntimeException("Registration is invalid");
 
-            // register the directories (random sensitivity)
-            register(dirs, watcher);
+            // cancel the registration
+            key.cancel();
         }
     }
 
