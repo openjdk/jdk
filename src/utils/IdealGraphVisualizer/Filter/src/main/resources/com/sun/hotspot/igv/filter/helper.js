@@ -43,6 +43,11 @@ function warn(propertyToMatch, regexp, propertyToShow) {
     f.apply(graph);
 }
 
+function removeSelfLoops() {
+    var f = new RemoveSelfLoopsFilter("");
+    f.apply(graph);
+}
+
 function remove(property, regexp) {
     var f = new RemoveFilter("");
     f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp))));

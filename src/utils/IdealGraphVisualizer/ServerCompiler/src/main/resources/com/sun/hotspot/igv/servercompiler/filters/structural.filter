@@ -1,5 +1,4 @@
-// Remove self-loops.
-new RemoveSelfLoopsFilter("Remove Self-Loops").apply(graph);
+removeSelfLoops();
 
 // Hide secondary edges.
 remove("short_name", "FP|RA|IO|RP");
