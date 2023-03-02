@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -32,7 +33,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
