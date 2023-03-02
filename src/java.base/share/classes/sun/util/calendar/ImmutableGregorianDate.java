@@ -118,10 +118,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addSeconds(int n) {
-        unsupported(); return this;
-    }
-
     public int getMillis() {
         return date.getMillis();
     }
