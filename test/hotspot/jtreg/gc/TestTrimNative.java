@@ -38,214 +38,186 @@ package gc;
 //// full gc tests /////
 
 /*
- * @test id=fullgc-serial
+ * @test id=testExplicitTrimOnFullGC-serial
  * @summary Test that TrimNativeHeap works with Serial
  * @requires vm.gc.Serial
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-fullgc serial
+ * @run driver gc.TestTrimNative testExplicitTrimOnFullGC serial
  */
 
 /*
- * @test id=fullgc-parallel
+ * @test id=testExplicitTrimOnFullGC-parallel
  * @summary Test that TrimNativeHeap works with Parallel
  * @requires vm.gc.Parallel
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-fullgc parallel
+ * @run driver gc.TestTrimNative testExplicitTrimOnFullGC parallel
  */
 
 /*
- * @test id=fullgc-shenandoah
+ * @test id=testExplicitTrimOnFullGC-shenandoah
  * @summary Test that TrimNativeHeap works with Shenandoah
  * @requires vm.gc.Shenandoah
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-fullgc shenandoah
+ * @run driver gc.TestTrimNative testExplicitTrimOnFullGC shenandoah
  */
 
 /*
- * @test id=fullgc-g1
+ * @test id=testExplicitTrimOnFullGC-g1
  * @summary Test that TrimNativeHeap works with G1
  * @requires vm.gc.G1
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-fullgc g1
+ * @run driver gc.TestTrimNative testExplicitTrimOnFullGC g1
  */
 
 /*
- * @test id=fullgc-z
+ * @test id=testExplicitTrimOnFullGC-z
  * @summary Test that TrimNativeHeap works with Z
  * @requires vm.gc.Z
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-fullgc z
+ * @run driver gc.TestTrimNative testExplicitTrimOnFullGC z
  */
 
 //// auto mode tests /////
 
-// Note: not serial, since it does not do periodic trimming, only trimming on full gc
-
 /*
- * @test id=auto-parallel
+ * @test id=testPeriodicTrim-serial
  * @summary Test that TrimNativeHeap works with Parallel
  * @requires vm.gc.Parallel
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto parallel
+ * @run driver gc.TestTrimNative testPeriodicTrim serial
  */
 
 /*
- * @test id=auto-shenandoah
+ * @test id=testPeriodicTrim-parallel
+ * @summary Test that TrimNativeHeap works with Parallel
+ * @requires vm.gc.Parallel
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative testPeriodicTrim parallel
+ */
+
+/*
+ * @test id=testPeriodicTrim-shenandoah
  * @summary Test that TrimNativeHeap works with Shenandoah
  * @requires vm.gc.Shenandoah
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto shenandoah
+ * @run driver gc.TestTrimNative testPeriodicTrim shenandoah
  */
 
 /*
- * @test id=auto-g1
+ * @test id=testPeriodicTrim-g1
  * @summary Test that TrimNativeHeap works with G1
  * @requires vm.gc.G1
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto g1
+ * @run driver gc.TestTrimNative testPeriodicTrim g1
  */
 
 /*
- * @test id=auto-z
+ * @test id=testPeriodicTrim-z
  * @summary Test that TrimNativeHeap works with Z
  * @requires vm.gc.Z
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto z
+ * @run driver gc.TestTrimNative testPeriodicTrim z
  */
 
-//// test-auto-high-interval interval test /////
-
-// Note: not serial, since it does not do periodic trimming, only trimming on full gc
+//// testPeriodicTrimDisabled test /////
 
 /*
- * @test id=auto-high-interval-parallel
- * @summary Test that a high TrimNativeHeapInterval effectively disables automatic trimming
+ * @test id=testPeriodicTrimDisabled-serial
+ * @summary Test that TrimNativeHeap works with Parallel
  * @requires vm.gc.Parallel
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-high-interval parallel
+ * @run driver gc.TestTrimNative testPeriodicTrimDisabled serial
  */
 
 /*
- * @test id=auto-high-interval-g1
- * @summary Test that a high TrimNativeHeapInterval effectively disables automatic trimming
- * @requires vm.gc.G1
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-high-interval g1
- */
-
-/*
- * @test id=auto-high-interval-shenandoah
- * @summary Test that a high TrimNativeHeapInterval effectively disables automatic trimming
- * @requires vm.gc.Shenandoah
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-high-interval shenandoah
- */
-
-/*
- * @test id=auto-high-interval-z
- * @summary Test that a high TrimNativeHeapInterval effectively disables automatic trimming
- * @requires vm.gc.Z
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-high-interval z
- */
-
-//// test-auto-interval-0 test /////
-
-// Note: not serial, since it does not do periodic trimming, only trimming on full gc
-
-/*
- * @test id=auto-zero-interval-parallel
- * @summary Test that a TrimNativeHeapInterval=0 disables periodic trimming
+ * @test id=testPeriodicTrimDisabled-parallel
+ * @summary Test that TrimNativeHeap works with Parallel
  * @requires vm.gc.Parallel
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-zero-interval parallel
+ * @run driver gc.TestTrimNative testPeriodicTrimDisabled parallel
  */
 
 /*
- * @test id=auto-zero-interval-g1
- * @summary Test that a TrimNativeHeapInterval=0 disables periodic trimming
- * @requires vm.gc.G1
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-zero-interval g1
- */
-
-/*
- * @test id=auto-zero-interval-shenandoah
- * @summary Test that a TrimNativeHeapInterval=0 disables periodic trimming
+ * @test id=testPeriodicTrimDisabled-shenandoah
+ * @summary Test that TrimNativeHeap works with Shenandoah
  * @requires vm.gc.Shenandoah
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-zero-interval shenandoah
+ * @run driver gc.TestTrimNative testPeriodicTrimDisabled shenandoah
  */
 
 /*
- * @test id=auto-zero-interval-z
- * @summary Test that a TrimNativeHeapInterval=0 disables periodic trimming
+ * @test id=testPeriodicTrimDisabled-g1
+ * @summary Test that TrimNativeHeap works with G1
+ * @requires vm.gc.G1
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative testPeriodicTrimDisabled g1
+ */
+
+/*
+ * @test id=testPeriodicTrimDisabled-z
+ * @summary Test that TrimNativeHeap works with Z
  * @requires vm.gc.Z
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-auto-zero-interval z
+ * @run driver gc.TestTrimNative testPeriodicTrimDisabled z
  */
 
 // Other tests
 
 /*
- * @test id=off-explicit
+ * @test id=testOffByDefault
  * @summary Test that -GCTrimNative disables the feature
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-off-explicit
+ * @run driver gc.TestTrimNative testOffByDefault
  */
 
 /*
- * @test id=off-by-default
+ * @test id=testOffExplicit
  * @summary Test that GCTrimNative is off by default
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-off-by-default
+ * @run driver gc.TestTrimNative testOffExplicit
  */
 
 /*
- * @test id=off-on-other-platforms
+ * @test id=testOffOnNonCompliantPlatforms
  * @summary Test that GCTrimNative is off on unsupportive platforms
  * @requires (os.family!="linux") | vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver gc.TestTrimNative test-off-on-other-platforms
+ * @run driver gc.TestTrimNative testOffOnNonCompliantPlatforms
  */
 
 import jdk.internal.misc.Unsafe;
@@ -254,6 +226,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -323,7 +296,7 @@ public class TestTrimNative {
             }
 
         } else {
-            output.shouldContain("Native trim disabled");
+            output.shouldNotContain("Native trim");
         }
     }
 
@@ -345,7 +318,7 @@ public class TestTrimNative {
                                                           int maxExplicitTrimsExpected) {
         output.reportDiagnosticSummary();
         List<String> lines = output.asLines();
-        Pattern pat = Pattern.compile(".*\\[gc,trim\\] Trim native heap (explicit|periodic)" +
+        Pattern pat = Pattern.compile(".*\\[gc,trim\\] Trim native heap \\((explicit|periodic)\\)" +
                 ".*RSS\\+Swap: (\\d+)([BKMG])->(\\d+)([BKMG]).*");
         int numExplicitTrimsFound = 0;
         int numPeriodicTrimsFound = 0;
@@ -382,12 +355,12 @@ public class TestTrimNative {
             }
         }
         if (numPeriodicTrimsFound < minPeriodicTrimsExpected) {
-            throw new RuntimeException("We found fewer trim lines in UL log than expected (expected " + numPeriodicTrimsFound +
-                    ", found " + minPeriodicTrimsExpected + ".");
+            throw new RuntimeException("We found fewer (periodic) trim lines in UL log than expected (expected at least " + minPeriodicTrimsExpected +
+                    ", found " + numPeriodicTrimsFound + ").");
         }
         if (numExplicitTrimsFound < minExplicitTrimsExpected) {
-            throw new RuntimeException("We found fewer trim lines in UL log than expected (expected " + numExplicitTrimsFound +
-                    ", found " + minExplicitTrimsExpected + ".");
+            throw new RuntimeException("We found fewer (explicit) trim lines in UL log than expected (expected at least " + minExplicitTrimsExpected +
+                    ", found " + numExplicitTrimsFound + ").");
         }
         // This is very fuzzy. Test program malloced X bytes, then freed them again and trimmed. But the log line prints change in RSS.
         // Which, of course, is influenced by a lot of other factors. But we expect to see *some* reasonable reduction in RSS
@@ -410,8 +383,8 @@ public class TestTrimNative {
     final static boolean DEFAULT_AUTOSTEP = false;
 
     // Test explicit trim on full gc
-    static private final void testWithFullGC(GC gc) throws IOException {
-        System.out.println("testWithFullGC");
+    static private final void testExplicitTrimOnFullGC(GC gc) throws IOException {
+        System.out.println("testExplicitTrimOnFullGC");
         int sleeptime_secs = 2;
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+TrimNativeHeap" },
@@ -424,13 +397,23 @@ public class TestTrimNative {
         output.shouldContain("NativeTrimmer pause");
         output.shouldContain("NativeTrimmer unpause + request explicit trim");
 
-        parseOutputAndLookForNegativeTrim(output, true, 1, 1);
+        int minPeriodicTrimsExpected = 0;
+        int maxPeriodicTrimsExpected = 10;
+        int minExplicitTrimsExpected = 1;
+        int maxExplicitTrimsExpected = 10;
+
+        parseOutputAndLookForNegativeTrim(output,
+                0, /*  minPeriodicTrimsExpected */
+                10,  /*  maxPeriodicTrimsExpected */
+                1, /*  minExplicitTrimsExpected */
+                10 /*  maxExplicitTrimsExpected */
+        );
     }
 
     // Test periodic trim with very short trim interval. We explicitly don't do a GC to not get an explicite trim
     // "stealing" our gains.
-    static private final void testAuto(GC gc) throws IOException {
-        System.out.println("testAuto");
+    static private final void testPeriodicTrim(GC gc) throws IOException {
+        System.out.println("testPeriodicTrim");
         long t1 = System.currentTimeMillis();
         int sleeptime_secs = 4;
         OutputAnalyzer output = runTestWithOptions (
@@ -444,47 +427,47 @@ public class TestTrimNative {
 
         // With an interval time of 1 second and a runtime of 6..x seconds we expect to see x periodic trim
         // log lines (+- fudge factor).
-        parseOutputAndLookForNegativeTrim(output, false,runtime_s - 4, runtime_s);
-    }
-
-    // Test that trim-native correctly honors interval
-    static private final void testAutoWithHighInterval(GC gc) throws IOException {
-        // We pass a high interval than the expected test runtime. We expect no trims.
-        System.out.println("testAutoWithHighInterval");
-        OutputAnalyzer output = runTestWithOptions (
-                new String[] { gc.getSwitchName(), "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=12" },
-                new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
+        parseOutputAndLookForNegativeTrim(output,
+                runtime_s - 4, /*  minPeriodicTrimsExpected */
+                runtime_s,  /*  maxPeriodicTrimsExpected */
+                0, /*  minExplicitTrimsExpected */
+                10 /*  maxExplicitTrimsExpected */
         );
-        output.shouldContain("Native trim enabled.");
-        output.shouldContain("Periodic native trim enabled (interval: 12 seconds, step-down-interval: 48 seconds).");
-        output.shouldNotContain("Trim native heap");
+
     }
 
-    static private final void testAutoWithZeroInterval(GC gc) throws IOException {
-        System.out.println("testAutoWithZeroInterval");
+    static private final void testPeriodicTrimDisabled(GC gc) throws IOException {
+        System.out.println("testPeriodicTrimDisabled");
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=0" },
-                new String[] { "false" /* full gc */, "4000" /* ms after peak */ }
+                new String[] { "true" /* full gc */, "4000" /* ms after peak */ }
         );
-        output.shouldContain("Native trim enabled.");
-        output.shouldContain("Periodic native trim disabled");
-        output.shouldNotContain("Trim native heap");
+        checkExpectedLogMessages(output, true, 0, DEFAULT_AUTOSTEP);
+
+        // We expect only explicit trims, no periodic trims
+        parseOutputAndLookForNegativeTrim(output,
+                0, /*  minPeriodicTrimsExpected */
+                0,  /*  maxPeriodicTrimsExpected */
+                1, /*  minExplicitTrimsExpected */
+                10 /*  maxExplicitTrimsExpected */
+        );
     }
 
     // Test that trim-native gets disabled on platforms that don't support it.
     static private final void testOffOnNonCompliantPlatforms() throws IOException {
+        if (Platform.isLinux() && !Platform.isMusl()) {
+            throw new RemoteException("Don't call me for Linux glibc");
+        }
         // Logic is shared, so no need to test with every GC. Just use the default GC.
         System.out.println("testOffOnNonCompliantPlatforms");
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+TrimNativeHeap" },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        output.shouldContain("TrimNativeHeap disabled");
-        output.shouldNotContain("Native trim enabled.");
-        output.shouldNotContain("Trim native heap");
+        checkExpectedLogMessages(output, false, 0, false);
     }
 
-    // Test that TrimNativeHeap=0 switches trim-native off
+    // Test trim native is disabled if explicitly switched off
     static private final void testOffExplicit() throws IOException {
         // Logic is shared, so no need to test with every GC. Just use the default GC.
         System.out.println("testOffExplicit");
@@ -492,8 +475,7 @@ public class TestTrimNative {
                 new String[] { "-XX:-TrimNativeHeap" },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        output.shouldNotContain("Native trim enabled.");
-        output.shouldNotContain("Trim native heap");
+        checkExpectedLogMessages(output, false, 0, false);
     }
 
     // Test that trim-native is disabled by default
@@ -504,8 +486,7 @@ public class TestTrimNative {
                 new String[] { },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        output.shouldNotContain("Native trim enabled.");
-        output.shouldNotContain("Trim native heap");
+        checkExpectedLogMessages(output, false, 0, false);
     }
 
     public static void main(String[] args) throws Exception {
@@ -541,24 +522,21 @@ public class TestTrimNative {
 
             return;
 
-        } else if (args[0].equals("test-fullgc")) {
+        } else if (args[0].equals("testExplicitTrimOnFullGC")) {
             final GC gc = GC.valueOf(args[1]);
-            testWithFullGC(gc);
-        } else if (args[0].equals("test-auto")) {
+            testExplicitTrimOnFullGC(gc);
+        } else if (args[0].equals("testPeriodicTrim")) {
             final GC gc = GC.valueOf(args[1]);
-            testAuto(gc);
-        } else if (args[0].equals("test-auto-high-interval")) {
+            testPeriodicTrim(gc);
+        } else if (args[0].equals("testPeriodicTrimDisabled")) {
             final GC gc = GC.valueOf(args[1]);
-            testAutoWithHighInterval(gc);
-        } else if (args[0].equals("test-auto-zero-interval")) {
-            final GC gc = GC.valueOf(args[1]);
-            testAutoWithZeroInterval(gc);
-        } else if (args[0].equals("test-off-explicit")) {
-            testOffExplicit();
-        } else if (args[0].equals("test-off-by-default")) {
-            testOffByDefault();
-        } else if (args[0].equals("test-off-on-other-platforms")) {
+            testPeriodicTrimDisabled(gc);
+        } else if (args[0].equals("testOffOnNonCompliantPlatforms")) {
             testOffOnNonCompliantPlatforms();
+        } else if (args[0].equals("testOffExplicit")) {
+            testOffExplicit();
+        } else if (args[0].equals("testOffByDefault")) {
+            testOffByDefault();
         } else {
             throw new RuntimeException("Invalid test " + args[0]);
         }

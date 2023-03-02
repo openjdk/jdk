@@ -696,7 +696,7 @@
           "GC will attempt to trim the native heap periodically and "       \
           "at the end of a GC cycle.")                                      \
                                                                             \
-  product(uint, TrimNativeHeapInterval, 5, EXPERIMENTAL,                    \
+  product(uint, TrimNativeHeapInterval, 30, EXPERIMENTAL,                   \
           "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
           "the GC will attempt to trim the native heap. If "                \
           "TrimNativeHeapAdaptiveStepDown is enabled, the JVM may lower "   \

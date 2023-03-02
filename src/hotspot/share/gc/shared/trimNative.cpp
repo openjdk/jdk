@@ -247,7 +247,7 @@ void TrimNative::initialize() {
       if (TrimNativeHeapAdaptiveStepDown) {
         FLAG_SET_ERGO(TrimNativeHeapAdaptiveStepDown, false);
       }
-      log_info(gc, trim)("Periodic trimming disabled.");
+      log_info(gc, trim)("Periodic native trim disabled.");
     } else {
       log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds, dynamic step-down %s)",
                          TrimNativeHeapInterval, (TrimNativeHeapAdaptiveStepDown ? "enabled" : "disabled"));
