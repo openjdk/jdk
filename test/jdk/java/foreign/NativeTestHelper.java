@@ -164,6 +164,18 @@ public class NativeTestHelper {
         }
     }
 
+    public static TestValue[] genTestArgs(FunctionDescriptor descriptor, SegmentAllocator allocator) {
+        return genTestArgs(DEFAULT_RANDOM, descriptor, allocator);
+    }
+
+    public static TestValue[] genTestArgs(RandomGenerator random, FunctionDescriptor descriptor, SegmentAllocator allocator) {
+        TestValue[] result = new TestValue[descriptor.argumentLayouts().size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = genTestValue(random, descriptor.argumentLayouts().get(i), allocator);
+        }
+        return result;
+    }
+
     public record TestValue (Object value, Consumer<Object> check) {}
 
     public static TestValue genTestValue(MemoryLayout layout, SegmentAllocator allocator) {
