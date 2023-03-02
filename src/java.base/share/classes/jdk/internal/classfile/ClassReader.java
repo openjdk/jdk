@@ -267,4 +267,4 @@ public sealed interface ClassReader extends ConstantPool
                     int bufWriterOffset,
                     int classReaderOffset,
                     int length);
-    }
+}
