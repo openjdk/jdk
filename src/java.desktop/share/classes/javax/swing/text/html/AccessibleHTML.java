@@ -183,10 +183,10 @@ class AccessibleHTML implements Accessible {
             Element root = doc.getDefaultRootElement();
 
             rootElementInfo = new ElementInfo(root);
+            rootElementInfo.validate();
             if (rootHTMLAccessibleContext != null) {
                 rootHTMLAccessibleContext.setElementInfo(rootElementInfo);
             }
-            rootElementInfo.validate();
         } finally {
             unlock(lock);
         }
