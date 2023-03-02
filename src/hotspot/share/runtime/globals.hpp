@@ -1297,7 +1297,7 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
-  product(bool, UseSystemMemoryBarrier, true, DIAGNOSTIC,                   \
+  product(bool, UseSystemMemoryBarrier, false,                              \
           "Try to enable system memory barrier if supported by OS")         \
                                                                             \
   product(intx, NmethodSweepActivity, 4,                                    \
