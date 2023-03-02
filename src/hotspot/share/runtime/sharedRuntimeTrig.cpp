@@ -28,14 +28,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sharedRuntimeMath.hpp"
 
-// This file contains copies of the fdlibm routines used by
-// StrictMath. It turns out that it is almost always required to use
-// these runtime routines; the Intel CPU doesn't meet the Java
-// specification for sin/cos outside a certain limited argument range,
-// and the SPARC CPU doesn't appear to have sin/cos instructions. It
-// also turns out that avoiding the indirect call through function
+// This file contains copies of the C fdlibm routines originally used by
+// StrictMath. Avoiding the indirect call through function
 // pointer out to libjava.so in SharedRuntime speeds these routines up
-// by roughly 15% on both Win32/x86 and Solaris/SPARC.
+// by roughly 15% on multiple architectures.
 
 /*
  * __kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
