@@ -311,7 +311,7 @@ inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame_static(
   set_top_ijava_frame_at_SP_as_last_Java_frame(sp, tmp1, true);
 }
 
-void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
+inline void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
 #ifdef ASSERT
   Label ok;
   z_brc(cond, ok);
@@ -320,7 +320,7 @@ void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, 
 #endif // ASSERT
 }
 
-void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
+inline void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {
 #ifdef ASSERT
   switch (size) {
@@ -343,7 +343,7 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
 // after transformation:
 //   expected_size - FP + SP == 0
 // Destroys Register expected_size if no tmp register is passed.
-void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
+inline void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
 #ifdef ASSERT
   if (tmp == noreg) {
     tmp = expected_size;
