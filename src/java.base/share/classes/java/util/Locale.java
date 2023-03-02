@@ -2072,7 +2072,7 @@ public final class Locale implements Cloneable, Serializable {
      * Returns a name for the locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
      * getDisplayScript(), getDisplayCountry(), getDisplayVariant() and
-     * optional {@linkplain Locale##def_locale_extension Unicode extensions}
+     * optional {@linkplain ##def_locale_extension Unicode extensions}
      * assembled into a single string. The non-empty values are used in order, with
      * the second and subsequent names in parentheses.  For example:
      * <blockquote>
@@ -2097,7 +2097,7 @@ public final class Locale implements Cloneable, Serializable {
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
      * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
-     * getDisplayVariant(), and optional {@linkplain Locale##def_locale_extension
+     * getDisplayVariant(), and optional {@linkplain ##def_locale_extension
      * Unicode extensions} assembled into a single string. The non-empty
      * values are used in order, with the second and subsequent names in
      * parentheses.  For example:
@@ -2465,7 +2465,7 @@ public final class Locale implements Cloneable, Serializable {
      * are exactly "ja", "JP", "JP" or "th", "TH", "TH" and script/extensions
      * fields are empty, this method supplies {@code UNICODE_LOCALE_EXTENSION}
      * "ca"/"japanese" (calendar type is "japanese") or "nu"/"thai" (number script
-     * type is "thai"). See {@linkplain Locale##special_cases_constructor Special Cases}
+     * type is "thai"). See {@linkplain ##special_cases_constructor Special Cases}
      * for more information.
      *
      * @return an instance of {@code Locale} equivalent to
