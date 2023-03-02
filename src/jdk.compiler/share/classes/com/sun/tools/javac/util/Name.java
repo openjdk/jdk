@@ -38,7 +38,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class Name implements javax.lang.model.element.Name, PoolConstant {
+public abstract class Name implements javax.lang.model.element.Name, PoolConstant, Comparable<Name> {
 
     public final Table table;
 
@@ -102,10 +102,41 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         return table.fromUtf(bs, 0, bs.length);
     }
 
-    /** An arbitrary but consistent complete order among all Names.
+    /** Order names lexicographically.
+     *
+     *  <p>
+     *  The ordering defined by this method must match the ordering
+     *  defined by the corresponding {@link #toString()} values.
+     *  @see String#compareTo
      */
-    public int compareTo(Name other) {
-        return other.getIndex() - this.getIndex();
+    @Override
+    public int compareTo(Name name) {
+        byte[] buf1 = getByteArray();
+        byte[] buf2 = name.getByteArray();
+        int off1 = getByteOffset();
+        int off2 = name.getByteOffset();
+        int len1 = getByteLength();
+        int len2 = name.getByteLength();
+        while (len1 > 0 && len2 > 0) {
+            int val1 = buf1[off1++] & 0xff;
+            int val2 = buf2[off2++] & 0xff;
+            if (val1 == 0xc0 && (buf1[off1] & 0x3f) == 0) {
+                val1 = 0;       // char 0x0000 encoded in two bytes
+                off1++;
+                len1--;
+            }
+            if (val2 == 0xc0 && (buf2[off2] & 0x3f) == 0) {
+                val2 = 0;       // char 0x0000 encoded in two bytes
+                off2++;
+                len2--;
+            }
+            int diff = val1 - val2;
+            if (diff != 0)
+                return diff;
+            len1--;
+            len2--;
+        }
+        return len1 > 0 ? 1 : len2 > 0 ? -1 : 0;
     }
 
     /** Return true if this is the empty name.
