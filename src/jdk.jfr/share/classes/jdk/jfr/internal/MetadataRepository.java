@@ -46,9 +46,9 @@ import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.RequestEngine.RequestHook;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.periodic.PeriodicEvents;
 
 public final class MetadataRepository {
 
@@ -70,7 +70,6 @@ public final class MetadataRepository {
     }
 
     private void initializeJVMEventTypes() {
-        List<RequestHook> requestHooks = new ArrayList<>();
         for (Type type : new ArrayList<>(typeLibrary.getTypes())) {
             if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
@@ -84,14 +83,13 @@ public final class MetadataRepository {
                 if (pEventType.hasPeriod()) {
                     pEventType.setEventHook(true);
                     if (!pEventType.isMethodSampling()) {
-                        requestHooks.add(new RequestHook(pEventType));
+                        PeriodicEvents.addJVMEvent(pEventType);
                     }
                 }
                 nativeControls.add(new EventControl(pEventType));
                 nativeEventTypes.add(eventType);
             }
         }
-        RequestEngine.addHooks(requestHooks);
     }
 
     public static MetadataRepository getInstance() {

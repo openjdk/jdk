@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,11 @@ enum {
 
 enum {
   pd_two_operand_lir_form = true
+};
+
+// the number of stack required by ArrayCopyStub
+enum {
+  pd_arraycopystub_reserved_argument_area_size = 5
 };
 
 #endif // CPU_X86_C1_DEFS_X86_HPP

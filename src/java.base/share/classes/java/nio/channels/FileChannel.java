@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -633,7 +633,7 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
+     * position is greater than or equal to the file's current size then no bytes are
      * transferred.  If the target channel has a position then bytes are
      * written starting at that position and then the position is incremented
      * by the number of bytes written.
@@ -761,7 +761,7 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -806,7 +806,7 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then the file will be
+     * position is greater than or equal to the file's current size then the file will be
      * grown to accommodate the new bytes; the values of any bytes between the
      * previous end-of-file and the newly-written bytes are unspecified.  </p>
      *
