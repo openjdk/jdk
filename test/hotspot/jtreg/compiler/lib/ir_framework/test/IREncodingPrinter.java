@@ -71,6 +71,7 @@ public class IREncodingPrinter {
         "avx",
         "avx2",
         "avx512",
+        "avx512bw",
         "avx512dq",
         "avx512vl",
         "avx512f",

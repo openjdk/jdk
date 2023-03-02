@@ -804,6 +804,7 @@ final class Streams {
             }
         }
 
+        @SuppressWarnings("overloads")
         static class OfInt
                 extends ConcatSpliterator.OfPrimitive<Integer, IntConsumer, Spliterator.OfInt>
                 implements Spliterator.OfInt {
@@ -812,6 +813,7 @@ final class Streams {
             }
         }
 
+        @SuppressWarnings("overloads")
         static class OfLong
                 extends ConcatSpliterator.OfPrimitive<Long, LongConsumer, Spliterator.OfLong>
                 implements Spliterator.OfLong {
@@ -820,6 +822,7 @@ final class Streams {
             }
         }
 
+        @SuppressWarnings("overloads")
         static class OfDouble
                 extends ConcatSpliterator.OfPrimitive<Double, DoubleConsumer, Spliterator.OfDouble>
                 implements Spliterator.OfDouble {

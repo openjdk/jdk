@@ -3474,10 +3474,12 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+    char* shared_archive_path = get_default_shared_archive_path();
+    if (os::same_files(shared_archive_path, ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
-        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", shared_archive_path);
     }
+    FREE_C_HEAP_ARRAY(char, shared_archive_path);
   }
 
   if (SharedArchiveFile == nullptr) {
