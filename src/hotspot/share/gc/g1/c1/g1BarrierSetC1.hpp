@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class G1PreBarrierStub: public CodeStub {
     assert(_pre_val->is_register(), "should be temporary register");
     assert(_addr->is_address(), "should be the address of the field");
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   // Version that _does not_ generate load of the previous value; the
@@ -60,7 +59,6 @@ class G1PreBarrierStub: public CodeStub {
   {
     assert(_pre_val->is_register(), "should be a register");
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   LIR_Opr addr() const { return _addr; }
@@ -101,7 +99,6 @@ class G1PostBarrierStub: public CodeStub {
   // addr (the address of the object head) and new_val must be registers.
   G1PostBarrierStub(LIR_Opr addr, LIR_Opr new_val): _addr(addr), _new_val(new_val) {
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   LIR_Opr addr() const { return _addr; }

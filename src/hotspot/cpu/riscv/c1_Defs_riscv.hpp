@@ -90,4 +90,9 @@ enum {
   pd_arraycopystub_reserved_argument_area_size = 2
 };
 
+// multiplier factor to update reserved_area_argument_size
+enum {
+  pd_reserved_argument_area_size_factor = 2
+};
+
 #endif // CPU_RISCV_C1_DEFS_RISCV_HPP

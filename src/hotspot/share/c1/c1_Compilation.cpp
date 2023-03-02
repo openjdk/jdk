@@ -398,7 +398,7 @@ int Compilation::compile_java_method() {
   {
     PhaseTraceTime timeit(_t_emit_lir);
 
-    _frame_map = new FrameMap(method(), hir()->number_of_locks(), hir()->max_stack());
+    _frame_map = new FrameMap(method(), hir()->number_of_locks(), MAX2((int)reserved_argument_area_size_factor, hir()->max_stack()));
     emit_lir();
   }
   CHECK_BAILOUT_(no_frame_size);

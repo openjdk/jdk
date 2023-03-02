@@ -111,7 +111,6 @@ class CounterOverflowStub: public CodeStub {
 public:
   CounterOverflowStub(CodeEmitInfo* info, int bci, LIR_Opr method) :  _info(info), _bci(bci), _method(method) {
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   virtual void emit_code(LIR_Assembler* e);
@@ -173,7 +172,6 @@ class RangeCheckStub: public CodeStub {
     assert(info != NULL, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
   // For IndexOutOfBoundsException.
   RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
@@ -181,7 +179,6 @@ class RangeCheckStub: public CodeStub {
     assert(info != NULL, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
@@ -353,7 +350,6 @@ class MonitorEnterStub: public MonitorAccessStub {
     : MonitorAccessStub(obj_reg, lock_reg) {
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   virtual void emit_code(LIR_Assembler* e);
@@ -497,7 +493,6 @@ public:
   DeoptimizeStub(CodeEmitInfo* info, Deoptimization::DeoptReason reason, Deoptimization::DeoptAction action) :
     _info(new CodeEmitInfo(info)), _trap_request(Deoptimization::make_trap_request(reason, action)) {
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   virtual void emit_code(LIR_Assembler* e);
@@ -522,7 +517,6 @@ class SimpleExceptionStub: public CodeStub {
   SimpleExceptionStub(Runtime1::StubID stub, LIR_Opr obj, CodeEmitInfo* info):
     _obj(obj), _stub(stub), _info(info) {
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
 
   void set_obj(LIR_Opr obj) {
@@ -560,7 +554,6 @@ class ArrayCopyStub: public CodeStub {
  public:
   ArrayCopyStub(LIR_OpArrayCopy* op): _op(op) {
     FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(arraycopystub_reserved_argument_area_size * BytesPerWord);
   }
 
   LIR_Opr src() const                         { return _op->src(); }
