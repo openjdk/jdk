@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.constantpool;
 
+import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
@@ -35,6 +36,11 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodTypeEntryImpl {
+
+    @Override
+    default ConstantDesc constantValue() {
+        return asSymbol();
+    }
 
     /**
      * {@return the constant pool entry describing the method type}

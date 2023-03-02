@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.constantpool;
 
+import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
@@ -35,6 +36,11 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodHandleEntryImpl {
+
+    @Override
+    default ConstantDesc constantValue() {
+        return asSymbol();
+    }
 
     /**
      * {@return the reference kind of this method handle {@jvms 4.4.8}}

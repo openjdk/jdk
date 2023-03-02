@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.ClassEntry;
@@ -41,7 +40,6 @@ import jdk.internal.classfile.constantpool.FloatEntry;
 import jdk.internal.classfile.constantpool.IntegerEntry;
 import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
 import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.LongEntry;
 import jdk.internal.classfile.constantpool.MemberRefEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
@@ -371,8 +369,6 @@ public abstract sealed class AbstractPoolEntry {
             if (o == this) return true;
             if (o instanceof Utf8EntryImpl u) {
                 return equalsUtf8(u);
-            } else if (o instanceof Utf8Entry u) {
-                return equalsString(u.stringValue());
             }
             return false;
         }
@@ -845,18 +841,6 @@ public abstract sealed class AbstractPoolEntry {
         public ConstantDynamicEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.constantDynamicEntry(bootstrap(), nameAndType());
         }
-
-        @Override
-        public ConstantDesc constantValue() {
-            List<LoadableConstantEntry> args = bootstrap().arguments();
-            int argsSize =  args.size();
-            ConstantDesc[] staticArgs = new ConstantDesc[argsSize];
-            for (int i = 0; i < argsSize; i++)
-                staticArgs[i] = args.get(i).constantValue();
-
-            return DynamicConstantDesc.ofCanonical(bootstrap().bootstrapMethod().asSymbol(),
-                                                   nameAndType().name().stringValue(), ClassDesc.ofDescriptor(nameAndType().type().stringValue()), staticArgs);
-        }
     }
 
     public static final class MethodHandleEntryImpl extends AbstractPoolEntry
@@ -882,11 +866,6 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public int kind() {
             return refKind;
-        }
-
-        @Override
-        public ConstantDesc constantValue() {
-            return asSymbol();
         }
 
         @Override
@@ -942,11 +921,6 @@ public abstract sealed class AbstractPoolEntry {
 
         public Utf8Entry descriptor() {
             return ref1;
-        }
-
-        @Override
-        public ConstantDesc constantValue() {
-            return MethodTypeDesc.ofDescriptor(descriptor().stringValue());
         }
 
         @Override

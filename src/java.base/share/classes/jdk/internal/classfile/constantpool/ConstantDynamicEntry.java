@@ -39,6 +39,11 @@ public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
         permits AbstractPoolEntry.ConstantDynamicEntryImpl {
 
+    @Override
+    default ConstantDesc constantValue() {
+        return asSymbol();
+    }
+
     /**
      * {@return the symbolic descriptor for the {@code invokedynamic} constant}
      */
