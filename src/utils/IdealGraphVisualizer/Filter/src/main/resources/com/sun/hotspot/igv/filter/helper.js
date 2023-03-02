@@ -31,10 +31,18 @@ function split_string(s) {
     return s.split(/(\s+)/).filter(function(e) {return e.trim().length > 0;});
 }
 
-function colorize(property, regexp, color) {
+function colorize(selector, color) {
     var f = new ColorFilter("");
-    f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), color));
-    f.apply(graph); 
+    f.addRule(new ColorFilter.ColorRule(selector, color));
+    f.apply(graph);
+}
+
+invisibleConnection = Connection.ConnectionStyle.INVISIBLE;
+
+function styleOutputConnections(selector, color, style) {
+    var f = new ConnectionFilter("");
+    f.addRule(new ConnectionFilter.ConnectionStyleRule(selector, color, style));
+    f.apply(graph);
 }
 
 function warn(propertyToMatch, regexp, propertyToShow) {
@@ -48,9 +56,9 @@ function removeSelfLoops() {
     f.apply(graph);
 }
 
-function remove(property, regexp) {
+function remove(selector) {
     var f = new RemoveFilter("");
-    f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp))));
+    f.addRule(new RemoveFilter.RemoveRule(selector));
     f.apply(graph);
 }
 
@@ -156,6 +164,12 @@ function removeEmptySlots(selector) {
     new RemoveEmptySlotsFilter("", selector).apply(graph);
 }
 
+function removeBlock(selector) {
+    var f = new RemoveBlockFilter("");
+    f.addRule(new RemoveBlockFilter.RemoveBlockRule(selector));
+    f.apply(graph);
+}
+
 function or(selectors) {
     return new OrSelector(selectors);
 }
@@ -170,6 +184,10 @@ function not(selector) {
 
 function successorOf(selector) {
     return new SuccessorSelector(selector);
+}
+
+function hasAnyNode(selector) {
+    return new AnySelector(selector);
 }
 
 function matches(property, value) {

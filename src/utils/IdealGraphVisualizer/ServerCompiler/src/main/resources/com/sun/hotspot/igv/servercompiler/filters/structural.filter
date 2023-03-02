@@ -1,7 +1,7 @@
 removeSelfLoops();
 
 // Hide secondary edges.
-remove("short_name", "FP|RA|IO|RP");
+remove(matches("short_name", "FP|RA|IO|RP"));
 
 // Pretty-print Bool nodes to be shown as output slots.
 function replaceComparisonWithSign(text) {
