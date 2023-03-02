@@ -37,6 +37,15 @@ function callJavaInfo(dump_spec) {
 }
 editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), "dump_spec", "extra_label", callJavaInfo);
 
+function callLeafInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 2) {
+    return null;
+  }
+  return dump_components[1];
+}
+editProperty(matches("name", "CallLeaf|CallLeafNoFP"), "dump_spec", "extra_label", callLeafInfo);
+
 // Add extra line to exception creation nodes with the name of the exception.
 function exceptionInfo(dump_spec) {
   dump_components = split_string(dump_spec);
