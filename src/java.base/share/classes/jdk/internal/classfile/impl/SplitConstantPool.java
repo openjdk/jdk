@@ -164,7 +164,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             int attrLen = buf.size() - pos;
             buf.patchInt(pos + 2, 4, attrLen - 6);
             buf.patchInt(pos + 6, 2, bsmSize);
-            return true;
         }
         else {
             Attribute<BootstrapMethodsAttribute> a
@@ -178,8 +177,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 }
             };
             a.writeTo(buf);
-            return true;
         }
+        return true;
     }
 
     @Override
@@ -336,7 +335,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return null;
     }
 
-    private<T> AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, String target) {
+    private AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, String target) {
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1;
              token = map.nextToken(hash, token)) {
@@ -485,7 +484,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             fullScan();
             return methodHandleEntry(refKind, reference);
         }
-        return internalAdd(new AbstractPoolEntry.MethodHandleEntryImpl(this, size, hash, refKind, (AbstractPoolEntry.AbstractMemberRefEntry) reference), hash);
+        return internalAdd(new AbstractPoolEntry.MethodHandleEntryImpl(this, size,
+                hash, refKind, (AbstractPoolEntry.AbstractMemberRefEntry) reference), hash);
     }
 
     @Override
@@ -496,7 +496,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         if (!canWriteDirect(nameAndType.constantPool()))
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
-        int hash = AbstractPoolEntry.hash2(TAG_INVOKEDYNAMIC, bootstrapMethodEntry.bsmIndex(), nameAndType.index());
+        int hash = AbstractPoolEntry.hash2(TAG_INVOKEDYNAMIC,
+                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap<PoolEntry> map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
@@ -510,7 +511,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return invokeDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.InvokeDynamicEntryImpl ce = new AbstractPoolEntry.InvokeDynamicEntryImpl(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
+        AbstractPoolEntry.InvokeDynamicEntryImpl ce =
+                new AbstractPoolEntry.InvokeDynamicEntryImpl(this, size, hash,
+                        (BootstrapMethodEntryImpl) bootstrapMethodEntry,
+                        (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
@@ -523,7 +527,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         if (!canWriteDirect(nameAndType.constantPool()))
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
-        int hash = AbstractPoolEntry.hash2(TAG_CONSTANTDYNAMIC, bootstrapMethodEntry.bsmIndex(), nameAndType.index());
+        int hash = AbstractPoolEntry.hash2(TAG_CONSTANTDYNAMIC,
+                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap<PoolEntry> map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
@@ -537,7 +542,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return constantDynamicEntry(bootstrapMethodEntry, nameAndType);
         }
 
-        AbstractPoolEntry.ConstantDynamicEntryImpl ce = new AbstractPoolEntry.ConstantDynamicEntryImpl(this, size, hash, (BootstrapMethodEntryImpl) bootstrapMethodEntry, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
+        AbstractPoolEntry.ConstantDynamicEntryImpl ce =
+                new AbstractPoolEntry.ConstantDynamicEntryImpl(this, size, hash,
+                        (BootstrapMethodEntryImpl) bootstrapMethodEntry,
+                        (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         internalAdd(ce, hash);
         return ce;
     }
