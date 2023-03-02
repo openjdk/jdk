@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 8303413
  * @summary Sanity test for JDK-specific sensitivity level watch event modifier
  * @modules jdk.unsupported
  * @library .. /test/lib
