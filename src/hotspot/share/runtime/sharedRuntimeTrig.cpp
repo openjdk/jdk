@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sharedRuntimeMath.hpp"
 
-// This file contains copies of the C fdlibm routines originally used by
-// StrictMath. Avoiding the indirect call through function
-// pointer out to libjava.so in SharedRuntime speeds these routines up
-// by roughly 15% on multiple architectures.
+// This file contains copies of the C fdlibm routines originally used
+// by StrictMath. The StrictMath sin, cos, and tan methods now use a
+// Java port of the algorithm in java.lang.Fdlibm.java.
 
 /*
  * __kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
