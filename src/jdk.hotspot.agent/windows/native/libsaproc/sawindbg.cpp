@@ -185,7 +185,7 @@ static void throwNewDebuggerException(JNIEnv* env, const char* errMsg) {
   do { \
     const HRESULT hr = (v); \
     if (hr != S_OK) { \
-      size_t errmsg_size = new char[strlen(str) + 32;
+      size_t errmsg_size = strlen(str) + 32;
       AutoArrayPtr<char> errmsg(new char[errmsg_size]); \
       if (errmsg == nullptr) { \
         THROW_NEW_DEBUGGER_EXCEPTION_(str, retValue); \
