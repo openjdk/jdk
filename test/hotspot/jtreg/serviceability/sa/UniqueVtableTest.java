@@ -31,12 +31,9 @@
  *          jdk.hotspot.agent/sun.jvm.hotspot.types
  *          jdk.hotspot.agent/sun.jvm.hotspot.types.basic
  *
- * @run main/othervm --add-opens=jdk.hotspot.agent/sun.jvm.hotspot.types.basic=ALL-UNNAMED UniqueVtableTest
+ * @run main/othervm UniqueVtableTest
  */
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -55,7 +52,6 @@ import jdk.test.lib.SA.SATestUtils;
 public class UniqueVtableTest {
 
     private HotSpotAgent agent;
-    private MethodHandle vtblForType;
 
     public UniqueVtableTest() {
     }
@@ -73,15 +69,6 @@ public class UniqueVtableTest {
         log("Attaching to process ID " + pid + "...");
         agent.attach((int) pid);
         log("Attached successfully.");
-
-        // agent.getTypeDataBase() returns HotSpotTypeDataBase (extends BasicTypeDataBase)
-        // We need a method from BasicTypeDataBase
-        //    Address vtblForType(Type type);
-
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        MethodHandles.Lookup classLookup = MethodHandles.privateLookupIn(BasicTypeDataBase.class, lookup);
-        vtblForType = classLookup.findVirtual(BasicTypeDataBase.class, "vtblForType",
-                 MethodType.methodType(Address.class, Type.class));
     }
 
     private void detach() {
@@ -91,42 +78,50 @@ public class UniqueVtableTest {
     }
 
     private void runTest() throws Throwable {
-        Map<Address, List<Type>> types = new HashMap<>();
+        Map<Address, List<Type>> vtableToTypesMap = new HashMap<>();
         Iterator<Type> it = agent.getTypeDataBase().getTypes();
-        int dupFound = 0;
+        int dupsFound = 0;
+        // agent.getTypeDataBase() returns HotSpotTypeDataBase (extends BasicTypeDataBase)
+        BasicTypeDataBase typeDB = (BasicTypeDataBase)(agent.getTypeDataBase());
+        int total = 0;
+        int no_vtable = 0;
+        int no_vtable_with_super = 0;
         while (it.hasNext()) {
+            total++;
             Type t = it.next();
-            Address vtable = (Address) vtblForType.invoke(agent.getTypeDataBase(), t);
-
+            Address vtable = typeDB.vtblForType(t);
             if (vtable != null) {
-                List<Type> typeList = types.get(vtable);
+                no_vtable++;
+                List<Type> typeList = vtableToTypesMap.get(vtable);
                 if (typeList == null) {
-                    types.put(vtable, new ArrayList<>(List.of(t)));
+                    vtableToTypesMap.put(vtable, new ArrayList<>(List.of(t)));
                 } else {
                     // duplicate found
-                    dupFound++;
+                    dupsFound++;
                     typeList.add(t);
                 }
             }
 
             if (vtable == null && t.getSuperclass() != null) {
-               log("WARNING: vtable is null for " + type2String(t)
-                  + ", CInt: " + t.isCIntegerType()
-                  + ", CStr: " + t.isCStringType()
-                  + ", JPrimitive: " + t.isJavaPrimitiveType()
-                  + ", Oop: " + t.isOopType()
-                  + ", Ptr: " + t.isPointerType());
+                no_vtable_with_super++;
+                log("WARNING: vtable is null for " + type2String(t)
+                    + ", CInt: " + t.isCIntegerType()
+                    + ", CStr: " + t.isCStringType()
+                    + ", JPrimitive: " + t.isJavaPrimitiveType()
+                    + ", Oop: " + t.isOopType()
+                    + ", Ptr: " + t.isPointerType());
             }
         }
-
-        if (dupFound > 0) {
-            types.forEach((vtable, list) -> {
+        log("total: " + total + ", no vtable: " + no_vtable
+            + ", no_vtable_with_super: " + no_vtable_with_super);
+        if (dupsFound > 0) {
+            vtableToTypesMap.forEach((vtable, list) -> {
                 if (list.size() > 1) {
                     log("Duplicate vtable: " + vtable + ": ");
                     list.forEach(t -> log("  - " + type2String(t)));
                 }
             });
-            throw new RuntimeException("Duplicate vtable(s) found: " + dupFound);
+            throw new RuntimeException("Duplicate vtable(s) found: " + dupsFound);
         }
     }
 
