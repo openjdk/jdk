@@ -33,12 +33,12 @@ import jdk.internal.misc.FileSystemOption;
  * watch service implementation that polls the file system.
  *
  * @deprecated
- * The polling implementation of {@link java.nio.file.WatchService WatchService}
- * no longer recognizes this {@link java.nio.file.WatchEvent.Modifier
- * WatchEvent.Modifier}.  This was the only {@code WatchService} in the JDK
- * which used this {@code WatchEvent.Modifier}.  Therefore this
- * {@code WatchEvent.Modifier} class is vestigial and should be removed in a
- * future release.
+ * The sensitivity levels were historically used by polling-based
+ * {@link java.nio.file.WatchService WatchService} implementations to configure
+ * the polling interval. They are are no longer used. The {@code WatchService}
+ * implementations in the JDK ignore these {@link java.nio.file.WatchEvent
+ * WatchEvent} modifiers if they are specified when registering a directory
+ * to be watched.
  *
  * @since 1.7
  */
