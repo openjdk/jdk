@@ -202,21 +202,6 @@ void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _bot_part.set_for_starts_humongous(obj_top, fill_size);
 }
 
-void HeapRegion::bot_set_for_starts_humongous(HeapWord* obj_top, size_t fill_size)
-{
-  _bot_part.set_for_starts_humongous(obj_top, fill_size);
-}
-
-void HeapRegion::change_continues_humongous(HeapRegion* first_hr) {
-  // assert(is_humongous(), "sanity / pre-condition");
-  assert(first_hr->is_starts_humongous(), "pre-condition");
-
-  _type.set_free();
-  report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
-  _type.set_continues_humongous();
-  _humongous_start_region = first_hr;
-}
-
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   assert(!is_humongous(), "sanity / pre-condition");
   assert(top() == bottom(), "should be empty");

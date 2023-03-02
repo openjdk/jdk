@@ -443,14 +443,11 @@ public:
   // obj_top : points to the top of the humongous object.
   // fill_size : size of the filler object at the end of the region series.
   void set_starts_humongous(HeapWord* obj_top, size_t fill_size);
-  void bot_set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
 
   // Makes the current region be a "continues humongous'
   // region. first_hr is the "start humongous" region of the series
   // which this region will be part of.
   void set_continues_humongous(HeapRegion* first_hr);
-
-  void change_continues_humongous(HeapRegion* first_hr);
 
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
