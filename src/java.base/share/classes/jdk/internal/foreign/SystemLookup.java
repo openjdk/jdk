@@ -58,8 +58,8 @@ public final class SystemLookup implements SymbolLookup {
     private static SymbolLookup makeSystemLookup() {
         try {
             return switch (CABI.current()) {
-                case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64 -> libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
-                case WIN_64 -> makeWindowsLookup(); // out of line to workaround javac crash
+                case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64, LINUX_RISCV_64 -> libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
+                case WIN_64, WIN_AARCH_64 -> makeWindowsLookup(); // out of line to workaround javac crash
             };
         } catch (Throwable ex) {
             // This can happen in the event of a library loading failure - e.g. if one of the libraries the
@@ -119,8 +119,8 @@ public final class SystemLookup implements SymbolLookup {
     private static Path jdkLibraryPath(String name) {
         Path javahome = Path.of(GetPropertyAction.privilegedGetProperty("java.home"));
         String lib = switch (CABI.current()) {
-            case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64 -> "lib";
-            case WIN_64 -> "bin";
+            case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64, LINUX_RISCV_64 -> "lib";
+            case WIN_64, WIN_AARCH_64 -> "bin";
         };
         String libname = System.mapLibraryName(name);
         return javahome.resolve(lib).resolve(libname);
@@ -193,8 +193,7 @@ public final class SystemLookup implements SymbolLookup {
         wscanf_s,
 
         // time
-        gmtime
-        ;
+        gmtime;
 
         static WindowsFallbackSymbols valueOfOrNull(String name) {
             try {

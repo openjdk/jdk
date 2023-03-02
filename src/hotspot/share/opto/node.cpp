@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,33 +616,7 @@ void Node::destruct(PhaseValues* phase) {
     //assert(def->out(def->outcnt()-1) == (Node *)this,"bad def-use hacking in reclaim");
   }
   assert(outcnt() == 0, "deleting a node must not leave a dangling use");
-  // See if the input array was allocated just prior to the object
-  int edge_size = _max*sizeof(void*);
-  int out_edge_size = _outmax*sizeof(void*);
-  char *edge_end = ((char*)_in) + edge_size;
-  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
-  int node_size = size_of();
 
-  // Free the output edge array
-  if (out_edge_size > 0) {
-    compile->node_arena()->Afree(out_array, out_edge_size);
-  }
-
-  // Free the input edge array and the node itself
-  if( edge_end == (char*)this ) {
-    // It was; free the input array and object all in one hit
-#ifndef ASSERT
-    compile->node_arena()->Afree(_in,edge_size+node_size);
-#endif
-  } else {
-    // Free just the input array
-    compile->node_arena()->Afree(_in,edge_size);
-
-    // Free just the object
-#ifndef ASSERT
-    compile->node_arena()->Afree(this,node_size);
-#endif
-  }
   if (is_macro()) {
     compile->remove_macro_node(this);
   }
@@ -665,13 +639,43 @@ void Node::destruct(PhaseValues* phase) {
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->unregister_potential_barrier_node(this);
+
+  // See if the input array was allocated just prior to the object
+  int edge_size = _max*sizeof(void*);
+  int out_edge_size = _outmax*sizeof(void*);
+  char *in_array = ((char*)_in);
+  char *edge_end = in_array + edge_size;
+  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
+  int node_size = size_of();
+
 #ifdef ASSERT
   // We will not actually delete the storage, but we'll make the node unusable.
+  compile->remove_modified_node(this);
   *(address*)this = badAddress;  // smash the C++ vtbl, probably
   _in = _out = (Node**) badAddress;
   _max = _cnt = _outmax = _outcnt = 0;
-  compile->remove_modified_node(this);
 #endif
+
+  // Free the output edge array
+  if (out_edge_size > 0) {
+    compile->node_arena()->Afree(out_array, out_edge_size);
+  }
+
+  // Free the input edge array and the node itself
+  if( edge_end == (char*)this ) {
+    // It was; free the input array and object all in one hit
+#ifndef ASSERT
+    compile->node_arena()->Afree(in_array, edge_size+node_size);
+#endif
+  } else {
+    // Free just the input array
+    compile->node_arena()->Afree(in_array, edge_size);
+
+    // Free just the object
+#ifndef ASSERT
+    compile->node_arena()->Afree(this, node_size);
+#endif
+  }
 }
 
 //------------------------------grow-------------------------------------------
@@ -734,8 +738,11 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
+}
+
+bool Node::is_not_dead(const Node* n) {
+  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
 }
 
 bool Node::is_reachable_from_root() const {
@@ -1145,9 +1152,9 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '+VerifyIterativeGVN' checks
+// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
 // these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with +VerifyIterativeGVN!
+// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
@@ -1380,6 +1387,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   ResourceMark rm;
   Node_List nstack;
+  VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1387,6 +1395,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (!dead_set.test_set(dead->_idx)) {
+      // If dead has any live uses, those are now still attached. Notify them before we lose them.
+      igvn->add_users_to_worklist(dead);
+    }
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(igvn);
     }
@@ -2277,11 +2289,11 @@ void PrintBFS::print_node_idx(const Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
-    sprintf(buf,"_");           // null
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
   } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
   } else {
-    sprintf(buf, "o%d", n->_idx); // old node
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
   tty->print("%6s", buf);
 }
@@ -2289,7 +2301,7 @@ void PrintBFS::print_node_idx(const Node* n) {
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
-  sprintf(buf, "B%d", b->_pre_order);
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
   tty->print("%7s", buf);
 }
 
@@ -2543,10 +2555,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
-    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
-      st->print("  Interface:");
-    } else if (toop) {
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");

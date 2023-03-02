@@ -47,7 +47,7 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
   }
 
   if (subk != NULL) {
-    switch (Compile::current()->static_subtype_check(superk, subk)) {
+    switch (Compile::current()->static_subtype_check(superk, subk, false)) {
       case Compile::SSC_always_false:
         return TypeInt::CC_GT;
       case Compile::SSC_always_true:
@@ -167,19 +167,10 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
   if (super_t->singleton() && subk != NULL) {
-    Node* subklass = NULL;
-    if (sub_t->isa_oopptr()) {
-      Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
-      subklass  = phase->transform(LoadKlassNode::make(*phase, NULL, C->immutable_memory(), adr, TypeInstPtr::KLASS));
-      record_for_cleanup(subklass, phase);
-    } else {
-      subklass = obj_or_subklass;
-    }
-
     const Type* cached_t = Value(phase); // cache the type to validate consistency
     switch (C->static_subtype_check(superk, subk)) {
       case Compile::SSC_easy_test: {
-        return verify_helper(phase, subklass, cached_t);
+        return verify_helper(phase, load_klass(phase), cached_t);
       }
       case Compile::SSC_full_test: {
         Node* p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
@@ -189,6 +180,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
         int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
         bool might_be_cache = (phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
         if (!might_be_cache) {
+          Node* subklass = load_klass(phase);
           Node* chk_off_X = chk_off;
 #ifdef _LP64
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
@@ -210,4 +202,19 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
 
   return true;
 }
+
+Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
+  Node* obj_or_subklass = in(ObjOrSubKlass);
+  const Type* sub_t = phase->type(obj_or_subklass);
+  Node* subklass = NULL;
+  if (sub_t->isa_oopptr()) {
+    Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
+    subklass  = phase->transform(LoadKlassNode::make(*phase, NULL, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
+    record_for_cleanup(subklass, phase);
+  } else {
+    subklass = obj_or_subklass;
+  }
+  return subklass;
+}
+
 #endif

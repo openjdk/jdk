@@ -13,7 +13,7 @@ public class MethodReferenceTestVarHandle_neg {
       int apply(int[] arr, int idx, int val);
   }
 
-  public static void main(String[] args) {
+  public static void meth() {
       VarHandle vh = MethodHandles.arrayElementVarHandle(int[].class);
 
       // Return type of Setter::apply does not match return type of VarHandle::set

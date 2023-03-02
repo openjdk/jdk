@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class RetTable {
 
   void add_jsr(int return_bci, int target_bci);   // Adds entry to list
  public:
-  RetTable()                                                  { _first = NULL; }
+  RetTable()                                                  { _first = nullptr; }
   void compute_ret_table(const methodHandle& method);
   void update_ret_table(int bci, int delta);
   RetTableEntry* find_jsrs_for_target(int targBci);

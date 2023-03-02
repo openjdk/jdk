@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -115,31 +115,65 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
                                           MacroAssembler::PreservationLevel preservation_level) {
-  Label done, not_weak, verify;
+  Label done, tagged, weak_tagged, verify;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
-  __ beq(CCR0, not_weak);     // Test for jweak tag.
+  __ andi_(tmp1, value, JNIHandles::tag_mask);
+  __ bne(CCR0, tagged);       // Test for tag.
 
-  // Resolve (untagged) jobject.
-  __ clrrdi(value, value, JNIHandles::weak_tag_size);
-  load_at(masm, IN_NATIVE | ON_PHANTOM_OOP_REF, T_OBJECT,
-          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, // no uncoloring
+                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
   __ b(verify);
 
-  __ bind(not_weak);
-  load_at(masm, IN_NATIVE, T_OBJECT,
-          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ bind(tagged);
+  __ andi_(tmp1, value, JNIHandles::TypeTag::weak_global);
+  __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
+  __ bne(CCR0, weak_tagged);   // Test for jweak tag.
+
+  __ access_load_at(T_OBJECT, IN_NATIVE,
+                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ b(verify);
+
+  __ bind(weak_tagged);
+  __ access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
+                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
 
   __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
 }
 
+// Generic implementation. GCs can provide an optimized one.
+void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register value,
+                                          Register tmp1, Register tmp2,
+                                          MacroAssembler::PreservationLevel preservation_level) {
+  Label done;
+
+  __ cmpdi(CCR0, value, 0);
+  __ beq(CCR0, done);         // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    __ andi_(tmp1, value, JNIHandles::TypeTag::global);
+    __ bne(CCR0, valid_global_tag);       // Test for global tag.
+    __ stop("non global jobject using resolve_global_jobject");
+    __ bind(valid_global_tag);
+  }
+#endif
+
+  __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
+  __ access_load_at(T_OBJECT, IN_NATIVE,
+                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ verify_oop(value, FILE_AND_LINE);
+
+  __ bind(done);
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clrrdi(dst, obj, JNIHandles::weak_tag_size);
+  __ clrrdi(dst, obj, JNIHandles::tag_size);
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
 }
 
@@ -163,7 +197,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
 
   // Low order half of 64 bit value is currently used.
-  __ ld(R0, in_bytes(bs_nm->thread_disarmed_offset()), R16_thread);
+  __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
   __ cmpw(CCR0, R0, tmp);
 
   __ bnectrl(CCR0);
@@ -220,4 +254,8 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ bind(skip_barrier);
 
   __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
+  __ verify_oop(oop, msg);
 }

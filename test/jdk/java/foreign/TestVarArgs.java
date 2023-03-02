@@ -25,16 +25,20 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.ValueLayout;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
@@ -46,6 +50,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.MemoryLayout.PathElement.*;
+import static org.testng.Assert.*;
 
 public class TestVarArgs extends CallGeneratorHelper {
 
@@ -65,7 +70,7 @@ public class TestVarArgs extends CallGeneratorHelper {
 
     static final MemorySegment VARARGS_ADDR = findNativeOrThrow("varargs");
 
-    @Test(dataProvider = "functions")
+    @Test(dataProvider = "variadicFunctions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
                             List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Arg> args = makeArgs(paramTypes, fields);
@@ -104,6 +109,58 @@ public class TestVarArgs extends CallGeneratorHelper {
 
             // args checked by upcall
         }
+    }
+
+    private static List<ParamType> createParameterTypesForStruct(int extraIntArgs) {
+        List<ParamType> paramTypes = new ArrayList<ParamType>();
+        for (int i = 0; i < extraIntArgs; i++) {
+            paramTypes.add(ParamType.INT);
+        }
+        paramTypes.add(ParamType.STRUCT);
+        return paramTypes;
+    }
+
+    private static List<StructFieldType> createFieldsForStruct(int fieldCount, StructFieldType fieldType) {
+        List<StructFieldType> fields = new ArrayList<StructFieldType>();
+        for (int i = 0; i < fieldCount; i++) {
+            fields.add(fieldType);
+        }
+        return fields;
+    }
+
+    @DataProvider(name = "variadicFunctions")
+    public static Object[][] variadicFunctions() {
+        List<Object[]> downcalls = new ArrayList<>();
+
+        var functionsDowncalls = functions();
+        for (var array : functionsDowncalls) {
+            downcalls.add(array);
+        }
+
+        // Test struct with 4 floats
+        int extraIntArgs = 0;
+        List<StructFieldType> fields = createFieldsForStruct(4, StructFieldType.FLOAT);
+        List<ParamType> paramTypes = createParameterTypesForStruct(extraIntArgs);
+        downcalls.add(new Object[] { 0, "", Ret.VOID, paramTypes, fields });
+
+        // Test struct with 4 floats without enough registers for all fields
+        extraIntArgs = 6;
+        fields = createFieldsForStruct(4, StructFieldType.FLOAT);
+        paramTypes = createParameterTypesForStruct(extraIntArgs);
+        downcalls.add(new Object[] { 0, "", Ret.VOID, paramTypes, fields });
+
+        // Test struct with 2 doubles without enough registers for all fields
+        extraIntArgs = 7;
+        fields = createFieldsForStruct(2, StructFieldType.DOUBLE);
+        paramTypes = createParameterTypesForStruct(extraIntArgs);
+        downcalls.add(new Object[] { 0, "", Ret.VOID, paramTypes, fields });
+
+        // Test struct with 2 ints without enough registers for all fields
+        fields = createFieldsForStruct(2, StructFieldType.INT);
+        paramTypes = createParameterTypesForStruct(extraIntArgs);
+        downcalls.add(new Object[] { 0, "", Ret.VOID, paramTypes, fields });
+
+        return downcalls.toArray(new Object[0][]);
     }
 
     private static List<Arg> makeArgs(List<ParamType> paramTypes, List<StructFieldType> fields) throws ReflectiveOperationException {
@@ -262,6 +319,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             S_PPF,
             S_PPD,
             S_PPP,
+            S_FFFF,
             ;
 
             public static NativeType of(String type) {

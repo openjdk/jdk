@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,26 +37,23 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import javax.net.ssl.SSLContext;
-
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
  * @bug 8292044
  * @summary Tests behaviour of HttpClient when server responds with 102 or 103 status codes
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */
@@ -86,7 +83,7 @@ public class Response1xxTest implements HttpServerAdapters {
         http1RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
                 .port(serverSocket.getLocalPort()).build().toString();
 
-        http2Server = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2Server = HttpTestServer.create(HTTP_2);
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
         http2Server.addHandler(new Http2Handler(), "/http2/100");
@@ -104,8 +101,7 @@ public class Response1xxTest implements HttpServerAdapters {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        https2Server = HttpTestServer.of(new Http2TestServer("localhost",
-                true, sslContext));
+        https2Server = HttpTestServer.create(HTTP_2, sslContext);
         https2Server.addHandler(new Http2Handler(), "/http2/101");
         https2RequestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
                 .port(https2Server.getAddress().getPort())
@@ -366,7 +362,7 @@ public class Response1xxTest implements HttpServerAdapters {
     @Test
     public void test1xxForHTTP2() throws Exception {
         final HttpClient client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
+                .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         TRACKER.track(client);
         final URI[] requestURIs = new URI[]{
@@ -378,7 +374,7 @@ public class Response1xxTest implements HttpServerAdapters {
             System.out.println("Issuing request to " + requestURI);
             final HttpResponse<String> response = client.send(request,
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            Assert.assertEquals(response.version(), HttpClient.Version.HTTP_2,
+            Assert.assertEquals(response.version(), HTTP_2,
                     "Unexpected HTTP version in response");
             Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
             Assert.assertEquals(response.body(), EXPECTED_RSP_BODY, "Unexpected response body");
@@ -394,7 +390,7 @@ public class Response1xxTest implements HttpServerAdapters {
     @Test
     public void test1xxRequestTimeout() throws Exception {
         final HttpClient client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
+                .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         TRACKER.track(client);
         final URI requestURI = new URI(http2RequestURIBase + "/only-informational");
@@ -434,7 +430,7 @@ public class Response1xxTest implements HttpServerAdapters {
     @Test
     public void testSecureHTTP2Unexpected101() throws Exception {
         final HttpClient client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
+                .version(HTTP_2)
                 .sslContext(sslContext)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         TRACKER.track(client);
@@ -453,7 +449,7 @@ public class Response1xxTest implements HttpServerAdapters {
     @Test
     public void testPlainHTTP2Unexpected101() throws Exception {
         final HttpClient client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
+                .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         TRACKER.track(client);
         // when using HTTP2 version against a "http://" (non-secure) URI

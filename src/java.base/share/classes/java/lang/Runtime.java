@@ -156,6 +156,11 @@ public class Runtime {
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
      *
+     * @implNote
+     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.Runtime}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code Runtime.exit()} is logged.
+     *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
      *         indicates abnormal termination.
@@ -569,6 +574,8 @@ public class Runtime {
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the specified environment.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.

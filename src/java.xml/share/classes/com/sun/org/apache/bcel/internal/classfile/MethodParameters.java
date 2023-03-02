@@ -24,36 +24,36 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.stream.Stream;
 
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class represents a MethodParameters attribute.
  *
- * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.24">
- * The class File Format : The MethodParameters Attribute</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.24"> The class File Format :
+ *      The MethodParameters Attribute</a>
  * @since 6.0
  */
-public class MethodParameters extends Attribute {
+public class MethodParameters extends Attribute implements Iterable<MethodParameter> {
 
-    private MethodParameter[] parameters = new MethodParameter[0];
+    /**
+     * Empty array.
+     */
+    private static final MethodParameter[] EMPTY_METHOD_PARAMETER_ARRAY = {};
 
-    MethodParameters(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException {
-        super(Const.ATTR_METHOD_PARAMETERS, name_index, length, constant_pool);
+    private MethodParameter[] parameters = EMPTY_METHOD_PARAMETER_ARRAY;
 
-        final int parameters_count = input.readUnsignedByte();
-        parameters = new MethodParameter[parameters_count];
-        for (int i = 0; i < parameters_count; i++) {
+    MethodParameters(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        super(Const.ATTR_METHOD_PARAMETERS, nameIndex, length, constantPool);
+
+        final int parameterCount = input.readUnsignedByte();
+        parameters = new MethodParameter[parameterCount];
+        for (int i = 0; i < parameterCount; i++) {
             parameters[i] = new MethodParameter(input);
         }
-    }
-
-    public MethodParameter[] getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(final MethodParameter[] parameters) {
-        this.parameters = parameters;
     }
 
     @Override
@@ -62,14 +62,12 @@ public class MethodParameters extends Attribute {
     }
 
     @Override
-    public Attribute copy(final ConstantPool _constant_pool) {
+    public Attribute copy(final ConstantPool constantPool) {
         final MethodParameters c = (MethodParameters) clone();
         c.parameters = new MethodParameter[parameters.length];
 
-        for (int i = 0; i < parameters.length; i++) {
-            c.parameters[i] = parameters[i].copy();
-        }
-        c.setConstantPool(_constant_pool);
+        Arrays.setAll(c.parameters, i -> parameters[i].copy());
+        c.setConstantPool(constantPool);
         return c;
     }
 
@@ -77,14 +75,27 @@ public class MethodParameters extends Attribute {
      * Dump method parameters attribute to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
-       public void dump(final DataOutputStream file) throws IOException {
-           super.dump(file);
-           file.writeByte(parameters.length);
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeByte(parameters.length);
         for (final MethodParameter parameter : parameters) {
             parameter.dump(file);
         }
+    }
+
+    public MethodParameter[] getParameters() {
+        return parameters;
+    }
+
+    @Override
+    public Iterator<MethodParameter> iterator() {
+        return Stream.of(parameters).iterator();
+    }
+
+    public void setParameters(final MethodParameter[] parameters) {
+        this.parameters = parameters;
     }
 }

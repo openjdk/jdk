@@ -446,14 +446,15 @@ JCOV_INPUT_JDK=@JCOV_INPUT_JDK@
 JCOV_FILTERS=@JCOV_FILTERS@
 
 # AddressSanitizer
-export ASAN_ENABLED:=@ASAN_ENABLED@
-export DEVKIT_LIB_DIR:=@DEVKIT_LIB_DIR@
-ifeq ($(ASAN_ENABLED), yes)
-  export ASAN_OPTIONS=handle_segv=0 detect_leaks=0
-  ifneq ($(DEVKIT_LIB_DIR),)
-    export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(DEVKIT_LIB_DIR)
-  endif
-endif
+ASAN_ENABLED:=@ASAN_ENABLED@
+
+# LeakSanitizer
+LSAN_ENABLED:=@LSAN_ENABLED@
+
+# UndefinedBehaviorSanitizer
+UBSAN_ENABLED:=@UBSAN_ENABLED@
+UBSAN_CFLAGS:=@UBSAN_CFLAGS@
+UBSAN_LDFLAGS:=@UBSAN_LDFLAGS@
 
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@

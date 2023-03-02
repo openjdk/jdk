@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void DataLayout::clean_weak_klass_links(bool always_clean) {
 
 // Constructor for invalid ProfileData.
 ProfileData::ProfileData() {
-  _data = NULL;
+  _data = nullptr;
 }
 
 char* ProfileData::print_data_on_helper(const MethodData* md) const {
@@ -118,7 +118,7 @@ char* ProfileData::print_data_on_helper(const MethodData* md) const {
       fatal("unexpected tag %d", dp->tag());
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
@@ -126,8 +126,8 @@ void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
 }
 
 void ProfileData::print_shared(outputStream* st, const char* name, const char* extra) const {
-  st->print("bci: %d", bci());
-  st->fill_to(tab_width_one);
+  st->print("bci: %d ", bci());
+  st->fill_to(tab_width_one + 1);
   st->print("%s", name);
   tab(st);
   int trap = trap_state();
@@ -135,7 +135,7 @@ void ProfileData::print_shared(outputStream* st, const char* name, const char* e
     char buf[100];
     st->print("trap(%s) ", Deoptimization::format_trap_state(buf, sizeof(buf), trap));
   }
-  if (extra != NULL) {
+  if (extra != nullptr) {
     st->print("%s", extra);
   }
   int flags = data()->flags();
@@ -317,8 +317,8 @@ void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
   for (int i = 0; i < _number_of_entries; i++) {
     intptr_t p = type(i);
     Klass* k = (Klass*)klass_part(p);
-    if (k != NULL && (always_clean || !k->is_loader_alive())) {
-      set_type(i, with_status((Klass*)NULL, p));
+    if (k != nullptr && (always_clean || !k->is_loader_alive())) {
+      set_type(i, with_status((Klass*)nullptr, p));
     }
   }
 }
@@ -326,8 +326,8 @@ void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
 void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
   intptr_t p = type();
   Klass* k = (Klass*)klass_part(p);
-  if (k != NULL && (always_clean || !k->is_loader_alive())) {
-    set_type(with_status((Klass*)NULL, p));
+  if (k != nullptr && (always_clean || !k->is_loader_alive())) {
+    set_type(with_status((Klass*)nullptr, p));
   }
 }
 
@@ -406,7 +406,7 @@ void VirtualCallTypeData::print_data_on(outputStream* st, const char* extra) con
 void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
     for (uint row = 0; row < row_limit(); row++) {
     Klass* p = receiver(row);
-    if (p != NULL && (always_clean || !p->is_loader_alive())) {
+    if (p != nullptr && (always_clean || !p->is_loader_alive())) {
       clear_row(row);
     }
   }
@@ -416,7 +416,7 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
   for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL)  entries++;
+    if (receiver(row) != nullptr)  entries++;
   }
 #if INCLUDE_JVMCI
   st->print_cr("count(%u) nonprofiled_count(%u) entries(%u)", count(), nonprofiled_count(), entries);
@@ -425,12 +425,12 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
 #endif
   int total = count();
   for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
+    if (receiver(row) != nullptr) {
       total += receiver_count(row);
     }
   }
   for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
+    if (receiver(row) != nullptr) {
       tab(st);
       receiver(row)->print_value_on(st);
       st->print_cr("(%u %4.2f)", receiver_count(row), (float) receiver_count(row) / (float) total);
@@ -805,7 +805,7 @@ void* FailedSpeculation::operator new(size_t size, size_t fs_size) throw() {
   return CHeapObj<mtCompiler>::operator new(fs_size, std::nothrow);
 }
 
-FailedSpeculation::FailedSpeculation(address speculation, int speculation_len) : _data_len(speculation_len), _next(NULL) {
+FailedSpeculation::FailedSpeculation(address speculation, int speculation_len) : _data_len(speculation_len), _next(nullptr) {
   memcpy(data(), speculation, speculation_len);
 }
 
@@ -814,15 +814,15 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
   jlong head = (jlong)(address) *failed_speculations_address;
   if ((head & 0x1) == 0x1) {
     stringStream st;
-    if (nm != NULL) {
+    if (nm != nullptr) {
       st.print("%d", nm->compile_id());
       Method* method = nm->method();
       st.print_raw("{");
-      if (method != NULL) {
+      if (method != nullptr) {
         method->print_name(&st);
       } else {
         const char* jvmci_name = nm->jvmci_name();
-        if (jvmci_name != NULL) {
+        if (jvmci_name != nullptr) {
           st.print_raw(jvmci_name);
         }
       }
@@ -835,10 +835,10 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
 }
 
 bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
-  assert(failed_speculations_address != NULL, "must be");
+  assert(failed_speculations_address != nullptr, "must be");
   size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
   FailedSpeculation* fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
-  if (fs == NULL) {
+  if (fs == nullptr) {
     // no memory -> ignore failed speculation
     return false;
   }
@@ -848,9 +848,9 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
 
   FailedSpeculation** cursor = failed_speculations_address;
   do {
-    if (*cursor == NULL) {
-      FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) NULL, fs);
-      if (old_fs == NULL) {
+    if (*cursor == nullptr) {
+      FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
+      if (old_fs == nullptr) {
         // Successfully appended fs to end of the list
         return true;
       }
@@ -862,9 +862,9 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
 }
 
 void FailedSpeculation::free_failed_speculations(FailedSpeculation** failed_speculations_address) {
-  assert(failed_speculations_address != NULL, "must be");
+  assert(failed_speculations_address != nullptr, "must be");
   FailedSpeculation* fs = *failed_speculations_address;
-  while (fs != NULL) {
+  while (fs != nullptr) {
     FailedSpeculation* next = fs->next();
     delete fs;
     fs = next;
@@ -1099,7 +1099,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
 // Get the data at an arbitrary (sort of) data index.
 ProfileData* MethodData::data_at(int data_index) const {
   if (out_of_bounds(data_index)) {
-    return NULL;
+    return nullptr;
   }
   DataLayout* data_layout = data_layout_at(data_index);
   return data_layout->data_in();
@@ -1144,7 +1144,7 @@ ProfileData* DataLayout::data_in() {
   case DataLayout::no_tag:
   default:
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   case DataLayout::bit_data_tag:
     return new BitData(this);
   case DataLayout::counter_data_tag:
@@ -1186,7 +1186,7 @@ DataLayout* MethodData::next_data_layout(DataLayout* current) const {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();
   if (out_of_bounds(next_index)) {
-    return NULL;
+    return nullptr;
   }
   DataLayout* next = data_layout_at(next_index);
   return next;
@@ -1203,7 +1203,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
     data->post_initialize(stream, this);
   }
   if (_parameters_type_data_di != no_parameters) {
-    parameters_type_data()->post_initialize(NULL, this);
+    parameters_type_data()->post_initialize(nullptr, this);
   }
 }
 
@@ -1310,7 +1310,7 @@ void MethodData::init() {
 
 #if INCLUDE_JVMCI
   _jvmci_ir_size = 0;
-  _failed_speculations = NULL;
+  _failed_speculations = nullptr;
 #endif
 
 #if INCLUDE_RTM_OPT
@@ -1345,11 +1345,11 @@ bool MethodData::is_mature() const {
 address MethodData::bci_to_dp(int bci) {
   ResourceMark rm;
   DataLayout* data = data_layout_before(bci);
-  DataLayout* prev = NULL;
+  DataLayout* prev = nullptr;
   for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() >= bci) {
       if (data->bci() == bci)  set_hint_di(dp_to_di((address)data));
-      else if (prev != NULL)   set_hint_di(dp_to_di((address)prev));
+      else if (prev != nullptr)   set_hint_di(dp_to_di((address)prev));
       return (address)data;
     }
     prev = data;
@@ -1357,7 +1357,7 @@ address MethodData::bci_to_dp(int bci) {
   return (address)limit_data_position();
 }
 
-// Translate a bci to its corresponding data, or NULL.
+// Translate a bci to its corresponding data, or null.
 ProfileData* MethodData::bci_to_data(int bci) {
   DataLayout* data = data_layout_before(bci);
   for ( ; is_valid(data); data = next_data_layout(data)) {
@@ -1368,7 +1368,7 @@ ProfileData* MethodData::bci_to_data(int bci) {
       break;
     }
   }
-  return bci_to_extra_data(bci, NULL, false);
+  return bci_to_extra_data(bci, nullptr, false);
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {
@@ -1396,25 +1396,25 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
     // since the data structure is monotonic.
     switch(dp->tag()) {
     case DataLayout::no_tag:
-      return NULL;
+      return nullptr;
     case DataLayout::arg_info_data_tag:
       dp = end;
-      return NULL; // ArgInfoData is at the end of extra data section.
+      return nullptr; // ArgInfoData is at the end of extra data section.
     case DataLayout::bit_data_tag:
-      if (m == NULL && dp->bci() == bci) {
+      if (m == nullptr && dp->bci() == bci) {
         return new BitData(dp);
       }
       break;
     case DataLayout::speculative_trap_data_tag:
-      if (m != NULL) {
+      if (m != nullptr) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
         // data->method() may be null in case of a concurrent
         // allocation. Maybe it's for the same method. Try to use that
         // entry in that case.
         if (dp->bci() == bci) {
-          if (data->method() == NULL) {
+          if (data->method() == nullptr) {
             assert(concurrent, "impossible because no concurrent allocation");
-            return NULL;
+            return nullptr;
           } else if (data->method() == m) {
             return data;
           }
@@ -1425,11 +1425,11 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
       fatal("unexpected tag %d", dp->tag());
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-// Translate a bci to its corresponding extra data, or NULL.
+// Translate a bci to its corresponding extra data, or null.
 ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_missing) {
   // This code assumes an entry for a SpeculativeTrapData is 2 cells
   assert(2*DataLayout::compute_size_in_bytes(BitData::static_cell_count()) ==
@@ -1437,8 +1437,8 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
          "code needs to be adjusted");
 
   // Do not create one of these if method has been redefined.
-  if (m != NULL && m->is_old()) {
-    return NULL;
+  if (m != nullptr && m->is_old()) {
+    return nullptr;
   }
 
   DataLayout* dp  = extra_data_base();
@@ -1448,7 +1448,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   // all entries have the same size and non atomic concurrent
   // allocation would result in a corrupted extra data space.
   ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
-  if (result != NULL) {
+  if (result != nullptr) {
     return result;
   }
 
@@ -1457,16 +1457,16 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
     // Check again now that we have the lock. Another thread may
     // have added extra data entries.
     ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
-    if (result != NULL || dp >= end) {
+    if (result != nullptr || dp >= end) {
       return result;
     }
 
-    assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != NULL), "should be free");
+    assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != nullptr), "should be free");
     assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
-    u1 tag = m == NULL ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
+    u1 tag = m == nullptr ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
     // SpeculativeTrapData is 2 slots. Make sure we have room.
-    if (m != NULL && next_extra(dp)->tag() != DataLayout::no_tag) {
-      return NULL;
+    if (m != nullptr && next_extra(dp)->tag() != DataLayout::no_tag) {
+      return nullptr;
     }
     DataLayout temp;
     temp.initialize(tag, bci, 0);
@@ -1482,7 +1482,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
       return data;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 ArgInfoData *MethodData::arg_info() {
@@ -1492,7 +1492,7 @@ ArgInfoData *MethodData::arg_info() {
     if (dp->tag() == DataLayout::arg_info_data_tag)
       return new ArgInfoData(dp);
   }
-  return NULL;
+  return nullptr;
 }
 
 // Printing
@@ -1595,7 +1595,7 @@ int MethodData::profile_arguments_flag() {
 }
 
 bool MethodData::profile_arguments() {
-  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all && TypeProfileArgsLimit > 0;
 }
 
 bool MethodData::profile_arguments_jsr292_only() {
@@ -1737,7 +1737,7 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
     case DataLayout::speculative_trap_data_tag: {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
-      assert(m != NULL, "should have a method");
+      assert(m != nullptr, "should have a method");
       if (!cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead
         // SpeculativeTrapData entries that have been seen so
@@ -1781,7 +1781,7 @@ void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
     case DataLayout::speculative_trap_data_tag: {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
-      assert(m != NULL && cl->is_live(m), "Method should exist");
+      assert(m != nullptr && cl->is_live(m), "Method should exist");
       break;
     }
     case DataLayout::bit_data_tag:
@@ -1804,7 +1804,7 @@ void MethodData::clean_method_data(bool always_clean) {
     data->clean_weak_klass_links(always_clean);
   }
   ParametersTypeData* parameters = parameters_type_data();
-  if (parameters != NULL) {
+  if (parameters != nullptr) {
     parameters->clean_weak_klass_links(always_clean);
   }
 

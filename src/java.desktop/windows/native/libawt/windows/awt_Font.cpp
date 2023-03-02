@@ -25,6 +25,7 @@
 
 #include "awt.h"
 #include <math.h>
+#include <strsafe.h>
 #include "jlong.h"
 #include "awt_Font.h"
 #include "awt_Toolkit.h"
@@ -287,7 +288,6 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                 return NULL;
             }
             LPCWSTR textComponentFontName = JNU_GetStringPlatformChars(env, jTextComponentFontName, NULL);
-
             awtFont->m_textInput = -1;
             for (int i = 0; i < cfnum; i++) {
                 // nativeName is a pair of platform fontname and its charset
@@ -463,7 +463,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
 
     // Set font name
     WCHAR tmpname[80];
-    wcscpy(tmpname, name);
+    StringCchCopy(tmpname, 80, name);
     WCHAR* delimit = wcschr(tmpname, L',');
     if (delimit != NULL)
         *delimit = L'\0';  // terminate the string after the font name.
@@ -471,7 +471,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
     strip_tail(tmpname,L""); //strip possible trailing whitespace
     strip_tail(tmpname,L"Italic");
     strip_tail(tmpname,L"Bold");
-    wcscpy(&(logFont.lfFaceName[0]), tmpname);
+    StringCchCopy(&(logFont.lfFaceName[0]), LF_FACESIZE, tmpname);
     HFONT hFont = ::CreateFontIndirect(&logFont);
     DASSERT(hFont != NULL);
     // get a expanded or condensed version if its specified.
@@ -502,7 +502,7 @@ HFONT AwtFont::CreateHFont(LPCWSTR name, int style, int height,
     // 80 > (max face name(=30) + strlen("CHINESEBIG5_CHARSET"))
     // longName doesn't have to be printable.  So, it is OK not to convert.
 
-    wsprintf(longName, L"%ls-%d-%d", name, style, height);
+    StringCchPrintf(longName, 80, L"%ls-%d-%d", name, style, height);
 
     HFONT hFont = NULL;
 
@@ -1750,12 +1750,12 @@ LPSTR CCombinedSegTable::GetCodePageSubkey()
     lpszCP++; // cf lpszCP = "932"
 
     char szSubKey[KEYLEN];
-    strcpy(szSubKey, "EUDC\\");
+    StringCchCopyA(szSubKey, KEYLEN, "EUDC\\");
     if ((strlen(szSubKey) + strlen(lpszCP)) >= KEYLEN) {
         return NULL;
     }
-    strcpy(&(szSubKey[strlen(szSubKey)]), lpszCP);
-    strcpy(m_szCodePageSubkey, szSubKey);
+    StringCchCatA(szSubKey, KEYLEN, lpszCP);
+    StringCchCopyA(m_szCodePageSubkey, KEYLEN, szSubKey);
     return m_szCodePageSubkey;
 }
 
@@ -1780,7 +1780,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
 
     // get EUDC font file name
     WCHAR szFamilyName[80];
-    wcscpy(szFamilyName, GetFontName());
+    StringCchCopy(szFamilyName, 80, GetFontName());
     WCHAR* delimit = wcschr(szFamilyName, L',');
     if (delimit != NULL)
         *delimit = L'\0';
@@ -1799,7 +1799,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         if (m_fTTEUDCFileExist == FALSE)
             return;
         if (wcslen(m_szDefaultEUDCFile) > 0) {
-            wcscpy(lpszFileName, m_szDefaultEUDCFile);
+            StringCchCopy(lpszFileName, cchFileName, m_szDefaultEUDCFile);
             return;
         }
         char szDefault[] = "SystemDefaultEUDCFont";
@@ -1825,7 +1825,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
     VERIFY(::MultiByteToWideChar(CP_ACP, 0,
         (LPCSTR)szFileName, -1, lpszFileName, cchFileName) != 0);
     if (fUseDefault)
-        wcscpy(m_szDefaultEUDCFile, lpszFileName);
+        StringCchCopy(m_szDefaultEUDCFile, _MAX_PATH, lpszFileName);
 }
 
 void CCombinedSegTable::Create(LPCWSTR name)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,7 +816,7 @@ class StubGenerator: public StubCodeGenerator {
     __ str_32(tmp2, Address(tmp1));
 
     // make sure object is 'reasonable'
-    __ cbz(oop, exit);                           // if obj is NULL it is ok
+    __ cbz(oop, exit);                           // if obj is null it is ok
 
     // Check if the oop is in the right area of memory
     // Note: oop_mask and oop_bits must be updated if the code is saved/reused
@@ -830,7 +830,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // make sure klass is 'reasonable'
     __ load_klass(klass, oop);                   // get klass
-    __ cbz(klass, error);                        // if klass is NULL it is broken
+    __ cbz(klass, error);                        // if klass is null it is broken
 
     // return if everything seems ok
     __ bind(exit);
@@ -870,11 +870,11 @@ class StubGenerator: public StubCodeGenerator {
   //  input registers are preserved
   //
   void array_overlap_test(address no_overlap_target, int log2_elem_size, Register tmp1, Register tmp2) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, log2_elem_size, tmp1, tmp2);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, log2_elem_size, tmp1, tmp2);
   }
   void array_overlap_test(Label& L_no_overlap, int log2_elem_size, Register tmp1, Register tmp2) {
-    array_overlap_test(NULL, &L_no_overlap, log2_elem_size, tmp1, tmp2);
+    array_overlap_test(nullptr, &L_no_overlap, log2_elem_size, tmp1, tmp2);
   }
   void array_overlap_test(address no_overlap_target, Label* NOLp, int log2_elem_size, Register tmp1, Register tmp2) {
     const Register from       = R0;
@@ -892,12 +892,12 @@ class StubGenerator: public StubCodeGenerator {
     if (log2_elem_size != 0) {
       __ mov(byte_count, AsmOperand(count, lsl, log2_elem_size));
     }
-    if (NOLp == NULL)
+    if (NOLp == nullptr)
       __ b(no_overlap_target,lo);
     else
       __ b((*NOLp), lo);
     __ cmp(to_from, byte_count);
-    if (NOLp == NULL)
+    if (NOLp == nullptr)
       __ b(no_overlap_target, ge);
     else
       __ b((*NOLp), ge);
@@ -1974,7 +1974,7 @@ class StubGenerator: public StubCodeGenerator {
         return &SharedRuntime::_jlong_array_copy_ctr;
       default:
         ShouldNotReachHere();
-        return NULL;
+        return nullptr;
     }
   }
 #endif // !PRODUCT
@@ -1998,7 +1998,7 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    R1
   //      count: R2 treated as signed 32-bit int
   //
-  address generate_primitive_copy(bool aligned, const char * name, bool status, int bytes_per_count, bool disjoint, address nooverlap_target = NULL) {
+  address generate_primitive_copy(bool aligned, const char * name, bool status, int bytes_per_count, bool disjoint, address nooverlap_target = nullptr) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2016,7 +2016,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zap_high_non_significant_bits(R2);
 
     if (!disjoint) {
-      assert (nooverlap_target != NULL, "must be specified for conjoint case");
+      assert (nooverlap_target != nullptr, "must be specified for conjoint case");
       array_overlap_test(nooverlap_target, exact_log2(bytes_per_count), tmp1, tmp2);
     }
 
@@ -2172,7 +2172,7 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    R1
   //      count: R2 treated as signed 32-bit int
   //
-  address generate_oop_copy(bool aligned, const char * name, bool status, bool disjoint, address nooverlap_target = NULL) {
+  address generate_oop_copy(bool aligned, const char * name, bool status, bool disjoint, address nooverlap_target = nullptr) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2191,7 +2191,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zap_high_non_significant_bits(R2);
 
     if (!disjoint) {
-      assert (nooverlap_target != NULL, "must be specified for conjoint case");
+      assert (nooverlap_target != nullptr, "must be specified for conjoint case");
       array_overlap_test(nooverlap_target, LogBytesPerHeapOop, tmp1, tmp2);
     }
 
@@ -2508,7 +2508,7 @@ class StubGenerator: public StubCodeGenerator {
     // ======== loop entry is here ========
     __ BIND(load_element);
     __ load_heap_oop(R5, Address(from, BytesPerHeapOop, post_indexed));  // load the oop
-    __ cbz(R5, store_element); // NULL
+    __ cbz(R5, store_element); // null
 
     __ load_klass(R6, R5);
 
@@ -2640,20 +2640,20 @@ class StubGenerator: public StubCodeGenerator {
     // (2) src_pos must not be negative.
     // (3) dst_pos must not be negative.
     // (4) length  must not be negative.
-    // (5) src klass and dst klass should be the same and not NULL.
+    // (5) src klass and dst klass should be the same and not null.
     // (6) src and dst should be arrays.
     // (7) src_pos + length must not exceed length of src.
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    //  if (src == NULL) return -1;
+    //  if (src == nullptr) return -1;
     __ cbz(src, L_failed);
 
     //  if (src_pos < 0) return -1;
     __ cmp_32(src_pos, 0);
     __ b(L_failed, lt);
 
-    //  if (dst == NULL) return -1;
+    //  if (dst == nullptr) return -1;
     __ cbz(dst, L_failed);
 
     //  if (dst_pos < 0) return -1;
@@ -3053,13 +3053,7 @@ class StubGenerator: public StubCodeGenerator {
     __ reset_last_Java_frame(Rtemp);
 
     // R0 is jobject handle result, unpack and process it through a barrier.
-    Label L_null_jobject;
-    __ cbz(R0, L_null_jobject);
-
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(masm, ACCESS_READ | IN_NATIVE, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
-
-    __ bind(L_null_jobject);
+    __ resolve_global_jobject(R0, Rtemp, R1);
 
     __ raw_pop(R1, R2, LR);
     __ ret();
@@ -3146,7 +3140,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_arraycopy_stubs();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
     }
 
@@ -3177,7 +3171,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #define UCM_TABLE_MAX_ENTRIES 32
 void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
+  if (UnsafeCopyMemory::_table == nullptr) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);

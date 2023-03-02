@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class Settings : public AllStatic {
   // Note that this only affects the non-class metaspace. Class space ignores this size (it is one
   //  single large mapping).
   static const size_t _virtual_space_node_default_word_size =
-      chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(2) LP64_ONLY(16); // 8MB (32-bit) / 64MB (64-bit)
+      chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(1) LP64_ONLY(4); // 16MB (32-bit) / 64MB (64-bit)
 
   // Alignment of the base address of a virtual space node
   static const size_t _virtual_space_node_reserve_alignment_words = chunklevel::MAX_CHUNK_WORD_SIZE;
@@ -56,15 +56,6 @@ class Settings : public AllStatic {
   // the requested size, we attempt to double the chunk size in place...
   static const bool _enlarge_chunks_in_place = true;
 
-  // Whether or not chunks handed out to an arena start out fully committed;
-  // if true, this deactivates committing-on-demand (regardless of whether
-  // we uncommit free chunks).
-  static bool _new_chunks_are_fully_committed;
-
-  // If true, chunks equal or larger than a commit granule are uncommitted
-  // after being returned to the freelist.
-  static bool _uncommit_free_chunks;
-
   // If true, metablock allocations are guarded and periodically checked.
   DEBUG_ONLY(static bool _use_allocation_guard;)
 
@@ -72,11 +63,9 @@ public:
 
   static size_t commit_granule_bytes()                        { return _commit_granule_bytes; }
   static size_t commit_granule_words()                        { return _commit_granule_words; }
-  static bool new_chunks_are_fully_committed()                { return _new_chunks_are_fully_committed; }
   static size_t virtual_space_node_default_word_size()        { return _virtual_space_node_default_word_size; }
   static size_t virtual_space_node_reserve_alignment_words()  { return _virtual_space_node_reserve_alignment_words; }
   static bool enlarge_chunks_in_place()                       { return _enlarge_chunks_in_place; }
-  static bool uncommit_free_chunks()                          { return _uncommit_free_chunks; }
   static bool use_allocation_guard()                          { return DEBUG_ONLY(_use_allocation_guard) NOT_DEBUG(false); }
 
   static void ergo_initialize();

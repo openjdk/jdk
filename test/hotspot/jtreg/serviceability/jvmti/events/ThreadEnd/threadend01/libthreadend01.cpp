@@ -56,7 +56,7 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   if (inf.name != NULL && strstr(inf.name, prefix) == inf.name) {
     eventsCount++;
-    sprintf(name, "%s%d", prefix, eventsCount);
+    snprintf(name, sizeof(name), "%s%d", prefix, eventsCount);
     if (inf.name == NULL || strcmp(name, inf.name) != 0) {
       LOG("(#%d) wrong thread name: \"%s\"",eventsCount, inf.name);
       LOG(", expected: \"%s\"\n", name);

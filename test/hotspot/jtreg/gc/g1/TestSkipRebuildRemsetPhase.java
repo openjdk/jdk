@@ -67,13 +67,7 @@ public class TestSkipRebuildRemsetPhase {
 
             // Memory objects have been promoted to old by full GC.
             // Concurrent cycle should not select any regions for rebuilding
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
-            }
-
+            wb.g1RunConcurrentGC();
             System.out.println(used);
         }
 

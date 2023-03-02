@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -146,19 +146,19 @@ void JavaThread::smr_delete() {
 }
 
 // Initialized by VMThread at vm_global_init
-OopStorage* JavaThread::_thread_oop_storage = NULL;
+OopStorage* JavaThread::_thread_oop_storage = nullptr;
 
 OopStorage* JavaThread::thread_oop_storage() {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
+  assert(_thread_oop_storage != nullptr, "not yet initialized");
   return _thread_oop_storage;
 }
 
 void JavaThread::set_threadOopHandles(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
+  assert(_thread_oop_storage != nullptr, "not yet initialized");
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
-  _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
+  _jvmti_vthread = OopHandle(_thread_oop_storage, p->is_a(vmClasses::BoundVirtualThread_klass()) ? p : nullptr);
+  _scopedValueCache = OopHandle(_thread_oop_storage, nullptr);
 }
 
 oop JavaThread::threadObj() const {
@@ -174,7 +174,7 @@ oop JavaThread::vthread() const {
 }
 
 void JavaThread::set_vthread(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
+  assert(_thread_oop_storage != nullptr, "not yet initialized");
   _vthread.replace(p);
 }
 
@@ -183,7 +183,7 @@ oop JavaThread::jvmti_vthread() const {
 }
 
 void JavaThread::set_jvmti_vthread(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
+  assert(_thread_oop_storage != nullptr, "not yet initialized");
   _jvmti_vthread.replace(p);
 }
 
@@ -192,19 +192,19 @@ oop JavaThread::scopedValueCache() const {
 }
 
 void JavaThread::set_scopedValueCache(oop p) {
-  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+  if (_scopedValueCache.ptr_raw() != nullptr) { // i.e. if the OopHandle has been allocated
     _scopedValueCache.replace(p);
   } else {
-    assert(p == NULL, "not yet initialized");
+    assert(p == nullptr, "not yet initialized");
   }
 }
 
 void JavaThread::clear_scopedValueBindings() {
-  set_scopedValueCache(NULL);
+  set_scopedValueCache(nullptr);
   oop vthread_oop = vthread();
   // vthread may be null here if we get a VM error during startup,
   // before the java.lang.Thread instance has been created.
-  if (vthread_oop != NULL) {
+  if (vthread_oop != nullptr) {
     java_lang_Thread::clear_scopedValueBindings(vthread_oop);
   }
 }
@@ -212,7 +212,7 @@ void JavaThread::clear_scopedValueBindings() {
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
-  assert(threadObj() == NULL, "should only create Java thread object once");
+  assert(threadObj() == nullptr, "should only create Java thread object once");
 
   InstanceKlass* ik = vmClasses::Thread_klass();
   assert(ik->is_initialized(), "must be");
@@ -225,7 +225,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   set_threadOopHandles(thread_oop());
 
   JavaValue result(T_VOID);
-  if (thread_name != NULL) {
+  if (thread_name != nullptr) {
     Handle name = java_lang_String::create_from_str(thread_name, CHECK);
     // Thread gets assigned specified name and null target
     JavaCalls::call_special(&result,
@@ -282,10 +282,10 @@ void JavaThread::collect_counters(jlong* array, int length) {
 // Attempt to enlarge the array for per thread counters.
 jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
-  if (new_counters == NULL) {
-    return NULL;
+  if (new_counters == nullptr) {
+    return nullptr;
   }
-  if (old_counters == NULL) {
+  if (old_counters == nullptr) {
     old_counters = new_counters;
     memset(old_counters, 0, sizeof(jlong) * new_size);
   } else {
@@ -303,7 +303,7 @@ jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size
 // Attempt to enlarge the array for per thread counters.
 bool JavaThread::resize_counters(int current_size, int new_size) {
   jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
-  if (new_counters == NULL) {
+  if (new_counters == nullptr) {
     return false;
   } else {
     _jvmci_counters = new_counters;
@@ -323,7 +323,7 @@ class VM_JVMCIResizeCounters : public VM_Operation {
   void doit() {
     // Resize the old thread counters array
     jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    if (new_counters == NULL) {
+    if (new_counters == nullptr) {
       _failed = true;
       return;
     } else {
@@ -409,11 +409,11 @@ JavaThread::JavaThread() :
   _vm_result(nullptr),
   _vm_result_2(nullptr),
 
-  _current_pending_monitor(NULL),
+  _current_pending_monitor(nullptr),
   _current_pending_monitor_is_from_java(true),
-  _current_waiting_monitor(NULL),
-  _active_handles(NULL),
-  _free_handle_block(NULL),
+  _current_waiting_monitor(nullptr),
+  _active_handles(nullptr),
+  _free_handle_block(nullptr),
   _Stalled(0),
 
   _monitor_chunks(nullptr),
@@ -541,9 +541,9 @@ void JavaThread::interrupt() {
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
 
-  if (_threadObj.peek() == NULL) {
+  if (_threadObj.peek() == nullptr) {
     // If there is no j.l.Thread then it is impossible to have
-    // been interrupted. We can find NULL during VM initialization
+    // been interrupted. We can find null during VM initialization
     // or when a JNI thread is still in the process of attaching.
     // In such cases this must be the current thread.
     assert(this == Thread::current(), "invariant");
@@ -598,7 +598,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread
   thr_type = entry_point == &CompilerThread::thread_entry ? os::compiler_thread :
                                                             os::java_thread;
   os::create_thread(this, thr_type, stack_sz);
-  // The _osthread may be NULL here because we ran out of memory (too many threads active).
+  // The _osthread may be null here because we ran out of memory (too many threads active).
   // We need to throw and OutOfMemoryError - however we cannot do this here because the caller
   // may hold a lock and all locks must be unlocked before throwing the exception (throwing
   // the exception consists of creating the exception object & initializing it, initialization
@@ -617,30 +617,30 @@ JavaThread::~JavaThread() {
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
-  _SleepEvent = NULL;
+  _SleepEvent = nullptr;
 
   // Free any remaining  previous UnrollBlock
   vframeArray* old_array = vframe_array_last();
 
-  if (old_array != NULL) {
+  if (old_array != nullptr) {
     Deoptimization::UnrollBlock* old_info = old_array->unroll_block();
-    old_array->set_unroll_block(NULL);
+    old_array->set_unroll_block(nullptr);
     delete old_info;
     delete old_array;
   }
 
   JvmtiDeferredUpdates* updates = deferred_updates();
-  if (updates != NULL) {
+  if (updates != nullptr) {
     // This can only happen if thread is destroyed before deoptimization occurs.
     assert(updates->count() > 0, "Updates holder not deleted");
     // free deferred updates.
     delete updates;
-    set_deferred_updates(NULL);
+    set_deferred_updates(nullptr);
   }
 
   // All Java related clean up happens in exit
   ThreadSafepointState::destroy(this);
-  if (_thread_stat != NULL) delete _thread_stat;
+  if (_thread_stat != nullptr) delete _thread_stat;
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
@@ -697,7 +697,7 @@ void JavaThread::run() {
 
 void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
-  assert(_threadObj.peek() != NULL, "just checking");
+  assert(_threadObj.peek() != nullptr, "just checking");
 
   // Execute thread entry point unless this thread has a pending exception.
   // Note: Due to JVMTI StopThread we can have pending exceptions already!
@@ -733,14 +733,14 @@ static void ensure_join(JavaThread* thread) {
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
-  java_lang_Thread::set_thread(threadObj(), NULL);
+  java_lang_Thread::set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
 }
 
 static bool is_daemon(oop threadObj) {
-  return (threadObj != NULL && java_lang_Thread::is_daemon(threadObj));
+  return (threadObj != nullptr && java_lang_Thread::is_daemon(threadObj));
 }
 
 // For any new cleanup additions, please check to see if they need to be applied to
@@ -878,15 +878,15 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // is in a consistent state, in case GC happens
   JFR_ONLY(Jfr::on_thread_exit(this);)
 
-  if (active_handles() != NULL) {
+  if (active_handles() != nullptr) {
     JNIHandleBlock* block = active_handles();
-    set_active_handles(NULL);
+    set_active_handles(nullptr);
     JNIHandleBlock::release_block(block);
   }
 
-  if (free_handle_block() != NULL) {
+  if (free_handle_block() != nullptr) {
     JNIHandleBlock* block = free_handle_block();
-    set_free_handle_block(NULL);
+    set_free_handle_block(nullptr);
     JNIHandleBlock::release_block(block);
   }
 
@@ -903,7 +903,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
   // We need to cache the thread name for logging purposes below as once
   // we have called on_thread_detach this thread must not access any oops.
-  char* thread_name = NULL;
+  char* thread_name = nullptr;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
     thread_name = os::strdup(name());
@@ -949,15 +949,15 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 }
 
 void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
-  if (active_handles() != NULL) {
+  if (active_handles() != nullptr) {
     JNIHandleBlock* block = active_handles();
-    set_active_handles(NULL);
+    set_active_handles(nullptr);
     JNIHandleBlock::release_block(block);
   }
 
-  if (free_handle_block() != NULL) {
+  if (free_handle_block() != nullptr) {
     JNIHandleBlock* block = free_handle_block();
-    set_free_handle_block(NULL);
+    set_free_handle_block(nullptr);
     JNIHandleBlock::release_block(block);
   }
 
@@ -979,7 +979,7 @@ JavaThread* JavaThread::active() {
   } else {
     assert(thread->is_VM_thread(), "this must be a vm thread");
     VM_Operation* op = ((VMThread*) thread)->vm_operation();
-    JavaThread *ret = op == NULL ? NULL : JavaThread::cast(op->calling_thread());
+    JavaThread *ret = op == nullptr ? nullptr : JavaThread::cast(op->calling_thread());
     return ret;
   }
 }
@@ -987,7 +987,7 @@ JavaThread* JavaThread::active() {
 bool JavaThread::is_lock_owned(address adr) const {
   if (Thread::is_lock_owned(adr)) return true;
 
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
+  for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
     if (chunk->contains(adr)) return true;
   }
 
@@ -1008,7 +1008,7 @@ void JavaThread::add_monitor_chunk(MonitorChunk* chunk) {
 }
 
 void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
-  guarantee(monitor_chunks() != NULL, "must be non empty");
+  guarantee(monitor_chunks() != nullptr, "must be non empty");
   if (monitor_chunks() == chunk) {
     set_monitor_chunks(chunk->next());
   } else {
@@ -1030,7 +1030,7 @@ void JavaThread::handle_special_runtime_exit_condition() {
 // Asynchronous exceptions support
 //
 void JavaThread::handle_async_exception(oop java_throwable) {
-  assert(java_throwable != NULL, "should have an _async_exception to throw");
+  assert(java_throwable != nullptr, "should have an _async_exception to throw");
   assert(!is_at_poll_safepoint(), "should have never called this method");
 
   if (has_last_Java_frame()) {
@@ -1242,7 +1242,7 @@ void JavaThread::deoptimize() {
         jio_snprintf(buffer, sizeof(buffer), "%d", sd->bci());
         size_t len = strlen(buffer);
         const char * found = strstr(DeoptimizeOnlyAt, buffer);
-        while (found != NULL) {
+        while (found != nullptr) {
           if ((found[len] == ',' || found[len] == '\n' || found[len] == '\0') &&
               (found == DeoptimizeOnlyAt || found[-1] == ',' || found[-1] == '\n')) {
             // Check that the bci found is bracketed by terminators.
@@ -1310,7 +1310,7 @@ void JavaThread::push_jni_handle_block() {
   // Inlined code from jni_PushLocalFrame()
   JNIHandleBlock* old_handles = active_handles();
   JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
-  assert(old_handles != NULL && new_handles != NULL, "should not be NULL");
+  assert(old_handles != nullptr && new_handles != nullptr, "should not be null");
   new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
   set_active_handles(new_handles);
 }
@@ -1322,7 +1322,7 @@ void JavaThread::pop_jni_handle_block() {
   JNIHandleBlock* new_handles = old_handles->pop_frame_link();
   assert(new_handles != nullptr, "should never set active handles to null");
   set_active_handles(new_handles);
-  old_handles->set_pop_frame_link(NULL);
+  old_handles->set_pop_frame_link(nullptr);
   JNIHandleBlock::release_block(old_handles, this);
 }
 
@@ -1333,7 +1333,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 
-  if (active_handles() != NULL) {
+  if (active_handles() != nullptr) {
     active_handles()->oops_do(f);
   }
 
@@ -1341,16 +1341,16 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
 
   if (has_last_Java_frame()) {
     // Traverse the monitor chunks
-    for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
+    for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
       chunk->oops_do(f);
     }
   }
 
-  assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
+  assert(vframe_array_head() == nullptr, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written
   GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
-  if (list != NULL) {
+  if (list != nullptr) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(f);
     }
@@ -1364,7 +1364,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_jvmci_reserved_oop0);
 #endif
 
-  if (jvmti_thread_state() != NULL) {
+  if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->oops_do(f, cf);
   }
 
@@ -1385,7 +1385,7 @@ void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
     return;
   }
   // Finish any pending lazy GC activity for the frames
-  StackWatermarkSet::finish_processing(this, NULL /* context */, StackWatermarkKind::gc);
+  StackWatermarkSet::finish_processing(this, nullptr /* context */, StackWatermarkKind::gc);
   // Traverse the execution stack
   for (StackFrameStream fst(this, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
     fst.current()->oops_do(f, cf, fst.register_map());
@@ -1410,7 +1410,7 @@ void JavaThread::nmethods_do(CodeBlobClosure* cf) {
     }
   }
 
-  if (jvmti_thread_state() != NULL) {
+  if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
 }
@@ -1424,11 +1424,11 @@ void JavaThread::metadata_do(MetadataClosure* f) {
   } else if (is_Compiler_thread()) {
     // need to walk ciMetadata in current compile tasks to keep alive.
     CompilerThread* ct = (CompilerThread*)this;
-    if (ct->env() != NULL) {
+    if (ct->env() != nullptr) {
       ct->env()->metadata_do(f);
     }
     CompileTask* task = ct->task();
-    if (task != NULL) {
+    if (task != nullptr) {
       task->metadata_do(f);
     }
   }
@@ -1462,7 +1462,7 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_raw(name());
   st->print_raw("\" ");
   oop thread_oop = threadObj();
-  if (thread_oop != NULL) {
+  if (thread_oop != nullptr) {
     st->print("#" INT64_FORMAT " [%ld] ", (int64_t)java_lang_Thread::thread_id(thread_oop), (long) osthread()->thread_id());
     if (java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
     st->print("prio=%d ", java_lang_Thread::priority(thread_oop));
@@ -1470,10 +1470,10 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   Thread::print_on(st, print_extended_info);
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
-  if (thread_oop != NULL) {
+  if (thread_oop != nullptr) {
     if (is_vthread_mounted()) {
       oop vt = vthread();
-      assert(vt != NULL, "");
+      assert(vt != nullptr, "");
       st->print_cr("   Carrying virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
@@ -1484,9 +1484,9 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
 #endif // PRODUCT
   if (is_Compiler_thread()) {
     CompileTask *task = ((CompilerThread*)this)->task();
-    if (task != NULL) {
+    if (task != nullptr) {
       st->print("   Compiling: ");
-      task->print(st, NULL, true, false);
+      task->print(st, nullptr, true, false);
     } else {
       st->print("   No compile task");
     }
@@ -1544,19 +1544,19 @@ static void frame_verify(frame* f, const RegisterMap *map) { f->verify(map); }
 
 void JavaThread::verify() {
   // Verify oops in the thread.
-  oops_do(&VerifyOopClosure::verify_oop, NULL);
+  oops_do(&VerifyOopClosure::verify_oop, nullptr);
 
   // Verify the stack frames.
   frames_do(frame_verify);
 }
 
 // CR 6300358 (sub-CR 2137150)
-// Most callers of this method assume that it can't return NULL but a
+// Most callers of this method assume that it can't return null but a
 // thread may not have a name whilst it is in the process of attaching to
 // the VM - see CR 6412693, and there are places where a JavaThread can be
 // seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
-// for such that this method never returns NULL.
+// for such that this method never returns null.
 const char* JavaThread::name() const  {
   if (Thread::is_JavaThread_protected(/* target */ this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
@@ -1567,7 +1567,7 @@ const char* JavaThread::name() const  {
   return Thread::name();
 }
 
-// Returns a non-NULL representation of this thread's name, or a suitable
+// Returns a non-null representation of this thread's name, or a suitable
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
@@ -1579,10 +1579,10 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     // or if it is a JavaThread that can safely access oops.
 #endif
     oop thread_obj = threadObj();
-    if (thread_obj != NULL) {
+    if (thread_obj != nullptr) {
       oop name = java_lang_Thread::name(thread_obj);
-      if (name != NULL) {
-        if (buf == NULL) {
+      if (name != nullptr) {
+        if (buf == nullptr) {
           name_str = java_lang_String::as_utf8_string(name);
         } else {
           name_str = java_lang_String::as_utf8_string(name, buf, buflen);
@@ -1608,16 +1608,16 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     }
   }
 #endif
-  assert(name_str != NULL, "unexpected NULL thread name");
+  assert(name_str != nullptr, "unexpected null thread name");
   return name_str;
 }
 
 // Helper to extract the name from the thread oop for logging.
 const char* JavaThread::name_for(oop thread_obj) {
-  assert(thread_obj != NULL, "precondition");
+  assert(thread_obj != nullptr, "precondition");
   oop name = java_lang_Thread::name(thread_obj);
   const char* name_str;
-  if (name != NULL) {
+  if (name != nullptr) {
     name_str = java_lang_String::as_utf8_string(name);
   } else {
     name_str = "<un-named>";
@@ -1668,10 +1668,10 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
 oop JavaThread::current_park_blocker() {
   // Support for JSR-166 locks
   oop thread_oop = threadObj();
-  if (thread_oop != NULL) {
+  if (thread_oop != nullptr) {
     return java_lang_Thread::park_blocker(thread_oop);
   }
-  return NULL;
+  return nullptr;
 }
 
 // Print current stack trace for checked JNI warnings and JNI fatal errors.
@@ -1707,7 +1707,7 @@ void JavaThread::print_stack_on(outputStream* st) {
                       RegisterMap::WalkContinuation::skip);
   vframe* start_vf = platform_thread_last_java_vframe(&reg_map);
   int count = 0;
-  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+  for (vframe* f = start_vf; f != nullptr; f = f->sender()) {
     if (f->is_java_frame()) {
       javaVFrame* jvf = javaVFrame::cast(f);
       java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
@@ -1741,7 +1741,7 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
   ContinuationEntry* cont_entry = last_continuation();
   vframe* start_vf = last_java_vframe(&reg_map);
   int count = 0;
-  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+  for (vframe* f = start_vf; f != nullptr; f = f->sender()) {
     // Watch for end of vthread stack
     if (Continuation::is_continuation_enterSpecial(f->fr())) {
       assert(cont_entry == Continuation::get_continuation_entry_for_entry_frame(this, f->fr()), "");
@@ -1793,7 +1793,7 @@ JvmtiThreadState* JavaThread::rebind_to_jvmti_thread_state_of(oop thread_oop) {
 
 // JVMTI PopFrame support
 void JavaThread::popframe_preserve_args(ByteSize size_in_bytes, void* start) {
-  assert(_popframe_preserved_args == NULL, "should not wipe out old PopFrame preserved arguments");
+  assert(_popframe_preserved_args == nullptr, "should not wipe out old PopFrame preserved arguments");
   if (in_bytes(size_in_bytes) != 0) {
     _popframe_preserved_args = NEW_C_HEAP_ARRAY(char, in_bytes(size_in_bytes), mtThread);
     _popframe_preserved_args_size = in_bytes(size_in_bytes);
@@ -1816,9 +1816,9 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 }
 
 void JavaThread::popframe_free_preserved_args() {
-  assert(_popframe_preserved_args != NULL, "should not free PopFrame preserved arguments twice");
+  assert(_popframe_preserved_args != nullptr, "should not free PopFrame preserved arguments twice");
   FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
-  _popframe_preserved_args = NULL;
+  _popframe_preserved_args = nullptr;
   _popframe_preserved_args_size = 0;
 }
 
@@ -1838,7 +1838,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
  protected:
   template <class T> inline void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
-    if (obj == NULL) return;
+    if (obj == nullptr) return;
     tty->print(INTPTR_FORMAT ": ", p2i(p));
     if (oopDesc::is_oop_or_null(obj)) {
       if (obj->is_objArray()) {
@@ -1938,7 +1938,7 @@ frame JavaThread::vthread_last_frame() {
 
 frame JavaThread::carrier_last_frame(RegisterMap* reg_map) {
   const ContinuationEntry* entry = vthread_continuation();
-  guarantee (entry != NULL, "Not a carrier thread");
+  guarantee (entry != nullptr, "Not a carrier thread");
   frame f = entry->to_frame();
   if (reg_map->process_frames()) {
     entry->flush_stack_processing(this);
@@ -1952,11 +1952,11 @@ frame JavaThread::platform_thread_last_frame(RegisterMap* reg_map) {
 }
 
 javaVFrame* JavaThread::last_java_vframe(const frame f, RegisterMap *reg_map) {
-  assert(reg_map != NULL, "a map must be given");
+  assert(reg_map != nullptr, "a map must be given");
   for (vframe* vf = vframe::new_vframe(&f, reg_map, this); vf; vf = vf->sender()) {
     if (vf->is_java_frame()) return javaVFrame::cast(vf);
   }
-  return NULL;
+  return nullptr;
 }
 
 Klass* JavaThread::security_get_caller_class(int depth) {
@@ -1968,7 +1968,7 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   if (!vfst.at_end()) {
     return vfst.method()->method_holder();
   }
-  return NULL;
+  return nullptr;
 }
 
 // java.lang.Thread.sleep support
@@ -2043,7 +2043,7 @@ void JavaThread::invoke_shutdown_hooks() {
   Klass* shutdown_klass =
     SystemDictionary::resolve_or_null(vmSymbols::java_lang_Shutdown(),
                                       THREAD);
-  if (shutdown_klass != NULL) {
+  if (shutdown_klass != nullptr) {
     // SystemDictionary::resolve_or_null will return null if there was
     // an exception.  If we cannot load the Shutdown class, just don't
     // call Shutdown.shutdown() at all.  This will mean the shutdown hooks
@@ -2092,7 +2092,7 @@ Handle JavaThread::create_system_thread_object(const char* name,
 void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
                                        Handle thread_oop, ThreadPriority prio) {
 
-  assert(target->osthread() != NULL, "target thread is not properly initialized");
+  assert(target->osthread() != nullptr, "target thread is not properly initialized");
 
   MutexLocker mu(current, Threads_lock);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,6 @@ public class Types {
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         noWarnings = new Warner(null);
-        qualifiedSymbolCache = new HashMap<>();
     }
     // </editor-fold>
 
@@ -1408,9 +1407,6 @@ public class Types {
 
                     Map<Symbol,Type> tMap = new HashMap<>();
                     for (Type ti : interfaces(t)) {
-                        if (tMap.containsKey(ti)) {
-                            throw new AssertionError("Malformed intersection");
-                        }
                         tMap.put(ti.tsym, ti);
                     }
                     for (Type si : interfaces(s)) {
@@ -3618,56 +3614,6 @@ public class Types {
     }
     // </editor-fold>
 
-    /** Cache the symbol to reflect the qualifying type.
-     *  key: corresponding type
-     *  value: qualified symbol
-     */
-    private Map<Type, Symbol> qualifiedSymbolCache;
-
-    public void clearQualifiedSymbolCache() {
-        qualifiedSymbolCache.clear();
-    }
-
-    /** Construct a symbol to reflect the qualifying type that should
-     *  appear in the byte code as per JLS 13.1.
-     *
-     *  For {@literal target >= 1.2}: Clone a method with the qualifier as owner (except
-     *  for those cases where we need to work around VM bugs).
-     *
-     *  For {@literal target <= 1.1}: If qualified variable or method is defined in a
-     *  non-accessible class, clone it with the qualifier class as owner.
-     *
-     *  @param sym    The accessed symbol
-     *  @param site   The qualifier's type.
-     */
-    public Symbol binaryQualifier(Symbol sym, Type site) {
-
-        if (site.hasTag(ARRAY)) {
-            if (sym == syms.lengthVar ||
-                    sym.owner != syms.arrayClass)
-                return sym;
-            // array clone can be qualified by the array type in later targets
-            Symbol qualifier;
-            if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
-                qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
-                qualifiedSymbolCache.put(site, qualifier);
-            }
-            return sym.clone(qualifier);
-        }
-
-        if (sym.owner == site.tsym ||
-                (sym.flags() & (STATIC | SYNTHETIC)) == (STATIC | SYNTHETIC)) {
-            return sym;
-        }
-
-        // leave alone methods inherited from Object
-        // JLS 13.1.
-        if (sym.owner == syms.objectType.tsym)
-            return sym;
-
-        return sym.clone(site.tsym);
-    }
-
     /**
      * Helper method for generating a string representation of a given type
      * accordingly to a given locale
@@ -3777,7 +3723,7 @@ public class Types {
     }
 
     /**
-     * Collect types into a new closure (using a @code{ClosureHolder})
+     * Collect types into a new closure (using a {@code ClosureHolder})
      */
     public Collector<Type, ClosureHolder, List<Type>> closureCollector(boolean minClosure, BiPredicate<Type, Type> shouldSkip) {
         return Collector.of(() -> new ClosureHolder(minClosure, shouldSkip),
