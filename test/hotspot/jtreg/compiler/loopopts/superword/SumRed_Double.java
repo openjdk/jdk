@@ -126,11 +126,7 @@ public class SumRed_Double {
             double total,
             double valid,
             String op) throws Exception {
-        if (total == valid) {
-            System.out.println(op + ": Success");
-        } else {
-            System.out.println("Invalid total: " + total);
-            System.out.println("Expected value = " + valid);
+        if (total != valid) {
             throw new Exception(op + ": Failed");
         }
     }
