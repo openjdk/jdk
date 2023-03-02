@@ -32,10 +32,17 @@
 
 import java.awt.AWTException;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -53,62 +60,67 @@ public class EditableComboBoxPopupPos {
     private static Point cb1Point, cb2Point;
     private static int cb1Width, cb1Height, cb2Width, cb2Height;
 
-    private static final int BUTTON_OFFSET = 10;
-    private static final int POPUP_OFFSET = 5;
+    private static Path testDir;
+    private static BufferedImage image1, image2;
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
-            robot = new Robot();
-            robot.setAutoDelay(100);
-            robot.setAutoWaitForIdle(true);
+    private static final int BUTTON_OFFSET = 8;
+    private static final int POPUP_OFFSET = 6;
 
-            for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
-            lafName = laf.getName();
-            SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(laf);
-                panel = new JPanel();
-                String[] comboStrings = {"One", "Two", "Three"};
-                cb1 = new JComboBox(comboStrings);
-                cb1.setEditable(true);
-                cb1.setBorder(BorderFactory.createTitledBorder(
-                        "Editable JComboBox"));
+    public static void main(String[] args) throws InterruptedException,
+            InvocationTargetException, AWTException, IOException {
+        robot = new Robot();
+        robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
+        testDir = Path.of(System.getProperty("test.classes", "."));
 
-                cb2 = new JComboBox(comboStrings);
-                cb2.setEditable(true);
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+        lafName = laf.getName();
+        SwingUtilities.invokeAndWait(() -> {
+            setLookAndFeel(laf);
+            panel = new JPanel();
+            String[] comboStrings = {"One", "Two", "Three"};
+            cb1 = new JComboBox(comboStrings);
+            cb1.setEditable(true);
+            cb1.setBorder(BorderFactory.createTitledBorder(
+                    "Editable JComboBox"));
 
-                panel.add(cb1);
-                panel.add(cb2);
+            cb2 = new JComboBox(comboStrings);
+            cb2.setEditable(true);
 
-                // Change starting selection to check if the position of the
-                // first selection item is in the correct position on screen.
-                cb1.setSelectedIndex(1);
-                cb2.setSelectedIndex(1);
+            panel.add(cb1);
+            panel.add(cb2);
 
-                frame = new JFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.add(panel);
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+            // Change starting selection to check if the position of the
+            // first selection item is in the correct position on screen.
+            cb1.setSelectedIndex(1);
+            cb2.setSelectedIndex(1);
 
-                cb1Point = cb1.getLocationOnScreen();
-                cb1Width = cb1.getWidth();
-                cb1Height = cb1.getHeight();
-                cb2Point = cb2.getLocationOnScreen();
-                cb2Width = cb2.getWidth();
-                cb2Height = cb2.getHeight();
-            });
+            frame = new JFrame();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.add(panel);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
 
-            runTestOnComboBox(cb1Point, cb1Width, cb1Height);
-            runTestOnComboBox(cb2Point, cb2Width, cb2Height);
+            cb1Point = cb1.getLocationOnScreen();
+            cb1Width = cb1.getWidth();
+            cb1Height = cb1.getHeight();
+            cb2Point = cb2.getLocationOnScreen();
+            cb2Width = cb2.getWidth();
+            cb2Height = cb2.getHeight();
+        });
 
-            SwingUtilities.invokeAndWait(() -> {
-                cb1Str = cb1.getSelectedItem().toString();
-                cb2Str = cb2.getSelectedItem().toString();
-            });
+        runTestOnComboBox(cb1Point, cb1Width, cb1Height);
+        runTestOnComboBox(cb2Point, cb2Width, cb2Height);
 
-            checkSelection(cb1Str, cb2Str);
+        SwingUtilities.invokeAndWait(() -> {
+            cb1Str = cb1.getSelectedItem().toString();
+            cb2Str = cb2.getSelectedItem().toString();
+        });
 
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        checkSelection(cb1Str, cb2Str);
+
+        SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -123,12 +135,21 @@ public class EditableComboBoxPopupPos {
         }
     }
 
-    private static void runTestOnComboBox(Point p, int width, int height) {
-        robot.mouseMove(p.x + width - BUTTON_OFFSET, p.y + POPUP_OFFSET);
+    private static void runTestOnComboBox(Point p, int width, int height) throws IOException {
+        robot.mouseMove(p.x + width - BUTTON_OFFSET, p.y + (height / 2) + POPUP_OFFSET);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        image1 = robot.createScreenCapture(screenRect);
+        ImageIO.write(image1, "png", new File(testDir + "/image1.png"));
+
         robot.mouseMove(p.x + (width / 2) - BUTTON_OFFSET,
                 p.y + height + POPUP_OFFSET);
+
+        image2 = robot.createScreenCapture(screenRect);
+        ImageIO.write(image2, "png", new File(testDir + "/image2.png"));
+
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
