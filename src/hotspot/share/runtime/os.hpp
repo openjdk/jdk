@@ -576,7 +576,7 @@ class os: AllStatic {
   // multiple calls to naked_short_sleep. Only for use by non-JavaThreads.
   static void naked_sleep(jlong millis);
   // Never returns, use with CAUTION
-  static void infinite_sleep();
+  [[noreturn]] static void infinite_sleep();
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
@@ -601,26 +601,26 @@ class os: AllStatic {
   static int fork_and_exec(const char *cmd);
 
   // Call ::exit() on all platforms
-  static void exit(int num);
+  [[noreturn]] static void exit(int num);
 
   // Call ::_exit() on all platforms. Similar semantics to die() except we never
   // want a core dump.
-  static void _exit(int num);
+  [[noreturn]] static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
-  static void abort(bool dump_core, void *siginfo, const void *context);
-  static void abort(bool dump_core = true);
+  [[noreturn]] static void abort(bool dump_core, void *siginfo, const void *context);
+  [[noreturn]] static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
   // preferred means to abort the VM on error. os::die() should only
   // be called if something has gone badly wrong. CreateCoredumpOnCrash
   // is intentionally not honored by this function.
-  static void die();
+  [[noreturn]] static void die();
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);

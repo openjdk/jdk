@@ -66,3 +66,9 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 void VMError::reporting_started() {}
 void VMError::interrupt_reporting_thread() {}
 
+void VMError::raise_fail_fast(void* exrecord, void* context) {
+  DWORD flags = (exrecord == nullptr) ? FAIL_FAST_GENERATE_EXCEPTION_ADDRESS : 0;
+  RaiseFailFastException(static_cast<PEXCEPTION_RECORD>(exrecord),
+                         static_cast<PCONTEXT>(context),
+                         flags);
+}
