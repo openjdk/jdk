@@ -416,11 +416,18 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 goto errOut;
             }
 
-            // Only add certificates with trusted settings
+            // Only add certificates with trusted settings, use all 3 domains
+            // see https://developer.apple.com/documentation/security/sectrustsettingsdomain
             CFArrayRef trustSettings;
             if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings)
                     == errSecItemNotFound) {
-                continue;
+                if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings)
+                        == errSecItemNotFound) {
+                    if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainSystem, &trustSettings)
+                            == errSecItemNotFound) {
+                        continue;
+                    }
+                }
             }
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
