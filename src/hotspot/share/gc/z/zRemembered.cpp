@@ -311,6 +311,8 @@ public:
       }
     };
 
+    ZHeap::heap()->mark_flush_and_free(Thread::current());
+
     context.print();
   }
 };
@@ -361,6 +363,8 @@ public:
         break;
       }
     }
+
+    ZHeap::heap()->mark_flush_and_free(Thread::current());
   }
 };
 
@@ -379,7 +383,7 @@ void ZRemembered::scan() const {
 void ZRemembered::scan_field(volatile zpointer* p) const {
   assert(ZGeneration::young()->is_phase_mark(), "Wrong phase");
 
-  const zaddress addr = ZBarrier::mark_young_good_barrier_on_oop_field(p);
+  const zaddress addr = ZBarrier::remset_barrier_on_oop_field(p);
 
   if (!is_null(addr) && ZHeap::heap()->is_young(addr)) {
     remember(p);

@@ -108,7 +108,10 @@ private:
 
   static zaddress mark_slow_path(zaddress addr);
   static zaddress mark_young_slow_path(zaddress addr);
+  static zaddress mark_from_young_slow_path(zaddress addr);
+  static zaddress mark_from_old_slow_path(zaddress addr);
   static zaddress mark_finalizable_slow_path(zaddress addr);
+  static zaddress mark_finalizable_from_old_slow_path(zaddress addr);
 
   static zaddress keep_alive_slow_path(zaddress addr);
   static zaddress heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal);
@@ -162,9 +165,11 @@ public:
 
   // Mark barrier
   static void mark_barrier_on_young_oop_field(volatile zpointer* p);
-  static void promote_barrier_on_young_oop_field(volatile zpointer* p);
+  static void mark_barrier_on_old_oop_field(volatile zpointer* p, bool finalizable);
   static void mark_barrier_on_oop_field(volatile zpointer* p, bool finalizable);
-  static zaddress mark_young_good_barrier_on_oop_field(volatile zpointer* p);
+  static void mark_young_good_barrier_on_oop_field(volatile zpointer* p);
+  static zaddress remset_barrier_on_oop_field(volatile zpointer* p);
+  static void promote_barrier_on_young_oop_field(volatile zpointer* p);
 
   // Store barrier
   static void store_barrier_on_heap_oop_field(volatile zpointer* p, bool heal);

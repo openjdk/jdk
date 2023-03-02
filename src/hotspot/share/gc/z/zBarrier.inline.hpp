@@ -445,6 +445,19 @@ inline zpointer color_mark_young_good(zaddress new_addr, zpointer old_ptr) {
   return ZAddress::mark_young_good(new_addr, old_ptr);
 }
 
+inline zpointer color_remset_good(zaddress new_addr, zpointer old_ptr) {
+  if (new_addr == zaddress::null || ZHeap::heap()->is_young(new_addr)) {
+    return ZAddress::mark_good(new_addr, old_ptr);
+  } else {
+    // If remembered set scanning finds an old-to-old pointer, we won't mark it
+    // and hence only really care about setting remembered bits to 11 so that
+    // subsequent stores trip on the store-bad bit pattern. However, the contract
+    // with the fast path check, is that the pointer should invariantly be young
+    // mark good at least, so we color it as such.
+    return ZAddress::mark_young_good(new_addr, old_ptr);
+  }
+}
+
 inline zpointer color_store_good(zaddress new_addr, zpointer old_ptr) {
   return ZAddress::store_good(new_addr);
 }
@@ -617,9 +630,46 @@ inline void ZBarrier::mark_barrier_on_oop_field(volatile zpointer* p, bool final
   }
 }
 
-inline void ZBarrier::mark_barrier_on_young_oop_field(volatile zpointer* p) {
+inline void ZBarrier::mark_barrier_on_old_oop_field(volatile zpointer* p, bool finalizable) {
+  assert(ZHeap::heap()->is_old(p), "Should be from old");
   const zpointer o = load_atomic(p);
-  barrier(is_store_good_or_null_any_fast_path, mark_slow_path, color_store_good, p, o);
+
+  if (finalizable) {
+    // During marking, we mark through already marked oops to avoid having
+    // some large part of the object graph hidden behind a pushed, but not
+    // yet flushed, entry on a mutator mark stack. Always marking through
+    // allows the GC workers to proceed through the object graph even if a
+    // mutator touched an oop first, which in turn will reduce the risk of
+    // having to flush mark stacks multiple times to terminate marking.
+    //
+    // However, when doing finalizable marking we don't always want to mark
+    // through. First, marking through an already strongly marked oop would
+    // be wasteful, since we will then proceed to do finalizable marking on
+    // an object which is, or will be, marked strongly. Second, marking
+    // through an already finalizable marked oop would also be wasteful,
+    // since such oops can never end up on a mutator mark stack and can
+    // therefore not hide some part of the object graph from GC workers.
+
+    // Make the oop finalizable marked/good, instead of normal marked/good.
+    // This is needed because an object might first becomes finalizable
+    // marked by the GC, and then loaded by a mutator thread. In this case,
+    // the mutator thread must be able to tell that the object needs to be
+    // strongly marked. The finalizable bit in the oop exists to make sure
+    // that a load of a finalizable marked oop will fall into the barrier
+    // slow path so that we can mark the object as strongly reachable.
+
+    // Note: that this does not color the pointer finalizable marked if it
+    // is already colored marked old good.
+    barrier(is_finalizable_good_fast_path, mark_finalizable_from_old_slow_path, color_finalizable_good, p, o);
+  } else {
+    barrier(is_mark_good_fast_path, mark_from_old_slow_path, color_mark_good, p, o);
+  }
+}
+
+inline void ZBarrier::mark_barrier_on_young_oop_field(volatile zpointer* p) {
+  assert(ZHeap::heap()->is_young(p), "Should be from young");
+  const zpointer o = load_atomic(p);
+  barrier(is_store_good_or_null_any_fast_path, mark_from_young_slow_path, color_store_good, p, o);
 }
 
 inline void ZBarrier::promote_barrier_on_young_oop_field(volatile zpointer* p) {
@@ -635,12 +685,14 @@ inline void ZBarrier::promote_barrier_on_young_oop_field(volatile zpointer* p) {
   barrier(is_store_good_fast_path, promote_slow_path, color_store_good, p, o);
 }
 
-//
-// Mark barrier
-//
-inline zaddress ZBarrier::mark_young_good_barrier_on_oop_field(volatile zpointer* p) {
+inline zaddress ZBarrier::remset_barrier_on_oop_field(volatile zpointer* p) {
   const zpointer o = load_atomic(p);
-  return barrier(is_mark_young_good_fast_path, mark_young_slow_path, color_mark_young_good, p, o);
+  return barrier(is_mark_young_good_fast_path, mark_young_slow_path, color_remset_good, p, o);
+}
+
+inline void ZBarrier::mark_young_good_barrier_on_oop_field(volatile zpointer* p) {
+  const zpointer o = load_atomic(p);
+  barrier(is_mark_young_good_fast_path, mark_young_slow_path, color_mark_young_good, p, o);
 }
 
 //

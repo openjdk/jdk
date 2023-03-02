@@ -281,6 +281,11 @@ void ZHeap::keep_alive(oop obj) {
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
+void ZHeap::mark_flush_and_free(Thread* thread) {
+  _young.mark_flush_and_free(thread);
+  _old.mark_flush_and_free(thread);
+}
+
 bool ZHeap::is_allocating(zaddress addr) const {
   const ZPage* const page = _page_table.get(addr);
   return page->is_allocating();

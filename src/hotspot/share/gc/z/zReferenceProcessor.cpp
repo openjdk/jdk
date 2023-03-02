@@ -240,7 +240,7 @@ void ZReferenceProcessor::discover(zaddress reference, ReferenceType type) {
     // the problem of later having to mark those objects if the referent is
     // still final reachable during processing.
     volatile zpointer* const referent_addr = reference_referent_addr(reference);
-    ZBarrier::mark_barrier_on_oop_field(referent_addr, true /* finalizable */);
+    ZBarrier::mark_barrier_on_old_oop_field(referent_addr, true /* finalizable */);
   }
 
   // Add reference to discovered list

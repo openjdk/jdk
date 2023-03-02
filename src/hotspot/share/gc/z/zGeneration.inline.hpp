@@ -117,6 +117,7 @@ inline const ZForwardingTable* ZGeneration::forwarding_table() const {
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZGeneration::mark_object(zaddress addr) {
+  assert(is_phase_mark(), "Should be marking");
   _mark.mark_object<resurrect, gc_thread, follow, finalizable>(addr);
 }
 

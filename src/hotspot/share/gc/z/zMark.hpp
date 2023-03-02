@@ -84,7 +84,7 @@ private:
   bool try_steal_local(ZMarkContext* context);
   bool try_steal_global(ZMarkContext* context);
   bool try_steal(ZMarkContext* context);
-  bool flush(bool gc_threads);
+  bool flush();
   bool try_proactive_flush();
   bool try_terminate_flush();
   bool try_terminate();
@@ -99,6 +99,7 @@ private:
   void work();
 
   void verify_all_stacks_empty() const;
+  void verify_worker_stacks_empty() const;
 
 public:
   ZMark(ZGeneration* generation, ZPageTable* page_table);
