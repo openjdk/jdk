@@ -824,9 +824,6 @@ public final class ProcessTools {
         }
 
         public void uncaughtException(Thread t, Throwable e) {
-            if (e instanceof Error && t.getState() == State.TERMINATED) {
-                return;
-            }
             e.printStackTrace(System.err);
             uncaughtThrowable = e;
         }
