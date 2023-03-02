@@ -452,8 +452,8 @@ public final class StringBuilder
      * @since 21
      */
     @Override
-    public StringBuilder repeat(char c, int count) {
-        super.repeat(c, count);
+    public StringBuilder repeat(int codePoint, int count) {
+        super.repeat(codePoint, count);
         return this;
     }
 

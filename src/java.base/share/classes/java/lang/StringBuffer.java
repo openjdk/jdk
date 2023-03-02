@@ -714,8 +714,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * @since 21
      */
     @Override
-    public synchronized StringBuffer repeat(char c, int count) {
-        super.repeat(c, count);
+    public synchronized StringBuffer repeat(int codePoint, int count) {
+        super.repeat(codePoint, count);
         return this;
     }
 

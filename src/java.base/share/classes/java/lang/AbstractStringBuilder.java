@@ -29,6 +29,7 @@ import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
 
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
@@ -1822,43 +1823,55 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         count += end - off;
     }
 
-    /**
-     * Appends {@code count} copies of the character {@code c} to this sequence.
-     * <p>
-     * The length of this sequence increases by {@code count}.
-     *
-     * @param c      character to append
-     * @param count  number of times to copy
-     *
-     * @return  a reference to this object.
-     *
-     * @throws IllegalArgumentException  if {@code count} is negative
-     *
-     * @since 21
-     */
-    public AbstractStringBuilder repeat(char c, int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count is negative: " + count);
-        } else if (count == 0) {
-            return this;
-        }
-        ensureCapacityInternal(this.count + count);
-        int index = this.count;
-        int limit = index + count;
+    private AbstractStringBuilder repeat(char c, int count) {
+        int limit = this.count + count;
+        ensureCapacityInternal(limit);
         boolean isLatin1 = isLatin1();
         if (isLatin1 && StringLatin1.canEncode(c)) {
-            while (index < limit) {
-                value[index++] = (byte)c;
+            byte b = (byte)c;
+            for (int index = this.count; index < limit; index++) {
+                value[index] = b;
             }
         } else {
             if (isLatin1) {
                 inflate();
             }
-            while (index < limit) {
-                StringUTF16.putCharSB(value, index++, c);
+            for (int index = this.count; index < limit; index++) {
+                StringUTF16.putCharSB(value, index, c);
             }
         }
         this.count = limit;
+        return this;
+    }
+
+    /**
+     * Repeats {@code count} copies of the string representation of the
+     * {@code codePoint} argument to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code count} times the
+     * string representation length.
+     *
+     * @param codePoint  code point to append
+     * @param count      number of times to copy
+     *
+     * @return  a reference to this object.
+     *
+     * @throws IllegalArgumentException if the specified {@code codePoint}
+     * is not a valid Unicode code point or if {@code count} is negative.
+     *
+     * @since 21
+     */
+    public AbstractStringBuilder repeat(int codePoint, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is negative: " + count);
+        } else if (count == 0) {
+            return this;
+        }
+        if (Character.isBmpCodePoint(codePoint)) {
+            repeat((char)codePoint, count);
+        } else {
+            repeat(CharBuffer.wrap(Character.toChars(codePoint)), count);
+        }
         return this;
     }
 
@@ -1908,7 +1921,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         ensureCapacityInternal(limit);
         if (cs instanceof String str) {
             putStringAt(offset, str);
-        } else  if (cs instanceof AbstractStringBuilder asb) {
+        } else if (cs instanceof AbstractStringBuilder asb) {
             append(asb);
         } else {
             appendChars(cs, 0, length);

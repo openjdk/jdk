@@ -108,6 +108,27 @@ public class Repeat {
         String expected = "repeat233333233333-2-3-3-3-3-3\u2461\u2462\u2462\u2462\u2462\u2462\u2461\u2462\u2462\u2462\u2462\u2462-\u2461-\u2462-\u2462-\u2462-\u2462-\u2462abcabcabc" +
                           "nullnullnullnullnullnullnullnullnullnullnullnull";
         assertEquals(expected, sb.toString());
+
+        // Codepoints
+
+        sb.setLength(0);
+
+        sb.repeat(0, 0);
+        sb.repeat(0, 1);
+        sb.repeat(0, 5);
+        sb.repeat((int)' ', 0);
+        sb.repeat((int)' ', 1);
+        sb.repeat((int)' ', 5);
+        sb.repeat(0x2460, 0);
+        sb.repeat(0x2461, 1);
+        sb.repeat(0x2462, 5);
+        sb.repeat(0x10FFFF, 0);
+        sb.repeat(0x10FFFF, 1);
+        sb.repeat(0x10FFFF, 5);
+
+        expected = "\u0000\u0000\u0000\u0000\u0000\u0000\u0020\u0020\u0020\u0020\u0020\u0020\u2461\u2462\u2462\u2462\u2462\u2462\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff";
+        assertEquals(expected, sb.toString());
+
     }
 
     public void exceptions() {
