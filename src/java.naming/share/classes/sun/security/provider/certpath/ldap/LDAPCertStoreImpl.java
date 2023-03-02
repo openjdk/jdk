@@ -225,6 +225,9 @@ final class LDAPCertStoreImpl {
 
         LDAPRequest(String name) throws CertStoreException {
             try {
+                // Convert DN to an LdapName so that it is not treated as a
+                // composite name by JNDI. In JNDI, using a string name is
+                // equivalent to calling new CompositeName(stringName).
                 this.name = new LdapName(name);
             } catch (InvalidNameException ine) {
                 throw new CertStoreException("Invalid name: " + name, ine);
@@ -326,6 +329,9 @@ final class LDAPCertStoreImpl {
                         if (newDn != null && newDn.charAt(0) == '/') {
                             newDn = newDn.substring(1);
                         }
+                        // In JNDI, it is not possible to use an LdapName for
+                        // the referral DN, so we must validate the syntax of
+                        // the string DN.
                         checkName(newDn);
                     } catch (Exception e) {
                         throw new NamingException("Cannot follow referral to "
