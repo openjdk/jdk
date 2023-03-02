@@ -29,7 +29,7 @@
  *          Note: CompileCommand Option Vectorize is enabled.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestDependencyOffsets
+ * @run driver/timeout=400 compiler.loopopts.superword.TestDependencyOffsets
  */
 
 package compiler.loopopts.superword;
@@ -40,15 +40,17 @@ import compiler.lib.ir_framework.*;
  *       https://bugs.openjdk.org/browse/JDK-8298935
  *
  * Types: int, long, short, char, byte, float, double
- * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -15, 15, -16, 16, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
+ * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -15, 15, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
  *
  * Checking if we should vectorize is a bit complicated. It depends on
  * Matcher::vector_width_in_bytes, of the respective platforms (eg. x86.ad)
  * This vector_width can be further constrained by MaxVectorSize.
  *
- * Generally, we vectorize if:
+ * With '-XX:-AlignVector', we vectorize if:
  *  - Vectors have at least 4 bytes:    vector_width >= 4
  *  - Vectors hold at least 2 elements: vector_width >= 2 * sizeofop(velt_type)
+ *    -> min_vector_width = max(4, 2 * sizeofop(velt_type))
+ *    -> simplifies to: vector_width >= min_vector_width
  *  - No cyclic dependency:
  *    - Access: data[i + offset] = data[i] * fac;
  *    - byte_offset = offset * sizeofop(type)
@@ -59,7 +61,42 @@ import compiler.lib.ir_framework.*;
  * Different types can lead to different vector_width. This depends on
  * the CPU-features. Thus, we have a positive and negative IR rule per
  * CPU-feature for each test.
-*/
+ *
+ * Definition:
+ *     MaxVectorSize: limit through flag
+ *     vector_width: limit given by specific CPU feature for a specific velt_type
+ *     actual_vector_width: what is actually vectorized with
+ *     min_vector_width: what is minimally required for vectorization
+ *
+ *     min_vector_width = max(4, 2 * sizeofop(velt_type))
+ *     MaxVectorSize >= vector_width >= actual_vector_width >= min_vector_width
+ *
+ * In general, we cannot easily specify negative IR rules, that require no
+ * vectorization to happen. We may improve the SuperWord algorithm later,
+ * or some additional optimization collapses some Loads, and suddenly cyclic
+ * dependency disappears, and we can vectorize.
+ *
+ * With '-XX:+AlignVector', we would like to check that we vectorize exactly iff:
+ *     byte_offset % actual_vector_width == 0
+ * Because all vector_widths are powers of 2, this is equivalent to:
+ *     pow2_factor(byte_offset) >= actual_vector_width
+ * where pow2_factor computes the largest power of 2 that is a factor of the number.
+ *
+ * Under these assumptions, we know there must be vectorization:
+ *     pow2_factor(byte_offset) >= vector_width
+ *       implies
+ *         pow2_factor(byte_offset) >= actual_vector_width
+ *     MaxVectorSize >= min_vector_size
+ *       else any vectorization is impossible.
+ *
+ * And under the following conditions no vectorization is possible:
+ *     byte_offset < 0: No cyclic dependency.
+ *       Cyclic dependency could lead to Load removals, then only the store is vectorized.
+ *     byte_offset % min_vector_width != 0
+ *       implies
+ *         byte_offset % actual_vector_width != 0
+ *
+ */
 
 public class TestDependencyOffsets {
     static final int RANGE = 512;
@@ -81,6 +118,10 @@ public class TestDependencyOffsets {
     static int[] goldIntP15 = new int[RANGE];
     static int[] goldIntM16 = new int[RANGE];
     static int[] goldIntP16 = new int[RANGE];
+    static int[] goldIntM18 = new int[RANGE];
+    static int[] goldIntP18 = new int[RANGE];
+    static int[] goldIntM20 = new int[RANGE];
+    static int[] goldIntP20 = new int[RANGE];
     static int[] goldIntM31 = new int[RANGE];
     static int[] goldIntP31 = new int[RANGE];
     static int[] goldIntM32 = new int[RANGE];
@@ -114,6 +155,10 @@ public class TestDependencyOffsets {
     static long[] goldLongP15 = new long[RANGE];
     static long[] goldLongM16 = new long[RANGE];
     static long[] goldLongP16 = new long[RANGE];
+    static long[] goldLongM18 = new long[RANGE];
+    static long[] goldLongP18 = new long[RANGE];
+    static long[] goldLongM20 = new long[RANGE];
+    static long[] goldLongP20 = new long[RANGE];
     static long[] goldLongM31 = new long[RANGE];
     static long[] goldLongP31 = new long[RANGE];
     static long[] goldLongM32 = new long[RANGE];
@@ -147,6 +192,10 @@ public class TestDependencyOffsets {
     static short[] goldShortP15 = new short[RANGE];
     static short[] goldShortM16 = new short[RANGE];
     static short[] goldShortP16 = new short[RANGE];
+    static short[] goldShortM18 = new short[RANGE];
+    static short[] goldShortP18 = new short[RANGE];
+    static short[] goldShortM20 = new short[RANGE];
+    static short[] goldShortP20 = new short[RANGE];
     static short[] goldShortM31 = new short[RANGE];
     static short[] goldShortP31 = new short[RANGE];
     static short[] goldShortM32 = new short[RANGE];
@@ -180,6 +229,10 @@ public class TestDependencyOffsets {
     static char[] goldCharP15 = new char[RANGE];
     static char[] goldCharM16 = new char[RANGE];
     static char[] goldCharP16 = new char[RANGE];
+    static char[] goldCharM18 = new char[RANGE];
+    static char[] goldCharP18 = new char[RANGE];
+    static char[] goldCharM20 = new char[RANGE];
+    static char[] goldCharP20 = new char[RANGE];
     static char[] goldCharM31 = new char[RANGE];
     static char[] goldCharP31 = new char[RANGE];
     static char[] goldCharM32 = new char[RANGE];
@@ -213,6 +266,10 @@ public class TestDependencyOffsets {
     static byte[] goldByteP15 = new byte[RANGE];
     static byte[] goldByteM16 = new byte[RANGE];
     static byte[] goldByteP16 = new byte[RANGE];
+    static byte[] goldByteM18 = new byte[RANGE];
+    static byte[] goldByteP18 = new byte[RANGE];
+    static byte[] goldByteM20 = new byte[RANGE];
+    static byte[] goldByteP20 = new byte[RANGE];
     static byte[] goldByteM31 = new byte[RANGE];
     static byte[] goldByteP31 = new byte[RANGE];
     static byte[] goldByteM32 = new byte[RANGE];
@@ -246,6 +303,10 @@ public class TestDependencyOffsets {
     static float[] goldFloatP15 = new float[RANGE];
     static float[] goldFloatM16 = new float[RANGE];
     static float[] goldFloatP16 = new float[RANGE];
+    static float[] goldFloatM18 = new float[RANGE];
+    static float[] goldFloatP18 = new float[RANGE];
+    static float[] goldFloatM20 = new float[RANGE];
+    static float[] goldFloatP20 = new float[RANGE];
     static float[] goldFloatM31 = new float[RANGE];
     static float[] goldFloatP31 = new float[RANGE];
     static float[] goldFloatM32 = new float[RANGE];
@@ -279,6 +340,10 @@ public class TestDependencyOffsets {
     static double[] goldDoubleP15 = new double[RANGE];
     static double[] goldDoubleM16 = new double[RANGE];
     static double[] goldDoubleP16 = new double[RANGE];
+    static double[] goldDoubleM18 = new double[RANGE];
+    static double[] goldDoubleP18 = new double[RANGE];
+    static double[] goldDoubleM20 = new double[RANGE];
+    static double[] goldDoubleP20 = new double[RANGE];
     static double[] goldDoubleM31 = new double[RANGE];
     static double[] goldDoubleP31 = new double[RANGE];
     static double[] goldDoubleM32 = new double[RANGE];
@@ -332,6 +397,14 @@ public class TestDependencyOffsets {
         testIntM16(goldIntM16);
         init(goldIntP16);
         testIntP16(goldIntP16);
+        init(goldIntM18);
+        testIntM18(goldIntM18);
+        init(goldIntP18);
+        testIntP18(goldIntP18);
+        init(goldIntM20);
+        testIntM20(goldIntM20);
+        init(goldIntP20);
+        testIntP20(goldIntP20);
         init(goldIntM31);
         testIntM31(goldIntM31);
         init(goldIntP31);
@@ -398,6 +471,14 @@ public class TestDependencyOffsets {
         testLongM16(goldLongM16);
         init(goldLongP16);
         testLongP16(goldLongP16);
+        init(goldLongM18);
+        testLongM18(goldLongM18);
+        init(goldLongP18);
+        testLongP18(goldLongP18);
+        init(goldLongM20);
+        testLongM20(goldLongM20);
+        init(goldLongP20);
+        testLongP20(goldLongP20);
         init(goldLongM31);
         testLongM31(goldLongM31);
         init(goldLongP31);
@@ -464,6 +545,14 @@ public class TestDependencyOffsets {
         testShortM16(goldShortM16);
         init(goldShortP16);
         testShortP16(goldShortP16);
+        init(goldShortM18);
+        testShortM18(goldShortM18);
+        init(goldShortP18);
+        testShortP18(goldShortP18);
+        init(goldShortM20);
+        testShortM20(goldShortM20);
+        init(goldShortP20);
+        testShortP20(goldShortP20);
         init(goldShortM31);
         testShortM31(goldShortM31);
         init(goldShortP31);
@@ -530,6 +619,14 @@ public class TestDependencyOffsets {
         testCharM16(goldCharM16);
         init(goldCharP16);
         testCharP16(goldCharP16);
+        init(goldCharM18);
+        testCharM18(goldCharM18);
+        init(goldCharP18);
+        testCharP18(goldCharP18);
+        init(goldCharM20);
+        testCharM20(goldCharM20);
+        init(goldCharP20);
+        testCharP20(goldCharP20);
         init(goldCharM31);
         testCharM31(goldCharM31);
         init(goldCharP31);
@@ -596,6 +693,14 @@ public class TestDependencyOffsets {
         testByteM16(goldByteM16);
         init(goldByteP16);
         testByteP16(goldByteP16);
+        init(goldByteM18);
+        testByteM18(goldByteM18);
+        init(goldByteP18);
+        testByteP18(goldByteP18);
+        init(goldByteM20);
+        testByteM20(goldByteM20);
+        init(goldByteP20);
+        testByteP20(goldByteP20);
         init(goldByteM31);
         testByteM31(goldByteM31);
         init(goldByteP31);
@@ -662,6 +767,14 @@ public class TestDependencyOffsets {
         testFloatM16(goldFloatM16);
         init(goldFloatP16);
         testFloatP16(goldFloatP16);
+        init(goldFloatM18);
+        testFloatM18(goldFloatM18);
+        init(goldFloatP18);
+        testFloatP18(goldFloatP18);
+        init(goldFloatM20);
+        testFloatM20(goldFloatM20);
+        init(goldFloatP20);
+        testFloatP20(goldFloatP20);
         init(goldFloatM31);
         testFloatM31(goldFloatM31);
         init(goldFloatP31);
@@ -728,6 +841,14 @@ public class TestDependencyOffsets {
         testDoubleM16(goldDoubleM16);
         init(goldDoubleP16);
         testDoubleP16(goldDoubleP16);
+        init(goldDoubleM18);
+        testDoubleM18(goldDoubleM18);
+        init(goldDoubleP18);
+        testDoubleP18(goldDoubleP18);
+        init(goldDoubleM20);
+        testDoubleM20(goldDoubleM20);
+        init(goldDoubleP20);
+        testDoubleP20(goldDoubleP20);
         init(goldDoubleM31);
         testDoubleM31(goldDoubleM31);
         init(goldDoubleP31);
@@ -763,7 +884,6 @@ public class TestDependencyOffsets {
     }
 
     public static void main(String args[]) {
-        TestDependencyOffsets x = new TestDependencyOffsets();
         TestFramework framework = new TestFramework(TestDependencyOffsets.class);
         framework.addFlags("-XX:-TieredCompilation",
                            "-XX:CompileCommand=option,compiler.loopopts.superword.TestDependencyOffsets::test*,Vectorize",
@@ -773,9 +893,9 @@ public class TestDependencyOffsets {
                            "-XX:LoopUnrollLimit=250");
 
         int i = 0;
-        Scenario[] scenarios = new Scenario[8];
+        Scenario[] scenarios = new Scenario[16];
         for (int maxVectorSize : new int[] {1, 2, 4, 8, 16, 32, 64, 128}) {
-            for (String alignVectorSign : new String[] {"-"}) { // TODO
+            for (String alignVectorSign : new String[] {"+", "-"}) {
                 scenarios[i] = new Scenario(i, "-XX:" + alignVectorSign + "AlignVector",
                                                "-XX:MaxVectorSize=" + maxVectorSize);
                 i++;
@@ -788,33 +908,21 @@ public class TestDependencyOffsets {
     // ------------------- Tests -------------------
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP0(int[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -832,33 +940,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM1(int[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -876,38 +988,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testIntP1(int[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (int)(data[j] * (int)-11);
@@ -924,33 +1016,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM2(int[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -968,37 +1048,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP2(int[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -1016,33 +1084,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM3(int[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -1060,37 +1132,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP3(int[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -1108,33 +1168,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM4(int[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -1152,36 +1200,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP4(int[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -1199,33 +1239,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM7(int[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -1243,36 +1287,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP7(int[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -1290,33 +1322,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM8(int[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -1334,34 +1354,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP8(int[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -1379,33 +1399,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM15(int[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -1423,34 +1447,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 60 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 60 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 60"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP15(int[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -1468,33 +1480,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM16(int[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -1512,33 +1512,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP16(int[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -1556,33 +1560,169 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testIntM18(int[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (int)(data[j] * (int)-11);
+        }
+    }
+
+    @Run(test = "testIntM18")
+    @Warmup(0)
+    public static void runIntM18() {
+        int[] data = new int[RANGE];
+        init(data);
+        testIntM18(data);
+        verify("testIntM18", data, goldIntM18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testIntP18(int[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (int)(data[j] * (int)-11);
+        }
+    }
+
+    @Run(test = "testIntP18")
+    @Warmup(0)
+    public static void runIntP18() {
+        int[] data = new int[RANGE];
+        init(data);
+        testIntP18(data);
+        verify("testIntP18", data, goldIntP18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testIntM20(int[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (int)(data[j] * (int)-11);
+        }
+    }
+
+    @Run(test = "testIntM20")
+    @Warmup(0)
+    public static void runIntM20() {
+        int[] data = new int[RANGE];
+        init(data);
+        testIntM20(data);
+        verify("testIntM20", data, goldIntM20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testIntP20(int[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (int)(data[j] * (int)-11);
+        }
+    }
+
+    @Run(test = "testIntP20")
+    @Warmup(0)
+    public static void runIntP20() {
+        int[] data = new int[RANGE];
+        init(data);
+        testIntP20(data);
+        verify("testIntP20", data, goldIntP20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM31(int[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -1600,33 +1740,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP31(int[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -1644,33 +1772,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM32(int[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -1688,33 +1804,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP32(int[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -1732,33 +1852,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM63(int[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -1776,33 +1900,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP63(int[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -1820,33 +1932,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM64(int[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -1864,33 +1964,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP64(int[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -1908,33 +2012,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM65(int[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -1952,33 +2060,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP65(int[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -1996,33 +2092,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM128(int[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -2040,33 +2124,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP128(int[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -2084,33 +2172,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM129(int[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -2128,33 +2220,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP129(int[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -2172,33 +2252,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntM192(int[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -2216,33 +2284,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testIntP192(int[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -2260,33 +2332,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP0(long[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -2304,33 +2364,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM1(long[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -2348,38 +2412,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testLongP1(long[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (long)(data[j] + (long)-11);
@@ -2396,33 +2440,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM2(long[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -2440,36 +2472,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP2(long[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -2487,33 +2511,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM3(long[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -2531,36 +2559,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP3(long[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -2578,33 +2594,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM4(long[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -2622,34 +2626,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP4(long[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -2667,33 +2671,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM7(long[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -2711,34 +2719,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 56 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 56"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP7(long[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -2756,33 +2752,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM8(long[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -2800,33 +2784,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP8(long[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -2844,33 +2832,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM15(long[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -2888,33 +2880,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP15(long[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -2932,33 +2912,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM16(long[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -2976,33 +2944,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP16(long[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -3020,33 +2992,181 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testLongM18(long[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (long)(data[j] + (long)-11);
+        }
+    }
+
+    @Run(test = "testLongM18")
+    @Warmup(0)
+    public static void runLongM18() {
+        long[] data = new long[RANGE];
+        init(data);
+        testLongM18(data);
+        verify("testLongM18", data, goldLongM18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testLongP18(long[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (long)(data[j] + (long)-11);
+        }
+    }
+
+    @Run(test = "testLongP18")
+    @Warmup(0)
+    public static void runLongP18() {
+        long[] data = new long[RANGE];
+        init(data);
+        testLongP18(data);
+        verify("testLongP18", data, goldLongP18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testLongM20(long[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (long)(data[j] + (long)-11);
+        }
+    }
+
+    @Run(test = "testLongM20")
+    @Warmup(0)
+    public static void runLongM20() {
+        long[] data = new long[RANGE];
+        init(data);
+        testLongM20(data);
+        verify("testLongM20", data, goldLongM20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testLongP20(long[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (long)(data[j] + (long)-11);
+        }
+    }
+
+    @Run(test = "testLongP20")
+    @Warmup(0)
+    public static void runLongP20() {
+        long[] data = new long[RANGE];
+        init(data);
+        testLongP20(data);
+        verify("testLongP20", data, goldLongP20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM31(long[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -3064,33 +3184,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP31(long[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -3108,33 +3216,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM32(long[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -3152,33 +3248,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP32(long[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -3196,33 +3296,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM63(long[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -3240,33 +3344,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP63(long[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -3284,33 +3376,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM64(long[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -3328,33 +3408,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP64(long[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -3372,33 +3456,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM65(long[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -3416,33 +3504,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP65(long[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -3460,33 +3536,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM128(long[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -3504,33 +3568,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP128(long[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -3548,33 +3616,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM129(long[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -3592,33 +3664,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP129(long[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -3636,33 +3696,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongM192(long[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -3680,33 +3728,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testLongP192(long[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -3724,33 +3776,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP0(short[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -3768,33 +3808,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM1(short[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -3812,38 +3856,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testShortP1(short[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (short)(data[j] * (short)-11);
@@ -3860,33 +3884,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM2(short[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -3904,37 +3916,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP2(short[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -3952,33 +3952,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM3(short[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -3996,37 +4000,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP3(short[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -4044,33 +4036,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM4(short[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -4088,37 +4068,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP4(short[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -4136,33 +4104,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM7(short[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -4180,37 +4152,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP7(short[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -4228,33 +4188,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM8(short[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -4272,36 +4220,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP8(short[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -4319,33 +4259,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM15(short[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -4363,36 +4307,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP15(short[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -4410,33 +4342,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM16(short[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -4454,34 +4374,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP16(short[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -4499,33 +4419,167 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testShortM18(short[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (short)(data[j] * (short)-11);
+        }
+    }
+
+    @Run(test = "testShortM18")
+    @Warmup(0)
+    public static void runShortM18() {
+        short[] data = new short[RANGE];
+        init(data);
+        testShortM18(data);
+        verify("testShortM18", data, goldShortM18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 36 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 36"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testShortP18(short[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (short)(data[j] * (short)-11);
+        }
+    }
+
+    @Run(test = "testShortP18")
+    @Warmup(0)
+    public static void runShortP18() {
+        short[] data = new short[RANGE];
+        init(data);
+        testShortP18(data);
+        verify("testShortP18", data, goldShortP18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testShortM20(short[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (short)(data[j] * (short)-11);
+        }
+    }
+
+    @Run(test = "testShortM20")
+    @Warmup(0)
+    public static void runShortM20() {
+        short[] data = new short[RANGE];
+        init(data);
+        testShortM20(data);
+        verify("testShortM20", data, goldShortM20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 40 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 40"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testShortP20(short[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (short)(data[j] * (short)-11);
+        }
+    }
+
+    @Run(test = "testShortP20")
+    @Warmup(0)
+    public static void runShortP20() {
+        short[] data = new short[RANGE];
+        init(data);
+        testShortP20(data);
+        verify("testShortP20", data, goldShortP20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM31(short[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -4543,34 +4597,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 62 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 62 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 62"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP31(short[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -4588,33 +4630,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM32(short[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -4632,33 +4662,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP32(short[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -4676,33 +4710,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM63(short[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -4720,33 +4758,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP63(short[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -4764,33 +4790,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM64(short[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -4808,33 +4822,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP64(short[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -4852,33 +4870,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM65(short[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -4896,33 +4918,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP65(short[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -4940,33 +4950,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM128(short[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -4984,33 +4982,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP128(short[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -5028,33 +5030,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM129(short[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -5072,33 +5078,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP129(short[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -5116,33 +5110,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortM192(short[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -5160,33 +5142,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testShortP192(short[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -5204,33 +5190,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP0(char[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -5248,33 +5222,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM1(char[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -5292,38 +5270,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testCharP1(char[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (char)(data[j] * (char)-11);
@@ -5340,33 +5298,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM2(char[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -5384,37 +5330,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP2(char[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -5432,33 +5366,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM3(char[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -5476,37 +5414,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 6 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 6 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 6"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP3(char[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -5524,33 +5450,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM4(char[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -5568,37 +5482,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP4(char[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -5616,33 +5518,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM7(char[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -5660,37 +5566,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 14 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 14"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP7(char[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -5708,33 +5602,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM8(char[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -5752,36 +5634,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP8(char[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -5799,33 +5673,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM15(char[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -5843,36 +5721,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
-    // positive byte_offset 30 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    //   positive byte_offset 30 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP15(char[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -5890,33 +5756,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM16(char[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -5934,34 +5788,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP16(char[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -5979,33 +5833,167 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testCharM18(char[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (char)(data[j] * (char)-11);
+        }
+    }
+
+    @Run(test = "testCharM18")
+    @Warmup(0)
+    public static void runCharM18() {
+        char[] data = new char[RANGE];
+        init(data);
+        testCharM18(data);
+        verify("testCharM18", data, goldCharM18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 36 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 36"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testCharP18(char[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (char)(data[j] * (char)-11);
+        }
+    }
+
+    @Run(test = "testCharP18")
+    @Warmup(0)
+    public static void runCharP18() {
+        char[] data = new char[RANGE];
+        init(data);
+        testCharP18(data);
+        verify("testCharP18", data, goldCharP18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testCharM20(char[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (char)(data[j] * (char)-11);
+        }
+    }
+
+    @Run(test = "testCharM20")
+    @Warmup(0)
+    public static void runCharM20() {
+        char[] data = new char[RANGE];
+        init(data);
+        testCharM20(data);
+        verify("testCharM20", data, goldCharM20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 40 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 40"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testCharP20(char[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (char)(data[j] * (char)-11);
+        }
+    }
+
+    @Run(test = "testCharP20")
+    @Warmup(0)
+    public static void runCharP20() {
+        char[] data = new char[RANGE];
+        init(data);
+        testCharP20(data);
+        verify("testCharP20", data, goldCharP20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM31(char[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -6023,34 +6011,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
-    // positive byte_offset 62 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
+    //   positive byte_offset 62 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 62"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP31(char[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -6068,33 +6044,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM32(char[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -6112,33 +6076,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP32(char[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -6156,33 +6124,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM63(char[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -6200,33 +6172,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP63(char[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -6244,33 +6204,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM64(char[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -6288,33 +6236,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP64(char[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -6332,33 +6284,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM65(char[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -6376,33 +6332,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP65(char[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -6420,33 +6364,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM128(char[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -6464,33 +6396,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP128(char[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -6508,33 +6444,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM129(char[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -6552,33 +6492,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP129(char[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -6596,33 +6524,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharM192(char[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -6640,33 +6556,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 32
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 16
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testCharP192(char[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -6684,33 +6604,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP0(byte[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -6728,33 +6636,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM1(byte[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -6772,38 +6684,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 1 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 1 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 1 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 1 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 1"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 1"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 1 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 1 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 1 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 1 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testByteP1(byte[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (byte)(data[j] * (byte)11);
@@ -6820,33 +6712,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM2(byte[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -6864,38 +6760,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 2 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 2"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 2"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 2 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testByteP2(byte[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
             data[j + 2] = (byte)(data[j] * (byte)11);
@@ -6912,33 +6788,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM3(byte[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -6956,38 +6836,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 3 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 3 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 3 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 3 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 3"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 3"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 3 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 3 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 3 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 3 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testByteP3(byte[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
             data[j + 3] = (byte)(data[j] * (byte)11);
@@ -7004,33 +6864,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM4(byte[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -7048,37 +6896,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 4 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 4 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP4(byte[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -7096,33 +6932,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM7(byte[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -7140,37 +6980,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 7 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 7 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 7 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 7 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 7 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 7"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 7"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP7(byte[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -7188,33 +7016,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM8(byte[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -7232,37 +7048,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP8(byte[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -7280,33 +7084,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM15(byte[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -7324,37 +7132,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    // positive byte_offset 15 can lead to cyclic dependency
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    //   positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 15 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 15 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 15 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 15 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP15(byte[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -7372,33 +7168,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM16(byte[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -7416,36 +7200,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP16(byte[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -7463,33 +7239,187 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testByteM18(byte[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (byte)(data[j] * (byte)11);
+        }
+    }
+
+    @Run(test = "testByteM18")
+    @Warmup(0)
+    public static void runByteM18() {
+        byte[] data = new byte[RANGE];
+        init(data);
+        testByteM18(data);
+        verify("testByteM18", data, goldByteM18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 18 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 18"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 18 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 18"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 18 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 18"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testByteP18(byte[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (byte)(data[j] * (byte)11);
+        }
+    }
+
+    @Run(test = "testByteP18")
+    @Warmup(0)
+    public static void runByteP18() {
+        byte[] data = new byte[RANGE];
+        init(data);
+        testByteP18(data);
+        verify("testByteP18", data, goldByteP18);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testByteM20(byte[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (byte)(data[j] * (byte)11);
+        }
+    }
+
+    @Run(test = "testByteM20")
+    @Warmup(0)
+    public static void runByteM20() {
+        byte[] data = new byte[RANGE];
+        init(data);
+        testByteM20(data);
+        verify("testByteM20", data, goldByteM20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 20 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 20"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 20 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 20"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 20 can lead to cyclic dependency
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 20"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testByteP20(byte[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (byte)(data[j] * (byte)11);
+        }
+    }
+
+    @Run(test = "testByteP20")
+    @Warmup(0)
+    public static void runByteP20() {
+        byte[] data = new byte[RANGE];
+        init(data);
+        testByteP20(data);
+        verify("testByteP20", data, goldByteP20);
+    }
+
+    @Test
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM31(byte[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -7507,36 +7437,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 31 can lead to cyclic dependency
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 31 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
-    // positive byte_offset 31 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    //   positive byte_offset 31 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 31"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 31"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP31(byte[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -7554,33 +7472,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM32(byte[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -7598,34 +7504,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP32(byte[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -7643,33 +7549,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM63(byte[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -7687,34 +7597,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
-    // positive byte_offset 63 can lead to cyclic dependency
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
+    //   positive byte_offset 63 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 4", "MaxVectorSize", "<= 63"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 63"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 4", "MaxVectorSize", "> 63"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP63(byte[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -7732,33 +7630,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM64(byte[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -7776,33 +7662,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP64(byte[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -7820,33 +7710,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM65(byte[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -7864,33 +7758,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP65(byte[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -7908,33 +7790,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM128(byte[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -7952,33 +7822,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP128(byte[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -7996,33 +7870,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM129(byte[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -8040,33 +7918,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP129(byte[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -8084,33 +7950,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteM192(byte[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -8128,33 +7982,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
+    // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    // cpu: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
+    // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    // cpu: avx512bw -> vector_width: 64 -> elements in vector: 64
+    // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
-        applyIfCPUFeature = {"avx512bw", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 32
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 4"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
+        applyIfCPUFeature = {"avx512bw", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 32
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 4"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testByteP192(byte[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -8172,33 +8030,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP0(float[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -8216,33 +8062,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM1(float[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -8260,38 +8110,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 4 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 4"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 4"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 4 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testFloatP1(float[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (float)(data[j] * (float)1.001f);
@@ -8308,33 +8138,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM2(float[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -8352,37 +8170,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP2(float[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -8400,33 +8206,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM3(float[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -8444,37 +8254,25 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 12 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 12 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 12"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP3(float[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -8492,33 +8290,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM4(float[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -8536,36 +8322,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP4(float[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -8583,33 +8361,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM7(float[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -8627,36 +8409,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
-    // positive byte_offset 28 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 28"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP7(float[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -8674,33 +8444,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM8(float[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -8718,34 +8476,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP8(float[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -8763,33 +8521,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM15(float[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -8807,34 +8569,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
-    // positive byte_offset 60 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    //   positive byte_offset 60 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 8", "MaxVectorSize", "> 60"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP15(float[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -8852,33 +8602,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM16(float[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -8896,33 +8634,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP16(float[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -8940,33 +8682,169 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloatM18(float[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (float)(data[j] * (float)1.001f);
+        }
+    }
+
+    @Run(test = "testFloatM18")
+    @Warmup(0)
+    public static void runFloatM18() {
+        float[] data = new float[RANGE];
+        init(data);
+        testFloatM18(data);
+        verify("testFloatM18", data, goldFloatM18);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloatP18(float[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (float)(data[j] * (float)1.001f);
+        }
+    }
+
+    @Run(test = "testFloatP18")
+    @Warmup(0)
+    public static void runFloatP18() {
+        float[] data = new float[RANGE];
+        init(data);
+        testFloatP18(data);
+        verify("testFloatP18", data, goldFloatP18);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloatM20(float[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (float)(data[j] * (float)1.001f);
+        }
+    }
+
+    @Run(test = "testFloatM20")
+    @Warmup(0)
+    public static void runFloatM20() {
+        float[] data = new float[RANGE];
+        init(data);
+        testFloatM20(data);
+        verify("testFloatM20", data, goldFloatM20);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloatP20(float[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (float)(data[j] * (float)1.001f);
+        }
+    }
+
+    @Run(test = "testFloatP20")
+    @Warmup(0)
+    public static void runFloatP20() {
+        float[] data = new float[RANGE];
+        init(data);
+        testFloatP20(data);
+        verify("testFloatP20", data, goldFloatP20);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM31(float[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -8984,33 +8862,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP31(float[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -9028,33 +8894,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM32(float[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -9072,33 +8926,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP32(float[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -9116,33 +8974,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM63(float[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -9160,33 +9022,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP63(float[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -9204,33 +9054,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM64(float[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -9248,33 +9086,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP64(float[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -9292,33 +9134,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM65(float[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -9336,33 +9182,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP65(float[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -9380,33 +9214,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM128(float[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -9424,33 +9246,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP128(float[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -9468,33 +9294,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM129(float[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -9512,33 +9342,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP129(float[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -9556,33 +9374,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatM192(float[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -9600,33 +9406,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 4
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 8
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 16
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 8
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 8"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 8"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testFloatP192(float[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
@@ -9644,33 +9454,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP0(double[] data) {
         for (int j = 0; j < RANGE; j++) {
@@ -9688,33 +9486,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM1(double[] data) {
         for (int j = 1; j < RANGE; j++) {
@@ -9732,38 +9534,18 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 8 can lead to cyclic dependency
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 8"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 8"},
-        applyIfCPUFeature = {"asimd", "true"})
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 8 can lead to cyclic dependency
+    //   No positive IR rule: conditions impossible.
     public static void testDoubleP1(double[] data) {
         for (int j = 0; j < RANGE - 1; j++) {
             data[j + 1] = (double)(data[j] * (double)1.001);
@@ -9780,33 +9562,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM2(double[] data) {
         for (int j = 2; j < RANGE; j++) {
@@ -9824,36 +9594,28 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 16 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 16 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP2(double[] data) {
         for (int j = 0; j < RANGE - 2; j++) {
@@ -9871,33 +9633,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM3(double[] data) {
         for (int j = 3; j < RANGE; j++) {
@@ -9915,36 +9681,24 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
-    // positive byte_offset 24 can lead to cyclic dependency
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    //   positive byte_offset 24 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 24"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP3(double[] data) {
         for (int j = 0; j < RANGE - 3; j++) {
@@ -9962,33 +9716,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM4(double[] data) {
         for (int j = 4; j < RANGE; j++) {
@@ -10006,34 +9748,34 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 32 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 32 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 32"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP4(double[] data) {
         for (int j = 0; j < RANGE - 4; j++) {
@@ -10051,33 +9793,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM7(double[] data) {
         for (int j = 7; j < RANGE; j++) {
@@ -10095,34 +9841,22 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
-    // positive byte_offset 56 can lead to cyclic dependency
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    //   positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIfOr = {"MaxVectorSize", "< 16", "MaxVectorSize", "> 56"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP7(double[] data) {
         for (int j = 0; j < RANGE - 7; j++) {
@@ -10140,33 +9874,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM8(double[] data) {
         for (int j = 8; j < RANGE; j++) {
@@ -10184,33 +9906,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP8(double[] data) {
         for (int j = 0; j < RANGE - 8; j++) {
@@ -10228,33 +9954,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM15(double[] data) {
         for (int j = 15; j < RANGE; j++) {
@@ -10272,33 +10002,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP15(double[] data) {
         for (int j = 0; j < RANGE - 15; j++) {
@@ -10316,33 +10034,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM16(double[] data) {
         for (int j = 16; j < RANGE; j++) {
@@ -10360,33 +10066,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP16(double[] data) {
         for (int j = 0; j < RANGE - 16; j++) {
@@ -10404,33 +10114,181 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    public static void testDoubleM18(double[] data) {
+        for (int j = 18; j < RANGE; j++) {
+            data[j + -18] = (double)(data[j] * (double)1.001);
+        }
+    }
+
+    @Run(test = "testDoubleM18")
+    @Warmup(0)
+    public static void runDoubleM18() {
+        double[] data = new double[RANGE];
+        init(data);
+        testDoubleM18(data);
+        verify("testDoubleM18", data, goldDoubleM18);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testDoubleP18(double[] data) {
+        for (int j = 0; j < RANGE - 18; j++) {
+            data[j + 18] = (double)(data[j] * (double)1.001);
+        }
+    }
+
+    @Run(test = "testDoubleP18")
+    @Warmup(0)
+    public static void runDoubleP18() {
+        double[] data = new double[RANGE];
+        init(data);
+        testDoubleP18(data);
+        verify("testDoubleP18", data, goldDoubleP18);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testDoubleM20(double[] data) {
+        for (int j = 20; j < RANGE; j++) {
+            data[j + -20] = (double)(data[j] * (double)1.001);
+        }
+    }
+
+    @Run(test = "testDoubleM20")
+    @Warmup(0)
+    public static void runDoubleM20() {
+        double[] data = new double[RANGE];
+        init(data);
+        testDoubleM20(data);
+        verify("testDoubleM20", data, goldDoubleM20);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public static void testDoubleP20(double[] data) {
+        for (int j = 0; j < RANGE - 20; j++) {
+            data[j + 20] = (double)(data[j] * (double)1.001);
+        }
+    }
+
+    @Run(test = "testDoubleP20")
+    @Warmup(0)
+    public static void runDoubleP20() {
+        double[] data = new double[RANGE];
+        init(data);
+        testDoubleP20(data);
+        verify("testDoubleP20", data, goldDoubleP20);
+    }
+
+    @Test
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
+    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM31(double[] data) {
         for (int j = 31; j < RANGE; j++) {
@@ -10448,33 +10306,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP31(double[] data) {
         for (int j = 0; j < RANGE - 31; j++) {
@@ -10492,33 +10338,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM32(double[] data) {
         for (int j = 32; j < RANGE; j++) {
@@ -10536,33 +10370,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP32(double[] data) {
         for (int j = 0; j < RANGE - 32; j++) {
@@ -10580,33 +10418,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM63(double[] data) {
         for (int j = 63; j < RANGE; j++) {
@@ -10624,33 +10466,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP63(double[] data) {
         for (int j = 0; j < RANGE - 63; j++) {
@@ -10668,33 +10498,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM64(double[] data) {
         for (int j = 64; j < RANGE; j++) {
@@ -10712,33 +10530,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP64(double[] data) {
         for (int j = 0; j < RANGE - 64; j++) {
@@ -10756,33 +10578,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM65(double[] data) {
         for (int j = 65; j < RANGE; j++) {
@@ -10800,33 +10626,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP65(double[] data) {
         for (int j = 0; j < RANGE - 65; j++) {
@@ -10844,33 +10658,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM128(double[] data) {
         for (int j = 128; j < RANGE; j++) {
@@ -10888,33 +10690,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP128(double[] data) {
         for (int j = 0; j < RANGE - 128; j++) {
@@ -10932,33 +10738,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
+    //   Strict alignment not possible.
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM129(double[] data) {
         for (int j = 129; j < RANGE; j++) {
@@ -10976,33 +10786,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP129(double[] data) {
         for (int j = 0; j < RANGE - 129; j++) {
@@ -11020,33 +10818,21 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
-        applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleM192(double[] data) {
         for (int j = 192; j < RANGE; j++) {
@@ -11064,33 +10850,37 @@ public class TestDependencyOffsets {
     }
 
     @Test
-    // cpu: sse4.1 -> vector_width: 16 -> elements in vector: 2
+    // CPU: sse4.1 -> vector_width: 16 -> elements in vector: 2
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    // cpu: avx and avx2 -> vector_width: 32 -> elements in vector: 4
+    // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    // cpu: avx512 -> vector_width: 64 -> elements in vector: 8
+    // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
-        applyIfCPUFeature = {"avx512", "true"})
-    // cpu: asimd -> vector_width: 32 -> elements in vector: 4
+    //   Vectorize when strict alignment guaranteed.
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">= 16"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeature = {"avx512", "true"})
+    // CPU: asimd -> vector_width: 32 -> elements in vector: 4
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"MaxVectorSize", "< 16"},
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
     public static void testDoubleP192(double[] data) {
         for (int j = 0; j < RANGE - 192; j++) {
