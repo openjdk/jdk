@@ -1205,11 +1205,12 @@ public class CLDRConverter {
         // First, parse `coverageLevels.txt` file
         var covMap = Files.readAllLines(Path.of(COVERAGELEVELS_FILE)).stream()
             .filter(line -> !line.isBlank() && !line.startsWith("#"))
-            .map(line -> line.split(";", 3))
+            .map(line -> line.split("[\s\t]*;[\s\t]*", 3))
+            .filter(a -> a[1].matches("basic|moderate|modern|comprehensive"))
             .collect(Collectors.toMap(
-                    a -> Locale.forLanguageTag(a[0].trim().replaceAll("_", "-")),
-                    a -> a[1].trim(),
-                    (v1, v2) -> v2,
+                    a -> Locale.forLanguageTag(a[0].replaceAll("_", "-")),
+                    a -> a[1],
+                    (v1, v2) -> v2, // should never happen
                     HashMap::new));
 
         // Add other common (non-seed) locales (below `basic` coverage level) as of v42
