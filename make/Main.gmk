@@ -259,20 +259,20 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
 
 $(eval $(call SetupTarget, eclipse-java-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    TARGET := workspace-java, \
+    ARGS := WORKSPACE=java, \
 ))
 
 $(eval $(call SetupTarget, eclipse-hotspot-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    TARGET := workspace-hotspot, \
+    ARGS := WORKSPACE=hotspot, \
 ))
 
 $(eval $(call SetupTarget, eclipse-native-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    TARGET := workspace-native, \
+    ARGS := WORKSPACE=native, \
 ))
 
-$(eval $(call SetupTarget, eclipse-full-env, \
+$(eval $(call SetupTarget, eclipse-mixed-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
 ))
 

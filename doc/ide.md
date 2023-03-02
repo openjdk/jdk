@@ -96,11 +96,14 @@ Eclipse which can then conveniently switch between Java and C/C++ natures
 during development by running:
 
 ```shell
-make eclipse-full-env
+make eclipse-mixed-env
 ```
 
 Do note that this generates all features that come with both Java and C/C++
 natures.
+
+Eclipse support in the JDK is relatively new, so keep in mind that certain
+Eclipse features may not fully work properly at the moment.
 
 #### Compilation Database
 
@@ -162,8 +165,12 @@ Follow `File -> Import -> Projects from Folder or Archive` and select the
 Java Workspace.
 
 As mentioned above for Eclipse CDT, you can create a combined Java and C/C++
-Workspace which can conveniently switch between Java and C/C++ natures during development by running:
+Workspace which can conveniently switch between Java and C/C++ natures during
+development by running:
 
 ```shell
-make eclipse-full-env
+make eclipse-mixed-env
 ```
+
+Eclipse JDT support in the JDK is also very recent, much like with Eclipse CDT,
+so no guarantees of stability can be made as of yet.

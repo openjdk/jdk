@@ -27,6 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include TextFileProcessing.gmk
 include Utils.gmk
 include Modules.gmk
 
@@ -36,7 +37,7 @@ include hotspot/lib/JvmFeatures.gmk
 include hotspot/lib/JvmOverrideFiles.gmk
 include hotspot/lib/JvmFlags.gmk
 
-WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
+IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
 NATIVE_FILE := $(IDE_OUTPUTDIR)/.cproject
 LANGUAGE_SETTINGS := $(IDE_OUTPUTDIR)/.settings/language.settings.xml
 
@@ -94,16 +95,6 @@ NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
 
 EmitEmptyLine = $(call AppendFile,,$(1))
 
-# Important note: We only run strip on our own relative source directories
-# Absolute paths should not be passed to strip!
-
-EmitLinkedDirectory = \
-  $(call AppendFile,        <link>, $(WORKSPACE_FILE)) \
-  $(call AppendFile,            <name>$(strip $(1))</name>, $(WORKSPACE_FILE)) \
-  $(call AppendFile,            <type>2</type>, $(WORKSPACE_FILE)) \
-  $(call AppendFile,            <location>$(subst \\,/,$(call FixPath, $(2)))</location>, $(WORKSPACE_FILE)) \
-  $(call AppendFile,        </link>, $(WORKSPACE_FILE))
-
 EmitNativeDir = \
   $(call AppendFile,                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$(strip $(1))"/>, $(NATIVE_FILE))
 
@@ -133,17 +124,22 @@ EmitExtractedDefines = \
 #
 # Remaining parameter(s) are named arguments:
 #   NATURE - Which Eclipse Workspace nature to generate for the Workspace. Can
-#       be one of JAVA, HOTSPOT, NATIVE, or FULL.
+#       be one of JAVA, HOTSPOT, NATIVE, or MIXED.
 #   SHARED - Workspace will share the same directory as the JDK if true. Can be
 #       either true or false. Defaults to false if not specified.
 SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
 define SetupEclipseWorkspaceBody
 
+  $1_CLASSPATH :=
+  $1_NATURES :=
+  $1_BUILD_MANAGERS :=
+  $1_LINKED_RESOURCES :=
+
   ifeq ($$($1_NATURE), )
     $$(error No nature specified for Eclipse Workspace, cannot continue)
   endif
 
-  ifeq ($$(findstring $$($1_NATURE), JAVA HOTSPOT NATIVE FULL), )
+  ifeq ($$(findstring $$($1_NATURE), JAVA HOTSPOT NATIVE MIXED), )
     $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
   endif
 
@@ -155,73 +151,64 @@ define SetupEclipseWorkspaceBody
   endif
 
   ifeq ($$($1_SHARED), true)
-    CLASSPATH_FILE := $(TOPDIR)/.classpath
+    $1_CLASSPATH_FILE := $(TOPDIR)/.classpath
+    $1_WORKSPACE_FILE := $(TOPDIR)/.project
   else
     IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
-    CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath\
+    $1_CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
+    $1_WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
     $$(call MakeDir, $(IDE_OUTPUTDIR))
   endif
 
-  # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+  # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
   #   ifeq ($(TOOLCHAIN_TYPE), microsoft)
   #     $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
   #   endif
   # endif
 
-  # Start with the Workspace file first
-  $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
-  $$(call AppendFile,<projectDescription>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <name>Java</name>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <comment></comment>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <projects>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    </projects>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <buildSpec>, $(WORKSPACE_FILE))
-
-  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
-    $$(call AppendFile,        <buildCommand>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <arguments>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            </arguments>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        </buildCommand>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        <buildCommand>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <triggers>full$$(COMMA)incremental$$(COMMA)</triggers>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            <arguments>, $(WORKSPACE_FILE))
-    $$(call AppendFile,            </arguments>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        </buildCommand>, $(WORKSPACE_FILE))
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+    $1_BUILD_MANAGERS += \
+      <buildCommand> \
+          <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
+          <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
+          <arguments> \
+          </arguments> \
+      </buildCommand> \
+      <buildCommand> \
+          <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
+          <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
+          <arguments> \
+          </arguments> \
+      </buildCommand>$$(NEWLINE)
   endif
 
-  $$(call AppendFile,    </buildSpec>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <natures>, $(WORKSPACE_FILE))
-
-  ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
-
-    $1_CLASSPATH :=
+  ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
 
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
-    $$(foreach src,$(JAVA_DIRS), \
-      $1_CLASSPATH += \
-          <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>)
+    $1_CLASSPATH += $$(foreach src,$(JAVA_DIRS), \
+      <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>$$(NEWLINE))
 
-    $$(eval $$(call SetupTextFileProcessing, $1_CLASSPATH_FILE, \
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_CLASSPATH_FILE, \
       SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/classpath.template, \
-      OUTPUT_FILE := $$(CLASSPATH_FILE), \
+      OUTPUT_FILE := $$($1_CLASSPATH_FILE), \
       REPLACEMENTS := \
           @@CLASSPATH@@ => $$($1_CLASSPATH), \
     ))
 
-    $$(call AppendFile,        <nature>org.eclipse.jdt.core.javanature</nature>, $(WORKSPACE_FILE))
+    TARGETS += $$($1_CREATE_CLASSPATH_FILE)
+
+    $1_NATURES += <nature>org.eclipse.jdt.core.javanature</nature>$$(NEWLINE)
 
   endif
 
-  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
 
-    $$(call AppendFile,        <nature>org.eclipse.cdt.core.cnature</nature>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        <nature>org.eclipse.cdt.core.ccnature</nature>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>, $(WORKSPACE_FILE))
-    $$(call AppendFile,        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>, $(WORKSPACE_FILE))
+    $1_NATURES += \
+      <nature>org.eclipse.cdt.core.cnature</nature> \
+      <nature>org.eclipse.cdt.core.ccnature</nature> \
+      <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature> \
+      <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>$$(NEWLINE)
 
     # Now emit the native file
     $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(NATIVE_FILE))
@@ -267,7 +254,7 @@ define SetupEclipseWorkspaceBody
     # This is always emitted, no matter which of the 3 natures were selected
     $$(call EmitNativeDir, src/hotspot)
 
-    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
     endif
 
@@ -346,7 +333,7 @@ define SetupEclipseWorkspaceBody
 
     $$(call AppendFile,                <language id="org.eclipse.cdt.core.gcc">, $(LANGUAGE_SETTINGS))
 
-    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
       $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
@@ -420,7 +407,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
 
     # Now the rest of the C++ sources in the codebase
-    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
       $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
@@ -443,54 +430,71 @@ define SetupEclipseWorkspaceBody
 
   endif
 
-  $$(call AppendFile,    </natures>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <linkedResources>, $(WORKSPACE_FILE))
+  ifeq ($$($1_SHARED), false)
+    ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
+      $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
+        <link> \
+            <name>$$(strip $$(src))</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+        </link>$$(NEWLINE))
+    endif
 
-  # Eclipse does have rudimentary support for these, so why not?
-  # Their inclusion will not affect or slow indexing down in any way regardless
-  $$(call EmitLinkedDirectory, bin,$(TOPDIR)/bin)
-  $$(call EmitLinkedDirectory, doc,$(TOPDIR)/doc)
+    ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+      # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
+      # including the make sources as well, since the cost of indexing them is miniscule
+      $1_LINKED_RESOURCES += \
+        <link> \
+            <name>make</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
+        </link> \
+        <link> \
+            <name>src/hotspot</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
+        </link>$$(NEWLINE)
+    endif
 
-  ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
-    $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+      $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
+        <link> \
+            <name>$$(strip $$(src))</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+        </link>$$(NEWLINE))
+    endif
   endif
 
-  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+  $$(eval $$(call SetupTextFileProcessing, $1_CREATE_WORKSPACE_FILE, \
+    SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/workspace.template, \
+    OUTPUT_FILE := $$($1_WORKSPACE_FILE), \
+    REPLACEMENTS := \
+        @@BUILD_MANAGERS@@ => $$($1_BUILD_MANAGERS) ; \
+        @@NATURES@@ => $$($1_NATURES) ; \
+        @@LINKED_RESOURCES@@ => $$($1_LINKED_RESOURCES), \
+  ))
 
-    # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
-    # including the make sources as well, since the cost of indexing them is miniscule
-    $$(call EmitLinkedDirectory, make,$(TOPDIR)/make)
-    $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
-
-  endif
-
-  ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
-    $$(foreach src,$(NATIVE_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
-  endif
-
-  $$(call AppendFile,    </linkedResources>, $(WORKSPACE_FILE))
-  $$(call AppendFile,</projectDescription>, $(WORKSPACE_FILE))
+  TARGETS += $$($1_CREATE_WORKSPACE_FILE)
 
 endef
 
-workspace-java:
-	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-	    NATURE := JAVA, \
-	))
+ifeq ($(WORKSPACE), java)
+$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+  NATURE := JAVA, \
+))
+else ifeq ($(WORKSPACE), hotspot)
+$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+  NATURE := HOTSPOT, \
+))
+else ifeq ($(WORKSPACE), native)
+$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+  NATURE := NATIVE, \
+))
+else
+$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+  NATURE := MIXED, \
+))
+endif
 
-workspace-hotspot:
-	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-	    NATURE := HOTSPOT, \
-	))
-
-workspace-native:
-	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-	    NATURE := NATIVE, \
-	))
-
-workspace-full:
-	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-	    NATURE := FULL, \
-	))
-
-all: workspace-full
+all: $(TARGETS)

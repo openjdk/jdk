@@ -108,9 +108,11 @@ Eclipse's default look and feel. ;)</p>
 strain, the make system also supports generating a combined Java and
 C/C++ Workspace for Eclipse which can then conveniently switch between
 Java and C/C++ natures during development by running:</p>
-<pre class="shell"><code>make eclipse-full-env</code></pre>
+<pre class="shell"><code>make eclipse-mixed-env</code></pre>
 <p>Do note that this generates all features that come with both Java and
 C/C++ natures.</p>
+<p>Eclipse support in the JDK is relatively new, so keep in mind that
+certain Eclipse features may not fully work properly at the moment.</p>
 <h4 id="compilation-database">Compilation Database</h4>
 <p>The make system can generate generic native code indexing support in
 the form of a <a
@@ -153,6 +155,8 @@ to import the newly created Java Workspace.</p>
 <p>As mentioned above for Eclipse CDT, you can create a combined Java
 and C/C++ Workspace which can conveniently switch between Java and C/C++
 natures during development by running:</p>
-<pre class="shell"><code>make eclipse-full-env</code></pre>
+<pre class="shell"><code>make eclipse-mixed-env</code></pre>
+<p>Eclipse JDT support in the JDK is also very recent, much like with
+Eclipse CDT, so no guarantees of stability can be made as of yet.</p>
 </body>
 </html>
