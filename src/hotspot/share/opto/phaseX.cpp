@@ -471,7 +471,9 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
   if (old_node_note_array != nullptr) {
-    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), 8, 0, nullptr));
+    int new_size = (_useful.size() >> 8) + 1; // The node note array uses blocks, see C->_log2_node_notes_block_size
+    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), new_size, 0, nullptr));
+    C->grow_node_notes(C->node_note_array(), new_size);
   }
 
   // Iterate over the set of live nodes.
