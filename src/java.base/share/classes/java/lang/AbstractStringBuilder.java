@@ -1850,6 +1850,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * <p>
      * The length of this sequence increases by {@code count} times the
      * string representation length.
+     * <p>
+     * It is usual to use {@code char} expressions for code points. For example:
+     * {@snippet lang="java":
+     * // insert 10 asterisks into the buffer
+     * sb.repeat('*', 10);
+     * }
      *
      * @param codePoint  code point to append
      * @param count      number of times to copy
