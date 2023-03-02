@@ -385,16 +385,30 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    CHECK_NULL(jc_KeychainStore);
+    if (jc_KeychainStore == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
             env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
-    CHECK_NULL(jm_createTrustedCertEntry);
+    if (jm_createTrustedCertEntry == NULL) {
+        goto errOut;
+    }
+
     jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
-    CHECK_NULL(jc_arrayListClass);
+    if (jc_arrayListClass == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
-    CHECK_NULL(jm_arrayListCons);
+    if (jm_arrayListCons == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-    CHECK_NULL(jm_listAdd);
+    if (jm_listAdd == NULL) {
+        goto errOut;
+    }
 
     do {
         searchResult = SecKeychainSearchCopyNext(keychainItemSearch, &theItem);
