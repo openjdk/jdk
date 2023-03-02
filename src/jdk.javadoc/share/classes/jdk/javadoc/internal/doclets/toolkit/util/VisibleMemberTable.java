@@ -498,10 +498,10 @@ public class VisibleMemberTable {
     }
 
     private boolean allowInheritedMembers(Element e, Kind kind, LocalMemberTable lmt) {
-        return isInherited(e) && !isMemberHidden(e, kind, lmt);
+        return isAccessible(e) && !isMemberHidden(e, kind, lmt);
     }
 
-    private boolean isInherited(Element e) {
+    private boolean isAccessible(Element e) {
         if (utils.isPrivate(e))
             return false;
 
@@ -647,7 +647,7 @@ public class VisibleMemberTable {
     private boolean allowInheritedMethod(ExecutableElement inheritedMethod,
                                          Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
                                          LocalMemberTable lmt) {
-        if (!isInherited(inheritedMethod))
+        if (!isAccessible(inheritedMethod))
             return false;
 
         final boolean haveStatic = utils.isStatic(inheritedMethod);
