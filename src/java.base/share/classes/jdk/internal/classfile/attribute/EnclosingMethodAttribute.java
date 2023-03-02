@@ -106,7 +106,7 @@ public sealed interface EnclosingMethodAttribute
         return new UnboundAttribute.UnboundEnclosingMethodAttribute(
                         TemporaryConstantPool.INSTANCE.classEntry(className),
                         methodName.isPresent() && methodType.isPresent()
-                                ? TemporaryConstantPool.INSTANCE.natEntry(methodName.get(), methodType.get())
+                                ? TemporaryConstantPool.INSTANCE.nameAndTypeEntry(methodName.get(), methodType.get())
                                 : null);
     }
 }

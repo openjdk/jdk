@@ -218,7 +218,7 @@ public sealed interface ConstantPoolBuilder
      * @param nameEntry the member name
      * @param typeEntry the member field or method descriptor
      */
-    NameAndTypeEntry natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry);
+    NameAndTypeEntry nameAndTypeEntry(Utf8Entry nameEntry, Utf8Entry typeEntry);
 
     /**
      * {@return A {@link NameAndTypeEntry} describing the provided name and type}
@@ -229,8 +229,8 @@ public sealed interface ConstantPoolBuilder
      * @param name the member name
      * @param type the symbolic descriptor for a field type
      */
-    default NameAndTypeEntry natEntry(String name, ClassDesc type) {
-        return natEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+    default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
     }
 
     /**
@@ -242,8 +242,8 @@ public sealed interface ConstantPoolBuilder
      * @param name the member name
      * @param type the symbolic descriptor for a method type
      */
-    default NameAndTypeEntry natEntry(String name, MethodTypeDesc type) {
-        return natEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+    default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
     }
 
     /**
@@ -268,7 +268,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the field
      */
     default FieldRefEntry fieldRefEntry(ClassDesc owner, String name, ClassDesc type) {
-        return fieldRefEntry(classEntry(owner), natEntry(name, type));
+        return fieldRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -293,7 +293,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the method
      */
     default MethodRefEntry methodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
-        return methodRefEntry(classEntry(owner), natEntry(name, type));
+        return methodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -318,7 +318,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the method
      */
     default InterfaceMethodRefEntry interfaceMethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
-        return interfaceMethodRefEntry(classEntry(owner), natEntry(name, type));
+        return interfaceMethodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -351,7 +351,7 @@ public sealed interface ConstantPoolBuilder
      */
     default MethodHandleEntry methodHandleEntry(DirectMethodHandleDesc descriptor) {
         var owner = classEntry(descriptor.owner());
-        var nat = natEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
+        var nat = nameAndTypeEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
         return methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
             case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER -> fieldRefEntry(owner, nat);
             case INTERFACE_STATIC, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> interfaceMethodRefEntry(owner, nat);
@@ -379,7 +379,7 @@ public sealed interface ConstantPoolBuilder
      * @param dcsd the symbolic descriptor of the method handle
      */
     default InvokeDynamicEntry invokeDynamicEntry(DynamicCallSiteDesc dcsd) {
-        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), natEntry(dcsd.invocationName(), dcsd.invocationType()));
+        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
     }
 
     /**
@@ -403,7 +403,7 @@ public sealed interface ConstantPoolBuilder
      * @param dcd the symbolic descriptor of the constant
      */
     default ConstantDynamicEntry constantDynamicEntry(DynamicConstantDesc<?> dcd) {
-        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), natEntry(dcd.constantName(), dcd.constantType()));
+        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
     }
 
     /**

@@ -98,7 +98,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public NameAndTypeEntry natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
+    public NameAndTypeEntry nameAndTypeEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
         return new AbstractPoolEntry.NameAndTypeEntryImpl(this, -3,
                                                           (AbstractPoolEntry.Utf8EntryImpl) nameEntry,
                                                           (AbstractPoolEntry.Utf8EntryImpl) typeEntry);

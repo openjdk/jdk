@@ -468,7 +468,7 @@ public sealed interface CodeBuilder
             bsArguments.add(BytecodeHelpers.constantEntry(constantPool(), constantValue));
         }
         BootstrapMethodEntry bm = constantPool().bsmEntry(bsMethod, bsArguments);
-        NameAndTypeEntry nameAndType = constantPool().natEntry(desc.invocationName(), desc.invocationType());
+        NameAndTypeEntry nameAndType = constantPool().nameAndTypeEntry(desc.invocationName(), desc.invocationType());
         invokeDynamicInstruction(constantPool().invokeDynamicEntry(bm, nameAndType));
         return this;
     }

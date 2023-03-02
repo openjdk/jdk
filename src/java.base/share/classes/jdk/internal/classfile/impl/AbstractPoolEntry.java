@@ -650,7 +650,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.natEntry(ref1, ref2);
+            return cp.canWriteDirect(constantPool) ? this : cp.nameAndTypeEntry(ref1, ref2);
         }
 
         @Override
