@@ -82,8 +82,16 @@ public class FdlibmTranslit {
         return Atan.compute(x);
     }
 
+    public static double atan2(double y, double x) {
+        return Atan2.compute(y, x);
+    }
+
     public static double hypot(double x, double y) {
         return Hypot.compute(x, y);
+    }
+
+    public static double sqrt(double x) {
+        return Sqrt.compute(x);
     }
 
     public static double cbrt(double x) {
@@ -393,6 +401,282 @@ public class FdlibmTranslit {
                 z = atanhi[id] - ((x*(s1+s2) - atanlo[id]) - x);
                 return (hx<0)? -z:z;
             }
+        }
+    }
+
+    /**
+     * Returns the angle theta from the conversion of rectangular
+     * coordinates (x, y) to polar coordinates (r, theta).
+     *
+     * Method :
+     *      1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
+     *      2. Reduce x to positive by (if x and y are unexceptional):
+     *              ARG (x+iy) = arctan(y/x)           ... if x > 0,
+     *              ARG (x+iy) = pi - arctan[y/(-x)]   ... if x < 0,
+     *
+     * Special cases:
+     *
+     *      ATAN2((anything), NaN ) is NaN;
+     *      ATAN2(NAN , (anything) ) is NaN;
+     *      ATAN2(+-0, +(anything but NaN)) is +-0  ;
+     *      ATAN2(+-0, -(anything but NaN)) is +-pi ;
+     *      ATAN2(+-(anything but 0 and NaN), 0) is +-pi/2;
+     *      ATAN2(+-(anything but INF and NaN), +INF) is +-0 ;
+     *      ATAN2(+-(anything but INF and NaN), -INF) is +-pi;
+     *      ATAN2(+-INF,+INF ) is +-pi/4 ;
+     *      ATAN2(+-INF,-INF ) is +-3pi/4;
+     *      ATAN2(+-INF, (anything but,0,NaN, and INF)) is +-pi/2;
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan2 {
+        private static final double
+            tiny  = 1.0e-300,
+            zero  = 0.0,
+            pi_o_4  = 7.8539816339744827900E-01, /* 0x3FE921FB, 0x54442D18 */
+            pi_o_2  = 1.5707963267948965580E+00, /* 0x3FF921FB, 0x54442D18 */
+            pi      = 3.1415926535897931160E+00, /* 0x400921FB, 0x54442D18 */
+            pi_lo   = 1.2246467991473531772E-16; /* 0x3CA1A626, 0x33145C07 */
+
+        static double compute(double y, double x) {
+            double z;
+            int k,m,hx,hy,ix,iy;
+            /*unsigned*/ int lx,ly;
+
+            hx = __HI(x); ix = hx&0x7fffffff;
+            lx = __LO(x);
+            hy = __HI(y); iy = hy&0x7fffffff;
+            ly = __LO(y);
+            if(((ix|((lx|-lx)>>>31))>0x7ff00000)|| // Note unsigned shifts
+               ((iy|((ly|-ly)>>>31))>0x7ff00000))    /* x or y is NaN */
+                return x+y;
+            if(((hx-0x3ff00000)|lx)==0) return atan(y);   /* x=1.0 */
+            m = ((hy>>31)&1)|((hx>>30)&2);  /* 2*sign(x)+sign(y) */
+
+            /* when y = 0 */
+            if((iy|ly)==0) {
+                switch(m) {
+                case 0:
+                case 1: return y;       /* atan(+-0,+anything)=+-0 */
+                case 2: return  pi+tiny;/* atan(+0,-anything) = pi */
+                case 3: return -pi-tiny;/* atan(-0,-anything) =-pi */
+                }
+            }
+            /* when x = 0 */
+            if((ix|lx)==0) return (hy<0)?  -pi_o_2-tiny: pi_o_2+tiny;
+
+            /* when x is INF */
+            if(ix==0x7ff00000) {
+                if(iy==0x7ff00000) {
+                    switch(m) {
+                    case 0: return  pi_o_4+tiny;/* atan(+INF,+INF) */
+                    case 1: return -pi_o_4-tiny;/* atan(-INF,+INF) */
+                    case 2: return  3.0*pi_o_4+tiny;/*atan(+INF,-INF)*/
+                    case 3: return -3.0*pi_o_4-tiny;/*atan(-INF,-INF)*/
+                    }
+                } else {
+                    switch(m) {
+                    case 0: return  zero  ;     /* atan(+...,+INF) */
+                    case 1: return -1.0*zero  ; /* atan(-...,+INF) */
+                    case 2: return  pi+tiny  ;  /* atan(+...,-INF) */
+                    case 3: return -pi-tiny  ;  /* atan(-...,-INF) */
+                    }
+                }
+            }
+            /* when y is INF */
+            if(iy==0x7ff00000) return (hy<0)? -pi_o_2-tiny: pi_o_2+tiny;
+
+            /* compute y/x */
+            k = (iy-ix)>>20;
+            if(k > 60) z=pi_o_2+0.5*pi_lo;  /* |y/x| >  2**60 */
+            else if(hx<0&&k<-60) z=0.0;     /* |y|/x < -2**60 */
+            else z=atan(Math.abs(y/x));         /* safe to do y/x */
+            switch (m) {
+            case 0: return       z  ;   /* atan(+,+) */
+            case 1:
+                // original:__HI(z) ^= 0x80000000;
+                z = __HI(z, __HI(z) ^ 0x80000000);
+                return       z  ;   /* atan(-,+) */
+            case 2: return  pi-(z-pi_lo);/* atan(+,-) */
+            default: /* case 3 */
+                return  (z-pi_lo)-pi;/* atan(-,-) */
+            }
+        }
+    }
+
+    /**
+     * Return correctly rounded sqrt.
+     *           ------------------------------------------
+     *           |  Use the hardware sqrt if you have one |
+     *           ------------------------------------------
+     * Method:
+     *   Bit by bit method using integer arithmetic. (Slow, but portable)
+     *   1. Normalization
+     *      Scale x to y in [1,4) with even powers of 2:
+     *      find an integer k such that  1 <= (y=x*2^(2k)) < 4, then
+     *              sqrt(x) = 2^k * sqrt(y)
+     *   2. Bit by bit computation
+     *      Let q  = sqrt(y) truncated to i bit after binary point (q = 1),
+     *           i                                                   0
+     *                                     i+1         2
+     *          s  = 2*q , and      y  =  2   * ( y - q  ).         (1)
+     *           i      i            i                 i
+     *
+     *      To compute q    from q , one checks whether
+     *                  i+1       i
+     *
+     *                            -(i+1) 2
+     *                      (q + 2      ) <= y.                     (2)
+     *                        i
+     *                                                            -(i+1)
+     *      If (2) is false, then q   = q ; otherwise q   = q  + 2      .
+     *                             i+1   i             i+1   i
+     *
+     *      With some algebraic manipulation, it is not difficult to see
+     *      that (2) is equivalent to
+     *                             -(i+1)
+     *                      s  +  2       <= y                      (3)
+     *                       i                i
+     *
+     *      The advantage of (3) is that s  and y  can be computed by
+     *                                    i      i
+     *      the following recurrence formula:
+     *          if (3) is false
+     *
+     *          s     =  s  ,       y    = y   ;                    (4)
+     *           i+1      i          i+1    i
+     *
+     *          otherwise,
+     *                         -i                     -(i+1)
+     *          s     =  s  + 2  ,  y    = y  -  s  - 2             (5)
+     *           i+1      i          i+1    i     i
+     *
+     *      One may easily use induction to prove (4) and (5).
+     *      Note. Since the left hand side of (3) contain only i+2 bits,
+     *            it does not necessary to do a full (53-bit) comparison
+     *            in (3).
+     *   3. Final rounding
+     *      After generating the 53 bits result, we compute one more bit.
+     *      Together with the remainder, we can decide whether the
+     *      result is exact, bigger than 1/2ulp, or less than 1/2ulp
+     *      (it will never equal to 1/2ulp).
+     *      The rounding mode can be detected by checking whether
+     *      huge + tiny is equal to huge, and whether huge - tiny is
+     *      equal to huge for some floating point number "huge" and "tiny".
+     *
+     * Special cases:
+     *      sqrt(+-0) = +-0         ... exact
+     *      sqrt(inf) = inf
+     *      sqrt(-ve) = NaN         ... with invalid signal
+     *      sqrt(NaN) = NaN         ... with invalid signal for signaling NaN
+     *
+     * Other methods : see the appended file at the end of the program below.
+     *---------------
+     */
+    static class Sqrt {
+        private static final double    one     = 1.0, tiny=1.0e-300;
+
+        public static double compute(double x) {
+            double z = 0.0;
+            int     sign = (int)0x80000000;
+            /*unsigned*/ int r,t1,s1,ix1,q1;
+            int ix0,s0,q,m,t,i;
+
+            ix0 = __HI(x);                  /* high word of x */
+            ix1 = __LO(x);          /* low word of x */
+
+            /* take care of Inf and NaN */
+            if((ix0&0x7ff00000)==0x7ff00000) {
+                return x*x+x;               /* sqrt(NaN)=NaN, sqrt(+inf)=+inf
+                                               sqrt(-inf)=sNaN */
+            }
+            /* take care of zero */
+            if(ix0<=0) {
+                if(((ix0&(~sign))|ix1)==0) return x;/* sqrt(+-0) = +-0 */
+                else if(ix0<0)
+                    return (x-x)/(x-x);             /* sqrt(-ve) = sNaN */
+            }
+            /* normalize x */
+            m = (ix0>>20);
+            if(m==0) {                              /* subnormal x */
+                while(ix0==0) {
+                    m -= 21;
+                    ix0 |= (ix1>>>11); ix1 <<= 21; // unsigned shift
+                }
+                for(i=0;(ix0&0x00100000)==0;i++) ix0<<=1;
+                m -= i-1;
+                ix0 |= (ix1>>>(32-i)); // unsigned shift
+                ix1 <<= i;
+            }
+            m -= 1023;      /* unbias exponent */
+            ix0 = (ix0&0x000fffff)|0x00100000;
+            if((m&1) != 0){        /* odd m, double x to make it even */
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+            }
+            m >>= 1;        /* m = [m/2] */
+
+            /* generate sqrt(x) bit by bit */
+            ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+            ix1 += ix1;
+            q = q1 = s0 = s1 = 0;   /* [q,q1] = sqrt(x) */
+            r = 0x00200000;         /* r = moving bit from right to left */
+
+            while(r!=0) {
+                t = s0+r;
+                if(t<=ix0) {
+                    s0   = t+r;
+                    ix0 -= t;
+                    q   += r;
+                }
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+                r>>>=1; // unsigned shift
+            }
+
+            r = sign;
+            while(r!=0) {
+                t1 = s1+r;
+                t  = s0;
+                if((t<ix0)||((t==ix0)&&(Integer.compareUnsigned(t1, ix1) <= 0 ))) { // t1<=ix1
+                    s1  = t1+r;
+                    if(((t1&sign)==sign)&&(s1&sign)==0) s0 += 1;
+                    ix0 -= t;
+                    if (Integer.compareUnsigned(ix1, t1) < 0) ix0 -= 1; // ix1 < t1
+                    ix1 -= t1;
+                    q1  += r;
+                }
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+                r>>>=1; // unsigned shift
+            }
+
+            /* use floating add to find out rounding direction */
+            if((ix0|ix1)!=0) {
+                z = one-tiny; /* trigger inexact flag */
+                if (z>=one) {
+                    z = one+tiny;
+                    if (q1==0xffffffff) { q1=0; q += 1;}
+                    else if (z>one) {
+                        if (q1==0xfffffffe) q+=1;
+                        q1+=2;
+                    } else
+                        q1 += (q1&1);
+                }
+            }
+            ix0 = (q>>1)+0x3fe00000;
+            ix1 =  q1>>>1; // unsigned shift
+            if ((q&1)==1) ix1 |= sign;
+            ix0 += (m <<20);
+            // __HI(z) = ix0;
+            z = __HI(z, ix0);
+            // __LO(z) = ix1;
+            z = __LO(z, ix1);
+            return z;
         }
     }
 

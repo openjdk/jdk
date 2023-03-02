@@ -148,7 +148,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
-      case vmIntrinsics::_dsqrt_strict:      return native;
+      case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {

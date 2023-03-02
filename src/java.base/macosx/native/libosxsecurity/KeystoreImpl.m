@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,16 +385,30 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    CHECK_NULL(jc_KeychainStore);
+    if (jc_KeychainStore == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
             env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
-    CHECK_NULL(jm_createTrustedCertEntry);
+    if (jm_createTrustedCertEntry == NULL) {
+        goto errOut;
+    }
+
     jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
-    CHECK_NULL(jc_arrayListClass);
+    if (jc_arrayListClass == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
-    CHECK_NULL(jm_arrayListCons);
+    if (jm_arrayListCons == NULL) {
+        goto errOut;
+    }
+
     jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-    CHECK_NULL(jm_listAdd);
+    if (jm_listAdd == NULL) {
+        goto errOut;
+    }
 
     do {
         searchResult = SecKeychainSearchCopyNext(keychainItemSearch, &theItem);
@@ -425,7 +439,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
             jobject inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-            CHECK_NULL(inputTrust);
+            if (inputTrust == NULL) {
+                CFRelease(trustSettings);
+                goto errOut;
+            }
 
             // Dump everything inside trustSettings into inputTrust
             CFIndex count = CFArrayGetCount(trustSettings);

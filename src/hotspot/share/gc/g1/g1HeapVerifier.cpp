@@ -367,9 +367,7 @@ public:
          _failures = true;
       }
     } else {
-      bool failures = false;
-      r->verify(_vo, &failures);
-      if (failures) {
+      if (r->verify(_vo)) {
         _failures = true;
       } else if (!r->is_starts_humongous()) {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
