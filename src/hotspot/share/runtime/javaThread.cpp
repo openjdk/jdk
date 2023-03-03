@@ -652,6 +652,11 @@ JavaThread::~JavaThread() {
 
 // First JavaThread specific code executed by a new Java thread.
 void JavaThread::pre_run() {
+  {
+    ResourceMark rm;
+    log_debug(logging, thread)("Starting %s thread, tid = " INTX_FORMAT, name(), os::current_thread_id());
+  }
+
   // empty - see comments in run()
 }
 
