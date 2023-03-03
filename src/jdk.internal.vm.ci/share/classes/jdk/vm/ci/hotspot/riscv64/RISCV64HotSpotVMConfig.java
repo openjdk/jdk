@@ -57,12 +57,4 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useRVVForBigIntegerShiftIntrinsics = getFlag("UseRVVForBigIntegerShiftIntrinsics", Boolean.class);
 
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
-
-    /*
-     * These flags are set if the corresponding support is in the hardware.
-     */
-    // Checkstyle: stop
-    // CPU feature flags are currently not available in VM_Version
-    // Checkstyle: resume
-
 }
