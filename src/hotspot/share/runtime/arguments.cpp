@@ -2653,29 +2653,23 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xcomp")) {
       // for testing the compiler; turn off all flags that inhibit compilation
           set_mode_flags(_comp);
-    // -Xshare:dump
+#if INCLUDE_CDS
     } else if (match_option(option, "-Xshare:dump")) {
-#if INCLUDE_CDS
       DumpSharedSpaces = true;
-#endif
-    // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
-#if INCLUDE_CDS
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
-#endif
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
-#if INCLUDE_CDS
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
-#endif
       xshare_auto_cmd_line = true;
-    // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
-#if INCLUDE_CDS
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+#else
+    } else if (match_option(option, "-Xshare:")) {
+      warning("Option %s is not supported in this VM", option->optionString);
 #endif
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
