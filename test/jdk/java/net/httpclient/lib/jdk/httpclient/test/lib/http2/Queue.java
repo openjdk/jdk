@@ -62,29 +62,22 @@ public class Queue<T> implements ExceptionallyCloseable {
         return !closed && !closing;
     }
 
+    public synchronized void put(T obj) throws IOException {
+        if (!putIfOpen(obj)) {
+            throw new IOException("stream closed");
+        }
+    }
+
     public synchronized boolean putIfOpen(T obj) {
         Objects.requireNonNull(obj);
         if (!isOpen()) return false;
-        queueUp(obj);
-        return true;
-    }
-
-    public synchronized void put(T obj) throws IOException {
-        Objects.requireNonNull(obj);
-        if (closed || closing) {
-            throw new IOException("stream closed");
-        }
-        queueUp(obj);
-    }
-
-    private void queueUp(T obj) {
-        assert Thread.holdsLock(this);
         q.add(obj);
         if (waiters > 0) {
             notifyAll();
         }
+        return true;
     }
-
+    
     // Other close() variants are immediate and abortive
     // This allows whatever is on Q to be processed first.
 
