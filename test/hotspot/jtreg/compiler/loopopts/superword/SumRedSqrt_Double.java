@@ -53,25 +53,20 @@ public class SumRedSqrt_Double {
         framework.start();
     }
 
-    @Run(test = {"sumReductionImplement"},
+    @Run(test = {"sumReductionWithStoreImplement"},
          mode = RunMode.STANDALONE)
     public void runTests() throws Exception {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
         double[] c = new double[256 * 1024];
+        double[] d = new double[256 * 1024];
         sumReductionInit(a, b, c);
         double total = 0;
         double valid = 2.06157643776E14;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, total);
+            total = sumReductionWithStoreImplement(a, b, c, d, total);
         }
-        if (total == valid) {
-            System.out.println("Success");
-        } else {
-            System.out.println("Invalid sum of elements variable in total: " + total);
-            System.out.println("Expected value = " + valid);
-            throw new Exception("Failed");
-        }
+        testCorrectness(total, valid, "sumReductionWithStore");
     }
 
     public static void sumReductionInit(
@@ -87,22 +82,35 @@ public class SumRedSqrt_Double {
         }
     }
 
-    // Require avx for SQRT_VD
+    /* Vectorization is expected but not enabled without store.
+       The store could be removed later.
+       Require avx for SQRT_VD. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD, IRNode.SQRT_V})
     @IR(applyIfCPUFeature = {"avx", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_V, ">= 1"})
-    public static double sumReductionImplement(
+    public static double sumReductionWithStoreImplement(
             double[] a,
             double[] b,
             double[] c,
+            double[] d,
             double total) {
         for (int i = 0; i < a.length; i++) {
-            total += Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
+            d[i] = Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
+            total += d[i];
         }
         return total;
+    }
+
+    public static void testCorrectness(
+            double total,
+            double valid,
+            String op) throws Exception {
+        if (total != valid) {
+            throw new Exception(op + ": Failed");
+        }
     }
 
 }
