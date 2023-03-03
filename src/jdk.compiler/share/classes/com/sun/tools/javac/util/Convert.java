@@ -100,62 +100,96 @@ public class Convert {
 /* Conversion routines between names, strings, and byte arrays in Utf8 format
  */
 
-    /** Convert `len' bytes from utf8 to characters.
-     *  Parameters are as in System.arraycopy
-     *  Return first index in `dst' past the last copied char.
-     *  @param src        The array holding the bytes to convert.
-     *  @param sindex     The start index from which bytes are converted.
-     *  @param dst        The array holding the converted characters..
-     *  @param dindex     The start index from which converted characters
-     *                    are written.
-     *  @param len        The maximum number of bytes to convert.
+    /** Count the number of characters encoded in a Modified UTF-8 encoding.
+     *  This method does not check for invalid data.
+     *  @param buf data buffer
+     *  @param off starting offset of UTF-8 data
+     *  @param len number of bytes of UTF-8 data
+     *  @return the number of encoded characters
      */
-    public static int utf2chars(byte[] src, int sindex,
-                                char[] dst, int dindex,
-                                int len) {
-        int i = sindex;
-        int j = dindex;
-        int limit = sindex + len;
-        while (i < limit) {
-            int b = src[i++] & 0xFF;
-            if (b >= 0xE0) {
-                b = (b & 0x0F) << 12;
-                b = b | (src[i++] & 0x3F) << 6;
-                b = b | (src[i++] & 0x3F);
-            } else if (b >= 0xC0) {
-                b = (b & 0x1F) << 6;
-                b = b | (src[i++] & 0x3F);
-            }
-            dst[j++] = (char)b;
+    public static int utfNumChars(byte[] buf, int off, int len) {
+        int numChars = 0;
+        while (len-- > 0) {
+            int byte1 = buf[off++];
+            if (byte1 < 0)
+                len -= ((byte1 & 0xe0) == 0xc0) ? 1 : 2;
+            numChars++;
         }
-        return j;
+        return numChars;
     }
 
-    /** Return bytes in Utf8 representation as an array of characters.
+    /** Decode characters encoded in Modified UTF-8 encoding.
+     *  Reject any invalid data by throwing an {@link IllegalArgumentException}.
+     *  Parameters are as in System.arraycopy():
+     *  @param src        The array holding the bytes to convert.
+     *  @param soff       The start index from which bytes are converted.
+     *  @param dst        The array holding the converted characters..
+     *  @param doff       The start index from which converted characters
+     *                    are written.
+     *  @param len        The maximum number of bytes to convert.
+     *  @return the index in {@code dst} just after the last copied char
+     *  @throws IllegalArgumentException if invalid Modified UTF-8 is encountered
+     */
+    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len) {
+        final int soff0 = soff;
+        final int doff0 = doff;
+        while (len-- > 0) {
+            int value = src[soff++];
+            if (value < 0) {
+                if ((value & 0xe0) == 0xc0) {
+                    if (--len < 0)
+                        throw new IllegalArgumentException("truncated data at offset " + (soff - soff0));
+                    int value2 = src[soff++];
+                    if ((value2 & 0xc0) != 0x80)
+                        throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
+                    value = ((value & 0x1f) << 6) | (value2 & 0x3f);
+                } else if ((value & 0xf0) == 0xe0) {
+                    if ((len -= 2) < 0)
+                        throw new IllegalArgumentException("truncated data at offset " + (soff - soff0));
+                    int value2 = src[soff++];
+                    int value3 = src[soff++];
+                    if ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80)
+                        throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
+                    value = ((value & 0x0f) << 12) | ((value2 & 0x3f) << 6) | (value3 & 0x3f);
+                } else
+                    throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
+            }
+            dst[doff++] = (char)value;
+        }
+        return doff - doff0;
+    }
+
+    /** Decode characters encoded in Modified UTF-8 encoding.
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
+     *  @return           The decoded characters in an array.
+     *  @throws IllegalArgumentException if invalid data is encountered
      */
     public static char[] utf2chars(byte[] src, int sindex, int len) {
         char[] dst = new char[len];
         int len1 = utf2chars(src, sindex, dst, 0, len);
+        if (len1 == len)
+            return dst;
         char[] result = new char[len1];
         System.arraycopy(dst, 0, result, 0, len1);
         return result;
     }
 
-    /** Return all bytes of a given array in Utf8 representation
+    /** Decode characters encoded in Modified UTF-8 encoding.
      *  as an array of characters.
      *  @param src        The array holding the bytes.
+     *  @throws IllegalArgumentException if invalid data is encountered
      */
     public static char[] utf2chars(byte[] src) {
         return utf2chars(src, 0, src.length);
     }
 
-    /** Return bytes in Utf8 representation as a string.
+    /** Decode a {@link String} encoded in Modified UTF-8 encoding.
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
+     *  @throws IllegalArgumentException if invalid data is encountered
      */
     public static String utf2string(byte[] src, int sindex, int len) {
         char dst[] = new char[len];
@@ -308,13 +342,8 @@ public class Convert {
      *  @return the last part of the qualified name
      */
     public static Name shortName(Name name) {
-        int start = name.lastIndexOf((byte)'.') + 1;
-        int end = name.getByteLength();
-        if (start == 0 && end == name.length()) {
-            return name;
-        }
-        return name.subName(
-            name.lastIndexOf((byte)'.') + 1, name.getByteLength());
+        int start = name.lastIndexOfAscii('.') + 1;
+        return start > 0 ? name.subName(start) : name;
     }
 
     /** Return the last part of a qualified name from its string representation
@@ -326,10 +355,11 @@ public class Convert {
     }
 
     /** Return the package name of a class name, excluding the trailing '.',
-     *  "" if not existent.
+     *  or "" if not existent.
      */
     public static Name packagePart(Name classname) {
-        return classname.subName(0, classname.lastIndexOf((byte)'.'));
+        int end = Math.max(classname.lastIndexOfAscii('.'), 0);
+        return classname.subName(0, end);
     }
 
     public static String packagePart(String classname) {
@@ -340,7 +370,7 @@ public class Convert {
     public static List<Name> enclosingCandidates(Name name) {
         List<Name> names = List.nil();
         int index;
-        while ((index = name.lastIndexOf((byte)'$')) > 0) {
+        while ((index = name.lastIndexOfAscii('$')) > 0) {
             name = name.subName(0, index);
             names = names.prepend(name);
         }

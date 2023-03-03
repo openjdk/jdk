@@ -538,8 +538,7 @@ public class ClassReader {
             typevars = typevars.leave();
             return poly;
         default:
-            throw badClassFile("bad.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.signature", quoteBadSignature());
         }
     }
 
@@ -549,8 +548,7 @@ public class ClassReader {
      */
     Type classSigToType() {
         if (signature[sigp] != 'L')
-            throw badClassFile("bad.class.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.class.signature", quoteBadSignature());
         sigp++;
         Type outer = Type.noType;
         int startSbp = sbp;
@@ -652,6 +650,20 @@ public class ClassReader {
                 continue;
             }
         }
+    }
+
+    /** Quote a bogus signature for display inside an error message.
+     */
+    String quoteBadSignature() {
+        String value;
+        try {
+            value = Convert.utf2string(signature, sigp, siglimit - sigp);
+        } catch (IllegalArgumentException e) {
+            return "invalid modified UTF-8: " + e.getMessage();
+        }
+        if (value.length() > 10)
+            value = value.substring(0, 10) + "...";
+        return "\"" + value + "\"";
     }
 
     /** Convert (implicit) signature to list of types
@@ -1180,7 +1192,7 @@ public class ClassReader {
                         ListBuffer<InterimUsesDirective> uses = new ListBuffer<>();
                         int nuses = nextChar();
                         for (int i = 0; i < nuses; i++) {
-                            Name srvc = poolReader.peekClassName(nextChar(), this::classNameMapper);
+                            Name srvc = poolReader.peekClassName(nextChar(), this::classNameDecoder);
                             uses.add(new InterimUsesDirective(srvc));
                         }
                         interimUses = uses.toList();
@@ -1188,11 +1200,11 @@ public class ClassReader {
                         ListBuffer<InterimProvidesDirective> provides = new ListBuffer<>();
                         int nprovides = nextChar();
                         for (int p = 0; p < nprovides; p++) {
-                            Name srvc = poolReader.peekClassName(nextChar(), this::classNameMapper);
+                            Name srvc = poolReader.peekClassName(nextChar(), this::classNameDecoder);
                             int nimpls = nextChar();
                             ListBuffer<Name> impls = new ListBuffer<>();
                             for (int i = 0; i < nimpls; i++) {
-                                impls.append(poolReader.peekClassName(nextChar(), this::classNameMapper));
+                                impls.append(poolReader.peekClassName(nextChar(), this::classNameDecoder));
                             provides.add(new InterimProvidesDirective(srvc, impls.toList()));
                             }
                         }
@@ -1200,7 +1212,7 @@ public class ClassReader {
                     }
                 }
 
-                private Name classNameMapper(byte[] arr, int offset, int length) {
+                private Name classNameDecoder(byte[] arr, int offset, int length) {
                     return names.fromUtf(ClassFile.internalize(arr, offset, length));
                 }
             },

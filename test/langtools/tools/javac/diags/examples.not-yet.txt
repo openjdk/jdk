@@ -57,6 +57,7 @@ compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
+compiler.misc.bad.utf8.const.at                         # bad class file
 compiler.misc.bad.type.annotation.value
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class

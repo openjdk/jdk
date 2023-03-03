@@ -34,7 +34,6 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Name.NameMapper;
 import com.sun.tools.javac.util.Names;
 
 import java.util.Arrays;
@@ -116,33 +115,33 @@ public class PoolReader {
     }
 
     /**
-     * Get class name without resolving
+     * Get class name without resolving.
      */
-    <Z> Z peekClassName(int index, NameMapper<Z> mapper) {
-        return peekItemName(index, mapper);
+    <Z> Z peekClassName(int index, Decoder<Z> decoder) {
+        return peekItemName(index, decoder);
     }
 
     /**
-     * Get package name without resolving
+     * Get package name without resolving.
      */
-    <Z> Z peekPackageName(int index, NameMapper<Z> mapper) {
-        return peekItemName(index, mapper);
+    <Z> Z peekPackageName(int index, Decoder<Z> decoder) {
+        return peekItemName(index, decoder);
     }
 
     /**
-     * Get module name without resolving
+     * Get module name without resolving.
      */
-    <Z> Z peekModuleName(int index, NameMapper<Z> mapper) {
-        return peekItemName(index, mapper);
+    <Z> Z peekModuleName(int index, Decoder<Z> decoder) {
+        return peekItemName(index, decoder);
     }
 
-    private <Z> Z peekItemName(int index, NameMapper<Z> mapper) {
+    private <Z> Z peekItemName(int index, Decoder<Z> decoder) {
         try {
             index = buf.getChar(pool.offset(index));
         } catch (UnderflowException e) {
             throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
         }
-        return peekName(index, mapper);
+        return peekName(index, decoder);
     }
 
     /**
@@ -162,9 +161,9 @@ public class PoolReader {
     /**
      * Peek a name from the pool at given index without resolving.
      */
-    <Z> Z peekName(int index, Name.NameMapper<Z> mapper) {
+    <Z> Z peekName(int index, Decoder<Z> decoder) {
         try {
-            return getUtf8(index, mapper);
+            return getUtf8(index, decoder);
         } catch (UnderflowException e) {
             throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
         }
@@ -202,12 +201,20 @@ public class PoolReader {
         return pool.tag(index) == tag;
     }
 
-    private <Z> Z getUtf8(int index, NameMapper<Z> mapper) throws UnderflowException {
+    private <Z> Z getUtf8(int index, Decoder<Z> decoder) throws UnderflowException {
         int tag = pool.tag(index);
         int offset = pool.offset(index);
         if (tag == CONSTANT_Utf8) {
-            int len = pool.poolbuf.getChar(offset);
-            return mapper.map(pool.poolbuf.elems, offset + 2, len);
+            int utf8len = pool.poolbuf.getChar(offset);
+            int utf8off = offset + 2;
+            pool.poolbuf.verifyRange(utf8off, utf8len);
+            try {
+                return decoder.decode(pool.poolbuf.elems, utf8off, utf8len);
+            } catch (IllegalArgumentException e) {
+                throw reader.badClassFile("bad.utf8.const.at",
+                                    Integer.toString(utf8off),
+                                    e.getMessage());
+            }
         } else {
             throw reader.badClassFile("unexpected.const.pool.tag.at",
                                 Integer.toString(tag),
@@ -261,7 +268,7 @@ public class PoolReader {
      * reasons, it would be unwise to eagerly turn all pool entries into corresponding javac
      * entities. First, not all entries are actually going to be read/used by javac; secondly,
      * there are cases where creating a symbol too early might result in issues (hence methods like
-     * {@link PoolReader#peekClassName(int, NameMapper)}.
+     * {@link PoolReader#peekClassName(int, Decoder)}.
      */
     int readPool(ByteBuffer poolbuf, int offset) {
         try {
@@ -327,6 +334,26 @@ public class PoolReader {
             default:
                 return 1;
         }
+    }
+
+    /**
+     * An interface for parsing a byte sequence.
+     *
+     * @param <T> the type of object resulting from the parse
+     */
+    @FunctionalInterface
+    public interface Decoder<T> {
+
+        /**
+         * Decode the given byte range.
+         *
+         * @param buf data buffer
+         * @param off offset into buffer
+         * @param len number of bytes to parse
+         * @return the decoded object
+         * @throws IllegalArgumentException if the data is invalid
+         */
+        T decode(byte[] buf, int off, int len);
     }
 
     class ImmutablePoolHelper {

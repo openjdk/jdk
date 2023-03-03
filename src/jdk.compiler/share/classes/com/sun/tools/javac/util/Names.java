@@ -421,10 +421,10 @@ public class Names {
     }
 
     public Name fromUtf(byte[] cs) {
-        return table.fromUtf(cs);
+        return table.fromUtf8(cs);
     }
 
     public Name fromUtf(byte[] cs, int start, int len) {
-        return table.fromUtf(cs, start, len);
+        return table.fromUtf8(cs, start, len);
     }
 }

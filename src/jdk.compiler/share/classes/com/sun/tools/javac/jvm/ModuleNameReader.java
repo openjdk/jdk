@@ -27,7 +27,6 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.Convert;
-import com.sun.tools.javac.util.Name.NameMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,8 +115,8 @@ public class ModuleNameReader {
         for (int i = 0; i < attributes_count; i++) {
             int attr_name = nextChar();
             int attr_length = nextInt();
-            if (reader.peekName(attr_name, utf8Mapper(false)).equals("Module") && attr_length > 2) {
-                return reader.peekModuleName(nextChar(), utf8Mapper(true));
+            if (reader.peekName(attr_name, utf8Decoder(false)).equals("Module") && attr_length > 2) {
+                return reader.peekModuleName(nextChar(), utf8Decoder(true));
             } else {
                 // skip over unknown attributes
                 bp += attr_length;
@@ -157,7 +156,7 @@ public class ModuleNameReader {
         return res;
     }
 
-    NameMapper<String> utf8Mapper(boolean internalize) {
+    PoolReader.Decoder<String> utf8Decoder(boolean internalize) {
         return internalize ?
                 (buf, offset, len) ->
                     Convert.utf2string(ClassFile.internalize(buf, offset, len)) :

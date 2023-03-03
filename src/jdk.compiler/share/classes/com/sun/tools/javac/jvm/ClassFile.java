@@ -151,11 +151,7 @@ public class ClassFile {
      */
     public static byte[] internalize(byte[] buf, int offset, int len) {
         byte[] translated = new byte[len];
-        for (int j = 0; j < len; j++) {
-            byte b = buf[offset + j];
-            if (b == '/') translated[j] = (byte) '.';
-            else translated[j] = b;
-        }
+        copyAndReplace(buf, offset, translated, (byte)'/', (byte)'.');
         return translated;
     }
 
@@ -166,7 +162,9 @@ public class ClassFile {
      * which defines "internal name" to be the form using "/" instead of "."
      */
     public static byte[] internalize(Name name) {
-        return internalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
+        byte[] buf = name.toUtf8();
+        replace(buf, (byte)'/', (byte)'.');
+        return buf;
     }
 
     /**
@@ -177,11 +175,7 @@ public class ClassFile {
      */
     public static byte[] externalize(byte[] buf, int offset, int len) {
         byte[] translated = new byte[len];
-        for (int j = 0; j < len; j++) {
-            byte b = buf[offset + j];
-            if (b == '.') translated[j] = (byte) '/';
-            else translated[j] = b;
-        }
+        copyAndReplace(buf, offset, translated, (byte)'.', (byte)'/');
         return translated;
     }
 
@@ -192,6 +186,22 @@ public class ClassFile {
      * which defines "internal name" to be the form using "/" instead of "."
      */
     public static byte[] externalize(Name name) {
-        return externalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
+        byte[] buf = name.toUtf8();
+        replace(buf, (byte)'.', (byte)'/');
+        return buf;
+    }
+
+    static void replace(byte[] buf, byte x, byte y) {
+        for (int i = 0; i < buf.length; i++) {
+            if (buf[i] == x)
+                buf[i] = y;
+        }
+    }
+
+    static void copyAndReplace(byte[] src, int off, byte[] dst, byte x, byte y) {
+        for (int i = 0; i < dst.length; i++) {
+            byte b = src[off++];
+            dst[i] = b == x ? y : b;
+        }
     }
 }
