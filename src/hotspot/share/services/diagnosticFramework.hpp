@@ -460,7 +460,6 @@ class DCmdRegistrant : public AllStatic {
 
 private:
     static void register_dcmds();
-    static void register_dcmds_ext();
 
     friend class Management;
 };
