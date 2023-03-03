@@ -2439,10 +2439,69 @@ public final class String
      *          character sequence represented by this object that is greater
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur.
+     *
+     * @apiNote
+     * Unlike {@link #substring(int)}, for example, this method does not throw
+     * an exception when {@code fromIndex} is outside the valid range.
+     * Rather, it returns -1 when {@code fromIndex} is larger than the length of
+     * the string.
+     * This result is, by itself, indistinguishable from a genuine absence of
+     * {@code ch} in the string.
+     * If stricter behavior is needed, {@link #indexOf(int, int, int)}
+     * should be considered instead.
+     * On a {@link String} {@code s}, for example,
+     * {@code s.indexOf(ch, fromIndex, s.length())} would throw if
+     * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex)
-                          : StringUTF16.indexOf(value, ch, fromIndex);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
+                : StringUTF16.indexOf(value, ch, fromIndex, length());
+    }
+
+    /**
+     * Returns the index within this string of the first occurrence of the
+     * specified character, starting the search at {@code beginIndex} and
+     * stopping before {@code endIndex}.
+     *
+     * <p>If a character with value {@code ch} occurs in the
+     * character sequence represented by this {@code String}
+     * object at an index no smaller than {@code beginIndex} but smaller than
+     * {@code endIndex}, then
+     * the index of the first such occurrence is returned. For values
+     * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
+     * this is the smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.charAt(<i>k</i>) == ch) &amp;&amp; (beginIndex &lt;= <i>k</i> &lt; endIndex)
+     * </pre></blockquote>
+     * is true. For other values of {@code ch}, it is the
+     * smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.codePointAt(<i>k</i>) == ch) &amp;&amp; (beginIndex &lt;= <i>k</i> &lt; endIndex)
+     * </pre></blockquote>
+     * is true. In either case, if no such character occurs in this
+     * string at or after position {@code beginIndex} and before position
+     * {@code endIndex}, then {@code -1} is returned.
+     *
+     * <p>All indices are specified in {@code char} values
+     * (Unicode code units).
+     *
+     * @param   ch          a character (Unicode code point).
+     * @param   beginIndex  the index to start the search from (included).
+     * @param   endIndex    the index to stop the search at (excluded).
+     * @return  the index of the first occurrence of the character in the
+     *          character sequence represented by this object that is greater
+     *          than or equal to {@code beginIndex} and less than {@code endIndex},
+     *          or {@code -1} if the character does not occur.
+     * @throws  StringIndexOutOfBoundsException if {@code beginIndex}
+     *          is negative, or {@code endIndex} is larger than the length of
+     *          this {@code String} object, or {@code beginIndex} is larger than
+     *          {@code endIndex}.
+     * @since   21
+     */
+    public int indexOf(int ch, int beginIndex, int endIndex) {
+        checkBoundsBeginEnd(beginIndex, endIndex, length());
+        return isLatin1() ? StringLatin1.indexOf(value, ch, beginIndex, endIndex)
+                : StringUTF16.indexOf(value, ch, beginIndex, endIndex);
     }
 
     /**
