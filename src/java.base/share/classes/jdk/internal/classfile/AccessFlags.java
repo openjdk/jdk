@@ -51,7 +51,7 @@ public sealed interface AccessFlags
     /**
      * {@return whether the specified flag is present}  The specified flag
      * should be a valid flag for the classfile location associated with this
-     * element.
+     * element otherwise false is returned.
      * @param flag the flag to test
      */
     boolean has(AccessFlag flag);
