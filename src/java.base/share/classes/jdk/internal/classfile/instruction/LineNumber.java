@@ -41,5 +41,18 @@ import jdk.internal.classfile.impl.LineNumberImpl;
  */
 public sealed interface LineNumber extends PseudoInstruction
         permits LineNumberImpl {
+
+    /**
+     * {@return the line number}
+     */
     int line();
+
+    /**
+     * {@return a line number pseudo-instruction}
+     *
+     * @param line the line number
+     */
+    static LineNumber of(int line) {
+        return LineNumberImpl.of(line);
+    }
 }
