@@ -63,6 +63,7 @@ public class Queue<T> implements ExceptionallyCloseable {
     }
 
     public synchronized boolean putIfOpen(T obj) {
+        Objects.requireNonNull(obj);
         if (!isOpen()) return false;
         queueUp(obj);
         return true;
