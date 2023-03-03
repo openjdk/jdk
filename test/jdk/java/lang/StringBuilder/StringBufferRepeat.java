@@ -30,12 +30,12 @@ import java.util.Arrays;
 /**
  * @test
  * @bug 8302323
- * @summary Test StringBuilder.repeat sanity tests
- * @run testng/othervm -XX:-CompactStrings Repeat
- * @run testng/othervm -XX:+CompactStrings Repeat
+ * @summary Test StringBuffer.repeat sanity tests
+ * @run testng/othervm -XX:-CompactStrings StringBufferRepeat
+ * @run testng/othervm -XX:+CompactStrings StringBufferRepeat
  */
 @Test
-public class Repeat {
+public class StringBufferRepeat {
     private static class MyChars implements CharSequence {
         private static final char[] DATA = new char[] { 'a', 'b', 'c' };
 
@@ -58,8 +58,8 @@ public class Repeat {
     private static final MyChars MYCHARS = new MyChars();
 
     public void sanity() {
-        StringBuilder sb = new StringBuilder();
-        // prime the StringBuilder
+        StringBuffer sb = new StringBuffer();
+        // prime the StringBuffer
         sb.append("repeat");
 
         // single character Latin1
@@ -132,7 +132,7 @@ public class Repeat {
     }
 
     public void exceptions() {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
 
         try {
             sb.repeat(' ', Integer.MAX_VALUE);
@@ -158,21 +158,35 @@ public class Repeat {
         try {
             sb.repeat(' ', -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException ex) {
             // Okay
         }
 
         try {
             sb.repeat("abc", -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException ex) {
             // Okay
         }
 
         try {
             sb.repeat(MYCHARS, -1);
             throw new RuntimeException("No IllegalArgumentException thrown");
-        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException ex) {
+            // Okay
+        }
+
+        try {
+            sb.repeat(0x10FFFF + 1, -1);
+            throw new RuntimeException("No IllegalArgumentException thrown");
+        } catch (IllegalArgumentException ex) {
+            // Okay
+        }
+
+        try {
+            sb.repeat(-1, -1);
+            throw new RuntimeException("No IllegalArgumentException thrown");
+        } catch (IllegalArgumentException ex) {
             // Okay
         }
 
