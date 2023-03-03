@@ -372,7 +372,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     /*
      * Utility method to process the completion status after command execution.
      * If we get IOE during previous command execution, delay throwing it until
-     * completion status have been read.
+     * completion status has been read.
      */
     void processCompletionStatus(IOException ioe, String cmd, InputStream sis) throws AgentLoadException, IOException {
         // Read the command completion status
