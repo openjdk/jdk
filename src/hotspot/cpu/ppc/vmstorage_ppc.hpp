@@ -35,16 +35,14 @@ enum class StorageType : int8_t {
   FLOAT = 1,
   STACK = 2,
   PLACEHOLDER = 3,
-  INTEGER_AND_FLOAT = 4,
-  STACK_AND_FLOAT = 5,
 // special locations used only by native code
-  FRAME_DATA = 6,
+  FRAME_DATA = 4,
   INVALID = -1
 };
 
 // need to define this before constructing VMStorage (below)
 constexpr inline bool VMStorage::is_reg(StorageType type) {
-   return type == StorageType::INTEGER || type == StorageType::INTEGER_AND_FLOAT || type == StorageType::FLOAT;
+   return type == StorageType::INTEGER || type == StorageType::FLOAT;
 }
 constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
 constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
@@ -55,7 +53,7 @@ constexpr uint16_t REG32_MASK = 0b0000000000000001;
 constexpr uint16_t REG64_MASK = 0b0000000000000011;
 
 inline Register as_Register(VMStorage vms) {
-  assert(vms.type() == StorageType::INTEGER || vms.type() == StorageType::INTEGER_AND_FLOAT, "not the right type");
+  assert(vms.type() == StorageType::INTEGER, "not the right type");
   return ::as_Register(vms.index());
 }
 

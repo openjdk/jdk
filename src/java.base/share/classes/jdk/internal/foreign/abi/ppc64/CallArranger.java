@@ -89,6 +89,8 @@ public abstract class CallArranger {
                            boolean isInMemoryReturn) {
     }
 
+    private record HfaRegs(VMStorage[] first, VMStorage[] second) {}
+
     public static final CallArranger LINUX = new LinuxPPC64CallArranger();
 
     protected CallArranger() {}
@@ -231,7 +233,7 @@ public abstract class CallArranger {
             return result;
         }
 
-        VMStorage[] hfaAlloc(List<MemoryLayout> scalarLayouts) {
+        HfaRegs hfaAlloc(List<MemoryLayout> scalarLayouts) {
             // Determine count and type.
             int count = scalarLayouts.size();
             Class<?> elementCarrier = ((ValueLayout) (scalarLayouts.get(0))).carrier();
@@ -259,7 +261,8 @@ public abstract class CallArranger {
             }
 
             VMStorage[] source = (forArguments ? C.inputStorage : C.outputStorage)[StorageType.FLOAT];
-            VMStorage[] result = new VMStorage[fpRegCnt + structSlots];
+            VMStorage[] result  = new VMStorage[fpRegCnt + structSlots],
+                        result2 = new VMStorage[fpRegCnt + structSlots]; // For overlapping.
             if (elementCarrier == float.class) {
                 // Mark elements as single precision (32 bit).
                 for (int i = 0; i < fpRegCnt; i++) {
@@ -281,19 +284,19 @@ public abstract class CallArranger {
             stackAlloc(fpRegCnt * elementSize, STACK_SLOT_SIZE);
 
             if (needOverlapping) {
-                // "no partial DW rule": Mark first stack slot to get filled.
+                // "no partial DW rule": Put GP reg or stack slot into result2.
                 // Note: Can only happen with forArguments = true.
                 VMStorage overlappingReg;
                 if (nRegs[StorageType.INTEGER] <= MAX_REGISTER_ARGUMENTS) {
                     VMStorage allocatedGpReg = C.inputStorage[StorageType.INTEGER][nRegs[StorageType.INTEGER] - 1];
-                    overlappingReg = new VMStorage(StorageType.INTEGER_AND_FLOAT,
+                    overlappingReg = new VMStorage(StorageType.INTEGER,
                                                    PPC64Architecture.REG64_MASK, allocatedGpReg.indexOrOffset());
                 } else {
-                    overlappingReg = new VMStorage(StorageType.STACK_AND_FLOAT,
+                    overlappingReg = new VMStorage(StorageType.STACK,
                                                    (short) STACK_SLOT_SIZE, (int) stackOffset - 4);
                     stackOffset += 4; // We now have a 64 bit slot, but reserved only 32 bit before.
                 }
-                result[fpRegCnt - 1] = overlappingReg; // Replace by overlapped slot.
+                result2[fpRegCnt - 1] = overlappingReg;
             }
 
             // Allocate rest as struct.
@@ -301,7 +304,7 @@ public abstract class CallArranger {
                 result[fpRegCnt + i] = nextStorage(StorageType.INTEGER, false);
             }
 
-            return result;
+            return new HfaRegs(result, result2);
         }
 
         void adjustForVarArgs() {
@@ -358,19 +361,30 @@ public abstract class CallArranger {
                 case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;
                     List<MemoryLayout> scalarLayouts = TypeClass.scalarLayouts((GroupLayout) layout);
-                    VMStorage[] regs = storageCalculator.hfaAlloc(scalarLayouts);
+                    HfaRegs regs = storageCalculator.hfaAlloc(scalarLayouts);
                     final long baseSize = scalarLayouts.get(0).byteSize();
                     long offset = 0;
-                    for (VMStorage storage : regs) {
+                    for (int index = 0; index < regs.first().length; index++) {
+                        VMStorage storage = regs.first()[index];
                         // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
-                        final long size = (baseSize == 4 &&
-                                           (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
+                        long size = (baseSize == 4 &&
+                                     (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, storage.type() == StorageType.FLOAT);
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type)
                                 .vmStore(storage, type);
+                        VMStorage storage2 = regs.second()[index];
+                        if (storage2 != null) {
+                            // We have a second slot to fill (always 64 bit GP reg or stack slot).
+                            size = 8;
+                            if (offset + size < layout.byteSize()) {
+                                bindings.dup();
+                            }
+                            bindings.bufferLoad(offset, long.class)
+                                    .vmStore(storage2, long.class);
+                        }
                         offset += size;
                     }
                 }
@@ -430,10 +444,12 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     List<MemoryLayout> scalarLayouts = TypeClass.scalarLayouts((GroupLayout) layout);
-                    VMStorage[] regs = storageCalculator.hfaAlloc(scalarLayouts);
+                    HfaRegs regs = storageCalculator.hfaAlloc(scalarLayouts);
                     final long baseSize = scalarLayouts.get(0).byteSize();
                     long offset = 0;
-                    for (VMStorage storage : regs) {
+                    for (int index = 0; index < regs.first().length; index++) {
+                        // Use second if available since first one only contains one 32 bit value.
+                        VMStorage storage = regs.second()[index] == null ? regs.first()[index] : regs.second()[index];
                         // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
                         final long size = (baseSize == 4 &&
                                            (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;

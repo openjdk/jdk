@@ -62,8 +62,6 @@ public class PPC64Architecture implements Architecture {
         byte FLOAT = 1;
         byte STACK = 2;
         byte PLACEHOLDER = 3;
-        byte INTEGER_AND_FLOAT = 4;
-        byte STACK_AND_FLOAT = 5;
     }
 
     public static class Regs { // break circular dependency

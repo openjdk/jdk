@@ -107,10 +107,6 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
                        VMStorage from_reg, VMStorage to_reg) {
   int out_bias = 0;
   switch (to_reg.type()) {
-    case StorageType::INTEGER_AND_FLOAT:
-      // "no partial DW rule"
-      __ stw(as_Register(from_reg), -8, R1_SP);
-      __ lfs(F13, -8, R1_SP); // fallthrough
     case StorageType::INTEGER:
       if (to_reg.segment_mask() == REG64_MASK && from_reg.segment_mask() == REG32_MASK) {
         // see CCallingConventionRequiresIntsAsLongs
@@ -130,10 +126,6 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
         __ lfd(as_FloatRegister(to_reg), -8, R1_SP);
       }
       break;
-    case StorageType::STACK_AND_FLOAT:
-      // "no partial DW rule"
-      __ stw(as_Register(from_reg), -8, R1_SP);
-      __ lfs(F13, -8, R1_SP); // fallthrough
     case StorageType::STACK:
       out_bias = out_stk_bias; // fallthrough
     case StorageType::FRAME_DATA:
@@ -158,7 +150,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
     case StorageType::INTEGER:
       // FP arguments can get passed in GP reg!
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
-      if (to_reg.segment_mask() == REG32_MASK) {
+      if (from_reg.segment_mask() == REG32_MASK) {
         __ stfs(as_FloatRegister(from_reg), -8, R1_SP);
         __ lwa(as_Register(to_reg), -8, R1_SP);
       } else {
@@ -187,9 +179,6 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
                        VMStorage from_reg, VMStorage to_reg) {
   int out_bias = 0;
   switch (to_reg.type()) {
-    case StorageType::INTEGER_AND_FLOAT:
-      // "no partial DW rule"
-      __ lfs(F13, reg2offset(from_reg, in_stk_bias), callerSP); // fallthrough
     case StorageType::INTEGER:
       switch (from_reg.stack_size()) {
         case 8: __ ld( as_Register(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
@@ -204,9 +193,6 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
         default: ShouldNotReachHere();
       }
       break;
-    case StorageType::STACK_AND_FLOAT:
-      // "no partial DW rule"
-      __ lfs(F13, reg2offset(from_reg, in_stk_bias), callerSP); // fallthrough
     case StorageType::STACK:
       out_bias = out_stk_bias; // fallthrough
     case StorageType::FRAME_DATA: {
@@ -241,14 +227,12 @@ void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_st
     }
 
     switch (from_reg.type()) {
-      case StorageType::INTEGER_AND_FLOAT:
       case StorageType::INTEGER:
         move_reg64(masm, out_stk_bias, from_reg, to_reg);
         break;
       case StorageType::FLOAT:
         move_float(masm, out_stk_bias, from_reg, to_reg);
         break;
-      case StorageType::STACK_AND_FLOAT:
       case StorageType::STACK:
         move_stack(masm, callerSP, in_stk_bias, out_stk_bias, from_reg, to_reg);
         break;
