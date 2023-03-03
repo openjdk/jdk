@@ -44,6 +44,9 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+
 /**
  * @test
  * @bug 8232853
@@ -87,7 +90,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     ProxySelector proxySelector;
     MyAuthenticator auth;
     HttpClient client;
-    Executor executor = Executors.newCachedThreadPool();
+    ExecutorService executor = Executors.newCachedThreadPool();
 
     @DataProvider(name = "uris")
     Object[][] testURIs() {
@@ -119,9 +122,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             auth = new MyAuthenticator();
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, executor);
             http1Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/http1/");
             http1Server.start();
             http1URI = new URI("http://" + http1Server.serverAuthority()
@@ -138,16 +139,14 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                     + "/AuthFilterCacheTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority()
                     + "/AuthFilterCacheTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority()
