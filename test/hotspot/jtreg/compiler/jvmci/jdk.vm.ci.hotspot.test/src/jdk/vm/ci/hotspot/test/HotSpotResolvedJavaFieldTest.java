@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class HotSpotResolvedJavaFieldTest {
         Field f = null;
         try {
             Class<?> typeImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl");
-            m = typeImpl.getDeclaredMethod("createField", JavaType.class, int.class, int.class, int.class);
+            m = typeImpl.getDeclaredMethod("createField", JavaType.class, int.class, int.class, int.class, int.class);
             m.setAccessible(true);
             Class<?> fieldImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedJavaFieldImpl");
             f = fieldImpl.getDeclaredField("index");
@@ -136,7 +136,7 @@ public class HotSpotResolvedJavaFieldTest {
                 if (field.isInternal()) {
                     HotSpotResolvedJavaField expected = (HotSpotResolvedJavaField) field;
                     int index = indexField.getInt(expected);
-                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), index);
+                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), expected.getInternalModifiers(), index);
                     Assert.assertEquals(expected, actual);
                 }
             }

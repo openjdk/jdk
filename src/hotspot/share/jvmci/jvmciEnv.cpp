@@ -1419,6 +1419,33 @@ JVMCIObject JVMCIEnv::new_JVMCIError(JVMCI_TRAPS) {
   }
 }
 
+JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    HotSpotJVMCI::FieldInfo::klass()->initialize(CHECK_(JVMCIObject()));
+    oop obj = HotSpotJVMCI::FieldInfo::klass()->allocate_instance(CHECK_(JVMCIObject()));
+    Handle obj_h(THREAD, obj);
+    HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
+    HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
+    HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
+    HotSpotJVMCI::FieldInfo::set_accessFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_fieldFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
+    HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
+    return wrap(obj_h());
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jobject result = jni()->NewObject(JNIJVMCI::FieldInfo::clazz(),
+                                      JNIJVMCI::VMFlag::constructor(),
+                                      (jint)fieldinfo->name_index(),
+                                      (jint)fieldinfo->signature_index(),
+                                      (jint)fieldinfo->offset(),
+                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->field_flags().as_uint(),
+                                      (jint)fieldinfo->initializer_index());
+
+    return wrap(result);
+  }
+}
 
 JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont_register) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.

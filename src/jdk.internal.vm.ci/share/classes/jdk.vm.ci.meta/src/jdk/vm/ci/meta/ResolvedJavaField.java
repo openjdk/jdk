@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,13 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
      */
     @Override
     int getModifiers();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns VM internal flags associated with this field
+     */
+    int getInternalModifiers();
 
     /**
      * Returns the offset of the field relative to the base of its storage container (e.g.,

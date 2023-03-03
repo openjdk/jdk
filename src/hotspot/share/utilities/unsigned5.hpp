@@ -258,8 +258,8 @@ class UNSIGNED5 : AllStatic {
   //  MyReader r(array); while (r.has_next())  print(r.next_uint());
   template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
   class Reader {
-    const ARR _array;
-    const OFF _limit;
+    ARR _array;
+    OFF _limit;
     OFF _position;
     int next_length() {
       return UNSIGNED5::check_length(_array, _position, _limit, GET());

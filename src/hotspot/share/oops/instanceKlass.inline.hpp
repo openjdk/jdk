@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -44,6 +45,9 @@ inline intptr_t* InstanceKlass::end_of_itable()     const { return start_of_itab
 inline int InstanceKlass::itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 
 inline oop InstanceKlass::static_field_base_raw() { return java_mirror(); }
+
+inline int InstanceKlass::java_fields_count() const { return FieldInfoStream::num_java_fields(fieldinfo_stream()); }
+inline int InstanceKlass::total_fields_count() const { return FieldInfoStream::num_total_fields(fieldinfo_stream()); }
 
 inline OopMapBlock* InstanceKlass::start_of_nonstatic_oop_maps() const {
   return (OopMapBlock*)(start_of_itable() + itable_length());

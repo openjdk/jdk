@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,16 @@ public class TestResolvedJavaField extends FieldUniverse {
             int expected = e.getKey().getModifiers();
             int actual = e.getValue().getModifiers();
             assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void getInternalModifiersTest() {
+        for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
+            // Reflection currently doesn't export InternalModifiers, no way to test them for now
+            // int expected = e.getKey().getInternalModifiers();
+            int actual = e.getValue().getInternalModifiers();
+            // assertEquals(expected, actual);
         }
     }
 

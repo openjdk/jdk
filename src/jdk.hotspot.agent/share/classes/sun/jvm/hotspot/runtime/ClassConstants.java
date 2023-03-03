@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,17 +136,6 @@ public interface ClassConstants
 
     // Method* flags
     public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
-
-    // field flags
-    // Note: these flags must be defined in the low order 16 bits because
-    // InstanceKlass only stores a ushort worth of information from the
-    // AccessFlags value.
-    // field access is watched by JVMTI
-    public static final long JVM_ACC_FIELD_ACCESS_WATCHED         = 0x00002000;
-    // field modification is watched by JVMTI
-    public static final long JVM_ACC_FIELD_MODIFICATION_WATCHED   = 0x00008000;
-    // field has generic signature
-    public static final long JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE  = 0x00000800;
 
     // flags accepted by set_field_flags
     public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;

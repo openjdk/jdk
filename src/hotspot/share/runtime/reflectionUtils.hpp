@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_REFLECTIONUTILS_HPP
 
 #include "memory/allStatic.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"

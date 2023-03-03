@@ -218,7 +218,6 @@ class InstanceKlass: public Klass {
   u2              _nest_host_index;
   u2              _this_class_index;        // constant pool entry
   u2              _static_oop_field_count;  // number of static oop fields in this klass
-  u2              _java_fields_count;       // The number of declared Java fields
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
@@ -271,20 +270,9 @@ class InstanceKlass: public Klass {
   // offset matches _default_methods offset
   Array<int>*     _default_vtable_indices;
 
-  // Instance and static variable information, starts with 6-tuples of shorts
-  // [access, name index, sig index, initval index, low_offset, high_offset]
-  // for all fields, followed by the generic signature data at the end of
-  // the array. Only fields with generic signature attributes have the generic
-  // signature data set in the array. The fields array looks like following:
-  //
-  // f1: [access, name index, sig index, initial value index, low_offset, high_offset]
-  // f2: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //      ...
-  // fn: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //     [generic signature index]
-  //     [generic signature index]
-  //     ...
-  Array<u2>*      _fields;
+  // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
+  Array<u1>* _fieldinfo_stream;
+  Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
@@ -393,23 +381,25 @@ class InstanceKlass: public Klass {
 
  private:
   friend class fieldDescriptor;
-  FieldInfo* field(int index) const { return FieldInfo::from_field_array(_fields, index); }
+  FieldInfo field(int index) const;
 
  public:
-  int     field_offset      (int index) const { return field(index)->offset(); }
-  int     field_access_flags(int index) const { return field(index)->access_flags(); }
-  Symbol* field_name        (int index) const { return field(index)->name(constants()); }
-  Symbol* field_signature   (int index) const { return field(index)->signature(constants()); }
+  int     field_offset      (int index) const { return field(index).offset(); }
+  int     field_access_flags(int index) const { return field(index).access_flags().as_int(); }
+  FieldInfo::FieldFlags field_flags(int index) const { return field(index).field_flags(); }
+  FieldStatus field_status(int index)   const { return fields_status()->at(index); }
+  Symbol* field_name        (int index) const { return field(index).name(constants()); }
+  Symbol* field_signature   (int index) const { return field(index).signature(constants()); }
 
   // Number of Java declared fields
-  int java_fields_count() const           { return (int)_java_fields_count; }
+  int java_fields_count() const;
+  int total_fields_count() const;
 
-  Array<u2>* fields() const            { return _fields; }
-  void set_fields(Array<u2>* f, u2 java_fields_count) {
-    guarantee(_fields == nullptr || f == nullptr, "Just checking");
-    _fields = f;
-    _java_fields_count = java_fields_count;
-  }
+  Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
+  void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
+
+  Array<FieldStatus>* fields_status() const {return _fields_status; }
+  void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
 
   // inner classes
   Array<u2>* inner_classes() const       { return _inner_classes; }

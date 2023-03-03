@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,18 +1120,14 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 buf.append(" " + kls.getName().asString() + "={");
                 int flen = ov.fieldsSize();
 
-                U2Array klfields = kls.getFields();
-                int klen = klfields.length();
+                sun.jvm.hotspot.oops.Field[] fields = sun.jvm.hotspot.oops.Field.getFields(kls);
                 int findex = 0;
-                for (int index = 0; index < klen; index++) {
-                    int accsFlags = kls.getFieldAccessFlags(index);
-                    Symbol f_name = kls.getFieldName(index);
-                    AccessFlags access = new AccessFlags(accsFlags);
-                    if (!access.isStatic()) {
-                        ScopeValue svf = ov.getFieldAt(findex++);
-                        String    fstr = scopeValueAsString(sd, svf);
-                        buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
-                    }
+                for (int index = 0; index < fields.length; index++) {
+                  if (!fields[index].getAccessFlagsObj().isStatic()) {
+                     ScopeValue svf = ov.getFieldAt(findex++);
+                     String    fstr = scopeValueAsString(sd, svf);
+                     buf.append(" [" + fields[index].getName().asString() + " :"+ index + "]=(#" + fstr + ")");
+                  }
                 }
                 buf.append(" }");
             } else {
@@ -1680,15 +1676,15 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForFields(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      U2Array fields = klass.getFields();
-      int numFields = klass.getAllFieldsCount();
+      sun.jvm.hotspot.oops.Field[] fields = sun.jvm.hotspot.oops.Field.getFields(klass);
+      int numFields = fields.length;
       if (numFields != 0) {
          buf.h3("Fields");
          buf.beginList();
          for (int f = 0; f < numFields; f++) {
-           sun.jvm.hotspot.oops.Field field = klass.getFieldByIndex(f);
-           String f_name = ((NamedFieldIdentifier)field.getID()).getName();
-           Symbol f_sig  = field.getSignature();
+           sun.jvm.hotspot.oops.Field field = fields[f];
+           String f_name = field.getName().asString();
+           Symbol f_sig = field.getSignature();
            Symbol f_genSig = field.getGenericSignature();
            AccessFlags acc = field.getAccessFlagsObj();
 
@@ -1702,7 +1698,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
            buf.append(f_name);
            buf.append(';');
            // is it generic?
-           if (f_genSig != null) {
+           if (field.isGeneric()) {
               buf.append(" [signature ");
               buf.append(escapeHTMLSpecialChars(f_genSig.asString()));
               buf.append("] ");

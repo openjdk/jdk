@@ -66,6 +66,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -225,8 +226,7 @@
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<InstanceKlass*>*)                \
-  nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
-  nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _fieldinfo_stream,                             Array<u1>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
@@ -2092,11 +2092,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
-  declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
-  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
-  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
-  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -2228,24 +2223,6 @@
   /*************************************/                                 \
                                                                           \
                                                                           \
-  /*************************************/                                 \
-  /* FieldInfo FieldOffset enum        */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_constant(FieldInfo::access_flags_offset)                        \
-  declare_constant(FieldInfo::name_index_offset)                          \
-  declare_constant(FieldInfo::signature_index_offset)                     \
-  declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_packed_offset)                          \
-  declare_constant(FieldInfo::high_packed_offset)                         \
-  declare_constant(FieldInfo::field_slots)                                \
-                                                                          \
-  /*************************************/                                 \
-  /* FieldInfo tag constants           */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
   /* InstanceKlass InnerClassAttributeOffset enum */                      \
@@ -2314,6 +2291,17 @@
   declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
   declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
   declare_constant(JavaThreadStatus::TERMINATED)                          \
+                                                                          \
+                                                                          \
+  /******************************/                                        \
+  /* FieldFlags enum            */                                        \
+  /******************************/                                        \
+                                                                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_initialized)                \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
+  declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \
