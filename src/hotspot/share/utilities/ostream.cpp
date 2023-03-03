@@ -1141,7 +1141,7 @@ bool networkStream::connect(const char *host, short port) {
   struct addrinfo hints;
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6
+  hints.ai_family = AF_INET;       // Allow IPv4 only
   hints.ai_socktype = SOCK_STREAM; // TCP only
 
   // getaddrinfo can resolve both an IP address and a host name
