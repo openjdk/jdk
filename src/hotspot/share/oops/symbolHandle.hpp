@@ -52,8 +52,7 @@ public:
   // Does not increment the current reference count if temporary.
   SymbolHandleBase(Symbol *s) : _temp(s) {
     if (!TEMP) {
-      assert(s != nullptr, "must not be null");
-      s->increment_refcount();
+      Symbol::maybe_increment_refcount(_temp);
     }
   }
 

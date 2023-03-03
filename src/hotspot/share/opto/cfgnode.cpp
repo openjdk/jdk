@@ -436,7 +436,6 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
 #endif //ASSERT
 
 void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
-  assert(status != RegionNode::LoopStatus::NeverIrreducibleEntry, "do not set this");
   assert(loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "why set our status again?");
   _loop_status = status;
 }

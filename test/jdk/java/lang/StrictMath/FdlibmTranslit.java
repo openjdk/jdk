@@ -70,8 +70,28 @@ public class FdlibmTranslit {
                                        ( ((long)high)) << 32 );
     }
 
+    public static double asin(double x) {
+        return Asin.compute(x);
+    }
+
+    public static double acos(double x) {
+        return Acos.compute(x);
+    }
+
+    public static double atan(double x) {
+        return Atan.compute(x);
+    }
+
+    public static double atan2(double y, double x) {
+        return Atan2.compute(y, x);
+    }
+
     public static double hypot(double x, double y) {
         return Hypot.compute(x, y);
+    }
+
+    public static double sqrt(double x) {
+        return Sqrt.compute(x);
     }
 
     public static double cbrt(double x) {
@@ -90,8 +110,574 @@ public class FdlibmTranslit {
         return Log1p.compute(x);
     }
 
+    public static double exp(double x) {
+        return Exp.compute(x);
+    }
+
     public static double expm1(double x) {
         return Expm1.compute(x);
+    }
+
+    public static double sinh(double x) {
+        return Sinh.compute(x);
+    }
+
+    public static double cosh(double x) {
+        return Cosh.compute(x);
+    }
+
+    public static double tanh(double x) {
+        return Tanh.compute(x);
+    }
+
+
+    /** Returns the arcsine of x.
+     *
+     * Method :
+     *      Since  asin(x) = x + x^3/6 + x^5*3/40 + x^7*15/336 + ...
+     *      we approximate asin(x) on [0,0.5] by
+     *              asin(x) = x + x*x^2*R(x^2)
+     *      where
+     *              R(x^2) is a rational approximation of (asin(x)-x)/x^3
+     *      and its remez error is bounded by
+     *              |(asin(x)-x)/x^3 - R(x^2)| < 2^(-58.75)
+     *
+     *      For x in [0.5,1]
+     *              asin(x) = pi/2-2*asin(sqrt((1-x)/2))
+     *      Let y = (1-x), z = y/2, s := sqrt(z), and pio2_hi+pio2_lo=pi/2;
+     *      then for x>0.98
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio2_hi - (2*(s+s*z*R(z)) - pio2_lo)
+     *      For x<=0.98, let pio4_hi = pio2_hi/2, then
+     *              f = hi part of s;
+     *              c = sqrt(z) - f = (z-f*f)/(s+f)         ...f+c=sqrt(z)
+     *      and
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio4_hi+(pio4-2s)-(2s*z*R(z)-pio2_lo)
+     *                      = pio4_hi+(pio4-2f)-(2s*z*R(z)-(pio2_lo+2c))
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     */
+    static class Asin {
+        private static final double
+            one =  1.00000000000000000000e+00, /* 0x3FF00000, 0x00000000 */
+            huge =  1.000e+300,
+            pio2_hi =  1.57079632679489655800e+00, /* 0x3FF921FB, 0x54442D18 */
+            pio2_lo =  6.12323399573676603587e-17, /* 0x3C91A626, 0x33145C07 */
+            pio4_hi =  7.85398163397448278999e-01, /* 0x3FE921FB, 0x54442D18 */
+        /* coefficient for R(x^2) */
+            pS0 =  1.66666666666666657415e-01, /* 0x3FC55555, 0x55555555 */
+            pS1 = -3.25565818622400915405e-01, /* 0xBFD4D612, 0x03EB6F7D */
+            pS2 =  2.01212532134862925881e-01, /* 0x3FC9C155, 0x0E884455 */
+            pS3 = -4.00555345006794114027e-02, /* 0xBFA48228, 0xB5688F3B */
+            pS4 =  7.91534994289814532176e-04, /* 0x3F49EFE0, 0x7501B288 */
+            pS5 =  3.47933107596021167570e-05, /* 0x3F023DE1, 0x0DFDF709 */
+            qS1 = -2.40339491173441421878e+00, /* 0xC0033A27, 0x1C8A2D4B */
+            qS2 =  2.02094576023350569471e+00, /* 0x40002AE5, 0x9C598AC8 */
+            qS3 = -6.88283971605453293030e-01, /* 0xBFE6066C, 0x1B8D0159 */
+            qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
+
+        static double compute(double x) {
+            double t=0,w,p,q,c,r,s;
+            int hx,ix;
+            hx = __HI(x);
+            ix = hx&0x7fffffff;
+            if(ix>= 0x3ff00000) {           /* |x|>= 1 */
+                if(((ix-0x3ff00000)|__LO(x))==0)
+                    /* asin(1)=+-pi/2 with inexact */
+                    return x*pio2_hi+x*pio2_lo;
+                return (x-x)/(x-x);         /* asin(|x|>1) is NaN */
+            } else if (ix<0x3fe00000) {     /* |x|<0.5 */
+                if(ix<0x3e400000) {         /* if |x| < 2**-27 */
+                    if(huge+x>one) return x;/* return x with inexact if x!=0*/
+                } else
+                    t = x*x;
+                p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
+                q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));
+                w = p/q;
+                return x+x*w;
+            }
+            /* 1> |x|>= 0.5 */
+            w = one-Math.abs(x);
+            t = w*0.5;
+            p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
+            q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));
+            s = Math.sqrt(t);
+            if(ix>=0x3FEF3333) {    /* if |x| > 0.975 */
+                w = p/q;
+                t = pio2_hi-(2.0*(s+s*w)-pio2_lo);
+            } else {
+                w  = s;
+                // __LO(w) = 0;
+                w  = __LO(w, 0);
+                c  = (t-w*w)/(s+w);
+                r  = p/q;
+                p  = 2.0*s*r-(pio2_lo-2.0*c);
+                q  = pio4_hi-2.0*w;
+                t  = pio4_hi-(p-q);
+            }
+            if(hx>0) return t; else return -t;
+        }
+    }
+
+    /** Returns the arccosine of x.
+     * Method :
+     *      acos(x)  = pi/2 - asin(x)
+     *      acos(-x) = pi/2 + asin(x)
+     * For |x|<=0.5
+     *      acos(x) = pi/2 - (x + x*x^2*R(x^2))     (see asin.c)
+     * For x>0.5
+     *      acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
+     *              = 2asin(sqrt((1-x)/2))
+     *              = 2s + 2s*z*R(z)        ...z=(1-x)/2, s=sqrt(z)
+     *              = 2f + (2c + 2s*z*R(z))
+     *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
+     *     for f so that f+c ~ sqrt(z).
+     * For x<-0.5
+     *      acos(x) = pi - 2asin(sqrt((1-|x|)/2))
+     *              = pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     * Function needed: sqrt
+     */
+    static class Acos {
+        private static final double
+            one=  1.00000000000000000000e+00, /* 0x3FF00000, 0x00000000 */
+            pi =  3.14159265358979311600e+00, /* 0x400921FB, 0x54442D18 */
+            pio2_hi =  1.57079632679489655800e+00, /* 0x3FF921FB, 0x54442D18 */
+            pio2_lo =  6.12323399573676603587e-17, /* 0x3C91A626, 0x33145C07 */
+            pS0 =  1.66666666666666657415e-01, /* 0x3FC55555, 0x55555555 */
+            pS1 = -3.25565818622400915405e-01, /* 0xBFD4D612, 0x03EB6F7D */
+            pS2 =  2.01212532134862925881e-01, /* 0x3FC9C155, 0x0E884455 */
+            pS3 = -4.00555345006794114027e-02, /* 0xBFA48228, 0xB5688F3B */
+            pS4 =  7.91534994289814532176e-04, /* 0x3F49EFE0, 0x7501B288 */
+            pS5 =  3.47933107596021167570e-05, /* 0x3F023DE1, 0x0DFDF709 */
+            qS1 = -2.40339491173441421878e+00, /* 0xC0033A27, 0x1C8A2D4B */
+            qS2 =  2.02094576023350569471e+00, /* 0x40002AE5, 0x9C598AC8 */
+            qS3 = -6.88283971605453293030e-01, /* 0xBFE6066C, 0x1B8D0159 */
+            qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
+
+        static double compute(double x) {
+            double z,p,q,r,w,s,c,df;
+            int hx,ix;
+            hx = __HI(x);
+            ix = hx&0x7fffffff;
+            if(ix>=0x3ff00000) {    /* |x| >= 1 */
+                if(((ix-0x3ff00000)|__LO(x))==0) {  /* |x|==1 */
+                    if(hx>0) return 0.0;            /* acos(1) = 0  */
+                    else return pi+2.0*pio2_lo;     /* acos(-1)= pi */
+                }
+                return (x-x)/(x-x);         /* acos(|x|>1) is NaN */
+            }
+            if(ix<0x3fe00000) {     /* |x| < 0.5 */
+                if(ix<=0x3c600000) return pio2_hi+pio2_lo;/*if|x|<2**-57*/
+                z = x*x;
+                p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
+                q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
+                r = p/q;
+                return pio2_hi - (x - (pio2_lo-x*r));
+            } else  if (hx<0) {             /* x < -0.5 */
+                z = (one+x)*0.5;
+                p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
+                q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
+                s = Math.sqrt(z);
+                r = p/q;
+                w = r*s-pio2_lo;
+                return pi - 2.0*(s+w);
+            } else {                        /* x > 0.5 */
+                z = (one-x)*0.5;
+                s = Math.sqrt(z);
+                df = s;
+                // __LO(df) = 0;
+                df = __LO(df, 0);
+                c  = (z-df*df)/(s+df);
+                p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
+                q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
+                r = p/q;
+                w = r*s+c;
+                return 2.0*(df+w);
+            }
+        }
+    }
+
+    /* Returns the arctangent of x.
+     * Method
+     *   1. Reduce x to positive by atan(x) = -atan(-x).
+     *   2. According to the integer k=4t+0.25 chopped, t=x, the argument
+     *      is further reduced to one of the following intervals and the
+     *      arctangent of t is evaluated by the corresponding formula:
+     *
+     *      [0,7/16]      atan(x) = t-t^3*(a1+t^2*(a2+...(a10+t^2*a11)...)
+     *      [7/16,11/16]  atan(x) = atan(1/2) + atan( (t-0.5)/(1+t/2) )
+     *      [11/16.19/16] atan(x) = atan( 1 ) + atan( (t-1)/(1+t) )
+     *      [19/16,39/16] atan(x) = atan(3/2) + atan( (t-1.5)/(1+1.5t) )
+     *      [39/16,INF]   atan(x) = atan(INF) + atan( -1/t )
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan {
+        private static final double atanhi[] = {
+            4.63647609000806093515e-01, /* atan(0.5)hi 0x3FDDAC67, 0x0561BB4F */
+            7.85398163397448278999e-01, /* atan(1.0)hi 0x3FE921FB, 0x54442D18 */
+            9.82793723247329054082e-01, /* atan(1.5)hi 0x3FEF730B, 0xD281F69B */
+            1.57079632679489655800e+00, /* atan(inf)hi 0x3FF921FB, 0x54442D18 */
+        };
+
+        private static final double atanlo[] = {
+            2.26987774529616870924e-17, /* atan(0.5)lo 0x3C7A2B7F, 0x222F65E2 */
+            3.06161699786838301793e-17, /* atan(1.0)lo 0x3C81A626, 0x33145C07 */
+            1.39033110312309984516e-17, /* atan(1.5)lo 0x3C700788, 0x7AF0CBBD */
+            6.12323399573676603587e-17, /* atan(inf)lo 0x3C91A626, 0x33145C07 */
+        };
+
+        private static final double aT[] = {
+             3.33333333333329318027e-01, /* 0x3FD55555, 0x5555550D */
+            -1.99999999998764832476e-01, /* 0xBFC99999, 0x9998EBC4 */
+             1.42857142725034663711e-01, /* 0x3FC24924, 0x920083FF */
+            -1.11111104054623557880e-01, /* 0xBFBC71C6, 0xFE231671 */
+             9.09088713343650656196e-02, /* 0x3FB745CD, 0xC54C206E */
+            -7.69187620504482999495e-02, /* 0xBFB3B0F2, 0xAF749A6D */
+             6.66107313738753120669e-02, /* 0x3FB10D66, 0xA0D03D51 */
+            -5.83357013379057348645e-02, /* 0xBFADDE2D, 0x52DEFD9A */
+             4.97687799461593236017e-02, /* 0x3FA97B4B, 0x24760DEB */
+            -3.65315727442169155270e-02, /* 0xBFA2B444, 0x2C6A6C2F */
+             1.62858201153657823623e-02, /* 0x3F90AD3A, 0xE322DA11 */
+        };
+
+        private static final double
+            one   = 1.0,
+            huge   = 1.0e300;
+
+        static double compute(double x) {
+            double w,s1,s2,z;
+            int ix,hx,id;
+
+            hx = __HI(x);
+            ix = hx&0x7fffffff;
+            if(ix>=0x44100000) {    /* if |x| >= 2^66 */
+                if(ix>0x7ff00000||
+                   (ix==0x7ff00000&&(__LO(x)!=0)))
+                    return x+x;             /* NaN */
+                if(hx>0) return  atanhi[3]+atanlo[3];
+                else     return -atanhi[3]-atanlo[3];
+            } if (ix < 0x3fdc0000) {        /* |x| < 0.4375 */
+                if (ix < 0x3e200000) {      /* |x| < 2^-29 */
+                    if(huge+x>one) return x;        /* raise inexact */
+                }
+                id = -1;
+            } else {
+                x = Math.abs(x);
+                if (ix < 0x3ff30000) {          /* |x| < 1.1875 */
+                    if (ix < 0x3fe60000) {      /* 7/16 <=|x|<11/16 */
+                        id = 0; x = (2.0*x-one)/(2.0+x);
+                    } else {                    /* 11/16<=|x|< 19/16 */
+                        id = 1; x  = (x-one)/(x+one);
+                    }
+                } else {
+                    if (ix < 0x40038000) {      /* |x| < 2.4375 */
+                        id = 2; x  = (x-1.5)/(one+1.5*x);
+                    } else {                    /* 2.4375 <= |x| < 2^66 */
+                        id = 3; x  = -1.0/x;
+                    }
+                }}
+            /* end of argument reduction */
+            z = x*x;
+            w = z*z;
+            /* break sum from i=0 to 10 aT[i]z**(i+1) into odd and even poly */
+            s1 = z*(aT[0]+w*(aT[2]+w*(aT[4]+w*(aT[6]+w*(aT[8]+w*aT[10])))));
+            s2 = w*(aT[1]+w*(aT[3]+w*(aT[5]+w*(aT[7]+w*aT[9]))));
+            if (id<0) return x - x*(s1+s2);
+            else {
+                z = atanhi[id] - ((x*(s1+s2) - atanlo[id]) - x);
+                return (hx<0)? -z:z;
+            }
+        }
+    }
+
+    /**
+     * Returns the angle theta from the conversion of rectangular
+     * coordinates (x, y) to polar coordinates (r, theta).
+     *
+     * Method :
+     *      1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
+     *      2. Reduce x to positive by (if x and y are unexceptional):
+     *              ARG (x+iy) = arctan(y/x)           ... if x > 0,
+     *              ARG (x+iy) = pi - arctan[y/(-x)]   ... if x < 0,
+     *
+     * Special cases:
+     *
+     *      ATAN2((anything), NaN ) is NaN;
+     *      ATAN2(NAN , (anything) ) is NaN;
+     *      ATAN2(+-0, +(anything but NaN)) is +-0  ;
+     *      ATAN2(+-0, -(anything but NaN)) is +-pi ;
+     *      ATAN2(+-(anything but 0 and NaN), 0) is +-pi/2;
+     *      ATAN2(+-(anything but INF and NaN), +INF) is +-0 ;
+     *      ATAN2(+-(anything but INF and NaN), -INF) is +-pi;
+     *      ATAN2(+-INF,+INF ) is +-pi/4 ;
+     *      ATAN2(+-INF,-INF ) is +-3pi/4;
+     *      ATAN2(+-INF, (anything but,0,NaN, and INF)) is +-pi/2;
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan2 {
+        private static final double
+            tiny  = 1.0e-300,
+            zero  = 0.0,
+            pi_o_4  = 7.8539816339744827900E-01, /* 0x3FE921FB, 0x54442D18 */
+            pi_o_2  = 1.5707963267948965580E+00, /* 0x3FF921FB, 0x54442D18 */
+            pi      = 3.1415926535897931160E+00, /* 0x400921FB, 0x54442D18 */
+            pi_lo   = 1.2246467991473531772E-16; /* 0x3CA1A626, 0x33145C07 */
+
+        static double compute(double y, double x) {
+            double z;
+            int k,m,hx,hy,ix,iy;
+            /*unsigned*/ int lx,ly;
+
+            hx = __HI(x); ix = hx&0x7fffffff;
+            lx = __LO(x);
+            hy = __HI(y); iy = hy&0x7fffffff;
+            ly = __LO(y);
+            if(((ix|((lx|-lx)>>>31))>0x7ff00000)|| // Note unsigned shifts
+               ((iy|((ly|-ly)>>>31))>0x7ff00000))    /* x or y is NaN */
+                return x+y;
+            if(((hx-0x3ff00000)|lx)==0) return atan(y);   /* x=1.0 */
+            m = ((hy>>31)&1)|((hx>>30)&2);  /* 2*sign(x)+sign(y) */
+
+            /* when y = 0 */
+            if((iy|ly)==0) {
+                switch(m) {
+                case 0:
+                case 1: return y;       /* atan(+-0,+anything)=+-0 */
+                case 2: return  pi+tiny;/* atan(+0,-anything) = pi */
+                case 3: return -pi-tiny;/* atan(-0,-anything) =-pi */
+                }
+            }
+            /* when x = 0 */
+            if((ix|lx)==0) return (hy<0)?  -pi_o_2-tiny: pi_o_2+tiny;
+
+            /* when x is INF */
+            if(ix==0x7ff00000) {
+                if(iy==0x7ff00000) {
+                    switch(m) {
+                    case 0: return  pi_o_4+tiny;/* atan(+INF,+INF) */
+                    case 1: return -pi_o_4-tiny;/* atan(-INF,+INF) */
+                    case 2: return  3.0*pi_o_4+tiny;/*atan(+INF,-INF)*/
+                    case 3: return -3.0*pi_o_4-tiny;/*atan(-INF,-INF)*/
+                    }
+                } else {
+                    switch(m) {
+                    case 0: return  zero  ;     /* atan(+...,+INF) */
+                    case 1: return -1.0*zero  ; /* atan(-...,+INF) */
+                    case 2: return  pi+tiny  ;  /* atan(+...,-INF) */
+                    case 3: return -pi-tiny  ;  /* atan(-...,-INF) */
+                    }
+                }
+            }
+            /* when y is INF */
+            if(iy==0x7ff00000) return (hy<0)? -pi_o_2-tiny: pi_o_2+tiny;
+
+            /* compute y/x */
+            k = (iy-ix)>>20;
+            if(k > 60) z=pi_o_2+0.5*pi_lo;  /* |y/x| >  2**60 */
+            else if(hx<0&&k<-60) z=0.0;     /* |y|/x < -2**60 */
+            else z=atan(Math.abs(y/x));         /* safe to do y/x */
+            switch (m) {
+            case 0: return       z  ;   /* atan(+,+) */
+            case 1:
+                // original:__HI(z) ^= 0x80000000;
+                z = __HI(z, __HI(z) ^ 0x80000000);
+                return       z  ;   /* atan(-,+) */
+            case 2: return  pi-(z-pi_lo);/* atan(+,-) */
+            default: /* case 3 */
+                return  (z-pi_lo)-pi;/* atan(-,-) */
+            }
+        }
+    }
+
+    /**
+     * Return correctly rounded sqrt.
+     *           ------------------------------------------
+     *           |  Use the hardware sqrt if you have one |
+     *           ------------------------------------------
+     * Method:
+     *   Bit by bit method using integer arithmetic. (Slow, but portable)
+     *   1. Normalization
+     *      Scale x to y in [1,4) with even powers of 2:
+     *      find an integer k such that  1 <= (y=x*2^(2k)) < 4, then
+     *              sqrt(x) = 2^k * sqrt(y)
+     *   2. Bit by bit computation
+     *      Let q  = sqrt(y) truncated to i bit after binary point (q = 1),
+     *           i                                                   0
+     *                                     i+1         2
+     *          s  = 2*q , and      y  =  2   * ( y - q  ).         (1)
+     *           i      i            i                 i
+     *
+     *      To compute q    from q , one checks whether
+     *                  i+1       i
+     *
+     *                            -(i+1) 2
+     *                      (q + 2      ) <= y.                     (2)
+     *                        i
+     *                                                            -(i+1)
+     *      If (2) is false, then q   = q ; otherwise q   = q  + 2      .
+     *                             i+1   i             i+1   i
+     *
+     *      With some algebraic manipulation, it is not difficult to see
+     *      that (2) is equivalent to
+     *                             -(i+1)
+     *                      s  +  2       <= y                      (3)
+     *                       i                i
+     *
+     *      The advantage of (3) is that s  and y  can be computed by
+     *                                    i      i
+     *      the following recurrence formula:
+     *          if (3) is false
+     *
+     *          s     =  s  ,       y    = y   ;                    (4)
+     *           i+1      i          i+1    i
+     *
+     *          otherwise,
+     *                         -i                     -(i+1)
+     *          s     =  s  + 2  ,  y    = y  -  s  - 2             (5)
+     *           i+1      i          i+1    i     i
+     *
+     *      One may easily use induction to prove (4) and (5).
+     *      Note. Since the left hand side of (3) contain only i+2 bits,
+     *            it does not necessary to do a full (53-bit) comparison
+     *            in (3).
+     *   3. Final rounding
+     *      After generating the 53 bits result, we compute one more bit.
+     *      Together with the remainder, we can decide whether the
+     *      result is exact, bigger than 1/2ulp, or less than 1/2ulp
+     *      (it will never equal to 1/2ulp).
+     *      The rounding mode can be detected by checking whether
+     *      huge + tiny is equal to huge, and whether huge - tiny is
+     *      equal to huge for some floating point number "huge" and "tiny".
+     *
+     * Special cases:
+     *      sqrt(+-0) = +-0         ... exact
+     *      sqrt(inf) = inf
+     *      sqrt(-ve) = NaN         ... with invalid signal
+     *      sqrt(NaN) = NaN         ... with invalid signal for signaling NaN
+     *
+     * Other methods : see the appended file at the end of the program below.
+     *---------------
+     */
+    static class Sqrt {
+        private static final double    one     = 1.0, tiny=1.0e-300;
+
+        public static double compute(double x) {
+            double z = 0.0;
+            int     sign = (int)0x80000000;
+            /*unsigned*/ int r,t1,s1,ix1,q1;
+            int ix0,s0,q,m,t,i;
+
+            ix0 = __HI(x);                  /* high word of x */
+            ix1 = __LO(x);          /* low word of x */
+
+            /* take care of Inf and NaN */
+            if((ix0&0x7ff00000)==0x7ff00000) {
+                return x*x+x;               /* sqrt(NaN)=NaN, sqrt(+inf)=+inf
+                                               sqrt(-inf)=sNaN */
+            }
+            /* take care of zero */
+            if(ix0<=0) {
+                if(((ix0&(~sign))|ix1)==0) return x;/* sqrt(+-0) = +-0 */
+                else if(ix0<0)
+                    return (x-x)/(x-x);             /* sqrt(-ve) = sNaN */
+            }
+            /* normalize x */
+            m = (ix0>>20);
+            if(m==0) {                              /* subnormal x */
+                while(ix0==0) {
+                    m -= 21;
+                    ix0 |= (ix1>>>11); ix1 <<= 21; // unsigned shift
+                }
+                for(i=0;(ix0&0x00100000)==0;i++) ix0<<=1;
+                m -= i-1;
+                ix0 |= (ix1>>>(32-i)); // unsigned shift
+                ix1 <<= i;
+            }
+            m -= 1023;      /* unbias exponent */
+            ix0 = (ix0&0x000fffff)|0x00100000;
+            if((m&1) != 0){        /* odd m, double x to make it even */
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+            }
+            m >>= 1;        /* m = [m/2] */
+
+            /* generate sqrt(x) bit by bit */
+            ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+            ix1 += ix1;
+            q = q1 = s0 = s1 = 0;   /* [q,q1] = sqrt(x) */
+            r = 0x00200000;         /* r = moving bit from right to left */
+
+            while(r!=0) {
+                t = s0+r;
+                if(t<=ix0) {
+                    s0   = t+r;
+                    ix0 -= t;
+                    q   += r;
+                }
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+                r>>>=1; // unsigned shift
+            }
+
+            r = sign;
+            while(r!=0) {
+                t1 = s1+r;
+                t  = s0;
+                if((t<ix0)||((t==ix0)&&(Integer.compareUnsigned(t1, ix1) <= 0 ))) { // t1<=ix1
+                    s1  = t1+r;
+                    if(((t1&sign)==sign)&&(s1&sign)==0) s0 += 1;
+                    ix0 -= t;
+                    if (Integer.compareUnsigned(ix1, t1) < 0) ix0 -= 1; // ix1 < t1
+                    ix1 -= t1;
+                    q1  += r;
+                }
+                ix0 += ix0 + ((ix1&sign)>>>31); // unsigned shift
+                ix1 += ix1;
+                r>>>=1; // unsigned shift
+            }
+
+            /* use floating add to find out rounding direction */
+            if((ix0|ix1)!=0) {
+                z = one-tiny; /* trigger inexact flag */
+                if (z>=one) {
+                    z = one+tiny;
+                    if (q1==0xffffffff) { q1=0; q += 1;}
+                    else if (z>one) {
+                        if (q1==0xfffffffe) q+=1;
+                        q1+=2;
+                    } else
+                        q1 += (q1&1);
+                }
+            }
+            ix0 = (q>>1)+0x3fe00000;
+            ix1 =  q1>>>1; // unsigned shift
+            if ((q&1)==1) ix1 |= sign;
+            ix0 += (m <<20);
+            // __HI(z) = ix0;
+            z = __HI(z, ix0);
+            // __LO(z) = ix1;
+            z = __LO(z, ix1);
+            return z;
+        }
     }
 
     /**
@@ -335,7 +921,7 @@ public class FdlibmTranslit {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Exp {
+    private static final class Exp {
         private static final double one     = 1.0;
         private static final double[] halF = {0.5,-0.5,};
         private static final double huge    = 1.0e+300;
@@ -353,7 +939,7 @@ public class FdlibmTranslit {
         private static final double P4   = -1.65339022054652515390e-06;         /* 0xBEBBBD41, 0xC5D26BF1 */
         private static final double P5   =  4.13813679705723846039e-08;         /* 0x3E663769, 0x72BEA4D0 */
 
-        public static double compute(double x) {
+        static double compute(double x) {
             double y,hi=0,lo=0,c,t;
             int k=0,xsb;
             /*unsigned*/ int hx;
@@ -929,6 +1515,200 @@ public class FdlibmTranslit {
                 }
             }
             return y;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically sinh(x) if defined to be (exp(x)-exp(-x))/2
+     *      1. Replace x by |x| (sinh(-x) = -sinh(x)).
+     *      2.
+     *                                                  E + E/(E+1)
+     *          0        <= x <= 22     :  sinh(x) := --------------, E=expm1(x)
+     *                                                      2
+     *
+     *          22       <= x <= lnovft :  sinh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  sinh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  sinh(x) := x*shuge (overflow)
+     *
+     * Special cases:
+     *      sinh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only sinh(0)=0 is exact for finite x.
+     */
+    private static final class Sinh {
+        private static final double one = 1.0, shuge = 1.0e307;
+
+        static double compute(double x) {
+            double t,w,h;
+            int ix,jx;
+            /* unsigned */ int lx;
+
+            /* High word of |x|. */
+            jx = __HI(x);
+            ix = jx&0x7fffffff;
+
+            /* x is INF or NaN */
+            if(ix>=0x7ff00000) return x+x;
+
+            h = 0.5;
+            if (jx<0) h = -h;
+            /* |x| in [0,22], return sign(x)*0.5*(E+E/(E+1))) */
+            if (ix < 0x40360000) {          /* |x|<22 */
+                if (ix<0x3e300000)          /* |x|<2**-28 */
+                    if(shuge+x>one) return x;/* sinh(tiny) = tiny with inexact */
+                t = FdlibmTranslit.expm1(Math.abs(x));
+                if(ix<0x3ff00000) return h*(2.0*t-t*t/(t+one));
+                return h*(t+t/(t+one));
+            }
+
+            /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
+            if (ix < 0x40862E42) return h*FdlibmTranslit.exp(Math.abs(x));
+
+            /* |x| in [log(maxdouble), overflowthresold] */
+            // Note: the original FDLIBM sources use
+            // lx = *( (((*(unsigned*)&one)>>29)) + (unsigned*)&x);
+            // to set lx to the low-order 32 bits of x. The expression
+            // in question is an alternate way to implement the
+            // functionality of the C FDLIBM __LO macro and the
+            // expression is coded to work on both big-edian and
+            // little-endian machines. However, this port will instead
+            // use the __LO method call to represent this
+            // functionality.
+            lx = __LO(x);
+            if (ix<0x408633CE || ((ix==0x408633ce)&&(Long.compareUnsigned(lx, 0x8fb9f87d) <= 0 ))) {
+                w = exp(0.5*Math.abs(x));
+                t = h*w;
+                return t*w;
+            }
+
+            /* |x| > overflowthresold, sinh(x) overflow */
+            return x*shuge;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically cosh(x) if defined to be (exp(x)+exp(-x))/2
+     *      1. Replace x by |x| (cosh(x) = cosh(-x)).
+     *      2.
+     *                                                      [ exp(x) - 1 ]^2
+     *          0        <= x <= ln2/2  :  cosh(x) := 1 + -------------------
+     *                                                         2*exp(x)
+     *
+     *                                                exp(x) +  1/exp(x)
+     *          ln2/2    <= x <= 22     :  cosh(x) := -------------------
+     *                                                        2
+     *          22       <= x <= lnovft :  cosh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  cosh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  cosh(x) := huge*huge (overflow)
+     *
+     * Special cases:
+     *      cosh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only cosh(0)=1 is exact for finite x.
+     */
+    private static final class Cosh {
+        private static final double one = 1.0, half=0.5, huge = 1.0e300;
+        static double compute(double x) {
+            double t,w;
+            int ix;
+            /*unsigned*/ int lx;
+
+            /* High word of |x|. */
+            ix = __HI(x);
+            ix &= 0x7fffffff;
+
+            /* x is INF or NaN */
+            if(ix>=0x7ff00000) return x*x;
+
+            /* |x| in [0,0.5*ln2], return 1+expm1(|x|)^2/(2*exp(|x|)) */
+            if(ix<0x3fd62e43) {
+                t = expm1(Math.abs(x));
+                w = one+t;
+                if (ix<0x3c800000) return w;        /* cosh(tiny) = 1 */
+                return one+(t*t)/(w+w);
+            }
+
+            /* |x| in [0.5*ln2,22], return (exp(|x|)+1/exp(|x|)/2; */
+            if (ix < 0x40360000) {
+                t = exp(Math.abs(x));
+                return half*t+half/t;
+            }
+
+            /* |x| in [22, log(maxdouble)] return half*exp(|x|) */
+            if (ix < 0x40862E42) return half*exp(Math.abs(x));
+
+            /* |x| in [log(maxdouble), overflowthresold] */
+            // See note above in the sinh implementation for how this
+            // transliteration port uses __LO(x) in the line below
+            // that differs from the idiom used in the original FDLIBM.
+            lx = __LO(x);
+            if (ix<0x408633CE ||
+                ((ix==0x408633ce)&&(Integer.compareUnsigned(lx, 0x8fb9f87d) <= 0))) {
+                w = exp(half*Math.abs(x));
+                t = half*w;
+                return t*w;
+            }
+
+            /* |x| > overflowthresold, cosh(x) overflow */
+            return huge*huge;
+        }
+    }
+
+    /**
+     * Return the Hyperbolic Tangent of x
+     *
+     * Method :
+     *                                     x    -x
+     *                                    e  - e
+     *      0. tanh(x) is defined to be -----------
+     *                                     x    -x
+     *                                    e  + e
+     *      1. reduce x to non-negative by tanh(-x) = -tanh(x).
+     *      2.  0      <= x <= 2**-55 : tanh(x) := x*(one+x)
+     *                                              -t
+     *          2**-55 <  x <=  1     : tanh(x) := -----; t = expm1(-2x)
+     *                                             t + 2
+     *                                                   2
+     *          1      <= x <=  22.0  : tanh(x) := 1-  ----- ; t=expm1(2x)
+     *                                                 t + 2
+     *          22.0   <  x <= INF    : tanh(x) := 1.
+     *
+     * Special cases:
+     *      tanh(NaN) is NaN;
+     *      only tanh(0)=0 is exact for finite argument.
+     */
+    private static final class Tanh {
+        private static final double one=1.0, two=2.0, tiny = 1.0e-300;
+        static double compute(double x) {
+            double t,z;
+            int jx,ix;
+
+            /* High word of |x|. */
+            jx = __HI(x);
+            ix = jx&0x7fffffff;
+
+            /* x is INF or NaN */
+            if(ix>=0x7ff00000) {
+                if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
+                else       return one/x-one;    /* tanh(NaN) = NaN */
+            }
+
+            /* |x| < 22 */
+            if (ix < 0x40360000) {          /* |x|<22 */
+                if (ix<0x3c800000)          /* |x|<2**-55 */
+                    return x*(one+x);       /* tanh(small) = small */
+                if (ix>=0x3ff00000) {       /* |x|>=1  */
+                    t = expm1(two*Math.abs(x));
+                    z = one - two/(t+two);
+                } else {
+                    t = expm1(-two*Math.abs(x));
+                    z= -t/(t+two);
+                }
+                /* |x| > 22, return +-1 */
+            } else {
+                z = one - tiny;             /* raised inexact flag */
+            }
+            return (jx>=0)? z: -z;
         }
     }
 }

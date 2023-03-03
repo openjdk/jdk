@@ -688,7 +688,8 @@ public final class JarSigner {
             throw new AssertionError(asae);
         }
 
-        ZipOutputStream zos = new ZipOutputStream(os);
+        ZipOutputStream zos = new ZipOutputStream(
+                (os instanceof BufferedOutputStream) ? os : new BufferedOutputStream(os));
 
         Manifest manifest = new Manifest();
         byte[] mfRawBytes = null;

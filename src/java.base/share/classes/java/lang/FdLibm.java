@@ -60,7 +60,9 @@ package java.lang;
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
-    private static final double TWO54   =  0x1.0p54; // 1.80143985094819840000e+16
+    private static final double TWO54    = 0x1.0p54; // 1.80143985094819840000e+16
+    private static final double HUGE     = 1.0e+300;
+
 
     private FdLibm() {
         throw new UnsupportedOperationException("No FdLibm instances for you.");
@@ -101,6 +103,858 @@ class FdLibm {
         return Double.longBitsToDouble((transX & 0x0000_0000_FFFF_FFFFL) |
                                        ( ((long)high)) << 32 );
     }
+
+    /**
+     * Return a double with its high-order bits of the first argument
+     * and the low-order bits of the second argument..
+     */
+    private static double __HI_LO(int high, int low) {
+        return Double.longBitsToDouble(((long)high << 32) |
+                                       (low & 0xffff_ffffL));
+    }
+
+    /** Returns the arcsine of x.
+     *
+     * Method :
+     *      Since  asin(x) = x + x^3/6 + x^5*3/40 + x^7*15/336 + ...
+     *      we approximate asin(x) on [0,0.5] by
+     *              asin(x) = x + x*x^2*R(x^2)
+     *      where
+     *              R(x^2) is a rational approximation of (asin(x)-x)/x^3
+     *      and its remez error is bounded by
+     *              |(asin(x)-x)/x^3 - R(x^2)| < 2^(-58.75)
+     *
+     *      For x in [0.5,1]
+     *              asin(x) = pi/2-2*asin(sqrt((1-x)/2))
+     *      Let y = (1-x), z = y/2, s := sqrt(z), and pio2_hi+pio2_lo=pi/2;
+     *      then for x>0.98
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio2_hi - (2*(s+s*z*R(z)) - pio2_lo)
+     *      For x<=0.98, let pio4_hi = pio2_hi/2, then
+     *              f = hi part of s;
+     *              c = sqrt(z) - f = (z-f*f)/(s+f)         ...f+c=sqrt(z)
+     *      and
+     *              asin(x) = pi/2 - 2*(s+s*z*R(z))
+     *                      = pio4_hi+(pio4-2s)-(2s*z*R(z)-pio2_lo)
+     *                      = pio4_hi+(pio4-2f)-(2s*z*R(z)-(pio2_lo+2c))
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     */
+    static class Asin {
+        private Asin() {throw new UnsupportedOperationException();}
+
+        private static final double
+            pio2_hi = 0x1.921fb54442d18p0,   //  1.57079632679489655800e+00
+            pio2_lo = 0x1.1a62633145c07p-54, //  6.12323399573676603587e-17
+            pio4_hi = 0x1.921fb54442d18p-1,  //  7.85398163397448278999e-01
+        // coefficient for R(x^2)
+            pS0 =  0x1.5555555555555p-3,     //  1.66666666666666657415e-01
+            pS1 = -0x1.4d61203eb6f7dp-2,     // -3.25565818622400915405e-01
+            pS2 =  0x1.9c1550e884455p-3,     //  2.01212532134862925881e-01
+            pS3 = -0x1.48228b5688f3bp-5,     // -4.00555345006794114027e-02
+            pS4 =  0x1.9efe07501b288p-11,    //  7.91534994289814532176e-04
+            pS5 =  0x1.23de10dfdf709p-15,    //  3.47933107596021167570e-05
+            qS1 = -0x1.33a271c8a2d4bp1,      // -2.40339491173441421878e+00
+            qS2 =  0x1.02ae59c598ac8p1,      //  2.02094576023350569471e+00
+            qS3 = -0x1.6066c1b8d0159p-1,     // -6.88283971605453293030e-01
+            qS4 =  0x1.3b8c5b12e9282p-4;     //  7.70381505559019352791e-02
+
+        static double compute(double x) {
+            double t = 0, w, p, q, c, r, s;
+            int hx, ix;
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x3ff0_0000) {           // |x| >= 1
+                if(((ix - 0x3ff0_0000) | __LO(x)) == 0) {
+                    // asin(1) = +-pi/2 with inexact
+                    return x*pio2_hi + x*pio2_lo;
+                }
+                return (x - x)/(x - x);         // asin(|x| > 1) is NaN
+            } else if (ix < 0x3fe0_0000) {     // |x| < 0.5
+                if (ix < 0x3e40_0000) {        // if |x| < 2**-27
+                    if (HUGE + x > 1.0) {// return x with inexact if x != 0
+                        return x;
+                    }
+                } else {
+                    t = x*x;
+                }
+                p = t*(pS0 + t*(pS1 + t*(pS2 + t*(pS3 + t*(pS4 + t*pS5)))));
+                q = 1.0 + t*(qS1 + t*(qS2 + t*(qS3 + t*qS4)));
+                w = p/q;
+                return x + x*w;
+            }
+            // 1 > |x| >= 0.5
+            w = 1.0 - Math.abs(x);
+            t = w*0.5;
+            p = t*(pS0 + t*(pS1 + t*(pS2 + t*(pS3 + t*(pS4 + t*pS5)))));
+            q = 1.0 + t*(qS1 + t*(qS2 + t*(qS3 + t*qS4)));
+            s = Math.sqrt(t);
+            if (ix >= 0x3FEF_3333) {    // if |x| > 0.975
+                w = p/q;
+                t = pio2_hi - (2.0*(s + s*w) - pio2_lo);
+            } else {
+                w  = s;
+                w  = __LO(w, 0);
+                c  = (t - w*w)/(s + w);
+                r  = p/q;
+                p  = 2.0*s*r - (pio2_lo - 2.0*c);
+                q  = pio4_hi - 2.0*w;
+                t  = pio4_hi - (p - q);
+            }
+            return (hx > 0) ? t : -t;
+        }
+    }
+
+    /** Returns the arccosine of x.
+     * Method :
+     *      acos(x)  = pi/2 - asin(x)
+     *      acos(-x) = pi/2 + asin(x)
+     * For |x| <= 0.5
+     *      acos(x) = pi/2 - (x + x*x^2*R(x^2))     (see asin.c)
+     * For x > 0.5
+     *      acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
+     *              = 2asin(sqrt((1-x)/2))
+     *              = 2s + 2s*z*R(z)        ...z=(1-x)/2, s=sqrt(z)
+     *              = 2f + (2c + 2s*z*R(z))
+     *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
+     *     for f so that f+c ~ sqrt(z).
+     * For x <- 0.5
+     *      acos(x) = pi - 2asin(sqrt((1-|x|)/2))
+     *              = pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
+     *
+     * Special cases:
+     *      if x is NaN, return x itself;
+     *      if |x|>1, return NaN with invalid signal.
+     *
+     * Function needed: sqrt
+     */
+    static class Acos {
+        private Acos() {throw new UnsupportedOperationException();}
+
+        private static final double
+            pio2_hi =  0x1.921fb54442d18p0,   //  1.57079632679489655800e+00
+            pio2_lo =  0x1.1a62633145c07p-54, //  6.12323399573676603587e-17
+            pS0     =  0x1.5555555555555p-3,  //  1.66666666666666657415e-01
+            pS1     = -0x1.4d61203eb6f7dp-2,  // -3.25565818622400915405e-01
+            pS2     =  0x1.9c1550e884455p-3,  //  2.01212532134862925881e-01
+            pS3     = -0x1.48228b5688f3bp-5,  // -4.00555345006794114027e-02
+            pS4     =  0x1.9efe07501b288p-11, //  7.91534994289814532176e-04
+            pS5     =  0x1.23de10dfdf709p-15, //  3.47933107596021167570e-05
+            qS1     = -0x1.33a271c8a2d4bp1,   // -2.40339491173441421878e+00
+            qS2     =  0x1.02ae59c598ac8p1,   //  2.02094576023350569471e+00
+            qS3     = -0x1.6066c1b8d0159p-1,  // -6.88283971605453293030e-01
+            qS4     =  0x1.3b8c5b12e9282p-4;  //  7.70381505559019352791e-02
+
+        static double compute(double x) {
+            double z, p, q, r, w, s, c, df;
+            int hx, ix;
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x3ff0_0000) {    // |x| >= 1
+                if (((ix - 0x3ff0_0000) | __LO(x)) == 0) {  // |x| == 1
+                    if (hx > 0) {// acos(1) = 0
+                        return 0.0;
+                    }else {       // acos(-1)= pi
+                        return Math.PI + 2.0*pio2_lo;
+                    }
+                }
+                return (x-x)/(x-x);         // acos(|x| > 1) is NaN
+            }
+            if (ix < 0x3fe0_0000) {     // |x| < 0.5
+                if (ix <= 0x3c60_0000) {  // if |x| < 2**-57
+                    return pio2_hi + pio2_lo;
+                }
+                z = x*x;
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                r = p/q;
+                return pio2_hi - (x - (pio2_lo - x*r));
+            } else if (hx < 0) {             // x < -0.5
+                z = (1.0 + x)*0.5;
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                s = Math.sqrt(z);
+                r = p/q;
+                w = r*s - pio2_lo;
+                return Math.PI - 2.0*(s+w);
+            } else {                        // x > 0.5
+                z = (1.0 - x)*0.5;
+                s = Math.sqrt(z);
+                df = s;
+                df = __LO(df, 0);
+                c  = (z - df*df)/(s + df);
+                p = z*(pS0 + z*(pS1 + z*(pS2 + z*(pS3 + z*(pS4 + z*pS5)))));
+                q = 1.0 + z*(qS1 + z*(qS2 + z*(qS3 + z*qS4)));
+                r = p/q;
+                w = r*s + c;
+                return 2.0*(df + w);
+            }
+        }
+    }
+
+    /* Returns the arctangent of x.
+     * Method
+     *   1. Reduce x to positive by atan(x) = -atan(-x).
+     *   2. According to the integer k=4t+0.25 chopped, t=x, the argument
+     *      is further reduced to one of the following intervals and the
+     *      arctangent of t is evaluated by the corresponding formula:
+     *
+     *      [0,7/16]      atan(x) = t-t^3*(a1+t^2*(a2+...(a10+t^2*a11)...)
+     *      [7/16,11/16]  atan(x) = atan(1/2) + atan( (t-0.5)/(1+t/2) )
+     *      [11/16.19/16] atan(x) = atan( 1 ) + atan( (t-1)/(1+t) )
+     *      [19/16,39/16] atan(x) = atan(3/2) + atan( (t-1.5)/(1+1.5t) )
+     *      [39/16,INF]   atan(x) = atan(INF) + atan( -1/t )
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan {
+        private Atan() {throw new UnsupportedOperationException();}
+
+        private static final double atanhi[] = {
+            0x1.dac670561bb4fp-2,  // atan(0.5)hi 4.63647609000806093515e-01
+            0x1.921fb54442d18p-1,  // atan(1.0)hi 7.85398163397448278999e-01
+            0x1.f730bd281f69bp-1,  // atan(1.5)hi 9.82793723247329054082e-01
+            0x1.921fb54442d18p0,   // atan(inf)hi 1.57079632679489655800e+00
+        };
+
+        private static final double atanlo[] = {
+            0x1.a2b7f222f65e2p-56, // atan(0.5)lo 2.26987774529616870924e-17
+            0x1.1a62633145c07p-55, // atan(1.0)lo 3.06161699786838301793e-17
+            0x1.007887af0cbbdp-56, // atan(1.5)lo 1.39033110312309984516e-17
+            0x1.1a62633145c07p-54, // atan(inf)lo 6.12323399573676603587e-17
+        };
+
+        private static final double aT[] = {
+             0x1.555555555550dp-2, //  3.33333333333329318027e-01
+            -0x1.999999998ebc4p-3, // -1.99999999998764832476e-01
+             0x1.24924920083ffp-3, //  1.42857142725034663711e-01
+            -0x1.c71c6fe231671p-4, // -1.11111104054623557880e-01
+             0x1.745cdc54c206ep-4, //  9.09088713343650656196e-02
+            -0x1.3b0f2af749a6dp-4, // -7.69187620504482999495e-02
+             0x1.10d66a0d03d51p-4, //  6.66107313738753120669e-02
+            -0x1.dde2d52defd9ap-5, // -5.83357013379057348645e-02
+             0x1.97b4b24760debp-5, //  4.97687799461593236017e-02
+            -0x1.2b4442c6a6c2fp-5, // -3.65315727442169155270e-02
+             0x1.0ad3ae322da11p-6, //  1.62858201153657823623e-02
+        };
+
+        static double compute(double x) {
+            double w, s1, s2, z;
+            int ix, hx, id;
+
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x4410_0000) {    // if |x| >= 2^66
+                if (ix > 0x7ff0_0000 ||
+                    (ix == 0x7ff0_0000 && (__LO(x) != 0))) {
+                    return x+x;             // NaN
+                }
+                if (hx > 0) {
+                    return atanhi[3] + atanlo[3];
+                } else {
+                    return -atanhi[3] - atanlo[3];
+                }
+            } if (ix < 0x3fdc_0000) {        // |x| < 0.4375
+                if (ix < 0x3e20_0000) {      // |x| < 2^-29
+                    if (HUGE + x > 1.0) { // raise inexact
+                        return x;
+                    }
+                }
+                id = -1;
+            } else {
+                x = Math.abs(x);
+                if (ix < 0x3ff3_0000) {         // |x| < 1.1875
+                    if (ix < 0x3fe60000) {      // 7/16 <= |x| < 11/16
+                        id = 0;
+                        x = (2.0*x - 1.0)/(2.0 + x);
+                    } else {                    // 11/16 <= |x| < 19/16
+                        id = 1;
+                        x  = (x - 1.0)/(x + 1.0);
+                    }
+                } else {
+                    if (ix < 0x4003_8000) {      // |x| < 2.4375
+                        id = 2;
+                        x  = (x - 1.5)/(1.0 + 1.5*x);
+                    } else {                    // 2.4375 <= |x| < 2^66
+                        id = 3;
+                        x  = -1.0/x;
+                    }
+                }
+            }
+            // end of argument reduction
+            z = x*x;
+            w = z*z;
+            // break sum from i=0 to 10 aT[i]z**(i+1) into odd and even poly
+            s1 = z*(aT[0] + w*(aT[2] + w*(aT[4] + w*(aT[6] + w*(aT[8] + w*aT[10])))));
+            s2 = w*(aT[1] + w*(aT[3] + w*(aT[5] + w*(aT[7] + w*aT[9]))));
+            if (id < 0) {
+                return x - x*(s1 + s2);
+            } else {
+                z = atanhi[id] - ((x*(s1+s2) - atanlo[id]) - x);
+                return (hx < 0) ? -z: z;
+            }
+        }
+    }
+
+    /**
+     * Returns the angle theta from the conversion of rectangular
+     * coordinates (x, y) to polar coordinates (r, theta).
+     *
+     * Method :
+     *      1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
+     *      2. Reduce x to positive by (if x and y are unexceptional):
+     *              ARG (x+iy) = arctan(y/x)           ... if x > 0,
+     *              ARG (x+iy) = pi - arctan[y/(-x)]   ... if x < 0,
+     *
+     * Special cases:
+     *
+     *      ATAN2((anything), NaN ) is NaN;
+     *      ATAN2(NAN , (anything) ) is NaN;
+     *      ATAN2(+-0, +(anything but NaN)) is +-0  ;
+     *      ATAN2(+-0, -(anything but NaN)) is +-pi ;
+     *      ATAN2(+-(anything but 0 and NaN), 0) is +-pi/2;
+     *      ATAN2(+-(anything but INF and NaN), +INF) is +-0 ;
+     *      ATAN2(+-(anything but INF and NaN), -INF) is +-pi;
+     *      ATAN2(+-INF,+INF ) is +-pi/4 ;
+     *      ATAN2(+-INF,-INF ) is +-3pi/4;
+     *      ATAN2(+-INF, (anything but,0,NaN, and INF)) is +-pi/2;
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     */
+    static class Atan2 {
+        private Atan2() {throw new UnsupportedOperationException();}
+
+        private static final double
+            tiny    = 1.0e-300,
+            pi_o_4  = 0x1.921fb54442d18p-1,  // 7.8539816339744827900E-01
+            pi_o_2  = 0x1.921fb54442d18p0,   // 1.5707963267948965580E+00
+            pi_lo   = 0x1.1a62633145c07p-53; // 1.2246467991473531772E-16
+
+        static double compute(double y, double x) {
+            double z;
+            int k, m, hx, hy, ix, iy;
+            /*unsigned*/ int lx, ly;
+
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            lx = __LO(x);
+            hy = __HI(y);
+            iy = hy&0x7fff_ffff;
+            ly = __LO(y);
+            if (Double.isNaN(x) || Double.isNaN(y))
+                return x + y;
+            if (((hx - 0x3ff0_0000) | lx) == 0) // x = 1.0
+                return StrictMath.atan(y);
+            m = ((hy >> 31) & 1)|((hx >> 30) & 2);  // 2*sign(x) + sign(y)
+
+            // when y = 0
+            if ((iy | ly) == 0) {
+                switch(m) {
+                case 0:
+                case 1: return y;               // atan(+/-0, +anything)  = +/-0
+                case 2: return  Math.PI + tiny; // atan(+0,   -anything)  =  pi
+                case 3: return -Math.PI - tiny; // atan(-0,   -anything)  = -pi
+                }
+            }
+            // when x = 0
+            if ((ix | lx) == 0) {
+                return (hy < 0)?  -pi_o_2 - tiny : pi_o_2 + tiny;
+            }
+
+            // when x is INF
+            if (ix == 0x7ff0_0000) {
+                if (iy == 0x7ff0_0000) {
+                    switch(m) {
+                    case 0: return  pi_o_4 + tiny;      // atan(+INF, +INF)
+                    case 1: return -pi_o_4 - tiny;      // atan(-INF, +INF)
+                    case 2: return  3.0*pi_o_4 + tiny;  // atan(+INF, -INF)
+                    case 3: return -3.0*pi_o_4 - tiny;  // atan(-INF, -INF)
+                    }
+                } else {
+                    switch(m) {
+                    case 0: return  0.0;                // atan(+..., +INF)
+                    case 1: return -0.0;                // atan(-..., +INF)
+                    case 2: return  Math.PI + tiny;     // atan(+..., -INF)
+                    case 3: return -Math.PI - tiny;     // atan(-..., -INF)
+                    }
+                }
+            }
+            // when y is INF
+            if (iy == 0x7ff0_0000) {
+                return (hy < 0)? -pi_o_2 - tiny : pi_o_2 + tiny;
+            }
+
+            // compute y/x
+            k = (iy - ix) >> 20;
+            if (k > 60) {   // |y/x| >  2**60
+                z = pi_o_2+0.5*pi_lo;
+            } else if (hx < 0 && k < -60) { // |y|/x < -2**60
+                z = 0.0;
+            } else { // safe to do y/x
+                z = StrictMath.atan(Math.abs(y/x));
+            }
+            switch (m) {
+            case 0:  return  z;                     // atan(+, +)
+            case 1:  return -z;                     // atan(-, +)
+            case 2:  return  Math.PI - (z - pi_lo); // atan(+, -)
+            default: return (z - pi_lo) - Math.PI;  // atan(-, -), case 3
+            }
+        }
+    }
+
+    /**
+     * Return correctly rounded sqrt.
+     *           ------------------------------------------
+     *           |  Use the hardware sqrt if you have one |
+     *           ------------------------------------------
+     * Method:
+     *   Bit by bit method using integer arithmetic. (Slow, but portable)
+     *   1. Normalization
+     *      Scale x to y in [1,4) with even powers of 2:
+     *      find an integer k such that  1 <= (y=x*2^(2k)) < 4, then
+     *              sqrt(x) = 2^k * sqrt(y)
+     *   2. Bit by bit computation
+     *      Let q  = sqrt(y) truncated to i bit after binary point (q = 1),
+     *           i                                                   0
+     *                                     i+1         2
+     *          s  = 2*q , and      y  =  2   * ( y - q  ).         (1)
+     *           i      i            i                 i
+     *
+     *      To compute q    from q , one checks whether
+     *                  i+1       i
+     *
+     *                            -(i+1) 2
+     *                      (q + 2      ) <= y.                     (2)
+     *                        i
+     *                                                            -(i+1)
+     *      If (2) is false, then q   = q ; otherwise q   = q  + 2      .
+     *                             i+1   i             i+1   i
+     *
+     *      With some algebraic manipulation, it is not difficult to see
+     *      that (2) is equivalent to
+     *                             -(i+1)
+     *                      s  +  2       <= y                      (3)
+     *                       i                i
+     *
+     *      The advantage of (3) is that s  and y  can be computed by
+     *                                    i      i
+     *      the following recurrence formula:
+     *          if (3) is false
+     *
+     *          s     =  s  ,       y    = y   ;                    (4)
+     *           i+1      i          i+1    i
+     *
+     *          otherwise,
+     *                         -i                     -(i+1)
+     *          s     =  s  + 2  ,  y    = y  -  s  - 2             (5)
+     *           i+1      i          i+1    i     i
+     *
+     *      One may easily use induction to prove (4) and (5).
+     *      Note. Since the left hand side of (3) contain only i+2 bits,
+     *            it does not necessary to do a full (53-bit) comparison
+     *            in (3).
+     *   3. Final rounding
+     *      After generating the 53 bits result, we compute one more bit.
+     *      Together with the remainder, we can decide whether the
+     *      result is exact, bigger than 1/2ulp, or less than 1/2ulp
+     *      (it will never equal to 1/2ulp).
+     *      The rounding mode can be detected by checking whether
+     *      huge + tiny is equal to huge, and whether huge - tiny is
+     *      equal to huge for some floating point number "huge" and "tiny".
+     *
+     * Special cases:
+     *      sqrt(+-0) = +-0         ... exact
+     *      sqrt(inf) = inf
+     *      sqrt(-ve) = NaN         ... with invalid signal
+     *      sqrt(NaN) = NaN         ... with invalid signal for signaling NaN
+     *
+     * Other methods : see the appended file at the end of the program below.
+     *---------------
+     */
+    static class Sqrt {
+        private Sqrt() {throw new UnsupportedOperationException();}
+
+        private static final double tiny = 1.0e-300;
+
+        static double compute(double x) {
+            double z = 0.0;
+            int sign = 0x8000_0000;
+            /*unsigned*/ int r, t1, s1, ix1, q1;
+            int ix0, s0, q, m, t, i;
+
+            ix0 = __HI(x);  // high word of x
+            ix1 = __LO(x);  // low word of x
+
+            // take care of Inf and NaN
+            if ((ix0 & 0x7ff0_0000) == 0x7ff0_0000) {
+                return x*x + x; // sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN
+            }
+            // take care of zero
+            if (ix0 <= 0) {
+                if (((ix0 & (~sign)) | ix1) == 0)
+                    return x; // sqrt(+-0) = +-0
+                else if (ix0 < 0)
+                    return (x-x)/(x-x); // sqrt(-ve) = sNaN
+            }
+            // normalize x
+            m = (ix0 >> 20);
+            if (m == 0) { // subnormal x
+                while (ix0 == 0) {
+                    m -= 21;
+                    ix0 |= (ix1 >>> 11); // unsigned shift
+                    ix1 <<= 21;
+                }
+                for(i = 0; (ix0 & 0x0010_0000) == 0; i++) {
+                    ix0 <<= 1;
+                }
+                m -= i-1;
+                ix0 |= (ix1 >>> (32 - i)); // unsigned shift
+                ix1 <<= i;
+            }
+            m -= 1023;      // unbias exponent */
+            ix0 = (ix0 & 0x000f_ffff) | 0x0010_0000;
+            if ((m & 1) != 0){        // odd m, double x to make it even
+                ix0 += ix0 + ((ix1 & sign) >>> 31); // unsigned shift
+                ix1 += ix1;
+            }
+            m >>= 1;        // m = [m/2]
+
+            // generate sqrt(x) bit by bit
+            ix0 += ix0 + ((ix1 & sign) >>> 31); // unsigned shift
+            ix1 += ix1;
+            q = q1 = s0 = s1 = 0;   // [q,q1] = sqrt(x)
+            r = 0x0020_0000;        // r = moving bit from right to left
+
+            while (r != 0) {
+                t = s0 + r;
+                if (t <= ix0) {
+                    s0   = t + r;
+                    ix0 -= t;
+                    q   += r;
+                }
+                ix0 += ix0 + ((ix1 & sign) >>> 31); // unsigned shift
+                ix1 += ix1;
+                r >>>= 1; // unsigned shift
+            }
+
+            r = sign;
+            while (r != 0) {
+                t1 = s1 + r;
+                t  = s0;
+                if ((t < ix0) ||
+                    ((t == ix0) && (Integer.compareUnsigned(t1, ix1) <= 0 ))) { // t1 <= ix1
+                    s1 = t1 + r;
+                    if (((t1 & sign) == sign) && (s1 & sign) == 0) {
+                        s0 += 1;
+                    }
+                    ix0 -= t;
+                    if (Integer.compareUnsigned(ix1, t1) < 0) {  // ix1 < t1
+                        ix0 -= 1;
+                    }
+                    ix1 -= t1;
+                    q1  += r;
+                }
+                ix0 += ix0 + ((ix1 & sign) >>> 31); // unsigned shift
+                ix1 += ix1;
+                r >>>= 1; // unsigned shift
+            }
+
+            // use floating add to find out rounding direction
+            if ((ix0 | ix1) != 0) {
+                z = 1.0 - tiny; // trigger inexact flag
+                if (z >= 1.0) {
+                    z = 1.0 + tiny;
+                    if (q1 == 0xffff_ffff) {
+                        q1 = 0;
+                        q += 1;
+                    } else if (z > 1.0) {
+                        if (q1 == 0xffff_fffe) {
+                            q += 1;
+                        }
+                        q1 += 2;
+                    } else {
+                        q1 += (q1 & 1);
+                    }
+                }
+            }
+            ix0 = (q >> 1) + 0x3fe0_0000;
+            ix1 =  q1 >>> 1; // unsigned shift
+            if ((q & 1) == 1) {
+                ix1 |= sign;
+            }
+            ix0 += (m << 20);
+            return __HI_LO(ix0, ix1);
+        }
+    }
+
+    // The following comment is supplementary information from the FDLIBM sources.
+
+    /*
+     * Other methods  (use floating-point arithmetic)
+     * -------------
+     * (This is a copy of a drafted paper by Prof W. Kahan
+     * and K.C. Ng, written in May, 1986)
+     *
+     *        Two algorithms are given here to implement sqrt(x)
+     *        (IEEE double precision arithmetic) in software.
+     *        Both supply sqrt(x) correctly rounded. The first algorithm (in
+     *        Section A) uses newton iterations and involves four divisions.
+     *        The second one uses reciproot iterations to avoid division, but
+     *        requires more multiplications. Both algorithms need the ability
+     *        to chop results of arithmetic operations instead of round them,
+     *        and the INEXACT flag to indicate when an arithmetic operation
+     *        is executed exactly with no roundoff error, all part of the
+     *        standard (IEEE 754-1985). The ability to perform shift, add,
+     *        subtract and logical AND operations upon 32-bit words is needed
+     *        too, though not part of the standard.
+     *
+     * A.  sqrt(x) by Newton Iteration
+     *
+     *   (1)  Initial approximation
+     *
+     *        Let x0 and x1 be the leading and the trailing 32-bit words of
+     *        a floating point number x (in IEEE double format) respectively
+     *
+     *            1    11                  52                           ...widths
+     *           ------------------------------------------------------
+     *        x: |s|    e     |             f                         |
+     *           ------------------------------------------------------
+     *              msb    lsb  msb                                 lsb ...order
+     *
+     *
+     *             ------------------------        ------------------------
+     *        x0:  |s|   e    |    f1     |    x1: |          f2           |
+     *             ------------------------        ------------------------
+     *
+     *        By performing shifts and subtracts on x0 and x1 (both regarded
+     *        as integers), we obtain an 8-bit approximation of sqrt(x) as
+     *        follows.
+     *
+     *                k  := (x0>>1) + 0x1ff80000;
+     *                y0 := k - T1[31&(k>>15)].       ... y ~ sqrt(x) to 8 bits
+     *        Here k is a 32-bit integer and T1[] is an integer array containing
+     *        correction terms. Now magically the floating value of y (y's
+     *        leading 32-bit word is y0, the value of its trailing word is 0)
+     *        approximates sqrt(x) to almost 8-bit.
+     *
+     *        Value of T1:
+     *        static int T1[32]= {
+     *        0,      1024,   3062,   5746,   9193,   13348,  18162,  23592,
+     *        29598,  36145,  43202,  50740,  58733,  67158,  75992,  85215,
+     *        83599,  71378,  60428,  50647,  41945,  34246,  27478,  21581,
+     *        16499,  12183,  8588,   5674,   3403,   1742,   661,    130,};
+     *
+     *    (2) Iterative refinement
+     *
+     *        Apply Heron's rule three times to y, we have y approximates
+     *        sqrt(x) to within 1 ulp (Unit in the Last Place):
+     *
+     *                y := (y+x/y)/2          ... almost 17 sig. bits
+     *                y := (y+x/y)/2          ... almost 35 sig. bits
+     *                y := y-(y-x/y)/2        ... within 1 ulp
+     *
+     *
+     *        Remark 1.
+     *            Another way to improve y to within 1 ulp is:
+     *
+     *                y := (y+x/y)            ... almost 17 sig. bits to 2*sqrt(x)
+     *                y := y - 0x00100006     ... almost 18 sig. bits to sqrt(x)
+     *
+     *                                2
+     *                            (x-y )*y
+     *                y := y + 2* ----------  ...within 1 ulp
+     *                               2
+     *                             3y  + x
+     *
+     *
+     *        This formula has one division fewer than the one above; however,
+     *        it requires more multiplications and additions. Also x must be
+     *        scaled in advance to avoid spurious overflow in evaluating the
+     *        expression 3y*y+x. Hence it is not recommended uless division
+     *        is slow. If division is very slow, then one should use the
+     *        reciproot algorithm given in section B.
+     *
+     *    (3) Final adjustment
+     *
+     *        By twiddling y's last bit it is possible to force y to be
+     *        correctly rounded according to the prevailing rounding mode
+     *        as follows. Let r and i be copies of the rounding mode and
+     *        inexact flag before entering the square root program. Also we
+     *        use the expression y+-ulp for the next representable floating
+     *        numbers (up and down) of y. Note that y+-ulp = either fixed
+     *        point y+-1, or multiply y by nextafter(1,+-inf) in chopped
+     *        mode.
+     *
+     *                I := FALSE;     ... reset INEXACT flag I
+     *                R := RZ;        ... set rounding mode to round-toward-zero
+     *                z := x/y;       ... chopped quotient, possibly inexact
+     *                If(not I) then {        ... if the quotient is exact
+     *                    if(z=y) {
+     *                        I := i;  ... restore inexact flag
+     *                        R := r;  ... restore rounded mode
+     *                        return sqrt(x):=y.
+     *                    } else {
+     *                        z := z - ulp;   ... special rounding
+     *                    }
+     *                }
+     *                i := TRUE;              ... sqrt(x) is inexact
+     *                If (r=RN) then z=z+ulp  ... rounded-to-nearest
+     *                If (r=RP) then {        ... round-toward-+inf
+     *                    y = y+ulp; z=z+ulp;
+     *                }
+     *                y := y+z;               ... chopped sum
+     *                y0:=y0-0x00100000;      ... y := y/2 is correctly rounded.
+     *                I := i;                 ... restore inexact flag
+     *                R := r;                 ... restore rounded mode
+     *                return sqrt(x):=y.
+     *
+     *    (4) Special cases
+     *
+     *        Square root of +inf, +-0, or NaN is itself;
+     *        Square root of a negative number is NaN with invalid signal.
+     *
+     *
+     * B.  sqrt(x) by Reciproot Iteration
+     *
+     *   (1)  Initial approximation
+     *
+     *        Let x0 and x1 be the leading and the trailing 32-bit words of
+     *        a floating point number x (in IEEE double format) respectively
+     *        (see section A). By performing shifs and subtracts on x0 and y0,
+     *        we obtain a 7.8-bit approximation of 1/sqrt(x) as follows.
+     *
+     *            k := 0x5fe80000 - (x0>>1);
+     *            y0:= k - T2[63&(k>>14)].    ... y ~ 1/sqrt(x) to 7.8 bits
+     *
+     *        Here k is a 32-bit integer and T2[] is an integer array
+     *        containing correction terms. Now magically the floating
+     *        value of y (y's leading 32-bit word is y0, the value of
+     *        its trailing word y1 is set to zero) approximates 1/sqrt(x)
+     *        to almost 7.8-bit.
+     *
+     *        Value of T2:
+     *        static int T2[64]= {
+     *        0x1500, 0x2ef8, 0x4d67, 0x6b02, 0x87be, 0xa395, 0xbe7a, 0xd866,
+     *        0xf14a, 0x1091b,0x11fcd,0x13552,0x14999,0x15c98,0x16e34,0x17e5f,
+     *        0x18d03,0x19a01,0x1a545,0x1ae8a,0x1b5c4,0x1bb01,0x1bfde,0x1c28d,
+     *        0x1c2de,0x1c0db,0x1ba73,0x1b11c,0x1a4b5,0x1953d,0x18266,0x16be0,
+     *        0x1683e,0x179d8,0x18a4d,0x19992,0x1a789,0x1b445,0x1bf61,0x1c989,
+     *        0x1d16d,0x1d77b,0x1dddf,0x1e2ad,0x1e5bf,0x1e6e8,0x1e654,0x1e3cd,
+     *        0x1df2a,0x1d635,0x1cb16,0x1be2c,0x1ae4e,0x19bde,0x1868e,0x16e2e,
+     *        0x1527f,0x1334a,0x11051,0xe951, 0xbe01, 0x8e0d, 0x5924, 0x1edd,};
+     *
+     *    (2) Iterative refinement
+     *
+     *        Apply Reciproot iteration three times to y and multiply the
+     *        result by x to get an approximation z that matches sqrt(x)
+     *        to about 1 ulp. To be exact, we will have
+     *                -1ulp < sqrt(x)-z<1.0625ulp.
+     *
+     *        ... set rounding mode to Round-to-nearest
+     *           y := y*(1.5-0.5*x*y*y)       ... almost 15 sig. bits to 1/sqrt(x)
+     *           y := y*((1.5-2^-30)+0.5*x*y*y)... about 29 sig. bits to 1/sqrt(x)
+     *        ... special arrangement for better accuracy
+     *           z := x*y                     ... 29 bits to sqrt(x), with z*y<1
+     *           z := z + 0.5*z*(1-z*y)       ... about 1 ulp to sqrt(x)
+     *
+     *        Remark 2. The constant 1.5-2^-30 is chosen to bias the error so that
+     *        (a) the term z*y in the final iteration is always less than 1;
+     *        (b) the error in the final result is biased upward so that
+     *                -1 ulp < sqrt(x) - z < 1.0625 ulp
+     *            instead of |sqrt(x)-z|<1.03125ulp.
+     *
+     *    (3) Final adjustment
+     *
+     *        By twiddling y's last bit it is possible to force y to be
+     *        correctly rounded according to the prevailing rounding mode
+     *        as follows. Let r and i be copies of the rounding mode and
+     *        inexact flag before entering the square root program. Also we
+     *        use the expression y+-ulp for the next representable floating
+     *        numbers (up and down) of y. Note that y+-ulp = either fixed
+     *        point y+-1, or multiply y by nextafter(1,+-inf) in chopped
+     *        mode.
+     *
+     *        R := RZ;                ... set rounding mode to round-toward-zero
+     *        switch(r) {
+     *            case RN:            ... round-to-nearest
+     *               if(x<= z*(z-ulp)...chopped) z = z - ulp; else
+     *               if(x<= z*(z+ulp)...chopped) z = z; else z = z+ulp;
+     *               break;
+     *            case RZ:case RM:    ... round-to-zero or round-to--inf
+     *               R:=RP;           ... reset rounding mod to round-to-+inf
+     *               if(x<z*z ... rounded up) z = z - ulp; else
+     *               if(x>=(z+ulp)*(z+ulp) ...rounded up) z = z+ulp;
+     *               break;
+     *            case RP:            ... round-to-+inf
+     *               if(x>(z+ulp)*(z+ulp)...chopped) z = z+2*ulp; else
+     *               if(x>z*z ...chopped) z = z+ulp;
+     *               break;
+     *        }
+     *
+     *        Remark 3. The above comparisons can be done in fixed point. For
+     *        example, to compare x and w=z*z chopped, it suffices to compare
+     *        x1 and w1 (the trailing parts of x and w), regarding them as
+     *        two's complement integers.
+     *
+     *        ...Is z an exact square root?
+     *        To determine whether z is an exact square root of x, let z1 be the
+     *        trailing part of z, and also let x0 and x1 be the leading and
+     *        trailing parts of x.
+     *
+     *        If ((z1&0x03ffffff)!=0) ... not exact if trailing 26 bits of z!=0
+     *            I := 1;             ... Raise Inexact flag: z is not exact
+     *        else {
+     *            j := 1 - [(x0>>20)&1]       ... j = logb(x) mod 2
+     *            k := z1 >> 26;              ... get z's 25-th and 26-th
+     *                                            fraction bits
+     *            I := i or (k&j) or ((k&(j+j+1))!=(x1&3));
+     *        }
+     *        R:= r           ... restore rounded mode
+     *        return sqrt(x):=z.
+     *
+     *        If multiplication is cheaper then the foregoing red tape, the
+     *        Inexact flag can be evaluated by
+     *
+     *            I := i;
+     *            I := (z*z!=x) or I.
+     *
+     *        Note that z*z can overwrite I; this value must be sensed if it is
+     *        True.
+     *
+     *        Remark 4. If z*z = x exactly, then bit 25 to bit 0 of z1 must be
+     *        zero.
+     *
+     *                    --------------------
+     *                z1: |        f2        |
+     *                    --------------------
+     *                bit 31             bit 0
+     *
+     *        Further more, bit 27 and 26 of z1, bit 0 and 1 of x1, and the odd
+     *        or even of logb(x) have the following relations:
+     *
+     *        -------------------------------------------------
+     *        bit 27,26 of z1         bit 1,0 of x1   logb(x)
+     *        -------------------------------------------------
+     *        00                      00              odd and even
+     *        01                      01              even
+     *        10                      10              odd
+     *        10                      00              even
+     *        11                      01              even
+     *        -------------------------------------------------
+     *
+     *    (4) Special cases (see (4) of Section A).
+     */
 
     /**
      * cbrt(x)
@@ -658,8 +1512,9 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Exp {
-        private static final double one     = 1.0;
+    static final class Exp {
+        private Exp() {throw new UnsupportedOperationException();}
+
         private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
@@ -676,10 +1531,6 @@ class FdLibm {
         private static final double P3   =  0x1.1566aaf25de2cp-14; //  6.61375632143793436117e-05
         private static final double P4   = -0x1.bbd41c5d26bf1p-20; // -1.65339022054652515390e-06
         private static final double P5   =  0x1.6376972bea4d0p-25; //  4.13813679705723846039e-08
-
-        private Exp() {
-            throw new UnsupportedOperationException();
-        }
 
         public static double compute(double x) {
             double y;
@@ -723,8 +1574,8 @@ class FdLibm {
                 }
                 x  = hi - lo;
             } else if (hx < 0x3e300000)  {     /* when |x|<2**-28 */
-                if (huge + x > one)
-                    return one + x; /* trigger inexact */
+                if (huge + x > 1.0)
+                    return 1.0 + x; /* trigger inexact */
             } else {
                 k = 0;
             }
@@ -733,9 +1584,9 @@ class FdLibm {
             t  = x * x;
             c  = x - t*(P1 + t*(P2 + t*(P3 + t*(P4 + t*P5))));
             if (k == 0)
-                return one - ((x*c)/(c - 2.0) - x);
+                return 1.0 - ((x*c)/(c - 2.0) - x);
             else
-                y = one - ((lo - (x*c)/(2.0 - c)) - hi);
+                y = 1.0 - ((lo - (x*c)/(2.0 - c)) - hi);
 
             if(k >= -1021) {
                 y = __HI(y, __HI(y) + (k << 20)); /* add k to y's exponent */
@@ -1332,6 +2183,217 @@ class FdLibm {
                 }
             }
             return y;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically sinh(x) if defined to be (exp(x)-exp(-x))/2
+     *      1. Replace x by |x| (sinh(-x) = -sinh(x)).
+     *      2.
+     *                                                  E + E/(E+1)
+     *          0        <= x <= 22     :  sinh(x) := --------------, E=expm1(x)
+     *                                                      2
+     *
+     *          22       <= x <= lnovft :  sinh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  sinh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  sinh(x) := x*shuge (overflow)
+     *
+     * Special cases:
+     *      sinh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only sinh(0)=0 is exact for finite x.
+     */
+    static final class Sinh {
+        private Sinh() {throw new UnsupportedOperationException();}
+
+        private static final double shuge = 1.0e307;
+
+        static double compute(double x) {
+            double t, w, h;
+            int ix, jx;
+            /* unsigned */ int lx;
+
+            // High word of |x|
+            jx = __HI(x);
+            ix = jx & 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                return x + x;
+            }
+
+            h = 0.5;
+            if (jx < 0) {
+                h = -h;
+            }
+            // |x| in [0,22], return sign(x)*0.5*(E+E/(E+1)))
+            if (ix < 0x4036_0000) {          // |x| < 22
+                if (ix < 0x3e30_0000)        // |x| < 2**-28
+                    if (shuge + x > 1.0) {   // sinh(tiny) = tiny with inexact
+                        return x;
+                    }
+                t = StrictMath.expm1(Math.abs(x));
+                if (ix < 0x3ff0_0000) {
+                    return h*(2.0 * t - t*t/(t + 1.0));
+                }
+                return h*(t + t/(t + 1.0));
+            }
+
+            // |x| in [22, log(maxdouble)] return 0.5*exp(|x|)
+            if (ix < 0x4086_2E42) {
+                return h*StrictMath.exp(Math.abs(x));
+            }
+
+            // |x| in [log(maxdouble), overflowthresold]
+            lx = __LO(x);
+            if (ix < 0x4086_33CE ||
+                ((ix == 0x4086_33ce) &&
+                 (Long.compareUnsigned(lx, 0x8fb9_f87d) <= 0 ))) {
+                w = StrictMath.exp(0.5 * Math.abs(x));
+                t = h * w;
+                return t * w;
+            }
+
+            // |x| > overflowthresold, sinh(x) overflow
+            return x * shuge;
+        }
+    }
+
+    /**
+     * Method :
+     * mathematically cosh(x) if defined to be (exp(x)+exp(-x))/2
+     *      1. Replace x by |x| (cosh(x) = cosh(-x)).
+     *      2.
+     *                                                      [ exp(x) - 1 ]^2
+     *          0        <= x <= ln2/2  :  cosh(x) := 1 + -------------------
+     *                                                         2*exp(x)
+     *
+     *                                                exp(x) +  1/exp(x)
+     *          ln2/2    <= x <= 22     :  cosh(x) := -------------------
+     *                                                        2
+     *          22       <= x <= lnovft :  cosh(x) := exp(x)/2
+     *          lnovft   <= x <= ln2ovft:  cosh(x) := exp(x/2)/2 * exp(x/2)
+     *          ln2ovft  <  x           :  cosh(x) := huge*huge (overflow)
+     *
+     * Special cases:
+     *      cosh(x) is |x| if x is +INF, -INF, or NaN.
+     *      only cosh(0)=1 is exact for finite x.
+     */
+    static final class Cosh {
+        private Cosh() {throw new UnsupportedOperationException();}
+
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t, w;
+            int ix;
+            /*unsigned*/ int lx;
+
+            // High word of |x|
+            ix = __HI(x);
+            ix &= 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                return x*x;
+            }
+
+            // |x| in [0,0.5*ln2], return 1+expm1(|x|)^2/(2*exp(|x|))
+            if (ix < 0x3fd6_2e43) {
+                t = StrictMath.expm1(Math.abs(x));
+                w = 1.0 + t;
+                if (ix < 0x3c80_0000) { // cosh(tiny) = 1
+                    return w;
+                }
+                return 1.0 + (t * t)/(w + w);
+            }
+
+            // |x| in [0.5*ln2, 22], return (exp(|x|) + 1/exp(|x|)/2
+            if (ix < 0x4036_0000) {
+                t = StrictMath.exp(Math.abs(x));
+                return 0.5*t + 0.5/t;
+            }
+
+            // |x| in [22, log(maxdouble)] return 0.5*exp(|x|)
+            if (ix < 0x4086_2E42) {
+                return 0.5*StrictMath.exp(Math.abs(x));
+            }
+
+            // |x| in [log(maxdouble), overflowthresold]
+            lx = __LO(x);
+            if (ix<0x4086_33CE ||
+                ((ix == 0x4086_33ce) &&
+                 (Integer.compareUnsigned(lx, 0x8fb9_f87d) <= 0))) {
+                w = StrictMath.exp(0.5*Math.abs(x));
+                t = 0.5*w;
+                return t*w;
+            }
+
+            // |x| > overflowthresold, cosh(x) overflow
+            return huge*huge;
+        }
+    }
+
+    /**
+     * Return the Hyperbolic Tangent of x
+     *
+     * Method :
+     *                                     x    -x
+     *                                    e  - e
+     *      0. tanh(x) is defined to be -----------
+     *                                     x    -x
+     *                                    e  + e
+     *      1. reduce x to non-negative by tanh(-x) = -tanh(x).
+     *      2.  0      <= x <= 2**-55 : tanh(x) := x*(one+x)
+     *                                              -t
+     *          2**-55 <  x <=  1     : tanh(x) := -----; t = expm1(-2x)
+     *                                             t + 2
+     *                                                   2
+     *          1      <= x <=  22.0  : tanh(x) := 1-  ----- ; t=expm1(2x)
+     *                                                 t + 2
+     *          22.0   <  x <= INF    : tanh(x) := 1.
+     *
+     * Special cases:
+     *      tanh(NaN) is NaN;
+     *      only tanh(0)=0 is exact for finite argument.
+     */
+    static final class Tanh {
+        private Tanh() {throw new UnsupportedOperationException();}
+
+        private static final double tiny = 1.0e-300;
+
+        static double compute(double x) {
+            double t, z;
+            int jx, ix;
+
+            // High word of |x|.
+            jx = __HI(x);
+            ix = jx & 0x7fff_ffff;
+
+            // x is INF or NaN
+            if (ix >= 0x7ff0_0000) {
+                if (jx >= 0) {  // tanh(+-inf)=+-1
+                    return 1.0/x + 1.0;
+                } else {        // tanh(NaN) = NaN
+                    return 1.0/x - 1.0;
+                }
+            }
+
+            // |x| < 22
+            if (ix < 0x4036_0000) {          // |x| < 22
+                if (ix<0x3c80_0000)          // |x| < 2**-55
+                    return x*(1.0 + x);      // tanh(small) = small
+                if (ix>=0x3ff0_0000) {       // |x| >= 1
+                    t = StrictMath.expm1(2.0*Math.abs(x));
+                    z = 1.0 - 2.0/(t + 2.0);
+                } else {
+                    t = StrictMath.expm1(-2.0*Math.abs(x));
+                    z= -t/(t + 2.0);
+                }
+            } else { // |x| > 22, return +-1
+                z = 1.0 - tiny;             // raised inexact flag
+            }
+            return (jx >= 0)? z: -z;
         }
     }
 }

@@ -482,8 +482,7 @@ MonitorInfo::MonitorInfo(oop owner, BasicLock* lock, bool eliminated, bool owner
 void vframeStreamCommon::found_bad_method_frame() const {
   // 6379830 Cut point for an assertion that occasionally fires when
   // we are using the performance analyzer.
-  // Disable this assert when testing the analyzer with fastdebug.
-  // -XX:SuppressErrorAt=vframe.cpp:XXX (XXX=following line number)
+  // Disable this when testing the analyzer with fastdebug.
   fatal("invalid bci or invalid scope desc");
 }
 #endif
