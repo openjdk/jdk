@@ -1046,9 +1046,9 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             throw new ArithmeticException("Divide by zero");
 
-        BigInteger plainNum = wholeNumerator();
-        BigInteger[] quotAndRem = denominator.divideAndRemainder(plainNum);
-        return valueOf(signum, quotAndRem[0], quotAndRem[1], plainNum);
+        BigInteger wholeNum = wholeNumerator();
+        BigInteger[] quotAndRem = denominator.divideAndRemainder(wholeNum);
+        return valueOf(signum, quotAndRem[0], quotAndRem[1], wholeNum);
     }
 
     /**
@@ -1152,7 +1152,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see #remainder(Rational)
      */
     public Rational[] divideAndRemainder(Rational divisor) {
-        Rational quot = new Rational(signum * divisor.signum, divide(divisor).floor);
+        Rational quot = new Rational(signum * divisor.signum, this.divide(divisor).floor);
         return new Rational[] { quot, subtract(quot.multiply(divisor)) };
     }
 
@@ -1396,10 +1396,11 @@ public class Rational extends Number implements Comparable<Rational> {
 
             if (mc.precision != 0) {
                 // => mc.roundingMode == UNNECESSARY, but user-specified number of digits
+                final Rational exact = result;
                 result = result.round(new MathContext(mc.precision, RoundingMode.DOWN));
 
                 // If result**n != x, the root isn't exact
-                if (!result.pow(n).equals(x))
+                if (!result.equals(exact))
                     throw new ArithmeticException("Computed " + n + "th root not exact.");
             }
 
@@ -1548,7 +1549,7 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = unsignedShiftLeft(numerator, n - shiftDen);
             resDen = denominator.shiftRight(shiftDen); // shiftDen is non-negative
 
-            if (resNum.compareTo(resDen) >= 0) {
+            if (resNum.compareMagnitude(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
                 resFloor = resFloor.add(divRem[0]);
 
@@ -1698,7 +1699,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // floor * 10^n == floor * 2^n * 5^n == (floor << n) * (5^fiveExp * 5^(n - fiveExp))
             resFloor = unsignedShiftLeft(floor, n).multiply(fivePow).multiply(bigFiveToThe(n - fiveExp.intValue()));
 
-            if (resNum.compareTo(resDen) >= 0) {
+            if (resNum.compareMagnitude(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
                 resFloor = resFloor.add(divRem[0]);
 
@@ -1817,7 +1818,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 val = divRem[0];
                 remaining.addAndGet(-(1L << i));
 
-                if (remaining.get() < 1L << i || divisor.compareTo(val) > 0) {
+                if (remaining.get() < 1L << i || divisor.compareMagnitude(val) > 0) {
                     stop = true;
                 } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
                     final BigInteger square;
@@ -1831,7 +1832,7 @@ public class Rational extends Number implements Comparable<Rational> {
                         FIVE_SQUARES.add(square);
                     }
 
-                    if (square.compareTo(val) <= 0) {
+                    if (square.compareMagnitude(val) <= 0) {
                         // square the divisor
                         divisor = square;
                         i++;
@@ -1845,7 +1846,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // find, if exists, the greatest non-negative n <= i
             // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
             final int highestBit = Math.min(i, Long.SIZE - 1 - Long.numberOfLeadingZeros(remaining.get()));
-            if (FIVE_SQUARES.get(highestBit).compareTo(val) <= 0) {
+            if (FIVE_SQUARES.get(highestBit).compareMagnitude(val) <= 0) {
                 // easy case, no need to search for n
                 i = highestBit;
             } else {
@@ -1868,7 +1869,7 @@ public class Rational extends Number implements Comparable<Rational> {
                     i--; // by definition of n, val can no longer be divided by 5^(1 << i)
                     if (i >= 0)
                         divisor = FIVE_SQUARES.get(i);
-                } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
+                } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareMagnitude(val) <= 0);
             }
         }
 
@@ -2450,10 +2451,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof Rational r))
-            return false;
-
-        if (signum != r.signum)
+        if (!(obj instanceof Rational r) || signum != r.signum)
             return false;
 
         if (signum == 0) // values are both zero
@@ -2483,21 +2481,22 @@ public class Rational extends Number implements Comparable<Rational> {
             return 0;
 
         // compare absolute values
-        int absComp = floor.compareTo(val.floor);
+        int magComp = floor.compareMagnitude(val.floor);
 
-        if (absComp == 0) { // values have the same floor
-            if (denominator.equals(val.denominator)) {
-                absComp = numerator.compareTo(val.numerator);
+        if (magComp == 0) { // values have the same floor
+            int valDen_cmp_den = val.denominator.compareMagnitude(denominator);
+            if (valDen_cmp_den == 0) { // val.denominator.equals(denominator)
+                magComp = numerator.compareMagnitude(val.numerator);
             } else if (numerator.equals(val.numerator)) {
-                absComp = val.denominator.compareTo(denominator); // a/b < a/c <=> c < b
+                magComp = valDen_cmp_den; // a/b < a/c <=> c < b
             } else {
                 // compare using least common denominator
-                BigInteger[] lcdNums = lcdNumerators(val, denominator.gcd(val.denominator));
-                absComp = lcdNums[0].compareTo(lcdNums[1]);
+                BigInteger[] lcdNums = this.lcdNumerators(val, denominator.gcd(val.denominator));
+                magComp = lcdNums[0].compareMagnitude(lcdNums[1]);
             }
         }
 
-        return signum * absComp; // adjust comparison with signum
+        return signum * magComp; // adjust comparison with signum
     }
 
     /**
@@ -2511,7 +2510,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see #compareTo(Rational)
      */
     public Rational min(Rational val) {
-        return (compareTo(val) <= 0 ? this : val);
+        return (this.compareTo(val) <= 0 ? this : val);
     }
 
     /**
@@ -2525,6 +2524,6 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see #compareTo(Rational)
      */
     public Rational max(Rational val) {
-        return (compareTo(val) >= 0 ? this : val);
+        return (this.compareTo(val) >= 0 ? this : val);
     }
 }

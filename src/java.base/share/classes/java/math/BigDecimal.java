@@ -5068,7 +5068,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return bigTenToThe(n).multiply(value);
     }
 
-    static BigInteger bigMultiplyPowerTen(BigInteger value, int n) {
+    private static BigInteger bigMultiplyPowerTen(BigInteger value, int n) {
         if (n <= 0)
             return value;
         if(n<LONG_TEN_POWERS_TABLE.length) {
