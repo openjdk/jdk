@@ -30,6 +30,8 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
 
+#include <type_traits>
+
 template<typename K, typename V>
 class ResourceHashtableNode : public AnyObj {
 public:
@@ -55,6 +57,10 @@ template<
     bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
+                "Destructor for K is only called with C_HEAP");
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
+                "Destructor for V is only called with C_HEAP");
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
@@ -320,6 +326,12 @@ class ResourceHashtableBase : public STORAGE {
     return TableStatistics(summary, literal_bytes, sizeof(Node*), sizeof(Node));
   }
 
+  // This method calculates the "shallow" size. If you want the recursive size, use statistics_calculate.
+  size_t mem_size() const {
+    return sizeof(*this) +
+      table_size() * sizeof(Node*) +
+      number_of_entries() * sizeof(Node);
+  }
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>

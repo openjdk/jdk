@@ -42,9 +42,9 @@ SerialHeap::SerialHeap() :
     GenCollectedHeap(Generation::DefNew,
                      Generation::MarkSweepCompact,
                      "Copy:MSC"),
-    _eden_pool(NULL),
-    _survivor_pool(NULL),
-    _old_pool(NULL) {
+    _eden_pool(nullptr),
+    _survivor_pool(nullptr),
+    _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy", "end of minor GC");
   _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
 }
@@ -92,7 +92,7 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   return memory_pools;
 }
 
-void SerialHeap::young_process_roots(OopIterateClosure* root_closure,
+void SerialHeap::young_process_roots(OopClosure* root_closure,
                                      OopIterateClosure* old_gen_closure,
                                      CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
