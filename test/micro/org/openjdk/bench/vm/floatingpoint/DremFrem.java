@@ -171,10 +171,10 @@ public class DremFrem {
             double log_negative   = (double)Math.log(-1.0);
             double inf_minus_inf  = Double.POSITIVE_INFINITY - Double.POSITIVE_INFINITY;
             double inf_times_zero = Double.POSITIVE_INFINITY * 0.0f;
-            double quiet_nan1     = Double.longBitsToDouble(0x7ffc000000000001l);
-            double quiet_nan2     = Double.longBitsToDouble(0x7ffc000000000002l);
-            double signaling_nan1 = Double.longBitsToDouble(0x7ffa000000000001l);
-            double signaling_nan2 = Double.longBitsToDouble(0x7ffa000000000002l);
+            double quiet_nan1     = Double.longBitsToDouble(0x7ffc000000000001L);
+            double quiet_nan2     = Double.longBitsToDouble(0x7ffc000000000002L);
+            double signaling_nan1 = Double.longBitsToDouble(0x7ffa000000000001L);
+            double signaling_nan2 = Double.longBitsToDouble(0x7ffa000000000002L);
             double nan_minus      = -nan;
 
             // Generate some infinities.
