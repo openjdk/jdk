@@ -1196,6 +1196,7 @@ public:
   virtual Klass* array_klass(TRAPS);
   virtual Klass* array_klass_or_null();
 
+  static void clean_initialization_error_table();
 private:
   void fence_and_clear_init_lock();
 
@@ -1204,6 +1205,9 @@ private:
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
   void eager_initialize_impl                     ();
+
+  void add_initialization_error(JavaThread* current, Handle exception);
+  oop get_initialization_error(JavaThread* current);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,
