@@ -42,7 +42,7 @@ public enum TypeKind {
     /** the primitive type double */
     DoubleType("double", "D", 7),
     /** a reference type */
-    ReferenceType("reference type", "A", -1),
+    ReferenceType("reference type", "L", -1),
     /** the primitive type char */
     CharType("char", "C", 5),
     /** the primitive type boolean */
