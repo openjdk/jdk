@@ -43,7 +43,7 @@ import static org.testng.Assert.assertEquals;
 public class TestUTCParse {
 
     static {
-        // Assuming CLDR's SHORT name for "America/Los_Angeles
+        // Assuming CLDR's SHORT name for "America/Los_Angeles"
         // produces "UTC\u212208:00"
         System.setProperty("java.locale.providers", "CLDR");
     }
@@ -60,7 +60,7 @@ public class TestUTCParse {
     @Test
     public void testUTCShortNameRoundTrip() {
         var fmt = DateTimeFormatter.ofPattern("z", Locale.FRANCE);
-        var now = ZonedDateTime.now(ZoneId.of("America/Los_Angeles"));
+        var now = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         var formatted = fmt.format(now);
         assertEquals(formatted, "UTC\u221208:00");
         assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), now.getZone());
