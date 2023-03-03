@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
  * Code} attribute, including "intrinsic constant" instructions (e.g., {@code
- * aload_0}), "argument constant" instructions (e.g., {@code bipush}), and "load
+ * iconst_0}), "argument constant" instructions (e.g., {@code bipush}), and "load
  * constant" instructions (e.g., {@code LDC}).  Corresponding opcodes will have
  * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
