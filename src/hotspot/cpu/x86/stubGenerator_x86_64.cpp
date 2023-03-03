@@ -3509,6 +3509,57 @@ void StubGenerator::generate_libm_stubs() {
   }
 }
 
+/**
+*  Arguments:
+*
+*  Input:
+*    c_rarg0   - float16  jshort
+*
+*  Output:
+*       xmm0   - float
+*/
+address StubGenerator::generate_float16ToFloat() {
+  StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  // Load value into xmm0 and convert
+  __ flt16_to_flt(xmm0, c_rarg0);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  return start;
+}
+
+/**
+*  Arguments:
+*
+*  Input:
+*       xmm0   - float
+*
+*  Output:
+*        rax   - float16  jshort
+*/
+address StubGenerator::generate_floatToFloat16() {
+  StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  // Convert and put result into rax
+  __ flt_to_flt16(rax, xmm0, xmm1);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  return start;
+}
 
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
@@ -3872,6 +3923,15 @@ void StubGenerator::generate_initial() {
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+  }
+
+  if (VM_Version::supports_f16c() || VM_Version::supports_avx512vl()) {
+    // For results consistency both intrinsics should be enabled.
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   generate_libm_stubs();

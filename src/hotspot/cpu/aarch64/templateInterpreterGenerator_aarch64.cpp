@@ -1698,6 +1698,15 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
+
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  return nullptr; // TODO: implement
+}
+
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  return nullptr; // TODO: implement
+}
+
 //-----------------------------------------------------------------------------
 // Exceptions
 

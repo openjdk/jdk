@@ -162,6 +162,11 @@ class MacroAssembler: public Assembler {
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
+  void incrementl(AddressLiteral dst, Register rscratch = noreg);
+  void incrementl(ArrayAddress   dst, Register rscratch);
+
+  void incrementq(AddressLiteral dst, Register rscratch = noreg);
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;
@@ -189,10 +194,27 @@ class MacroAssembler: public Assembler {
   }
   void movdbl(Address dst, XMMRegister src) { movsd(dst, src); }
 
-  void incrementl(AddressLiteral dst, Register rscratch = noreg);
-  void incrementl(ArrayAddress   dst, Register rscratch);
+  void flt_to_flt16(Register dst, XMMRegister src, XMMRegister tmp) {
+    // Instruction requires different XMM registers
+    vcvtps2ph(tmp, src, 0x04, Assembler::AVX_128bit);
+    movdl(dst, tmp);
+    movswl(dst, dst);
+  }
 
-  void incrementq(AddressLiteral dst, Register rscratch = noreg);
+  void flt16_to_flt(XMMRegister dst, Register src) {
+    movdl(dst, src);
+    vcvtph2ps(dst, dst, Assembler::AVX_128bit);
+  }
+
+  void flt_to_flt16(Register dst, XMMRegister tmp1, XMMRegister tmp2, Address src) {
+    movflt(tmp1, src);
+    flt_to_flt16(dst, tmp1, tmp2);
+  }
+
+  void flt16_to_flt(XMMRegister dst, Register tmp, Address src) {
+    movswl(tmp, src);
+    flt16_to_flt(dst, tmp);
+  }
 
   // Alignment
   void align32();

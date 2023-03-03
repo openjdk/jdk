@@ -170,6 +170,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
   case vmIntrinsics::_getReference:
   case vmIntrinsics::_getBoolean:
   case vmIntrinsics::_getByte:

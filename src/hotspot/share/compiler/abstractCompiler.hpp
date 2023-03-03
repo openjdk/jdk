@@ -125,7 +125,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // GraphBuilder::GraphBuilder() in src/share/vm/c1/c1_GraphBuilder.cpp
   // for more details.
 
-  virtual bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
+  bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
     return is_intrinsic_supported(method) &&
            !directive->is_intrinsic_disabled(method) &&
            !vmIntrinsics::is_disabled_by_flags(method);

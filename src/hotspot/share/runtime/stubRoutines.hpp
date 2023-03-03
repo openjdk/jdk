@@ -249,6 +249,9 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
+  static address _f2hf;
+  static address _hf2f;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -423,6 +426,9 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+
+  static address f2hf()                { return _f2hf; }
+  static address hf2f()                { return _hf2f; }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }

@@ -128,14 +128,18 @@ class SharedRuntime: AllStatic {
   static jfloat  d2f (jdouble x);
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
-  static jfloat  hf2f(jshort  x);
-  static jshort  f2hf(jfloat  x);
   static jfloat  i2f (jint    x);
 
 #ifdef __SOFTFP__
   static jdouble i2d (jint    x);
   static jdouble f2d (jfloat  x);
 #endif // __SOFTFP__
+
+  // These are versions of the java.lang.Float methods which perform
+  // the same operations as the intrinsic version.  They are used for
+  // constant folding in the compiler to ensure equivalence.
+  static jfloat  hf2f(jshort  x);
+  static jshort  f2hf(jfloat  x);
 
   // double trigonometrics and transcendentals
   static jdouble dsin(jdouble x);
