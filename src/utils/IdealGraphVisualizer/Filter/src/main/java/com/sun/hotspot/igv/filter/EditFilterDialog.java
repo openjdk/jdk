@@ -49,7 +49,7 @@ public class EditFilterDialog extends javax.swing.JDialog {
         this.customFilter = customFilter;
         initComponents();
 
-        sourceTextArea.setFont(new Font("Courier", Font.PLAIN, 12));
+        sourceTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         AbstractDocument doc = (AbstractDocument) sourceTextArea.getDocument();
         doc.setDocumentFilter(new DocumentFilter(){
             private final StyledDocument styledDocument = sourceTextArea.getStyledDocument();
