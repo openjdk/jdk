@@ -62,7 +62,7 @@ public class TestAddPAtOuterLoopHead {
         }
 
 
-        int v  = 0;
+        int v = 0;
         for (int j = 0; j < 2; j++) {
             for (int i = 0; i < 998; i += k) {
                 int l = testHelper(m, j, i);
