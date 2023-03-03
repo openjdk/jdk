@@ -254,7 +254,7 @@ public interface RandomGenerator {
     }
 
     private DoubleStream equiDoubles(double left, double right,
-            boolean isLeftClosed, boolean isRightOpen) {
+            boolean isLeftIncluded, boolean isRightIncluded) {
         /*
          * Inspired by
          *      Goualard, "Drawing random floating-point numbers from an
@@ -264,7 +264,7 @@ public interface RandomGenerator {
          *
          * It is assumed that left <= right.
          * Whether the boundaries of the interval I = <left, right> are included
-         * is indicated by isLeftClosed and isRightOpen.
+         * is indicated by isLeftIncluded and isRightIncluded.
          *
          * delta > 0 is the smallest double such that every product k delta
          * (k integer) that lies in I is an exact double as well.
@@ -301,8 +301,8 @@ public interface RandomGenerator {
              * Thus, kl is computed exactly.
              *
              * Mathematically,
-             *      kr = ceil(right / delta),           if isRightOpen
-             *      kr = floor(right / delta) + 1,      if !isRightOpen
+             *      kr = ceil(right / delta),           if isRightIncluded
+             *      kr = floor(right / delta) + 1,      if !isRightIncluded
              * The double division rd = right / delta never overflows and is
              * exact, except in the presence of underflows. But even underflows
              * do not affect the outcomes of ceil() and floor(), except,
@@ -324,7 +324,7 @@ public interface RandomGenerator {
              *      -2^P <= kl + nextLong(n) <= 2^P
              * which shows that kl + nextLong(n) can be cast exactly to double.
              *
-             * Further, if isLeftClosed then left = kl delta, so that we get
+             * Further, if isLeftIncluded then left = kl delta, so that we get
              *      left = kl * delta <= (kl + nextLong(n)) * delta
              * For any other k < kl, when nextLong(n) = 0 we would have
              *      (k + nextLong(n)) * delta < left
@@ -348,8 +348,8 @@ public interface RandomGenerator {
             delta = nextUp(left) - left;
             double rd = right / delta;
             double crd = rd != 0 || right == 0 ? rd : copySign(Double.MIN_VALUE, right);
-            kr = isRightOpen ? (long) ceil(crd) : (long) floor(crd) + 1;
-            kl = (long) (left / delta) + (isLeftClosed ? 0 : 1);
+            kr = isRightIncluded ? (long) floor(crd) + 1 : (long) ceil(crd);
+            kl = (long) (left / delta) + (isLeftIncluded ? 0 : 1);
         } else {
             /* Here,
              *      right > 0,      -right < left <= right
@@ -359,8 +359,8 @@ public interface RandomGenerator {
             delta = right - nextDown(right);
             double ld = left / delta;
             double cld = ld != 0 || left == 0 ? ld : copySign(Double.MIN_VALUE, left);
-            kl = isLeftClosed ? (long) ceil(cld) : (long) floor(cld) + 1;
-            kr = (long) (right / delta) + (isRightOpen ? 0 : 1);
+            kl = isLeftIncluded ? (long) ceil(cld) : (long) floor(cld) + 1;
+            kr = (long) (right / delta) + (isRightIncluded ? 1 : 0);
         }
         n = kr - kl;
         return DoubleStream.generate(() -> (kl + nextLong(n)) * delta).sequential();
@@ -368,130 +368,44 @@ public interface RandomGenerator {
 
     /**
      * Returns an effectively unlimited stream of pseudorandomly chosen
-     * {@code double} values, where each value is between the specified origin
-     * (inclusive) and the specified bound (exclusive).
+     * {@code double} values, where each value is between the specified
+     * {@code left} boundary and the specified {@code right} boundary.
+     * The {@code left} boundary is included as indicated by
+     * {@code isLeftIncluded}; similarly, the {@code right} boundary is included
+     * as indicated by {@code isRightIncluded}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta;
+     * (<i>k</i> integer) lying in the interval specified by the parameters,
+     * where &delta; > 0 is the smallest number for which all these multiples
+     * are exact {@code double}s.
+     * They are therefore all equidistant.
      *
      * <p>The uniformity of the distribution of the {@code double}s produced by
      * the stream is as good as the one of {@link #nextLong(long)}.
      *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
-     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
-     * is the smallest number for which all these multiples are exact {@code double}s.
+     * @param left the left boundary
+     * @param right the right boundary
+     * @param isLeftIncluded whether the {@code left} boundary is included
+     * @param isRightIncluded whether the {@code right} boundary is included
      *
-     * @param origin the least value (inclusive) that can be produced
-     * @param bound the upper bound (exclusive) for each value produced
+     * @return a stream of pseudorandomly chosen {@code double} values, each
+     *         between {@code left} and {@code right}, as specified above.
+     *         The stream never produces {@code -0.0}, although it may produce
+     *         {@code 0.0} if the specified interval contains 0.
      *
-     * @return a stream of pseudorandomly chosen {@code double} values, each between
-     *         the specified origin (inclusive) and the specified bound (exclusive).
-     *         The stream never generates {@code -0.0}, although it may generate
-     *         {@code 0.0}
-     *
-     * @throws IllegalArgumentException if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}
+     * @throws IllegalArgumentException if {@code left} is not finite,
+     *         or {@code right} is not finite, or if the specified interval
+     *         is empty.
      */
-    default DoubleStream equiDoublesLeftClosedRightOpen(double origin, double bound) {
-        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
-                bound < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException("the interval must not be empty");
+    default DoubleStream equiDoublesLeftClosedRightOpen(double left, double right,
+        boolean isLeftIncluded, boolean isRightIncluded) {
+        if (!((isLeftIncluded ? left : nextUp(left)) < (isRightIncluded ? nextUp(right) : right)
+                && Double.NEGATIVE_INFINITY < left
+                && right < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException(
+                    "the boundaries must be finite and the interval must not be empty");
         }
-        return equiDoubles(origin, bound, true, true);
-    }
-
-    /**
-     * Returns an effectively unlimited stream of pseudorandomly chosen
-     * {@code double} values, where each value is between the specified origin
-     * (inclusive) and the specified bound (inclusive).
-     *
-     * <p>The uniformity of the distribution of the {@code double}s produced by
-     * the stream is as good as the one of {@link #nextLong(long)}.
-     *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
-     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
-     * is the smallest number for which all these multiples are exact {@code double}s.
-     *
-     * @param origin the least value (inclusive) that can be produced
-     * @param bound the upper bound (inclusive) for each value produced
-     *
-     * @return a stream of pseudorandomly chosen {@code double} values, each between
-     *         the specified origin (inclusive) and the specified bound (inclusive).
-     *         The stream never generates {@code -0.0}, although it may generate
-     *         {@code 0.0}
-     *
-     * @throws IllegalArgumentException if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than {@code bound}
-     */
-    default DoubleStream equiDoublesLeftClosedRightClosed(double origin, double bound) {
-        if (!(Double.NEGATIVE_INFINITY < origin && origin <= bound &&
-                bound < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException("the interval must not be empty");
-        }
-        return equiDoubles(origin, bound, true, false);
-    }
-
-    /**
-     * Returns an effectively unlimited stream of pseudorandomly chosen
-     * {@code double} values, where each value is between the specified origin
-     * (exclusive) and the specified bound (exclusive).
-     *
-     * <p>The uniformity of the distribution of the {@code double}s produced by
-     * the stream is as good as the one of {@link #nextLong(long)}.
-     *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
-     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
-     * is the smallest number for which all these multiples are exact {@code double}s.
-     *
-     * @param origin the least value (exclusive) that can be produced
-     * @param bound the upper bound (exclusive) for each value produced
-     *
-     * @return a stream of pseudorandomly chosen {@code double} values, each between
-     *         the specified origin (exclusive) and the specified bound (exclusive).
-     *         The stream never generates {@code -0.0}, although it may generate
-     *         {@code 0.0}
-     *
-     * @throws IllegalArgumentException if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or if the successor of {@code origin}
-     *         is greater than or equal to {@code bound}
-     */
-    default DoubleStream equiDoublesLeftOpenRightOpen(double origin, double bound) {
-        if (!(Double.NEGATIVE_INFINITY < origin && nextUp(origin) < bound &&
-                bound < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException("the interval must not be empty");
-        }
-        return equiDoubles(origin, bound, false, true);
-    }
-
-    /**
-     * Returns an effectively unlimited stream of pseudorandomly chosen
-     * {@code double} values, where each value is between the specified origin
-     * (exclusive) and the specified bound (inclusive).
-     *
-     * <p>The uniformity of the distribution of the {@code double}s produced by
-     * the stream is as good as the one of {@link #nextLong(long)}.
-     *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta; (<i>k</i>
-     * integer) lying in the given range, where &delta; &ge; {@link Double#MIN_VALUE}
-     * is the smallest number for which all these multiples are exact {@code double}s.
-     *
-     * @param origin the least value (exclusive) that can be produced
-     * @param bound the upper bound (inclusive) for each value produced
-     *
-     * @return a stream of pseudorandomly chosen {@code double} values, each between
-     *         the specified origin (exclusive) and the specified bound (inclusive).
-     *         The stream never generates {@code -0.0}, although it may generate
-     *         {@code 0.0}
-     *
-     * @throws IllegalArgumentException if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}
-     */
-    default DoubleStream equiDoublesLeftOpenRightClosed(double origin, double bound) {
-        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
-                bound < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException("the interval must not be empty");
-        }
-        return equiDoubles(origin, bound, false, false);
+        return equiDoubles(left, right, isLeftIncluded, isRightIncluded);
     }
 
     /**
