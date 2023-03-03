@@ -560,7 +560,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   if (AllowArchivingWithJavaAgent) {
-    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_info(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 
@@ -941,7 +941,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   } else {
     set_shared_metaspace_range(nullptr, nullptr, nullptr);
     if (DynamicDumpSharedSpaces) {
-      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+      log_warning(cds)("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
     }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
