@@ -129,6 +129,61 @@ public class TestVectorizationMismatchedAccess {
         testByteByte1(byteArray, byteArray);
     }
 
+    // It would be legal to vectorize this one but it's not currently
+    @Test
+    //@IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    public static void testByteByte2(byte[] dest, byte[] src) {
+        for (int i = 1; i < src.length / 8; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), src[i]);
+        }
+    }
+
+    @Run(test = "testByteByte2")
+    public static void testByteByte2_runner() {
+        testByteByte2(byteArray, byteArray);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    public static void testByteByte3(byte[] dest, byte[] src) {
+        for (int i = 0; i < src.length / 8 - 1; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), src[i]);
+        }
+    }
+
+    @Run(test = "testByteByte3")
+    public static void testByteByte3_runner() {
+        testByteByte3(byteArray, byteArray);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    public static void testByteByte4(byte[] dest, byte[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, src[i]);
+        }
+    }
+
+    @Run(test = "testByteByte4")
+    public static void testByteByte4_runner() {
+        baseOffset = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        testByteByte4(byteArray, byteArray, 1, size);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    public static void testByteByte5(byte[] dest, byte[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), src[i]);
+        }
+    }
+
+    @Run(test = "testByteByte5")
+    public static void testByteByte5_runner() {
+        baseOffset = 1;
+        testByteByte5(byteArray, byteArray, 0, size-1);
+    }
+    
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testOffHeapLong1(long dest, long[] src) {
