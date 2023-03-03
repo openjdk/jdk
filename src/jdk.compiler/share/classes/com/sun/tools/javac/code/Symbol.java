@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -837,9 +837,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return false;
             if (type.hasTag(that.type.getTag())) {
                 if (type.hasTag(CLASS)) {
+                    int thatRank = types.rank(that.type);
+                    int thisRank = types.rank(this.type);
                     return
-                        types.rank(that.type) < types.rank(this.type) ||
-                        types.rank(that.type) == types.rank(this.type) &&
+                        thatRank < thisRank ||
+                        thatRank == thisRank &&
                         that.getQualifiedName().compareTo(this.getQualifiedName()) < 0;
                 } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
