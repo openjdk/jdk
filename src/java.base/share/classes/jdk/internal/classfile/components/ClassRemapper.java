@@ -442,9 +442,14 @@ public sealed interface ClassRemapper extends ClassTransform {
                 case Signature.ArrayTypeSig ats ->
                     Signature.ArrayTypeSig.of(mapSignature(ats.componentSignature()));
                 case Signature.ClassTypeSig cts ->
-                    Signature.ClassTypeSig.of(cts.outerType().map(this::mapSignature).orElse(null),
-                            map(cts.classDesc()), cts.typeArgs().stream()
-                                    .map(this::mapSignature).toArray(Signature[]::new));
+                    Signature.ClassTypeSig.of(
+                            cts.outerType().map(this::mapSignature).orElse(null),
+                            map(cts.classDesc()),
+                            cts.typeArgs().stream()
+                                    .map(ta -> Signature.TypeArg.of(
+                                            ta.wildcardIndicator(),
+                                            ta.boundType().map(this::mapSignature)))
+                                    .toArray(Signature.TypeArg[]::new));
                 default -> signature;
             };
         }

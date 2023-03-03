@@ -130,7 +130,7 @@ public final class SignaturesImpl {
         switch (c) {
             case 'L':
                 StringBuilder sb = new StringBuilder();
-                ArrayList<Signature> argTypes = null;
+                ArrayList<TypeArg> argTypes = null;
                 Signature.ClassTypeSig t = null;
                 char sigch ;
                 do {
@@ -138,7 +138,7 @@ public final class SignaturesImpl {
                         case '<' -> {
                             argTypes = new ArrayList<>();
                             while (sig.charAt(sigp) != '>')
-                                argTypes.add(typeSig());
+                                argTypes.add(typeArg());
                             sigp++;
                         }
                         case '.',';' -> {
@@ -156,11 +156,20 @@ public final class SignaturesImpl {
                 sigp = sep + 1;
                 return ty;
             case '[': return ArrayTypeSig.of(typeSig());
+        }
+        throw new IllegalStateException("not a valid type signature: " + sig);
+    }
+
+    private TypeArg typeArg() {
+        char c = sig.charAt(sigp++);
+        switch (c) {
             case '*': return TypeArg.unbounded();
             case '+': return TypeArg.extendsOf(referenceTypeSig());
             case '-': return TypeArg.superOf(referenceTypeSig());
+            default:
+                sigp--;
+                return TypeArg.of(referenceTypeSig());
         }
-        throw new IllegalStateException("not a valid type signature: " + sig);
     }
 
     public static record BaseTypeSigImpl(char baseType) implements Signature.BaseTypeSig {
@@ -192,7 +201,7 @@ public final class SignaturesImpl {
         }
     }
 
-    public static record ClassTypeSigImpl(Optional<ClassTypeSig> outerType, String className, List<Signature> typeArgs)
+    public static record ClassTypeSigImpl(Optional<ClassTypeSig> outerType, String className, List<Signature.TypeArg> typeArgs)
             implements Signature.ClassTypeSig {
 
         @Override
@@ -208,7 +217,7 @@ public final class SignaturesImpl {
                 var sb = new StringBuilder();
                 sb.append('<');
                 for (var ta : typeArgs)
-                    sb.append(ta.signatureString());
+                    sb.append(((TypeArgImpl)ta).signatureString());
                 suffix = sb.append(">;").toString();
             }
             return prefix + className + suffix;
@@ -217,10 +226,11 @@ public final class SignaturesImpl {
 
     public static record TypeArgImpl(WildcardIndicator wildcardIndicator, Optional<RefTypeSig> boundType) implements Signature.TypeArg {
 
-        @Override
         public String signatureString() {
             return switch (wildcardIndicator) {
-                case EXTENDS, SUPER -> wildcardIndicator.indicator + boundType.get().signatureString();
+                case DEFAULT -> boundType.get().signatureString();
+                case EXTENDS -> "+" + boundType.get().signatureString();
+                case SUPER -> "-" + boundType.get().signatureString();
                 case UNBOUNDED -> "*";
             };
         }
