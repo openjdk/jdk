@@ -412,9 +412,9 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             try {
                 if (!fileObject.getName().equals(filter.getName())) {
                     FileLock lock = fileObject.lock();
-                    fileObject.move(lock, fileObject.getParent(), filter.getName(), "js");
+                    fileObject.move(lock, fileObject.getParent(), filter.getName(), "");
                     lock.releaseLock();
-                    FileObject newFileObject = fileObject.getParent().getFileObject(filter.getName() + ".js");
+                    FileObject newFileObject = fileObject.getParent().getFileObject(filter.getName());
                     fileObject = newFileObject;
                 }
 
@@ -457,6 +457,8 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                     sb.append("\n");
                 }
                 code = sb.toString();
+            } catch (FileNotFoundException ex) {
+                Exceptions.printStackTrace(ex);
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             } finally {
@@ -470,6 +472,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
             String displayName = fo.getName();
 
+
             final CustomFilter cf = new CustomFilter(displayName, code, engine);
             map.put(displayName, cf);
 
@@ -480,6 +483,8 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             if (enabled != null && (boolean) enabled) {
                 enabledSet.add(cf);
             }
+
+            cf.getChangedEvent().addListener(new FilterChangedListener(fo, cf));
 
             customFilters.add(cf);
         }
@@ -507,10 +512,6 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         for (CustomFilter cf : customFilters) {
             sequence.addFilter(cf);
-            FileObject fo = getFileObject(cf);
-            FilterChangedListener listener = new FilterChangedListener(fo, cf);
-            listener.changed(cf);
-            cf.getChangedEvent().addListener(listener);
             if (enabledSet.contains(cf)) {
                 filterChain.addFilter(cf);
             }
@@ -596,10 +597,10 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     private FileObject getFileObject(CustomFilter cf) {
-        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + cf.getName() + ".js");
+        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + cf.getName());
         if (fo == null) {
             try {
-                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(cf.getName() + ".js");
+                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(cf.getName());
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             }
