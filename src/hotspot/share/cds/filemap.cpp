@@ -1097,7 +1097,11 @@ bool FileMapInfo::validate_shared_path_table() {
       const char* mismatch_msg = "shared class paths mismatch";
       const char* hint_msg = log_is_enabled(Info, class, path) ?
           "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
-      log_warning(cds)("%s%s", mismatch_msg, hint_msg);
+      if (RequireSharedSpaces) {
+        fail_stop("%s%s", mismatch_msg, hint_msg);
+      } else {
+        log_warning(cds)("%s%s", mismatch_msg, hint_msg);
+      }
       return false;
     }
   }

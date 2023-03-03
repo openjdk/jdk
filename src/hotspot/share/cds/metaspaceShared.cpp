@@ -911,6 +911,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   if (static_mapinfo != nullptr) {
     log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
+
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);
     if (result == MAP_ARCHIVE_MMAP_FAILURE) {
