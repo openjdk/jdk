@@ -48,9 +48,11 @@ Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = nullptr;
-ReferenceProcessor*     MarkSweep::_ref_processor   = nullptr;
 STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
 SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
+
+AlwaysTrueClosure   MarkSweep::_always_true_closure;
+ReferenceProcessor* MarkSweep::_ref_processor;
 
 StringDedup::Requests*  MarkSweep::_string_dedup_requests = nullptr;
 
@@ -243,9 +245,8 @@ void MarkSweep::initialize() {
   MarkSweep::_gc_tracer = new SerialOldTracer();
   MarkSweep::_string_dedup_requests = new StringDedup::Requests();
 
-  static AlwaysTrueClosure always_true;
-
-  // Full heap; always subject-to-discovery
-  MarkSweep::_ref_processor = new ReferenceProcessor(&always_true);
+  // The Full GC operates on the entire heap so all objects should be subject
+  // to discovery, hence the _always_true_closure.
+  MarkSweep::_ref_processor = new ReferenceProcessor(&_always_true_closure);
   mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }

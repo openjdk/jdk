@@ -104,7 +104,7 @@ class MarkSweep : AllStatic {
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
 
-  // Reference processing (used in ...follow_contents)
+  static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
 
   static STWGCTimer*                     _gc_timer;
