@@ -154,7 +154,7 @@ class PackageSnippets {
                                               for (ClassElement ce : classModel) {
                                                   if (!(ce instanceof MethodModel mm
                                                         && mm.methodName().stringValue().startsWith("debug")))
-                                                  classBuilder.with(ce);
+                                                      classBuilder.with(ce);
                                               }
                                           });
         // @end
