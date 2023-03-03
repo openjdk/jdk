@@ -2872,11 +2872,11 @@ public class Check {
     /** Enter interface into into set.
      *  If it existed already, issue a "repeated interface" error.
      */
-    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Type> its) {
-        if (its.contains(it))
+    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Symbol> its) {
+        if (its.contains(it.tsym))
             log.error(pos, Errors.RepeatedInterface);
         else {
-            its.add(it);
+            its.add(it.tsym);
         }
     }
 
@@ -2956,9 +2956,9 @@ public class Check {
 
     /** Check the type annotations.
      */
-    public void validateTypeAnnotations(List<JCAnnotation> annotations, boolean isTypeParameter) {
+    public void validateTypeAnnotations(List<JCAnnotation> annotations, Symbol s, boolean isTypeParameter) {
         for (JCAnnotation a : annotations)
-            validateTypeAnnotation(a, isTypeParameter);
+            validateTypeAnnotation(a, s, isTypeParameter);
     }
 
     /** Check an annotation of a symbol.
@@ -3127,8 +3127,10 @@ public class Check {
         }
     }
 
-    public void validateTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
+    public void validateTypeAnnotation(JCAnnotation a, Symbol s, boolean isTypeParameter) {
         Assert.checkNonNull(a.type);
+        // we just want to validate that the anotation doesn't have any wrong target
+        if (s != null) getApplicableTargets(a, s);
         validateAnnotationTree(a);
 
         if (a.hasTag(TYPE_ANNOTATION) &&
@@ -3457,9 +3459,10 @@ public class Check {
             } else if (target == names.MODULE) {
                 if (s.kind == MDL)
                     applicableTargets.add(names.MODULE);
-            } else
-                return Optional.empty(); // Unknown ElementType. This should be an error at declaration site,
-                                         // assume applicable.
+            } else {
+                log.error(a, Errors.AnnotationUnrecognizedAttributeName(a.type, target));
+                return Optional.empty(); // Unknown ElementType
+            }
         }
         return Optional.of(applicableTargets);
     }

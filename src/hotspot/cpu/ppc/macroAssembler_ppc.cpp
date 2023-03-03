@@ -2958,8 +2958,6 @@ void MacroAssembler::get_vm_result(Register oop_result) {
   //   oop_result
   //   R16_thread->in_bytes(JavaThread::vm_result_offset())
 
-  verify_thread();
-
   ld(oop_result, in_bytes(JavaThread::vm_result_offset()), R16_thread);
   li(R0, 0);
   std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
@@ -4228,12 +4226,6 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_of
   }
   asm_assert(check_equal, msg);
 #endif // ASSERT
-}
-
-void MacroAssembler::verify_thread() {
-  if (VerifyThread) {
-    unimplemented("'VerifyThread' currently not implemented on PPC");
-  }
 }
 
 void MacroAssembler::verify_coop(Register coop, const char* msg) {

@@ -1042,7 +1042,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     }
 
     // Only attempt slp analysis when user controls do not prohibit it
-    if (!cl->range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
+    if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
       if (future_unroll_cnt >= _local_loop_unroll_factor) {
@@ -1916,7 +1916,7 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
   // only process RCE'd main loops
-  if (!cl->is_main_loop() || cl->range_checks_present()) return;
+  if (!cl->is_main_loop() || loop->range_checks_present()) return;
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -2278,8 +2278,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
     // Verify that policy_unroll result is still valid.
     const TypeInt* limit_type = _igvn.type(limit)->is_int();
-    assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
-           stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo),
+    assert((stride_con > 0 && ((min_jint + stride_con) <= limit_type->_hi)) ||
+           (stride_con < 0 && ((max_jint + stride_con) >= limit_type->_lo)),
            "sanity");
 
     if (limit->is_Con()) {
@@ -3003,7 +3003,7 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
 
 //------------------------------do_range_check---------------------------------
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Range Check Elimination ");
@@ -3016,12 +3016,10 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  // If we fail before trying to eliminate range checks, set multiversion state
-  int closed_range_checks = 1;
 
   // protect against stride not being a constant
   if (!cl->stride_is_con()) {
-    return closed_range_checks;
+    return;
   }
   // Find the trip counter; we are iteration splitting based on it
   Node *trip_counter = cl->phi();
@@ -3033,7 +3031,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Opaque1 node is optimized away and then another round
   // of loop opts attempted.
   if (cl->is_canonical_loop_entry() == NULL) {
-    return closed_range_checks;
+    return;
   }
 
   // Need to find the main-loop zero-trip guard
@@ -3047,7 +3045,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   Node *p_f = iffm->in(0);
   // pre loop may have been optimized out
   if (p_f->Opcode() != Op_IfFalse) {
-    return closed_range_checks;
+    return;
   }
   CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
   assert(pre_end->loopnode()->is_pre_loop(), "");
@@ -3056,7 +3054,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // optimized away and then another round of loop opts attempted.
   // We can not optimize this particular loop in that case.
   if (pre_opaq1->Opcode() != Op_Opaque1) {
-    return closed_range_checks;
+    return;
   }
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
   Node *pre_limit = pre_opaq->in(1);
@@ -3068,7 +3066,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // pre-loop Opaque1 node.
   Node *orig_limit = pre_opaq->original_loop_limit();
   if (orig_limit == NULL || _igvn.type(orig_limit) == Type::TOP) {
-    return closed_range_checks;
+    return;
   }
   // Must know if its a count-up or count-down loop
 
@@ -3081,10 +3079,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   set_ctrl(one,  C->root());
   set_ctrl(mini, C->root());
 
-  // Count number of range checks and reduce by load range limits, if zero,
-  // the loop is in canonical form to multiversion.
-  closed_range_checks = 0;
-
   Node* predicate_proj = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(predicate_proj->is_Proj() && predicate_proj->in(0)->is_If(), "if projection only");
 
@@ -3095,7 +3089,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         iff->Opcode() == Op_RangeCheck) { // Test?
       // Test is an IfNode, has 2 projections.  If BOTH are in the loop
       // we need loop unswitching instead of iteration splitting.
-      closed_range_checks++;
       Node *exit = loop->is_loop_exit(iff);
       if (!exit) continue;
       int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
@@ -3264,9 +3257,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           --imax;
         }
       }
-      if (int_limit->Opcode() == Op_LoadRange) {
-        closed_range_checks--;
-      }
     } // End of is IF
   }
   if (predicate_proj != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
@@ -3316,32 +3306,19 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
 
-  return closed_range_checks;
+  return;
 }
 
-//------------------------------has_range_checks-------------------------------
-// Check to see if RCE cleaned the current loop of range-checks.
-void PhaseIdealLoop::has_range_checks(IdealLoopTree *loop) {
-  assert(RangeCheckElimination, "");
-
-  // skip if not a counted loop
-  if (!loop->is_counted()) return;
-
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-
-  // skip this loop if it is already checked
-  if (cl->has_been_range_checked()) return;
-
-  // Now check for existence of range checks
-  for (uint i = 0; i < loop->_body.size(); i++) {
-    Node *iff = loop->_body[i];
+bool IdealLoopTree::compute_has_range_checks() const {
+  assert(_head->is_CountedLoop(), "");
+  for (uint i = 0; i < _body.size(); i++) {
+    Node *iff = _body[i];
     int iff_opc = iff->Opcode();
     if (iff_opc == Op_If || iff_opc == Op_RangeCheck) {
-      cl->mark_has_range_checks();
-      break;
+      return true;
     }
   }
-  cl->set_has_been_range_checked();
+  return false;
 }
 
 //-------------------------multi_version_post_loops----------------------------
@@ -4007,13 +3984,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     // with full checks, but the main-loop with no checks.  Remove said checks
     // from the main body.
     if (should_rce) {
-      if (phase->do_range_check(this, old_new) != 0) {
-        cl->mark_has_range_checks();
-      } else {
-        cl->clear_has_range_checks();
-      }
-    } else if (PostLoopMultiversioning) {
-      phase->has_range_checks(this);
+      phase->do_range_check(this, old_new);
     }
 
     if (should_unroll && !should_peel && PostLoopMultiversioning &&

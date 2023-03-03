@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
 import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import jdk.test.lib.Asserts;
@@ -67,9 +67,9 @@ public class TestPhaseIRMatching {
         FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, noAdditionalFlags);
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
         TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1);
-        MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
-        Matchable testClassMatchable = methodCompilationParser.parse(testVMProcess.getHotspotPidFileName(),
-                                                                     testVMProcess.getIrEncoding());
+        TestClassParser testClassParser = new TestClassParser(testClass);
+        Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
+                                                             testVMProcess.getIrEncoding());
         MatchResult result = testClassMatchable.match();
         List<Failure> expectedFails = new ExpectedFailsBuilder().build(testClass);
         List<Failure> foundFailures = new FailureBuilder().build(result);
