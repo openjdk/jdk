@@ -790,7 +790,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
       t4 = r7, t5 = r11, t6 = r12, t7 = r13;
     const Register stride = r14;
-    const Register gct1 = r8, gct2 = r9, gct3 = r10;
+    const Register gct1 = rscratch1, gct2 = rscratch2, gct3 = r10;
     const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
     ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
@@ -1125,7 +1125,7 @@ class StubGenerator: public StubCodeGenerator {
            && granularity <= sizeof (jlong), "Impossible granularity in copy_memory_small");
 
     const Register t0 = r3;
-    const Register gct1 = r8, gct2 = r9, gct3 = r10;
+    const Register gct1 = rscratch1, gct2 = rscratch2, gct3 = r10;
     ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, fnoreg, fnoreg, fnoreg);
 
     // ??? I don't know if this bit-test-and-branch is the right thing
@@ -1184,7 +1184,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r11;
     const Register t6 = r12, t7 = r13, t8 = r14, t9 = r15;
     const Register send = r17, dend = r16;
-    const Register gct1 = r8, gct2 = r9, gct3 = r10;
+    const Register gct1 = rscratch1, gct2 = rscratch2, gct3 = r10;
     const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
     ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
