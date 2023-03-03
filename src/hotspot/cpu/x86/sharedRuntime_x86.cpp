@@ -84,28 +84,8 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
-#ifdef _WIN64
-const juint  float_sign_mask  = 0x7FFFFFFF;
-const juint  float_infinity   = 0x7F800000;
-const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
-const julong double_infinity  = CONST64(0x7FF0000000000000);
-#endif
-
-#if !defined(_WINDOWS) || defined(_WIN64)
+#ifndef _WIN64
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
-#ifdef _WIN64
-  // 64-bit Windows on amd64 returns the wrong values for
-  // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
-  // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
-    return x;
-  }
-  return ((jfloat)fmod_winx64((double)x, (double)y));
-#else
   jfloat retval;
   asm ("\
 1:               \n\
@@ -118,21 +98,9 @@ jne    1b        \n\
     :"0"(x), "u"(y)
     :"cc", "ax");
   return retval;
-#endif
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-#ifdef _WIN64
-  union { jdouble d; julong l; } xbits, ybits;
-  xbits.d = x;
-  ybits.d = y;
-  // x Mod Infinity == x unless x is infinity
-  if (((xbits.l & double_sign_mask) != double_infinity) &&
-       ((ybits.l & double_sign_mask) == double_infinity) ) {
-    return x;
-  }
-  return ((jdouble)fmod_winx64((double)x, (double)y));
-#else
   jdouble retval;
   asm ("\
 1:               \n\
@@ -145,6 +113,5 @@ jne    1b        \n\
     :"0"(x), "u"(y)
     :"cc", "ax");
   return retval;
-#endif
 JRT_END
-#endif // !defined(_WINDOWS) || defined(_WIN64)
+#endif // !_WIN64
