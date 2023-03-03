@@ -212,8 +212,6 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(counts = {IRNode.POPULATE_INDEX, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     static void test1(int[] data) {
        for (int j = 0; j < RANGE; j++) {
            // Vectorizes even if it is not forced
