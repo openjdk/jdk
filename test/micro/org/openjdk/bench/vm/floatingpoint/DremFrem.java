@@ -37,10 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for float and double modulo.
- * Java bytecode drem is defined as C fmod (not C drem==remainder).
- * GCC had slow fmod():
- * since https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=4f2611b6e872c40e0bf4da38ff05df8c8fe0ee64
- * until https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=8020c9c42349f51f75239b9d35a2be41848a97bd
  * Testcase is based on: https://github.com/cirosantilli/java-cheat/blob/c5ffd8ea19c5620ce752b6c98b2d3579be2bef98/Nan.java
  */
 @BenchmarkMode(Mode.AverageTime)

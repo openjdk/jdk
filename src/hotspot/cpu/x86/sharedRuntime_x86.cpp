@@ -93,7 +93,6 @@ const julong double_infinity  = CONST64(0x7FF0000000000000);
 
 #if !defined(_WINDOWS) || defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
-// see SharedRuntime::drem
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
@@ -123,10 +122,6 @@ jne    1b        \n\
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-// Java bytecode drem is defined as C fmod (not C drem==remainder).
-// GCC had slow fmod():
-// since https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=4f2611b6e872c40e0bf4da38ff05df8c8fe0ee64
-// until https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=8020c9c42349f51f75239b9d35a2be41848a97bd
 #ifdef _WIN64
   union { jdouble d; julong l; } xbits, ybits;
   xbits.d = x;
