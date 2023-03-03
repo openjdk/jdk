@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
