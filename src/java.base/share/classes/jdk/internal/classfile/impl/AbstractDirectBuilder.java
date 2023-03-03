@@ -31,7 +31,7 @@ import jdk.internal.classfile.Attribute;
 /**
  * AbstractDirectBuilder
  */
-public class AbstractDirectBuilder<B, M> {
+public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
     protected final AttributeHolder attributes = new AttributeHolder();
     protected M original;

@@ -39,7 +39,7 @@ import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
-        extends AbstractDirectBuilder<MethodBuilder, MethodModel>
+        extends AbstractDirectBuilder<MethodModel>
         implements TerminalMethodBuilder, WritableElement<MethodModel>, MethodInfo {
 
     final Utf8Entry name;
