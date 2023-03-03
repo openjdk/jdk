@@ -60,7 +60,7 @@ public class TransformImpl {
 
     private static final Runnable NOTHING = () -> { };
 
-    interface FakeClassTransform extends ClassTransform {
+    interface UnresolvedClassTransform extends ClassTransform {
         @Override
         default void accept(ClassBuilder builder, ClassElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -89,7 +89,7 @@ public class TransformImpl {
 
     public record ChainedClassTransform(ClassTransform t,
                                         ClassTransform next)
-            implements FakeClassTransform {
+            implements UnresolvedClassTransform {
         @Override
         public ClassTransformImpl resolve(ClassBuilder builder) {
             ResolvedTransform<ClassElement> downstream = next.resolve(builder);
@@ -102,7 +102,7 @@ public class TransformImpl {
     }
 
     public record SupplierClassTransform(Supplier<ClassTransform> supplier)
-            implements FakeClassTransform {
+            implements UnresolvedClassTransform {
         @Override
         public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
             return supplier.get().resolve(builder);
@@ -111,7 +111,7 @@ public class TransformImpl {
 
     public record ClassMethodTransform(MethodTransform transform,
                                        Predicate<MethodModel> filter)
-            implements FakeClassTransform {
+            implements UnresolvedClassTransform {
         @Override
         public ClassTransformImpl resolve(ClassBuilder builder) {
             return new ClassTransformImpl(ce -> {
@@ -128,13 +128,13 @@ public class TransformImpl {
                 return new ClassMethodTransform(transform.andThen(cmt.transform),
                                                 mm -> filter.test(mm) && cmt.filter.test(mm));
             else
-                return FakeClassTransform.super.andThen(next);
+                return UnresolvedClassTransform.super.andThen(next);
         }
     }
 
     public record ClassFieldTransform(FieldTransform transform,
                                       Predicate<FieldModel> filter)
-            implements FakeClassTransform {
+            implements UnresolvedClassTransform {
         @Override
         public ClassTransformImpl resolve(ClassBuilder builder) {
             return new ClassTransformImpl(ce -> {
@@ -151,13 +151,13 @@ public class TransformImpl {
                 return new ClassFieldTransform(transform.andThen(cft.transform),
                                                mm -> filter.test(mm) && cft.filter.test(mm));
             else
-                return FakeClassTransform.super.andThen(next);
+                return UnresolvedClassTransform.super.andThen(next);
         }
     }
 
     // MethodTransform
 
-    interface FakeMethodTransform extends MethodTransform {
+    interface UnresolvedMethodTransform extends MethodTransform {
         @Override
         default void accept(MethodBuilder builder, MethodElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -182,7 +182,7 @@ public class TransformImpl {
 
     public record ChainedMethodTransform(MethodTransform t,
                                          MethodTransform next)
-            implements TransformImpl.FakeMethodTransform {
+            implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
             ResolvedTransform<MethodElement> downstream = next.resolve(builder);
@@ -195,7 +195,7 @@ public class TransformImpl {
     }
 
     public record SupplierMethodTransform(Supplier<MethodTransform> supplier)
-            implements TransformImpl.FakeMethodTransform {
+            implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
             return supplier.get().resolve(builder);
@@ -203,7 +203,7 @@ public class TransformImpl {
     }
 
     public record MethodCodeTransform(CodeTransform xform)
-            implements TransformImpl.FakeMethodTransform {
+            implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
             return new MethodTransformImpl(me -> {
@@ -220,14 +220,14 @@ public class TransformImpl {
         public MethodTransform andThen(MethodTransform next) {
             return (next instanceof TransformImpl.MethodCodeTransform mct)
                    ? new TransformImpl.MethodCodeTransform(xform.andThen(mct.xform))
-                   : FakeMethodTransform.super.andThen(next);
+                   : UnresolvedMethodTransform.super.andThen(next);
 
         }
     }
 
     // FieldTransform
 
-    interface FakeFieldTransform extends FieldTransform {
+    interface UnresolvedFieldTransform extends FieldTransform {
         @Override
         default void accept(FieldBuilder builder, FieldElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -251,7 +251,7 @@ public class TransformImpl {
     }
 
     public record ChainedFieldTransform(FieldTransform t, FieldTransform next)
-            implements FakeFieldTransform {
+            implements UnresolvedFieldTransform {
         @Override
         public FieldTransformImpl resolve(FieldBuilder builder) {
             ResolvedTransform<FieldElement> downstream = next.resolve(builder);
@@ -264,7 +264,7 @@ public class TransformImpl {
     }
 
     public record SupplierFieldTransform(Supplier<FieldTransform> supplier)
-            implements FakeFieldTransform {
+            implements UnresolvedFieldTransform {
         @Override
         public ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
             return supplier.get().resolve(builder);
@@ -273,7 +273,7 @@ public class TransformImpl {
 
     // CodeTransform
 
-    interface FakeCodeTransform extends CodeTransform {
+    interface UnresolvedCodeTransform extends CodeTransform {
         @Override
         default void accept(CodeBuilder builder, CodeElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -297,7 +297,7 @@ public class TransformImpl {
     }
 
     public record ChainedCodeTransform(CodeTransform t, CodeTransform next)
-            implements FakeCodeTransform {
+            implements UnresolvedCodeTransform {
         @Override
         public CodeTransformImpl resolve(CodeBuilder builder) {
             ResolvedTransform<CodeElement> downstream = next.resolve(builder);
@@ -310,7 +310,7 @@ public class TransformImpl {
     }
 
     public record SupplierCodeTransform(Supplier<CodeTransform> supplier)
-            implements FakeCodeTransform {
+            implements UnresolvedCodeTransform {
         @Override
         public ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
             return supplier.get().resolve(builder);
