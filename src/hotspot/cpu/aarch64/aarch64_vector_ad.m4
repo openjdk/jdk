@@ -3560,7 +3560,7 @@ instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI_cmp_cond cond)
   match(Set dst (VectorMaskCmp (Binary src (ReplicateI zero)) cond));
   format %{ "vmaskcmp_zeroI_neon $dst, $src, #0, $cond" %}
   ins_encode %{
-    Assembler::Condition condition = booltest_cond_to_assembler_cond((BoolTest::mask)$cond$$constant);
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ neon_compare_zero($dst$$FloatRegister, bt, $src$$FloatRegister,
@@ -3577,7 +3577,7 @@ instruct vmaskcmp_zero$1_neon(vReg dst, vReg src, imm`$1'0 zero, immI_cmp_cond c
   match(Set dst (VectorMaskCmp (Binary src (Replicate$1 zero)) cond));
   format %{ "vmaskcmp_zero$1_neon $dst, $src, #0, $cond" %}
   ins_encode %{
-    Assembler::Condition condition = booltest_cond_to_assembler_cond((BoolTest::mask)$cond$$constant);
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ neon_compare_zero($dst$$FloatRegister, $2, $src$$FloatRegister,
                          condition, /* isQ */ length_in_bytes == 16);

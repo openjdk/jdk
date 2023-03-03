@@ -1194,7 +1194,7 @@ public:
 
   // Convert BootTest condition to Assembler condition.
   // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
-  Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond);
+  Assembler::Condition to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2533,36 +2533,46 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Convert BootTest condition to Assembler condition.
 // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
-Assembler::Condition booltest_cond_to_assembler_cond(BoolTest::mask cond) {
+Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
+  Assembler::Condition result;
   switch(cond) {
     case BoolTest::eq:
-      return Assembler::EQ;
+      result = Assembler::EQ; break;
     case BoolTest::ne:
-      return Assembler::NE;
+      result = Assembler::NE; break;
     case BoolTest::le:
-      return Assembler::LE;
+      result = Assembler::LE; break;
     case BoolTest::ge:
-      return Assembler::GE;
+      result = Assembler::GE; break;
     case BoolTest::lt:
-      return Assembler::LT;
+      result = Assembler::LT; break;
     case BoolTest::gt:
-      return Assembler::GT;
+      result = Assembler::GT; break;
     case BoolTest::ule:
-      return Assembler::LS;
+      result = Assembler::LS; break;
     case BoolTest::uge:
-      return Assembler::HS;
+      result = Assembler::HS; break;
     case BoolTest::ult:
-      return Assembler::LO;
+      result = Assembler::LO; break;
     case BoolTest::ugt:
-      return Assembler::HI;
+      result = Assembler::HI; break;
     case BoolTest::overflow:
-      return Assembler::VS;
+      result = Assembler::VS; break;
     case BoolTest::no_overflow:
-      return Assembler::VC;
+      result = Assembler::VC; break;
     default:
       ShouldNotReachHere();
       return Assembler::Condition(-1);
   }
+
+  // Check conversion
+  if (cond & BoolTest::unsigned_compare) {
+    assert(cmpOpUOper((BoolTest::mask)((int)cond & 0b1111)).ccode() == result, "Invalid conversion");
+  } else {
+    assert(cmpOpOper(cond).ccode() == result, "Invalid conversion");
+  }
+
+  return result;
 }
 
 // Binary src (Replicate con)
@@ -4306,16 +4316,7 @@ operand immI_cmp_cond()
 %{
   predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
   match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
 
-// BoolTest condition for unsigned compare
-operand immI_cmpU_cond()
-%{
-  predicate(n->get_int() > (int)(BoolTest::unsigned_compare));
-  match(ConI);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);

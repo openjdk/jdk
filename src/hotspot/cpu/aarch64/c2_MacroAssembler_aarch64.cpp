@@ -970,20 +970,11 @@ void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, Float
       fcm(cond, dst, size, src);
     }
   } else {
-    switch (cond) {
-      case Assembler::EQ: cmeq(dst, size, src); break;
-      case Assembler::NE: {
-        cmeq(dst, size, src);
-        notr(dst, isQ ? T16B : T8B, dst);
-        break;
-      }
-      case Assembler::GE: cmge(dst, size, src); break;
-      case Assembler::GT: cmgt(dst, size, src); break;
-      case Assembler::LE: cmle(dst, size, src); break;
-      case Assembler::LT: cmlt(dst, size, src); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      cm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      cm(cond, dst, size, src);
     }
   }
 }

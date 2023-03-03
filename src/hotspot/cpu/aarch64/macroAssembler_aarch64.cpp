@@ -5598,7 +5598,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     //                          ASCII-check on lo-parts (no sign).
     FloatRegister vlox = vtmp1; // Merge lower bytes.
                                 ASCII(orr(vlox, T16B, vlo0, vlo1));
-    umov(chk, vhix, D, 1);      ASCII(cmlt(vlox, T16B, vlox));
+    umov(chk, vhix, D, 1);      ASCII(cm(LT, vlox, T16B, vlox));
     fmovd(max, vhix);           ASCII(umaxv(vlox, T16B, vlox));
     orr(chk, chk, max);         ASCII(umov(max, vlox, B, 0));
                                 ASCII(orr(chk, chk, max));
@@ -5624,7 +5624,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     uzp2(vhi, T16B, vtmp3, vtmp3);
     // ISO-check on hi-parts (all zero).
     //                          ASCII-check on lo-parts (no sign).
-                                ASCII(cmlt(vtmp2, T16B, vlo));
+                                ASCII(cm(LT, vtmp2, T16B, vlo));
     fmovd(chk, vhi);            ASCII(umaxv(vtmp2, T16B, vtmp2));
                                 ASCII(umov(max, vtmp2, B, 0));
                                 ASCII(orr(chk, chk, max));
