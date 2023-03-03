@@ -57,7 +57,7 @@ public sealed interface ConstantInstruction extends Instruction {
 
     /**
      * Models an "intrinsic constant" instruction (e.g., {@code
-     * aload_0}).
+     * iconst_0}).
      */
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
