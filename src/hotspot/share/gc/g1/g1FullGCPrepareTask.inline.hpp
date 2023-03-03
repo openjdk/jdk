@@ -68,6 +68,8 @@ inline G1FullGCCompactionPoint* G1DetermineCompactionQueueClosure::next_compacti
 
 inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegion* hr) {
   _collector->set_compaction_top(hr, hr->bottom());
+  _collector->set_has_compaction_targets();
+
   G1FullGCCompactionPoint* cp = next_compaction_point();
   if (!cp->is_initialized()) {
     cp->initialize(hr);

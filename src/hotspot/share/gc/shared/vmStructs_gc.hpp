@@ -27,7 +27,6 @@
 
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
@@ -169,7 +168,6 @@
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
   declare_toplevel_type(CardTable)                                        \
-           declare_type(CardTableRS, CardTable)                           \
   declare_toplevel_type(BarrierSet::Name)                                 \
                                                                           \
   /* Miscellaneous other GC types */                                      \
@@ -188,7 +186,6 @@
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(CardTable*)                                       \
   declare_toplevel_type(CardTable*const)                                  \
-  declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableBarrierSet*)                             \
   declare_toplevel_type(CardTableBarrierSet**)                            \
   declare_toplevel_type(CollectedHeap*)                                   \

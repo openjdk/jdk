@@ -59,37 +59,13 @@ import java.util.Map;
  * <p>
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace004Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>EXPECTED_METHODS</code> array.</p>
- * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
+ * correct stack frames. </p>
  */
-public class strace004 {
+public class strace004 extends StraceBase {
 
     static final int DEPTH = 100;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Object.wait0",
-            "java.lang.System$2.headStackableScope",
-            "java.lang.Thread.headStackableScopes",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.Thread.yield0",
-            "java.lang.Thread.clearReferences",
-            "java.lang.Thread.currentCarrierThread",
-            "java.lang.Thread.currentThread",
-            "java.lang.Thread.threadContainer",
-            "jdk.internal.misc.Blocker.begin",
-            "jdk.internal.misc.Blocker.currentCarrierThread",
-            "jdk.internal.misc.Blocker.end",
-            "jdk.internal.vm.StackableScope.head",
-            "jdk.internal.vm.StackableScope.popAll",
-            "nsk.stress.strace.strace004Thread.run",
-            "nsk.stress.strace.strace004Thread.recursiveMethod"
-    };
-
 
     static volatile boolean isLocked = false;
     static PrintStream out;
@@ -229,15 +205,6 @@ public class strace004 {
             }
         }
         return res;
-    }
-
-    boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (name.startsWith(EXPECTED_METHODS[i]))
-                return true;
-        }
-        return false;
     }
 
     void finishThreads() {
