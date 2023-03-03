@@ -150,34 +150,34 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
 
   oop obj = cast_to_oop(hr->bottom());
   size_t obj_size = obj->size();
-  int num_regions = (int) G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
+  uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
 
   if (!has_regions()) {
     return num_regions;
   }
 
-  // Find contiguous compaction target regions for the humongous object
+  // Find contiguous compaction target regions for the humongous object.
   Pair<uint, uint> range = find_contiguous_before(hr, num_regions);
   uint range_begin = range.first;
   uint range_end = range.second;
 
   if (range_begin == range_end) {
-    // No contiguous compaction target regions found, so the object cannot be moved
+    // No contiguous compaction target regions found, so the object cannot be moved.
     return num_regions;
   }
 
   // Preserve the mark for the humongous object as the region was initially not compacting.
   _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
 
-  HeapRegion* destn_hr = _compaction_regions->at(range_begin);
-  obj->forward_to(cast_to_oop(destn_hr->bottom()));
+  HeapRegion* dest_hr = _compaction_regions->at(range_begin);
+  obj->forward_to(cast_to_oop(dest_hr->bottom()));
   assert(obj->is_forwarded(), "Object must be forwarded!");
 
-  // Add the humongous object regions to the compaction point
+  // Add the humongous object regions to the compaction point.
   add_humongous(hr);
 
   // Remove covered regions from compaction target candidates.
-  _compaction_regions->erase(range_begin, (range_begin + num_regions));
+  _compaction_regions->remove_range(range_begin, (range_begin + num_regions));
 
   return num_regions;
 }
@@ -202,7 +202,7 @@ Pair<uint, uint> G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr,
     }
     // Check if the current region and the previous region are contiguous.
     bool regions_are_contiguous = (_compaction_regions->at(range_end)->hrm_index() - _compaction_regions->at(range_end - 1)->hrm_index()) == 1;
-    contiguous_region_count =  regions_are_contiguous ? contiguous_region_count + 1 : 1;
+    contiguous_region_count = regions_are_contiguous ? contiguous_region_count + 1 : 1;
   }
 
   if (contiguous_region_count < num_regions &&

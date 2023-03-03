@@ -254,11 +254,11 @@ public:
 
   // Remove all elements up to the index (exclusive). The order is preserved.
   void remove_till(int idx) {
-    erase(0, idx);
+    remove_range(0, idx);
   }
 
   // Remove all elements in the range [start - end). The order is preserved.
-  void erase(int start, int end) {
+  void remove_range(int start, int end) {
     assert(0 <= start, "illegal index");
     assert(start < end && end <= _len, "erase called with invalid range");
 

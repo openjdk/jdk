@@ -94,5 +94,13 @@ bool G1FullCollector::has_humongous() {
   return _has_humongous;
 }
 
+void G1FullCollector::add_humongous_region(HeapRegion* hr) {
+  _humongous_compaction_regions.append(hr);
+}
+
+GrowableArrayCHeap<HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
+  return _humongous_compaction_regions;
+}
+
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
 

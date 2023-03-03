@@ -56,7 +56,7 @@ void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
   assert(obj->forwardee() != obj, "Object must have a new location");
 
   size_t size = obj->size();
-  // copy object and reinit its mark
+  // Copy object and reinit its mark.
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
   Copy::aligned_conjoint_words(obj_addr, destination, size);
@@ -108,7 +108,7 @@ void G1FullGCCompactTask::serial_compaction() {
 void G1FullGCCompactTask::humongous_compaction() {
   GCTraceTime(Debug, gc, phases) tm("Phase 4: Humonguous Compaction", collector()->scope()->timer());
 
-  for (HeapRegion* hr : *(collector()->humongous_compaction_regions())) {
+  for (HeapRegion* hr : collector()->humongous_compaction_regions()) {
     assert(collector()->is_compaction_target(hr->hrm_index()), "Sanity");
     compact_humongous_obj(hr);
   }
@@ -171,7 +171,7 @@ void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
   oop obj = cast_to_oop(src_hr->bottom());
   size_t word_size = obj->size();
 
-  uint num_regions = (uint) G1CollectedHeap::humongous_obj_size_in_regions(word_size);
+  uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(word_size);
   HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
 
   assert(collector()->mark_bitmap()->is_marked(obj), "Should only compact marked objects");

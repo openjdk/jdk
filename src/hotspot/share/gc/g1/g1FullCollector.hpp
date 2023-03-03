@@ -84,10 +84,10 @@ class G1FullCollector : StackObj {
   PreservedMarksSet         _preserved_marks_set;
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1FullGCCompactionPoint   _humongous_compaction_point;
-  GrowableArray<HeapRegion*>* _humongous_compaction_regions;
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
   G1RegionMarkStats*        _live_stats;
+  GrowableArrayCHeap<HeapRegion*, mtGC> _humongous_compaction_regions;
 
   static uint calc_active_workers();
 
@@ -146,8 +146,8 @@ public:
   inline void set_has_compaction_targets();
   inline bool has_compaction_targets() const;
 
-  inline void add_humongous_region(HeapRegion* hr) { _humongous_compaction_regions->append(hr); }
-  GrowableArray<HeapRegion*>* humongous_compaction_regions() { return _humongous_compaction_regions; }
+  inline void add_humongous_region(HeapRegion* hr);
+  inline GrowableArrayCHeap<HeapRegion*, mtGC>& humongous_compaction_regions();
 
   uint truncate_parallel_cps();
 

@@ -179,9 +179,6 @@ public:
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
-  // Update heap region that has been compacted to be consistent after Full GC.
-  void reset_compacted_humongous_after_full_gc(HeapWord* new_top);
-
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 

@@ -127,6 +127,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _humongous_compaction_point(this),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
+    _humongous_compaction_regions(8),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
     _region_attr_table() {
@@ -135,8 +136,6 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _preserved_marks_set.init(_num_workers);
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
-
-  _humongous_compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(8, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
   _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
@@ -159,7 +158,7 @@ G1FullCollector::~G1FullCollector() {
     delete _markers[i];
     delete _compaction_points[i];
   }
-  delete _humongous_compaction_regions;
+
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
   FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
@@ -479,7 +478,7 @@ void G1FullCollector::phase4_do_compaction() {
     task.serial_compaction();
   }
 
-  if (!_humongous_compaction_regions->is_empty()) {
+  if (!_humongous_compaction_regions.is_empty()) {
     assert(scope()->do_maximal_compaction(), "Only compact humongous during maximal compaction");
     task.humongous_compaction();
   }
