@@ -82,7 +82,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractAttributeMapper;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.CodeImpl;
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 
 /**
@@ -779,7 +779,7 @@ public class Attributes {
     static {
         var map = new HashMap<Utf8Entry, AttributeMapper<?>>(64);
         for (var am : PREDEFINED_ATTRIBUTES) {
-            map.put(ConcreteEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
+            map.put(AbstractPoolEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
         }
         _ATTR_MAP = Collections.unmodifiableMap(map);
     }

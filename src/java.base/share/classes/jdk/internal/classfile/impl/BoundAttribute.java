@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 import jdk.internal.classfile.*;
@@ -761,12 +760,12 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 BootstrapMethodEntry[] bs = new BootstrapMethodEntry[size];
                 int p = payloadStart + 2;
                 for (int i = 0; i < size; ++i) {
-                    final ConcreteEntry.ConcreteMethodHandleEntry handle
-                            = (ConcreteEntry.ConcreteMethodHandleEntry) classReader.readMethodHandleEntry(p);
+                    final AbstractPoolEntry.MethodHandleEntryImpl handle
+                            = (AbstractPoolEntry.MethodHandleEntryImpl) classReader.readMethodHandleEntry(p);
                     final List<LoadableConstantEntry> args = readEntryList(p + 2);
                     p += 4 + args.size() * 2;
-                    int hash = ConcreteBootstrapMethodEntry.computeHashCode(handle, args);
-                    bs[i] = new ConcreteBootstrapMethodEntry(classReader, i, hash, handle, args);
+                    int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
+                    bs[i] = new BootstrapMethodEntryImpl(classReader, i, hash, handle, args);
                 }
                 bootstraps = List.of(bs);
             }

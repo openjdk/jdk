@@ -25,9 +25,7 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.instruction.CharacterRange;
 
 public final class BoundCharacterRange

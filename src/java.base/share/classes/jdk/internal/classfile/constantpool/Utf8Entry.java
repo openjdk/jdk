@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_UTF8_info} constant in the constant pool of a
@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface Utf8Entry
         extends CharSequence, AnnotationConstantValueEntry
-        permits ConcreteEntry.ConcreteUtf8Entry {
+        permits AbstractPoolEntry.Utf8EntryImpl {
 
     /**
      * {@return the string value for this entry}

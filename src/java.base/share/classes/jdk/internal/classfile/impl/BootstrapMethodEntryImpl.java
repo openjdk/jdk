@@ -24,28 +24,26 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 
-import static jdk.internal.classfile.impl.ConcreteEntry.ConcreteMethodHandleEntry;
+import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
-public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry {
+public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
     final int hash;
     private final ConstantPool constantPool;
-    private final ConcreteMethodHandleEntry handle;
+    private final MethodHandleEntryImpl handle;
     private final List<LoadableConstantEntry> arguments;
 
-    ConcreteBootstrapMethodEntry(ConstantPool constantPool, int bsmIndex, int hash,
-                                 ConcreteMethodHandleEntry handle,
+    BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
+                                 MethodHandleEntryImpl handle,
                                  List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
         this.hash = hash;
@@ -85,13 +83,13 @@ public final class ConcreteBootstrapMethodEntry implements BootstrapMethodEntry 
             return false;
     }
 
-    static int computeHashCode(ConcreteMethodHandleEntry handle,
+    static int computeHashCode(MethodHandleEntryImpl handle,
                                List<? extends LoadableConstantEntry> arguments) {
         int hash = handle.hashCode();
         for (LoadableConstantEntry a : arguments) {
             hash = 31 * hash + a.hashCode();
         }
-        return ConcreteEntry.phiMix(hash);
+        return AbstractPoolEntry.phiMix(hash);
     }
 
     @Override

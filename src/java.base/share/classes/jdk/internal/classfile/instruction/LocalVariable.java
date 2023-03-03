@@ -28,7 +28,6 @@ import java.lang.constant.ClassDesc;
 
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Label;

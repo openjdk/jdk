@@ -23,7 +23,6 @@
  * questions.
  */
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.HashSet;
@@ -106,19 +105,18 @@ class PackageSnippets {
     void gatherDependencies2(byte[] bytes) {
         // @start region="gatherDependencies2"
         ClassModel cm = Classfile.parse(bytes);
-        Set<ClassDesc> dependencies = cm.elementStream()
-                                        .filter(ce -> ce instanceof MethodModel)
-                                        .flatMap(ce -> ((MethodModel) ce).elementStream())
-                                        .filter(me -> me instanceof CodeModel)
-                                        .flatMap(me -> ((CodeModel) me).elementStream())
-                                        .<ClassDesc>mapMulti((xe, c) -> {
-                                            switch (xe) {
-                                                case InvokeInstruction i -> c.accept(i.owner().asSymbol());
-                                                case FieldInstruction i -> c.accept(i.owner().asSymbol());
-                                                default -> { }
-                                            }
-                                        })
-                                        .collect(toSet());
+        Set<ClassDesc> dependencies =
+              cm.elementStream()
+                .flatMap(ce -> ce instanceof MethodMethod mm ? mm.elementStream() : Stream.empty())
+                .flatMap(me -> me instanceof CodeModel com ? com.elementStream() : Stream.empty())
+                .<ClassDesc>mapMulti((xe, c) -> {
+                    switch (xe) {
+                        case InvokeInstruction i -> c.accept(i.owner().asSymbol());
+                        case FieldInstruction i -> c.accept(i.owner().asSymbol());
+                        default -> { }
+                    }
+                })
+                .collect(toSet());
         // @end
     }
 
@@ -156,7 +154,7 @@ class PackageSnippets {
                                               for (ClassElement ce : classModel) {
                                                   if (!(ce instanceof MethodModel mm
                                                         && mm.methodName().stringValue().startsWith("debug")))
-                                                  classBuilder.with(ce);
+                                                      classBuilder.with(ce);
                                               }
                                           });
         // @end

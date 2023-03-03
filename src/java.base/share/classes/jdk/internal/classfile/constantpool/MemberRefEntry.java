@@ -24,14 +24,14 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a member reference constant in the constant pool of a classfile,
  * which includes references to fields, methods, and interface methods.
  */
 public sealed interface MemberRefEntry extends PoolEntry
-        permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, ConcreteEntry.MemberRefEntry {
+        permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {
     /**
      * {@return the class in which this member ref lives}
      */

@@ -49,83 +49,80 @@ import jdk.internal.classfile.constantpool.StringEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import java.lang.constant.MethodTypeDesc;
-import java.util.Collections;
 import java.util.List;
-
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
-    private TemporaryConstantPool() {};
+    private TemporaryConstantPool() {}
 
     public static final TemporaryConstantPool INSTANCE = new TemporaryConstantPool();
 
     @Override
     public Utf8Entry utf8Entry(String s) {
-        return new ConcreteEntry.ConcreteUtf8Entry(this, -1, s);
+        return new AbstractPoolEntry.Utf8EntryImpl(this, -1, s);
     }
 
     @Override
     public IntegerEntry intEntry(int value) {
-        return new ConcreteEntry.ConcreteIntegerEntry(this, -1, value);
+        return new AbstractPoolEntry.IntegerEntryImpl(this, -1, value);
     }
 
     @Override
     public FloatEntry floatEntry(float value) {
-        return new ConcreteEntry.ConcreteFloatEntry(this, -1, value);
+        return new AbstractPoolEntry.FloatEntryImpl(this, -1, value);
     }
 
     @Override
     public LongEntry longEntry(long value) {
-        return new ConcreteEntry.ConcreteLongEntry(this, -1, value);
+        return new AbstractPoolEntry.LongEntryImpl(this, -1, value);
     }
 
     @Override
     public DoubleEntry doubleEntry(double value) {
-        return new ConcreteEntry.ConcreteDoubleEntry(this, -1, value);
+        return new AbstractPoolEntry.DoubleEntryImpl(this, -1, value);
     }
 
     @Override
     public ClassEntry classEntry(Utf8Entry name) {
-        return new ConcreteEntry.ConcreteClassEntry(this, -2, (ConcreteEntry.ConcreteUtf8Entry) name);
+        return new AbstractPoolEntry.ClassEntryImpl(this, -2, (AbstractPoolEntry.Utf8EntryImpl) name);
     }
 
     @Override
     public PackageEntry packageEntry(Utf8Entry name) {
-        return new ConcreteEntry.ConcretePackageEntry(this, -2, (ConcreteEntry.ConcreteUtf8Entry) name);
+        return new AbstractPoolEntry.PackageEntryImpl(this, -2, (AbstractPoolEntry.Utf8EntryImpl) name);
     }
 
     @Override
     public ModuleEntry moduleEntry(Utf8Entry name) {
-        return new ConcreteEntry.ConcreteModuleEntry(this, -2, (ConcreteEntry.ConcreteUtf8Entry) name);
+        return new AbstractPoolEntry.ModuleEntryImpl(this, -2, (AbstractPoolEntry.Utf8EntryImpl) name);
     }
 
     @Override
-    public NameAndTypeEntry natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
-        return new ConcreteEntry.ConcreteNameAndTypeEntry(this, -3,
-                                                          (ConcreteEntry.ConcreteUtf8Entry) nameEntry,
-                                                          (ConcreteEntry.ConcreteUtf8Entry) typeEntry);
+    public NameAndTypeEntry nameAndTypeEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
+        return new AbstractPoolEntry.NameAndTypeEntryImpl(this, -3,
+                                                          (AbstractPoolEntry.Utf8EntryImpl) nameEntry,
+                                                          (AbstractPoolEntry.Utf8EntryImpl) typeEntry);
     }
 
     @Override
     public FieldRefEntry fieldRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        return new ConcreteEntry.ConcreteFieldRefEntry(this, -3,
-                                                       (ConcreteEntry.ConcreteClassEntry) owner,
-                                                       (ConcreteEntry.ConcreteNameAndTypeEntry) nameAndType);
+        return new AbstractPoolEntry.FieldRefEntryImpl(this, -3,
+                                                       (AbstractPoolEntry.ClassEntryImpl) owner,
+                                                       (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
     }
 
     @Override
     public MethodRefEntry methodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        return new ConcreteEntry.ConcreteMethodRefEntry(this, -3,
-                                                        (ConcreteEntry.ConcreteClassEntry) owner,
-                                                        (ConcreteEntry.ConcreteNameAndTypeEntry) nameAndType);
+        return new AbstractPoolEntry.MethodRefEntryImpl(this, -3,
+                                                        (AbstractPoolEntry.ClassEntryImpl) owner,
+                                                        (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
     }
 
     @Override
     public InterfaceMethodRefEntry interfaceMethodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        return new ConcreteEntry.ConcreteInterfaceMethodRefEntry(this, -3,
-                                                                 (ConcreteEntry.ConcreteClassEntry) owner,
-                                                                 (ConcreteEntry.ConcreteNameAndTypeEntry) nameAndType);
+        return new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, -3,
+                                                                 (AbstractPoolEntry.ClassEntryImpl) owner,
+                                                                 (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
     }
 
     @Override
@@ -155,7 +152,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
     @Override
     public StringEntry stringEntry(Utf8Entry utf8) {
-        return new ConcreteEntry.ConcreteStringEntry(this, -2, (ConcreteEntry.ConcreteUtf8Entry) utf8);
+        return new AbstractPoolEntry.StringEntryImpl(this, -2, (AbstractPoolEntry.Utf8EntryImpl) utf8);
     }
 
     @Override

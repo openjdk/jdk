@@ -50,9 +50,9 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
     byte[] codeArray();
 
     /**
-     *
+     * {@return the position of the {@code Label} in the {@code codeArray}
+     * or -1 if the {@code Label} does not point to the {@code codeArray}}
      * @param label a marker for a position within this {@code CodeAttribute}
-     * @return position of the {@code Label} in the {@code codeArray}
      */
     int labelToBci(Label label);
 }

@@ -35,7 +35,6 @@ import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
 
 public final class BufWriterImpl implements BufWriter {
 
@@ -174,7 +173,7 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeIndex(PoolEntry entry) {
-        int idx = ConcreteEntry.maybeClone(constantPool, entry).index();
+        int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
             throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
         writeU2(idx);

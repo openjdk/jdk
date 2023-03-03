@@ -25,8 +25,6 @@
 package jdk.internal.classfile.impl;
 
 import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 

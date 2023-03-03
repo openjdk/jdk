@@ -33,7 +33,8 @@ import java.util.TreeMap;
 import jdk.internal.classfile.BufWriter;
 
 import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.attribute.StackMapTableAttribute.*;
+import jdk.internal.classfile.attribute.StackMapFrameInfo;
+import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
 import jdk.internal.classfile.ClassReader;
 
 import static jdk.internal.classfile.Classfile.*;

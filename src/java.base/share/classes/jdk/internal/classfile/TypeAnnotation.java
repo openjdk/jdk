@@ -27,7 +27,6 @@ package jdk.internal.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
-import java.util.Set;
 
 import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;

@@ -40,7 +40,7 @@ import jdk.internal.classfile.instruction.LocalVariable;
 import jdk.internal.classfile.instruction.LocalVariableType;
 
 /**
- * CodeRelabeler is a {@link jdk.internal.classfile.CodeTransform} replacing all occurences
+ * CodeRelabeler is a {@link jdk.internal.classfile.CodeTransform} replacing all occurrences
  * of {@link jdk.internal.classfile.Label} in the transformed code with new instances.
  * All {@link jdk.internal.classfile.instruction.LabelTarget} instructions are adjusted accordingly.
  * Relabeled code graph is identical to the original.

@@ -51,6 +51,7 @@ import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodTransform;
 import jdk.internal.classfile.Signature;
 import jdk.internal.classfile.Signature.ClassTypeSig;
+import jdk.internal.classfile.Signature.TypeArg;
 import jdk.internal.classfile.Superclass;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.classfile.attribute.SignatureAttribute;
@@ -181,7 +182,7 @@ public class ExampleGallery {
                                           .andThen(ClassTransform.endHandler(b -> b.with(SignatureAttribute.of(
                                               ClassSignature.of(
                                                       ClassTypeSig.of(ClassDesc.of("impl.Fox"),
-                                                                      ClassTypeSig.of(ClassDesc.of("impl.Cow"))),
+                                                                      TypeArg.of(ClassTypeSig.of(ClassDesc.of("impl.Cow")))),
                                                       ClassTypeSig.of(ClassDesc.of("api.Rat"))))))));
     }
 

@@ -37,7 +37,6 @@ import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.FieldBuilder;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.FieldTransform;
@@ -64,7 +63,7 @@ public final class DirectClassBuilder
     public DirectClassBuilder(SplitConstantPool constantPool,
                               ClassEntry thisClass) {
         super(constantPool);
-        this.thisClassEntry = ConcreteEntry.maybeClone(constantPool, thisClass);
+        this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
         this.flags = Classfile.DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
@@ -158,12 +157,12 @@ public final class DirectClassBuilder
         // Do this early because it might trigger CP activity
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
-            superclass = ConcreteEntry.maybeClone(constantPool, superclass);
+            superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
         else if ((flags & Classfile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
         List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
         for (ClassEntry ce : interfaceEntries)
-            ies.add(ConcreteEntry.maybeClone(constantPool, ce));
+            ies.add(AbstractPoolEntry.maybeClone(constantPool, ce));
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;

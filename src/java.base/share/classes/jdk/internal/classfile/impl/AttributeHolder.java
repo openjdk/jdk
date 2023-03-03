@@ -35,9 +35,6 @@ import jdk.internal.classfile.BufWriter;
 public class AttributeHolder {
     private final List<Attribute<?>> attributes = new ArrayList<>();
 
-    public AttributeHolder() {
-    }
-
     public <A extends Attribute<A>> void withAttribute(Attribute<?> a) {
         if (a == null)
             return;

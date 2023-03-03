@@ -32,9 +32,7 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.constantpool.ClassEntry;
@@ -51,9 +49,8 @@ import jdk.internal.classfile.constantpool.NameAndTypeEntry;
  * BytecodeHelpers
  */
 public class BytecodeHelpers {
-//    public static Map<ConstantDesc, Opcode> constantsToOpcodes = new HashMap<>(16);
 
-    public BytecodeHelpers() {
+    private BytecodeHelpers() {
     }
 
     public static Opcode loadOpcode(TypeKind tk, int slot) {
@@ -260,7 +257,7 @@ public class BytecodeHelpers {
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
         ClassEntry bsOwner = constantPool.classEntry(bootstrapMethod.owner());
-        NameAndTypeEntry bsNameAndType = constantPool.natEntry(constantPool.utf8Entry(bootstrapMethod.methodName()),
+        NameAndTypeEntry bsNameAndType = constantPool.nameAndTypeEntry(constantPool.utf8Entry(bootstrapMethod.methodName()),
                                                                constantPool.utf8Entry(bootstrapMethod.lookupDescriptor()));
         int bsRefKind = bootstrapMethod.refKind();
         MemberRefEntry bsReference = toBootstrapMemberRef(constantPool, bsRefKind, bsOwner, bsNameAndType, bootstrapMethod.isOwnerInterface());
@@ -284,7 +281,7 @@ public class BytecodeHelpers {
 
         var bootstrapDesc = desc.bootstrapMethod();
         ClassEntry bsOwner = constantPool.classEntry(bootstrapDesc.owner());
-        NameAndTypeEntry bsNameAndType = constantPool.natEntry(bootstrapDesc.methodName(),
+        NameAndTypeEntry bsNameAndType = constantPool.nameAndTypeEntry(bootstrapDesc.methodName(),
                                                                bootstrapDesc.invocationType());
         int bsRefKind = bootstrapDesc.refKind();
 
@@ -292,7 +289,7 @@ public class BytecodeHelpers {
         MethodHandleEntry methodHandleEntry = constantPool.methodHandleEntry(bsRefKind, memberRefEntry);
         BootstrapMethodEntry bme = constantPool.bsmEntry(methodHandleEntry, staticArgs);
         return constantPool.constantDynamicEntry(bme,
-                                                 constantPool.natEntry(desc.constantName(),
+                                                 constantPool.nameAndTypeEntry(desc.constantName(),
                                                                        desc.constantType()));
     }
 

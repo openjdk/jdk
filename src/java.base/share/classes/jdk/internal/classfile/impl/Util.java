@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
