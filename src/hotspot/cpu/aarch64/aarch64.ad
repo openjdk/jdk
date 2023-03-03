@@ -2567,7 +2567,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 
   // Check conversion
   if (cond & BoolTest::unsigned_compare) {
-    assert(cmpOpUOper((BoolTest::mask)((int)cond & 0b1111)).ccode() == result, "Invalid conversion");
+    assert(cmpOpUOper((BoolTest::mask)((int)cond & ~(BoolTest::unsigned_compare))).ccode() == result, "Invalid conversion");
   } else {
     assert(cmpOpOper(cond).ccode() == result, "Invalid conversion");
   }
