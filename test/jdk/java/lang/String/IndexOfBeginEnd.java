@@ -31,11 +31,25 @@ import static org.testng.Assert.assertThrows;
  * @test
  * @bug 8302590
  * @summary This one is for String.indexOf(int,int,int).
- * @run testng/othervm -XX:+CompactStrings IndexOfFromTo
- * @run testng/othervm -XX:-CompactStrings IndexOfFromTo
+ * @run testng IndexOfBeginEnd
  */
 
-public class IndexOfFromTo extends CompactString {
+public class IndexOfBeginEnd {
+
+    private static final String STRING_EMPTY = "";
+    private static final String STRING_L1 = "A";
+    private static final String STRING_L2 = "AB";
+    private static final String STRING_L4 = "ABCD";
+    private static final String STRING_LLONG = "ABCDEFGH";
+    private static final String STRING_U1 = "\uFF21";
+    private static final String STRING_U2 = "\uFF21\uFF22";
+    private static final String STRING_LDUPLICATE = "ABABABABAB";
+    private static final String STRING_M11 = "A\uFF21";
+    private static final String STRING_M12 = "\uFF21A";
+    private static final String STRING_UDUPLICATE = "\uFF21\uFF22\uFF21\uFF22\uFF21\uFF22\uFF21\uFF22\uFF21\uFF22";
+    private static final String STRING_SUPPLEMENTARY = "\uD801\uDC00\uD801\uDC01\uFF21A";
+    private static final String STRING_MDUPLICATE1 = "\uFF21A\uFF21A\uFF21A\uFF21A\uFF21A";
+    private static final String STRING_MDUPLICATE2 = "A\uFF21A\uFF21A\uFF21A\uFF21A\uFF21";
 
     @DataProvider
     public Object[][] results() {
@@ -183,21 +197,27 @@ public class IndexOfFromTo extends CompactString {
 
     @Test(dataProvider = "results")
     public void testIndexOf(String str, int ch, int from, int to, int expected) {
-        map.get(str).forEach(
-                (source, data) -> {
-                    assertEquals(data.indexOf(ch, from, to), expected,
-                            String.format("testing String(%s).indexOf(%d,%d,%d), source : %s, ",
-                                    escapeNonASCIIs(data), ch, from, to, source));
-                });
+        assertEquals(str.indexOf(ch, from, to), expected,
+                String.format("testing String(%s).indexOf(%d,%d,%d)",
+                        escapeNonASCIIs(str), ch, from, to));
     }
 
     @Test(dataProvider = "exceptions")
     public void testIndexOf(String str, int ch, int from, int to) {
-        map.get(str).forEach(
-                (source, data) -> {
-                    assertThrows(StringIndexOutOfBoundsException.class,
-                            () -> data.indexOf(ch, from, to));
-                });
+        assertThrows(StringIndexOutOfBoundsException.class,
+                () -> str.indexOf(ch, from, to));
     }
 
+    private static String escapeNonASCIIs(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); ++i) {
+            char c = s.charAt(i);
+            if (c >= 0x100) {
+                sb.append("\\u").append(Integer.toHexString(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
 }
