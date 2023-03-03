@@ -122,8 +122,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return nullptr; // Generate a vanilla entry
-
   address entry_point = nullptr;
   Register continuation = LR;
   bool use_runtime_call = false;
@@ -780,9 +778,14 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 // Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 
 //
 // Interpreter stub for calling a native method. (asm interpreter)

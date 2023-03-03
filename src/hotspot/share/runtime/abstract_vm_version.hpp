@@ -41,6 +41,7 @@ typedef enum {
 } VirtualizationType;
 
 class outputStream;
+enum class vmIntrinsicID;
 
 // Abstract_VM_Version provides information about the VM.
 
@@ -177,6 +178,9 @@ class Abstract_VM_Version: AllStatic {
 
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
+
+  // Does this CPU support this intrinsic?
+  static bool is_intrinsic_supported(vmIntrinsicID id) { return true; }
 
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 

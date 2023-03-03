@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "code/codeBlob.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jvm.h"
@@ -3220,3 +3221,17 @@ intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
     }
   }
 }
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_f16c() && !supports_avx512vl()) return false;
+    break;
+  default:
+    break;
+  }
+  return true;
+}
+

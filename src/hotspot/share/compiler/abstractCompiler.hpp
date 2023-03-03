@@ -126,9 +126,11 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // for more details.
 
   virtual bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
+    vmIntrinsics::ID id = method->intrinsic_id();
+    assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
     return is_intrinsic_supported(method) &&
-           !directive->is_intrinsic_disabled(method) &&
-           !vmIntrinsics::is_disabled_by_flags(method);
+           vmIntrinsics::is_intrinsic_available(id) &&
+           !directive->is_intrinsic_disabled(id);
   }
 
   // Determines if an intrinsic is supported by the compiler, that is,

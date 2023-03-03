@@ -74,6 +74,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
+    java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
     java_lang_math_log,                                         // implementation of java.lang.Math.log   (x)
     java_lang_math_log10,                                       // implementation of java.lang.Math.log10 (x)
     java_lang_math_pow,                                         // implementation of java.lang.Math.pow   (x,y)
@@ -103,6 +104,9 @@ class AbstractInterpreter: AllStatic {
       return vmIntrinsics::_none;
   }
 
+  // Conversion from the above enum to vmIntrinsics::ID
+  static vmIntrinsics::ID method_intrinsic(MethodKind kind);
+
   enum SomeConstants {
     number_of_result_handlers = 10                              // number of result handlers for native calls
   };
@@ -111,9 +115,6 @@ class AbstractInterpreter: AllStatic {
   static StubQueue* _code;                                      // the interpreter code (codelets)
 
   static bool       _notice_safepoints;                         // true if safepoints are activated
-
-  static address    _native_entry_begin;                        // Region for native entry code
-  static address    _native_entry_end;
 
   // method entry points
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
@@ -219,7 +220,6 @@ class AbstractInterpreter: AllStatic {
   static address    slow_signature_handler()                    { return _slow_signature_handler; }
   static address    result_handler(BasicType type)              { return _native_abi_to_tosca[BasicType_as_index(type)]; }
   static int        BasicType_as_index(BasicType type);         // computes index into result_handler_by_index table
-  static bool       in_native_entry(address pc)                 { return _native_entry_begin <= pc && pc < _native_entry_end; }
   // Debugging/printing
   static void       print();                                    // prints the interpreter code
 

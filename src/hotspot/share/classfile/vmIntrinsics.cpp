@@ -28,6 +28,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "runtime/vm_version.hpp"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -645,9 +646,8 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   return _none;
 }
 
-bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  return is_disabled_by_flags(id);
+bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
+  return VM_Version::is_intrinsic_supported(id) && !is_disabled_by_flags(id);
 }
 
 bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {

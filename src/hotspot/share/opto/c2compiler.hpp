@@ -61,13 +61,11 @@ public:
   // possible for only a limited set of available intrinsics whereas
   // a non-virtual dispatch is possible for all available intrinsics.)
   // Return false otherwise.
-  virtual bool is_intrinsic_supported(const methodHandle& method) {
-    return is_intrinsic_supported(method, false);
-  }
+  virtual bool is_intrinsic_supported(const methodHandle& method);
 
   // Check if the compiler supports an intrinsic for 'method' given the
   // the dispatch mode specified by the 'is_virtual' parameter.
-  bool is_intrinsic_supported(const methodHandle& method, bool is_virtual);
+  bool is_virtual_intrinsic_supported(vmIntrinsics::ID id, bool is_virtual);
 
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);

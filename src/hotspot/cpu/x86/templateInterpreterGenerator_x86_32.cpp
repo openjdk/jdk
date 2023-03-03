@@ -320,8 +320,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // rcx: scratrch
   // rsi: sender sp
 
-  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
-
   address entry_point = __ pc();
 
   // These don't need a safepoint check because they aren't virtually
@@ -466,3 +464,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   return entry_point;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
+
