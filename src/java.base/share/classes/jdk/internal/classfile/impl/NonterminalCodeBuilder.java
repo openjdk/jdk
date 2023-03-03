@@ -42,8 +42,7 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     public NonterminalCodeBuilder(CodeBuilder parent) {
         this.parent = parent;
         this.terminal = switch (parent) {
-            case ChainedCodeBuilder cb -> cb.terminal;
-            case BlockCodeBuilderImpl cb -> cb.terminal;
+            case NonterminalCodeBuilder cb -> cb.terminal;
             case TerminalCodeBuilder cb -> cb;
         };
     }
