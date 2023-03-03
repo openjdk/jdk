@@ -2023,9 +2023,10 @@ void os::die() {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
     ::raise(SIGKILL);
-  } else {
-    ::abort();
+    // ::raise is not noreturn, even though with SIGKILL it definitely won't
+    // return.  Hence "fall through" to ::abort, which is declared noreturn.
   }
+  ::abort();
 }
 
 const char* os::file_separator() { return "/"; }

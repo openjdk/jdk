@@ -64,7 +64,7 @@ public class MethodHandlesGeneralTest extends DynamicArchiveTestBase {
     private static final String testClassName = "MethodHandlesGeneralTest";
     private static final String loggingOpts = "-Xlog:cds,cds+dynamic=debug,class+load=trace";
     private static final String lambdaLoadedFromArchive =
-        ".class.load. test.java.lang.invoke.MethodHandlesGeneralTest[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)";
+        ".class.load. test.java.lang.invoke.MethodHandlesGeneralTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)";
 
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();

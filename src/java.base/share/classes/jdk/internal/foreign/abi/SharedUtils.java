@@ -30,6 +30,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
@@ -185,6 +186,7 @@ public final class SharedUtils {
             case SYS_V -> SysVx64Linker.getInstance();
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
             case LINUX_PPC_64 -> LinuxPPC64Linker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
         };
@@ -299,6 +301,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaList(actions, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaList(actions, scope);
             default -> throw new RuntimeException("Unsupported platform");
         };
     }
@@ -310,6 +313,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaListOfAddress(address, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaListOfAddress(address, scope);
             default -> throw new RuntimeException("Unsupported platform");
         };
     }
@@ -321,6 +325,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.emptyVaList();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.emptyVaList();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.emptyVaList();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.emptyVaList();
             default -> throw new RuntimeException("Unsupported platform");
         };
     }
