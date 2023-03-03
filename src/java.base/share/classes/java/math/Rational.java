@@ -2474,6 +2474,9 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public int compareTo(Rational val) {
+        if (this == val) // An optimization
+            return 0;
+
         if (signum != val.signum)
             return signum > val.signum ? 1 : -1;
 
@@ -2484,7 +2487,7 @@ public class Rational extends Number implements Comparable<Rational> {
         int magComp = floor.compareMagnitude(val.floor);
 
         if (magComp == 0) { // values have the same floor
-            int valDen_cmp_den = val.denominator.compareMagnitude(denominator);
+            final int valDen_cmp_den = val.denominator.compareMagnitude(denominator);
             if (valDen_cmp_den == 0) { // val.denominator.equals(denominator)
                 magComp = numerator.compareMagnitude(val.numerator);
             } else if (numerator.equals(val.numerator)) {
