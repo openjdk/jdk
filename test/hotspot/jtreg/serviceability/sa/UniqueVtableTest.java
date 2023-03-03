@@ -81,17 +81,19 @@ public class UniqueVtableTest {
         Map<Address, List<Type>> vtableToTypesMap = new HashMap<>();
         Iterator<Type> it = agent.getTypeDataBase().getTypes();
         int dupsFound = 0;
-        // agent.getTypeDataBase() returns HotSpotTypeDataBase (extends BasicTypeDataBase)
+        // TypeDataBase knows nothing about vtables,
+        // but actually agent.getTypeDataBase() returns HotSpotTypeDataBase (extends BasicTypeDataBase)
+        // and BasicTypeDataBase has a method to get vtable for Types.
         BasicTypeDataBase typeDB = (BasicTypeDataBase)(agent.getTypeDataBase());
         int total = 0;
-        int no_vtable = 0;
-        int no_vtable_with_super = 0;
+        int vm_classes_with_vtable = 0;
+        int vm_classes_without_vtable = 0;
         while (it.hasNext()) {
             total++;
             Type t = it.next();
             Address vtable = typeDB.vtblForType(t);
             if (vtable != null) {
-                no_vtable++;
+                vm_classes_with_vtable++;
                 List<Type> typeList = vtableToTypesMap.get(vtable);
                 if (typeList == null) {
                     vtableToTypesMap.put(vtable, new ArrayList<>(List.of(t)));
@@ -102,18 +104,22 @@ public class UniqueVtableTest {
                 }
             }
 
-            if (vtable == null && t.getSuperclass() != null) {
-                no_vtable_with_super++;
-                log("WARNING: vtable is null for " + type2String(t)
-                    + ", CInt: " + t.isCIntegerType()
-                    + ", CStr: " + t.isCStringType()
-                    + ", JPrimitive: " + t.isJavaPrimitiveType()
-                    + ", Oop: " + t.isOopType()
-                    + ", Ptr: " + t.isPointerType());
+            // IntegerType/StringType/JavaPrimitiveType/OopType/PointerType types
+            // are expected to have no vtable.
+            // Log classes which might need vtable.
+            if (vtable == null
+                    && !t.isCIntegerType()
+                    && !t.isCStringType()
+                    && !t.isJavaPrimitiveType()
+                    && !t.isOopType()
+                    && !t.isPointerType()) {
+                vm_classes_without_vtable++;
+                log("vtable is null for " + type2String(t));
             }
         }
-        log("total: " + total + ", no vtable: " + no_vtable
-            + ", no_vtable_with_super: " + no_vtable_with_super);
+        log("total: " + total
+            + ", vm_classes_with_vtable: " + vm_classes_with_vtable
+            + ", vm_classes_without_vtable: " + vm_classes_without_vtable);
         if (dupsFound > 0) {
             vtableToTypesMap.forEach((vtable, list) -> {
                 if (list.size() > 1) {
