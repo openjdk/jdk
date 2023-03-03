@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64VaList;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64VaList;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64VaList;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64VaList;
 import jdk.internal.foreign.abi.x64.sysv.SysVVaList;
 import jdk.internal.foreign.abi.x64.windows.WinVaList;
@@ -105,7 +106,7 @@ import jdk.internal.reflect.Reflection;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, LinuxRISCV64VaList, SharedUtils.EmptyVaList {
+public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, WindowsAArch64VaList, LinuxRISCV64VaList, SharedUtils.EmptyVaList {
 
     /**
      * Reads the next value as an {@code int} and advances this variable argument list's position. The behavior of this
@@ -300,7 +301,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @since 19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder, LinuxRISCV64VaList.Builder {
+    sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder, WindowsAArch64VaList.Builder, LinuxRISCV64VaList.Builder {
 
         /**
          * Writes an {@code int} value to the variable argument list being constructed.

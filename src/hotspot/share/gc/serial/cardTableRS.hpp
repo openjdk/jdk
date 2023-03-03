@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_CARDTABLERS_HPP
-#define SHARE_GC_SHARED_CARDTABLERS_HPP
+#ifndef SHARE_GC_SERIAL_CARDTABLERS_HPP
+#define SHARE_GC_SERIAL_CARDTABLERS_HPP
 
 #include "gc/shared/cardTable.hpp"
 #include "memory/memRegion.hpp"
@@ -62,7 +62,6 @@ public:
   }
 
   void verify();
-  void initialize() override;
 
   void clear_into_younger(Generation* old_gen);
 
@@ -98,4 +97,4 @@ public:
   void do_MemRegion(MemRegion mr) override;
 };
 
-#endif // SHARE_GC_SHARED_CARDTABLERS_HPP
+#endif // SHARE_GC_SERIAL_CARDTABLERS_HPP

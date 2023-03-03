@@ -8995,14 +8995,12 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_ad_cas.m4
-
+// This section is generated from cas.m4
 
 
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9021,7 +9019,6 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9040,7 +9037,6 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9058,7 +9054,6 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9076,7 +9071,6 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9222,7 +9216,6 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9242,7 +9235,6 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9262,7 +9254,6 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9282,7 +9273,6 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9302,7 +9292,6 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);

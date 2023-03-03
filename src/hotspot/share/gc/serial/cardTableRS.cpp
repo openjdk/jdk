@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -433,10 +433,6 @@ void CardTableRS::verify() {
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   CardTable(whole_heap) { }
-
-void CardTableRS::initialize() {
-  CardTable::initialize();
-}
 
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,

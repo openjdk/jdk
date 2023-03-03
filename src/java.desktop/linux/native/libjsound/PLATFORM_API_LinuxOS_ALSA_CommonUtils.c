@@ -103,29 +103,29 @@ void decodeDeviceID(UINT32 deviceID, int* card, int* device, int* subdevice,
 }
 
 
-void getDeviceString(char* buffer, int card, int device, int subdevice,
-                     int usePlugHw, int isMidi) {
+void getDeviceString(char* buffer, size_t bufferSize, int card, int device,
+                     int subdevice, int usePlugHw, int isMidi) {
     if (needEnumerateSubdevices(isMidi)) {
-        sprintf(buffer, "%s:%d,%d,%d",
+        snprintf(buffer, bufferSize, "%s:%d,%d,%d",
                         usePlugHw ? ALSA_PLUGHARDWARE : ALSA_HARDWARE,
                         card, device, subdevice);
     } else {
-        sprintf(buffer, "%s:%d,%d",
+        snprintf(buffer, bufferSize, "%s:%d,%d",
                         usePlugHw ? ALSA_PLUGHARDWARE : ALSA_HARDWARE,
                         card, device);
     }
 }
 
 
-void getDeviceStringFromDeviceID(char* buffer, UINT32 deviceID,
-                                 int usePlugHw, int isMidi) {
+void getDeviceStringFromDeviceID(char* buffer, size_t bufferSize,
+                                 UINT32 deviceID, int usePlugHw, int isMidi) {
     int card, device, subdevice;
 
     if (deviceID == ALSA_DEFAULT_DEVICE_ID) {
         strcpy(buffer, ALSA_DEFAULT_DEVICE_NAME);
     } else {
         decodeDeviceID(deviceID, &card, &device, &subdevice, isMidi);
-        getDeviceString(buffer, card, device, subdevice, usePlugHw, isMidi);
+        getDeviceString(buffer, bufferSize, card, device, subdevice, usePlugHw, isMidi);
     }
 }
 

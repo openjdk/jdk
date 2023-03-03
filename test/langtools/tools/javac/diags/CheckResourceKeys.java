@@ -489,8 +489,7 @@ public class CheckResourceKeys {
      * Only strings that look like they might be a resource key are returned.
      */
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
-        InputStream in = fo.openInputStream();
-        try {
+        try (InputStream in = fo.openInputStream()) {
             ClassFile cf = ClassFile.read(in);
             for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
                 if (cpinfo.getTag() == ConstantPool.CONSTANT_Utf8) {
@@ -500,8 +499,6 @@ public class CheckResourceKeys {
                 }
             }
         } catch (ConstantPoolException ignore) {
-        } finally {
-            in.close();
         }
     }
 
