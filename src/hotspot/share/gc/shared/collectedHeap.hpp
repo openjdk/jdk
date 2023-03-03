@@ -446,6 +446,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   MetaspaceSummary create_metaspace_summary();
 
+  // GCs are free to represent the bit representation for null differently in memory,
+  // which is typically not observable when using the Access API. However, if for
+  // some reason a context doesn't allow using the Access API, then this function
+  // explicitly checks if the given memory location contains a null value.
+  bool contains_null(const oop* p);
+
   // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
   // The default behavior is to call print_on() on tty.
