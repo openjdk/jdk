@@ -77,7 +77,7 @@ public class Queue<T> implements ExceptionallyCloseable {
         }
         return true;
     }
-    
+
     // Other close() variants are immediate and abortive
     // This allows whatever is on Q to be processed first.
 
