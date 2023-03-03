@@ -91,6 +91,17 @@ class FreeBlocksTest {
     }
   }
 
+  void deallocate_all() {
+    while (_allocations != nullptr) {
+      allocation_t* a = _allocations;
+      _allocations = a->next;
+      check_marked_range(a->p, a->word_size);
+      _freeblocks.add_block(a->p, a->word_size);
+      delete a;
+      DEBUG_ONLY(_freeblocks.verify();)
+    }
+  }
+
   bool allocate() {
 
     size_t word_size = MAX2(_rgen_allocations.get(), _freeblocks.MinWordSize);
@@ -180,6 +191,10 @@ public:
     // some initial feeding
     _freeblocks.add_block(_fb.get(1024), 1024);
     CHECK_CONTENT(_freeblocks, 1, 1024);
+  }
+
+  ~FreeBlocksTest() {
+    deallocate_all();
   }
 
   static void test_small_allocations() {
