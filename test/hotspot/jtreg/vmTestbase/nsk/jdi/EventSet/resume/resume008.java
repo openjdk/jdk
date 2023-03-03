@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,17 +112,17 @@ public class resume008 extends TestDebuggerType1 {
 
                 case 0:
                 eventRequest = settingThreadStartRequest (
-                                       SUSPEND_NONE,   "ThreadStartRequest1");
+                                       SUSPEND_NONE,   "ThreadStartRequest0");
                 break;
 
                 case 1:
                 eventRequest = settingThreadStartRequest (
-                                       SUSPEND_THREAD, "ThreadStartRequest2");
+                                       SUSPEND_THREAD, "ThreadStartRequest1");
                 break;
 
                 case 2:
                 eventRequest = settingThreadStartRequest (
-                                       SUSPEND_ALL,    "ThreadStartRequest3");
+                                       SUSPEND_ALL,    "ThreadStartRequest2");
                 break;
 
 
@@ -137,6 +137,17 @@ public class resume008 extends TestDebuggerType1 {
 
             EventIterator eventIterator = eventSet.eventIterator();
             Event newEvent = eventIterator.nextEvent();
+            display("       got new event: "  + newEvent);
+
+            // Make sure any spurious ThreadStartEvent got filtered out.
+            if (newEvent instanceof ThreadStartEvent) {
+                ThreadStartEvent t = (ThreadStartEvent)newEvent;
+                if (!t.thread().name().equals(resume008a.THREAD_NAME_PREFIX + i)) {
+                    setFailedStatus("ERROR: ThreadStartEvent is not for expected thread:  " +
+                                    t.thread().name());
+                    return;
+                }
+            }
 
             if ( !(newEvent instanceof ThreadStartEvent)) {
                 setFailedStatus("ERROR: new event is not ThreadStartEvent");
@@ -263,7 +274,6 @@ public class resume008 extends TestDebuggerType1 {
                                                          String property) {
         try {
             ThreadStartRequest tsr = eventRManager.createThreadStartRequest();
-            tsr.addCountFilter(1);
             tsr.setSuspendPolicy(suspendPolicy);
             tsr.putProperty("number", property);
             return tsr;
