@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -698,8 +698,13 @@ public final class String
 
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
+     *
+     * @param  noShare
+     *         {@code true} if the resulting string MUST NOT share the byte array,
+     *         {@code false} if the byte array can be exclusively used to construct
+     *         the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
+    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noShare) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -710,7 +715,11 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                if (noShare || length != bytes.length) {
+                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                } else {
+                    return new String(bytes, LATIN1);
+                }
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
@@ -778,7 +787,7 @@ public final class String
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length);
+            return newStringUTF8NoRepl(src, 0, src.length, false);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -800,6 +809,8 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
+            if (COMPACT_STRINGS)
+                return new String(src, LATIN1);
             return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
         }
         int en = scale(len, cd.maxCharsPerByte());
