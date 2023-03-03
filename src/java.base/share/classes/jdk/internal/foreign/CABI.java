@@ -33,6 +33,7 @@ public enum CABI {
     WIN_64,
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
+    WIN_AARCH_64,
     LINUX_PPC_64,
     LINUX_RISCV_64;
 
