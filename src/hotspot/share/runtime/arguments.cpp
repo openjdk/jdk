@@ -1910,7 +1910,7 @@ void Arguments::process_java_compiler_argument(const char* arg) {
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   if (_sun_java_launcher != _default_java_launcher) {
-    os::free(_sun_java_launcher);
+    os::free(const_cast<char*>(_sun_java_launcher));
   }
   _sun_java_launcher = os::strdup_check_oom(launcher);
 }
