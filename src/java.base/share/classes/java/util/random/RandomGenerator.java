@@ -253,8 +253,47 @@ public interface RandomGenerator {
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
 
-    private DoubleStream equiDoubles(double left, double right,
-            boolean isLeftIncluded, boolean isRightIncluded) {
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified
+     * {@code left} boundary and the specified {@code right} boundary.
+     * The {@code left} boundary is included as indicated by
+     * {@code isLeftIncluded}; similarly, the {@code right} boundary is included
+     * as indicated by {@code isRightIncluded}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i>&delta;
+     * (<i>k</i> integer) lying in the interval specified by the parameters,
+     * where &delta; > 0 is the smallest number for which all these multiples
+     * are exact {@code double}s.
+     * They are therefore all equidistant.
+     *
+     * <p>The uniformity of the distribution of the {@code double}s produced by
+     * the stream is as good as the one of {@link #nextLong(long)}.
+     *
+     * @param left the left boundary
+     * @param right the right boundary
+     * @param isLeftIncluded whether the {@code left} boundary is included
+     * @param isRightIncluded whether the {@code right} boundary is included
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each
+     *         between {@code left} and {@code right}, as specified above.
+     *         The stream never produces {@code -0.0}, although it may produce
+     *         {@code 0.0} if the specified interval contains 0.
+     *
+     * @throws IllegalArgumentException if {@code left} is not finite,
+     *         or {@code right} is not finite, or if the specified interval
+     *         is empty.
+     */
+    default DoubleStream equiDoubles(double left, double right,
+        boolean isLeftIncluded, boolean isRightIncluded) {
+        if (!(Double.NEGATIVE_INFINITY < left
+                && right < Double.POSITIVE_INFINITY
+                && (isLeftIncluded ? left : nextUp(left))
+                    <= (isRightIncluded ? right : nextDown(right)))) {
+            throw new IllegalArgumentException(
+                    "the boundaries must be finite and the interval must not be empty");
+        }
+
         /*
          * Inspired by
          *      Goualard, "Drawing random floating-point numbers from an
@@ -274,10 +313,10 @@ public interface RandomGenerator {
          * kr is the k for the leftmost product k delta to the right of I.
          * n is kr - kl
          */
-        double delta;
-        long kl;
+        double delta;  // captured
+        long kl;  // captured
         long kr;
-        long n;
+        long n;  // captured
 
         if (left <= -right) {
             /*
@@ -364,48 +403,6 @@ public interface RandomGenerator {
         }
         n = kr - kl;
         return DoubleStream.generate(() -> (kl + nextLong(n)) * delta).sequential();
-    }
-
-    /**
-     * Returns an effectively unlimited stream of pseudorandomly chosen
-     * {@code double} values, where each value is between the specified
-     * {@code left} boundary and the specified {@code right} boundary.
-     * The {@code left} boundary is included as indicated by
-     * {@code isLeftIncluded}; similarly, the {@code right} boundary is included
-     * as indicated by {@code isRightIncluded}.
-     *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta;
-     * (<i>k</i> integer) lying in the interval specified by the parameters,
-     * where &delta; > 0 is the smallest number for which all these multiples
-     * are exact {@code double}s.
-     * They are therefore all equidistant.
-     *
-     * <p>The uniformity of the distribution of the {@code double}s produced by
-     * the stream is as good as the one of {@link #nextLong(long)}.
-     *
-     * @param left the left boundary
-     * @param right the right boundary
-     * @param isLeftIncluded whether the {@code left} boundary is included
-     * @param isRightIncluded whether the {@code right} boundary is included
-     *
-     * @return a stream of pseudorandomly chosen {@code double} values, each
-     *         between {@code left} and {@code right}, as specified above.
-     *         The stream never produces {@code -0.0}, although it may produce
-     *         {@code 0.0} if the specified interval contains 0.
-     *
-     * @throws IllegalArgumentException if {@code left} is not finite,
-     *         or {@code right} is not finite, or if the specified interval
-     *         is empty.
-     */
-    default DoubleStream equiDoublesLeftClosedRightOpen(double left, double right,
-        boolean isLeftIncluded, boolean isRightIncluded) {
-        if (!((isLeftIncluded ? left : nextUp(left)) < (isRightIncluded ? nextUp(right) : right)
-                && Double.NEGATIVE_INFINITY < left
-                && right < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException(
-                    "the boundaries must be finite and the interval must not be empty");
-        }
-        return equiDoubles(left, right, isLeftIncluded, isRightIncluded);
     }
 
     /**
