@@ -25,7 +25,7 @@
  * @test
  * @bug 8289551 8302976
  * @summary Verify conversion between float and the binary16 format
- * @requires vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*"
+ * @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch=="aarch64" | (os.arch == "riscv64" & vm.opt.UseZfhmin == true)
  * @comment default run
  * @run main Binary16Conversion
  * @comment C1 JIT compilation only:

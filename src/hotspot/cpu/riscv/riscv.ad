@@ -8193,8 +8193,7 @@ instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
   %}
 
   ins_encode %{
-    __ fmv_h_x($tmp$$FloatRegister, $src$$Register);
-    __ fcvt_s_h($dst$$FloatRegister, $tmp$$FloatRegister);
+    __ flt16_to_flt($dst$$FloatRegister, $src$$Register, $tmp$$FloatRegister);
   %}
 
   ins_pipe(fp_i2f);
@@ -8211,8 +8210,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF tmp) %{
   %}
 
   ins_encode %{
-    __ fcvt_h_s($tmp$$FloatRegister, $src$$FloatRegister);
-    __ fmv_x_h($dst$$Register, $tmp$$FloatRegister);
+    __ flt_to_flt16($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
 
   ins_pipe(fp_f2i);

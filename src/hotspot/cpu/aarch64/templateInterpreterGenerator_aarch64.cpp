@@ -300,6 +300,48 @@ void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpr
   __ blr(rscratch1);
 }
 
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  if (!InlineIntrinsics ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
+    return nullptr;
+  }
+  // r19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  //        [ arg ]
+  // retaddr in lr
+  // result in v0
+
+  address entry_point = __ pc();
+  __ ldrw(c_rarg0, Address(esp));
+  __ flt16_to_flt(v0, c_rarg0, v1);
+  __ mov(sp, r19_sender_sp); // Restore caller's SP
+  __ br(lr);
+  return entry_point;
+}
+
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  if (!InlineIntrinsics ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
+    return nullptr;
+  }
+  // r19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  //        [ arg ]
+  // retaddr in lr
+  // result in c_rarg0
+
+  address entry_point = __ pc();
+  __ ldrs(v0, Address(esp));
+  __ flt_to_flt16(c_rarg0, v0, v1);
+  __ mov(sp, r19_sender_sp); // Restore caller's SP
+  __ br(lr);
+  return entry_point;
+}
+
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {
@@ -1698,14 +1740,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
-
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
-  return nullptr; // TODO: implement
-}
-
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
-  return nullptr; // TODO: implement
-}
 
 //-----------------------------------------------------------------------------
 // Exceptions

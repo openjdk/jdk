@@ -642,20 +642,35 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dabs: // fall through
     case vmIntrinsics::_dsqrt: // fall through
-    case vmIntrinsics::_dsqrt_strict: {
+    case vmIntrinsics::_dsqrt_strict:
+    case vmIntrinsics::_floatToFloat16:
+    case vmIntrinsics::_float16ToFloat: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
+      LIR_Opr src = value.result();
       LIR_Opr dst = rlock_result(x);
 
       switch (x->id()) {
         case vmIntrinsics::_dsqrt: // fall through
         case vmIntrinsics::_dsqrt_strict: {
-          __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
+          __ sqrt(src, dst, LIR_OprFact::illegalOpr);
           break;
         }
         case vmIntrinsics::_dabs: {
-          __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
+          __ abs(src, dst, LIR_OprFact::illegalOpr);
+          break;
+        }
+        case vmIntrinsics::_floatToFloat16: {
+          LIR_Opr tmp = new_register(T_FLOAT);
+          __ move(LIR_OprFact::floatConst(-0.0), tmp);
+          __ f2hf(src, dst, tmp);
+          break;
+        }
+        case vmIntrinsics::_float16ToFloat: {
+          LIR_Opr tmp = new_register(T_FLOAT);
+          __ move(LIR_OprFact::floatConst(-0.0), tmp);
+          __ hf2f(src, dst, tmp);
           break;
         }
         default:

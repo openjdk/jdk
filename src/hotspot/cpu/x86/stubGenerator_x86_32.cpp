@@ -3766,44 +3766,6 @@ class StubGenerator: public StubCodeGenerator {
 
  }
 
-  address generate_float16ToFloat() {
-    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
-
-    address start = __ pc();
-
-    BLOCK_COMMENT("Entry:");
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // Load value into xmm0 and convert.
-    // We need to add additional wordSize because __ enter()
-    // have just pushed ebp on a stack.
-    __ flt16_to_flt(xmm0, rax, Address(rsp, wordSize + wordSize));
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ ret(0);
-
-    return start;
-  }
-
-  address generate_floatToFloat16() {
-    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
-
-    address start = __ pc();
-
-    BLOCK_COMMENT("Entry:");
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // Load value into xmm0, convert and put result into rax.
-    // We need to add additional wordSize because __ enter()
-    // have just pushed ebp on a stack
-    __ flt_to_flt16(rax, xmm0, xmm1, Address(rsp, wordSize + wordSize));
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ ret(0);
-
-    return start;
-  }
-
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
@@ -4171,14 +4133,6 @@ class StubGenerator: public StubCodeGenerator {
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
         StubRoutines::_dlibm_tan_cot_huge = generate_libm_tan_cot_huge();
         StubRoutines::_dtan = generate_libmTan();
-      }
-    }
-    if (VM_Version::supports_f16c() || VM_Version::supports_avx512vl()) {
-      // For results consistency both intrinsics should be enabled.
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
-        StubRoutines::_hf2f = generate_float16ToFloat();
-        StubRoutines::_f2hf = generate_floatToFloat16();
       }
     }
   }

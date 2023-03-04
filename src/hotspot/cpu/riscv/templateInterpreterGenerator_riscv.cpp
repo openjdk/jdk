@@ -301,6 +301,48 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry_point;
 }
 
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  if (!InlineIntrinsics || !UseZfhmin ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
+    return nullptr;
+  }
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  //        [ arg ]
+  // retaddr in ra
+  // result in f10
+
+  address entry_point = __ pc();
+  __ lw(c_rarg0, Address(esp));
+  __ flt16_to_flt(f10, c_rarg0, f11);
+  __ mv(sp, x19_sender_sp); // Restore caller's SP
+  __ jr(ra);
+  return entry_point;
+}
+
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  if (!InlineIntrinsics || !UseZfhmin ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
+    return nullptr;
+  }
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  //        [ arg ]
+  // retaddr in ra
+  // result in c_rarg0
+
+  address entry_point = __ pc();
+  __ flw(f10, Address(esp));
+  __ flt_to_flt16(c_rarg0, f10, f11);
+  __ mv(sp, x19_sender_sp); // Restore caller's SP
+  __ jr(ra);
+  return entry_point;
+}
+
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {
@@ -1460,14 +1502,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   __ ret();
 
   return entry_point;
-}
-
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
-  return nullptr; // TODO: implement
-}
-
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
-  return nullptr; // TODO: implement
 }
 
 //-----------------------------------------------------------------------------

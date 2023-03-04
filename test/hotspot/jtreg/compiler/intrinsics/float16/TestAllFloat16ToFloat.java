@@ -25,13 +25,13 @@
  * @test
  * @bug 8302976
  * @summary Verify conversion between float and the binary16 format
- * @requires vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*"
+ * @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseZfhmin == true)
  * @comment default run:
  * @run main TestAllFloat16ToFloat
  * @comment disable intrinsics:
  * @run main/othervm -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 TestAllFloat16ToFloat
  * @comment eager JIT compilation:
- * @run main/othervm -XX:CompileCommand=compileonly,TestAllFloat16ToFloat::test* -Xbatch TestAllFloat16ToFloat 
+ * @run main/othervm -XX:CompileCommand=compileonly,TestAllFloat16ToFloat::test* -Xbatch TestAllFloat16ToFloat
  * @comment C2 JIT compilation only:
  * @run main/othervm -XX:CompileCommand=compileonly,TestAllFloat16ToFloat::test* -Xbatch -XX:-TieredCompilation TestAllFloat16ToFloat
  * @comment C1 JIT compilation only:

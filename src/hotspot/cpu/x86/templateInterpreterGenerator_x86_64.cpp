@@ -349,7 +349,8 @@ address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
     // r13: the sender's SP
 
     // Load value into xmm0 and convert
-    __ flt16_to_flt(xmm0, rax, Address(rsp, wordSize));
+    __ movswl(rax, Address(rsp, wordSize));
+    __ flt16_to_flt(xmm0, rax);
 
     // Return result in xmm0
     __ pop(rdi);      // get return address
@@ -379,7 +380,8 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
     // r13: the sender's SP
 
     // Load value into xmm0, convert and put result into rax
-    __ flt_to_flt16(rax, xmm0, xmm1, Address(rsp, wordSize));
+    __ movflt(xmm0, Address(rsp, wordSize));
+    __ flt_to_flt16(rax, xmm0, xmm1);
 
     // Return result in rax
     __ pop(rdi);      // get return address

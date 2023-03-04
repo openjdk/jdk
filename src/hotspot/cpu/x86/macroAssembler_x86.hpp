@@ -206,16 +206,6 @@ class MacroAssembler: public Assembler {
     vcvtph2ps(dst, dst, Assembler::AVX_128bit);
   }
 
-  void flt_to_flt16(Register dst, XMMRegister tmp1, XMMRegister tmp2, Address src) {
-    movflt(tmp1, src);
-    flt_to_flt16(dst, tmp1, tmp2);
-  }
-
-  void flt16_to_flt(XMMRegister dst, Register tmp, Address src) {
-    movswl(tmp, src);
-    flt16_to_flt(dst, tmp);
-  }
-
   // Alignment
   void align32();
   void align64();
