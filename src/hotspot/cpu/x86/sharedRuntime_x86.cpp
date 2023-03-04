@@ -84,7 +84,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
-#ifndef _WIN64
+#if defined(TARGET_COMPILER_gcc) && !defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   jfloat retval;
   asm ("\
@@ -114,4 +114,4 @@ jne    1b        \n\
     :"cc", "ax");
   return retval;
 JRT_END
-#endif // !_WIN64
+#endif // TARGET_COMPILER_gcc && !_WIN64

@@ -235,7 +235,7 @@ const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 #endif
 
-#if !defined(X86) || defined(_WIN64)
+#if !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
