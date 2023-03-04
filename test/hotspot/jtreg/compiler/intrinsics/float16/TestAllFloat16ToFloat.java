@@ -29,7 +29,7 @@
  * @comment default run:
  * @run main TestAllFloat16ToFloat
  * @comment disable intrinsics:
- * @run main/othervm -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 TestAllFloat16ToFloat
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 TestAllFloat16ToFloat
  * @comment eager JIT compilation:
  * @run main/othervm -XX:CompileCommand=compileonly,TestAllFloat16ToFloat::test* -Xbatch TestAllFloat16ToFloat
  * @comment C2 JIT compilation only:
