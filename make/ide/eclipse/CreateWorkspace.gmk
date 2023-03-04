@@ -118,11 +118,11 @@ define SetupEclipseWorkspaceBody
     $$(call MakeDir, $$($1_IDE_OUTPUTDIR))
   endif
 
-  # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
-  #   ifeq ($(TOOLCHAIN_TYPE), microsoft)
-  #     $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
-  #   endif
-  # endif
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+    ifeq ($$(call isCompiler, microsoft), true)
+      $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
+    endif
+  endif
 
   ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
 
