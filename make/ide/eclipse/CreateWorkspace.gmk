@@ -234,26 +234,25 @@ define SetupEclipseWorkspaceBody
 
     TARGETS += $$($1_CREATE_NATIVE_FILE)
 
-    $$(call MakeDir, $$($1_SETTINGS_FILE))
+    ifeq ($$($1_SHARED), true)
+      $$(call MakeDir, $(TOPDIR)/.settings)
+    else
+      $$(call MakeDir, $$($1_IDE_OUTPUTDIR)/.settings)
+    endif
 
-    # $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), ))
     $1_CSETTINGS :=
     $1_CXXSETTINGS :=
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      # $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-      #   <resource project-relative-path="$$(dirs)"> \
-      #       <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
-      #   </resource>$$(NEWLINE))
-
-      # jdk.sctp is a special (C only) case that needs several java.base headers
-      $1_CSETTINGS += $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%, $$(call FindModuleNativeDirs, jdk.sctp))), \
-        <resource project-relative-path="$$(dirs)"> \
-            <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/> \
-        </resource>$$(NEWLINE))
+      $1_CSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+          <resource project-relative-path="$$(dirs)"> \
+              <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+              $$(if $$(findstring jdk.sctp,$$(module)),    <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>) \
+          </resource>$$(NEWLINE))))
 
       # main.c source file used for generic launchers
-      $1_CSETTINGS +=
+      $1_CSETTINGS += \
         <resource project-relative-path="src/java.base/share/native/launcher/main.c"> \
             <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/> \
         </resource>$$(NEWLINE)
@@ -299,17 +298,20 @@ define SetupEclipseWorkspaceBody
 
     # Now the rest of the C++ sources in the codebase
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      # $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-      #   <resource project-relative-path="$$(dirs)"> \
-      #       <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
-      #   </resource>$$(NEWLINE))
+      $1_CXXSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+          <resource project-relative-path="$$(dirs)"> \
+              <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+          </resource>$$(NEWLINE))))
     endif
 
     $$(eval $$(call SetupTextFileProcessing, $1_CREATE_SETTINGS_FILE, \
       SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/settings.template, \
       OUTPUT_FILE := $$($1_SETTINGS_FILE), \
       REPLACEMENTS := \
-          @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR), \
+          @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
+          @@CSETTINGS@@ => $$($1_CSETTINGS) ; \
+          @@CXXSETTINGS@@ => $$($1_CXXSETTINGS), \
     ))
 
     TARGETS += $$($1_CREATE_SETTINGS_FILE)
