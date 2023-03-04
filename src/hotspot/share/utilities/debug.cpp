@@ -76,18 +76,15 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-bool DebuggingContext::_enabled = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
 
 DebuggingContext::DebuggingContext() {
-  // Not an assert, since asserts are disabled by DebuggingContext.
-  if (is_enabled()) {
-    fatal("Multiple Debugging contexts");
-  }
-  _enabled = true;
+  _enabled += 1;                // Increase nesting count.
 }
 
 DebuggingContext::~DebuggingContext() {
-  _enabled = false;
+  assert(is_enabled(), "Debugging nesting confusion");
+  _enabled -= 1;                // Decrease nesting count.
 }
 
 #ifndef ASSERT

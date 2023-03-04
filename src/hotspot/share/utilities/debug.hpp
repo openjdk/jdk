@@ -55,14 +55,14 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
 // those operations are not normally permitted, with the state checked by an
 // assert.  We want the debugging commands to bypass those checks.
 class DebuggingContext {
-  static bool _enabled;
+  static int _enabled;          // Nesting counter.
 
 public:
   DebuggingContext();
   ~DebuggingContext();
   // Asserts and other code use this to determine whether to bypass checks
   // that would otherwise lead to program termination.
-  static bool is_enabled() { return _enabled; }
+  static bool is_enabled() { return _enabled > 0; }
 };
 
 // VMASSERT_CHECK_PASSED(P) provides the mechanism by which DebuggingContext
