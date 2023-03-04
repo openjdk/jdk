@@ -197,11 +197,9 @@ void ZNMethod::disarm(nmethod* nm) {
   bs->disarm(nm);
 }
 
-void ZNMethod::arm(nmethod* nm, int arm_value) {
+void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs != NULL) {
-    bs->arm(nm, arm_value);
-  }
+  bs->set_guard_value(nm, value);
 }
 
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
@@ -300,9 +298,9 @@ public:
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
     if (ZNMethod::is_armed(nm)) {
-      // Heal oops and disarm
+      // Heal oops and arm phase invariantly
       ZNMethod::nmethod_oops_barrier(nm);
-      ZNMethod::arm(nm, 0);
+      ZNMethod::set_guard_value(nm, 0);
     }
 
     // Clear compiled ICs and exception caches

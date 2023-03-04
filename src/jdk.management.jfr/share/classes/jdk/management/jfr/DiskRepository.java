@@ -139,7 +139,7 @@ final class DiskRepository implements Closeable {
     private long typeId;
     private int typeIdshift;
     private int sizeShift;
-    private int payLoadSize;
+    private long payLoadSize;
     private int longValueshift;
     private int eventFieldSize;
     private int lastFlush;
@@ -225,7 +225,7 @@ final class DiskRepository implements Closeable {
     private void processEvent() {
         int left = currentByteArray.length - index;
         if (left >= payLoadSize) {
-            index += payLoadSize;
+            index = index + (int)payLoadSize;
             payLoadSize = 0;
             state = State.EVENT_SIZE;
         } else {
@@ -261,7 +261,7 @@ final class DiskRepository implements Closeable {
 
         eventFieldSize++;
         byte b = nextByte(false);
-        int v = (b & 0x7F);
+        long v = (b & 0x7F);
         payLoadSize += (v << sizeShift);
         if (b >= 0) {
             if (payLoadSize == 0) {

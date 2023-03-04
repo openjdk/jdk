@@ -27,8 +27,9 @@
 #include "gc/z/zSafeDelete.hpp"
 
 #include "gc/z/zArray.inline.hpp"
-#include "metaprogramming/isArray.hpp"
 #include "utilities/debug.hpp"
+
+#include <type_traits>
 
 template <typename T>
 ZSafeDeleteImpl<T>::ZSafeDeleteImpl(ZLock* lock) :
@@ -49,7 +50,7 @@ bool ZSafeDeleteImpl<T>::deferred_delete(ItemT* item) {
 
 template <typename T>
 void ZSafeDeleteImpl<T>::immediate_delete(ItemT* item) {
-  if (IsArray<T>::value) {
+  if (std::is_array<T>::value) {
     delete [] item;
   } else {
     delete item;

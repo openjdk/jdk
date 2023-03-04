@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -358,8 +359,12 @@ public final class ProcessTools {
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
 
-        args.add("-cp");
-        args.add(System.getProperty("java.class.path"));
+        String noCPString = System.getProperty("test.noclasspath", "false");
+        boolean noCP = Boolean.valueOf(noCPString);
+        if (!noCP) {
+            args.add("-cp");
+            args.add(System.getProperty("java.class.path"));
+        }
 
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null) {
@@ -374,7 +379,12 @@ public final class ProcessTools {
             cmdLine.append(cmd).append(' ');
         System.out.println("Command line: [" + cmdLine.toString() + "]");
 
-        return new ProcessBuilder(args);
+        ProcessBuilder pb = new ProcessBuilder(args);
+        if (noCP) {
+            // clear CLASSPATH from the env
+            pb.environment().remove("CLASSPATH");
+        }
+        return pb;
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {
@@ -814,9 +824,6 @@ public final class ProcessTools {
         }
 
         public void uncaughtException(Thread t, Throwable e) {
-            if (e instanceof ThreadDeath) {
-                return;
-            }
             e.printStackTrace(System.err);
             uncaughtThrowable = e;
         }

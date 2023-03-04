@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,41 @@
 /*
  * @test
  * @bug 4074599 4939441
+ * @build Tests
+ * @build Log10Tests
+ * @run main Log10Tests
  * @summary Tests for {Math, StrictMath}.log10
  */
+
+import static java.lang.Double.longBitsToDouble;
 
 public class Log10Tests {
     private Log10Tests(){}
 
-    static final double infinityD = Double.POSITIVE_INFINITY;
-    static final double NaNd = Double.NaN;
-    static final double LN_10 = StrictMath.log(10.0);
+    private static final double infinityD = Double.POSITIVE_INFINITY;
+    private static final double NaNd = Double.NaN;
+    private static final double LN_10 = StrictMath.log(10.0);
 
     // Initialize shared random number generator
     static java.util.Random rand = new java.util.Random(0L);
 
-    static int testLog10Case(double input, double expected) {
+    private static int testLog10Case(double input, double expected) {
         int failures=0;
 
-        failures+=Tests.test("Math.log10",       input, Math::log10,       expected);
-        failures+=Tests.test("StrictMath.log10", input, StrictMath::log10, expected);
+        failures += Tests.test("Math.log10",       input, Math::log10,       expected);
+        failures += Tests.test("StrictMath.log10", input, StrictMath::log10, expected);
 
         return failures;
     }
 
-    static int testLog10() {
+    private static int testLog10() {
         int failures = 0;
 
+        for(double nan : Tests.NaNs) {
+            failures += testLog10Case(nan, NaNd);
+        }
+
         double [][] testCases = {
-            {Double.NaN,                NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.NEGATIVE_INFINITY,  NaNd},
             {-8.0,                      NaNd},
             {-1.0,                      NaNd},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
@@ -86,6 +88,8 @@ class DatagramChannelImpl
 {
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new DatagramDispatcher();
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // true if interruptible (can be false to emulate legacy DatagramSocket)
     private final boolean interruptible;
@@ -577,7 +581,7 @@ class DatagramChannelImpl
                             n = receive(dst, connected);
                         }
                     }
-                    if (n >= 0) {
+                    if (n > 0 || (n == 0 && isOpen())) {
                         // sender address is in socket address buffer
                         sender = sourceSocketAddress();
                     }
@@ -697,7 +701,7 @@ class DatagramChannelImpl
                 park(Net.POLLIN);
                 n = receive(dst, connected);
             }
-            if (n >= 0) {
+            if (n > 0 || (n == 0 && isOpen())) {
                 // sender address is in socket address buffer
                 sender = sourceSocketAddress();
             }
@@ -734,7 +738,7 @@ class DatagramChannelImpl
                     park(Net.POLLIN, remainingNanos);
                     n = receive(dst, connected);
                 }
-                if (n >= 0) {
+                if (n > 0 || (n == 0 && isOpen())) {
                     // sender address is in socket address buffer
                     sender = sourceSocketAddress();
                 }
@@ -780,13 +784,18 @@ class DatagramChannelImpl
                                         boolean connected)
         throws IOException
     {
-        int n = receive0(fd,
-                         ((DirectBuffer)bb).address() + pos, rem,
-                         sourceSockAddr.address(),
-                         connected);
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int n = receive0(fd,
+                             ((DirectBuffer)bb).address() + pos, rem,
+                             sourceSockAddr.address(),
+                             connected);
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
     /**
@@ -930,6 +939,7 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
+        NIO_ACCESS.acquireSession(bb);
         try {
             int addressLen = targetSocketAddress(target);
             written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
@@ -938,6 +948,8 @@ class DatagramChannelImpl
             if (isConnected())
                 throw pue;
             written = rem;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
         }
         if (written > 0)
             bb.position(pos + written);

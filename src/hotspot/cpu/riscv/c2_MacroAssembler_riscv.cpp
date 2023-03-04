@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -242,37 +242,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 }
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  IncompressibleRegion ir(this);  // Fixed length: see C2_MacroAssembler::entry_barrier_stub_size()
-
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
-  int alignment_bytes = align(4);
-
-  bind(stub->slow_path());
-
-  int32_t offset = 0;
-  movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  jalr(ra, t0, offset);
-  j(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  assert_alignment(pc());
-  emit_int32(0);  // nmethod guard value
-  // make sure the stub with a fixed code size
-  if (alignment_bytes == 2) {
-    assert(UseRVC, "bad alignment");
-    c_nop();
-  } else {
-    assert(alignment_bytes == 0, "bad alignment");
-    nop();
-  }
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 8 * 4 + 4; // 4 bytes for alignment margin
-}
 
 // Search for needle in haystack and return index or -1
 // x10: result
@@ -593,7 +562,12 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
     assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
   }
-  trampoline_call(stub);
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE, NOMATCH));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(NOMATCH);
@@ -996,7 +970,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       ShouldNotReachHere();
   }
   assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-  trampoline_call(stub);
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(SHORT_STRING);
@@ -1638,10 +1617,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min) {
+                                    bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, length_in_bytes);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1656,11 +1635,11 @@ void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, Vec
 void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min) {
+                                           bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(src2, tmp1, tmp2);
 
   Label L_done, L_NaN;
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, length_in_bytes);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2)
@@ -1693,11 +1672,10 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
                                             Register src1, VectorRegister src2,
-                                            BasicType bt, int opc) {
+                                            BasicType bt, int opc, int length_in_bytes) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
 
-  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-  vsetvli(t0, x0, sew);
+  rvv_vsetvli(bt, length_in_bytes);
 
   vmv_s_x(tmp, src1);
 
@@ -1726,4 +1704,21 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
   }
 
   vmv_x_s(dst, tmp);
+}
+
+// Set vl and vtype for full and partial vector operations.
+// (vlmul = m1, vma = mu, vta = tu, vill = false)
+void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp) {
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  if (length_in_bytes == MaxVectorSize) {
+    vsetvli(tmp, x0, sew);
+  } else {
+    int num_elements = length_in_bytes / type2aelembytes(bt);
+    if (num_elements <= 31) {
+      vsetivli(tmp, num_elements, sew);
+    } else {
+      mv(tmp, num_elements);
+      vsetvli(tmp, tmp, sew);
+    }
+  }
 }

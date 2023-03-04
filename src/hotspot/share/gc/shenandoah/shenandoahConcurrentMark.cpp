@@ -60,7 +60,7 @@ public:
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
     ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
-    assert(rp != NULL, "need reference processor");
+    assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, rp,
                    true /*cancellable*/,
@@ -78,18 +78,15 @@ private:
 public:
   ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
-    _cl(cl),
-    _claim_token(Threads::thread_claim_token()) {}
+    _cl(cl)  {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_threads_do(true, _claim_token)) {
-      // Transfer any partial buffer to the qset for completed buffer processing.
-      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-      if (thread->is_Java_thread()) {
-        if (_cl != NULL) {
-          ResourceMark rm;
-          thread->oops_do(_cl, NULL);
-        }
+    // Transfer any partial buffer to the qset for completed buffer processing.
+    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+    if (thread->is_Java_thread()) {
+      if (_cl != nullptr) {
+        ResourceMark rm;
+        thread->oops_do(_cl, nullptr);
       }
     }
   }
@@ -124,8 +121,8 @@ public:
 
       ShenandoahMarkRefsClosure             mark_cl(q, rp);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
-                                               ShenandoahIUBarrier ? &mark_cl : NULL);
-      Threads::threads_do(&tc);
+                                               ShenandoahIUBarrier ? &mark_cl : nullptr);
+      Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, rp,
                    false /*not cancellable*/,

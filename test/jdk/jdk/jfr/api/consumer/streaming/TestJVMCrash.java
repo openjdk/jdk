@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ import jdk.jfr.consumer.EventStream;
  */
 public class TestJVMCrash {
 
-    public static void main(String... args) throws Exception  {
+    public static void main(String... args) {
         int id = 1;
         while (true) {
-            try (TestProcess process = new TestProcess("crash-application-" + id++))  {
+            try (TestProcess process = new TestProcess("crash-application-" + id++, false /* createCore */))  {
                 AtomicInteger eventCounter = new AtomicInteger();
                 try (EventStream es = EventStream.openRepository(process.getRepository())) {
                     // Start from first event in repository
@@ -61,6 +61,9 @@ public class TestJVMCrash {
                     }
                     System.out.println("Incorrect event count. Retrying...");
                 }
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.getMessage());
+                System.out.println("Retrying...");
             }
         }
     }

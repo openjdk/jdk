@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -32,8 +32,6 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/genOopClosures.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -44,8 +42,8 @@
 #include "utilities/events.hpp"
 
 Generation::Generation(ReservedSpace rs, size_t initial_size) :
-  _gc_manager(NULL),
-  _ref_processor(NULL) {
+  _gc_manager(nullptr),
+  _ref_processor(nullptr) {
   if (!_virtual_space.initialize(rs, initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
@@ -75,7 +73,7 @@ size_t Generation::max_capacity() const {
 // By default we get a single threaded default reference processor;
 // generations needing multi-threaded refs processing or discovery override this method.
 void Generation::ref_processor_init() {
-  assert(_ref_processor == NULL, "a reference processor already exists");
+  assert(_ref_processor == nullptr, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
   _span_based_discoverer.set_span(_reserved);
   _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
@@ -111,11 +109,11 @@ class GenerationIsInReservedClosure : public SpaceClosure {
   const void* _p;
   Space* sp;
   virtual void do_space(Space* s) {
-    if (sp == NULL) {
+    if (sp == nullptr) {
       if (s->is_in_reserved(_p)) sp = s;
     }
   }
-  GenerationIsInReservedClosure(const void* p) : _p(p), sp(NULL) {}
+  GenerationIsInReservedClosure(const void* p) : _p(p), sp(nullptr) {}
 };
 
 class GenerationIsInClosure : public SpaceClosure {
@@ -123,17 +121,17 @@ class GenerationIsInClosure : public SpaceClosure {
   const void* _p;
   Space* sp;
   virtual void do_space(Space* s) {
-    if (sp == NULL) {
+    if (sp == nullptr) {
       if (s->is_in(_p)) sp = s;
     }
   }
-  GenerationIsInClosure(const void* p) : _p(p), sp(NULL) {}
+  GenerationIsInClosure(const void* p) : _p(p), sp(nullptr) {}
 };
 
 bool Generation::is_in(const void* p) const {
   GenerationIsInClosure blk(p);
   ((Generation*)this)->space_iterate(&blk);
-  return blk.sp != NULL;
+  return blk.sp != nullptr;
 }
 
 size_t Generation::max_contiguous_available() const {
@@ -160,17 +158,17 @@ oop Generation::promote(oop obj, size_t obj_size) {
 
 #ifndef PRODUCT
   if (GenCollectedHeap::heap()->promotion_should_fail()) {
-    return NULL;
+    return nullptr;
   }
 #endif  // #ifndef PRODUCT
 
   // Allocate new object.
   HeapWord* result = allocate(obj_size, false);
-  if (result == NULL) {
+  if (result == nullptr) {
     // Promotion of obj into gen failed.  Try to expand and allocate.
     result = expand_and_allocate(obj_size, false);
-    if (result == NULL) {
-      return NULL;
+    if (result == nullptr) {
+      return nullptr;
     }
   }
 
@@ -199,11 +197,11 @@ class GenerationBlockStartClosure : public SpaceClosure {
   const void* _p;
   HeapWord* _start;
   virtual void do_space(Space* s) {
-    if (_start == NULL && s->is_in_reserved(_p)) {
+    if (_start == nullptr && s->is_in_reserved(_p)) {
       _start = s->block_start(_p);
     }
   }
-  GenerationBlockStartClosure(const void* p) { _p = p; _start = NULL; }
+  GenerationBlockStartClosure(const void* p) { _p = p; _start = nullptr; }
 };
 
 HeapWord* Generation::block_start(const void* p) const {
@@ -287,7 +285,7 @@ void Generation::object_iterate(ObjectClosure* cl) {
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
   CompactibleSpace* space = first_compaction_space();
-  while (space != NULL) {
+  while (space != nullptr) {
     space->prepare_for_compaction(cp);
     space = space->next_compaction_space();
   }
@@ -309,7 +307,7 @@ void Generation::adjust_pointers() {
 
 void Generation::compact() {
   CompactibleSpace* sp = first_compaction_space();
-  while (sp != NULL) {
+  while (sp != nullptr) {
     sp->compact();
     sp = sp->next_compaction_space();
   }

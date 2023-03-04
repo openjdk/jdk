@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+#include <type_traits>
+
 class OopStorage;
 
 // Simple classes for wrapping oop and atomically accessed oop pointers
@@ -41,7 +43,7 @@ private:
   oop* _obj;
 
 public:
-  OopHandle() : _obj(NULL) {}
+  OopHandle() : _obj(nullptr) {}
   explicit OopHandle(oop* w) : _obj(w) {}
   OopHandle(OopStorage* storage, oop obj);
 
@@ -62,7 +64,7 @@ public:
   inline oop resolve() const;
   inline oop peek() const;
 
-  bool is_empty() const { return _obj == NULL; }
+  bool is_empty() const { return _obj == nullptr; }
 
   inline void release(OopStorage* storage);
 
@@ -70,14 +72,13 @@ public:
 
   inline oop xchg(oop new_value);
 
-  // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }
 };
 
 // Convert OopHandle to oop*
 
 template<>
-struct PrimitiveConversions::Translate<OopHandle> : public TrueType {
+struct PrimitiveConversions::Translate<OopHandle> : public std::true_type {
   typedef OopHandle Value;
   typedef oop* Decayed;
 

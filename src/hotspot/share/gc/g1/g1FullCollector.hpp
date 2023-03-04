@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
   G1FullGCScope             _scope;
   uint                      _num_workers;
+  bool                      _has_compaction_targets;
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
   OopQueueSet               _oop_queue_set;
@@ -137,6 +138,11 @@ public:
   inline void set_compaction_top(HeapRegion* r, HeapWord* value);
   inline HeapWord* compaction_top(HeapRegion* r) const;
 
+  inline void set_has_compaction_targets();
+  inline bool has_compaction_targets() const;
+
+  uint truncate_parallel_cps();
+
 private:
   void phase1_mark_live_objects();
   void phase2_prepare_compaction();
@@ -147,6 +153,7 @@ private:
 
   void phase3_adjust_pointers();
   void phase4_do_compaction();
+  void phase5_reset_metadata();
 
   void restore_marks();
   void verify_after_marking();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,21 +44,6 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
-  blr(rscratch1);
-  b(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  emit_int32(0);   // nmethod guard value
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 4 * 6;
-}
 
 // Search for str1 in str2 and return index or -1
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
@@ -313,7 +298,12 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
       assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
     }
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(LINEARSEARCH, LINEAR_MEDIUM, DONE, NOMATCH, MATCH));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
   }
 
@@ -872,7 +862,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
         ShouldNotReachHere();
      }
     assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
 
   bind(SHORT_STRING);
@@ -930,7 +925,7 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
       case BoolTest::ne: {
         fcmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
+        notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
       case BoolTest::ge: fcmge(dst, size, src1, src2); break;
@@ -946,7 +941,7 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       case BoolTest::eq: cmeq(dst, size, src1, src2); break;
       case BoolTest::ne: {
         cmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
+        notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
       case BoolTest::ge: cmge(dst, size, src1, src2); break;
@@ -960,6 +955,26 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       default:
         assert(false, "unsupported");
         ShouldNotReachHere();
+    }
+  }
+}
+
+void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
+                                          Condition cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    if (cond == Assembler::NE) {
+      fcm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      fcm(cond, dst, size, src);
+    }
+  } else {
+    if (cond == Assembler::NE) {
+      cm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      cm(cond, dst, size, src);
     }
   }
 }

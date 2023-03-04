@@ -24,7 +24,7 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415 6339649 6933879 8037396 8272072 8051627
+ *      7171415 6339649 6933879 8037396 8272072 8051627 8297687
  * @author Mark Reinhold
  */
 
@@ -1619,6 +1619,53 @@ public class Test {
         b8037396();
         b8051627();
         b8272072();
+        b8297687();
+    }
+
+    private static void b8297687() {
+        // constructors that take a hostname should fail
+        test("ftps", "p.e.local|SIT@p.e.local", "/path", null)
+                .x().z();
+        test("ftps", null,"p.e.local|SIT@p.e.local", -1, "/path", null, null)
+                .x().z();
+        // constructors that take an authority component should succeed
+        test("ftps", "p.e.local|SIT@p.e.local", "/path", null,null)
+                .s("ftps")
+                .sp("//p.e.local%7CSIT@p.e.local/path")
+                .spd("//p.e.local|SIT@p.e.local/path")
+                .u("p.e.local%7CSIT")
+                .ud("p.e.local|SIT")
+                .h("p.e.local")
+                .n(-1)
+                .p("/path")
+                .pd("/path")
+                .z();
+
+        // check index in exception for constructors that should fail
+        try {
+            URI uri = new URI("ftps", "p.e.local|SIT@p.e.local", "/path", null);
+            throw new AssertionError("Expected URISyntaxException not thrown for " + uri);
+        } catch (URISyntaxException ex) {
+            if (ex.getMessage().contains("at index 16")) {
+                 System.out.println("Got expected exception: " + ex);
+            } else {
+                throw new AssertionError("Exception does not point at index 16", ex);
+            }
+        }
+        testCount++;
+
+        // check index in exception for constructors that should fail
+        try {
+            URI uri = new URI("ftps", null, "p.e.local|SIT@p.e.local", -1, "/path", null, null);
+            throw new AssertionError("Expected URISyntaxException not thrown for " + uri);
+        } catch (URISyntaxException ex) {
+            if (ex.getMessage().contains("at index 16")) {
+                System.out.println("Got expected exception: " + ex);
+            } else {
+                throw new AssertionError("Exception does not point at index 16", ex);
+            }
+        }
+        testCount++;
     }
 
     // 6339649 - include detail message from nested exception

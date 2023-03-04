@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,22 @@ ifeq ($(call isTargetOs, windows), true)
   $(foreach v, $(JVM_VARIANTS), \
     $(eval $(call SetupCopyFiles, COPY_GTEST_MSVCR_$v, \
         DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
-        FILES := $(MSVCR_DLL) $(VCRUNTIME_1_DLL) $(MSVCP_DLL), \
+        FILES := $(MSVCR_DLL), \
         FLATTEN := true, \
     )) \
     $(eval TARGETS += $$(COPY_GTEST_MSVCR_$v)) \
+    $(eval $(call SetupCopyFiles, COPY_GTEST_VCRUNTIME_1_$v, \
+        DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
+        FILES := $(VCRUNTIME_1_DLL), \
+        FLATTEN := true, \
+    )) \
+    $(eval TARGETS += $$(COPY_GTEST_VCRUNTIME_1_$v)) \
+    $(eval $(call SetupCopyFiles, COPY_GTEST_MSVCP_$v, \
+        DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
+        FILES := $(MSVCP_DLL), \
+        FLATTEN := true, \
+    )) \
+    $(eval TARGETS += $$(COPY_GTEST_MSVCP_$v)) \
     $(if $(call equals, $(COPY_DEBUG_SYMBOLS), true), \
       $(eval $(call SetupCopyFiles, COPY_GTEST_PDB_$v, \
           SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/gtest, \

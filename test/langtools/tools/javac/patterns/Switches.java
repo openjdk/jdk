@@ -92,6 +92,10 @@ public class Switches {
         assertEquals("a", deconstructExpression(new R("a")));
         assertEquals("1", deconstructExpression(new R(1)));
         assertEquals("other", deconstructExpression(""));
+        assertEquals("a", translationTest("a"));
+        assertEquals("Rb", translationTest(new R("b")));
+        assertEquals("R2c", translationTest(new R2("c")));
+        assertEquals("other", translationTest(0));
         assertEquals("OK", totalPatternAndNull(Integer.valueOf(42)));
         assertEquals("OK", totalPatternAndNull(null));
         assertEquals("1", nullAfterTotal(Integer.valueOf(42)));
@@ -99,6 +103,8 @@ public class Switches {
         emptyFallThrough(1);
         emptyFallThrough("");
         emptyFallThrough(1.0);
+        testSimpleSwitch();
+        testSimpleSwitchExpression();
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -636,6 +642,15 @@ public class Switches {
         };
     }
 
+    String translationTest(Object o) {
+        return switch (o) {
+            case R(String s) -> "R" + s;
+            case String s -> s;
+            case R2(String s) -> "R2" + s;
+            default -> "other";
+        };
+    }
+
     String totalPatternAndNull(Integer in) {
         return switch (in) {
             case -1: { yield "";}
@@ -657,6 +672,23 @@ public class Switches {
             case String s:
             case Object obj:
         }
+    }
+
+    void testSimpleSwitch() {
+        Object o = "";
+        int res;
+        switch (o) {
+            default -> res = 1;
+        };
+        assertEquals(1, res);
+    }
+
+    void testSimpleSwitchExpression() {
+        Object o = "";
+        int res = switch (o) {
+            default -> 1;
+        };
+        assertEquals(1, res);
     }
 
     //verify that for cases like:
@@ -700,4 +732,5 @@ public class Switches {
     }
 
     record R(Object o) {}
+    record R2(Object o) {}
 }

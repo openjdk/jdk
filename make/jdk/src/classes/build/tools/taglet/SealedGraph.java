@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.file.StandardOpenOption.*;
+import static java.util.stream.Collectors.joining;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
@@ -98,7 +99,7 @@ public final class SealedGraph implements Taglet {
                 .map(Objects::toString)
                 .collect(Collectors.toUnmodifiableSet());
 
-        String dotContent = Renderer.graph(typeElement, exports);
+        String dotContent = new Renderer().graph(typeElement, exports);
 
         try  {
             Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);
@@ -133,13 +134,10 @@ public final class SealedGraph implements Taglet {
                 (height <= 0 ? "" : " height=\"" + height + "\""));
     }
 
-    private static final class Renderer {
-
-        private Renderer() {
-        }
+    private final class Renderer {
 
         // Generates a graph in DOT format
-        static String graph(TypeElement rootClass, Set<String> exports) {
+        String graph(TypeElement rootClass, Set<String> exports) {
             final State state = new State(rootClass);
             traverse(state, rootClass, exports);
             return state.render();
@@ -155,17 +153,21 @@ public final class SealedGraph implements Taglet {
             }
         }
 
-        private static final class State {
+        private final class State {
 
             private static final String LABEL = "label";
             private static final String TOOLTIP = "tooltip";
+            private static final String LINK = "href";
             private static final String STYLE = "style";
+
+            private final TypeElement rootNode;
 
             private final StringBuilder builder;
 
             private final Map<String, Map<String, String>> nodeStyleMap;
 
             public State(TypeElement rootNode) {
+                this.rootNode = rootNode;
                 nodeStyleMap = new LinkedHashMap<>();
                 builder = new StringBuilder()
                         .append("digraph G {")
@@ -188,10 +190,28 @@ public final class SealedGraph implements Taglet {
                 var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
                 styles.put(LABEL, node.getSimpleName().toString());
                 styles.put(TOOLTIP, node.getQualifiedName().toString());
+                styles.put(LINK, relativeLink(node));
                 if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                     // This indicates that the hierarchy is not closed
                     styles.put(STYLE, "dashed");
                 }
+            }
+
+            // A permitted class must be in the same package or in the same module.
+            // This implies the module is always the same.
+            private String relativeLink(TypeElement node) {
+                var util = SealedGraph.this.docletEnvironment.getElementUtils();
+                var rootPackage = util.getPackageOf(rootNode);
+                var nodePackage = util.getPackageOf(node);
+                var backNavigator = rootPackage.getQualifiedName().toString().chars()
+                        .filter(c -> c == '.')
+                        .mapToObj(c -> "../")
+                        .collect(joining()) +
+                        "../";
+                var forwardNavigator = nodePackage.getQualifiedName().toString()
+                        .replace(".", "/");
+
+                return backNavigator + forwardNavigator + "/" + node.getSimpleName() + ".html";
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
@@ -209,8 +229,8 @@ public final class SealedGraph implements Taglet {
                             .append('"').append(nodeName).append("\" ")
                             .append(styles.entrySet().stream()
                                     .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
-                                    .collect(Collectors.joining(" ", "[", "]")))
-                            .append(System.lineSeparator());
+                                    .collect(joining(" ", "[", "]")))
+                            .append(lineSeparator());
                 });
                 builder.append("}");
                 return builder.toString();

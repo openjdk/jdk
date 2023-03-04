@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,21 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
-import jdk.internal.foreign.MemoryAddressImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -66,26 +63,26 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 
-public class SharedUtils {
+public final class SharedUtils {
+
+    private SharedUtils() {
+    }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final MethodHandle MH_ALLOC_BUFFER;
-    private static final MethodHandle MH_BASEADDRESS;
     private static final MethodHandle MH_BUFFER_COPY;
-    private static final MethodHandle MH_REACHBILITY_FENCE;
+    private static final MethodHandle MH_REACHABILITY_FENCE;
 
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             MH_ALLOC_BUFFER = lookup.findVirtual(SegmentAllocator.class, "allocate",
                     methodType(MemorySegment.class, MemoryLayout.class));
-            MH_BASEADDRESS = lookup.findVirtual(MemorySegment.class, "address",
-                    methodType(MemoryAddress.class));
             MH_BUFFER_COPY = lookup.findStatic(SharedUtils.class, "bufferCopy",
-                    methodType(MemoryAddress.class, MemoryAddress.class, MemorySegment.class));
-            MH_REACHBILITY_FENCE = lookup.findStatic(Reference.class, "reachabilityFence",
+                    methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            MH_REACHABILITY_FENCE = lookup.findStatic(Reference.class, "reachabilityFence",
                     methodType(void.class, Object.class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
@@ -97,62 +94,12 @@ public class SharedUtils {
         throw new IllegalStateException("Cannot get here");
     };
 
-    /**
-     * Align the specified type from a given address
-     * @return The address the data should be at based on alignment requirement
-     */
-    public static long align(MemoryLayout t, boolean isVar, long addr) {
-        return alignUp(addr, alignment(t, isVar));
-    }
-
     public static long alignUp(long addr, long alignment) {
         return ((addr - 1) | (alignment - 1)) + 1;
     }
 
     /**
-     * The alignment requirement for a given type
-     * @param isVar indicate if the type is a standalone variable. This change how
-     * array is aligned. for example.
-     */
-    public static long alignment(MemoryLayout t, boolean isVar) {
-        if (t instanceof ValueLayout) {
-            return alignmentOfScalar((ValueLayout) t);
-        } else if (t instanceof SequenceLayout) {
-            // when array is used alone
-            return alignmentOfArray((SequenceLayout) t, isVar);
-        } else if (t instanceof GroupLayout) {
-            return alignmentOfContainer((GroupLayout) t);
-        } else if (t.isPadding()) {
-            return 1;
-        } else {
-            throw new IllegalArgumentException("Invalid type: " + t);
-        }
-    }
-
-    private static long alignmentOfScalar(ValueLayout st) {
-        return st.byteSize();
-    }
-
-    private static long alignmentOfArray(SequenceLayout ar, boolean isVar) {
-        if (ar.elementCount() == 0) {
-            // VLA or incomplete
-            return 16;
-        } else if ((ar.byteSize()) >= 16 && isVar) {
-            return 16;
-        } else {
-            // align as element type
-            MemoryLayout elementType = ar.elementLayout();
-            return alignment(elementType, false);
-        }
-    }
-
-    private static long alignmentOfContainer(GroupLayout ct) {
-        // Most strict member
-        return ct.memberLayouts().stream().mapToLong(t -> alignment(t, false)).max().orElse(1);
-    }
-
-    /**
-     * Takes a MethodHandle that takes an input buffer as a first argument (a MemoryAddress), and returns nothing,
+     * Takes a MethodHandle that takes an input buffer as a first argument (a MemorySegment), and returns nothing,
      * and adapts it to return a MemorySegment, by allocating a MemorySegment for the input
      * buffer, calling the target MethodHandle, and then returning the allocated MemorySegment.
      *
@@ -163,27 +110,27 @@ public class SharedUtils {
      * @param cDesc the function descriptor of the native function (with actual return layout)
      * @return the adapted handle
      */
-    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc) {
+    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc, CallingSequence sequence) {
         if (handle.type().returnType() != void.class)
             throw new IllegalArgumentException("return expected to be void for in memory returns: " + handle.type());
-        if (handle.type().parameterType(2) != MemoryAddress.class)
-            throw new IllegalArgumentException("MemoryAddress expected as third param: " + handle.type());
+        int imrAddrIdx = sequence.numLeadingParams();
+        if (handle.type().parameterType(imrAddrIdx) != MemorySegment.class)
+            throw new IllegalArgumentException("MemorySegment expected as third param: " + handle.type());
         if (cDesc.returnLayout().isEmpty())
             throw new IllegalArgumentException("Return layout needed: " + cDesc);
 
         MethodHandle ret = identity(MemorySegment.class); // (MemorySegment) MemorySegment
-        handle = collectArguments(ret, 1, handle); // (MemorySegment, Addressable, SegmentAllocator, MemoryAddress, ...) MemorySegment
-        handle = collectArguments(handle, 3, MH_BASEADDRESS); // (MemorySegment, Addressable, SegmentAllocator, MemorySegment, ...) MemorySegment
-        handle = mergeArguments(handle, 0, 3);  // (MemorySegment, Addressable, SegmentAllocator, ...) MemorySegment
-        handle = collectArguments(handle, 0, insertArguments(MH_ALLOC_BUFFER, 1, cDesc.returnLayout().get())); // (SegmentAllocator, Addressable, SegmentAllocator, ...) MemoryAddress
-        handle = mergeArguments(handle, 0, 2);  // (SegmentAllocator, Addressable, ...) MemoryAddress
-        handle = swapArguments(handle, 0, 1); // (Addressable, SegmentAllocator, ...) MemoryAddress
+        handle = collectArguments(ret, 1, handle); // (MemorySegment, MemorySegment, SegmentAllocator, MemorySegment, ...) MemorySegment
+        handle = mergeArguments(handle, 0, 1 + imrAddrIdx);  // (MemorySegment, MemorySegment, SegmentAllocator, ...) MemorySegment
+        handle = collectArguments(handle, 0, insertArguments(MH_ALLOC_BUFFER, 1, cDesc.returnLayout().get())); // (SegmentAllocator, MemorySegment, SegmentAllocator, ...) MemorySegment
+        handle = mergeArguments(handle, 0, 2);  // (SegmentAllocator, MemorySegment, ...) MemorySegment
+        handle = swapArguments(handle, 0, 1); // (MemorySegment, SegmentAllocator, ...) MemorySegment
         return handle;
     }
 
     /**
      * Takes a MethodHandle that returns a MemorySegment, and adapts it to take an input buffer as a first argument
-     * (a MemoryAddress), and upon invocation, copies the contents of the returned MemorySegment into the input buffer
+     * (a MemorySegment), and upon invocation, copies the contents of the returned MemorySegment into the input buffer
      * passed as the first argument.
      *
      * @param target the target handle to adapt
@@ -193,52 +140,57 @@ public class SharedUtils {
         if (target.type().returnType() != MemorySegment.class)
             throw new IllegalArgumentException("Must return MemorySegment for IMR");
 
-        target = collectArguments(MH_BUFFER_COPY, 1, target); // (MemoryAddress, ...) MemoryAddress
+        target = collectArguments(MH_BUFFER_COPY, 1, target); // (MemorySegment, ...) MemorySegment
 
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
             // adjust return type so it matches the inferred type of the effective
             // function descriptor
-            target = target.asType(target.type().changeReturnType(Addressable.class));
+            target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
 
         return target;
     }
 
-    private static MemoryAddress bufferCopy(MemoryAddress dest, MemorySegment buffer) {
-        MemoryAddressImpl.ofLongUnchecked(dest.toRawLongValue(), buffer.byteSize()).copyFrom(buffer);
-        return dest;
+    private static MemorySegment bufferCopy(MemorySegment dest, MemorySegment buffer) {
+        return dest.copyFrom(buffer);
     }
 
     public static Class<?> primitiveCarrierForSize(long size, boolean useFloat) {
+        return primitiveLayoutForSize(size, useFloat).carrier();
+    }
+
+    public static ValueLayout primitiveLayoutForSize(long size, boolean useFloat) {
         if (useFloat) {
             if (size == 4) {
-                return float.class;
+                return JAVA_FLOAT;
             } else if (size == 8) {
-                return double.class;
+                return JAVA_DOUBLE;
             }
         } else {
             if (size == 1) {
-                return byte.class;
+                return JAVA_BYTE;
             } else if (size == 2) {
-                return short.class;
+                return JAVA_SHORT;
             } else if (size <= 4) {
-                return int.class;
+                return JAVA_INT;
             } else if (size <= 8) {
-                return long.class;
+                return JAVA_LONG;
             }
         }
 
-        throw new IllegalArgumentException("No type for size: " + size + " isFloat=" + useFloat);
+        throw new IllegalArgumentException("No layout for size: " + size + " isFloat=" + useFloat);
     }
 
     public static Linker getSystemLinker() {
         return switch (CABI.current()) {
-            case Win64 -> Windowsx64Linker.getInstance();
-            case SysV -> SysVx64Linker.getInstance();
-            case LinuxAArch64 -> LinuxAArch64Linker.getInstance();
-            case MacOsAArch64 -> MacOsAArch64Linker.getInstance();
+            case WIN_64 -> Windowsx64Linker.getInstance();
+            case SYS_V -> SysVx64Linker.getInstance();
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
+            case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
         };
     }
 
@@ -305,7 +257,7 @@ public class SharedUtils {
     }
 
     private static MethodHandle reachabilityFenceHandle(Class<?> type) {
-        return MH_REACHBILITY_FENCE.asType(MethodType.methodType(void.class, type));
+        return MH_REACHABILITY_FENCE.asType(MethodType.methodType(void.class, type));
     }
 
     static void handleUncaughtException(Throwable t) {
@@ -315,6 +267,13 @@ public class SharedUtils {
         }
     }
 
+    public static long unboxSegment(MemorySegment segment) {
+        if (!segment.isNative()) {
+            throw new IllegalArgumentException("Heap segment not allowed: " + segment);
+        }
+        return segment.address();
+    }
+
     public static void checkExceptions(MethodHandle target) {
         Class<?>[] exceptions = JLIA.exceptionTypes(target);
         if (exceptions != null && exceptions.length != 0) {
@@ -322,52 +281,51 @@ public class SharedUtils {
         }
     }
 
-    public static MethodHandle maybeInsertAllocator(MethodHandle handle) {
-        if (!handle.type().returnType().equals(MemorySegment.class)) {
+    public static MethodHandle maybeInsertAllocator(FunctionDescriptor descriptor, MethodHandle handle) {
+        if (descriptor.returnLayout().isEmpty() || !(descriptor.returnLayout().get() instanceof GroupLayout)) {
             // not returning segment, just insert a throwing allocator
             handle = insertArguments(handle, 1, THROWING_ALLOCATOR);
         }
         return handle;
     }
 
-    public static void checkSymbol(Addressable symbol) {
-        checkAddressable(symbol, "Symbol is NULL");
-    }
-
-    public static void checkAddress(MemoryAddress address) {
-        checkAddressable(address, "Address is NULL");
-    }
-
-    private static void checkAddressable(Addressable symbol, String msg) {
+    @ForceInline
+    public static void checkSymbol(MemorySegment symbol) {
         Objects.requireNonNull(symbol);
-        if (symbol.address().toRawLongValue() == 0)
+        if (symbol.equals(MemorySegment.NULL))
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession session) {
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
         return switch (CABI.current()) {
-            case Win64 -> Windowsx64Linker.newVaList(actions, session);
-            case SysV -> SysVx64Linker.newVaList(actions, session);
-            case LinuxAArch64 -> LinuxAArch64Linker.newVaList(actions, session);
-            case MacOsAArch64 -> MacOsAArch64Linker.newVaList(actions, session);
+            case WIN_64 -> Windowsx64Linker.newVaList(actions, scope);
+            case SYS_V -> SysVx64Linker.newVaList(actions, scope);
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
+            case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaList(actions, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaList(actions, scope);
         };
     }
 
-    public static VaList newVaListOfAddress(MemoryAddress ma, MemorySession session) {
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
         return switch (CABI.current()) {
-            case Win64 -> Windowsx64Linker.newVaListOfAddress(ma, session);
-            case SysV -> SysVx64Linker.newVaListOfAddress(ma, session);
-            case LinuxAArch64 -> LinuxAArch64Linker.newVaListOfAddress(ma, session);
-            case MacOsAArch64 -> MacOsAArch64Linker.newVaListOfAddress(ma, session);
+            case WIN_64 -> Windowsx64Linker.newVaListOfAddress(address, scope);
+            case SYS_V -> SysVx64Linker.newVaListOfAddress(address, scope);
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
+            case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaListOfAddress(address, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaListOfAddress(address, scope);
         };
     }
 
     public static VaList emptyVaList() {
         return switch (CABI.current()) {
-            case Win64 -> Windowsx64Linker.emptyVaList();
-            case SysV -> SysVx64Linker.emptyVaList();
-            case LinuxAArch64 -> LinuxAArch64Linker.emptyVaList();
-            case MacOsAArch64 -> MacOsAArch64Linker.emptyVaList();
+            case WIN_64 -> Windowsx64Linker.emptyVaList();
+            case SYS_V -> SysVx64Linker.emptyVaList();
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.emptyVaList();
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.emptyVaList();
+            case LINUX_RISCV_64 -> LinuxRISCV64Linker.emptyVaList();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.emptyVaList();
         };
     }
 
@@ -378,16 +336,11 @@ public class SharedUtils {
         }
     }
 
-    public static boolean isVarargsIndex(FunctionDescriptor descriptor, int argIndex) {
-        int firstPos = descriptor.firstVariadicArgumentIndex();
-        return firstPos != -1 && argIndex >= firstPos;
-    }
-
     public static NoSuchElementException newVaListNSEE(MemoryLayout layout) {
         return new NoSuchElementException("No such element: " + layout);
     }
 
-    public static class SimpleVaArg {
+    public static final class SimpleVaArg {
         public final MemoryLayout layout;
         public final Object value;
 
@@ -401,11 +354,11 @@ public class SharedUtils {
         }
     }
 
-    public static non-sealed class EmptyVaList implements VaList, Scoped {
+    public static final class EmptyVaList implements VaList {
 
-        private final MemoryAddress address;
+        private final MemorySegment address;
 
-        public EmptyVaList(MemoryAddress address) {
+        public EmptyVaList(MemorySegment address) {
             this.address = address;
         }
 
@@ -429,7 +382,7 @@ public class SharedUtils {
         }
 
         @Override
-        public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
+        public MemorySegment nextVarg(ValueLayout.OfAddress layout) {
             throw uoe();
         }
 
@@ -444,17 +397,12 @@ public class SharedUtils {
         }
 
         @Override
-        public MemorySession session() {
-            return MemorySessionImpl.GLOBAL;
-        }
-
-        @Override
         public VaList copy() {
             return this;
         }
 
         @Override
-        public MemoryAddress address() {
+        public MemorySegment segment() {
             return address;
         }
     }
@@ -524,34 +472,6 @@ public class SharedUtils {
             return ptr.get(JAVA_BOOLEAN, 0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
-        }
-    }
-
-    // unaligned constants
-    public final static ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
-    public final static ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
-    public final static ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-    public final static ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
-    public final static ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-    public final static ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
-
-    public static MethodType inferMethodType(FunctionDescriptor descriptor, boolean upcall) {
-        MethodType type = MethodType.methodType(descriptor.returnLayout().isPresent() ?
-                carrierFor(descriptor.returnLayout().get(), upcall) : void.class);
-        for (MemoryLayout argLayout : descriptor.argumentLayouts()) {
-            type = type.appendParameterTypes(carrierFor(argLayout, !upcall));
-        }
-        return type;
-    }
-
-    static Class<?> carrierFor(MemoryLayout layout, boolean forArg) {
-        if (layout instanceof ValueLayout valueLayout) {
-            return (forArg && valueLayout.carrier().equals(MemoryAddress.class)) ?
-                    Addressable.class : valueLayout.carrier();
-        } else if (layout instanceof GroupLayout) {
-            return MemorySegment.class;
-        } else {
-            throw new IllegalArgumentException("Unsupported layout: " + layout);
         }
     }
 }

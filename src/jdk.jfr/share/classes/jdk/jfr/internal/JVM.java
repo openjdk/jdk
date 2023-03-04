@@ -48,7 +48,7 @@ public final class JVM {
      * The monitor type is used to exclude jdk.JavaMonitorWait events from being generated
      * when Object.wait() is called on this monitor.
      */
-    static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
+    public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
     private volatile boolean nativeOK;
 
@@ -118,11 +118,11 @@ public final class JVM {
      * @param eventTypeId type id
      *
      * @param timestamp commit time for event
-     * @param when when it is being done {@link Periodic.When}
+     * @param periodicType when it is being done {@link PeriodicType.When}
      *
      * @return true if the event was committed
      */
-    public native boolean emitEvent(long eventTypeId, long timestamp, long when);
+    public native boolean emitEvent(long eventTypeId, long timestamp, long periodicType);
 
     /**
      * Return a list of all classes deriving from {@link jdk.internal.event.Event}

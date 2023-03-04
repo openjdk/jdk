@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ outputStream::outputStream() {
   _position    = 0;
   _precount    = 0;
   _indentation = 0;
-  _scratch     = NULL;
+  _scratch     = nullptr;
   _scratch_len = 0;
 }
 
@@ -55,7 +55,7 @@ outputStream::outputStream(bool has_time_stamps) {
   _position    = 0;
   _precount    = 0;
   _indentation = 0;
-  _scratch     = NULL;
+  _scratch     = nullptr;
   _scratch_len = 0;
   if (has_time_stamps)  _stamp.update();
 }
@@ -250,7 +250,7 @@ void outputStream::date_stamp(bool guard,
   static const int buffer_length = 32;
   char buffer[buffer_length];
   const char* iso8601_result = os::iso8601_time(buffer, buffer_length);
-  if (iso8601_result != NULL) {
+  if (iso8601_result != nullptr) {
     print_raw(buffer);
   } else {
     print_raw(error_time);
@@ -394,7 +394,7 @@ void stringStream::write(const char* s, size_t len) {
 }
 
 void stringStream::zero_terminate() {
-  assert(_buffer != NULL &&
+  assert(_buffer != nullptr &&
          _written < _capacity, "sanity");
   _buffer[_written] = '\0';
 }
@@ -467,7 +467,7 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
   const char* nametail = log_name;
   // Compute buffer length
   size_t buffer_length;
-  if (force_directory != NULL) {
+  if (force_directory != nullptr) {
     buffer_length = strlen(force_directory) + strlen(os::file_separator()) +
                     strlen(basename) + 1;
   } else {
@@ -475,7 +475,7 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
   }
 
   const char* pts = strstr(basename, "%p");
-  int pid_pos = (pts == NULL) ? -1 : (pts - nametail);
+  int pid_pos = (pts == nullptr) ? -1 : (pts - nametail);
 
   if (pid_pos >= 0) {
     jio_snprintf(pid_text, sizeof(pid_text), "pid%u", pid);
@@ -483,21 +483,21 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
   }
 
   pts = strstr(basename, "%t");
-  int tms_pos = (pts == NULL) ? -1 : (pts - nametail);
+  int tms_pos = (pts == nullptr) ? -1 : (pts - nametail);
   if (tms_pos >= 0) {
     buffer_length += strlen(tms);
   }
 
   // File name is too long.
   if (buffer_length > JVM_MAXPATHLEN) {
-    return NULL;
+    return nullptr;
   }
 
   // Create big enough buffer.
   char *buf = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
 
   strcpy(buf, "");
-  if (force_directory != NULL) {
+  if (force_directory != nullptr) {
     strcat(buf, force_directory);
     strcat(buf, os::file_separator());
     nametail = basename;       // completely skip directory prefix
@@ -505,8 +505,8 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
 
   // who is first, %p or %t?
   int first = -1, second = -1;
-  const char *p1st = NULL;
-  const char *p2nd = NULL;
+  const char *p1st = nullptr;
+  const char *p2nd = nullptr;
 
   if (pid_pos >= 0 && tms_pos >= 0) {
     // contains both %p and %t
@@ -564,7 +564,7 @@ const char* make_log_name(const char* log_name, const char* force_directory) {
 
 fileStream::fileStream(const char* file_name) {
   _file = os::fopen(file_name, "w");
-  if (_file != NULL) {
+  if (_file != nullptr) {
     _need_close = true;
   } else {
     warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
@@ -574,7 +574,7 @@ fileStream::fileStream(const char* file_name) {
 
 fileStream::fileStream(const char* file_name, const char* opentype) {
   _file = os::fopen(file_name, opentype);
-  if (_file != NULL) {
+  if (_file != nullptr) {
     _need_close = true;
   } else {
     warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
@@ -583,7 +583,7 @@ fileStream::fileStream(const char* file_name, const char* opentype) {
 }
 
 void fileStream::write(const char* s, size_t len) {
-  if (_file != NULL)  {
+  if (_file != nullptr)  {
     // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = fwrite(s, 1, len, _file);
     update_position(s, len);
@@ -592,7 +592,7 @@ void fileStream::write(const char* s, size_t len) {
 
 long fileStream::fileSize() {
   long size = -1;
-  if (_file != NULL) {
+  if (_file != nullptr) {
     long pos = ::ftell(_file);
     if (pos < 0) return pos;
     if (::fseek(_file, 0, SEEK_END) == 0) {
@@ -604,8 +604,8 @@ long fileStream::fileSize() {
 }
 
 char* fileStream::readln(char *data, int count ) {
-  char * ret = NULL;
-  if (_file != NULL) {
+  char * ret = nullptr;
+  if (_file != nullptr) {
     ret = ::fgets(data, count, _file);
     // Get rid of annoying \n char only if it is present.
     size_t len = ::strlen(data);
@@ -617,14 +617,14 @@ char* fileStream::readln(char *data, int count ) {
 }
 
 fileStream::~fileStream() {
-  if (_file != NULL) {
+  if (_file != nullptr) {
     if (_need_close) fclose(_file);
-    _file      = NULL;
+    _file      = nullptr;
   }
 }
 
 void fileStream::flush() {
-  if (_file != NULL) {
+  if (_file != nullptr) {
     fflush(_file);
   }
 }
@@ -640,7 +640,7 @@ void fdStream::write(const char* s, size_t len) {
   }
 }
 
-defaultStream* defaultStream::instance = NULL;
+defaultStream* defaultStream::instance = nullptr;
 int defaultStream::_output_fd = 1;
 int defaultStream::_error_fd  = 2;
 FILE* defaultStream::_output_stream = stdout;
@@ -662,14 +662,14 @@ bool defaultStream::has_log_file() {
   // For safer printing during fatal error handling, do not init logfile
   // if a VM error has been reported.
   if (!_inited && !VMError::is_error_reported())  init();
-  return _log_file != NULL;
+  return _log_file != nullptr;
 }
 
 fileStream* defaultStream::open_file(const char* log_name) {
-  const char* try_name = make_log_name(log_name, NULL);
-  if (try_name == NULL) {
+  const char* try_name = make_log_name(log_name, nullptr);
+  if (try_name == nullptr) {
     warning("Cannot open file %s: file name is too long.\n", log_name);
-    return NULL;
+    return nullptr;
   }
 
   fileStream* file = new (mtInternal) fileStream(try_name);
@@ -683,9 +683,9 @@ fileStream* defaultStream::open_file(const char* log_name) {
   // Note: This feature is for maintainer use only.  No need for L10N.
   jio_printf("Warning:  Cannot open log file: %s\n", log_name);
   try_name = make_log_name(log_name, os::get_temp_directory());
-  if (try_name == NULL) {
+  if (try_name == nullptr) {
     warning("Cannot open file %s: file name is too long for directory %s.\n", log_name, os::get_temp_directory());
-    return NULL;
+    return nullptr;
   }
 
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
@@ -697,20 +697,20 @@ fileStream* defaultStream::open_file(const char* log_name) {
   }
 
   delete file;
-  return NULL;
+  return nullptr;
 }
 
 void defaultStream::init_log() {
   // %%% Need a MutexLocker?
-  const char* log_name = LogFile != NULL ? LogFile : "hotspot_%p.log";
+  const char* log_name = LogFile != nullptr ? LogFile : "hotspot_%p.log";
   fileStream* file = open_file(log_name);
 
-  if (file != NULL) {
+  if (file != nullptr) {
     _log_file = file;
     _outer_xmlStream = new(mtInternal) xmlStream(file);
     start_log();
   } else {
-    // and leave xtty as NULL
+    // and leave xtty as nullptr
     LogVMOutput = false;
     DisplayVMOutput = true;
     LogCompilation = false;
@@ -752,27 +752,27 @@ void defaultStream::start_log() {
       Arguments::print_jvm_args_on(xs->text());
       xs->tail("args");
     }
-    if (Arguments::java_command() != NULL) {
+    if (Arguments::java_command() != nullptr) {
       xs->head("command"); xs->text()->print_cr("%s", Arguments::java_command());
       xs->tail("command");
     }
-    if (Arguments::sun_java_launcher() != NULL) {
+    if (Arguments::sun_java_launcher() != nullptr) {
       xs->head("launcher"); xs->text()->print_cr("%s", Arguments::sun_java_launcher());
       xs->tail("launcher");
     }
-    if (Arguments::system_properties() !=  NULL) {
+    if (Arguments::system_properties() !=  nullptr) {
       xs->head("properties");
       // Print it as a java-style property list.
       // System properties don't generally contain newlines, so don't bother with unparsing.
       outputStream *text = xs->text();
-      for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
-        assert(p->key() != NULL, "p->key() is NULL");
+      for (SystemProperty* p = Arguments::system_properties(); p != nullptr; p = p->next()) {
+        assert(p->key() != nullptr, "p->key() is nullptr");
         if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());
           text->put('=');
-          assert(p->value() != NULL, "p->value() is NULL");
+          assert(p->value() != nullptr, "p->value() is nullptr");
           text->print_raw_cr(p->value());
         }
       }
@@ -799,10 +799,10 @@ void defaultStream::finish_log() {
   xs->flush();
 
   fileStream* file = _log_file;
-  _log_file = NULL;
+  _log_file = nullptr;
 
   delete _outer_xmlStream;
-  _outer_xmlStream = NULL;
+  _outer_xmlStream = nullptr;
 
   file->flush();
   delete file;
@@ -822,8 +822,8 @@ void defaultStream::finish_log_on_error(char *buf, int buflen) {
     xs->flush();
 
     fileStream* file = _log_file;
-    _log_file = NULL;
-    _outer_xmlStream = NULL;
+    _log_file = nullptr;
+    _outer_xmlStream = nullptr;
 
     if (file) {
       file->flush();
@@ -841,10 +841,10 @@ intx defaultStream::hold(intx writer_id) {
       writer_id == NO_WRITER ||
 
       // bootstrap problem
-      tty_lock == NULL ||
+      tty_lock == nullptr ||
 
       // can't grab a lock if current Thread isn't set
-      Thread::current_or_null() == NULL ||
+      Thread::current_or_null() == nullptr ||
 
       // developer hook
       !SerializeVMOutput ||
@@ -915,7 +915,7 @@ void defaultStream::write(const char* s, size_t len) {
 }
 
 intx ttyLocker::hold_tty() {
-  if (defaultStream::instance == NULL)  return defaultStream::NO_WRITER;
+  if (defaultStream::instance == nullptr)  return defaultStream::NO_WRITER;
   intx thread_id = os::current_thread_id();
   return defaultStream::instance->hold(thread_id);
 }
@@ -937,9 +937,9 @@ bool ttyLocker::release_tty_if_locked() {
 }
 
 void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
-  if (defaultStream::instance != NULL &&
+  if (defaultStream::instance != nullptr &&
       defaultStream::instance->writer() == holder) {
-    if (xtty != NULL) {
+    if (xtty != nullptr) {
       xtty->print_cr("<!-- safepoint while printing -->");
     }
     defaultStream::instance->release(holder);
@@ -948,7 +948,7 @@ void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
 }
 
 void ostream_init() {
-  if (defaultStream::instance == NULL) {
+  if (defaultStream::instance == nullptr) {
     defaultStream::instance = new(mtInternal) defaultStream();
     tty = defaultStream::instance;
 
@@ -985,8 +985,8 @@ void ostream_exit() {
     delete tmp;
   }
   delete defaultStream::instance;
-  xtty = NULL;
-  defaultStream::instance = NULL;
+  xtty = nullptr;
+  defaultStream::instance = nullptr;
 }
 
 // ostream_abort() is called by os::abort() when VM is about to die.
@@ -994,7 +994,7 @@ void ostream_abort() {
   // Here we can't delete tty, just flush its output
   if (tty) tty->flush();
 
-  if (defaultStream::instance != NULL) {
+  if (defaultStream::instance != nullptr) {
     static char buf[4096];
     defaultStream::instance->finish_log_on_error(buf, sizeof(buf));
   }
@@ -1143,7 +1143,7 @@ bool networkStream::connect(const char *ip, short port) {
   server.sin_addr.s_addr = inet_addr(ip);
   if (server.sin_addr.s_addr == (uint32_t)-1) {
     struct hostent* host = os::get_host_by_name((char*)ip);
-    if (host != NULL) {
+    if (host != nullptr) {
       memcpy(&server.sin_addr, host->h_addr_list[0], host->h_length);
     } else {
       return false;

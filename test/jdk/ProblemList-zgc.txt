@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,70 +27,4 @@
 #
 #############################################################################
 
-java/lang/StackWalker/AcrossThreads.java 8297235 generic-x64
-java/math/BigInteger/BigIntegerParallelMultiplyTest.java 8297235 generic-x64
-java/util/Arrays/SetAllTest.java 8297235 generic-x64
-java/util/Arrays/Sorting.java 8297235 generic-x64
-java/util/Arrays/largeMemory/ParallelPrefix.java 8297235 generic-x64
-java/util/BitSet/stream/BitSetStreamTest.java 8297235 generic-x64
-java/util/Collection/IteratorMicroBenchmark.java 8297235 generic-x64
-java/util/Collections/UnmodifiableMapEntrySet.java 8297235 generic-x64
-java/util/DoubleStreamSums/CompensatedSums.java 8297235 generic-x64
-java/util/Random/RandomTest.java 8297235 generic-x64
-java/util/Scanner/ScannerStreamTest.java 8297235 generic-x64
-java/util/concurrent/forkjoin/AsyncShutdownNow.java 8297235 generic-x64
-java/util/concurrent/forkjoin/AsyncShutdownNowInvokeAny.java 8297235 generic-x64
-java/util/concurrent/forkjoin/AsyncShutdownNowInvokeAnyRace.java 8297235 generic-x64
-java/util/concurrent/forkjoin/Integrate.java 8297235 generic-x64
-java/util/concurrent/forkjoin/NQueensCS.java 8297235 generic-x64
-java/util/concurrent/tck/JSR166TestCase.java 8297235 generic-x64
-java/util/regex/PatternStreamTest.java 8297235 generic-x64
-java/util/stream/CustomFJPoolTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/DoubleNodeTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/FlagOpTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/IntNodeTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/LongNodeTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/NodeTest.java 8297235 generic-x64
-java/util/stream/boottest/java.base/java/util/stream/StreamReuseTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/SplittableRandomTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectAndSummaryStatisticsTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectorsTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ConcatOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/CountTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/DistinctOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/DoublePrimitiveOpsTests.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/FilterOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/FindAnyOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/FindFirstOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/FlatMapOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ForEachOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/GroupByOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/InfiniteStreamWithLimitOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntReduceTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntSliceOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntUniqOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/IterateTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/LongPrimitiveOpsTests.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/MapOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/MatchOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/MinMaxTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/PrimitiveAverageOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/PrimitiveSumTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/RangeTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ReduceByOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ReduceTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/SequentialOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/SliceOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/SortedOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamBuilderTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamLinkTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamSpliteratorTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/TeeOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ToArrayOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/ToListOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpTest.java 8297235 generic-x64
-java/util/stream/test/org/openjdk/tests/java/util/stream/mapMultiOpTest.java 8297235 generic-x64
-
-jdk/internal/vm/Continuation/Fuzz.java#default 8298058 generic-x64
+java/util/concurrent/locks/Lock/OOMEInAQS.java 8298066 windows-x64

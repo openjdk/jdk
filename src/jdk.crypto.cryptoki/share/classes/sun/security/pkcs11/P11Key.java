@@ -1321,7 +1321,7 @@ final class NativeKeyHolder {
     private long keyID;
 
     // phantom reference notification clean up for session keys
-    private SessionKeyRef ref;
+    private final SessionKeyRef ref;
 
     private int refCount;
 

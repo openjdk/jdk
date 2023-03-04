@@ -667,9 +667,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCImport extends JCTree implements ImportTree {
         public boolean staticImport;
         /** The imported class(es). */
-        public JCTree qualid;
+        public JCFieldAccess qualid;
         public com.sun.tools.javac.code.Scope importScope;
-        protected JCImport(JCTree qualid, boolean importStatic) {
+        protected JCImport(JCFieldAccess qualid, boolean importStatic) {
             this.qualid = qualid;
             this.staticImport = importStatic;
         }
@@ -679,7 +679,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public boolean isStatic() { return staticImport; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCTree getQualifiedIdentifier() { return qualid; }
+        public JCFieldAccess getQualifiedIdentifier() { return qualid; }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.IMPORT; }
@@ -1074,6 +1074,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
+        /** If this block contains record pattern, it is necessary to catch
+         *  exceptions from the deconstructors and wrap them.
+         * The {@code patternMatchingCatch} keeps the list of the deconstructor
+         * invocations, and the additional catch block that wraps the exceptions.
+         */
+        public PatternMatchingCatch patternMatchingCatch;
         protected JCBlock(long flags, List<JCStatement> stats) {
             this.stats = stats;
             this.flags = flags;
@@ -1098,6 +1104,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Tag getTag() {
             return BLOCK;
         }
+
+        public record PatternMatchingCatch(JCCatch handler, Set<JCMethodInvocation> calls2Handle) {}
     }
 
     /**
@@ -2218,6 +2226,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCInstanceOf extends JCExpression implements InstanceOfTree {
         public JCExpression expr;
         public JCTree pattern;
+        /**{@code true} if this instanceof test should have
+         * value {@code true} when the {@code expr} is {@code null}.*/
+        public boolean allowNull;
         protected JCInstanceOf(JCExpression expr, JCTree pattern) {
             this.expr = expr;
             this.pattern = pattern;
@@ -3392,7 +3403,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCCompilationUnit TopLevel(List<JCTree> defs);
         JCPackageDecl PackageDecl(List<JCAnnotation> annotations,
                                   JCExpression pid);
-        JCImport Import(JCTree qualid, boolean staticImport);
+        JCImport Import(JCFieldAccess qualid, boolean staticImport);
         JCClassDecl ClassDef(JCModifiers mods,
                           Name name,
                           List<JCTypeParameter> typarams,

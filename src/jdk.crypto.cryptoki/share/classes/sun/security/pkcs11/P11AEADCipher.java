@@ -35,6 +35,8 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
@@ -54,6 +56,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   13
  */
 final class P11AEADCipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // supported AEAD algorithms/transformations
     private enum Transformation {
@@ -106,9 +110,9 @@ final class P11AEADCipher extends CipherSpi {
     private SecureRandom random = JCAUtil.getSecureRandom();
 
     // dataBuffer is cleared upon doFinal calls
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
     // aadBuffer is cleared upon successful init calls
-    private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private boolean updateCalled = false;
 
     private boolean requireReinit = false;
@@ -705,84 +709,94 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
+        NIO_ACCESS.acquireSession(inBuffer);
         try {
-            ensureInitialized();
+            NIO_ACCESS.acquireSession(outBuffer);
+            try {
+                try {
+                    ensureInitialized();
 
-            long inAddr = 0;
-            byte[] in = null;
-            int inOfs = 0;
-            if (dataBuffer.size() > 0) {
-                if (inLen > 0) {
-                    byte[] temp = new byte[inLen];
-                    inBuffer.get(temp);
-                    dataBuffer.write(temp, 0, temp.length);
-                }
-                in = dataBuffer.toByteArray();
-                inOfs = 0;
-                inLen = in.length;
-            } else {
-                if (inBuffer instanceof DirectBuffer) {
-                    inAddr = ((DirectBuffer) inBuffer).address();
-                    inOfs = inBuffer.position();
-                } else {
-                    if (inBuffer.hasArray()) {
-                        in = inBuffer.array();
-                        inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                    long inAddr = 0;
+                    byte[] in = null;
+                    int inOfs = 0;
+                    if (dataBuffer.size() > 0) {
+                        if (inLen > 0) {
+                            byte[] temp = new byte[inLen];
+                            inBuffer.get(temp);
+                            dataBuffer.write(temp, 0, temp.length);
+                        }
+                        in = dataBuffer.toByteArray();
+                        inOfs = 0;
+                        inLen = in.length;
                     } else {
-                        in = new byte[inLen];
-                        inBuffer.get(in);
+                        if (inBuffer instanceof DirectBuffer dInBuffer) {
+                            inAddr = dInBuffer.address();
+                            inOfs = inBuffer.position();
+                        } else {
+                            if (inBuffer.hasArray()) {
+                                in = inBuffer.array();
+                                inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                            } else {
+                                in = new byte[inLen];
+                                inBuffer.get(in);
+                            }
+                        }
                     }
-                }
-            }
-            long outAddr = 0;
-            byte[] outArray = null;
-            int outOfs = 0;
-            if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
-                outOfs = outBuffer.position();
-            } else {
-                if (outBuffer.hasArray()) {
-                    outArray = outBuffer.array();
-                    outOfs = outBuffer.position() + outBuffer.arrayOffset();
-                } else {
-                    outArray = new byte[outLen];
-                }
-            }
+                    long outAddr = 0;
+                    byte[] outArray = null;
+                    int outOfs = 0;
+                    if (outBuffer instanceof DirectBuffer dOutBuffer) {
+                        outAddr = dOutBuffer.address();
+                        outOfs = outBuffer.position();
+                    } else {
+                        if (outBuffer.hasArray()) {
+                            outArray = outBuffer.array();
+                            outOfs = outBuffer.position() + outBuffer.arrayOffset();
+                        } else {
+                            outArray = new byte[outLen];
+                        }
+                    }
 
-            int k = 0;
-            if (encrypt) {
-                k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
-            } else {
-                // Special handling to match SunJCE provider behavior
-                if (inLen == 0) {
-                    return 0;
+                    int k = 0;
+                    if (encrypt) {
+                        k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    } else {
+                        // Special handling to match SunJCE provider behavior
+                        if (inLen == 0) {
+                            return 0;
+                        }
+                        k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    }
+                    inBuffer.position(inBuffer.limit());
+                    outBuffer.position(outBuffer.position() + k);
+                    return k;
+                } catch (PKCS11Exception e) {
+                    // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+                    // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+                    // successful calls to determine the output length. However,
+                    // these cases are not expected here because the output length
+                    // is checked in the OpenJDK side before making the PKCS#11 call.
+                    // Thus, doCancel can safely be 'false'.
+                    doCancel = false;
+                    handleException(e);
+                    throw new ProviderException("doFinal() failed", e);
+                } finally {
+                    if (encrypt) {
+                        lastEncKey = this.p11Key;
+                        lastEncIv = this.iv;
+                        requireReinit = true;
+                    }
+                    reset(doCancel);
                 }
-                k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
+            } finally {
+                NIO_ACCESS.releaseSession(outBuffer);
             }
-            inBuffer.position(inBuffer.limit());
-            outBuffer.position(outBuffer.position() + k);
-            return k;
-        } catch (PKCS11Exception e) {
-            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
-            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
-            // successful calls to determine the output length. However,
-            // these cases are not expected here because the output length
-            // is checked in the OpenJDK side before making the PKCS#11 call.
-            // Thus, doCancel can safely be 'false'.
-            doCancel = false;
-            handleException(e);
-            throw new ProviderException("doFinal() failed", e);
         } finally {
-            if (encrypt) {
-                lastEncKey = this.p11Key;
-                lastEncIv = this.iv;
-                requireReinit = true;
-            }
-            reset(doCancel);
+            NIO_ACCESS.releaseSession(inBuffer);
         }
     }
 

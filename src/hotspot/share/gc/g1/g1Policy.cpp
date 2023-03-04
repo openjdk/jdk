@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -71,8 +70,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
-  _predicted_surviving_bytes_from_survivor(0),
-  _predicted_surviving_bytes_from_old(0),
   _rs_length(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
@@ -105,8 +102,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-  // We may immediately start allocating regions and placing them on the
-  // collection set list. Initialize the per-collection set info
+
+  // We immediately start allocating regions placing them in the collection set.
+  // Initialize the collection set info.
   _collection_set->start_incremental_building();
 }
 
@@ -188,6 +186,7 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
+  assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
                              _analytics->predict_rs_length(for_young_only_phase));
@@ -224,14 +223,16 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 //
 // - sizer min/max bounds on young gen
 // - pause time goal for whole young gen evacuation
-// - MMU goal influencing eden to make GCs spaced apart.
-// - a minimum one eden region length.
+// - MMU goal influencing eden to make GCs spaced apart
+// - if after a GC, request at least one eden region to avoid immediate full gcs
 //
-// We may enter with already allocated eden and survivor regions, that may be
-// higher than the maximum, or the above goals may result in a desired value
-// smaller than are already allocated.
-// The main reason is revising young length, with or without the GCLocker being
-// active.
+// We may enter with already allocated eden and survivor regions because there
+// are survivor regions (after gc). Young gen revising can call this method at any
+// time too.
+//
+// For this method it does not matter if the above goals may result in a desired
+// value smaller than what is already allocated or what can actually be allocated.
+// This return value is only an expectation.
 //
 uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
@@ -240,12 +241,6 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   assert(min_young_length_by_sizer >= 1, "invariant");
   assert(max_young_length_by_sizer >= min_young_length_by_sizer, "invariant");
 
-  // Absolute minimum eden length.
-  // Enforcing a minimum eden length helps at startup when the predictors are not
-  // yet trained on the application to avoid unnecessary (but very short) full gcs
-  // on very small (initial) heaps.
-  uint const MinDesiredEdenLength = 1;
-
   // Calculate the absolute and desired min bounds first.
 
   // This is how many survivor regions we already have.
@@ -253,9 +248,13 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Size of the already allocated young gen.
   const uint allocated_young_length = _g1h->young_regions_count();
   // This is the absolute minimum young length that we can return. Ensure that we
-  // don't go below any user-defined minimum bound; but we might have already
-  // allocated more than that for various reasons. In this case, use that.
-  uint absolute_min_young_length = MAX2(allocated_young_length, min_young_length_by_sizer);
+  // don't go below any user-defined minimum bound.  Also, we must have at least
+  // one eden region, to ensure progress. But when revising during the ensuing
+  // mutator phase we might have already allocated more than either of those, in
+  // which case use that.
+  uint absolute_min_young_length = MAX3(min_young_length_by_sizer,
+                                        survivor_length + 1,
+                                        allocated_young_length);
   // Calculate the absolute max bounds. After evac failure or when revising the
   // young length we might have exceeded absolute min length or absolute_max_length,
   // so adjust the result accordingly.
@@ -277,10 +276,8 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
 
     // Incorporate MMU concerns; assume that it overrides the pause time
     // goal, as the default value has been chosen to effectively disable it.
-    // Also request at least one eden region, see above for reasons.
-    uint desired_eden_length = MAX3(desired_eden_length_by_pause,
-                                    desired_eden_length_by_mmu,
-                                    MinDesiredEdenLength);
+    uint desired_eden_length = MAX2(desired_eden_length_by_pause,
+                                    desired_eden_length_by_mmu);
 
     desired_young_length = desired_eden_length + survivor_length;
   } else {
@@ -297,13 +294,11 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
                             "absolute min young length %u "
                             "absolute max young length %u "
                             "desired eden length by mmu %u "
-                            "desired eden length by pause %u "
-                            "desired eden length by default %u",
+                            "desired eden length by pause %u ",
                             desired_young_length, survivor_length,
                             allocated_young_length, absolute_min_young_length,
                             absolute_max_young_length, desired_eden_length_by_mmu,
-                            desired_eden_length_by_pause,
-                            MinDesiredEdenLength);
+                            desired_eden_length_by_pause);
 
   assert(desired_young_length >= allocated_young_length, "must be");
   return desired_young_length;
@@ -566,7 +561,6 @@ void G1Policy::record_full_collection_end() {
   // also call this on any additional surv rate groups
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-  update_survival_estimates_for_next_collection();
   _survivor_surv_rate_group->reset();
   update_young_length_bounds();
 
@@ -643,8 +637,6 @@ void G1Policy::record_young_collection_start() {
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  _collection_set->reset_bytes_used_before();
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();
@@ -807,11 +799,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _eden_surv_rate_group->start_adding_regions();
 
-  double merge_hcc_time_ms = average_time_ms(G1GCPhaseTimes::MergeHCC);
   if (update_stats) {
     // Update prediction for card merge.
-    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
-                                                 p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
     // MergeRSCards includes the cards from the Eager Reclaim phase.
     size_t const merged_cards_from_rs = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSCards) +
                                         p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSCards);
@@ -821,7 +811,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
-                                    average_time_ms(G1GCPhaseTimes::MergeHCC) +
                                     average_time_ms(G1GCPhaseTimes::MergeLB) +
                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
       _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, is_young_only_pause);
@@ -881,8 +870,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
-  update_survival_estimates_for_next_collection();
-
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
@@ -906,36 +893,21 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (logged_cards_time_goal_ms < merge_hcc_time_ms) {
-    log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
-                                "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                logged_cards_time_goal_ms, merge_hcc_time_ms);
-
-    logged_cards_time_goal_ms = 0;
-  } else {
-    logged_cards_time_goal_ms -= merge_hcc_time_ms;
-  }
-
   double const logged_cards_time_ms = logged_cards_processing_time();
   size_t logged_cards =
     phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB,
                                          G1GCPhaseTimes::MergeLBDirtyCards);
-  size_t hcc_cards =
-    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
-                                         G1GCPhaseTimes::MergeHCCDirtyCards);
   bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
   size_t predicted_thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
   log_debug(gc, ergo, refine)
-           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
+           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, %s",
             cr->pending_cards_target(),
             predicted_thread_buffer_cards,
             logged_cards_time_goal_ms,
             logged_cards,
             logged_cards_time_ms,
-            hcc_cards,
-            merge_hcc_time_ms,
             (exceeded_goal ? " (exceeded goal)" : ""));
 
   cr->adjust_after_gc(logged_cards_time_ms,
@@ -1559,88 +1531,6 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_optional_regions, max_optional_regions, total_prediction_ms);
-}
-
-// Number of regions required to store the given number of bytes, taking
-// into account the target amount of wasted space in PLABs.
-static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
-  size_t byte_count_adjusted = byte_count * (size_t)(100 + TargetPLABWastePct) / 100.0;
-
-  // Round up the region count
-  return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
-}
-
-bool G1Policy::preventive_collection_required(uint alloc_region_count) {
-  if (!G1UsePreventiveGC || !Universe::is_fully_initialized()) {
-    // Don't attempt any preventive GC's if the feature is disabled,
-    // or before initialization is complete.
-    return false;
-  }
-
-  if (_g1h->young_regions_count() == 0 && !_collection_set->has_candidates()) {
-    return false;
-  }
-
-  uint eden_count = _g1h->eden_regions_count();
-  size_t const eden_surv_bytes_pred = _eden_surv_rate_group->accum_surv_rate_pred(eden_count) * HeapRegion::GrainBytes;
-  size_t const total_young_predicted_surviving_bytes = eden_surv_bytes_pred + _predicted_surviving_bytes_from_survivor;
-
-  uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
-                                get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
-
-  if (required_regions > _g1h->num_free_or_available_regions() - alloc_region_count) {
-    log_debug(gc, ergo, cset)("Preventive GC, insufficient free or available regions. "
-                              "Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free or Avail %u (Free %u) Alloc %u",
-                              required_regions,
-                              eden_count,
-                              (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
-                              _g1h->survivor_regions_count(),
-                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
-                              _g1h->old_regions_count(),
-                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
-                              _g1h->num_free_or_available_regions(),
-                              _g1h->num_free_regions(),
-                              alloc_region_count);
-
-    return true;
-  }
-
-  return false;
-}
-
-void G1Policy::update_survival_estimates_for_next_collection() {
-  // Predict the number of bytes of surviving objects from survivor and old
-  // regions and update the associated members.
-
-  // Survivor regions
-  size_t survivor_bytes = 0;
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
-  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
-       it != survivor_regions->end();
-       ++it) {
-    survivor_bytes += predict_bytes_to_copy(*it);
-  }
-
-  _predicted_surviving_bytes_from_survivor = survivor_bytes;
-
-  // Old regions
-  if (!_collection_set->has_candidates()) {
-    _predicted_surviving_bytes_from_old = 0;
-    return;
-  }
-
-  // Use the minimum old gen collection set as conservative estimate for the number
-  // of regions to take for this calculation.
-  G1CollectionSetCandidates *candidates = _collection_set->candidates();
-  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length(candidates));
-  uint current_index = candidates->cur_idx();
-  size_t old_bytes = 0;
-  for (uint i = 0; i < iterate_count; i++) {
-    HeapRegion *region = candidates->at(current_index + i);
-    old_bytes += predict_bytes_to_copy(region);
-  }
-
-  _predicted_surviving_bytes_from_old = old_bytes;
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

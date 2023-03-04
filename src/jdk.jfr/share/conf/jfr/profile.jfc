@@ -512,6 +512,16 @@
       <setting name="cutoff" control="old-objects-cutoff">0 ns</setting>
     </event>
 
+    <event name="jdk.NativeMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
+    <event name="jdk.NativeMemoryUsageTotal">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.CompilerConfiguration">
       <setting name="enabled" control="compiler-enabled">true</setting>
       <setting name="period">beginChunk</setting>

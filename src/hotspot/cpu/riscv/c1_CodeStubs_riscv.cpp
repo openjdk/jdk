@@ -43,7 +43,9 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
   __ relocate(safepoint_pc.rspec(), [&] {
-    __ la(t0, safepoint_pc.target());
+    int32_t offset;
+    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ addi(t0, t0, offset);
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 
@@ -64,18 +66,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ j(_continuation);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -201,12 +191,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(_info);
   assert(_result->as_register() == x10, "result must in x10");
   __ j(_continuation);
-}
-
-// Implementation of MonitorAccessStubs
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg, lock_reg) {
-  _info = new CodeEmitInfo(info);
 }
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {

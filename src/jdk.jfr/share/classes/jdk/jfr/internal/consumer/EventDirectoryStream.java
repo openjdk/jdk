@@ -166,18 +166,21 @@ public final class EventDirectoryStream extends AbstractEventStream {
                         processUnordered(disp);
                     }
                     currentParser.resetCache();
-                    barrier.check(); // block if recording is being stopped
                     long endNanos = currentParser.getStartNanos() + currentParser.getChunkDuration();
                     // same conversion as in RecordingInfo
-                    long endMillis = Instant.ofEpochSecond(0, endNanos).toEpochMilli();
-                    if (barrier.getStreamEnd() <= endMillis) {
-                        return;
-                    }
                     if (endNanos > filterEnd) {
                         return;
                     }
                 }
-                if (isLastChunk()) {
+                long endNanos = currentParser.getStartNanos() + currentParser.getChunkDuration();
+                long endMillis = Instant.ofEpochSecond(0, endNanos).toEpochMilli();
+
+                barrier.check(); // block if recording is being stopped
+                if (barrier.getStreamEnd() <= endMillis) {
+                    return;
+                }
+
+                if (!barrier.hasStreamEnd() && isLastChunk()) {
                     // Recording was stopped/closed externally, and no more data to process.
                     return;
                 }

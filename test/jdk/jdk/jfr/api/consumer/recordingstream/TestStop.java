@@ -149,7 +149,7 @@ public class TestStop {
                 if (dumpOuter.size() != 3) {
                     throw new AssertionError("Expected outer dump to have 3 events");
                 }
-                if (outerCount.get() == 3) {
+                if (outerCount.get() != 3) {
                     throw new AssertionError("Expected outer stream to have 3 events");
                 }
                 if (dumpInner.size() != 1) {

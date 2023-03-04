@@ -24,12 +24,12 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestClassLoaderFindNative
  */
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import org.testng.annotations.Test;
@@ -49,20 +49,20 @@ public class TestClassLoaderFindNative {
 
     @Test
     public void testSimpleLookup() {
-        assertFalse(SymbolLookup.loaderLookup().lookup("f").isEmpty());
+        assertFalse(SymbolLookup.loaderLookup().find("f").isEmpty());
     }
 
     @Test
     public void testInvalidSymbolLookup() {
-        assertTrue(SymbolLookup.loaderLookup().lookup("nonExistent").isEmpty());
+        assertTrue(SymbolLookup.loaderLookup().find("nonExistent").isEmpty());
     }
 
     @Test
     public void testVariableSymbolLookup() {
         MemorySegment segment = MemorySegment.ofAddress(
-                SymbolLookup.loaderLookup().lookup("c").get().address(),
+                SymbolLookup.loaderLookup().find("c").get().address(),
                 ValueLayout.JAVA_INT.byteSize(),
-                MemorySession.global());
+                SegmentScope.global());
         assertEquals(segment.get(JAVA_BYTE, 0), 42);
     }
 }

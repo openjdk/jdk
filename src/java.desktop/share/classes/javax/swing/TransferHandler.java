@@ -188,7 +188,7 @@ public class TransferHandler implements Serializable {
         public String toString() {
             return getClass().getName() + "[dropPoint=" + dropPoint + "]";
         }
-    };
+    }
 
     /**
      * This class encapsulates all relevant details of a clipboard
