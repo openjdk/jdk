@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
@@ -85,7 +86,7 @@ public class InputSlotWidget extends SlotWidget {
             Graphics2D g = scene.getGraphics();
             String label = "...";
             g.setColor(Color.BLACK);
-            g.setFont(Diagram.SLOT_FONT);
+            g.setFont(Diagram.SLOT_FONT.deriveFont(Font.BOLD));
             Rectangle2D labelRect = new Canvas().getFontMetrics(Diagram.SLOT_FONT).getStringBounds(label, g);
             int slotWidth = this.calculateClientArea().width;
             int xStart = this.getBounds().x + (inputSlot.hasSourceNodes() ? 0 : (slotWidth / 2));
