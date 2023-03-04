@@ -2238,8 +2238,6 @@ private:
   void xorq(Register dst, int32_t imm32);
   void xorq(Address dst, Register src);
 
-  void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
-
   // AVX 3-operands scalar instructions (encoded with VEX prefix)
 
   void vaddsd(XMMRegister dst, XMMRegister nds, Address src);

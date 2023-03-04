@@ -12379,18 +12379,9 @@ void Assembler::pusha() { // 32bit
   emit_int8(0x60);
 }
 
-void Assembler::set_byte_if_not_zero(Register dst) {
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | dst->encoding()));
-}
-
 #else // LP64
 
 // 64bit only pieces of the assembler
-
-void Assembler::set_byte_if_not_zero(Register dst) {
-  int enc = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | enc));
-}
 
 // This should only be used by 64bit instructions that can use rip-relative
 // it cannot be used by instructions that want an immediate value.

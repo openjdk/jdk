@@ -10637,17 +10637,56 @@ instruct xorL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 %}
 
 // Convert Int to Boolean
+instruct convI2B_Flip(rRegI dst, rRegI src, immI_1 one, rFlagsReg cr)
+%{
+  match(Set dst (XorI (Conv2B src) one));
+  effect(KILL cr);
+  ins_cost(125);
+
+  format %{ "testl   $src, $src\t# ci2b\n\t"
+            "sete    $dst\n\t"
+            "movzbl  $dst, $dst" %}
+
+  ins_encode %{
+    __ testl($src$$Register, $src$$Register);
+    __ sete($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+// Convert Int to Boolean
 instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
   effect(KILL cr);
+  ins_cost(150);
 
   format %{ "testl   $src, $src\t# ci2b\n\t"
             "setnz   $dst\n\t"
             "movzbl  $dst, $dst" %}
   ins_encode %{
     __ testl($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
+    __ setne($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+// Convert Pointer to Boolean
+instruct convP2B_Flip(rRegI dst, rRegP src, immI_1 one, rFlagsReg cr)
+%{
+  match(Set dst (XorI (Conv2B src) one));
+  effect(KILL cr);
+  ins_cost(125);
+
+  format %{ "testq   $src, $src\t# cp2b\n\t"
+            "sete    $dst\n\t"
+            "movzbl  $dst, $dst" %}
+
+  ins_encode %{
+    __ testq($src$$Register, $src$$Register);
+    __ sete($dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10658,13 +10697,14 @@ instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
   effect(KILL cr);
+  ins_cost(150);
 
   format %{ "testq   $src, $src\t# cp2b\n\t"
             "setnz   $dst\n\t"
             "movzbl  $dst, $dst" %}
   ins_encode %{
     __ testq($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
+    __ setne($dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX

@@ -1363,6 +1363,28 @@ public class IRNode {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
     }
 
+    // x86 specific
+
+    public static final String CONVI2B_X86 = PREFIX + "CONVI2B_X86" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONVI2B_X86, "convI2B");
+    }
+
+    public static final String CONVI2B_FLIP_X86 = PREFIX + "CONVI2B_FLIP_X86" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONVI2B_FLIP_X86, "convI2B_Flip");
+    }
+
+    public static final String CONVP2B_X86 = PREFIX + "CONVP2B_X86" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONVP2B_X86, "convP2B");
+    }
+
+    public static final String CONVP2B_FLIP_X86 = PREFIX + "CONVP2B_FLIP_X86" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONVP2B_FLIP_X86, "convP2B_Flip");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
