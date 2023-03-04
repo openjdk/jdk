@@ -4,8 +4,8 @@ removeSelfLoops();
 remove(matches("short_name", "FP|RA|IO|RP"));
 
 // Pretty-print Bool nodes to be shown as output slots.
-function replaceComparisonWithSign(text) {
-  var comparison = text.replace('[','').replace(']','')
+function replaceComparisonWithSign(dump_spec) {
+  var comparison = dump_spec.replace('[','').replace(']','')
   switch (comparison) {
     case "eq":  return "=";
     case "gt":  return ">";
@@ -22,6 +22,21 @@ editSameProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign
 editSameProperty(and([matches("name", "ConP"), matches("dump_spec", "#NULL")]),
                  "short_name",
                  function(t) {return "null";});
+
+// Pretty-print CatchProj nodes.
+function catchProjShortText(con) {
+  switch (con) {
+    case "0": return "F"; // fall-through
+    case "1": return "T"; // throw
+    default:  return "?";
+  }
+}
+editProperty(matches("name", "CatchProj"), "con", "short_name", catchProjShortText);
+
+// Add short text to inlined mach data parameters.
+editProperty(and([matches("name", "MachProj"), matches("category", "data"), successorOf(matches("name", "Start"))]),
+             "dump_spec", "short_name",
+             function(dump_spec) {return dump_spec;});
 
 // Condense inputs for all nodes.
 
