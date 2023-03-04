@@ -39,11 +39,11 @@ public class Settings {
     }
 
     public static final String NODE_TEXT = "nodeText";
-    public static final String NODE_TEXT_DEFAULT = "[id] [name]";
+    public static final String NODE_TEXT_DEFAULT = "[idx] [name]";
     public static final String NODE_SHORT_TEXT = "nodeShortText";
-    public static final String NODE_SHORT_TEXT_DEFAULT = "[id] [name]";
+    public static final String NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
     public static final String NODE_TINY_TEXT = "nodeTinyText";
-    public static final String NODE_TINY_TEXT_DEFAULT = "[id]";
+    public static final String NODE_TINY_TEXT_DEFAULT = "[idx]";
     public static final String DEFAULT_VIEW = "defaultView";
     public static final int    DEFAULT_VIEW_DEFAULT = DefaultView.SEA_OF_NODES;
     public static final String PORT = "port";
