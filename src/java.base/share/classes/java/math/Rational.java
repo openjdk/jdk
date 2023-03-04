@@ -635,7 +635,6 @@ public class Rational extends Number implements Comparable<Rational> {
      * <dt><i>FractionPart:</i>
      * <dd><i>Preperiod Period<sub>opt</sub></i>
      * <dd><i>Period</i>
-     * <dd><i>Preperiod</i>
      * <dt><i>Preperiod:</i>
      * <dd><i>Digits</i>
      * <dt><i>Period:</i>
