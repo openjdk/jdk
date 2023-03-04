@@ -55,7 +55,6 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     /*
      * These flags are set if the corresponding support is in the hardware.
      */
-    // Checkstyle: stop
     final long aarch64FP = getConstant("VM_Version::CPU_FP", Long.class);
     final long aarch64ASIMD = getConstant("VM_Version::CPU_ASIMD", Long.class);
     final long aarch64EVTSTRM = getConstant("VM_Version::CPU_EVTSTRM", Long.class);
@@ -66,5 +65,4 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long aarch64CRC32 = getConstant("VM_Version::CPU_CRC32", Long.class);
     final long aarch64LSE = getConstant("VM_Version::CPU_LSE", Long.class);
     final long aarch64A53MAC = getConstant("VM_Version::CPU_A53MAC", Long.class);
-    // Checkstyle: resume
 }
