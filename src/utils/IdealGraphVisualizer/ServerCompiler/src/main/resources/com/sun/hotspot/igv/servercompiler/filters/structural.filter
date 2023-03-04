@@ -23,43 +23,6 @@ editSameProperty(and([matches("name", "ConP"), matches("dump_spec", "#NULL")]),
                  "short_name",
                  function(t) {return "null";});
 
-// Add extra line to method calls with callee information.
-function callJavaInfo(dump_spec) {
-  dump_components = split_string(dump_spec);
-  if (dump_components.length < 3) {
-    return null;
-  }
-  var tm = /(uncommon_trap\(reason=\'(\w*)\')/.exec(dump_components[2]);
-  if (tm == null || typeof tm[2] == 'undefined') {
-    return dump_components[2];
-  }
-  return "trap: " + tm[2];
-}
-editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), "dump_spec", "extra_label", callJavaInfo);
-
-function callLeafInfo(dump_spec) {
-  dump_components = split_string(dump_spec);
-  if (dump_components.length < 2) {
-    return null;
-  }
-  return dump_components[1];
-}
-editProperty(matches("name", "CallLeaf|CallLeafNoFP"), "dump_spec", "extra_label", callLeafInfo);
-
-// Add extra line to exception creation nodes with the name of the exception.
-function exceptionInfo(dump_spec) {
-  dump_components = split_string(dump_spec);
-  if (dump_components.length < 2) {
-    return null;
-  }
-  ex_components = dump_components[1].split(/(:)/);
-  if (ex_components.length < 3) {
-    return null;
-  }
-  return ex_components[2];
-}
-editProperty(matches("name", "CreateEx"), "dump_spec", "extra_label", exceptionInfo);
-
 // Condense inputs for all nodes.
 
 var anyNode = matches("name", ".*");

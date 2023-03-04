@@ -13,9 +13,13 @@
             <attr name="enabled" boolvalue="true"/>
             <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
+        <file name="Show custom node info" url="filters/customNodeInfo.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Color by execution frequency"/>
+        </file>
         <file name="Condense graph" url="filters/structural.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show node warnings"/>
+            <attr name="after" stringvalue="Show custom node info"/>
         </file>
         <file name="Hide data subgraph" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>

@@ -1,0 +1,40 @@
+// This filter add a new line to the label of selected nodes with custom
+information. This is achieved by adding a special property 'extra_label' to them
+with information extracted from other properties, typically 'dump_spec'.
+
+// Add extra line to method calls with callee information.
+function callJavaInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 3) {
+    return null;
+  }
+  var tm = /(uncommon_trap\(reason=\'(\w*)\')/.exec(dump_components[2]);
+  if (tm == null || typeof tm[2] == 'undefined') {
+    return dump_components[2];
+  }
+  return "trap: " + tm[2];
+}
+editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), "dump_spec", "extra_label", callJavaInfo);
+
+function callLeafInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 2) {
+    return null;
+  }
+  return dump_components[1];
+}
+editProperty(matches("name", "CallLeaf|CallLeafNoFP"), "dump_spec", "extra_label", callLeafInfo);
+
+// Add extra line to exception creation nodes with the name of the exception.
+function exceptionInfo(dump_spec) {
+  dump_components = split_string(dump_spec);
+  if (dump_components.length < 2) {
+    return null;
+  }
+  ex_components = dump_components[1].split(/(:)/);
+  if (ex_components.length < 3) {
+    return null;
+  }
+  return ex_components[2];
+}
+editProperty(matches("name", "CreateEx"), "dump_spec", "extra_label", exceptionInfo);
