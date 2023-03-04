@@ -453,8 +453,8 @@ private:
 };
 
 // This class provides a convenient way to register Dcmds, without a need to change
-// management.cpp every time. Body of these two methods resides in
-// diagnosticCommand.cpp
+// management.cpp every time. The body of this method resides in
+// diagnosticCommand.cpp.
 
 class DCmdRegistrant : public AllStatic {
 
