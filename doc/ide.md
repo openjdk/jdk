@@ -102,8 +102,16 @@ make eclipse-mixed-env
 Do note that this generates all features that come with both Java and C/C++
 natures.
 
-Eclipse support in the JDK is relatively new, so keep in mind that certain
-Eclipse features may not fully work properly at the moment.
+By default, the Eclipse Workspace is located in the ide subdirectory in the
+build output. To share the JDK's source directory with the Eclipse Workspace,
+you can instead run:
+
+```shell
+make eclipse-shared-<ENV>-env
+```
+
+Eclipse support in the JDK is relatively new, so do keep in mind that not
+everything may work at the moment.
 
 #### Compilation Database
 
@@ -164,6 +172,13 @@ Follow `File -> Import -> Projects from Folder or Archive` and select the
 `ide\eclipse` directory in the build output folder to import the newly created
 Java Workspace.
 
+Alternatively, if you want a Java Workspace inside the JDK's source directory,
+you can instead run:
+
+```shell
+make eclipse-shared-java-env
+```
+
 As mentioned above for Eclipse CDT, you can create a combined Java and C/C++
 Workspace which can conveniently switch between Java and C/C++ natures during
 development by running:
@@ -171,6 +186,3 @@ development by running:
 ```shell
 make eclipse-mixed-env
 ```
-
-Eclipse JDT support in the JDK is also very recent, much like with Eclipse CDT,
-so no guarantees of stability can be made as of yet.

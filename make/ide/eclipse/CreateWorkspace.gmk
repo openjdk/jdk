@@ -37,40 +37,13 @@ include hotspot/lib/JvmFeatures.gmk
 include hotspot/lib/JvmOverrideFiles.gmk
 include hotspot/lib/JvmFlags.gmk
 
-IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
-NATIVE_FILE := $(IDE_OUTPUTDIR)/.cproject
-LANGUAGE_SETTINGS := $(IDE_OUTPUTDIR)/.settings/language.settings.xml
-
 # Warning: This file does not have the best formatting!
-
-# FixPath already removes $(FIXPATH) automatically, but if we rely on FixPath
-# to do it for us dir won't be able to handle the converted path (if on Windows).
-# Reversing the order causes dir to mangle the preceeding $(FIXPATH) which breaks
-# the ability of FixPath to remove it, so it has to be manually removed here.
-#
-# Note that the workspace setup system currently does not support Visual C++ when
-# extracting compiler and/or system headers vital to the build!
-COMPILER_PATH := $(call FixPath, $(dir $(patsubst $(FIXPATH), , $(CC))))
-
-# Sidestep annoying issue of WSL path conversion not working properly with true
-# Unix paths. Eclipse can't run the WSL make by itself anyway, even if we could
-# properly convert the path.
-ifeq ($(call isBuildOsEnv, windows.wsl1 windows.wsl2), true)
-  MAKE_EXE := wsl.exe $(MAKE)
-else
-  MAKE_EXE := $(call FixPath, $(MAKE))
-endif
 
 # Random number generation, with the amount of specified digits
 # No need to check if the parameter passed is a valid number, the shell will
 # be more than happy to complain if it isn't ;)
 RandomDigits = \
   $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
-
-# Cache a 10 digit number as the workspace id where needed
-# This needs to be the same everywhere it's used anyway, and doing this also avoids
-# regenerating the number every time
-WORKSPACE_ID := $(call RandomDigits, 10)
 
 # Modified version of utility from JdkNativeCompilation.gmk
 # The full path could be omitted, but it was chosen not to so wildcard
@@ -93,24 +66,6 @@ JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
 NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
   $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
 
-EmitEmptyLine = $(call AppendFile,,$(1))
-
-EmitNativeDir = \
-  $(call AppendFile,                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$(strip $(1))"/>, $(NATIVE_FILE))
-
-# This is so named because Eclipse is able to create virtual make targets that call
-# to the real target which can have a different name. For now we don't need to use
-# this functionality that Eclipse provides.
-EmitMatchingMakeTarget = \
-  $(call AppendFile,            <target name="$(strip $(1))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">, $(NATIVE_FILE)) \
-  $(call AppendFile,                <buildCommand>$(MAKE_EXE)</buildCommand>, $(NATIVE_FILE)) \
-  $(call AppendFile,                <buildArguments>-C $(call FixPath, $(TOPDIR))</buildArguments>, $(NATIVE_FILE)) \
-  $(call AppendFile,                <buildTarget>$(strip $(1))</buildTarget>, $(NATIVE_FILE)) \
-  $(call AppendFile,                <stopOnError>true</stopOnError>, $(NATIVE_FILE)) \
-  $(call AppendFile,                <useDefaultCommand>false</useDefaultCommand>, $(NATIVE_FILE)) \
-  $(call AppendFile,                <runAllBuilders>true</runAllBuilders>, $(NATIVE_FILE)) \
-  $(call AppendFile,            </target>, $(NATIVE_FILE))
-
 # Emit the defines extracted from the list of options specified in the first parameter into
 # the language settings file, in Eclipse format.
 EmitExtractedDefines = \
@@ -130,7 +85,6 @@ EmitExtractedDefines = \
 SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
 define SetupEclipseWorkspaceBody
 
-  $1_CLASSPATH :=
   $1_NATURES :=
   $1_BUILD_MANAGERS :=
   $1_LINKED_RESOURCES :=
@@ -153,11 +107,15 @@ define SetupEclipseWorkspaceBody
   ifeq ($$($1_SHARED), true)
     $1_CLASSPATH_FILE := $(TOPDIR)/.classpath
     $1_WORKSPACE_FILE := $(TOPDIR)/.project
+    $1_NATIVE_FILE := $(TOPDIR)/.cproject
+    $1_SETTINGS_FILE := $(TOPDIR)/.settings/language.settings.xml
   else
-    IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
-    $1_CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
-    $1_WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
-    $$(call MakeDir, $(IDE_OUTPUTDIR))
+    $1_IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
+    $1_CLASSPATH_FILE := $$($1_IDE_OUTPUTDIR)/.classpath
+    $1_WORKSPACE_FILE := $$($1_IDE_OUTPUTDIR)/.project
+    $1_NATIVE_FILE := $$($1_IDE_OUTPUTDIR)/.cproject
+    $1_SETTINGS_FILE := $$($1_IDE_OUTPUTDIR)/.settings/language.settings.xml
+    $$(call MakeDir, $$($1_IDE_OUTPUTDIR))
   endif
 
   # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
@@ -166,23 +124,9 @@ define SetupEclipseWorkspaceBody
   #   endif
   # endif
 
-  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
-    $1_BUILD_MANAGERS += \
-      <buildCommand> \
-          <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
-          <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
-          <arguments> \
-          </arguments> \
-      </buildCommand> \
-      <buildCommand> \
-          <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
-          <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
-          <arguments> \
-          </arguments> \
-      </buildCommand>$$(NEWLINE)
-  endif
-
   ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
+
+    $1_CLASSPATH :=
 
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
@@ -204,229 +148,171 @@ define SetupEclipseWorkspaceBody
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
 
+    $1_NATIVE_SRCS :=
+
+    $1_BUILD_MANAGERS += \
+      <buildCommand> \
+          <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
+          <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
+          <arguments> \
+          </arguments> \
+      </buildCommand> \
+      <buildCommand> \
+          <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
+          <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
+          <arguments> \
+          </arguments> \
+      </buildCommand>$$(NEWLINE)
+
     $1_NATURES += \
       <nature>org.eclipse.cdt.core.cnature</nature> \
       <nature>org.eclipse.cdt.core.ccnature</nature> \
       <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature> \
       <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>$$(NEWLINE)
 
-    # Now emit the native file
-    $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(NATIVE_FILE))
-    $$(call AppendFile,<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">, $(NATIVE_FILE))
-    $$(call AppendFile,    <storageModule moduleId="scannerConfiguration">, $(NATIVE_FILE))
-    $$(call AppendFile,        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>, $(NATIVE_FILE))
-    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
-    $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>, $(NATIVE_FILE))
-    $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.settings">, $(NATIVE_FILE))
-    $$(call AppendFile,        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)">, $(NATIVE_FILE))
-    $$(call AppendFile,            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>, $(NATIVE_FILE))
-    $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" moduleId="org.eclipse.cdt.core.settings" name="Java">, $(NATIVE_FILE))
-    $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
-
-    # For some strange reason Eclipse requires that the binary parsers be listed for
-    # the workspace to be recognised as a C/C++ one
-    $$(call AppendFile,                <extensions>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                </extensions>, $(NATIVE_FILE))
-    $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
-    $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,            <storageModule moduleId="cdtBuildSystem" version="4.0.0">, $(NATIVE_FILE))
-    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
-    $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
-    # $$(call AppendFile,                        <toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9)" name="C/C++ Compiler" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">, $(NATIVE_FILE))
-    # $$(call AppendFile,                            <targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9).$(WORKSPACE_ID)" name=""/>, $(NATIVE_FILE))
-    $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
-    $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.$(WORKSPACE_ID)" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                        </toolChain>, $(NATIVE_FILE))
-    $$(call AppendFile,                    </folderInfo>, $(NATIVE_FILE))
-    $$(call AppendFile,                    <sourceEntries>, $(NATIVE_FILE))
-
     # This is always emitted, no matter which of the 3 natures were selected
-    $$(call EmitNativeDir, src/hotspot)
+    $1_NATIVE_SRCS += \
+      <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/hotspot"/>$$(NEWLINE)
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
+      $1_NATIVE_SRCS += $$(foreach src,$(NATIVE_DIRS), \
+        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$$(strip $$(src))"/>$$(NEWLINE))
     endif
 
-    $$(call AppendFile,                    </sourceEntries>, $(NATIVE_FILE))
-    $$(call AppendFile,                </configuration>, $(NATIVE_FILE))
-    $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
-    $$(call AppendFile,        </cconfiguration>, $(NATIVE_FILE))
-    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
-    $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">, $(NATIVE_FILE))
-    $$(call AppendFile,        <buildTargets>, $(NATIVE_FILE))
+    $1_WORKSPACE_MAJOR := $$(call RandomDigits, 10)
+    $1_WORKSPACE_MINOR := $$(call RandomDigits, 9)
 
-    # Omitted: reconfigure and dist-clean
-    # The former is sensitive to the make, shell and environment used
-    # The latter would destroy the virtual workspace
-    $$(call EmitMatchingMakeTarget, update-build-docs)
-    $$(call EmitMatchingMakeTarget, docs)
-    $$(call EmitMatchingMakeTarget, gensrc)
-    $$(call EmitMatchingMakeTarget, gendata)
-    $$(call EmitMatchingMakeTarget, copy)
-    $$(call EmitMatchingMakeTarget, java)
-    $$(call EmitMatchingMakeTarget, launchers)
-    $$(call EmitMatchingMakeTarget, libs)
-    $$(call EmitMatchingMakeTarget, hotspot)
-    $$(call EmitMatchingMakeTarget, jdk)
-    $$(call EmitMatchingMakeTarget, product-images)
-    $$(call EmitMatchingMakeTarget, bootcycle-images)
-    $$(call EmitMatchingMakeTarget, all-images)
-    $$(call EmitMatchingMakeTarget, test-image)
-    $$(call EmitMatchingMakeTarget, clean)
+    # FixPath already removes $(FIXPATH) automatically, but if we rely on FixPath
+    # to do it for us dir won't be able to handle the converted path (if on Windows).
+    # Reversing the order causes dir to mangle the preceeding $(FIXPATH) which breaks
+    # the ability of FixPath to remove it, so it has to be manually removed here.
+    #
+    # Note that the workspace setup system currently does not support Visual C++ when
+    # extracting compiler and/or system headers vital to the build!
+    $1_ENV := $$(call FixPath, $$(dir $$(patsubst $(FIXPATH), , $(CC))))
 
-    $$(call AppendFile,        </buildTargets>, $(NATIVE_FILE))
-    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
-    $$(call AppendFile,</cproject>, $(NATIVE_FILE))
+    # Sidestep annoying issue of WSL path conversion not working properly with true
+    # Unix paths. Eclipse can't run the WSL make by itself anyway, even if we could
+    # properly convert the path.
+    ifeq ($$(call isBuildOsEnv, windows.wsl1 windows.wsl2), true)
+      $1_MAKE := wsl.exe $(MAKE)
+    else
+      $1_MAKE := $$(call FixPath, $(MAKE))
+    endif
 
-    $$(call MakeDir, $(IDE_OUTPUTDIR)/.settings)
+    $1_MATCHING_MAKE_TARGETS :=
+    $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata \
+      copy java launchers libs hotspot jdk product-images all-images test-image clean
 
-    $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java">, $(LANGUAGE_SETTINGS))
+    # make reconfigure omitted since it is sensitive to which make was used
+    ifeq ($$($1_SHARED), true)
+      $1_PLAIN_MAKE_TARGETS += dist-clean
+    endif
 
-    $$(call AppendFile,        <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">, $(LANGUAGE_SETTINGS))
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    $1_MATCHING_MAKE_TARGETS += $$(foreach name,$$($1_PLAIN_MAKE_TARGETS), \
+      <target name="$$(strip $$(name))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder"> \
+          <buildCommand>$$($1_MAKE)</buildCommand> \
+          <buildArguments>-C $$(call FixPath, $(TOPDIR))</buildArguments> \
+          <buildTarget>$$(strip $$(name))</buildTarget> \
+          <stopOnError>true</stopOnError> \
+          <useDefaultCommand>false</useDefaultCommand> \
+          <runAllBuilders>true</runAllBuilders> \
+      </target>$$(NEWLINE))
 
-    # Doesn't hurt to include compilation database and build output parsing support
-    $$(call AppendFile,            <provider build-parser-id="" cdb-modified-time="" class="org.eclipse.cdt.managedbuilder.internal.language.settings.providers.CompilationDatabaseParser" id="org.eclipse.cdt.managedbuilder.core.CompilationDatabaseParser" name="Compilation Database Parser" prefer-non-shared="true" store-entries-with-project="true"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuildCommandParser" id="org.eclipse.cdt.managedbuilder.core.GCCBuildCommandParser" keep-relative-paths="false" name="CDT GCC Build Output Parser" parameter="$$(LEFT_PAREN)[^/\\\\]*$$(RIGHT_PAREN)$$(LEFT_PAREN)$$(LEFT_PAREN)g?cc$$(RIGHT_PAREN)|$$(LEFT_PAREN)[gc]\+\+$$(RIGHT_PAREN)|$$(LEFT_PAREN)clang$$(RIGHT_PAREN)$$(RIGHT_PAREN)" prefer-non-shared="true" store-entries-with-project="true"/>, $(LANGUAGE_SETTINGS))
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_NATIVE_FILE, \
+      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/native.template, \
+      OUTPUT_FILE := $$($1_NATIVE_FILE), \
+      REPLACEMENTS := \
+          @@DIR@@ => $$(call FixPath, $(TOPDIR)) ; \
+          @@ENV@@ => $$($1_ENV) ; \
+          @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
+          @@MINOR@@ =>  $$($1_WORKSPACE_MINOR) ; \
+          @@MAKE@@ => $$($1_MAKE) ; \
+          @@SRC@@ => $$($1_NATIVE_SRCS) ; \
+          @@MAKE_TARGETS@@ => $$($1_MATCHING_MAKE_TARGETS), \
+    ))
 
-    # Get the compiler environment settings out of the way
-    # Note that the Managed Build Setting Entries are left out, this is intentional as
-    # we don't want to mix the CDT Managed Builder with make if we don't need it
-    $$(call AppendFile,            <provider class="org.eclipse.cdt.internal.build.crossgcc.CrossGCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.build.crossgcc.CrossGCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT Cross GCC Built-in Compiler Settings" parameter="$$(DOLLAR){COMMAND} $$(DOLLAR){FLAGS} -E -P -v -dD &quot;$$(DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.gcc"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.g++"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    TARGETS += $$($1_CREATE_NATIVE_FILE)
 
-    # Eclipse seems to work without this, but I'll leave this here in case we suddenly
-    # need it if the way Language Settings Providers work suddenly change in the
-    # future.
-    # This would also be a helpful reference for when we eventually make this system
-    # more flexible and able to work with Visual C++ too. (I say we, but I'm likely to
-    # be the only one insane enough to be willing to go through the pain that such an
-    # overhaul would put anyone through...)
-    # $$(call AppendFile,            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="$$(DOLLAR){COMMAND} $$(DOLLAR){FLAGS} -E -P -v -dD &quot;$$(DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.gcc"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.g++"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
-    # $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    $$(call MakeDir, $$($1_SETTINGS_FILE))
 
-    # Now for the tricky part: Setting up the proper environment and macros that were
-    # defined during configure...
-    $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-    $$(call AppendFile,                <language id="org.eclipse.cdt.core.gcc">, $(LANGUAGE_SETTINGS))
+    # $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), ))
+    $1_CSETTINGS :=
+    $1_CXXSETTINGS :=
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-      $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
-        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))))
+      # $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+      #   <resource project-relative-path="$$(dirs)"> \
+      #       <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+      #   </resource>$$(NEWLINE))
 
       # jdk.sctp is a special (C only) case that needs several java.base headers
-      $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%, $$(call FindModuleNativeDirs, jdk.sctp))), \
-        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))
+      $1_CSETTINGS += $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%, $$(call FindModuleNativeDirs, jdk.sctp))), \
+        <resource project-relative-path="$$(dirs)"> \
+            <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/> \
+        </resource>$$(NEWLINE))
 
       # main.c source file used for generic launchers
-      $$(call AppendFile,                    <resource project-relative-path="src/java.base/share/native/launcher/main.c">, $(LANGUAGE_SETTINGS))
-      $$(call AppendFile,                        <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/>, $(LANGUAGE_SETTINGS))
-      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
-
-      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+      $1_CSETTINGS +=
+        <resource project-relative-path="src/java.base/share/native/launcher/main.c"> \
+            <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/> \
+        </resource>$$(NEWLINE)
     endif
 
-    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
-
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-    $$(call AppendFile,                <language id="org.eclipse.cdt.core.g++">, $(LANGUAGE_SETTINGS))
-
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
     # HotSpot first
-    $$(call AppendFile,                    <resource project-relative-path="src/hotspot">, $(LANGUAGE_SETTINGS))
+    $1_CXXSETTINGS += <resource project-relative-path="src/hotspot">$$(NEWLINE)
 
     # If only the Java Virtual Machine sources were requested, headers from other parts of
     # the native source that it needs will not be available. Add them as include paths here
     # instead.
     ifeq ($$($1_NATURE), HOTSPOT)
-      $$(foreach src, $$(strip $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
-        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>, $(LANGUAGE_SETTINGS)))
-      $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>, $(LANGUAGE_SETTINGS))
+      $1_CXXSETTINGS += $$(foreach src, $$(strip $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
+        $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>$$(NEWLINE))
+      $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>$$(NEWLINE)
     endif
 
-    $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc)"/>, $(LANGUAGE_SETTINGS))
+    $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc)"/>$$(NEWLINE)
 
     ifeq ($$(call check-jvm-feature, compiler2), true)
-      $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles)"/>, $(LANGUAGE_SETTINGS))
+      $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles)"/>$$(NEWLINE)
     endif
 
-    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+    $1_CXXSETTINGS += </resource>$$(NEWLINE)
 
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-    $$(call AppendFile,                    <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp">, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME), $(HOTSPOT_BUILD_TIME), $(call EpochToISO8601, $(shell $(DATE) +"%s")))&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
-
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-    $$(call AppendFile,                    <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp">, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME), $(HOTSPOT_BUILD_TIME), $(call EpochToISO8601, $(shell $(DATE) +"%s")))&quot;"/>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+    $1_CXXSETTINGS += \
+      <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
+          <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+          <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+          <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+      </resource> \
+      <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
+          <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+          <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+          <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+          <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+      </resource>$$(NEWLINE)
 
     # Now the rest of the C++ sources in the codebase
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-
-      $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
-        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS)) \
-        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))))
+      # $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+      #   <resource project-relative-path="$$(dirs)"> \
+      #       <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+      #   </resource>$$(NEWLINE))
     endif
 
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_SETTINGS_FILE, \
+      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/settings.template, \
+      OUTPUT_FILE := $$($1_SETTINGS_FILE), \
+      REPLACEMENTS := \
+          @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR), \
+    ))
 
-    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
-
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
-
-    $$(call AppendFile,        </extension>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,    </configuration>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,</project>, $(LANGUAGE_SETTINGS))
+    TARGETS += $$($1_CREATE_SETTINGS_FILE)
 
   endif
 
@@ -482,18 +368,22 @@ endef
 ifeq ($(WORKSPACE), java)
 $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
   NATURE := JAVA, \
+  SHARED := $(SHARED), \
 ))
 else ifeq ($(WORKSPACE), hotspot)
 $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
   NATURE := HOTSPOT, \
+  SHARED := $(SHARED), \
 ))
 else ifeq ($(WORKSPACE), native)
 $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
   NATURE := NATIVE, \
+  SHARED := $(SHARED), \
 ))
 else
 $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
   NATURE := MIXED, \
+  SHARED := $(SHARED), \
 ))
 endif
 

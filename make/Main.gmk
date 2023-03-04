@@ -259,21 +259,42 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
 
 $(eval $(call SetupTarget, eclipse-java-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := WORKSPACE=java, \
+    ARGS := --always-make WORKSPACE=java SHARED=false, \
 ))
 
 $(eval $(call SetupTarget, eclipse-hotspot-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := WORKSPACE=hotspot, \
+    ARGS := --always-make WORKSPACE=hotspot SHARED=false, \
 ))
 
 $(eval $(call SetupTarget, eclipse-native-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := WORKSPACE=native, \
+    ARGS := --always-make WORKSPACE=native SHARED=false, \
 ))
 
 $(eval $(call SetupTarget, eclipse-mixed-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make SHARED=false, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-java-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=java SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-hotspot-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=hotspot SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-native-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=native SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-mixed-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make SHARED=true, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \

@@ -18,5 +18,6 @@ NashornProfile.txt
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
+/.project
 /.classpath
 /.cproject

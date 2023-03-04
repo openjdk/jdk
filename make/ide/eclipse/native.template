@@ -16,10 +16,10 @@
     <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 
     <storageModule moduleId="org.eclipse.cdt.core.settings">
-        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE_ID@@">
+        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@">
             <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE_ID@@" moduleId="org.eclipse.cdt.core.settings" name="Java">
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" moduleId="org.eclipse.cdt.core.settings" name="Java">
                 <externalSettings/>
                 <extensions>
                     <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -32,16 +32,16 @@
             </storageModule>
 
             <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE_ID@@" name="Java" parent="org.eclipse.cdt.build.core.emptycfg">
-                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE_ID@@.@@RANDOM@@" name="/" resourcePath="">
-                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.@@RANDOM@@" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">
-                            <option id="cdt.managedbuild.option.gnu.cross.path.@@RANDOM@@" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="@@ENVPATH@@" valueType="string"/>
-                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.@@WORKSPACE_ID@@" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
-                            <builder command="@@MAKE@@" arguments="-C @@TOPDIR@@" id="cdt.managedbuild.builder.gnu.cross.@@RANDOM@@" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>
+                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" name="Java" parent="org.eclipse.cdt.build.core.emptycfg">
+                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@.@@MINOR@@" name="/" resourcePath="">
+                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.@@MINOR@@" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">
+                            <option id="cdt.managedbuild.option.gnu.cross.path.@@MINOR@@" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="@@ENV@@" valueType="string"/>
+                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.@@WORKSPACE@@" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+                            <builder command="@@MAKE@@" arguments="-C @@DIR@@" id="cdt.managedbuild.builder.gnu.cross.@@MINOR@@" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        @@SOURCES@@
+                        @@SRC@@
                     </sourceEntries>
                 </configuration>
             </storageModule>
