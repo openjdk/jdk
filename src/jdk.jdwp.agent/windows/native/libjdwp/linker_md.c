@@ -119,7 +119,7 @@ dbgsysBuildLibName(char *holder, int holderlen, const char *pname, const char *f
                 EXIT_ERROR(JVMTI_ERROR_INVALID_LOCATION, "One or more of the library paths supplied to jdwp, "
                                                          "likely by sun.boot.library.path, is too long.");
         }
-        sprintf(holder, "%s.dll", fname);
+        snprintf(holder, holderlen, "%s.dll", fname);
     } else {
       dll_build_name(holder, holderlen, pname, fname);
     }
