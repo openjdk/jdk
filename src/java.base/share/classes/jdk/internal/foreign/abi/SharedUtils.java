@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
@@ -157,25 +158,29 @@ public final class SharedUtils {
     }
 
     public static Class<?> primitiveCarrierForSize(long size, boolean useFloat) {
+        return primitiveLayoutForSize(size, useFloat).carrier();
+    }
+
+    public static ValueLayout primitiveLayoutForSize(long size, boolean useFloat) {
         if (useFloat) {
             if (size == 4) {
-                return float.class;
+                return JAVA_FLOAT;
             } else if (size == 8) {
-                return double.class;
+                return JAVA_DOUBLE;
             }
         } else {
             if (size == 1) {
-                return byte.class;
+                return JAVA_BYTE;
             } else if (size == 2) {
-                return short.class;
+                return JAVA_SHORT;
             } else if (size <= 4) {
-                return int.class;
+                return JAVA_INT;
             } else if (size <= 8) {
-                return long.class;
+                return JAVA_LONG;
             }
         }
 
-        throw new IllegalArgumentException("No type for size: " + size + " isFloat=" + useFloat);
+        throw new IllegalArgumentException("No layout for size: " + size + " isFloat=" + useFloat);
     }
 
     public static Linker getSystemLinker() {
@@ -184,6 +189,7 @@ public final class SharedUtils {
             case SYS_V -> SysVx64Linker.getInstance();
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
         };
     }
@@ -297,6 +303,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaList(actions, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaList(actions, scope);
         };
     }
 
@@ -307,6 +314,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaListOfAddress(address, scope);
+            case WIN_AARCH_64 -> WindowsAArch64Linker.newVaListOfAddress(address, scope);
         };
     }
 
@@ -317,6 +325,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.emptyVaList();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.emptyVaList();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.emptyVaList();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.emptyVaList();
         };
     }
 
