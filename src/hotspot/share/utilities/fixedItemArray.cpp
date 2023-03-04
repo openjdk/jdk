@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,22 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspace/chunkHeaderPool.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/fixedItemArray.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-namespace metaspace {
-
-// Returns reference to the one global chunk header pool.
-ChunkHeaderPool* ChunkHeaderPool::_chunkHeaderPool = nullptr;
-
-void ChunkHeaderPool::initialize() {
-  assert(_chunkHeaderPool == nullptr, "only once");
-  _chunkHeaderPool = new ChunkHeaderPool();
+void* CHeapAllocator::allocate(size_t l) {
+  return NEW_C_HEAP_ARRAY(char, l, mtInternal);
 }
 
-} // namespace metaspace
+void CHeapAllocator::deallocate(void* p) {
+  FREE_C_HEAP_ARRAY(char, p);
+}
 
+void* RawCHeapAllocator::allocate(size_t l) {
+  ALLOW_C_FUNCTION(::malloc, return ::malloc(l);)
+}
+
+void RawCHeapAllocator::deallocate(void* p) {
+  ALLOW_C_FUNCTION(::free, ::free(p);)
+}

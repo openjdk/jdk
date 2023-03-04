@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
 #include "services/nmtPreInit.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/fixedItemArray.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -57,36 +59,6 @@ static void* raw_checked_realloc(void* old, size_t s) {
   return p;
 }
 
-// --------- NMTPreInitAllocation --------------
-
-void* NMTPreInitAllocation::operator new(size_t count) {
-  return raw_checked_malloc(count);
-}
-
-void NMTPreInitAllocation::operator delete(void* p) {
-  raw_free(p);
-}
-
-NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
-  void* payload = raw_checked_malloc(payload_size);
-  NMTPreInitAllocation* a = new NMTPreInitAllocation(payload_size, payload);
-  return a;
-}
-
-NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size) {
-  assert(a->next == nullptr, "unhang from map first");
-  void* new_payload = raw_checked_realloc(a->payload, new_payload_size);
-  NMTPreInitAllocation* a2 = new NMTPreInitAllocation(new_payload_size, new_payload);
-  delete a;
-  return a2;
-}
-
-void NMTPreInitAllocation::do_free(NMTPreInitAllocation* a) {
-  assert(a->next == nullptr, "unhang from map first");
-  raw_free(a->payload);
-  delete a;
-}
-
 // --------- NMTPreInitAllocationTable --------------
 
 void* NMTPreInitAllocationTable::operator new(size_t count) {
@@ -99,18 +71,6 @@ void NMTPreInitAllocationTable::operator delete(void* p) {
 
 NMTPreInitAllocationTable::NMTPreInitAllocationTable() {
   ::memset(_entries, 0, sizeof(_entries));
-}
-
-NMTPreInitAllocationTable::~NMTPreInitAllocationTable() {
-  // clear LU entries, but let payloads live!
-  for (int i = 0; i < table_size; i++) {
-    NMTPreInitAllocation* a = _entries[i];
-    while (a != nullptr) {
-      NMTPreInitAllocation* a2 = a->next;
-      delete a;
-      a = a2;
-    }
-  }
 }
 
 // print a string describing the current state
@@ -186,6 +146,7 @@ void NMTPreInitAllocationTable::verify() const {
 // --------- NMTPreinit --------------
 
 NMTPreInitAllocationTable* NMTPreInit::_table = nullptr;
+NMTPreInitAllocationPoolType* NMTPreInit::_entry_pool = nullptr;
 
 // Some statistics
 unsigned NMTPreInit::_num_mallocs_pre = 0;
@@ -193,8 +154,17 @@ unsigned NMTPreInit::_num_reallocs_pre = 0;
 unsigned NMTPreInit::_num_frees_pre = 0;
 
 void NMTPreInit::create_table() {
-  assert(_table == nullptr, "just once");
+  assert(_table == nullptr && _entry_pool == nullptr, "invalid state");
   _table = new NMTPreInitAllocationTable;
+  _entry_pool = new NMTPreInitAllocationPoolType;
+}
+
+void NMTPreInit::delete_table() {
+  assert(_table != nullptr && _entry_pool != nullptr, "invalid state");
+  delete _table;
+  _table = nullptr;
+  delete _entry_pool;
+  _entry_pool = nullptr;
 }
 
 // Allocate with os::malloc (hidden to prevent having to include os.hpp)
@@ -213,20 +183,41 @@ void NMTPreInit::pre_to_post(bool nmt_off) {
     // Since neither pre- nor post-init-allocations use headers, from now on any pre-init allocation
     // can be handled directly by os::realloc or os::free.
     // We also can get rid of the lookup table.
-    // Note that we deliberately leak the headers (NMTPreInitAllocation) in order to speed up startup.
-    // That may leak about 12KB of memory for ~500 surviving pre-init allocations, which is a typical
-    // number. This is a compromise to keep the coding simple and startup time short. It could very
-    // easily improved by keeping a header pool, similar to metaspace ChunkHeaderPool. But since NMTPreInit
-    // had been critizised as "too complicated", I try to keep things short and simple.
-    delete _table;
-    _table = nullptr;
+    delete_table();
   }
+}
+
+NMTPreInitAllocation* NMTPreInit::do_alloc(size_t payload_size) {
+  // Create lookup table if needed. Only do this on malloc. Everything should start with malloc.
+  if (_table == nullptr) {
+    create_table();
+  }
+  void* payload = raw_checked_malloc(payload_size);
+  NMTPreInitAllocation* a = _entry_pool->allocate();
+  a->next = nullptr;
+  a->payload = payload;
+  a->size = payload_size;
+  return a;
+}
+
+NMTPreInitAllocation* NMTPreInit::do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size) {
+  assert(a->next == nullptr, "unhang from map first");
+  a->payload = raw_checked_realloc(a->payload, new_payload_size);
+  a->size = new_payload_size;
+  return a;
+}
+
+void NMTPreInit::do_free(NMTPreInitAllocation* a) {
+  assert(a->next == nullptr, "unhang from map first");
+  raw_free(a->payload);
+  _entry_pool->deallocate(a);
 }
 
 #ifdef ASSERT
 void NMTPreInit::verify() {
   if (_table != nullptr) {
     _table->verify();
+    _entry_pool->verify();
   }
   assert(_num_reallocs_pre <= _num_mallocs_pre &&
          _num_frees_pre <= _num_mallocs_pre, "stats are off");

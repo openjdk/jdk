@@ -32,6 +32,7 @@
 #endif
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/fixedItemArray.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -120,19 +121,8 @@ class outputStream;
 
 struct NMTPreInitAllocation {
   NMTPreInitAllocation* next;
-  const size_t size; // (inner) payload size without header
-  void* const payload;
-
-  NMTPreInitAllocation(size_t s, void* p) : next(nullptr), size(s), payload(p) {}
-
-  // These functions do raw-malloc/realloc/free a C-heap block of given payload size,
-  //  preceded with a NMTPreInitAllocation header.
-  static NMTPreInitAllocation* do_alloc(size_t payload_size);
-  static NMTPreInitAllocation* do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size);
-  static void do_free(NMTPreInitAllocation* a);
-
-  void* operator new(size_t l);
-  void  operator delete(void* p);
+  size_t size; // (inner) payload size without header
+  void* payload;
 };
 
 class NMTPreInitAllocationTable {
@@ -181,7 +171,6 @@ class NMTPreInitAllocationTable {
 public:
 
   NMTPreInitAllocationTable();
-  ~NMTPreInitAllocationTable();
 
   // Adds an entry to the table
   void add(NMTPreInitAllocation* a) {
@@ -217,10 +206,20 @@ public:
   void  operator delete(void* p);
 };
 
+// Entries live in a pool that uses raw malloc.
+typedef FixedItemArray<NMTPreInitAllocation,
+    NOT_DEBUG(1024) DEBUG_ONLY(64), // Entries per slab. Lower in debug to stress slab turnover.
+    NOT_DEBUG(0) DEBUG_ONLY(8192),  // Number of slabs. Infinite in release, in debug limited to give
+                                    // us a total of 512k (64*8k) possible allocations in pre-init phase.
+                                    // If we ever reach that, something is off.
+    RawCHeapAllocator> NMTPreInitAllocationPoolType;
+
 // NMTPreInit is the outside interface to all of NMT preinit handling.
 class NMTPreInit : public AllStatic {
+  friend struct NMTPreInitMapTests;
 
   static NMTPreInitAllocationTable* _table;
+  static NMTPreInitAllocationPoolType* _entry_pool;
 
   // Some statistics
   static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
@@ -232,11 +231,6 @@ class NMTPreInit : public AllStatic {
 
   static void add_to_map(NMTPreInitAllocation* a) {
     assert(!MemTracker::is_initialized(), "lookup map cannot be modified after NMT initialization");
-    // Only on add, we create the table on demand. Only needed on add, since everything should start
-    // with a call to os::malloc().
-    if (_table == nullptr) {
-      create_table();
-    }
     return _table->add(a);
   }
 
@@ -254,6 +248,12 @@ class NMTPreInit : public AllStatic {
   // Just a wrapper for os::malloc to avoid including os.hpp here.
   static void* do_os_malloc(size_t size, MEMFLAGS memflags);
 
+  // These functions do raw-malloc/realloc/free a C-heap block of given payload size,
+  //  preceded with a NMTPreInitAllocation header.
+  static NMTPreInitAllocation* do_alloc(size_t payload_size);
+  static NMTPreInitAllocation* do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size);
+  static void do_free(NMTPreInitAllocation* a);
+
 public:
 
   // Switches from NMT pre-init state to NMT post-init state;
@@ -267,8 +267,11 @@ public:
     size = MAX2((size_t)1, size);         // malloc(0)
     if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
+      if (_table == nullptr) {
+        create_table();
+      }
       // Allocate entry and add address to lookup table
-      NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
+      NMTPreInitAllocation* a = do_alloc(size);
       add_to_map(a);
       (*rc) = a->payload;
       _num_mallocs_pre++;
@@ -291,7 +294,7 @@ public:
         // - the address must already be in the lookup table
         // - find the old entry, remove from table, reallocate, add to table
         NMTPreInitAllocation* a = find_and_remove_in_map(old_p);
-        a = NMTPreInitAllocation::do_reallocate(a, new_size);
+        a = do_reallocate(a, new_size);
         add_to_map(a);
         (*rc) = a->payload;
         _num_reallocs_pre++;
@@ -342,7 +345,7 @@ public:
         //   NMTPreInit::handle_malloc()
         // - find the old entry, unhang from map, free it
         NMTPreInitAllocation* a = find_and_remove_in_map(p);
-        NMTPreInitAllocation::do_free(a);
+        do_free(a);
         _num_frees_pre++;
         return true;
       }

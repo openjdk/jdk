@@ -45,6 +45,7 @@ public:
   static void mark_range(void* p, size_t s)               { mark_range_with(p, s, 32); }
   static bool is_range_marked(const void* p, size_t s)    { return is_range_marked(p, s, 32); }
 
+  static uint8_t ptr2mark(const void* p)                  { return (uint8_t)((p2i(p) ^ (p2i(p) >> 8)) & 0xFF); }
 };
 
 #define ASSERT_RANGE_IS_MARKED_WITH(p, size, mark)  ASSERT_TRUE(GtestUtils::is_range_marked(p, size, mark))
@@ -62,6 +63,10 @@ public:
 
 #define ASSERT_ALIGN(p, n) ASSERT_TRUE(is_aligned(p, n))
 
+#ifdef LOG_PLEASE
 #define LOG_HERE(s, ...) { printf(s, __VA_ARGS__); printf("\n"); fflush(stdout); }
+#else
+#define LOG_HERE(s, ...)
+#endif
 
 #endif // TESTUTILS_HPP

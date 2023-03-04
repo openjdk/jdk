@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/fixedItemArray.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
@@ -38,62 +40,20 @@ namespace metaspace {
 // Chunk headers (Metachunk objects) are separate entities from their payload.
 //  Since they are allocated and released frequently in the course of buddy allocation
 //  (splitting, merging chunks happens often) we want allocation of them fast. Therefore
-//  we keep them in a simple pool (somewhat like a primitive slab allocator).
+//  we keep them in a simple pool.
 
 class ChunkHeaderPool : public CHeapObj<mtMetaspace> {
-
-  static const int SlabCapacity = 128;
-
-  struct Slab : public CHeapObj<mtMetaspace> {
-    Slab* _next;
-    int _top;
-    Metachunk _elems [SlabCapacity];
-    Slab() : _next(nullptr), _top(0) {
-      for (int i = 0; i < SlabCapacity; i++) {
-        _elems[i].clear();
-      }
-    }
-  };
-
-  IntCounter _num_slabs;
-  Slab* _first_slab;
-  Slab* _current_slab;
-
-  IntCounter _num_handed_out;
-
-  MetachunkList _freelist;
-
-  void allocate_new_slab();
-
+  FixedItemArray<Metachunk, 128, 0, CHeapAllocator> _pool;
   static ChunkHeaderPool* _chunkHeaderPool;
-
 public:
-
-  ChunkHeaderPool();
-
-  ~ChunkHeaderPool();
 
   // Allocates a Metachunk structure. The structure is uninitialized.
   Metachunk* allocate_chunk_header() {
     DEBUG_ONLY(verify());
-
-    Metachunk* c = nullptr;
-    c = _freelist.remove_first();
-    assert(c == nullptr || c->is_dead(), "Not a freelist chunk header?");
-    if (c == nullptr) {
-      if (_current_slab == nullptr ||
-          _current_slab->_top == SlabCapacity) {
-        allocate_new_slab();
-        assert(_current_slab->_top < SlabCapacity, "Sanity");
-      }
-      c = _current_slab->_elems + _current_slab->_top;
-      _current_slab->_top++;
-    }
-    _num_handed_out.increment();
+    Metachunk* c = _pool.allocate();
     // By contract, the returned structure is uninitialized.
     // Zap to make this clear.
     DEBUG_ONLY(c->zap_header(0xBB);)
-
     return c;
   }
 
@@ -101,33 +61,22 @@ public:
     // We only ever should return free chunks, since returning chunks
     // happens only on merging and merging only works with free chunks.
     assert(c != nullptr && c->is_free(), "Sanity");
-#ifdef ASSERT
     // In debug, fill dead header with pattern.
-    c->zap_header(0xCC);
-    c->set_next(nullptr);
-    c->set_prev(nullptr);
-#endif
+    DEBUG_ONLY(c->zap_header(0xCC);)
     c->set_dead();
-    _freelist.add(c);
-    _num_handed_out.decrement();
+    _pool.deallocate(c);
   }
 
-  // Returns number of allocated elements.
-  int used() const                   { return _num_handed_out.get(); }
+  int used() const                      { return _pool.num_allocated(); }
+  int freelist_size() const             { return _pool.num_free(); }
+  size_t memory_footprint_words() const { return _pool.footprint(); }
 
-  // Returns number of elements in free list.
-  int freelist_size() const          { return _freelist.count(); }
-
-  // Returns size of memory used.
-  size_t memory_footprint_words() const;
-
-  DEBUG_ONLY(void verify() const;)
+  DEBUG_ONLY(void verify() const { _pool.verify(); })
 
   static void initialize();
 
   // Returns reference to the one global chunk header pool.
   static ChunkHeaderPool* pool() { return _chunkHeaderPool; }
-
 };
 
 } // namespace metaspace
