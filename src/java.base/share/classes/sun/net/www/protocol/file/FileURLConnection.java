@@ -90,6 +90,10 @@ public class FileURLConnection extends URLConnection {
         }
     }
 
+    public boolean isConnected() {
+        return connected;
+    }
+
     private boolean initializedHeaders = false;
 
     private void initializeHeaders() {
