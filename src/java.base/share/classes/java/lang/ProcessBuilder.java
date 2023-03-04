@@ -1075,6 +1075,11 @@ public final class ProcessBuilder
      *
      * @throws IOException if an I/O error occurs
      *
+     * @implNote
+     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.ProcessBuilder}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code ProcessBuilder.start()} is logged.
+     *
      * @see Runtime#exec(String[], String[], java.io.File)
      */
     public Process start() throws IOException {
@@ -1284,6 +1289,9 @@ public final class ProcessBuilder
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes
+     *
+     * @implNote
+     * The start of each process is logged by {@link ProcessBuilder#start()}.
      *
      * @throws IOException if an I/O error occurs
      * @since 9

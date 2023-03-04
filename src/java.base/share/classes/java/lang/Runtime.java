@@ -349,6 +349,9 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
@@ -396,6 +399,9 @@ public class Runtime {
      *
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
+     *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -458,6 +464,9 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     *
      * @see     ProcessBuilder
      * @since 1.3
      */
@@ -503,6 +512,9 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray) throws IOException {
@@ -545,6 +557,9 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
      *
      * @see     ProcessBuilder
      */
@@ -640,6 +655,9 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * The new process creation is logged by {@link ProcessBuilder#start()}.
      *
      * @see     ProcessBuilder
      * @since 1.3
