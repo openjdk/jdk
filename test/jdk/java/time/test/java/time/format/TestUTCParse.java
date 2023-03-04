@@ -60,10 +60,10 @@ public class TestUTCParse {
     @Test
     public void testUTCShortNameRoundTrip() {
         var fmt = DateTimeFormatter.ofPattern("z", Locale.FRANCE);
-        var now = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        var formatted = fmt.format(now);
+        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        var formatted = fmt.format(zdt);
         assertEquals(formatted, "UTC\u221208:00");
-        assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), now.getZone());
+        assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), zdt.getZone());
     }
 
     @Test(dataProvider = "utcZoneIdStrings")
