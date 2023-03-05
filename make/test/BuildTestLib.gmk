@@ -36,7 +36,7 @@ TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
-    SRC := $(TEST_LIB_SOURCE_DIR)/sun $(TEST_LIB_SOURCE_DIR)/jdk/test/whitebox/parser, \
+    SRC := $(TEST_LIB_SOURCE_DIR)/jdk/test/whitebox/parser, \
     BIN := $(TEST_LIB_SUPPORT)/wb_classes, \
     JAR := $(TEST_LIB_SUPPORT)/wb.jar, \
     DISABLED_WARNINGS := deprecation removal, \
