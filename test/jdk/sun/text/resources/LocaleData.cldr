@@ -7875,3 +7875,6 @@ CalendarData//minimalDaysInFirstWeek=1: 001 GU UM US VI;4: AD AN AT AX BE BG CH 
 # tzdata2022f
 TimeZoneNames/en/America\/Ojinaga/1=Central Standard Time
 TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time
+
+# bug 8303472
+LocaleNames/en/TR=T\u00fcrkiye

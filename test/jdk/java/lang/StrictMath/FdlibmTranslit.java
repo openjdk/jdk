@@ -864,6 +864,16 @@ public class FdlibmTranslit {
             }
 
             jz = jk;
+            /*
+             * Transliteration note: the FDLIBM C sources have a
+             * "recompute:" label at this point and a "goto
+             * recompute;" later on at the indicated point. This
+             * structure was replaced by wrapping the code in the
+             * while(true){...} loop below, replacing the goto with
+             * the continue to re-execute the loop and by adding
+             * breaks to exit the loop on the other control flow
+             * paths.
+             */
             while(true) {
                 /* distill q[] into iq[] reversingly */
                 for(i=0,j=jz,z=q[jz];j>0;i++,j--) {
@@ -923,6 +933,7 @@ public class FdlibmTranslit {
                             q[i] = fw;
                         }
                         jz += k;
+                        // At this point "goto recompute;" in the original C sources.
                         continue;
                     } else { break;}
                 } else {break;}
