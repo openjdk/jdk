@@ -303,7 +303,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 case TAG_BitString:
                     out.append(String.format("%s [%d]", tagName(tag), len));
                     do {
-                        var skipped = in.skip(len);
+                        var skipped = (int) in.skip(len);
                         len -= skipped;
                         available -= skipped;
                     } while (len > 0);
