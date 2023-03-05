@@ -63,7 +63,7 @@ indexing for the C and C++ sources throughout the entire codebase, as well as
 registering all common make targets to be runnable from the Eclipse explorer.
 This can be done after configuring by running:
 
-```shell
+```
 make eclipse-native-env
 ```
 
@@ -81,7 +81,7 @@ compiler is, at present, not supported as an indexer.
 If desired, you can instead request make to only include indexing support for
 just the Java Virtual Machine instead of the entire native codebase, by running:
 
-```shell
+```
 make eclipse-hotspot-env
 ```
 
@@ -95,7 +95,7 @@ make system also supports generating a combined Java and C/C++ Workspace for
 Eclipse which can then conveniently switch between Java and C/C++ natures
 during development by running:
 
-```shell
+```
 make eclipse-mixed-env
 ```
 
@@ -106,7 +106,7 @@ By default, the Eclipse Workspace is located in the ide subdirectory in the
 build output. To share the JDK's source directory with the Eclipse Workspace,
 you can instead run:
 
-```shell
+```
 make eclipse-shared-<ENV>-env
 ```
 
@@ -161,7 +161,7 @@ a popular choice alongside IntelliJ IDEA for Java development. Likewise, the
 JDK now includes support for developing its Java sources with Eclipse, which
 can be achieved by setting up a Java Workspace by running:
 
-```shell
+```
 make eclipse-java-env
 ```
 
@@ -175,7 +175,7 @@ Java Workspace.
 Alternatively, if you want a Java Workspace inside the JDK's source directory,
 you can instead run:
 
-```shell
+```
 make eclipse-shared-java-env
 ```
 
@@ -183,6 +183,6 @@ As mentioned above for Eclipse CDT, you can create a combined Java and C/C++
 Workspace which can conveniently switch between Java and C/C++ natures during
 development by running:
 
-```shell
+```
 make eclipse-mixed-env
 ```

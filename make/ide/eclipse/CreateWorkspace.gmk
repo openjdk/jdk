@@ -120,7 +120,7 @@ define SetupEclipseWorkspaceBody
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
     ifeq ($$(call isCompiler, microsoft), true)
-      $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
+      $$(error Visual C++ is not yet supported as an indexer for Native Workspaces!)
     endif
   endif
 
