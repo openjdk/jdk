@@ -29,12 +29,16 @@ package jdk.vm.ci.meta;
 public interface Annotated {
 
     /**
-     * Gets the annotations of this element whose types are in {@code filter}. All enum types
-     * referenced by the returned annotation are initialized. Class initialization is not triggered
-     * for enum types referenced by other annotations of this element.
+     * Gets the annotations of this element whose types are in {@code filter}.
+     * The search for annotations of this element includes inherited annotations
+     * if this element is a class.
+     * 
+     * All enum types referenced by the returned annotation are initialized.
+     * Class initialization is not performed for enum types referenced by other
+     * annotations of this element.
      *
-     * The caller of this method is free to modify the returned array; it will have no effect on the
-     * arrays returned to other callers.
+     * The caller of this method is free to modify the returned array; it will
+     * have no effect on the arrays returned to other callers.
      *
      * @param filter an array of types
      * @return the annotations of this type whose types are in {@code filter}

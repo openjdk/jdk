@@ -1160,6 +1160,9 @@ public class TestResolvedJavaType extends TypeUniverse {
             getAnnotationDataTest(c);
         }
 
+        // Primitive classes have no annotations but we cannot directly
+        // test absence of annotations. Instead, just ensure empty answers
+        // are returned when looking up an arbitrary annotation type.
         Class<?>[] prims = {void.class, byte.class, int.class, double.class, float.class, short.class, char.class, long.class};
         ResolvedJavaType overrideType = metaAccess.lookupJavaType(Override.class);
         for (Class<?> c : prims) {
@@ -1169,6 +1172,17 @@ public class TestResolvedJavaType extends TypeUniverse {
             AnnotationData[] adArray = type.getAnnotationData(overrideType);
             Assert.assertEquals(0, adArray.length);
         }
+
+        // Test that inherited annotations are handled properly.
+        ResolvedJavaType namedType = metaAccess.lookupJavaType(AnnotationTestInput.Named.class);
+        AnnotationData ad = metaAccess.lookupJavaType(AnnotationTestInput.OwnName.class).getAnnotationDataFor(namedType);
+        Assert.assertEquals("NonInheritedValue", ad.getString("value"));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName1.class).getAnnotationDataFor(namedType);
+        Assert.assertEquals("Super1", ad.getString("value"));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName2.class).getAnnotationDataFor(namedType);
+        Assert.assertEquals("Super2", ad.getString("value"));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName3.class).getAnnotationDataFor(namedType);
+        Assert.assertEquals("Super1", ad.getString("value"));
     }
 
     // @formatter:off

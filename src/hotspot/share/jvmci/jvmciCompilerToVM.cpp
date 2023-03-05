@@ -2645,7 +2645,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JNIHandles::make_local(THREAD, reflected);
 }
 
-static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHandle annotations,
+static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHandle annotations, bool for_class,
                                               jint filter_length, InstanceKlass** filter,
                                               JavaThread* THREAD, JVMCIEnv* JVMCIENV) {
   // Get a ConstantPool object for annotation parsing
@@ -2673,6 +2673,7 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHa
   args.push_oop(annotations);
   args.push_oop(Handle(THREAD, holder->java_mirror()));
   args.push_oop(jcp);
+  args.push_int(for_class);
   args.push_oop(filter_classes);
   Symbol* signature = vmSymbols::encodeAnnotations_signature();
   JavaCalls::call_static(&result,
@@ -2717,7 +2718,7 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationData, (JNIEnv* env, jobjec
 
   typeArrayOop annotations_oop = Annotations::make_java_array(holder->class_annotations(), CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(holder, annotations, true, filter_length, filter_klasses, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
@@ -2728,7 +2729,7 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, j
 
   typeArrayOop annotations_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(holder, annotations, false, filter_length, filter_klasses, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
@@ -2739,7 +2740,7 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobjec
 
   typeArrayOop annotations_oop = Annotations::make_java_array(fd.annotations(), CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(holder, annotations, false, filter_length, filter_klasses, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))

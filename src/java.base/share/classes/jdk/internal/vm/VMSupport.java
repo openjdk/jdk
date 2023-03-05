@@ -26,9 +26,12 @@ package jdk.internal.vm;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
+import sun.reflect.annotation.AnnotationType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.IncompleteAnnotationException;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -162,13 +166,40 @@ public class VMSupport {
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
                                            Class<?> declaringClass,
                                            ConstantPool cp,
+                                           boolean forClass,
                                            Class<? extends Annotation>[] selectAnnotationClasses)
     {
-        Collection<Annotation> annotations = selectAnnotationClasses == null ?
-                AnnotationParser.parseAnnotations(rawAnnotations, cp, declaringClass).values() :
-                AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, selectAnnotationClasses).values();
+        Map<Class<? extends Annotation>, Annotation> annotations =
+                AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, selectAnnotationClasses);
+        if (forClass && annotations.size() != selectAnnotationClasses.length) {
+            Class<?> superClass = declaringClass.getSuperclass();
+            nextSuperClass:
+            while (superClass != null) {
+                JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+                Map<Class<? extends Annotation>, Annotation> superAnnotations =
+                    AnnotationParser.parseSelectAnnotations(
+                            jla.getRawClassAnnotations(superClass),
+                            jla.getConstantPool(superClass),
+                            superClass,
+                            selectAnnotationClasses);
 
-        return encodeAnnotations(annotations);
+                for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
+                    Class<? extends Annotation> annotationClass = e.getKey();
+                    if (!annotations.containsKey(annotationClass) && AnnotationType.getInstance(annotationClass).isInherited()) {
+                        if (annotations.isEmpty()) {
+                            // An empty map might be unmodifiable (e.g. Collections.emptyMap()).
+                            annotations = new LinkedHashMap<Class<? extends Annotation>, Annotation>();
+                        }
+                        annotations.put(annotationClass, e.getValue());
+                        if (annotations.size() == selectAnnotationClasses.length) {
+                            break nextSuperClass;
+                        }
+                    }
+                }
+                superClass = superClass.getSuperclass();
+            }
+        }
+        return encodeAnnotations(annotations.values());
     }
 
     /**

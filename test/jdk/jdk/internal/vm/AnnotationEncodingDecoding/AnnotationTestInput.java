@@ -23,6 +23,7 @@
 package jdk.internal.vm.test;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -99,6 +100,20 @@ public class AnnotationTestInput {
     public void annotatedMethod() {
     }
 
+    @Named("Super1")
+    public static class Super1 {}
+    @Named("Super2")
+    public static class Super2 extends Super1 {}
+    public static class Super3 extends Super1 {}
+
+    @Named("NonInheritedValue")
+    public static class OwnName extends Super1 {}
+
+    public static class InheritedName1 extends Super1 {}
+    public static class InheritedName2 extends Super2 {}
+    public static class InheritedName3 extends Super3 {}
+
+    @Named("AnnotatedClass")
     @Single(string = "a",
             stringArray = {"a", "b"},
             classValue = String.class,
@@ -219,6 +234,12 @@ public class AnnotationTestInput {
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface NestedAnno {
+        String value();
+    }
+
+    @Inherited
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Named {
         String value();
     }
 
