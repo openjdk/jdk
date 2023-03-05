@@ -144,7 +144,7 @@ void Management::init() {
   _optional_support.isRemoteDiagnosticCommandsSupported = 1;
 
   // Registration of the diagnostic commands
-  DCmdRegistrant::register_dcmds();
+  DCmd::register_dcmds();
 }
 
 void Management::initialize(TRAPS) {

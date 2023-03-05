@@ -310,6 +310,11 @@ public:
   // main method to invoke the framework
   static void parse_and_execute(DCmdSource source, outputStream* out, const char* cmdline,
                                 char delim, TRAPS);
+
+  // Convenience method to register Dcmds, without a need to change
+  // management.cpp every time.
+  static void register_dcmds();
+
 };
 
 class DCmdWithParser : public DCmd {
@@ -450,18 +455,6 @@ private:
       return 0;
     }
   }
-};
-
-// This class provides a convenient way to register Dcmds, without a need to change
-// management.cpp every time. The body of this method resides in
-// diagnosticCommand.cpp.
-
-class DCmdRegistrant : public AllStatic {
-
-private:
-    static void register_dcmds();
-
-    friend class Management;
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP

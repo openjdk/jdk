@@ -81,7 +81,7 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmdRegistrant::register_dcmds(){
+void DCmd::register_dcmds(){
   // Registration of the diagnostic commands
   // First argument specifies which interfaces will export the command
   // Second argument specifies if the command is enabled
