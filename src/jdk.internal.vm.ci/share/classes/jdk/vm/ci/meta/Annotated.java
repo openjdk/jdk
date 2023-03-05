@@ -32,7 +32,7 @@ public interface Annotated {
      * Gets the annotations of this element whose types are in {@code filter}.
      * The search for annotations of this element includes inherited annotations
      * if this element is a class.
-     * 
+     *
      * All enum types referenced by the returned annotation are initialized.
      * Class initialization is not performed for enum types referenced by other
      * annotations of this element.
