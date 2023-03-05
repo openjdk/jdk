@@ -48,8 +48,6 @@ module jdk.internal.le {
     exports jdk.internal.org.jline.terminal.spi to
         jdk.jshell;
 
-    uses jdk.internal.org.jline.terminal.spi.JnaSupport;
-
     // Console
     provides jdk.internal.io.JdkConsoleProvider with
             jdk.internal.org.jline.JdkConsoleProviderImpl;
