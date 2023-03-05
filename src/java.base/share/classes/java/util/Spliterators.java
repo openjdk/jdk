@@ -908,18 +908,21 @@ public final class Spliterators {
             OfRef() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfInt
                 extends EmptySpliterator<Integer, Spliterator.OfInt, IntConsumer>
                 implements Spliterator.OfInt {
             OfInt() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfLong
                 extends EmptySpliterator<Long, Spliterator.OfLong, LongConsumer>
                 implements Spliterator.OfLong {
             OfLong() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfDouble
                 extends EmptySpliterator<Double, Spliterator.OfDouble, DoubleConsumer>
                 implements Spliterator.OfDouble {

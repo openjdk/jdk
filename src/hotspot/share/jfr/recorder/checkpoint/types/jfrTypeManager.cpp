@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
@@ -237,6 +238,9 @@ bool JfrTypeManager::initialize() {
   register_static_type(TYPE_THREADSTATE, true, new ThreadStateConstant());
   register_static_type(TYPE_BYTECODE, true, new BytecodeConstant());
   register_static_type(TYPE_COMPILERTYPE, true, new CompilerTypeConstant());
+  if (MemTracker::enabled()) {
+    register_static_type(TYPE_NMTTYPE, true, new NMTTypeConstant());
+  }
   return load_thread_constants(JavaThread::current());
 }
 

@@ -21,10 +21,21 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @bug 8284161 8288214
  * @summary Verifies that FRAME_POP event is delivered when called from URL.openStream().
+ * @enablePreview
+ * @modules jdk.httpserver
+ * @library /test/lib
+ * @run main/othervm/native
+ *     -agentlib:VThreadNotifyFramePopTest
+ *     -Djdk.defaultScheduler.parallelism=2 -Djdk.defaultScheduler.maxPoolSize=2
+ *     VThreadNotifyFramePopTest
+ */
+
+/*
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
  * @modules jdk.httpserver
@@ -32,6 +43,8 @@
  * @run main/othervm/native
  *     -agentlib:VThreadNotifyFramePopTest
  *     -Djdk.defaultScheduler.parallelism=2 -Djdk.defaultScheduler.maxPoolSize=2
+ *     -XX:+UnlockExperimentalVMOptions
+ *     -XX:-VMContinuations
  *     VThreadNotifyFramePopTest
  */
 

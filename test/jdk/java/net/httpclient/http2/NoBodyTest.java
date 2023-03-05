@@ -26,7 +26,9 @@
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors NoBodyTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
+ *                     -Djdk.internal.httpclient.debug=true
+ *                     NoBodyTest
  */
 
 import java.io.IOException;

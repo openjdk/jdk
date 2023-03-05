@@ -57,6 +57,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -66,7 +67,6 @@
 
 // Forward declarations
 class G1Allocator;
-class G1ArchiveAllocator;
 class G1BatchedTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
@@ -75,7 +75,6 @@ class G1ConcurrentRefine;
 class G1GCCounters;
 class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
-class G1HotCardCache;
 class G1NewTracer;
 class G1RemSet;
 class G1ServiceTask;
@@ -118,6 +117,32 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   void reset_from_card_cache(uint start_idx, size_t num_regions);
  public:
   void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
+};
+
+// Helper to claim contiguous sets of JavaThread for processing by multiple threads.
+class G1JavaThreadsListClaimer : public StackObj {
+  ThreadsListHandle _list;
+  uint _claim_step;
+
+  volatile uint _cur_claim;
+
+  // Attempts to claim _claim_step JavaThreads, returning an array of claimed
+  // JavaThread* with count elements. Returns null (and a zero count) if there
+  // are no more threads to claim.
+  JavaThread* const* claim(uint& count);
+
+public:
+  G1JavaThreadsListClaimer(uint claim_step) : _list(), _claim_step(claim_step), _cur_claim(0) {
+    assert(claim_step > 0, "must be");
+  }
+
+  // Executes the given closure on the elements of the JavaThread list, chunking the
+  // JavaThread set in claim_step chunks for each caller to reduce parallelization
+  // overhead.
+  void apply(ThreadClosure* cl);
+
+  // Total number of JavaThreads that can be claimed.
+  uint length() const { return _list.length(); }
 };
 
 class G1CollectedHeap : public CollectedHeap {
@@ -218,9 +243,6 @@ public:
   size_t bytes_used_during_gc() const { return _bytes_used_during_gc; }
 
 private:
-  // Class that handles archive allocation ranges.
-  G1ArchiveAllocator* _archive_allocator;
-
   // GC allocation statistics policy for survivors.
   G1EvacStats _survivor_evac_stats;
 
@@ -272,14 +294,6 @@ private:
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
-
-  // This is a non-product method that is helpful for testing. It is
-  // called at the end of a GC and artificially expands the heap by
-  // allocating a number of dead regions. This way we can induce very
-  // frequent marking cycles and stress the cleanup / concurrent
-  // cleanup code more (as all the regions that will be allocated by
-  // this method will be found dead by the marking cycle).
-  void allocate_dummy_regions() PRODUCT_RETURN;
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -491,7 +505,7 @@ private:
   bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
-  void prepare_heap_for_mutators();
+  void prepare_for_mutator_after_full_collection();
   void abort_refinement();
   void verify_after_full_collection();
   void print_heap_after_full_collection();
@@ -682,26 +696,6 @@ public:
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list);
 
-  // Facility for allocating in 'archive' regions in high heap memory and
-  // recording the allocated ranges. These should all be called from the
-  // VM thread at safepoints, without the heap lock held. They can be used
-  // to create and archive a set of heap regions which can be mapped at the
-  // same fixed addresses in a subsequent JVM invocation.
-  void begin_archive_alloc_range(bool open = false);
-
-  // Check if the requested size would be too large for an archive allocation.
-  bool is_archive_alloc_too_large(size_t word_size);
-
-  // Allocate memory of the requested size from the archive region. This will
-  // return NULL if the size is too large or if no memory is available. It
-  // does not trigger a garbage collection.
-  HeapWord* archive_mem_allocate(size_t word_size);
-
-  // Optionally aligns the end address and returns the allocated ranges in
-  // an array of MemRegions in order of ascending addresses.
-  void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
-                               size_t end_alignment_in_bytes = 0);
-
   // Facility for allocating a fixed range within the heap and marking
   // the containing regions as 'archive'. For use at JVM init time, when the
   // caller may mmap archived heap data at the specified range(s).
@@ -771,7 +765,7 @@ public:
   // Start a concurrent cycle.
   void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
-  void prepare_tlabs_for_mutator();
+  void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
 
@@ -780,9 +774,6 @@ public:
   void record_obj_copy_mem_stats();
 
 private:
-  // The hot card cache for remembered set insertion optimization.
-  G1HotCardCache* _hot_card_cache;
-
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
   // Global card set configuration
@@ -933,10 +924,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  static void start_codecache_marking_cycle_if_inactive();
-
-  // Apply the given closure on all cards in the Hot Card Cache, emptying it.
-  void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
+  static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
+  static void finish_codecache_marking_cycle();
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
@@ -1064,8 +1053,6 @@ public:
   bool is_in_reserved(const void* addr) const {
     return reserved().contains(addr);
   }
-
-  G1HotCardCache* hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {
     return _card_table;
@@ -1268,12 +1255,6 @@ public:
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
   void update_used_after_gc(bool evacuation_failed);
-  // Reset and re-enable the hot card cache.
-  // Note the counts for the cards in the regions in the
-  // collection set are reset when the collection set is freed.
-  void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.

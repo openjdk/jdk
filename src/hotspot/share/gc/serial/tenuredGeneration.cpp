@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -32,7 +33,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -282,8 +282,7 @@ void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // iterations; objects allocated as a result of applying the closure are
   // not included.
 
-  HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
+  _rs->younger_refs_in_space_iterate(space(), blk);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -323,7 +322,6 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
-  _the_space->reset_saved_mark();
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
