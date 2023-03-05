@@ -135,6 +135,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_onSpinWait:
     if (!VM_Version::supports_on_spin_wait()) return false;
     break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!VM_Version::supports_float16()) return false;
+    break;
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -170,8 +174,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
-  case vmIntrinsics::_floatToFloat16:
-  case vmIntrinsics::_float16ToFloat:
   case vmIntrinsics::_getReference:
   case vmIntrinsics::_getBoolean:
   case vmIntrinsics::_getByte:

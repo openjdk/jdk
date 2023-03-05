@@ -63,6 +63,8 @@ public:
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
 
+  static bool supports_float16() { return UseZfhmin; }
+
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(I,            "i",            8)     \

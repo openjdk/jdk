@@ -759,6 +759,10 @@ public:
     return true;
   }
 
+  static bool supports_float16() {
+    return supports_f16c() || supports_avx512vl();
+  }
+
   // there are several insns to force cache line sync to memory which
   // we can use to ensure mapped non-volatile memory is up to date with
   // pending in-cache changes.

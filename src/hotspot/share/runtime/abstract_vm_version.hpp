@@ -178,6 +178,8 @@ class Abstract_VM_Version: AllStatic {
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
 
+  // Does platform support float16 instructions?
+  static bool supports_float16() { return false; }
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 
  protected:
