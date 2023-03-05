@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -948,6 +948,24 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         return options;
     }
 
+    /**
+     * Sets a IPPROTO_IPV6/IPPROTO level socket. Some platforms require both
+     * IPPROTO_IPV6 and IPPROTO socket options to be set when the socket is IPv6.
+     * In that case, the IPPROTO socket option is set on a best effort basis.
+     */
+    private <T> void setIpProtoSocketOption(SocketOption<T> opt, T value)
+        throws IOException
+    {
+        ProtocolFamily family = family();
+        Net.setSocketOption(fd, family, opt, value);
+        if (family == StandardProtocolFamily.INET6
+                && Net.shouldSetBothIPv4AndIPv6Options()) {
+            try {
+                Net.setSocketOption(fd, StandardProtocolFamily.INET, opt, value);
+            } catch (IOException ignore) { }
+        }
+    }
+
     @Override
     protected <T> void setOption(SocketOption<T> opt, T value) throws IOException {
         if (!supportedOptions().contains(opt))
@@ -956,9 +974,10 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw new IllegalArgumentException("Invalid value '" + value + "'");
         synchronized (stateLock) {
             ensureOpen();
+
             if (opt == StandardSocketOptions.IP_TOS) {
-                // maps to IP_TOS or IPV6_TCLASS
-                Net.setSocketOption(fd, family(), opt, value);
+                // maps to IPV6_TCLASS and/or IP_TOS
+                setIpProtoSocketOption(opt, value);
             } else if (opt == StandardSocketOptions.SO_REUSEADDR) {
                 boolean b = (boolean) value;
                 if (Net.useExclusiveBind()) {
@@ -1032,7 +1051,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 }
                 case IP_TOS: {
                     int i = intValue(value, "IP_TOS");
-                    Net.setSocketOption(fd, family(), StandardSocketOptions.IP_TOS, i);
+                    setIpProtoSocketOption(StandardSocketOptions.IP_TOS, i);
                     break;
                 }
                 case TCP_NODELAY: {

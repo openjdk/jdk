@@ -100,8 +100,8 @@ public class Net {
     /**
      * Tells whether both IPV6_XXX and IP_XXX socket options should be set on
      * IPv6 sockets. On some kernels, both IPV6_XXX and IP_XXX socket options
-     * need to be set so that the settings are effective for IPv4 multicast
-     * datagrams sent using the socket.
+     * need to be set so that the settings are effective for IPv4 connections
+     * and datagrams.
      */
     static boolean shouldSetBothIPv4AndIPv6Options() {
         return shouldSetBothIPv4AndIPv6Options0();
