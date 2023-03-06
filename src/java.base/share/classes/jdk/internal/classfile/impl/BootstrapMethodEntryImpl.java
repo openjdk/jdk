@@ -77,9 +77,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     static int computeHashCode(MethodHandleEntryImpl handle,
                                List<? extends LoadableConstantEntry> arguments) {
         int hash = handle.hashCode();
-        for (LoadableConstantEntry a : arguments) {
-            hash = 31 * hash + a.hashCode();
-        }
+        hash = 31 * hash + arguments.hashCode();
         return AbstractPoolEntry.phiMix(hash);
     }
 
