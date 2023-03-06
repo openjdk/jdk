@@ -30,6 +30,8 @@ import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.io.*;
@@ -40,8 +42,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.swing.JComboBox;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import org.openide.DialogDisplayer;
 import org.openide.ErrorManager;
@@ -83,12 +84,38 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
     private final ActionListener comboBoxSelectionChangedListener = l -> comboBoxSelectionChanged();
+    private static final String CUSTOM_LABEL = "--Local--";
+    private static final String GLOBAL_LABEL = "Global";
+
 
 
     public static FilterChain createNewDefaultFilterChain() {
-        FilterChain newCustomFilterChain = new FilterChain("--Custom--");
+        FilterChain newCustomFilterChain = new FilterChain(CUSTOM_LABEL);
         newCustomFilterChain.addFilters(defaultFilterChain.getFilters());
         return newCustomFilterChain;
+    }
+
+    static class CustomCellRenderer extends DefaultListCellRenderer {
+
+        public CustomCellRenderer() {
+            setOpaque(true);
+        }
+
+        public Component getListCellRendererComponent(JList jc, Object val, int idx,
+                                                      boolean isSelected, boolean cellHasFocus) {
+            setText(val.toString());
+            if (idx == 0) {
+                setForeground(Color.GRAY);
+            } else {
+                setForeground(Color.BLACK);
+            }
+            if (isSelected) {
+                setBackground(Color.LIGHT_GRAY);
+            } else {
+                setBackground(Color.WHITE);
+            }
+            return this;
+        }
     }
 
     private FilterTopComponent() {
@@ -109,7 +136,12 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         initFilters();
         customFilterChain = createNewDefaultFilterChain();
         comboBox = new JComboBox<>();
+        comboBox.setRenderer(new CustomCellRenderer());
+
         comboBox.addItem(customFilterChain);
+        FilterChain globalFilterChain = new FilterChain(GLOBAL_LABEL);
+        comboBox.addItem(globalFilterChain);
+
         comboBox.setSelectedItem(customFilterChain);
         filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
 
@@ -578,6 +610,12 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
                 CustomFilter filter = findFilter(filterName);
                 if (filter != null) {
                     filterChain.addFilter(filter);
+                }
+            }
+            for (int cnt=0; cnt<comboBox.getItemCount(); cnt++) {
+                FilterChain s = comboBox.getItemAt(cnt);
+                if (s.getName().equals(name)) {
+                    comboBox.removeItem(s);
                 }
             }
             comboBox.addItem(filterChain);
