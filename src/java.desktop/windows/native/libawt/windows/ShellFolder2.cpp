@@ -300,7 +300,7 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolderManager2_initializeCom
     HRESULT hr = ::CoInitialize(NULL);
     if (FAILED(hr)) {
         char c[64];
-        sprintf(c, "Could not initialize COM: HRESULT=0x%08X", hr);
+        snprintf(c, sizeof(c), "Could not initialize COM: HRESULT=0x%08X", hr);
         JNU_ThrowInternalError(env, c);
     }
 }

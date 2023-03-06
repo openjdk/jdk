@@ -280,10 +280,6 @@
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
-          "If true, perform verification of each heap region's "            \
-          "remembered set when verifying the heap during a full GC.")       \
-                                                                            \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
                                                                             \

@@ -506,9 +506,9 @@ public class Attr extends JCTree.Visitor {
         }
 
         /**
-         * Should {@link Attr#attribTree} use the {@ArgumentAttr} visitor instead of this one?
+         * Should {@link Attr#attribTree} use the {@code ArgumentAttr} visitor instead of this one?
          * @param tree The tree to be type-checked.
-         * @return true if {@ArgumentAttr} should be used.
+         * @return true if {@code ArgumentAttr} should be used.
          */
         protected boolean needsArgumentAttr(JCTree tree) { return false; }
 

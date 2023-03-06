@@ -828,7 +828,10 @@ public class Http2TestServerConnection {
                                 throw new IOException("Unexpected frame");
                             }
                         } else {
-                            q.put(frame);
+                            if (!q.putIfOpen(frame)) {
+                                System.err.printf("Stream %s is closed: dropping %s%n",
+                                        stream, frame);
+                            }
                         }
                     }
                 }
