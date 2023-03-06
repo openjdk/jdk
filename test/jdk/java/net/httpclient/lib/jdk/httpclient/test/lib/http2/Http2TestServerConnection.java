@@ -729,6 +729,12 @@ public class Http2TestServerConnection {
                     }
                 }
                 throw closed;
+            } finally {
+                // isEof() for if END_STREAM has been seen.
+                // q.size() > 0 for if frames in Queue have not been read.
+                if (bis instanceof BodyInputStream inputStream && (!inputStream.isEof() || inputStream.q.size() > 0)) {
+                    bos.setSendResetNoError(true);
+                }
             }
 
             // everything happens in the exchange from here. Hopefully will

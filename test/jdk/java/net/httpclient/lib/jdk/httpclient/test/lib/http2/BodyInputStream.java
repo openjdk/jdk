@@ -42,7 +42,7 @@ class BodyInputStream extends InputStream {
     final Queue<Http2Frame> q;
     final int streamid;
     boolean closed;
-    boolean eof;
+    volatile boolean eof;
     final Http2TestServerConnection conn;
 
     @SuppressWarnings({"rawtypes","unchecked"})
@@ -100,6 +100,11 @@ class BodyInputStream extends InputStream {
         return buffer;
     }
 
+
+    public boolean isEof() {
+        return eof;
+    }
+
     @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
         if (closed) {
@@ -130,7 +135,6 @@ class BodyInputStream extends InputStream {
 
     @Override
     public void close() {
-        // TODO reset this stream
         closed = true;
     }
 }

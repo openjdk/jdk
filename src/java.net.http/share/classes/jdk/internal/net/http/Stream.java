@@ -553,8 +553,10 @@ class Stream<T> extends ExchangeImpl<T> {
         } else {
             Flow.Subscriber<?> subscriber =
                     responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
-            if (frame.getErrorCode() == ResetFrame.NO_ERROR) {
-                // stop sending body because server instructed client to with RST_STREAM with NO_ERROR
+            if (!requestBodyCF.isDone()) {
+                // If a RST_STREAM is received, complete the requestBody. This will allow the
+                // response to be read before the Reset is handled in the case where the client's
+                // input stream is partially consumed or not consumed at all by the server.
                 requestBodyCF.complete(null);
             }
             if (response == null && subscriber == null) {

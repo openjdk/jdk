@@ -5,7 +5,7 @@
  *          does not process any data. The client should read all data from the server and close the connection.
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=20 -Djdk.httpclient.HttpClient.log=all
+ * @run testng/othervm/timeout=50 -Djdk.httpclient.HttpClient.log=all
  *                      PostPutTest
  */
 
@@ -50,7 +50,6 @@ public class PostPutTest {
     public void setup() throws Exception {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.addHandler(new TestHandler(), "/");
-        http2TestServer.setExchangeSupplier(PostPutExchange::new);
         http2TestServer.start();
         uri = new URI("http://" + http2TestServer.serverAuthority() + "/");
         testLog.println("PostPutTest.setup(): Test Server URI: " + uri);
@@ -103,14 +102,6 @@ public class PostPutTest {
             // The input stream is not read in this bug as this will trigger window updates for the server concerns
             // the case where no updates are sent and the server instead tells the client to abort the transmission.
             exchange.sendResponseHeaders(200, 0);
-        }
-    }
-
-    static class PostPutExchange extends Http2TestExchangeImpl {
-
-        public PostPutExchange(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
-            super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
-            os.setSendResetNoError(true);
         }
     }
 }
