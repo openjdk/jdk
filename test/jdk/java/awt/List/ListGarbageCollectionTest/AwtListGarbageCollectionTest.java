@@ -27,17 +27,20 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 
+import jdk.test.lib.util.ForceGC;
+
 /*
  * @test
  * @key headful
  * @bug 8040076
  * @summary AwtList not garbage collected
+ * @library /test/lib/
+ * @build jdk.test.lib.util.ForceGC
  * @run main/othervm -Xmx100m -Xlog:gc=debug AwtListGarbageCollectionTest
  */
 public class AwtListGarbageCollectionTest {
 
-    private static final long ENQUEUE_TIMEOUT = 1_000; // 1 sec, in millis
-    private static final int MAX_ATTEMPTS = 5;
+    private static final long ENQUEUE_TIMEOUT = 50;
 
     public static void main(String[] args) throws InterruptedException {
         Frame frame = new Frame("List leak test");
@@ -48,7 +51,7 @@ public class AwtListGarbageCollectionTest {
         }
     }
 
-    private static void test(Frame frame) throws InterruptedException {
+    private static void test(Frame frame) {
         frame.setSize(300, 200);
         frame.setVisible(true);
 
@@ -65,19 +68,16 @@ public class AwtListGarbageCollectionTest {
         strongListRef = null; // Clear the strong reference
 
         System.out.println("Waiting for the reference to be cleared");
-        int count = 1;
-        Reference<? extends List> ref;
-        do {
-            System.out.println("Attempt " + count);
-            System.gc();
-            System.out.println("    GC invoked");
-            ref = referenceQueue.remove(ENQUEUE_TIMEOUT);
-            System.out.println("    ref: " + ref);
-        } while (++count <= MAX_ATTEMPTS
-                 && ref != phantomListRef);
-
-        if (ref != phantomListRef) {
+        if (!ForceGC.wait(() -> phantomListRef == remove(referenceQueue))) {
             throw new RuntimeException("List wasn't garbage collected");
+        }
+    }
+
+    private static Reference<?> remove(ReferenceQueue<?> queue) {
+        try {
+            return queue.remove(ENQUEUE_TIMEOUT);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }
