@@ -533,4 +533,54 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         super.requestActive();
         view.requestFocus();
     }
+
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        super.writeExternal(out);
+
+        out.writeInt(comboBox.getItemCount()-1);
+        for (int i=0; i<comboBox.getItemCount(); i++) {
+            FilterChain filterChain = comboBox.getItemAt(i);
+            if (filterChain != customFilterChain) {
+                out.writeUTF(filterChain.getName());
+                out.writeInt(filterChain.getFilters().size());
+                for (Filter filter : filterChain.getFilters()) {
+                    CustomFilter cf = (CustomFilter) filter;
+                    out.writeUTF(cf.getName());
+                }
+            }
+        }
+    }
+
+    public CustomFilter findFilter(String name) {
+        for (Filter f : allFilterChains.getFilters()) {
+            CustomFilter cf = (CustomFilter) f;
+            if (cf.getName().equals(name)) {
+                return cf;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        super.readExternal(in);
+
+        int filterSettingsCount = in.readInt();
+        for (int i = 0; i < filterSettingsCount; i++) {
+            String name = in.readUTF();
+            int filterCount = in.readInt();
+            FilterChain filterChain = new FilterChain(name);
+            for (int j = 0; j < filterCount; j++) {
+                String filterName = in.readUTF();
+                CustomFilter filter = findFilter(filterName);
+                if (filter != null) {
+                    filterChain.addFilter(filter);
+                }
+            }
+            comboBox.addItem(filterChain);
+        }
+    }
 }
