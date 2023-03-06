@@ -89,6 +89,13 @@ abstract class PeriodicTask {
         long increment = batch.getPeriod();
         if (period != 0) {
             counter = (counter + increment) % period;
+            if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+                boolean trace = Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.TRACE);
+                boolean run = shouldRun();
+                if (trace || run) {
+                    logInterval(trace, run ? "Run" : "Skip");
+                }
+            }
         }
     }
 
@@ -114,14 +121,33 @@ abstract class PeriodicTask {
     }
 
     public final void run(long timestamp, PeriodicType periodicType) {
+        if (periodicType != PeriodicType.INTERVAL) {
+            logChunk(periodicType);
+        }
         try {
             execute(timestamp, periodicType);
         } catch (Throwable e) {
             // Prevent malicious user to propagate exception callback in the wrong context
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Exception occurred during execution of period task for " + name);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Exception occurred during execution of " + name);
         }
-        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Executed periodic task for " + name);
+    }
+
+    private void logChunk(PeriodicType periodicType) {
+        if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+            String action = periodicType == PeriodicType.BEGIN_CHUNK ? "beginChunk" : "endChunk";
+            String message = "Run " + action + " " + getName();
+            Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+        }
+    }
+
+    private void logInterval(boolean trace, String action) {
+        String message = action + " periodic " + getName();
+        if (trace) {
+            // Makes the counter run on x/x instead of 0/x which looks strange.
+            long a =  counter == 0 ? period : counter;
+            Logger.log(LogTag.JFR_PERIODIC, LogLevel.TRACE, message + (" " + a + "/" + period));
+        } else {
+            Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
         }
     }
 }

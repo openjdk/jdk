@@ -70,6 +70,7 @@ import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 public class Response204V2Test implements HttpServerAdapters {
 
@@ -270,11 +271,11 @@ public class Response204V2Test implements HttpServerAdapters {
         // HTTP/2
         HttpTestHandler handler204 = new Handler204();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler204, "/http2/test204/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/test204/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler204, "/https2/test204/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/test204/x";
 
