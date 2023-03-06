@@ -159,7 +159,6 @@ public class Util {
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
         return switch (desc.charAt(0)) {
-            case '[' -> desc;
             case 'L' -> desc.substring(1, desc.length() - 1);
             default -> throw new IllegalArgumentException(desc);
         };

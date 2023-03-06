@@ -157,7 +157,7 @@ public sealed interface ConstantPoolBuilder
      * @param classDesc the symbolic descriptor for the class
      */
     default ClassEntry classEntry(ClassDesc classDesc) {
-        return classEntry(utf8Entry(Util.toInternalName(classDesc)));
+        return classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
     }
 
     /**
