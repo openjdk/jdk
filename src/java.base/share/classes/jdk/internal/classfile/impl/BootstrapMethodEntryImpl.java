@@ -69,18 +69,9 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof BootstrapMethodEntry e
-            && e.bootstrapMethod() == handle
-            && e.arguments().size() == arguments.size()) {
-                for (int i = 0; i < arguments.size(); ++i) {
-                    if (e.arguments().get(i) != arguments.get(i)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        else
-            return false;
+        return obj instanceof BootstrapMethodEntry e
+                && e.bootstrapMethod().equals(handle)
+                && e.arguments().equals(arguments);
     }
 
     static int computeHashCode(MethodHandleEntryImpl handle,
