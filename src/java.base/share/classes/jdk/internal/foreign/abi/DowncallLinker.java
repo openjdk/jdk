@@ -186,7 +186,7 @@ public class DowncallLinker {
                             int retBufReadOffset = 0;
                             @Override
                             public Object load(VMStorage storage, Class<?> type) {
-                                Object result1 = SharedUtils.read(finalReturnBuffer.asSlice(retBufReadOffset), type);
+                                Object result1 = SharedUtils.read(finalReturnBuffer, retBufReadOffset, type);
                                 retBufReadOffset += abi.arch.typeSize(storage.type());
                                 return result1;
                             }
