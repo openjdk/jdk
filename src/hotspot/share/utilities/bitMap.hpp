@@ -254,23 +254,23 @@ class BitMap {
   // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
   void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
-  // Applies an operation to the index for each set bit in [beg, end), in
-  // increasing order.  The iteration terminates if the operation returns
-  // false.
+  // Applies an operation to the index of each set bit in [beg, end), in
+  // increasing order.
   //
-  // If the operation modifies the bitmap, modifications to bits at indices
+  // If i is an index of the bitmap, the operation is either
+  // - function(i)
+  // - cl->do_bit(i)
+  // The result of an operation must be either void or convertible to bool.
+  //
+  // If an operation returns false then the iteration stops at that index.
+  // The result of the iteration is true unless the iteration was stopped by
+  // an operation returning false.
+  //
+  // If an operation modifies the bitmap, modifications to bits at indices
   // greater than the current index will affect which further indices the
   // operation will be applied to.
   //
   // precondition: beg and end form a valid range for the bitmap.
-  //
-  // If i is an index of the bitmap,
-  //
-  // - function(i) is a valid expression.  If the result is void then it is
-  // treated as if it always returned true, i.e. the iteration never
-  // terminates early.  Otherwise, the result must be convertible to bool.
-  //
-  // - cl->do_bit(i) is a valid expression whose result is convertible to bool.
   template<typename Function>
   bool iterate(Function function, idx_t beg, idx_t end) const;
 
