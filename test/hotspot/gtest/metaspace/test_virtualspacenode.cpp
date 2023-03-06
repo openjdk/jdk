@@ -503,7 +503,6 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   CommitLimiter cl (word_size * 2); // basically, no commit limiter.
 
   VirtualSpaceNode* node = VirtualSpaceNode::create_node(word_size, &cl, &sres, &scomm);
-
   ASSERT_NOT_NULL(node);
   ASSERT_EQ(node->committed_words(), (size_t)0);
   ASSERT_EQ(node->committed_words(), scomm.get());
@@ -541,6 +540,8 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   DEBUG_ONLY(node->verify_locked();)
 
   delete node;
+  ASSERT_EQ(scomm.get(), 0);
+  ASSERT_EQ(sres.get(), 0);
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested

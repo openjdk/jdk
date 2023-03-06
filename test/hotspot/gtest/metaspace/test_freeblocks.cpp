@@ -79,7 +79,7 @@ class FreeBlocksTest {
     return false;
   }
 
-  void deallocate_top() {
+  bool deallocate_top() {
 
     allocation_t* a = _allocations;
     if (a != NULL) {
@@ -88,18 +88,13 @@ class FreeBlocksTest {
       _freeblocks.add_block(a->p, a->word_size);
       delete a;
       DEBUG_ONLY(_freeblocks.verify();)
+      return true;
     }
+    return false;
   }
 
   void deallocate_all() {
-    while (_allocations != nullptr) {
-      allocation_t* a = _allocations;
-      _allocations = a->next;
-      check_marked_range(a->p, a->word_size);
-      _freeblocks.add_block(a->p, a->word_size);
-      delete a;
-      DEBUG_ONLY(_freeblocks.verify();)
-    }
+    while (deallocate_top());
   }
 
   bool allocate() {
