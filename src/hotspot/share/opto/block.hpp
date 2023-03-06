@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public:
     int dom_diff = this->_dom_depth - that->_dom_depth;
     if (dom_diff > 0)  return false;
     for (; dom_diff < 0; dom_diff++)  that = that->_idom;
-    return this == that;
+    return (this == that) || (this != that && this->_dom_depth == that->_dom_depth);
   }
 
   // Report the alignment required by this block.  Must be a power of 2.

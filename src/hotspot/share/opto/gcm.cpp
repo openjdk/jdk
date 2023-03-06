@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1243,6 +1243,20 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
       end_latency = end_lat;
       if (target <= start_lat)
         in_latency = true;
+    }
+    if (LCA->_idom == early->_idom) {
+      // Make sure that the _dom_depth of the new LCA is less than the _dom_depth of the earlier.
+      // i.e.
+      //       B52     IDom: 51/#22
+      //      /   \
+      //    B53   B61  IDom: 52/#23
+      //    \     ..
+      //     \  /
+      //      B54      IDom: B52/#23
+      //       |
+      //      B55      IDom: 54/#24
+      //if early=B53, old LCA=B55, then new LCA cannot be B52 or smaller depth node.
+      break;
     }
   }
 
