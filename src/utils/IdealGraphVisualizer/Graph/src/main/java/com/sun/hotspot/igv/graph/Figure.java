@@ -366,15 +366,33 @@ public class Figure extends Properties.Entity implements Vertex {
         }
 
         lines = result.toArray(new String[0]);
-        // Set the "label" property of the input node, so that by default
-        // search is done on the node label (without line breaks). See also
-        // class NodeQuickSearch in the View module.
-        String label = inputNode.getProperties().resolveString(diagram.getNodeText());
-        inputNode.getProperties().setProperty("label", label.replaceAll("\\R", " "));
+        // Set the "label" property of the input node (and the slots' source
+        // nodes), so that by default search is done on their labels (without
+        // line breaks). See also class NodeQuickSearch in the View module.
+        setLabelProperty(inputNode, null);
+        for (InputSlot is : getInputSlots()) {
+            for (InputNode in : is.getSource().getSourceNodes()) {
+                setLabelProperty(in, is.shouldShowName() ? is.getShortName() : null);
+            }
+        }
+        for (OutputSlot os : getOutputSlots()) {
+            for (InputNode on : os.getSource().getSourceNodes()) {
+                setLabelProperty(on, os.shouldShowName() ? os.getShortName() : null);
+            }
+        }
 
         // Update figure dimensions, as these are affected by the node text.
         updateWidth();
         updateHeight();
+    }
+
+    private void setLabelProperty(InputNode n, String shortName) {
+        String label = n.getProperties().resolveString(diagram.getNodeText());
+        String singleLineLabel = label.replaceAll("\\R", " ");
+        if (shortName != null) {
+            singleLineLabel += " [" + shortName + "]";
+        }
+        n.getProperties().setProperty("label", singleLineLabel);
     }
 
     @Override

@@ -880,12 +880,24 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             nodeIds.add(inputNode.getId());
         }
         Set<Figure> selectedFigures = new HashSet<>();
+        Set<Slot> selectedSlots = new HashSet<>();
         for (Figure figure : model.getDiagram().getFigures()) {
             if (nodeIds.contains(figure.getInputNode().getId())) {
                 selectedFigures.add(figure);
             }
+            for (InputSlot is : figure.getInputSlots()) {
+                if (is.hasSourceNodes() && nodeIds.contains(is.getSource().getSourceNodes().get(0).getId())) {
+                    selectedSlots.add(is);
+                }
+            }
+            for (OutputSlot os : figure.getOutputSlots()) {
+                if (os.hasSourceNodes() && nodeIds.contains(os.getSource().getSourceNodes().get(0).getId())) {
+                    selectedSlots.add(os);
+                }
+            }
         }
         setFigureSelection(selectedFigures);
+        setSlotSelection(selectedSlots);
         if (showIfHidden) {
             model.showFigures(model.getSelectedFigures());
         }
@@ -947,6 +959,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void setFigureSelection(Set<Figure> list) {
+        super.setSelectedObjects(new HashSet<>(list));
+    }
+
+    private void setSlotSelection(Set<Slot> list) {
         super.setSelectedObjects(new HashSet<>(list));
     }
 
