@@ -241,4 +241,8 @@ public final class Utils {
         }
         return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
     }
+
+    public static int byteWidthOfPrimitive(Class<?> primitive) {
+        return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+    }
 }
