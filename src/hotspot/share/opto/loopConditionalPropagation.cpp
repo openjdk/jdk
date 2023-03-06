@@ -378,7 +378,7 @@ public:
                 in = c->in(j);
                 TreeNode* types_at_in = (TreeNode*) (_types_at_ctrl[in]);
                 if (types_at_in == NULL) {
-                  assert(_phase->get_loop(c)->_irreducible, "");
+                  assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
                   break;
                 }
                 const Type* type_at_in = types_at_in->get_type(node);
@@ -411,7 +411,7 @@ public:
               }
             }
           } else {
-            assert(_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in), "");
+            assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
           }
         } else if (c->is_IfProj()) {
           Node* iff = c->in(0);
