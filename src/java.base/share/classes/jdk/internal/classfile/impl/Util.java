@@ -60,7 +60,7 @@ public class Util {
         BitSet bs = new BitSet();
         if (type.charAt(0) != '(')
             throw new IllegalArgumentException();
-        for (int i = 1; i < type.length(); ++i) {
+        loop: for (int i = 1; i < type.length(); ++i) {
             switch (type.charAt(i)) {
                 case '[':
                     bs.set(i);
@@ -72,8 +72,7 @@ public class Util {
                     }
                     break;
                 case ')':
-                    i = type.length();
-                    break;
+                    break loop;
                 default:
                     bs.set(i);
                     if (type.charAt(i) == 'L') {
