@@ -88,3 +88,10 @@ Node* ProfileBooleanNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 }
+
+const Type* OpaqueZeroTripGuardNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(1)) == Type::TOP) {
+    return Type::TOP;
+  }
+  return bottom_type();
+}

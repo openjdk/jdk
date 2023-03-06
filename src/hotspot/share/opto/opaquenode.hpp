@@ -79,6 +79,7 @@ public:
   OpaqueZeroTripGuardNode(Compile* C, Node* n, BoolTest::mask loop_entered_test) :
           Opaque1Node(C, n), _loop_entered_mask(loop_entered_test) {
   }
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int Opcode() const;
   virtual uint size_of() const {
     return sizeof(*this);
