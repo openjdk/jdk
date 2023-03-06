@@ -450,7 +450,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
 	      $(BINUTILS_CFG) \
 	      $(CONFIG) \
-        $(LINKER_CONFIG) \
+	      $(LINKER_CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
