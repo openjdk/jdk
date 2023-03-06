@@ -36,18 +36,16 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
  * ChainedFieldBuilder
  */
 public final class ChainedFieldBuilder implements FieldBuilder {
-    private final FieldBuilder downstream;
     private final TerminalFieldBuilder terminal;
     private final Consumer<FieldElement> consumer;
 
     public ChainedFieldBuilder(FieldBuilder downstream,
                                Consumer<FieldElement> consumer) {
-        this.downstream = downstream;
         this.consumer = consumer;
-        FieldBuilder b = downstream;
-        while (b instanceof ChainedFieldBuilder cb)
-            b = cb.downstream;
-        terminal = (TerminalFieldBuilder) b;
+        this.terminal = switch (downstream) {
+            case ChainedFieldBuilder cb -> cb.terminal;
+            case TerminalFieldBuilder tb -> tb;
+        };
     }
 
     @Override

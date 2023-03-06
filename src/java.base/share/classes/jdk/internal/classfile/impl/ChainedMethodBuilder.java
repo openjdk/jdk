@@ -47,10 +47,10 @@ public final class ChainedMethodBuilder implements MethodBuilder {
                                 Consumer<MethodElement> consumer) {
         this.downstream = downstream;
         this.consumer = consumer;
-        MethodBuilder b = downstream;
-        while (b instanceof ChainedMethodBuilder cb)
-            b = cb.downstream;
-        terminal = (TerminalMethodBuilder) b;
+        this.terminal = switch (downstream) {
+            case ChainedMethodBuilder cb -> cb.terminal;
+            case TerminalMethodBuilder tb -> tb;
+        };
     }
 
     @Override

@@ -44,10 +44,10 @@ public final class ChainedClassBuilder
                                Consumer<ClassElement> consumer) {
         this.downstream = downstream;
         this.consumer = consumer;
-        ClassBuilder b = downstream;
-        while (b instanceof ChainedClassBuilder cb)
-            b = cb.downstream;
-        terminal = (DirectClassBuilder) b;
+        this.terminal = switch (downstream) {
+            case ChainedClassBuilder cb -> cb.terminal;
+            case DirectClassBuilder db -> db;
+        };
     }
 
     @Override
