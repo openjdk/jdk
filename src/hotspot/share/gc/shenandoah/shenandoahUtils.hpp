@@ -199,28 +199,4 @@ public:
   ~ShenandoahParallelWorkerSession();
 };
 
-class ShenandoahSuspendibleThreadSetJoiner {
-private:
-  SuspendibleThreadSetJoiner _joiner;
-public:
-  ShenandoahSuspendibleThreadSetJoiner(bool active = true) : _joiner(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetJoiner() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-};
-
-class ShenandoahSuspendibleThreadSetLeaver {
-private:
-  SuspendibleThreadSetLeaver _leaver;
-public:
-  ShenandoahSuspendibleThreadSetLeaver(bool active = true) : _leaver(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetLeaver() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-};
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

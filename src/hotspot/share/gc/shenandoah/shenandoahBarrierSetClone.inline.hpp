@@ -29,7 +29,6 @@
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.hpp"
@@ -86,7 +85,6 @@ void ShenandoahBarrierSet::clone_marking(oop obj) {
 void ShenandoahBarrierSet::clone_evacuation(oop obj) {
   assert(_heap->is_evacuation_in_progress(), "only during evacuation");
   if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
-    ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ true, /* evac = */ true, /* enqueue */ false> cl;
     obj->oop_iterate(&cl);
   }

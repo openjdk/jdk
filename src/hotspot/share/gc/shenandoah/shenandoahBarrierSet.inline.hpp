@@ -30,7 +30,6 @@
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -64,7 +63,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
     assert(_heap->is_evacuation_in_progress(),
            "evac should be in progress");
     Thread* const t = Thread::current();
-    ShenandoahEvacOOMScope scope(t);
     fwd = _heap->evacuate_object(obj, t);
   }
 
@@ -86,7 +84,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
       Thread* t = Thread::current();
-      ShenandoahEvacOOMScope oom_evac_scope(t);
       return _heap->evacuate_object(obj, t);
     }
     return fwd;
@@ -400,7 +397,6 @@ template <class T>
 void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
   assert(_heap->is_evacuation_in_progress(), "only during evacuation");
   if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
-    ShenandoahEvacOOMScope oom_evac;
     arraycopy_work<T, true, true, false>(src, count);
   }
 }

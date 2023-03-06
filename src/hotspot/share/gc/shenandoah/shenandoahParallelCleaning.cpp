@@ -27,7 +27,6 @@
 
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "runtime/safepoint.hpp"
 

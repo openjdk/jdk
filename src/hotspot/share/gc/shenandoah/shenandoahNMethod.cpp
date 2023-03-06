@@ -162,7 +162,6 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
              heap->is_concurrent_strong_root_in_progress() ) {
-    ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.

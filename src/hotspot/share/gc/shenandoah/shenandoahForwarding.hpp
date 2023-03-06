@@ -30,6 +30,11 @@
 
 class ShenandoahForwarding {
 public:
+  static const int self_forwarded_bits                = 1;
+  static const int self_forwarded_shift               = markWord::lock_shift + markWord::lock_bits;
+  static const uintptr_t self_forwarded_mask          = right_n_bits(self_forwarded_bits);
+  static const uintptr_t self_forwarded_mask_in_place = self_forwarded_mask << self_forwarded_shift;
+
   /* Gets forwardee from the given object.
    */
   static inline oop get_forwardee(oop obj);
@@ -51,17 +56,41 @@ public:
    * Returns true if the object is forwarded, false otherwise.
    */
   static inline bool is_forwarded(oop obj);
+};
 
-  /* Tries to atomically update forwardee in $holder object to $update.
-   * Assumes $holder points at itself.
-   * Asserts $holder is in from-space.
-   * Asserts $update is in to-space.
-   *
-   * Returns the new object 'update' upon success, or
-   * the new forwardee that a competing thread installed.
-   */
-  static inline oop try_update_forwardee(oop obj, oop update);
+// Encapsulate relevant forwarding state during evacuation.
+// In particular, it avoids to re-load and re-test the mark word
+// several times.
+class ShenandoahForwardingScope : public StackObj {
+private:
+  oop const _obj;
+  markWord _mark;
 
+  inline oop forwardee(markWord mark) const;
+  inline oop forward_to_impl(markWord new_mark);
+public:
+  inline ShenandoahForwardingScope(oop obj);
+
+  inline markWord mark() const { return _mark; }
+
+  // When the object has been forwarded, returns the forwardee.
+  // When the object has been self-forwarded (evacuation failure) returns object itself.
+  // Otherwise returns null.
+  inline oop forwardee() const;
+
+  // Atomically installs forwarding pointer to fwd.
+  // Only one thread can succeed to install the forwarding pointer.
+  // When this thread succeeds, returns null.
+  // When another thread succeeds, returns the forwarding pointer that has been
+  // installed by the other thread.
+  inline oop forward_to(oop fwd);
+
+  // Atomically installs forwarding to self (in case of evacuation failure).
+  // Only one thread can succeed to install the forwarding pointer.
+  // When this thread succeeds, returns null.
+  // When another thread succeeds, returns the forwarding pointer that has been
+  // installed by the other thread.
+  inline oop forward_to_self();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

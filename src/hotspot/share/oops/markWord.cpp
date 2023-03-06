@@ -87,6 +87,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
       } else {
         st->print(" hash=" INTPTR_FORMAT, hash());
       }
+      st->print(" value=" INTPTR_FORMAT, value());
     } else {
       st->print("??");
     }

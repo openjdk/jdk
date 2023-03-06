@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -604,7 +603,7 @@ public:
 //
 private:
   ShenandoahCollectionSet* _collection_set;
-  ShenandoahEvacOOMHandler _oom_evac_handler;
+  GrowableArrayCHeap<oop, mtGC>* _evac_failed_objects;
 
 public:
   static address in_cset_fast_test_addr();
@@ -621,9 +620,8 @@ public:
   // by this thread, or by some other thread.
   inline oop evacuate_object(oop src, Thread* thread);
 
-  // Call before/after evacuation.
-  inline void enter_evacuation(Thread* t);
-  inline void leave_evacuation(Thread* t);
+  void add_evac_failed_object(oop obj);
+  void fix_evac_failed_objects();
 
 // ---------- Helper functions
 //

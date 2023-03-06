@@ -27,7 +27,6 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -206,7 +205,6 @@ public:
 
     // Heal oops and disarm
     if (_bs->is_armed(nm)) {
-      ShenandoahEvacOOMScope oom_evac_scope;
       ShenandoahNMethod::heal_nmethod_metadata(nm_data);
       // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
       // mark_as_maybe_on_stack() callbacks when they are used again.

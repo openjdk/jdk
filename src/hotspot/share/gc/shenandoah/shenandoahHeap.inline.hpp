@@ -87,14 +87,6 @@ inline ShenandoahHeapRegion* const ShenandoahHeap::heap_region_containing(const 
   return result;
 }
 
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
-}
-
 template <class T>
 inline void ShenandoahHeap::update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
@@ -104,10 +96,9 @@ inline void ShenandoahHeap::update_with_forwarded(T* p) {
       // Corner case: when evacuation fails, there are objects in collection
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+      shenandoah_assert_forwarded_except(p, obj, cancelled_gc() || is_degenerated_gc_in_progress());
       oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
-
+      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc() || is_degenerated_gc_in_progress());
       // Unconditionally store the update: no concurrent updates expected.
       RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
     }
@@ -267,7 +258,6 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
 
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(CANCELLABLE);
-  _oom_evac_handler.clear();
 }
 
 inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size) {
@@ -289,13 +279,13 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 }
 
 inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
-  if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
-    // This thread went through the OOM during evac protocol and it is safe to return
-    // the forward pointer. It must not attempt to evacuate any more.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
 
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
+  ShenandoahForwardingScope forwarding(p);
+  oop fwd = forwarding.forwardee();
+  if (fwd != nullptr) {
+    assert(!fwd->mark().is_marked(), "double-forwarded?");
+    return fwd;
+  }
 
   size_t size = p->size();
 
@@ -324,10 +314,15 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   if (copy == nullptr) {
     control_thread()->handle_alloc_failure_evac(size);
-
-    _oom_evac_handler.handle_out_of_memory_during_evacuation();
-
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    fwd = forwarding.forward_to_self();
+    if (fwd == nullptr) {
+      assert(!p->mark().is_marked(), "double-forwarded?");
+      add_evac_failed_object(p);
+      return p;
+    } else {
+      assert(!fwd->mark().is_marked(), "double-forwarded?");
+      return fwd;
+    }
   }
 
   // Copy the object:
@@ -337,10 +332,11 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   oop copy_val = cast_to_oop(copy);
   ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
-  if (result == copy_val) {
+  oop result = forwarding.forward_to(copy_val);
+  if (result == nullptr) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(nullptr, copy_val);
+    copy_val->release_set_mark(forwarding.mark());
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -361,6 +357,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
       shenandoah_assert_correct(nullptr, copy_val);
     }
     shenandoah_assert_correct(nullptr, result);
+    assert(!result->mark().is_marked(), "double-forwarded?");
     return result;
   }
 }

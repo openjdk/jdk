@@ -491,7 +491,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
-  _collection_set(nullptr)
+  _collection_set(nullptr),
+  _evac_failed_objects(new GrowableArrayCHeap<oop,mtGC>())
 {
   // Initialize GC mode early, so we can adjust barrier support
   initialize_mode();
@@ -950,9 +951,9 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
-    if (!p->is_forwarded()) {
+    //if (!p->is_forwarded()) {
       _heap->evacuate_object(p, _thread);
-    }
+    //}
   }
 };
 
@@ -974,12 +975,10 @@ public:
   void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-      ShenandoahEvacOOMScope oom_evac_scope;
+      SuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
@@ -1006,6 +1005,7 @@ private:
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
+  fix_evac_failed_objects();
 }
 
 void ShenandoahHeap::trash_cset_regions() {
@@ -2024,7 +2024,7 @@ public:
   void work(uint worker_id) {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+      SuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
       do_work<ShenandoahConcUpdateRefsClosure>();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -2322,4 +2322,27 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   return false;
+}
+
+void ShenandoahHeap::add_evac_failed_object(oop obj) {
+  ShenandoahHeapLocker locker(lock());
+  _evac_failed_objects->append(obj);
+}
+
+void ShenandoahHeap::fix_evac_failed_objects() {
+  int num_objs = _evac_failed_objects->length();
+  if (num_objs > 0) {
+    ShenandoahHeapLocker locker(lock());
+    for (int i = 0; i < num_objs; i++) {
+      oop obj = _evac_failed_objects->at(i);
+      markWord mark = obj->mark_acquire();
+      tty->print_cr("Fixing mark for evac-failed object: " PTR_FORMAT ", mark: " INTPTR_FORMAT, p2i(obj), mark.value());
+      assert((mark.value() & ShenandoahForwarding::self_forwarded_mask_in_place) != 0, "object not evac-failed?");
+      while ((mark.value() & ShenandoahForwarding::self_forwarded_mask_in_place) != 0) {
+        markWord fixed = markWord(mark.value() & ~ShenandoahForwarding::self_forwarded_mask_in_place);
+        mark = obj->cas_set_mark(fixed, mark, memory_order_conservative);
+      }
+    }
+    _evac_failed_objects->clear();
+  }
 }
