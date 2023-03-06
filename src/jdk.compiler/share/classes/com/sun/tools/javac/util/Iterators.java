@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -43,18 +44,18 @@ public class Iterators {
         return new CompoundIterator<>(inputs, converter);
     }
 
-    private static class CompoundIterator<I, O> implements Iterator<O> {
+    private static final class CompoundIterator<I, O> implements Iterator<O> {
 
         private final Iterator<I> inputs;
         private final Function<I, Iterator<O>> converter;
-        @SuppressWarnings("unchecked")
-        private Iterator<O> currentIterator = EMPTY;
+        private Iterator<O> currentIterator = Collections.emptyIterator();
 
         public CompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> converter) {
             this.inputs = inputs.iterator();
             this.converter = converter;
         }
 
+        @Override
         public boolean hasNext() {
             if (currentIterator != null && !currentIterator.hasNext()) {
                 update();
@@ -62,37 +63,22 @@ public class Iterators {
             return currentIterator != null;
         }
 
+        @Override
         public O next() {
-            if (currentIterator == EMPTY && !hasNext()) {
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             return currentIterator.next();
         }
 
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
         private void update() {
             while (inputs.hasNext()) {
                 currentIterator = converter.apply(inputs.next());
-                if (currentIterator.hasNext()) return;
+                if (currentIterator.hasNext()) return; // implicit null check
             }
             currentIterator = null;
         }
     }
-
-    @SuppressWarnings("rawtypes")
-    private static final Iterator EMPTY = new Iterator() {
-        public boolean hasNext() {
-            return false;
-        }
-
-        @Override
-        public Object next() {
-            return null;
-        }
-    };
 
     public static <E> Iterator<E> createFilterIterator(Iterator<E> input, Predicate<E> test) {
         return new Iterator<>() {
