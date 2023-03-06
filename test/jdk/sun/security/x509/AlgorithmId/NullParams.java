@@ -105,7 +105,7 @@ public class NullParams {
             }
         } else {
             if (data.available() != 0) {
-                System.out.println("Has expected NULL");
+                System.out.println("Has unexpected NULL");
                 failed = true;
                 return;
             }
