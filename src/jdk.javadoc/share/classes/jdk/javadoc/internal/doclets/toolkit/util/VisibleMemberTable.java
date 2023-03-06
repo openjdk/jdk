@@ -647,6 +647,18 @@ public class VisibleMemberTable {
     private boolean allowInheritedMethod(ExecutableElement inheritedMethod,
                                          Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
                                          LocalMemberTable lmt) {
+        // JLS 8.4.8: A class does not inherit private or static methods from
+        // its superinterface types.
+        //
+        // JLS 9.4.1: An interface does not inherit private or static methods
+        // from its superinterfaces.
+        //
+        // JLS 8.4.8: m is public, protected, or declared with package access
+        // in the same package as C
+        //
+        // JLS 9.4: A method in the body of an interface declaration may be
+        // declared public or private. If no access modifier is given, the
+        // method is implicitly public.
         if (!isAccessible(inheritedMethod))
             return false;
 
