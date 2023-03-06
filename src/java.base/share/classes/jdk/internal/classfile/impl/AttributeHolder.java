@@ -65,12 +65,7 @@ public class AttributeHolder {
     }
 
     private void remove(AttributeMapper<?> am) {
-        for (ListIterator<Attribute<?>> iterator = attributes.listIterator();
-             iterator.hasNext(); ) {
-            Attribute<?> a = iterator.next();
-            if (a.attributeMapper() == am)
-                iterator.remove();
-        }
+        attributes.removeIf(a -> a.attributeMapper() == am);
     }
 
     List<? extends Attribute<?>> attributes() {
