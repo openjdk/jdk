@@ -50,57 +50,25 @@ public final class CodeImpl
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 
     static {
-        for (Opcode o : List.of(Opcode.NOP))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = NopInstruction.of();
-        for (Opcode o : List.of(Opcode.ACONST_NULL,
-                                Opcode.ICONST_M1,
-                                Opcode.ICONST_0, Opcode.ICONST_1, Opcode.ICONST_2, Opcode.ICONST_3, Opcode.ICONST_4, Opcode.ICONST_5,
-                                Opcode.LCONST_0, Opcode.LCONST_1,
-                                Opcode.FCONST_0, Opcode.FCONST_1, Opcode.FCONST_2,
-                                Opcode.DCONST_0, Opcode.DCONST_1))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ConstantInstruction.ofIntrinsic(o);
-        for (Opcode o : List.of(Opcode.ILOAD_0, Opcode.ILOAD_1, Opcode.ILOAD_2, Opcode.ILOAD_3,
-                                Opcode.LLOAD_0, Opcode.LLOAD_1, Opcode.LLOAD_2, Opcode.LLOAD_3,
-                                Opcode.FLOAD_0, Opcode.FLOAD_1, Opcode.FLOAD_2, Opcode.FLOAD_3,
-                                Opcode.DLOAD_0, Opcode.DLOAD_1, Opcode.DLOAD_2, Opcode.DLOAD_3,
-                                Opcode.ALOAD_0, Opcode.ALOAD_1, Opcode.ALOAD_2, Opcode.ALOAD_3))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = LoadInstruction.of(o, o.slot());
-        for (Opcode o : List.of(Opcode.ISTORE_0, Opcode.ISTORE_1, Opcode.ISTORE_2, Opcode.ISTORE_3,
-                                Opcode.LSTORE_0, Opcode.LSTORE_1, Opcode.LSTORE_2, Opcode.LSTORE_3,
-                                Opcode.FSTORE_0, Opcode.FSTORE_1, Opcode.FSTORE_2, Opcode.FSTORE_3,
-                                Opcode.DSTORE_0, Opcode.DSTORE_1, Opcode.DSTORE_2, Opcode.DSTORE_3,
-                                Opcode.ASTORE_0, Opcode.ASTORE_1, Opcode.ASTORE_2, Opcode.ASTORE_3))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = StoreInstruction.of(o, o.slot());
-        for (Opcode o : List.of(Opcode.IALOAD, Opcode.LALOAD, Opcode.FALOAD, Opcode.DALOAD, Opcode.AALOAD, Opcode.BALOAD, Opcode.CALOAD, Opcode.SALOAD))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ArrayLoadInstruction.of(o);
-        for (Opcode o : List.of(Opcode.IASTORE, Opcode.LASTORE, Opcode.FASTORE, Opcode.DASTORE, Opcode.AASTORE, Opcode.BASTORE, Opcode.CASTORE, Opcode.SASTORE))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ArrayStoreInstruction.of(o);
-        for (Opcode o : List.of(Opcode.POP, Opcode.POP2, Opcode.DUP, Opcode.DUP_X1, Opcode.DUP_X2, Opcode.DUP2, Opcode.DUP2_X1, Opcode.DUP2_X2, Opcode.SWAP))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = StackInstruction.of(o);
-        for (Opcode o : List.of(Opcode.IADD, Opcode.LADD, Opcode.FADD, Opcode.DADD, Opcode.ISUB,
-                                Opcode.LSUB, Opcode.FSUB, Opcode.DSUB,
-                                Opcode.IMUL, Opcode.LMUL, Opcode.FMUL, Opcode.DMUL,
-                                Opcode.IDIV, Opcode.LDIV, Opcode.FDIV, Opcode.DDIV,
-                                Opcode.IREM, Opcode.LREM, Opcode.FREM, Opcode.DREM,
-                                Opcode.INEG, Opcode.LNEG, Opcode.FNEG, Opcode.DNEG,
-                                Opcode.ISHL, Opcode.LSHL, Opcode.ISHR, Opcode.LSHR, Opcode.IUSHR, Opcode.LUSHR,
-                                Opcode.IAND, Opcode.LAND, Opcode.IOR, Opcode.LOR, Opcode.IXOR, Opcode.LXOR,
-                                Opcode.LCMP, Opcode.FCMPL, Opcode.FCMPG, Opcode.DCMPL, Opcode.DCMPG,
-                                Opcode.ARRAYLENGTH))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = OperatorInstruction.of(o);
-
-        for (Opcode o : List.of(Opcode.I2L, Opcode.I2F, Opcode.I2D,
-                                Opcode.L2I, Opcode.L2F, Opcode.L2D,
-                                Opcode.F2I, Opcode.F2L, Opcode.F2D,
-                                Opcode.D2I, Opcode.D2L, Opcode.D2F,
-                                Opcode.I2B, Opcode.I2C, Opcode.I2S))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ConvertInstruction.of(o);
-        for (Opcode o : List.of(Opcode.IRETURN, Opcode.LRETURN, Opcode.FRETURN, Opcode.DRETURN, Opcode.ARETURN, Opcode.RETURN))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ReturnInstruction.of(o);
-        for (Opcode o : List.of(Opcode.ATHROW))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = ThrowInstruction.of();
-        for (Opcode o : List.of(Opcode.MONITORENTER, Opcode.MONITOREXIT))
-            SINGLETON_INSTRUCTIONS[o.bytecode()] = MonitorInstruction.of(o);
+        for (var o : Opcode.values()) {
+            if (o.sizeIfFixed() == 1) {
+                SINGLETON_INSTRUCTIONS[o.bytecode()] = switch (o.kind()) {
+                    case ARRAY_LOAD -> ArrayLoadInstruction.of(o);
+                    case ARRAY_STORE -> ArrayStoreInstruction.of(o);
+                    case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
+                    case CONVERT -> ConvertInstruction.of(o);
+                    case LOAD -> LoadInstruction.of(o, o.slot());
+                    case MONITOR -> MonitorInstruction.of(o);
+                    case NOP -> NopInstruction.of();
+                    case OPERATOR -> OperatorInstruction.of(o);
+                    case RETURN -> ReturnInstruction.of(o);
+                    case STACK -> StackInstruction.of(o);
+                    case STORE -> StoreInstruction.of(o, o.slot());
+                    case THROW_EXCEPTION -> ThrowInstruction.of();
+                    default -> throw new AssertionError("invalid opcode: " + o);
+                };
+            }
+        }
     }
 
     List<ExceptionCatch> exceptionTable;
