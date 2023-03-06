@@ -114,57 +114,6 @@ void G1FullGCCompactTask::humongous_compaction() {
   }
 }
 
-void G1FullGCCompactTask::reset_humongous_metadata(HeapRegion* start_hr, uint num_regions, size_t word_size) {
-  // Calculate the new top of the humongous object
-  HeapWord* dest_top = start_hr->bottom() + word_size;
-  // The word size sum of all the regions used
-  size_t word_size_sum = num_regions * HeapRegion::GrainWords;
-  assert(word_size <= word_size_sum, "sanity");
-
-  // How many words memory we "waste" which cannot hold a filler object.
-  size_t words_not_fillable = 0;
-  // Next, pad out the unused tail of the last region with filler
-  // objects, for improved usage accounting.
-
-  // How many words can we use for filler objects.
-  size_t words_fillable = word_size_sum - word_size;
-
-  if (words_fillable >= G1CollectedHeap::min_fill_size()) {
-    G1CollectedHeap::fill_with_objects(dest_top, words_fillable);
-  } else {
-    // We have space to fill, but we cannot fit an object there.
-    words_not_fillable = words_fillable;
-    words_fillable = 0;
-  }
-
-  // Set up the first region as "starts humongous". This will also update
-  // the BOT covering all the regions to reflect that there is a single
-  // object that starts at the bottom of the first region.
-
-  start_hr->set_free(); // Avoid triggering asserts when changing region type
-  start_hr->set_top(start_hr->bottom());
-  start_hr->set_starts_humongous(dest_top, words_fillable);
-  start_hr->reset_compacted_after_full_gc(start_hr->end());
-
-  uint start_idx = start_hr->hrm_index();
-  uint end_idx   = start_idx + num_regions - 1;
-
-  // If there are any, we set up the "continues humongous" regions.
-  for (uint i = start_idx + 1; i <= end_idx; i++) {
-    HeapRegion* hr = _g1h->region_at(i);
-    hr->set_free();
-    hr->set_top(hr->bottom());
-    hr->set_continues_humongous(start_hr);
-    hr->reset_compacted_after_full_gc(hr->end());
-  }
-
-  // If we cannot fit a filler object, we must set top to the end
-  // of the humongous object, otherwise we cannot iterate the heap
-  // and the BOT will not be complete.
-  HeapRegion* end_hr = _g1h->region_at(end_idx);
-  end_hr->set_top(end_hr->end() - words_not_fillable);
-}
-
 void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
   assert(src_hr->is_starts_humongous(), "Should be start region of the humongous object");
 
@@ -181,7 +130,7 @@ void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
 
   uint dest_start_idx = _g1h->addr_to_region(destination);
   // Update the metadata for the destination regions.
-  reset_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size);
+  _g1h->reset_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size, false);
 
   // Free the source regions that do not overlap with the destination regions.
   uint src_start_idx = src_hr->hrm_index();
