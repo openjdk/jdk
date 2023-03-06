@@ -174,11 +174,6 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::f2hf( tf->getf() ) );
 }
 
-//------------------------------Identity---------------------------------------
-Node* ConvF2HFNode::Identity(PhaseGVN* phase) {
-  return (in(1)->Opcode() == Op_ConvHF2F) ? in(1)->in(1) : this;
-}
-
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {

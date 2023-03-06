@@ -26,6 +26,8 @@
  * @bug 8302976
  * @summary Verify conversion between float and the binary16 format
  * @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseZfhmin == true)
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @requires vm.compMode != "Xcomp"
  * @comment default run:
  * @run main TestAllFloat16ToFloat
  * @comment disable intrinsics:
