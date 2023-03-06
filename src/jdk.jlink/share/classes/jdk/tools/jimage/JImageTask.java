@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -110,7 +109,7 @@ class JImageTask {
         boolean help;
         boolean verbose;
         boolean version;
-        List<File> jimages = new LinkedList<>();
+        List<File> jimages = new ArrayList<>();
     }
 
     enum Task {
