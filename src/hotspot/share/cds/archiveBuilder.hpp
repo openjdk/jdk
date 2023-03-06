@@ -454,7 +454,7 @@ public:
     return alloc_stats()->string_stats();
   }
 
-  void relocate_klass_ptr_of_oop(oop o);
+  narrowKlass get_requested_narrow_klass(Klass* k);
 
   static Klass* get_buffered_klass(Klass* src_klass) {
     Klass* klass = (Klass*)current()->get_buffered_addr((address)src_klass);

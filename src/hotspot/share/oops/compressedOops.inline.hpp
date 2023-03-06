@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode(narrowOop v) {
-  return is_null(v) ? (oop)NULL : decode_not_null(v);
+  return is_null(v) ? nullptr : decode_not_null(v);
 }
 
 inline narrowOop CompressedOops::encode_not_null(oop v) {
@@ -76,6 +76,11 @@ inline narrowOop CompressedOops::encode_not_null(oop v) {
 
 inline narrowOop CompressedOops::encode(oop v) {
   return is_null(v) ? narrowOop::null : encode_not_null(v);
+}
+
+inline oop CompressedOops::decode_raw_not_null(oop v) {
+  assert(v != nullptr, "object is null");
+  return v;
 }
 
 inline oop CompressedOops::decode_not_null(oop v) {

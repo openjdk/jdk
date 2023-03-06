@@ -152,7 +152,10 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators = 0) {
   assert(val == noreg || val == rax, "parameter is just for looks");
-  __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
+  __ store_heap_oop(dst, val,
+                    NOT_LP64(rdx) LP64_ONLY(rscratch2),
+                    NOT_LP64(rbx) LP64_ONLY(r9),
+                    NOT_LP64(rsi) LP64_ONLY(r8), decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -3658,7 +3661,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ load_klass(rax, recv, rscratch1, true);
+  __ load_klass_check_null(rax, recv, rscratch1);
 
   // profile this call
   __ profile_virtual_call(rax, rlocals, rdx);
@@ -3749,7 +3752,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ jcc(Assembler::zero, notVFinal);
 
   // Get receiver klass into rlocals - also a null check
-  __ load_klass(rlocals, rcx, rscratch1, true);
+  __ load_klass_check_null(rlocals, rcx, rscratch1);
 
   Label subtype;
   __ check_klass_subtype(rlocals, rax, rbcp, subtype);
@@ -3771,7 +3774,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals();  // restore r14
-  __ load_klass(rdx, rcx, rscratch1, true);
+  __ load_klass_check_null(rdx, rcx, rscratch1);
 
   Label no_such_method;
 

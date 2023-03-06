@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,14 +59,14 @@ public:
 
   void do_oop(oop* p) {
     oop obj = *p;
-    if (obj == NULL) {
+    if (obj == nullptr) {
       ++_old_dead;
     } else if (_is_alive->do_object_b(obj)) {
       _keep_alive->do_oop(p);
       ++_live;
     } else {
       ObjectMonitor::maybe_deflate_dead(p);
-      *p = NULL;
+      *p = nullptr;
       ++_new_dead;
     }
   }
@@ -91,7 +91,7 @@ void WeakProcessor::Task::work(uint worker_id,
     assert(cur_state->storage() == OopStorageSet::storage(id), "invariant");
     cur_state->oops_do(&cl);
     cur_state->increment_num_dead(cl.dead());
-    if (_times != NULL) {
+    if (_times != nullptr) {
       _times->record_worker_items(worker_id, id, cl.new_dead(), cl.total());
     }
   }

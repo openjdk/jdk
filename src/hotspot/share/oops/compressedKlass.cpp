@@ -30,7 +30,7 @@
 #include "utilities/debug.hpp"
 #include "runtime/globals.hpp"
 
-address CompressedKlassPointers::_base = NULL;
+address CompressedKlassPointers::_base = nullptr;
 int CompressedKlassPointers::_shift_copy = 0;
 
 // Given an address range [addr, addr+len) which the encoding is supposed to

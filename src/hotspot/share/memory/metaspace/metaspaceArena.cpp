@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,9 +319,6 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
           METACHUNK_FORMAT_ARGS(new_chunk), requested_word_size);
 
       assert(new_chunk->free_below_committed_words() >= raw_word_size, "Sanity");
-      if (Settings::new_chunks_are_fully_committed()) {
-        assert(new_chunk->is_fully_committed(), "Chunk should be fully committed.");
-      }
 
       // We have a new chunk. Before making it the current chunk, retire the old one.
       if (current_chunk() != nullptr) {

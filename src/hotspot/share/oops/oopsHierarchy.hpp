@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ typedef class     typeArrayOopDesc*           typeArrayOop;
 // a conversion to or from an oop to a numerical type is needed,
 // use the inline template methods, cast_*_oop, defined below.
 //
-// Converting NULL to oop to Handle implicit is no longer accepted by the
+// Converting null to oop to Handle implicit is no longer accepted by the
 // compiler because there are too many steps in the conversion.  Use Handle()
 // instead, which generates less code anyway.
 

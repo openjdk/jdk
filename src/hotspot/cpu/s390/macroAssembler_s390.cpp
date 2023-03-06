@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1053,29 +1053,47 @@ int MacroAssembler::preset_reg(Register r, unsigned long pattern, int pattern_le
 }
 #endif
 
-// addr: Address descriptor of memory to clear index register will not be used !
+// addr: Address descriptor of memory to clear. Index register will not be used!
 // size: Number of bytes to clear.
+// condition code will not be preserved.
 //    !!! DO NOT USE THEM FOR ATOMIC MEMORY CLEARING !!!
 //    !!! Use store_const() instead                  !!!
-void MacroAssembler::clear_mem(const Address& addr, unsigned size) {
-  guarantee(size <= 256, "MacroAssembler::clear_mem: size too large");
-
-  if (size == 1) {
-    z_mvi(addr, 0);
-    return;
-  }
+void MacroAssembler::clear_mem(const Address& addr, unsigned int size) {
+  guarantee((addr.disp() + size) <= 4096, "MacroAssembler::clear_mem: size too large");
 
   switch (size) {
-    case 2: z_mvhhi(addr, 0);
+    case 0:
       return;
-    case 4: z_mvhi(addr, 0);
+    case 1:
+      z_mvi(addr, 0);
       return;
-    case 8: z_mvghi(addr, 0);
+    case 2:
+      z_mvhhi(addr, 0);
+      return;
+    case 4:
+      z_mvhi(addr, 0);
+      return;
+    case 8:
+      z_mvghi(addr, 0);
       return;
     default: ; // Fallthru to xc.
   }
 
-  z_xc(addr, size, addr);
+  // Caution: the emitter with Address operands does implicitly decrement the length
+  if (size <= 256) {
+    z_xc(addr, size, addr);
+  } else {
+    unsigned int offset = addr.disp();
+    unsigned int incr   = 256;
+    for (unsigned int i = 0; i <= size-incr; i += incr) {
+      z_xc(offset, incr - 1, addr.base(), offset, addr.base());
+      offset += incr;
+    }
+    unsigned int rest = size - (offset - addr.disp());
+    if (size > 0) {
+      z_xc(offset, rest-1, addr.base(), offset, addr.base());
+    }
+  }
 }
 
 void MacroAssembler::align(int modulus) {
@@ -3353,8 +3371,6 @@ void MacroAssembler::set_thread_state(JavaThreadState new_state) {
 }
 
 void MacroAssembler::get_vm_result(Register oop_result) {
-  verify_thread();
-
   z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
   clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
 
@@ -3362,8 +3378,6 @@ void MacroAssembler::get_vm_result(Register oop_result) {
 }
 
 void MacroAssembler::get_vm_result_2(Register result) {
-  verify_thread();
-
   z_lg(result, Address(Z_thread, JavaThread::vm_result_2_offset()));
   clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(void*));
 }
@@ -3636,6 +3650,11 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   } else {
     z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
   }
+}
+
+void MacroAssembler::load_klass_check_null(Register klass, Register src_oop, Register tmp) {
+  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
+  load_klass(klass, src_oop);
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
@@ -5386,12 +5405,6 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
   }
 }
 #endif // !PRODUCT
-
-void MacroAssembler::verify_thread() {
-  if (VerifyThread) {
-    unimplemented("", 117);
-  }
-}
 
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {

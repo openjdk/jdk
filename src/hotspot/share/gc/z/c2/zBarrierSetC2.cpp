@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,3 +563,20 @@ void ZBarrierSetC2::compute_liveness_at_stubs() const {
     }
   }
 }
+
+#ifndef PRODUCT
+void ZBarrierSetC2::dump_barrier_data(const MachNode* mach, outputStream* st) const {
+  if ((mach->barrier_data() & ZLoadBarrierStrong) != 0) {
+    st->print("strong ");
+  }
+  if ((mach->barrier_data() & ZLoadBarrierWeak) != 0) {
+    st->print("weak ");
+  }
+  if ((mach->barrier_data() & ZLoadBarrierPhantom) != 0) {
+    st->print("phantom ");
+  }
+  if ((mach->barrier_data() & ZLoadBarrierNoKeepalive) != 0) {
+    st->print("nokeepalive ");
+  }
+}
+#endif // !PRODUCT

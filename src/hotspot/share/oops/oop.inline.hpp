@@ -139,14 +139,18 @@ Klass* oopDesc::klass_or_null_acquire() const {
 #endif
 }
 
+Klass* oopDesc::klass_raw() const {
+  return klass();
+}
+
 #ifndef _LP64
 void oopDesc::set_klass(Klass* k) {
-  assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
+  assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   _klass = k;
 }
 
 void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
-  assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
+  assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
     Atomic::release_store((narrowKlass*)raw_mem,
@@ -311,7 +315,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   assert(forwardee(m) == p, "encoding must be reversable");
   markWord old_mark = cas_set_mark(m, compare, order);
   if (old_mark == compare) {
-    return NULL;
+    return nullptr;
   } else {
     return forwardee(old_mark);
   }
@@ -416,7 +420,7 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
 }
 
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
-  return obj == NULL || obj->klass()->is_subtype_of(klass);
+  return obj == nullptr || obj->klass()->is_subtype_of(klass);
 }
 
 intptr_t oopDesc::identity_hash() {

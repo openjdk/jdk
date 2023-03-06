@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,7 +77,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     fast_lock(obj, hdr, t0, t1, slow_case);
   } else {
     // and mark it as unlocked
-    ori(hdr, hdr, markWord::unlocked_value);
+    jori(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
     sd(hdr, Address(disp_hdr, 0));
     // test if object header is still the same (i.e. unlocked), and if so, store the
@@ -100,7 +100,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // assuming both the stack pointer and page_size have their least
     // significant 2 bits cleared and page_size is a power of 2
     sub(hdr, hdr, sp);
-    mv(t0, aligned_mask - os::vm_page_size());
+    mv(t0, aligned_mask - (int)os::vm_page_size());
     andr(hdr, hdr, t0);
     // for recursive locking, the result is zero => save it in the displaced header
     // location (NULL in the displaced hdr location indicates recursive locking)

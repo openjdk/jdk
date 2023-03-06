@@ -97,7 +97,7 @@ public:
   // Shift == LogKlassAlignmentInBytes (TODO: unify)
   static int      shift()            { return  LogKlassAlignmentInBytes; }
 
-  static bool is_null(Klass* v)      { return v == NULL; }
+  static bool is_null(Klass* v)      { return v == nullptr; }
   static bool is_null(narrowKlass v) { return v == 0; }
 
   static inline Klass* decode_raw(narrowKlass v);

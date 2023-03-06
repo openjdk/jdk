@@ -111,7 +111,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // significant 2 bits cleared and page_size is a power of 2
     mov(rscratch1, sp);
     sub(hdr, hdr, rscratch1);
-    ands(hdr, hdr, aligned_mask - os::vm_page_size());
+    ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
     // for recursive locking, the result is zero => save it in the displaced header
     // location (NULL in the displaced hdr location indicates recursive locking)
     str(hdr, Address(disp_hdr, 0));

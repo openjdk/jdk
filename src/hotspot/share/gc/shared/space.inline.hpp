@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ inline HeapWord* Space::block_start(const void* p) {
 #if INCLUDE_SERIALGC
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
@@ -67,7 +67,7 @@ inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   // above.  Perhaps in the future some lock-free manner of keeping the
   // coordination.
   HeapWord* res = ContiguousSpace::par_allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
@@ -138,7 +138,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
      // we have a chunk of the space which hasn't moved and we've reinitialized
      // the mark word during the previous pass, so we can't use is_gc_marked for
      // the traversal.
-     HeapWord* prev_obj = NULL;
+     HeapWord* prev_obj = nullptr;
 
      while (cur_obj < space->_first_dead) {
        size_t size = cast_to_oop(cur_obj)->size();
@@ -173,7 +173,7 @@ template <typename OopClosureType>
 void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
   HeapWord* t;
   HeapWord* p = saved_mark_word();
-  assert(p != NULL, "expected saved mark");
+  assert(p != nullptr, "expected saved mark");
 
   const intx interval = PrefetchScanIntervalInBytes;
   do {

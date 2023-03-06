@@ -1274,9 +1274,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // red zones.
   Label loop;
   bind(loop);
-  movl(Address(tmp, (-os::vm_page_size())), size );
-  subptr(tmp, os::vm_page_size());
-  subl(size, os::vm_page_size());
+  movl(Address(tmp, (-(int)os::vm_page_size())), size );
+  subptr(tmp, (int)os::vm_page_size());
+  subl(size, (int)os::vm_page_size());
   jcc(Assembler::greater, loop);
 
   // Bang down shadow pages too.
@@ -1285,10 +1285,10 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down including all pages in the shadow zone.
-  for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / os::vm_page_size()); i++) {
+  for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / (int)os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    movptr(Address(tmp, (-i*os::vm_page_size())), size );
+    movptr(Address(tmp, (-i*(int)os::vm_page_size())), size );
   }
 }
 
@@ -5150,22 +5150,25 @@ void MacroAssembler::load_nklass(Register dst, Register src) {
 }
 #endif
 
-void MacroAssembler::load_klass(Register dst, Register src, Register tmp, bool null_check_src) {
+void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64
   assert(UseCompressedClassPointers, "expect compressed class pointers");
-  if (null_check_src) {
-    null_check(src, oopDesc::mark_offset_in_bytes());
-  }
   load_nklass(dst, src);
   decode_klass_not_null(dst, tmp);
 #else
-  if (null_check_src) {
-    null_check(src, oopDesc::klass_offset_in_bytes());
-  }
   movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
 #endif
+}
+
+void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
+#ifdef _LP64
+  null_check(src, oopDesc::mark_offset_in_bytes());
+#else
+  null_check(src, oopDesc::klass_offset_in_bytes());
+#endif
+  load_klass(dst, src, tmp);
 }
 
 #ifndef _LP64

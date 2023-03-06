@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1280,7 +1280,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       // least significant bits clear.
       // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
       subptr(swap_reg, rsp);
-      andptr(swap_reg, zero_bits - os::vm_page_size());
+      andptr(swap_reg, zero_bits - (int)os::vm_page_size());
 
       // Save the test result, for recursive case, the result is zero
       movptr(Address(lock_reg, mark_offset), swap_reg);

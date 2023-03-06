@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/globals.hpp"
 
 // For UseCompressedOops.
-NarrowPtrStruct CompressedOops::_narrow_oop = { NULL, 0, true };
+NarrowPtrStruct CompressedOops::_narrow_oop = { nullptr, 0, true };
 MemRegion       CompressedOops::_heap_address_range;
 
 // Choose the heap base address and oop encoding mode
@@ -79,8 +79,8 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
                                                  false));
 
   // base() is one page below the heap.
-  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - os::vm_page_size()) ||
-         base() == NULL, "invalid value");
+  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - (intptr_t)os::vm_page_size()) ||
+         base() == nullptr, "invalid value");
   assert(shift() == LogMinObjAlignmentInBytes ||
          shift() == 0, "invalid value");
 #endif
@@ -148,14 +148,14 @@ bool CompressedOops::is_disjoint_heap_base_address(address addr) {
 
 // Check for disjoint base compressed oops.
 bool CompressedOops::base_disjoint() {
-  return _narrow_oop._base != NULL && is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 // Check for real heapbased compressed oops.
 // We must subtract the base as the bits overlap.
 // If we negate above function, we also get unscaled and zerobased.
 bool CompressedOops::base_overlaps() {
-  return _narrow_oop._base != NULL && !is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && !is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 void CompressedOops::print_mode(outputStream* st) {

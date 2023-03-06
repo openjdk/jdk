@@ -1802,7 +1802,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
         __ sub(swap_reg, sp, swap_reg);
         __ neg(swap_reg, swap_reg);
-        __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
+        __ ands(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
 
         // Save the test result, for recursive case, the result is zero
         __ str(swap_reg, Address(lock_reg, mark_word_offset));

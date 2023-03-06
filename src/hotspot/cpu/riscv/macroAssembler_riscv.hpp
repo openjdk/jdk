@@ -195,6 +195,7 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
+  void load_klass_check_null(Register dst, Register src, Register tmp = t0);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
 
@@ -412,7 +413,9 @@ class MacroAssembler: public Assembler {
   }
 
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  static int max_trampoline_stub_size();
   void emit_static_call_stub();
+  static int static_call_stub_size();
 
   // The following 4 methods return the offset of the appropriate move instruction
 
@@ -689,7 +692,7 @@ public:
 
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
-  void li(Register Rd, int64_t imm);  // optimized load immediate
+  void li  (Register Rd, int64_t imm);  // optimized load immediate
 
   // mv
   void mv(Register Rd, address addr)                  { li(Rd, (int64_t)addr); }
@@ -702,8 +705,6 @@ public:
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
-
-  inline void mvw(Register Rd, int32_t imm32)         { mv(Rd, imm32); }
 
   void mv(Register Rd, Address dest) {
     assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");

@@ -568,39 +568,8 @@ class StubGenerator: public StubCodeGenerator {
     // make sure object is 'reasonable'
     __ cbz(r0, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-    if (UseZGC) {
-      // Check if mask is good.
-      // verifies that ZAddressBadMask & r0 == 0
-      __ ldr(c_rarg3, Address(rthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(c_rarg2, r0, c_rarg3);
-      __ cbnz(c_rarg2, error);
-    }
-#endif
-
-    // Check if the oop is in the right area of memory
-    __ mov(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-    __ andr(c_rarg2, r0, c_rarg3);
-    __ mov(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-
-    // Compare c_rarg2 and c_rarg3.  We don't use a compare
-    // instruction here because the flags register is live.
-    __ eor(c_rarg2, c_rarg2, c_rarg3);
-    __ cbnz(c_rarg2, error);
-
-    // make sure klass is 'reasonable', which is not zero.
-    // NOTE: We used to load the Klass* here, and compare that to zero.
-    // However, with current Lilliput implementation, that would require
-    // checking the locking bits and calling into the runtime, which
-    // clobbers the condition flags, which may be live around this call.
-    // OTOH, this is a simple NULL-check, and we can simply load the upper
-    // 32bit of the header as narrowKlass, and compare that to 0. The
-    // worst that can happen (rarely) is that the object is locked and
-    // we have lock pointer bits in the upper 32bits. We can't get a false
-    // negative.
-    assert(oopDesc::klass_offset_in_bytes() % 4 == 0, "must be 4 byte aligned");
-    __ ldrw(r0, Address(r0, oopDesc::klass_offset_in_bytes()));  // get klass
-    __ cbzw(r0, error);      // if klass is NULL it is broken
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->check_oop(_masm, r0, c_rarg2, c_rarg3, error);
 
     // return if everything seems ok
     __ bind(exit);

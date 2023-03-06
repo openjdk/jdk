@@ -13384,15 +13384,15 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr, rRegP cx1) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, noreg, r15_thread, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, r15_thread, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

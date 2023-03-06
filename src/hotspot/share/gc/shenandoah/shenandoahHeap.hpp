@@ -94,7 +94,7 @@ public:
   // Reset iterator to default state
   void reset();
 
-  // Returns next region, or NULL if there are no more regions.
+  // Returns next region, or null if there are no more regions.
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -698,16 +698,16 @@ TEST_VM(os, find_mapping_3) {
 
 TEST_VM(os, os_pagesizes) {
   ASSERT_EQ(os::min_page_size(), 4 * K);
-  ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
+  ASSERT_LE(os::min_page_size(), os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
   // (contract says "default" page size but a lot of code actually assumes
   //  this to be the smallest page size; notable, deliberate exception is
   //  AIX which can have smaller page sizes but those are not part of the
   //  page_sizes() set).
-  ASSERT_EQ(os::page_sizes().smallest(), (size_t)os::vm_page_size());
+  ASSERT_EQ(os::page_sizes().smallest(), os::vm_page_size());
   // The large page size, if it exists, shall be part of the set
   if (UseLargePages) {
-    ASSERT_GT(os::large_page_size(), (size_t)os::vm_page_size());
+    ASSERT_GT(os::large_page_size(), os::vm_page_size());
     ASSERT_TRUE(os::page_sizes().contains(os::large_page_size()));
   }
   os::page_sizes().print_on(tty);

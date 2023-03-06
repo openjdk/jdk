@@ -1443,13 +1443,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // are handled properly.
     install_secondary_signal_handler();
   } else {
-#if defined(_WINDOWS)
-    // If UseOSErrorReporting we call this for each level of the call stack
-    // while searching for the exception handler.  Only the first level needs
-    // to be reported.
-    if (UseOSErrorReporting && log_done) return;
-#endif
-
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (_first_error_tid != mytid) {
@@ -1679,18 +1672,21 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     OnError = nullptr;
   }
 
-  if (WINDOWS_ONLY(!UseOSErrorReporting) NOT_WINDOWS(true)) {
-    // os::abort() will call abort hooks, try it first.
-    static bool skip_os_abort = false;
-    if (!skip_os_abort) {
-      skip_os_abort = true;
-      bool dump_core = should_report_bug(_id);
-      os::abort(dump_core && CreateCoredumpOnCrash, _siginfo, _context);
-    }
-
-    // if os::abort() doesn't abort, try os::die();
-    os::die();
+#if defined _WINDOWS
+  if (UseOSErrorReporting) {
+    raise_fail_fast(_siginfo, _context);
   }
+#endif // _WINDOWS
+
+  // os::abort() will call abort hooks, try it first.
+  static bool skip_os_abort = false;
+  if (!skip_os_abort) {
+    skip_os_abort = true;
+    bool dump_core = should_report_bug(_id);
+    os::abort(dump_core && CreateCoredumpOnCrash, _siginfo, _context);
+    // if os::abort() doesn't abort, try os::die();
+  }
+  os::die();
 }
 
 /*
