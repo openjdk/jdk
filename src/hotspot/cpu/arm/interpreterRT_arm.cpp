@@ -306,9 +306,9 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   virtual void pass_object() {
     intptr_t from_addr = (intptr_t)(_from + Interpreter::local_offset_in_bytes(0));
     if(_last_gp < GPR_PARAMS) {
-      _toGP[_last_gp++] = (*(intptr_t*)from_addr == 0) ? nullptr : from_addr;
+      _toGP[_last_gp++] = (*(intptr_t*)from_addr == 0) ? 0 : from_addr;
     } else {
-      *_to++ = (*(intptr_t*)from_addr == 0) ? nullptr : from_addr;
+      *_to++ = (*(intptr_t*)from_addr == 0) ? 0 : from_addr;
     }
     _from -= Interpreter::stackElementSize;
   }
