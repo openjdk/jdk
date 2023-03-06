@@ -153,7 +153,7 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
 }
 
 bool CollectedHeap::contains_null(const oop* p) {
-  return *p == NULL;
+  return *p == nullptr;
 }
 
 void CollectedHeap::print_heap_before_gc() {
