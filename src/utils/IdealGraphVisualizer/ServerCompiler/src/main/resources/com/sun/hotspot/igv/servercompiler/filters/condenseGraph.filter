@@ -1,7 +1,6 @@
-removeSelfLoops();
-
-// Hide secondary edges.
-remove(matches("short_name", "FP|RA|IO|RP"));
+// Condense the graph without information loss and make the structure of the
+// intermediate representation more explicit. This filter is most effective in
+// combination with "Simplify graph".
 
 // Pretty-print Bool nodes to be shown as output slots.
 function replaceComparisonWithSign(dump_spec) {
@@ -33,27 +32,18 @@ function catchProjShortText(con) {
 }
 editProperty(matches("name", "CatchProj"), "con", "short_name", catchProjShortText);
 
-// Add short text to inlined mach data parameters.
-editProperty(and([matches("name", "MachProj"), matches("category", "data"), successorOf(matches("name", "Start"))]),
+// Add short text to inlined Mach data parameters.
+editProperty(and([matches("name", "MachProj"),
+                  matches("category", "data"),
+                  successorOf(matches("name", "Start"))]),
              "dump_spec", "short_name",
              function(dump_spec) {return dump_spec;});
 
-// Condense inputs for all nodes.
-
+// Condense inputs in all nodes.
 var anyNode = matches("name", ".*");
-removeInputs(matches("name", "Root"), anyNode);
-
-var fun = matches("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect");
-var topCon = and([matches("name", "Con"),
-                  matches("type", "top")]);
-removeInputs(fun, or([topCon, matches("short_name", "I")]));
-
-var other = matches("name", "Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray");
-removeInputs(other, topCon);
-
 removeEmptySlots(anyNode);
 
-// Inline Parm and start MachProj nodes, except control ones.
+// Inline ("split") Parm and start MachProj nodes, except control ones.
 split(and([matches("name", "Parm|MachProj"),
            not(matches("category", "control")),
            successorOf(matches("name", "Start"))]),
@@ -70,7 +60,7 @@ combine(anyNode, matches("name", "Conv[IFD]2L"), ["2L"]);
 combine(anyNode, matches("name", "Conv[ILD]2F"), ["2F"]);
 combine(anyNode, matches("name", "Conv[ILF]2D"), ["2D"]);
 
-// Inline (split) constant nodes.
+// Inline ("split") constant nodes.
 split(matches("name", "MachTemp"), ["T"]);
 split(matches("name", "ThreadLocal"), ["TL"]);
 split(matches("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)"), ["[short_name]", "[name]"]);

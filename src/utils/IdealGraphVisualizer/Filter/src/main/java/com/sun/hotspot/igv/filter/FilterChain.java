@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.graph.Diagram;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -73,20 +74,23 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         }
     }
 
-    public void apply(Diagram d, FilterChain sequence) {
+    public void applyInOrder(Diagram d, FilterChain sequence, FilterChain ordering) {
         List<Filter> applied = new ArrayList<>();
+        List<Filter> candidates = new ArrayList<>(sequence.getFilters().size());
         for (Filter f : sequence.getFilters()) {
             if (filters.contains(f)) {
-                f.apply(d);
+                candidates.add(f);
                 applied.add(f);
             }
         }
-
-
         for (Filter f : filters) {
             if (!applied.contains(f)) {
-                f.apply(d);
+                candidates.add(f);
             }
+        }
+        candidates.sort(Comparator.comparingInt(ordering.getFilters()::indexOf));
+        for (Filter f : candidates) {
+            f.apply(d);
         }
     }
 
