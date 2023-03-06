@@ -148,6 +148,7 @@ public final class Jlink {
         private final Path output;
         private final Set<String> modules;
         private final ModuleFinder finder;
+        private final boolean useModulePath;
 
         /**
          * jlink configuration,
@@ -158,10 +159,12 @@ public final class Jlink {
          */
         public JlinkConfiguration(Path output,
                                   Set<String> modules,
-                                  ModuleFinder finder) {
+                                  ModuleFinder finder,
+                                  boolean useModulePath) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
+            this.useModulePath = useModulePath;
         }
 
         /**
@@ -184,6 +187,10 @@ public final class Jlink {
          */
         public ModuleFinder finder() {
             return finder;
+        }
+
+        public boolean useModulePath() {
+            return useModulePath;
         }
 
         /**

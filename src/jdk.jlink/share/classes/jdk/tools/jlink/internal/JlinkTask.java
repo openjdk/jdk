@@ -24,6 +24,8 @@
  */
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -39,8 +41,8 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -60,18 +62,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleReferenceImpl;
-import jdk.tools.jlink.internal.TaskHelper.BadArgs;
-import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
+import jdk.internal.module.ModuleResolution;
+import jdk.internal.opt.CommandLine;
+import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.internal.opt.CommandLine;
-import jdk.internal.module.ModulePath;
-import jdk.internal.module.ModuleResolution;
 
 /**
  * Implementation for the jlink tool.
@@ -270,14 +271,10 @@ public class JlinkTask {
                 if (jmods != null) {
                     options.modulePath.add(jmods);
                 }
-
-                if (options.modulePath.isEmpty()) {
-                    throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
-                            .showUsage(true);
-                }
             }
 
-            JlinkConfiguration config = initJlinkConfig();
+            boolean useModulePath = !options.modulePath.isEmpty();
+            JlinkConfiguration config = initJlinkConfig(useModulePath);
             outputPath = config.getOutput();
             if (options.suggestProviders) {
                 suggestProviders(config, remaining);
@@ -367,11 +364,11 @@ public class JlinkTask {
 
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
-    private JlinkConfiguration initJlinkConfig() throws BadArgs {
+    private JlinkConfiguration initJlinkConfig(boolean useModulePath) throws BadArgs {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of());
+                ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of(), useModulePath);
                 // all observable modules are roots
                 finder.findAll()
                       .stream()
@@ -383,18 +380,19 @@ public class JlinkTask {
             }
         }
 
-        ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots);
+        ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots, useModulePath);
         if (finder.find("java.base").isEmpty()) {
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
             }
-            finder = newModuleFinder(options.modulePath, options.limitMods, roots);
+            finder = newModuleFinder(options.modulePath, options.limitMods, roots, useModulePath);
         }
 
         return new JlinkConfiguration(options.output,
                                       roots,
-                                      finder);
+                                      finder,
+                                      useModulePath);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -443,16 +441,11 @@ public class JlinkTask {
      */
     public static ModuleFinder newModuleFinder(List<Path> paths,
                                                Set<String> limitMods,
-                                               Set<String> roots)
+                                               Set<String> roots,
+                                               boolean useModulePath)
     {
-        if (Objects.requireNonNull(paths).isEmpty()) {
-             throw new IllegalArgumentException(taskHelper.getMessage("err.empty.module.path"));
-        }
-
-        Path[] entries = paths.toArray(new Path[0]);
         Runtime.Version version = Runtime.version();
-        ModuleFinder finder = ModulePath.of(version, true, entries);
-
+        ModuleFinder finder = useModulePath ? moduleFinderFromPath(paths, version) : ModuleFinder.ofSystem();
         if (finder.find("java.base").isPresent()) {
             // use the version of java.base module, if present, as
             // the release version for multi-release JAR files
@@ -479,6 +472,15 @@ public class JlinkTask {
             finder = limitFinder(finder, limitMods, Objects.requireNonNull(roots));
         }
         return finder;
+    }
+
+    private static ModuleFinder moduleFinderFromPath(List<Path> paths, Runtime.Version version) {
+        if (Objects.requireNonNull(paths).isEmpty()) {
+            throw new IllegalArgumentException(taskHelper.getMessage("err.empty.module.path"));
+       }
+
+       Path[] entries = paths.toArray(new Path[0]);
+       return ModulePath.of(version, true, entries);
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
@@ -538,8 +540,8 @@ public class JlinkTask {
             // print modules to be linked in
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
-              .forEach(rm -> log.format("%s %s%n",
-                                        rm.name(), rm.reference().location().get()));
+              .forEach(rm -> log.format("%s %s%s%n",
+                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (jmod-less)"));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
@@ -580,7 +582,7 @@ public class JlinkTask {
                         targetPlatform.arch().byteOrder(), targetPlatform);
             }
         }
-        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning);
+        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning, config.useModulePath());
     }
 
     /*
@@ -856,7 +858,8 @@ public class JlinkTask {
                     Map<String, Path> modsPaths,
                     Platform targetPlatform,
                     Path packagedModulesPath,
-                    boolean ignoreSigning) throws IOException {
+                    boolean ignoreSigning,
+                    boolean useModulePath) throws IOException {
             Objects.requireNonNull(targetPlatform);
             this.targetPlatform = targetPlatform;
             this.packagedModulesPath = packagedModulesPath;
@@ -873,11 +876,11 @@ public class JlinkTask {
                 .orElse(Runtime.version());
 
             this.archives = modsPaths.entrySet().stream()
-                                .map(e -> newArchive(e.getKey(), e.getValue()))
+                                .map(e -> newArchive(e.getKey(), e.getValue(), useModulePath))
                                 .collect(Collectors.toSet());
         }
 
-        private Archive newArchive(String module, Path path) {
+        private Archive newArchive(String module, Path path, boolean useModulePath) {
             if (path.toString().endsWith(".jmod")) {
                 return new JmodArchive(module, path);
             } else if (path.toString().endsWith(".jar")) {
@@ -906,7 +909,7 @@ public class JlinkTask {
                 }
 
                 return modularJarArchive;
-            } else if (Files.isDirectory(path)) {
+            } else if (useModulePath && Files.isDirectory(path)) {
                 Path modInfoPath = path.resolve("module-info.class");
                 if (Files.isRegularFile(modInfoPath)) {
                     return new DirArchive(path, findModuleName(modInfoPath));
@@ -914,6 +917,9 @@ public class JlinkTask {
                     throw new IllegalArgumentException(
                         taskHelper.getMessage("err.not.a.module.directory", path));
                 }
+            } else if (ModuleFinder.ofSystem().find(module).isPresent()){
+                // the path is a JRTPath, when using a jmod-less image
+                return new JmodLessArchive(module, path);
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

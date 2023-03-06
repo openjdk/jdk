@@ -29,13 +29,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
-
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
  /*
  * @test
@@ -110,6 +110,18 @@ public class GenerateJLIClassesPluginTest {
     }
 
     @Test
+    public static void basicJlinkJavaBase() throws IOException {
+        Result result = JImageGenerator.getJLinkTask()
+                .modulePath(helper.defaultModulePath())
+                .output(helper.createNewImageDir("java-base-basic"))
+                .addMods("java.base")
+                .call();
+
+        Path image = result.assertSuccess();
+        validateJLISpeciesClasses(image);
+    }
+
+    @Test
     public static void nonExistentTraceFile() throws IOException {
         Result result = JImageGenerator.getJLinkTask()
                 .modulePath(helper.defaultModulePath())
@@ -128,6 +140,26 @@ public class GenerateJLIClassesPluginTest {
                         "/java.base/java/lang/invoke/DelegatingMethodHandle$Holder.class",
                         "/java.base/java/lang/invoke/LambdaForm$Holder.class",
                         "/java.base/java/lang/invoke/Invokers$Holder.class"),
+                List.of());
+    }
+
+    private static void validateJLISpeciesClasses(Path image) throws IOException {
+        JImageValidator.validate(image.resolve("lib").resolve("modules"),
+                List.of("/java.base/java/lang/invoke/BoundMethodHandle$Species_D.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_DL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_I.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_IL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LJ.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLJ.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLJ.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLLLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLLLLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLLLLLL.class",
+                        "/java.base/java/lang/invoke/BoundMethodHandle$Species_LLLLLLLLL.class"),
                 List.of());
     }
 

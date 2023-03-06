@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -62,7 +63,24 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 public final class GenerateJLIClassesPlugin extends AbstractPlugin {
 
-
+    // Work-around for jmod-less jlinking. jmod archives don't contain these
+    // classes so it isn't an issue for a jmod-full jlink.
+    private static final Set<String> GENERATED_JAVA_BASE_CLASSES = Set.of(
+            "java/lang/invoke/BoundMethodHandle$Species_D",
+            "java/lang/invoke/BoundMethodHandle$Species_DL",
+            "java/lang/invoke/BoundMethodHandle$Species_I",
+            "java/lang/invoke/BoundMethodHandle$Species_IL",
+            "java/lang/invoke/BoundMethodHandle$Species_LJ",
+            "java/lang/invoke/BoundMethodHandle$Species_LL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLJ",
+            "java/lang/invoke/BoundMethodHandle$Species_LLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLJ",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLLLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLLLLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLLLLLL",
+            "java/lang/invoke/BoundMethodHandle$Species_LLLLLLLLL");
     private static final String DEFAULT_TRACE_FILE = "default_jli_trace.txt";
 
     private static final JavaLangInvokeAccess JLIA
@@ -121,6 +139,7 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         initialize(in);
+        final Set<String> containedClasses = new HashSet<>();
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {
                 // No trace file given.  Copy all entries.
@@ -134,6 +153,11 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
                     path.equals(BASIC_FORMS_HOLDER_ENTRY)) {
                     return null;
                 } else {
+                    // Keep track of generated JLI classes
+                    String className = possiblyStripFromPath(path);
+                    if (GENERATED_JAVA_BASE_CLASSES.contains(className)) {
+                        containedClasses.add(className);
+                    }
                     return entry;
                 }
             }, out);
@@ -143,15 +167,28 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
             try {
                 JLIA.generateHolderClasses(traceFileStream)
                     .forEach((cn, bytes) -> {
-                        String entryName = "/java.base/" + cn + ".class";
-                        ResourcePoolEntry ndata = ResourcePoolEntry.create(entryName, bytes);
-                        out.add(ndata);
+                        // containedClasses will not contain any generated JLI
+                        // classes for the initial link, but will contain all
+                        // JLI classes in GENERATED_JAVA_BASE_CLASSES in the
+                        // recursive jmodless jlink case.
+                        if (!containedClasses.contains(cn)) {
+                            String entryName = "/java.base/" + cn + ".class";
+                            ResourcePoolEntry ndata = ResourcePoolEntry.create(entryName, bytes);
+                            out.add(ndata);
+                        }
                     });
             } catch (Exception ex) {
                 throw new PluginException(ex);
             }
         }
         return out.build();
+    }
+
+    private static String possiblyStripFromPath(String path) {
+        if (path.startsWith("/java.base/") && path.endsWith(".class")) {
+            return path.substring("/java.base/".length(), path.length() - ".class".length());
+        }
+        return path;
     }
 
     private static final String DIRECT_METHOD_HOLDER_ENTRY =

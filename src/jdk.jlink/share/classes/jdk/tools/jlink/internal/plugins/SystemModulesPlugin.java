@@ -24,13 +24,28 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import static java.lang.constant.ConstantDescs.CD_List;
+import static java.lang.constant.ConstantDescs.CD_Map;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_Set;
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_boolean;
+import static java.lang.constant.ConstantDescs.CD_byte;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
+import static jdk.internal.classfile.Classfile.ACC_FINAL;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static jdk.internal.classfile.Classfile.ACC_SUPER;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
-import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
@@ -64,23 +79,20 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.module.Checks;
 import jdk.internal.module.DefaultRoots;
-import jdk.internal.module.Modules;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.CodeBuilder;
-
+import jdk.internal.module.Modules;
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -167,13 +179,32 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // generate and add the SystemModuleMap and SystemModules classes
         Set<String> generated = genSystemModulesClasses(moduleInfos, out);
 
-        // pass through all other resources
+        // pass through all other resources other than SystemModules* and
+        // SystemModulesMap classes as we've generated them.
         in.entries()
-            .filter(data -> !data.path().endsWith("/module-info.class")
-                    && !generated.contains(data.path()))
+            .filter(data -> {
+                String path = data.path();
+                if (path.endsWith("/module-info.class") || generated.contains(path)) {
+                    return false;
+                }
+                String className = extractClassName(path);
+                if (className != null &&
+                        className.startsWith(
+                                 SYSTEM_MODULES_CLASS_PREFIX)) {
+                    return false;
+                }
+                return true;
+            })
             .forEach(data -> out.add(data));
 
         return out.build();
+    }
+
+    static String extractClassName(String path) {
+        if (!path.endsWith(".class") || !path.startsWith("/java.base/")) {
+            return null; // not a class or not java.base
+        }
+        return path.substring("/java.base/".length(), path.length() - 6 /* .class */);
     }
 
     /**
