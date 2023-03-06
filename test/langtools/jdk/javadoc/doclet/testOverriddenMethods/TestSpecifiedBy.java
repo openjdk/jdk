@@ -49,25 +49,25 @@ public class TestSpecifiedBy extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                 package pkg;
-                                
+
                 public abstract class A {
                     public abstract void m();
                 }
                 """, """
                 package pkg;
-                                
+
                 public class B extends A {
                     public void m() { }
                 }
                 """, """
                 package pkg;
-                                
+
                 public abstract class C extends A {
                     public void m() { }
                 }
                 """, """
                 package pkg;
-                                
+
                 public abstract class D extends A {
                     public abstract void m();
                 }
