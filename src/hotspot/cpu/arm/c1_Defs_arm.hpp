@@ -84,9 +84,7 @@ enum {
 };
 
 // multiplier factor to update reserved_area_argument_size
-enum {
-  pd_reserved_argument_area_size_factor = 2
-};
+static const int pd_reserved_argument_area_size_factor = 2;
 
 #define PATCHED_ADDR (204)
 #define CARDTABLEBARRIERSET_POST_BARRIER_HELPER

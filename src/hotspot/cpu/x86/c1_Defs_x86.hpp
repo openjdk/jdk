@@ -85,8 +85,6 @@ enum {
 };
 
 // multiplier factor to update reserved_area_argument_size
-enum {
-  pd_reserved_argument_area_size_factor = 2
-};
+static const int pd_reserved_argument_area_size_factor = 2;
 
 #endif // CPU_X86_C1_DEFS_X86_HPP

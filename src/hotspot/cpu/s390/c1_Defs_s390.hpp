@@ -78,8 +78,6 @@ enum {
 };
 
 // multiplier factor to update reserved_area_argument_size
-enum {
-  pd_reserved_argument_area_size_factor = 4
-};
+static const int pd_reserved_argument_area_size_factor = 4;
 
 #endif // CPU_S390_C1_DEFS_S390_HPP
