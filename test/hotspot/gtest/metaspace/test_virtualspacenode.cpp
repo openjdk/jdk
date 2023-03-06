@@ -540,8 +540,8 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   DEBUG_ONLY(node->verify_locked();)
 
   delete node;
-  ASSERT_EQ(scomm.get(), 0);
-  ASSERT_EQ(sres.get(), 0);
+  ASSERT_EQ(scomm.get(), size_t{0});
+  ASSERT_EQ(sres.get(), size_t{0});
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested
