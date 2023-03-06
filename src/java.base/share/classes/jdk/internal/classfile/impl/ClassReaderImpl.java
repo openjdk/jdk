@@ -194,53 +194,63 @@ public final class ClassReaderImpl
         return bsmEntries().get(index);
     }
 
+    @Override
     public int readU1(int p) {
         return buffer[p] & 0xFF;
     }
 
+    @Override
     public int readU2(int p) {
         int b1 = buffer[p] & 0xFF;
         int b2 = buffer[p + 1] & 0xFF;
         return (b1 << 8) + b2;
     }
 
+    @Override
     public int readS1(int p) {
         return buffer[p];
     }
 
+    @Override
     public int readS2(int p) {
         int b1 = buffer[p];
         int b2 = buffer[p + 1] & 0xFF;
         return (b1 << 8) + b2;
     }
 
+    @Override
     public int readInt(int p) {
         int ch1 = buffer[p] & 0xFF;
         int ch2 = buffer[p + 1] & 0xFF;
         int ch3 = buffer[p + 2] & 0xFF;
         int ch4 = buffer[p + 3] & 0xFF;
-        return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0);
+        return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
     }
 
+    @Override
     public long readLong(int p) {
         return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
                ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
                ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
-               ((buffer[p + 7] & 255) << 0);
+               (buffer[p + 7] & 255);
     }
 
+    @Override
     public float readFloat(int p) {
         return Float.intBitsToFloat(readInt(p));
     }
 
+    @Override
     public double readDouble(int p) {
         return Double.longBitsToDouble(readLong(p));
     }
 
+    @Override
     public byte[] readBytes(int p, int len) {
         return Arrays.copyOfRange(buffer, p, p + len);
     }
 
+    @Override
     public void copyBytesTo(BufWriter buf, int p, int len) {
         buf.writeBytes(buffer, p, len);
     }
@@ -261,7 +271,7 @@ public final class ClassReaderImpl
             bsmEntries = new ArrayList<>();
             BootstrapMethodsAttribute attr = bootstrapMethodsAttribute();
             List<BootstrapMethodEntry> list = attr.bootstrapMethods();
-            if (list.size() > 0) {
+            if (!list.isEmpty()) {
                 for (BootstrapMethodEntry bm : list) {
                     AbstractPoolEntry.MethodHandleEntryImpl handle = (AbstractPoolEntry.MethodHandleEntryImpl) bm.bootstrapMethod();
                     List<LoadableConstantEntry> args = bm.arguments();
@@ -290,17 +300,13 @@ public final class ClassReaderImpl
         return true;
     }
 
-    WritableElement<BootstrapMethodsAttribute> bootstrapMethodsWriter() {
-        return containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS)
-                             .orElse(null);
-    }
-
     void writeConstantPoolEntries(BufWriter buf) {
         copyBytesTo(buf, ClassReaderImpl.CP_ITEM_START,
                     metadataStart - ClassReaderImpl.CP_ITEM_START);
     }
 
     // Constantpool
+    @Override
     public PoolEntry entryByIndex(int index) {
         if (index <= 0 || index >= constantPoolCount) {
             throw new IndexOutOfBoundsException("Bad CP index: " + index);

@@ -36,7 +36,6 @@ import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.MethodBuilder;
 import jdk.internal.classfile.MethodElement;
@@ -49,9 +48,8 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
  */
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
-    private final List<MethodElement> elements = new ArrayList<>();
+    private final List<MethodElement> elements;
     private final SplitConstantPool constantPool;
-    private final ClassEntry thisClass;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private AccessFlags flags;
@@ -59,12 +57,11 @@ public final class BufferedMethodBuilder
     private int[] parameterSlots;
 
     public BufferedMethodBuilder(SplitConstantPool constantPool,
-                                 ClassEntry thisClass,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
                                  MethodModel original) {
+        this.elements = new ArrayList<>();
         this.constantPool = constantPool;
-        this.thisClass = thisClass;
         this.name = nameInfo;
         this.desc = typeInfo;
         this.flags = AccessFlags.ofMethod();

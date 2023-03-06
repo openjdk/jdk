@@ -96,7 +96,7 @@ class AnnotationReader {
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(annotations);
     }
 
-    public static List<List<Annotation>> readParameterAnnotations(ClassReader classReader, int p, boolean isVisible) {
+    public static List<List<Annotation>> readParameterAnnotations(ClassReader classReader, int p) {
         int cnt = classReader.readU1(p++);
         var pas = new Object[cnt];
         for (int i = 0; i < cnt; ++i) {

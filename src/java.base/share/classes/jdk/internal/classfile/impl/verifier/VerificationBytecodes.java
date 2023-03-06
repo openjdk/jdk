@@ -34,10 +34,9 @@ import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicTy
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/interpreter/bytecodes.hpp">hotspot/share/interpreter/bytecodes.hpp</a>
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/interpreter/bytecodes.cpp">hotspot/share/interpreter/bytecodes.cpp</a>
  */
-class VerificationBytecodes {
+final class VerificationBytecodes {
 
     static final int _breakpoint = 202,
-            number_of_java_codes = 203,
             _fast_agetfield = 203,
             _fast_bgetfield = 204,
             _fast_cgetfield = 205,
@@ -84,10 +83,6 @@ class VerificationBytecodes {
         return 0 <= code && code < number_of_codes;
     }
 
-    static int length_for(int code) {
-        return is_valid(code) ? _lengths[code] & 0xf : -1;
-    }
-
     static int wide_length_for(int code) {
         return is_valid(code) ? _lengths[code] >> 4 : -1;
     }
@@ -132,15 +127,6 @@ class VerificationBytecodes {
 
     static int align(int n) {
         return (n + 3) & ~3;
-    }
-
-    static int raw_special_length_at(byte bytecode[], int bci, int end) {
-        int code = code_or_bp_at(bytecode, bci);
-        if (code == _breakpoint) {
-            return 1;
-        } else {
-            return special_length_at(code, bytecode, bci, end);
-        }
     }
 
     static void def(int code, String name, String format, String wide_format, BasicType result_type, int depth) {
@@ -394,10 +380,5 @@ class VerificationBytecodes {
         def(_nofast_aload_0, "nofast_aload_0", "b", null, T_ILLEGAL, 1, Classfile.ALOAD_0);
         def(_nofast_iload, "nofast_iload", "bi", null, T_ILLEGAL, 1, Classfile.ILOAD);
         def(_shouldnotreachhere, "_shouldnotreachhere", "b", null, T_VOID, 0);
-    }
-
-    final int code;
-    VerificationBytecodes(int code) {
-        this.code = code;
     }
 }

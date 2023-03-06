@@ -67,6 +67,7 @@ public final class DirectFieldBuilder
         this.flags = flags;
     }
 
+    @Override
     public void writeTo(BufWriter buf) {
         buf.writeU2(flags);
         buf.writeIndex(name);

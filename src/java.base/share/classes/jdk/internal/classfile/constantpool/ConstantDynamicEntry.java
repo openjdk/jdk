@@ -59,6 +59,7 @@ public sealed interface ConstantDynamicEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.fromDescriptor(type().stringValue());
     }

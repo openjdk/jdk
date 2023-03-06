@@ -75,10 +75,12 @@ public abstract sealed class AbstractInstruction
     final Opcode op;
     final int size;
 
+    @Override
     public Opcode opcode() {
         return op;
     }
 
+    @Override
     public int sizeInBytes() {
         return size;
     }
@@ -88,6 +90,7 @@ public abstract sealed class AbstractInstruction
         this.size = size;
     }
 
+    @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
     public static abstract sealed class BoundInstruction extends AbstractInstruction {
@@ -104,6 +107,7 @@ public abstract sealed class AbstractInstruction
             return code.getLabel(pos - code.codeStart + offset);
         }
 
+        @Override
         public void writeTo(DirectCodeBuilder writer) {
             // Override this if the instruction has any CP references or labels!
             code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, size);
@@ -355,6 +359,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
                 fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
@@ -384,6 +389,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
                 methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
@@ -423,6 +429,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
                 methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
@@ -462,6 +469,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
                 indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
@@ -491,6 +499,7 @@ public abstract sealed class AbstractInstruction
             super(Opcode.NEW, Opcode.NEW.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry className() {
             if (classEntry == null)
                 classEntry = code.classReader.readClassEntry(pos + 1);
@@ -519,6 +528,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public TypeKind typeKind() {
             return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
         }
@@ -537,6 +547,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry componentType() {
             return code.classReader.readClassEntry(pos + 1);
         }
@@ -567,6 +578,7 @@ public abstract sealed class AbstractInstruction
             return code.classReader.readU1(pos + 3);
         }
 
+        @Override
         public ClassEntry arrayType() {
             return code.classReader.readClassEntry(pos + 1);
         }
@@ -594,6 +606,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry type() {
             if (typeEntry == null)
                 typeEntry = code.classReader.readClassEntry(pos + 1);
@@ -674,12 +687,9 @@ public abstract sealed class AbstractInstruction
     }
 
     public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+
         UnboundInstruction(Opcode op) {
             super(op, op.sizeIfFixed());
-        }
-
-        public UnboundInstruction(Opcode op, int size) {
-            super(op, size);
         }
 
         @Override
@@ -1027,6 +1037,7 @@ public abstract sealed class AbstractInstruction
             this.classEntry = classEntry;
         }
 
+        @Override
         public ClassEntry className() {
             return classEntry;
         }
@@ -1051,6 +1062,7 @@ public abstract sealed class AbstractInstruction
             this.typeKind = typeKind;
         }
 
+        @Override
         public TypeKind typeKind() {
             return typeKind;
         }
@@ -1075,6 +1087,7 @@ public abstract sealed class AbstractInstruction
             this.componentTypeEntry = componentTypeEntry;
         }
 
+        @Override
         public ClassEntry componentType() {
             return componentTypeEntry;
         }
@@ -1107,6 +1120,7 @@ public abstract sealed class AbstractInstruction
             return dimensions;
         }
 
+        @Override
         public ClassEntry arrayType() {
             return arrayTypeEntry;
         }
@@ -1158,6 +1172,7 @@ public abstract sealed class AbstractInstruction
             this.typeEntry = typeEntry;
         }
 
+        @Override
         public ClassEntry type() {
             return typeEntry;
         }

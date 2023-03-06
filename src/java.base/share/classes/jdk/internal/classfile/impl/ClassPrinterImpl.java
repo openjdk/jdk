@@ -694,7 +694,7 @@ public final class ClassPrinterImpl {
                     for (var smf : smta.entries()) {
                         stackMap.with(frameToTree(com.labelToBci(smf.target()), com, smf));
                     }
-                } else if (verbosity == Verbosity.TRACE_ALL) switch (attr) {
+                } else if (verbosity == Verbosity.TRACE_ALL && attr != null) switch (attr) {
                     case LocalVariableTableAttribute lvta -> {
                         locals = lvta.localVariables();
                         codeNode.with(new ListNodeImpl(BLOCK, "local variables",

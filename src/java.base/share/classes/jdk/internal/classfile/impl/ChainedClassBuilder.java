@@ -81,7 +81,7 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder withMethod(Utf8Entry name, Utf8Entry descriptor, int flags,
                                    Consumer<? super MethodBuilder> handler) {
-        return downstream.with(new BufferedMethodBuilder(terminal.constantPool, terminal.thisClassEntry,
+        return downstream.with(new BufferedMethodBuilder(terminal.constantPool,
                                                          name, descriptor, null)
                                        .run(handler)
                                        .toModel());
@@ -89,7 +89,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
-        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool, terminal.thisClassEntry,
+        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool,
                                                                   method.methodName(), method.methodType(), method);
         builder.transform(method, transform);
         return downstream.with(builder.toModel());

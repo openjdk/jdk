@@ -169,7 +169,7 @@ public sealed interface CodeStackTracker extends CodeTransform {
             return Optional.ofNullable(maxSize);
         }
 
-        private Map<Label, Stack> map = new HashMap<>();
+        private final Map<Label, Stack> map = new HashMap<>();
 
         private void push(TypeKind type) {
             if (stack != null) {

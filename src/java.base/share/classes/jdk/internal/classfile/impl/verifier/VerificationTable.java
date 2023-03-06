@@ -144,10 +144,10 @@ class VerificationTable {
 
     static class StackMapReader {
 
-        private VerificationWrapper.ConstantPoolWrapper _cp;
+        private final VerificationWrapper.ConstantPoolWrapper _cp;
         private final StackMapStream _stream;
-        private byte[] _code_data;
-        private int _code_length;
+        private final byte[] _code_data;
+        private final int _code_length;
         private final int _frame_count;
 
         void check_verification_type_array_size(int size, int max_size) {

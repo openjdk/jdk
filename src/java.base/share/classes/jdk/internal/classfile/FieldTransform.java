@@ -96,6 +96,7 @@ public non-sealed interface FieldTransform
         };
     }
 
+    @Override
     default FieldTransform andThen(FieldTransform t) {
         return new TransformImpl.ChainedFieldTransform(this, t);
     }

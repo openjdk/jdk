@@ -44,6 +44,7 @@ public abstract sealed class AbstractPseudoInstruction
         extends AbstractElement
         implements PseudoInstruction {
 
+    @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
     public static final class ExceptionCatchImpl

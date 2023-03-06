@@ -26,7 +26,6 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributeMapper;
@@ -66,9 +65,5 @@ public class AttributeHolder {
 
     private void remove(AttributeMapper<?> am) {
         attributes.removeIf(a -> a.attributeMapper() == am);
-    }
-
-    List<? extends Attribute<?>> attributes() {
-        return attributes;
     }
 }

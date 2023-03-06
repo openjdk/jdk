@@ -51,7 +51,6 @@ import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.CatchBuilderImpl;
 import jdk.internal.classfile.impl.ChainedCodeBuilder;
 import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.classfile.impl.LineNumberImpl;
 import jdk.internal.classfile.impl.NonterminalCodeBuilder;
 import jdk.internal.classfile.impl.TerminalCodeBuilder;
 import jdk.internal.classfile.instruction.ArrayLoadInstruction;

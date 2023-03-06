@@ -43,6 +43,7 @@ public sealed interface IntegerEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.IntType;
     }

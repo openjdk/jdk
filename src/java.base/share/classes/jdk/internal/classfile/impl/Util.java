@@ -116,7 +116,7 @@ public class Util {
 
     public static String toClassString(String desc) {
         //TODO: this doesn't look right L ... ;
-        return desc.replaceAll("/", ".");
+        return desc.replace('/', '.');
     }
 
     public static Iterator<String> parameterTypes(String s) {
@@ -124,10 +124,12 @@ public class Util {
         return new Iterator<>() {
             int ch = 1;
 
+            @Override
             public boolean hasNext() {
                 return s.charAt(ch) != ')';
             }
 
+            @Override
             public String next() {
                 char curr = s.charAt(ch);
                 switch (curr) {
