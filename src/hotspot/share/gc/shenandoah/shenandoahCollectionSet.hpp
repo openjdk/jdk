@@ -46,6 +46,7 @@ private:
   bool                  _has_old_regions;
   size_t                _garbage;
   size_t                _used;
+  size_t                _live;
   size_t                _region_count;
   size_t                _immediate_trash;
 
@@ -119,8 +120,9 @@ public:
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }
-
+  size_t live()          const { return _live; }
   size_t garbage()       const { return _garbage; }
+
   void clear();
 
 private:

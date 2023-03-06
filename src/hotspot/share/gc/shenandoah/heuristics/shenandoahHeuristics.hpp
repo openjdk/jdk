@@ -101,9 +101,6 @@ protected:
   intx _gc_time_penalties;
   TruncatedSeq* _gc_cycle_time_history;
 
-  size_t _live_memory_last_cycle;
-  size_t _live_memory_penultimate_cycle;
-
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
 
@@ -173,10 +170,6 @@ public:
   virtual void initialize();
 
   double elapsed_cycle_time() const;
-
-  void save_last_live_memory(size_t live_memory);
-  size_t get_last_live_memory();
-  size_t get_penultimate_live_memory();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP

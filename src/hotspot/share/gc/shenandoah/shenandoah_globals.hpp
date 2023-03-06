@@ -311,7 +311,7 @@
           "which upgrades to full GC whenever the budget is exceeded.")     \
           range(1.0,100.0)                                                  \
                                                                             \
-  product(uintx, ShenandoahMaxEvacLABRatio, 16, EXPERIMENTAL,               \
+  product(uintx, ShenandoahMaxEvacLABRatio, 0, EXPERIMENTAL,                \
           "Potentially, each running thread maintains a PLAB for "          \
           "evacuating objects into old-gen memory and a GCLAB for "         \
           "evacuating objects into young-gen memory.  Each time a thread "  \
@@ -327,7 +327,7 @@
           "stop-the-world pauses.  This is because a large value "          \
           "allows individual threads to consume large percentages of "      \
           "the total evacuation budget without necessarily effectively "    \
-          "filling their local evcauation buffers with evacuated "          \
+          "filling their local evacuation buffers with evacuated "          \
           "objects.  A value of zero means no maximum size is enforced.")   \
           range(0, 1024)                                                    \
                                                                             \

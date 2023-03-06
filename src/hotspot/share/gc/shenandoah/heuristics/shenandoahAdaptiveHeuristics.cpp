@@ -213,20 +213,27 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
     size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
     size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-    log_info(gc, ergo)("Adaptive CSet Selection. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
-                         byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
-                         byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
+    log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
+                     SIZE_FORMAT "%s, Max Evacuation: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
+                     byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
+                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
+                     byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
+                     byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
 
     size_t cur_cset = 0;
     size_t cur_garbage = 0;
 
     for (size_t idx = 0; idx < size; idx++) {
       ShenandoahHeapRegion* r = data[idx]._region;
-      size_t new_cset = cur_cset + r->get_live_data_bytes();
-      size_t region_garbage = r->garbage();
-      size_t new_garbage = cur_garbage + region_garbage;
-      bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
-      if ((new_cset <= max_cset) && (add_regardless || (region_garbage > garbage_threshold))) {
+
+      size_t new_cset    = cur_cset + r->get_live_data_bytes();
+      size_t new_garbage = cur_garbage + r->garbage();
+
+      if (new_cset > max_cset) {
+        break;
+      }
+
+      if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
         cset->add_region(r);
         cur_cset = new_cset;
         cur_garbage = new_garbage;
@@ -361,7 +368,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = min_free_threshold();
 
-  if (allocation_headroom < min_threshold) {
+  if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
@@ -373,7 +380,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
-    if (allocation_headroom < init_threshold) {
+    if (available < init_threshold) {
       log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
                    _generation->name(), _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
@@ -423,33 +430,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
 
-  size_t last_live_memory = get_last_live_memory();
-  size_t penultimate_live_memory = get_penultimate_live_memory();
-  double original_cycle_time = avg_cycle_time;
-  if ((penultimate_live_memory < last_live_memory) && (penultimate_live_memory != 0)) {
-    // If the live-memory size is growing, our estimates of cycle time are based on lighter workload, so adjust.
-    // TODO: Be more precise about how to scale when live memory is growing.  Existing code is a very rough approximation
-    // tuned with very limited workload observations.
-    avg_cycle_time = (avg_cycle_time * 2 * last_live_memory) / penultimate_live_memory;
-  } else {
-    int degen_cycles = degenerated_cycles_in_a_row();
-    if (degen_cycles > 0) {
-      // If we've degenerated recently, we might be waiting too long between triggers so adjust trigger forward.
-      // TODO: Be more precise about how to scale when we've experienced recent degenerated GC.  Existing code is a very
-      // rough approximation tuned with very limited workload observations.
-      avg_cycle_time += degen_cycles * avg_cycle_time;
-    }
-  }
-
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   log_debug(gc)("%s: average GC time: %.2f ms, allocation rate: %.0f %s/s",
     _generation->name(), avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
 
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
-    if (avg_cycle_time > original_cycle_time) {
-      log_debug(gc)("%s: average GC time adjusted from: %.2f ms to %.2f ms because upward trend in live memory retention",
-                    _generation->name(), original_cycle_time, avg_cycle_time);
-    }
 
     log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  _generation->name(), avg_cycle_time * 1000,
@@ -583,10 +568,6 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
     }
   }
   return false;
-}
-
-double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
-  return instantaneous_rate(os::elapsedTime(), allocated);
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {

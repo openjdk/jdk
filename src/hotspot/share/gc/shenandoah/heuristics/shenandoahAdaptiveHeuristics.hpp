@@ -36,7 +36,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double sample(size_t allocated);
 
-  double instantaneous_rate(size_t allocated) const;
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
 
