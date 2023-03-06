@@ -410,12 +410,6 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
-    public LongMaxVector slice(int origin) {
-        return (LongMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public LongMaxVector unslice(int origin, Vector<Long> w, int part) {
         return (LongMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

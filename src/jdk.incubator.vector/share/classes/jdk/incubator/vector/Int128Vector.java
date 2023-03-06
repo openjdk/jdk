@@ -420,12 +420,6 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int128Vector slice(int origin) {
-        return (Int128Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Int128Vector unslice(int origin, Vector<Integer> w, int part) {
         return (Int128Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

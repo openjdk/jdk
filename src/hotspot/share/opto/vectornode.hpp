@@ -1457,6 +1457,14 @@ class VectorBlendNode : public VectorNode {
   Node* vec_mask() const { return in(3); }
 };
 
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* origin)
+    : VectorNode(vec1, vec2, origin, vec1->bottom_type()->is_vect()) {}
+
+  virtual int Opcode() const;
+};
+
 class VectorRearrangeNode : public VectorNode {
  public:
   VectorRearrangeNode(Node* vec1, Node* shuffle)

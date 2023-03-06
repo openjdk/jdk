@@ -420,12 +420,6 @@ final class Byte64Vector extends ByteVector {
 
     @Override
     @ForceInline
-    public Byte64Vector slice(int origin) {
-        return (Byte64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Byte64Vector unslice(int origin, Vector<Byte> w, int part) {
         return (Byte64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

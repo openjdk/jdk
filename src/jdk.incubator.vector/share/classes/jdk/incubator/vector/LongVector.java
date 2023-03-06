@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2130,14 +2130,21 @@ public abstract class LongVector extends AbstractVector<Long> {
     /*package-private*/
     final
     @ForceInline
-    LongVector sliceTemplate(int origin, Vector<Long> v1) {
-        LongVector that = (LongVector) v1;
-        that.check(this);
+    LongVector sliceTemplate(int origin, Vector<Long> v) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Long> iota = iotaShuffle();
-        VectorMask<Long> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((long)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        LongVector that = (LongVector) v;
+        that.check(this);
+        return VectorSupport.slice(
+            getClass(), long.class, length(),
+            this, that, origin,
+            new VectorSliceOp<LongVector>() {
+                @ForceInline
+                public LongVector apply(LongVector v1, LongVector v2, int o) {
+                    VectorMask<Long> blendMask = v1.vspecies().indexInRange(o, v1.length());
+                    VectorShuffle<Long> iota = v1.iotaShuffle(o, 1, true);
+                    return v2.rearrange(iota).blend(v1.rearrange(iota), blendMask);
+                }
+            });
     }
 
     /**
@@ -2156,18 +2163,10 @@ public abstract class LongVector extends AbstractVector<Long> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    public abstract
-    LongVector slice(int origin);
-
-    /*package-private*/
-    final
     @ForceInline
-    LongVector sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Long> iota = iotaShuffle();
-        VectorMask<Long> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((long)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    public final
+    LongVector slice(int origin) {
+        return slice(origin, broadcast(0));
     }
 
     /**

@@ -407,12 +407,6 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float64Vector slice(int origin) {
-        return (Float64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Float64Vector unslice(int origin, Vector<Float> w, int part) {
         return (Float64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

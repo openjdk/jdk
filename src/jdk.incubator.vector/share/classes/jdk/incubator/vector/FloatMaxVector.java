@@ -407,12 +407,6 @@ final class FloatMaxVector extends FloatVector {
 
     @Override
     @ForceInline
-    public FloatMaxVector slice(int origin) {
-        return (FloatMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public FloatMaxVector unslice(int origin, Vector<Float> w, int part) {
         return (FloatMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

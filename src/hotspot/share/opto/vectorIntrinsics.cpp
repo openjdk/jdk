@@ -1826,7 +1826,7 @@ bool LibraryCallKit::inline_vector_test() {
 //  E>
 // V blend(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType, int vlen,
 //         V v1, V v2, M m,
-//         VectorBlendOp<V, M, E> defaultImpl)
+//         VectorBlendOp<V, M> defaultImpl)
 bool LibraryCallKit::inline_vector_blend() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(1))->isa_instptr();
@@ -1888,6 +1888,74 @@ bool LibraryCallKit::inline_vector_blend() {
   Node* blend = gvn().transform(new VectorBlendNode(v1, v2, mask));
 
   Node* box = box_vector(blend, vbox_type, elem_bt, num_elem);
+  set_result(box);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
+// public static
+// <V extends Vector<E>,
+//  E>
+// V slice(Class<? extends V> vectorClass, Class<E> elementType, int vlen,
+//         V v1, V v2, int origin,
+//         VectorSliceOp<V> defaultImpl)
+bool LibraryCallKit::inline_vector_slice() {
+  const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     origin       = gvn().type(argument(5))->isa_int();
+
+  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || origin == NULL) {
+    return false; // dead code
+  }
+  if (vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
+      !vlen->is_con() || !origin->is_con()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s origin=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(5)->Opcode()]);
+    }
+    return false; // not enough info for intrinsification
+  }
+  if (!is_klass_initialized(vector_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+    }
+    return false; // should be primitive type
+  }
+  BasicType elem_bt = elem_type->basic_type();
+  int num_elem = vlen->get_con();
+
+  if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=2 op=slice vlen=%d etype=%s ismask=notused",
+                    num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* v1   = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  Node* v2   = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* o    = argument(5);
+
+  if (v1 == NULL || v2 == NULL) {
+    return false; // operand unboxing failed
+  }
+
+  Node* slice = gvn().transform(new VectorSliceNode(v1, v2, o));
+
+  Node* box = box_vector(slice, vbox_type, elem_bt, num_elem);
   set_result(box);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;

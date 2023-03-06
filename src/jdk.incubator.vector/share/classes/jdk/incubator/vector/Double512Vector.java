@@ -407,12 +407,6 @@ final class Double512Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double512Vector slice(int origin) {
-        return (Double512Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Double512Vector unslice(int origin, Vector<Double> w, int part) {
         return (Double512Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

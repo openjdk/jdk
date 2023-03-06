@@ -426,12 +426,6 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    public $vectortype$ slice(int origin) {
-        return ($vectortype$) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public $vectortype$ unslice(int origin, Vector<$Boxtype$> w, int part) {
         return ($vectortype$) super.unsliceTemplate(origin, w, part);  // specialize
     }

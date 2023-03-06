@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2279,14 +2279,21 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /*package-private*/
     final
     @ForceInline
-    ByteVector sliceTemplate(int origin, Vector<Byte> v1) {
-        ByteVector that = (ByteVector) v1;
-        that.check(this);
+    ByteVector sliceTemplate(int origin, Vector<Byte> v) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        ByteVector that = (ByteVector) v;
+        that.check(this);
+        return VectorSupport.slice(
+            getClass(), byte.class, length(),
+            this, that, origin,
+            new VectorSliceOp<ByteVector>() {
+                @ForceInline
+                public ByteVector apply(ByteVector v1, ByteVector v2, int o) {
+                    VectorMask<Byte> blendMask = v1.vspecies().indexInRange(o, v1.length());
+                    VectorShuffle<Byte> iota = v1.iotaShuffle(o, 1, true);
+                    return v2.rearrange(iota).blend(v1.rearrange(iota), blendMask);
+                }
+            });
     }
 
     /**
@@ -2305,18 +2312,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    public abstract
-    ByteVector slice(int origin);
-
-    /*package-private*/
-    final
     @ForceInline
-    ByteVector sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    public final
+    ByteVector slice(int origin) {
+        return slice(origin, broadcast(0));
     }
 
     /**

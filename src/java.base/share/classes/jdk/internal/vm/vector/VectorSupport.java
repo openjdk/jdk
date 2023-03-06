@@ -25,6 +25,7 @@
 
 package jdk.internal.vm.vector;
 
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
 
@@ -623,6 +624,24 @@ public class VectorSupport {
             VectorBlendOp<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
+    }
+
+    /* ============================================================================ */
+
+    public interface VectorSliceOp<V extends Vector<?>> {
+        V apply(V v1, V v2, int origin);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V slice(Class<? extends V> vClass, Class<E> eClass, int length,
+            V v1, V v2, int origin,
+            VectorSliceOp<V> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, origin);
     }
 
     /* ============================================================================ */

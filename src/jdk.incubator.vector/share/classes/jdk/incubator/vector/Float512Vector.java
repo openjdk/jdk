@@ -407,12 +407,6 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float512Vector slice(int origin) {
-        return (Float512Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Float512Vector unslice(int origin, Vector<Float> w, int part) {
         return (Float512Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

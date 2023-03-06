@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2656,14 +2656,21 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     final
     @ForceInline
-    $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v1) {
-        $abstractvectortype$ that = ($abstractvectortype$) v1;
-        that.check(this);
+    $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        $abstractvectortype$ that = ($abstractvectortype$) v;
+        that.check(this);
+        return VectorSupport.slice(
+            getClass(), $type$.class, length(),
+            this, that, origin,
+            new VectorSliceOp<$Type$Vector>() {
+                @ForceInline
+                public $Type$Vector apply($Type$Vector v1, $Type$Vector v2, int o) {
+                    VectorMask<$Boxtype$> blendMask = v1.vspecies().indexInRange(o, v1.length());
+                    VectorShuffle<$Boxtype$> iota = v1.iotaShuffle(o, 1, true);
+                    return v2.rearrange(iota).blend(v1.rearrange(iota), blendMask);
+                }
+            });
     }
 
     /**
@@ -2682,18 +2689,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    public abstract
-    $abstractvectortype$ slice(int origin);
-
-    /*package-private*/
-    final
     @ForceInline
-    $abstractvectortype$ sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    public final
+    $abstractvectortype$ slice(int origin) {
+        return slice(origin, broadcast(0));
     }
 
     /**

@@ -420,12 +420,6 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short64Vector slice(int origin) {
-        return (Short64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Short64Vector unslice(int origin, Vector<Short> w, int part) {
         return (Short64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

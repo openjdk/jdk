@@ -349,6 +349,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_reduction();
   bool inline_vector_test();
   bool inline_vector_blend();
+  bool inline_vector_slice();
   bool inline_vector_rearrange();
   bool inline_vector_compare();
   bool inline_vector_broadcast_int();

@@ -420,12 +420,6 @@ final class Short512Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short512Vector slice(int origin) {
-        return (Short512Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Short512Vector unslice(int origin, Vector<Short> w, int part) {
         return (Short512Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

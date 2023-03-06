@@ -420,12 +420,6 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
-    public IntMaxVector slice(int origin) {
-        return (IntMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public IntMaxVector unslice(int origin, Vector<Integer> w, int part) {
         return (IntMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

@@ -420,12 +420,6 @@ final class Int64Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int64Vector slice(int origin) {
-        return (Int64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Int64Vector unslice(int origin, Vector<Integer> w, int part) {
         return (Int64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

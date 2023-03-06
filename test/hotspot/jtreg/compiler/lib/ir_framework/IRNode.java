@@ -1178,6 +1178,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
     }
 
+    public static final String VECTOR_SLICE = PREFIX + "VECTOR_SLICE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_SLICE, "VectorSlice");
+    }
+
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");

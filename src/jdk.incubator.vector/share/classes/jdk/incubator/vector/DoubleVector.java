@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2121,14 +2121,21 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     final
     @ForceInline
-    DoubleVector sliceTemplate(int origin, Vector<Double> v1) {
-        DoubleVector that = (DoubleVector) v1;
-        that.check(this);
+    DoubleVector sliceTemplate(int origin, Vector<Double> v) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        DoubleVector that = (DoubleVector) v;
+        that.check(this);
+        return VectorSupport.slice(
+            getClass(), double.class, length(),
+            this, that, origin,
+            new VectorSliceOp<DoubleVector>() {
+                @ForceInline
+                public DoubleVector apply(DoubleVector v1, DoubleVector v2, int o) {
+                    VectorMask<Double> blendMask = v1.vspecies().indexInRange(o, v1.length());
+                    VectorShuffle<Double> iota = v1.iotaShuffle(o, 1, true);
+                    return v2.rearrange(iota).blend(v1.rearrange(iota), blendMask);
+                }
+            });
     }
 
     /**
@@ -2147,18 +2154,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    public abstract
-    DoubleVector slice(int origin);
-
-    /*package-private*/
-    final
     @ForceInline
-    DoubleVector sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    public final
+    DoubleVector slice(int origin) {
+        return slice(origin, broadcast(0));
     }
 
     /**

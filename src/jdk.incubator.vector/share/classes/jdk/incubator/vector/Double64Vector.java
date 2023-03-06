@@ -407,12 +407,6 @@ final class Double64Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double64Vector slice(int origin) {
-        return (Double64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Double64Vector unslice(int origin, Vector<Double> w, int part) {
         return (Double64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

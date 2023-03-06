@@ -420,12 +420,6 @@ final class Short128Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short128Vector slice(int origin) {
-        return (Short128Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Short128Vector unslice(int origin, Vector<Short> w, int part) {
         return (Short128Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

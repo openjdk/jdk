@@ -407,12 +407,6 @@ final class DoubleMaxVector extends DoubleVector {
 
     @Override
     @ForceInline
-    public DoubleMaxVector slice(int origin) {
-        return (DoubleMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public DoubleMaxVector unslice(int origin, Vector<Double> w, int part) {
         return (DoubleMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

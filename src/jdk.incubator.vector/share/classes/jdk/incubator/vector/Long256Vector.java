@@ -410,12 +410,6 @@ final class Long256Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long256Vector slice(int origin) {
-        return (Long256Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Long256Vector unslice(int origin, Vector<Long> w, int part) {
         return (Long256Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

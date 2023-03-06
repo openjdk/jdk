@@ -410,12 +410,6 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long512Vector slice(int origin) {
-        return (Long512Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Long512Vector unslice(int origin, Vector<Long> w, int part) {
         return (Long512Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

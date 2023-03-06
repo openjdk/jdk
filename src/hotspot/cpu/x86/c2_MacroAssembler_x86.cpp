@@ -6089,3 +6089,68 @@ void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XM
   evpshufb(dst, ktmp, xtmp3, shuffle, true, vlen_enc);
 }
 
+void C2_MacroAssembler::slice_32B_avx1(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                       XMMRegister xtmp1, XMMRegister xtmp2, int shift_count) {
+  assert(UseAVX == 1, "");
+  if (shift_count < 16) {
+    vextractf128(xtmp1, src1, 1);
+    vpalignr(xtmp2, xtmp1, src1, shift_count, AVX_128bit);
+    vpalignr(xtmp1, src2, xtmp1, shift_count, AVX_128bit);
+    vinsertf128(dst, xtmp2, xtmp1, 1);
+  } else {
+    assert(shift_count > 16, "");
+    shift_count -= 16;
+    vextractf128(xtmp1, src1, 1);
+    vextractf128(xtmp2, src2, 1);
+    vpalignr(xtmp1, src2, xtmp1, shift_count, AVX_128bit);
+    vpalignr(xtmp2, xtmp2, src2, shift_count, AVX_128bit);
+    vinsertf128(dst, xtmp1, xtmp2, 1);
+  }
+}
+
+void C2_MacroAssembler::slice_32B_avx2(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                       XMMRegister xtmp, int shift_count) {
+  assert(UseAVX >= 2, "");
+  if (VM_Version::supports_avx512vl()) {
+    // vperm2f128 requires legacy registers, so we switch to evalignd
+    evalignd(xtmp, src2, src1, 0x4, AVX_256bit);
+  } else {
+    vperm2i128(xtmp, src1, src2, 0x21);
+  }
+
+  if (shift_count > 16) {
+    shift_count -= 16;
+    vpalignr(dst, src2, xtmp, shift_count, AVX_256bit);
+  } else {
+    assert(shift_count < 16, "");
+    vpalignr(dst, xtmp, src1, shift_count, AVX_256bit);
+  }
+}
+
+void C2_MacroAssembler::slice_64B(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                  XMMRegister xtmp1, XMMRegister xtmp2, int shift_count) {
+  assert(VM_Version::supports_avx512bw(), ""); // This is required for 512-bit byte or short vector
+  evshufi64x2(xtmp1, src1, src2, 0x4E, AVX_512bit);
+  if (shift_count > 32) {
+    evshufi64x2(xtmp2, xtmp1, src2, 0x99, AVX_512bit);
+  } else {
+    evshufi64x2(xtmp2, src1, xtmp1, 0x99, AVX_512bit);
+  }
+
+  XMMRegister first_operand;
+  XMMRegister second_operand;
+  if (shift_count < 16) {
+    first_operand = src1;
+    second_operand = xtmp2;
+  } else if (shift_count < 32) {
+    first_operand = xtmp2;
+    second_operand = xtmp1;
+  } else if (shift_count < 48) {
+    first_operand = xtmp1;
+    second_operand = xtmp2;
+  } else {
+    first_operand = xtmp2;
+    second_operand = src2;
+  }
+  vpalignr(dst, second_operand, first_operand, shift_count & 0xF, AVX_512bit);
+}

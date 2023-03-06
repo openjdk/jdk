@@ -410,12 +410,6 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long64Vector slice(int origin) {
-        return (Long64Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Long64Vector unslice(int origin, Vector<Long> w, int part) {
         return (Long64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

@@ -1068,6 +1068,17 @@ class methodHandle;
                                    "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
    do_name(vector_blend_name, "blend")                                                                                                         \
                                                                                                                                                \
+  do_intrinsic(_VectorSlice, jdk_internal_vm_vector_VectorSupport, vector_slice_name, vector_slice_sig, F_S)                                   \
+   do_signature(vector_slice_sig, "(Ljava/lang/Class;"                                                                                         \
+                                   "Ljava/lang/Class;"                                                                                         \
+                                   "I"                                                                                                         \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "I"                                                                                                         \
+                                   "Ljdk/internal/vm/vector/VectorSupport$VectorSliceOp;)"                                                     \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
+   do_name(vector_slice_name, "slice")                                                                                                         \
+                                                                                                                                               \
   do_intrinsic(_VectorCompare, jdk_internal_vm_vector_VectorSupport, vector_compare_name, vector_compare_sig, F_S)                             \
    do_signature(vector_compare_sig, "(I"                                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \

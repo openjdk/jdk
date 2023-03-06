@@ -709,6 +709,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_test();
   case vmIntrinsics::_VectorBlend:
     return inline_vector_blend();
+  case vmIntrinsics::_VectorSlice:
+    return inline_vector_slice();
   case vmIntrinsics::_VectorRearrange:
     return inline_vector_rearrange();
   case vmIntrinsics::_VectorCompare:

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -7914,7 +7914,6 @@ instruct evblendvp64(vec dst, vec src1, vec src2, vec mask, kReg ktmp) %{
   ins_pipe( pipe_slow );
 %}
 
-
 instruct evblendvp64_masked(vec dst, vec src1, vec src2, kReg mask) %{
   predicate(n->in(2)->bottom_type()->isa_vectmask() &&
             (!is_subword_type(Matcher::vector_element_basic_type(n)) ||
@@ -7925,6 +7924,143 @@ instruct evblendvp64_masked(vec dst, vec src1, vec src2, kReg mask) %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ evpblend(elem_bt, $dst$$XMMRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Vector Slice --------------------------------------
+
+instruct slice8B(vec dst, vec src, immI origin) %{
+  predicate(Matcher::vector_length_in_bytes(n) < 16 &&
+            UseAVX == 0);
+  match(Set dst (VectorSlice (Binary dst src) origin));
+  format %{ "vector_slice $dst, $src, $origin" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length_in_bytes(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    if (vlen == 8) {
+      __ punpcklqdq($dst$$XMMRegister, $src$$XMMRegister);
+    } else {
+      assert(vlen == 4, "");
+      __ punpckldq($dst$$XMMRegister, $src$$XMMRegister);
+    }
+    __ psrldq($dst$$XMMRegister, $origin$$constant * type2aelembytes(bt));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct slice16B(vec dst, vec src, immI origin) %{
+  predicate(Matcher::vector_length_in_bytes(n) == 16 &&
+            UseAVX == 0);
+  match(Set dst (VectorSlice (Binary src dst) origin));
+  format %{ "vector_slice $dst, $src, $origin" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ palignr($dst$$XMMRegister, $src$$XMMRegister, $origin$$constant * type2aelembytes(bt));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vslice16B(vec dst, vec src1, vec src2, immI origin) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16 &&
+            UseAVX > 0);
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  format %{ "vector_slice $dst, $src1, $src2, $origin" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length_in_bytes(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    if (vlen == 16) {
+      __ vpalignr($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, shift_count, Assembler::AVX_128bit);
+    } else {
+      if (vlen == 8) {
+        __ vpunpcklqdq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::AVX_128bit);
+      } else {
+        assert(vlen == 4, "");
+        __ vpunpckldq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::AVX_128bit);
+      }
+      __ vpsrldq($dst$$XMMRegister, $dst$$XMMRegister, shift_count, Assembler::AVX_128bit);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vslice32B16(vec dst, vec src1, vec src2, immI origin) %{
+  predicate(Matcher::vector_length_in_bytes(n) == 32 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() == 16 &&
+            !VM_Version::supports_avx512vl());
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  format %{ "vector_slice $dst, $src1, $src2, $origin" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vperm2f128($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, 0x21);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct slice32B(vec dst, vec src1, vec src2, immI origin, vec xtmp1, vec xtmp2) %{
+  predicate(UseAVX == 1 &&
+            Matcher::vector_length_in_bytes(n) == 32 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() != 16);
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_slice $dst, $src1, $src2, $origin\t! using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    __ slice_32B_avx1($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                      $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, shift_count);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vslice32B(vec dst, vec src1, vec src2, immI origin, vec xtmp) %{
+  predicate(UseAVX >= 2 &&
+            Matcher::vector_length_in_bytes(n) == 32 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() != 16 &&
+            ((type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U != 0 ||
+             !VM_Version::supports_avx512vl()));
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP xtmp);
+  format %{ "vector_slice $dst, $src1, $src2, $origin\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    __ slice_32B_avx2($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                      $xtmp$$XMMRegister, shift_count);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct evslice64B(vec dst, vec src1, vec src2, immI origin, vec xtmp1, vec xtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n) == 64 &&
+            (type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U != 0);
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_slice $dst, $src1, $src2, $origin\t! using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    assert(shift_count % 4 != 0, "");
+    __ slice_64B($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                 $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, shift_count);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct evsliceILFD(vec dst, vec src1, vec src2, immI origin) %{
+  predicate((type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U == 0 &&
+            (Matcher::vector_length_in_bytes(n) == 64 ||
+             (Matcher::vector_length_in_bytes(n) == 32 &&
+              VM_Version::supports_avx512vl())));
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  format %{ "vector_slice $dst, $src1, $src2, $origin" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    assert(shift_count % 4U == 0, "");
+    int vlen_enc = vector_length_encoding(this);
+    __ evalignd($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, shift_count / 4U, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

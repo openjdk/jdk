@@ -420,12 +420,6 @@ final class ShortMaxVector extends ShortVector {
 
     @Override
     @ForceInline
-    public ShortMaxVector slice(int origin) {
-        return (ShortMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public ShortMaxVector unslice(int origin, Vector<Short> w, int part) {
         return (ShortMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

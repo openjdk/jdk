@@ -420,12 +420,6 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
-    public ByteMaxVector slice(int origin) {
-        return (ByteMaxVector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public ByteMaxVector unslice(int origin, Vector<Byte> w, int part) {
         return (ByteMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }

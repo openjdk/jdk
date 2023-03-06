@@ -484,4 +484,13 @@ public:
   void rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp, int vlen_enc);
 
+  void slice_32B_avx1(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                      XMMRegister xtmp1, XMMRegister xtmp2, int shift_count);
+
+  void slice_32B_avx2(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                      XMMRegister xtmp, int shift_count);
+
+  void slice_64B(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                 XMMRegister xtmp1, XMMRegister xtmp2, int shift_count);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2280,14 +2280,21 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     final
     @ForceInline
-    ShortVector sliceTemplate(int origin, Vector<Short> v1) {
-        ShortVector that = (ShortVector) v1;
-        that.check(this);
+    ShortVector sliceTemplate(int origin, Vector<Short> v) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        ShortVector that = (ShortVector) v;
+        that.check(this);
+        return VectorSupport.slice(
+            getClass(), short.class, length(),
+            this, that, origin,
+            new VectorSliceOp<ShortVector>() {
+                @ForceInline
+                public ShortVector apply(ShortVector v1, ShortVector v2, int o) {
+                    VectorMask<Short> blendMask = v1.vspecies().indexInRange(o, v1.length());
+                    VectorShuffle<Short> iota = v1.iotaShuffle(o, 1, true);
+                    return v2.rearrange(iota).blend(v1.rearrange(iota), blendMask);
+                }
+            });
     }
 
     /**
@@ -2306,18 +2313,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    public abstract
-    ShortVector slice(int origin);
-
-    /*package-private*/
-    final
     @ForceInline
-    ShortVector sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    public final
+    ShortVector slice(int origin) {
+        return slice(origin, broadcast(0));
     }
 
     /**

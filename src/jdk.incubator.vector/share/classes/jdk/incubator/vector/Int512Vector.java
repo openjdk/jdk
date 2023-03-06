@@ -420,12 +420,6 @@ final class Int512Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int512Vector slice(int origin) {
-        return (Int512Vector) super.sliceTemplate(origin);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Int512Vector unslice(int origin, Vector<Integer> w, int part) {
         return (Int512Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }

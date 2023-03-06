@@ -2003,6 +2003,7 @@ private:
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+  void vpunpcklqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void evpunpcklqdq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpunpcklqdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
@@ -2093,6 +2094,7 @@ private:
 
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
   void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
+  void evalignd(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len);
   void evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
 
   void pblendw(XMMRegister dst, XMMRegister src, int imm8);
