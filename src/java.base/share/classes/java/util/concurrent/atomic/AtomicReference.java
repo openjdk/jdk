@@ -353,8 +353,8 @@ public class AtomicReference<V> implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
-     * expected value if successful
+     * @return the <em>witness value</em>, which is the current value
+     * at the time of the operation.
      * @since 9
      */
     public final V compareAndExchange(V expectedValue, V newValue) {
@@ -369,7 +369,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
@@ -385,7 +385,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
