@@ -2755,11 +2755,13 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
   Handle h_cause = Exceptions::new_exception(current, exception_name, st.as_string());
   // If new_exception returns a different exception while creating the exception,
-  // try to report the cause despite all of the above
+  // abandon the attempts to save initialization error and return null.
+  // We can't just return an original throwable (that is get passed as a parameter),
+  // because it would keep all the caller classes alive.
   if (h_cause->klass()->name() != exception_name) {
     log_info(class, init)("Exception thrown while saving initialization exception %s",
                         h_cause->klass()->external_name());
-    return throwable;
+    return Handle();
   }
 
   // Call to java to fill in the stack trace and clear declaringClassObject to
@@ -2778,6 +2780,10 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
     java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
     // Clear backtrace because the stacktrace should be used instead.
     set_backtrace(h_cause(), nullptr);
+  } else {
+    log_info(class, init)("Exception thrown while getting stack trace for initialization exception %s",
+                        h_cause->klass()->external_name());
+    current->clear_pending_exception();
   }
 
   return h_cause;
