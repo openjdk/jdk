@@ -1418,6 +1418,26 @@ public class IRNode {
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
     }
 
+    public static final String VBCAX_I_NEON = PREFIX + "VBCAX_I_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBCAX_I_NEON, "vbcaxI_neon");
+    }
+
+    public static final String VBCAX_L_NEON = PREFIX + "VBCAX_L_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBCAX_L_NEON, "vbcaxL_neon");
+    }
+
+    public static final String VBCAX_I_SVE = PREFIX + "VBCAX_I_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBCAX_I_SVE, "vbcaxI_sve");
+    }
+
+    public static final String VBCAX_L_SVE = PREFIX + "VBCAX_L_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBCAX_L_SVE, "vbcaxL_sve");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */

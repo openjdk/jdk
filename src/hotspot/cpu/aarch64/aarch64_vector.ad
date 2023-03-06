@@ -1405,6 +1405,56 @@ instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector bcax (unpredicated)
+
+instruct vbcaxI_neon(vReg dst, vReg src1, vReg src2, vReg src3, immI_M1 m1) %{
+  predicate(VM_Version::supports_sha3() &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateB m1)))));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateS m1)))));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateI m1)))));
+  format %{ "vbcaxI_neon $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    __ bcax($dst$$FloatRegister, __ T16B, $src1$$FloatRegister,
+            $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbcaxL_neon(vReg dst, vReg src1, vReg src2, vReg src3, immL_M1 m1) %{
+  predicate(VM_Version::supports_sha3() &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateL m1)))));
+  format %{ "vbcaxL_neon $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    __ bcax($dst$$FloatRegister, __ T16B, $src1$$FloatRegister,
+            $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbcaxI_sve(vReg dst_src1, vReg src2, vReg src3, immI_M1 m1) %{
+  predicate(UseSVE > 1 && !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateB m1)))));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateS m1)))));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateI m1)))));
+  format %{ "vbcaxI_sve $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    __ sve_bcax($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbcaxL_sve(vReg dst_src1, vReg src2, vReg src3, immL_M1 m1) %{
+  predicate(UseSVE > 1 && !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateL m1)))));
+  format %{ "vbcaxL_sve $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    __ sve_bcax($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector not -----------------------------------
 
 // vector not

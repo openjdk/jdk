@@ -732,6 +732,57 @@ instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector bcax (unpredicated)
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateB m1)))));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateS m1)))));
+  match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateI m1)))));',
+`match(Set dst (XorV src1 (AndV src2 (XorV src3 (ReplicateL m1)))));')')dnl
+dnl
+dnl VECTOR_BCAX_NEON($1  )
+dnl VECTOR_BCAX_NEON(type)
+define(`VECTOR_BCAX_NEON', `
+instruct vbcax$1_neon`'(vReg dst, vReg src1, vReg src2, vReg src3, imm$1_M1 m1) %{
+  predicate(VM_Version::supports_sha3() &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  MATCH_RULE($1)
+  format %{ "vbcax$1_neon $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    __ bcax($dst$$FloatRegister, __ T16B, $src1$$FloatRegister,
+            $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+VECTOR_BCAX_NEON(I)
+VECTOR_BCAX_NEON(L)dnl
+undefine(MATCH_RULE)
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateB m1)))));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateS m1)))));
+  match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateI m1)))));',
+`match(Set dst_src1 (XorV dst_src1 (AndV src2 (XorV src3 (ReplicateL m1)))));')')dnl
+dnl
+dnl VECTOR_BCAX_SVE($1  )
+dnl VECTOR_BCAX_SVE(type)
+define(`VECTOR_BCAX_SVE', `
+instruct vbcax$1_sve`'(vReg dst_src1, vReg src2, vReg src3, imm$1_M1 m1) %{
+  predicate(UseSVE > 1 && !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  MATCH_RULE($1)
+  format %{ "vbcax$1_sve $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    __ sve_bcax($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+VECTOR_BCAX_SVE(I)
+VECTOR_BCAX_SVE(L)dnl
+undefine(MATCH_RULE)
+dnl
+
 // ------------------------------ Vector not -----------------------------------
 
 dnl

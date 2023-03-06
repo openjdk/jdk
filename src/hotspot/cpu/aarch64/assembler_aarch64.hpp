@@ -4142,6 +4142,7 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   }
 
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+  INSN(sve_bcax, 0b011); // Bitwise clear and exclusive OR
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
