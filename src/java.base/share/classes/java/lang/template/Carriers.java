@@ -393,7 +393,7 @@ final class Carriers {
     }
 
     /**
-     * Wrapper object for carrier data. Instances types are stored in the {@code objects}
+     * Wrapper object for carrier data. Instance types are stored in the {@code objects}
      * array, while primitive types are recast to {@code int/long} and stored in the
      * {@code primitives} array. Primitive byte, short, char, boolean and int are stored as
      * integers. Longs and doubles are stored as longs.  Longs take up the first part of the

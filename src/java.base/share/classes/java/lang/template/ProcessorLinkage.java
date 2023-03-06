@@ -34,8 +34,8 @@ import java.util.FormatProcessor;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Policies using this additional interface have the flexibility to specialize
- * the composition of the templated string by returning a customized
+ * Built-in policies using this additional interface have the flexibility to
+ * specialize the composition of the templated string by returning a customized
  * {@link MethodHandle} from {@link ProcessorLinkage#linkage linkage}.
  * These specializations are typically implemented to improve performance;
  * specializing value types or avoiding boxing and vararg arrays.

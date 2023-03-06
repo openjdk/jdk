@@ -39,7 +39,7 @@ import jdk.internal.javac.PreviewFeature;
  * This {@link StringProcessor} constructs a {@link String} result using
  * {@link Formatter} specifications and values found in the {@link StringTemplate}.
  * Unlike {@link Formatter}, {@link FormatProcessor} uses the value from the
- * embedded expression that immediately follows, no whitespace, after the
+ * embedded expression that immediately follows, without whitespace, the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
  * For example:
  * {@snippet :
@@ -62,8 +62,8 @@ import jdk.internal.javac.PreviewFeature;
  * In the above example, the value of {@code result1} and {@code result2} will
  * both be {@code "10 + 20 = 30"}.
  * <p>
- * {@link FormatProcessor}  format specification uses and exceptions are the same as
- * those of {@link Formatter}.
+ * The {@link FormatProcessor} format specification used and exceptions thrown are the
+ * same as those of {@link Formatter}.
  * <p>
  * However, there are two significant differences related to the position of arguments.
  * An explict {@code n$} and relative {@code <} index will cause an exception due to
@@ -77,10 +77,10 @@ import jdk.internal.javac.PreviewFeature;
  * FormatProcessor thaiFMT = FormatProcessor.create(locale);
  * int x = 10;
  * int y = 20;
- * String result = thaiFMT."%d\{x} + %d\{y} = %d\{x + y}";
+ * String result = thaiFMT."%4d\{x} + %4d\{y} = %5d\{x + y}";
  * }
  * In the above example, the value of {@code result} will be
- * {@code "\u0E51\u0E50 + \u0E52\u0E50 = \u0E53\u0E50"}.
+ * {@code "  \u0E51\u0E50 +   \u0E52\u0E50 =    \u0E53\u0E50"}.
  * <p>
  * For day to day use, the predefined {@link FormatProcessor#FMT} {@link FormatProcessor}
  * is available. {@link FormatProcessor#FMT} is defined using the {@link Locale#ROOT}.
@@ -130,7 +130,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * specifications found in the fragments and values in the
      * supplied {@link StringTemplate} object. This method constructs a
      * format string from the fragments, gathers up the values and
-     * evaluates the expression
+     * evaluates the expression asif evaulating
      * {@code new Formatter(locale).format(format, values).toString()}.
      * <p>
      * If an embedded expression is not immediately preceded by a
@@ -172,7 +172,8 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * of type {@link ProcessorLinkage} and fetched from a static constant as is
      * {@link FormatProcessor#FMT} ({@code static final FormatProcessor}).
      * <p>
-     * Other {@link FormatProcessor} can be specialized if stored as static final.
+     * Other {@link FormatProcessor FormatProcessors} can be specialized when stored in a static
+     * final.
      * For example:
      * {@snippet :
      * FormatProcessor THAI_FMT = FormatProcessor.create(Locale.forLanguageTag("th-TH-u-nu-thai"));

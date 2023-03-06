@@ -25,6 +25,7 @@
 
 package java.lang.template;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -130,21 +131,19 @@ final class TemplateSupport {
         }
         String[] combinedFragments = new String[size + 1];
         Object[] combinedValues = new Object[size];
-        int i = 0, j = 0;
-        String last = "";
+        combinedFragments[0] = "";
+        int fragmentIndex = 1;
+        int valueIndex = 0;
         for (StringTemplate st : sts) {
-            List<String> fragments = st.fragments();
-            combinedFragments[i++] = last + fragments.get(0);
-            int k = 1, sizem1 = fragments.size() - 1;
-            for(; k < sizem1; k++) {
-                combinedFragments[i++] = fragments.get(k);
+            Iterator<String> iterator = st.fragments().iterator();
+            combinedFragments[fragmentIndex - 1] += iterator.next();
+            while (iterator.hasNext()) {
+                combinedFragments[fragmentIndex++] = iterator.next();
             }
-            last = fragments.get(k);
             for (Object value : st.values()) {
-                combinedValues[j++] = value;
+                combinedValues[valueIndex++] = value;
             }
         }
-        combinedFragments[i] = last;
         return JTA.newStringTemplate(combinedFragments, combinedValues);
     }
 

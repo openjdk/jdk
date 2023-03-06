@@ -73,7 +73,7 @@ import jdk.internal.javac.PreviewFeature;
  * When the template expression is evaluated, an instance of {@link StringTemplate} is
  * produced that returns the same lists from {@link StringTemplate#fragments()} and
  * {@link StringTemplate#values()} as shown above. The {@link StringTemplate#STR} template
- * processor uses these lists to yield an interpolated string. the value of {@code s} will
+ * processor uses these lists to yield an interpolated string. The value of {@code s} will
  * be equivalent to {@code "10 + 20 = 30"}.
  * <p>
  * The {@code interpolate()} method provides a direct way to perform string interpolation
@@ -302,9 +302,30 @@ public interface StringTemplate {
      * StringTemplate st = StringTemplate.combine(RAW."\{a}", RAW."\{b}", RAW."\{c}");
      * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
      * }
-     * Fragment lists from each {@link StringTemplate} are merged such that the last fragment
-     * from the previous {@link StringTemplate} is concatenated with the first fragment of the next
-     * {@link StringTemplate}. Values lists are simply concatenated to produce a single values list.
+     * Fragment lists from the {@link StringTemplate StringTemplates} are combined end to
+     * end with the last fragment from each {@link StringTemplate} concatenated with the
+     * first fragment of the next. To demonstrate, if we were to take two strings and we
+     * combined them as follows: {@snippet lang = "java":
+     * String s1 = "abc";
+     * String s2 = "xyz";
+     * String sc = s1 + s2;
+     * assert Objects.equals(sc, "abcxyz");
+     * }
+     * the last character {@code "c"} from the first string is juxtaposed with the first
+     * character {@code "x"} of the second string. The same would be true of combining
+     * {@link StringTemplate StringTemplates}.
+     * {@snippet lang ="java":
+     * StringTemplate st1 = RAW."a\{}b\{}c";
+     * StringTemplate st2 = RAW."x\{}y\{}z";
+     * StringTemplate st3 = RAW."a\{}b\{}cx\{}y\{}z";
+     * StringTemplate stc = StringTemplate.combine(st1, st2);
+     *
+     * assert Objects.equals(st1.fragments(), List.of("a", "b", "c"));
+     * assert Objects.equals(st2.fragments(), List.of("x", "y", "z"));
+     * assert Objects.equals(st3.fragments(), List.of("a", "b", "cx", "y", "z"));
+     * assert Objects.equals(stc.fragments(), List.of("a", "b", "cx", "y", "z"));
+     * }
+     * Values lists are simply concatenated to produce a single values list.
      * The result is a well-formed {@link StringTemplate} with n+1 fragments and n values, where
      * n is the total of number of values across all the supplied
      * {@link StringTemplate StringTemplates}.
@@ -332,9 +353,30 @@ public interface StringTemplate {
      * StringTemplate st = StringTemplate.combine(List.of(RAW."\{a}", RAW."\{b}", RAW."\{c}"));
      * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
      * }
-     * Fragment lists from each {@link StringTemplate} are merged such that the last fragment
-     * from the previous {@link StringTemplate} is concatenated with the first fragment of the next
-     * {@link StringTemplate}. Values lists are simply concatenated to produce a single values list.
+     * Fragment lists from the {@link StringTemplate StringTemplates} are combined end to
+     * end with the last fragment from each {@link StringTemplate} concatenated with the
+     * first fragment of the next. To demonstrate, if we were to take two strings and we
+     * combined them as follows: {@snippet lang = "java":
+     * String s1 = "abc";
+     * String s2 = "xyz";
+     * String sc = s1 + s2;
+     * assert Objects.equals(sc, "abcxyz");
+     * }
+     * the last character {@code "c"} from the first string is juxtaposed with the first
+     * character {@code "x"} of the second string. The same would be true of combining
+     * {@link StringTemplate StringTemplates}.
+     * {@snippet lang ="java":
+     * StringTemplate st1 = RAW."a\{}b\{}c";
+     * StringTemplate st2 = RAW."x\{}y\{}z";
+     * StringTemplate st3 = RAW."a\{}b\{}cx\{}y\{}z";
+     * StringTemplate stc = StringTemplate.combine(st1, st2);
+     *
+     * assert Objects.equals(st1.fragments(), List.of("a", "b", "c"));
+     * assert Objects.equals(st2.fragments(), List.of("x", "y", "z"));
+     * assert Objects.equals(st3.fragments(), List.of("a", "b", "cx", "y", "z"));
+     * assert Objects.equals(stc.fragments(), List.of("a", "b", "cx", "y", "z"));
+     * }
+     * Values lists are simply concatenated to produce a single values list.
      * The result is a well-formed {@link StringTemplate} with n+1 fragments and n values, where
      * n is the total of number of values across all the supplied
      * {@link StringTemplate StringTemplates}.
