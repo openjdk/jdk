@@ -420,11 +420,11 @@ public class Names {
         return table.fromString(s);
     }
 
-    public Name fromUtf(byte[] cs) {
+    public Name fromUtf(byte[] cs) throws InvalidUtfException {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len) {
+    public Name fromUtf(byte[] cs, int start, int len) throws InvalidUtfException {
         return table.fromUtf(cs, start, len);
     }
 }

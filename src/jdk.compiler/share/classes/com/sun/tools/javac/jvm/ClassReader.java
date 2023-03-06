@@ -454,7 +454,7 @@ public class ClassReader {
             sigp++;
             return sigEnterPhase
                 ? Type.noType
-                : findTypeVar(names.fromUtf(signature, start, sigp - 1 - start));
+                : findTypeVar(readName(signature, start, sigp - 1 - start));
         case '+': {
             sigp++;
             Type t = sigToType();
@@ -538,8 +538,7 @@ public class ClassReader {
             typevars = typevars.leave();
             return poly;
         default:
-            throw badClassFile("bad.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.signature", quoteBadSignature());
         }
     }
 
@@ -549,8 +548,7 @@ public class ClassReader {
      */
     Type classSigToType() {
         if (signature[sigp] != 'L')
-            throw badClassFile("bad.class.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.class.signature", quoteBadSignature());
         sigp++;
         Type outer = Type.noType;
         int startSbp = sbp;
@@ -560,7 +558,7 @@ public class ClassReader {
             switch (c) {
 
             case ';': {         // end
-                ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
+                ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
 
@@ -574,7 +572,7 @@ public class ClassReader {
             }
 
             case '<':           // generic arguments
-                ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
+                ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
                 outer = new ClassType(outer, sigToTypes('>'), t) {
@@ -637,7 +635,7 @@ public class ClassReader {
             case '.':
                 //we have seen an enclosing non-generic class
                 if (outer != Type.noType) {
-                    t = enterClass(names.fromUtf(signatureBuffer,
+                    t = enterClass(readName(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
                     outer = new ClassType(outer, List.nil(), t);
@@ -652,6 +650,20 @@ public class ClassReader {
                 continue;
             }
         }
+    }
+
+    /** Quote a bogus signature for display inside an error message.
+     */
+    String quoteBadSignature() {
+        String sigString;
+        try {
+            sigString = Convert.utf2string(signature, sigp, siglimit - sigp);
+        } catch (InvalidUtfException e) {
+            return diagFactory.fragment("bad.utf8.byte.sequence.at", sigp).toString();
+        }
+        if (sigString.length() > 32)
+            sigString = sigString.substring(0, 32) + "...";
+        return "\"" + sigString + "\"";
     }
 
     /** Convert (implicit) signature to list of types
@@ -700,7 +712,7 @@ public class ClassReader {
     Type sigToTypeParam() {
         int start = sigp;
         while (signature[sigp] != ':') sigp++;
-        Name name = names.fromUtf(signature, start, sigp - start);
+        Name name = readName(signature, start, sigp - start);
         TypeVar tvar;
         if (sigEnterPhase) {
             tvar = new TypeVar(name, currentOwner, syms.botType);
@@ -748,6 +760,14 @@ public class ClassReader {
                 return t;
             }
             throw badClassFile("undecl.type.var", name);
+        }
+    }
+
+    private Name readName(byte[] buf, int off, int len) {
+        try {
+            return names.fromUtf(buf, off, len);
+        } catch (InvalidUtfException e) {
+           throw badClassFile("bad.utf8.byte.sequence.at", sigp);
         }
     }
 
@@ -1200,7 +1220,7 @@ public class ClassReader {
                     }
                 }
 
-                private Name classNameMapper(byte[] arr, int offset, int length) {
+                private Name classNameMapper(byte[] arr, int offset, int length) throws InvalidUtfException {
                     return names.fromUtf(ClassFile.internalize(arr, offset, length));
                 }
             },

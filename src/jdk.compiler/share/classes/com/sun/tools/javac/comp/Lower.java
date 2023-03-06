@@ -474,7 +474,7 @@ public class Lower extends TreeTranslator {
                 .fromString(target.syntheticNameChar() +
                             "SwitchMap" +
                             target.syntheticNameChar() +
-                            names.fromUtf(ClassWriter.externalize(forEnum.type.tsym.flatName())).toString()
+                            ClassWriter.externalize(forEnum.type.tsym.flatName().toString())
                             .replace('/', '.')
                             .replace('.', target.syntheticNameChar()));
             ClassSymbol outerCacheClass = outerCacheClass();
