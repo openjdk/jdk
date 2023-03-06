@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,12 @@ public class Iterators {
     };
 
     public static <E> Iterator<E> createFilterIterator(Iterator<E> input, Predicate<E> test) {
-        return new Iterator<E>() {
+        return new Iterator<>() {
             private E current = update();
             private E update () {
                 while (input.hasNext()) {
                     E sym = input.next();
+                    assert sym != null; // otherwise, false positive EOF
                     if (test.test(sym)) {
                         return sym;
                     }
@@ -114,6 +115,9 @@ public class Iterators {
 
             @Override
             public E next() {
+                if (current == null) {
+                    throw new NoSuchElementException();
+                }
                 E res = current;
                 current = update();
                 return res;
