@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,10 +220,6 @@ handshake(int fd, jlong timeout) {
     if (strncmp(b, hello, received) != 0) {
         char msg[80+2*16];
         b[received] = '\0';
-        /*
-         * We should really use snprintf here but it's not available on Windows.
-         * We can't use jio_snprintf without linking the transport against the VM.
-         */
         snprintf(msg, sizeof(msg), "handshake failed - received >%s< - expected >%s<", b, hello);
         setLastError(0, msg);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
