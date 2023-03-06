@@ -44,7 +44,6 @@ public class SumRedAbsNeg_Double {
         for (String reductionSign : new String[] {"+", "-"}) {
             for (int maxUnroll : new int[] {2, 4, 8, 16}) {
                 scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
-                                               "-XX:LoopUnrollLimit=" + 250,
                                                "-XX:LoopMaxUnroll=" + maxUnroll);
                 i++;
             }
