@@ -8682,8 +8682,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">TRL</symbol>
 			</currency>
 			<currency type="TRY">
-				<displayName>新トルコリラ</displayName>
-				<displayName count="other">新トルコリラ</displayName>
+				<displayName>トルコリラ</displayName>
+				<displayName count="other">トルコリラ</displayName>
 				<symbol>TRY</symbol>
 				<symbol alt="narrow">₺</symbol>
 				<symbol alt="variant">TL</symbol>

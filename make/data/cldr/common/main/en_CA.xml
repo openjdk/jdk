@@ -574,7 +574,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/yy</pattern>
+							<pattern>y-MM-dd</pattern>
 							<pattern alt="variant">d/M/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
@@ -624,11 +624,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="GyMd">y-MM-dd G</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="Md" alt="variant">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMdd">MM/dd</dateFormatItem>
+						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMdd" alt="variant">dd/MM</dateFormatItem>
+						<dateFormatItem id="yM">y-MM</dateFormatItem>
+						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMd" alt="variant">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMEd" alt="variant">E, d/M/y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>

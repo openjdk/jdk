@@ -13533,13 +13533,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">TPE</symbol>
 			</currency>
 			<currency type="TRL">
-				<displayName>土耳其里拉</displayName>
-				<displayName count="other">土耳其里拉</displayName>
+				<displayName>土耳其里拉 (1922–2005)</displayName>
+				<displayName count="other">土耳其里拉 (1922–2005)</displayName>
 				<symbol draft="contributed">TRL</symbol>
 			</currency>
 			<currency type="TRY">
-				<displayName>新土耳其里拉</displayName>
-				<displayName count="other">新土耳其里拉</displayName>
+				<displayName>土耳其里拉</displayName>
+				<displayName count="other">土耳其里拉</displayName>
 				<symbol>TRY</symbol>
 				<symbol alt="narrow">₺</symbol>
 				<symbol alt="variant">TL</symbol>

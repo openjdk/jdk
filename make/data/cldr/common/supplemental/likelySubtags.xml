@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2022 Unicode, Inc.
+Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -972,6 +972,28 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Chhattisgarhi; ?; ? } => { Chhattisgarhi; Devanagari; India }-->
 		<likelySubtag from="hnj" to="hnj_Hmnp_US"/>
 		<!--{ Hmong Njua; ?; ? } => { Hmong Njua; Nyiakeng Puachue Hmong; United States }-->
+		<likelySubtag from="hnj_AU" to="hnj_Laoo_AU"/>
+		<!--{ Hmong Njua; ?; Australia } => { Hmong Njua; Lao; Australia }-->
+		<likelySubtag from="hnj_CN" to="hnj_Laoo_CN"/>
+		<!--{ Hmong Njua; ?; China } => { Hmong Njua; Lao; China }-->
+		<likelySubtag from="hnj_FR" to="hnj_Laoo_FR"/>
+		<!--{ Hmong Njua; ?; France } => { Hmong Njua; Lao; France }-->
+		<likelySubtag from="hnj_GF" to="hnj_Laoo_GF"/>
+		<!--{ Hmong Njua; ?; French Guiana } => { Hmong Njua; Lao; French Guiana }-->
+		<likelySubtag from="hnj_LA" to="hnj_Laoo_LA"/>
+		<!--{ Hmong Njua; ?; Laos } => { Hmong Njua; Lao; Laos }-->
+		<likelySubtag from="hnj_MM" to="hnj_Laoo_MM"/>
+		<!--{ Hmong Njua; ?; Myanmar (Burma) } => { Hmong Njua; Lao; Myanmar (Burma) }-->
+		<likelySubtag from="hnj_SR" to="hnj_Laoo_SR"/>
+		<!--{ Hmong Njua; ?; Suriname } => { Hmong Njua; Lao; Suriname }-->
+		<likelySubtag from="hnj_TH" to="hnj_Laoo_TH"/>
+		<!--{ Hmong Njua; ?; Thailand } => { Hmong Njua; Lao; Thailand }-->
+		<likelySubtag from="hnj_US" to="hnj_Hmnp_US"/>
+		<!--{ Hmong Njua US } => { Hmong Njua; Nyiakeng Puachue Hmong; United States }--> <!-- Manually re-added, revisit in CLDR-16424 -->
+		<likelySubtag from="hnj_VN" to="hnj_Laoo_VN"/>
+		<!--{ Hmong Njua; ?; Vietnam } => { Hmong Njua; Lao; Vietnam }-->
+		<likelySubtag from="hnj_Laoo" to="hnj_Laoo_LA"/>
+		<!--{ Hmong Njua; Lao; ? } => { Hmong Njua; Lao; Laos }-->
 		<likelySubtag from="hnn" to="hnn_Latn_PH"/>
 		<!--{ Hanunoo; ?; ? } => { Hanunoo; Latin; Philippines }-->
 		<likelySubtag from="hno" to="hno_Arab_PK"/>
@@ -1928,8 +1950,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Nzima; ?; ? } => { Nzima; Latin; Ghana }-->
 		<likelySubtag from="oc" to="oc_Latn_FR"/>
 		<!--{ Occitan; ?; ? } => { Occitan; Latin; France }-->
-		<likelySubtag from="oc_ES" to="oc_Latn_ES"/>
-		<!--{ Occitan; ? ; Spain } => { Occitan; Latin; Spain }-->
 		<likelySubtag from="ogc" to="ogc_Latn_ZZ"/>
 		<!--{ Ogbah; ?; ? } => { Ogbah; Latin; Unknown Region }-->
 		<likelySubtag from="oj" to="oj_Cans_CA"/>
@@ -2085,11 +2105,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ria" to="ria_Latn_IN"/>
 		<!--{ Riang (India); ?; ? } => { Riang (India); Latin; India }-->
 		<likelySubtag from="rif" to="rif_Latn_MA"/>
-		<!--{ Riffian; ?; ? } => { Riffian; Latn; Morocco }-->
-		<likelySubtag from="rif_Tfng" to="rif_Tfng_MA"/>
-		<!--{ Riffian; Tifinagh; ? } => { Riffian; Tifinagh; Morocco }-->
-		<likelySubtag from="rif_NL" to="rif_Latn_NL"/>
-		<!--{ Riffian; ?; Netherlands } => { Riffian; Latin; Netherlands }-->
+		<!--{ Riffian; ?; ? } => { Riffian; Latin; Morocco }-->
 		<likelySubtag from="rjs" to="rjs_Deva_NP"/>
 		<!--{ Rajbanshi; ?; ? } => { Rajbanshi; Devanagari; Nepal }-->
 		<likelySubtag from="rkt" to="rkt_Beng_BD"/>
@@ -2170,10 +2186,10 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Scots; ?; ? } => { Scots; Latin; United Kingdom }-->
 		<likelySubtag from="sd" to="sd_Arab_PK"/>
 		<!--{ Sindhi; ?; ? } => { Sindhi; Arabic; Pakistan }-->
-		<likelySubtag from="sd_Deva" to="sd_Deva_IN"/>
-		<!--{ Sindhi; Devanagari; ? } => { Sindhi; Devanagari; India }-->
 		<likelySubtag from="sd_IN" to="sd_Deva_IN"/>
 		<!--{ Sindhi; ?; India } => { Sindhi; Devanagari; India }-->
+		<likelySubtag from="sd_Deva" to="sd_Deva_IN"/>
+		<!--{ Sindhi; Devanagari; ? } => { Sindhi; Devanagari; India }-->
 		<likelySubtag from="sd_Khoj" to="sd_Khoj_IN"/>
 		<!--{ Sindhi; Khojki; ? } => { Sindhi; Khojki; India }-->
 		<likelySubtag from="sd_Sind" to="sd_Sind_IN"/>
@@ -3372,8 +3388,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Arabic; Thailand } => { Pattani Malay; Arabic; Thailand }-->
 		<likelySubtag from="und_Arab_TJ" to="fa_Arab_TJ"/>
 		<!--{ ?; Arabic; Tajikistan } => { Persian; Arabic; Tajikistan }-->
-		<likelySubtag from="und_Arab_TR" to="az_Arab_TR"/>
-		<!--{ ?; Arabic; Türkiye } => { Azerbaijani; Arabic; Türkiye }-->
+		<likelySubtag from="und_Arab_TR" to="apc_Arab_TR"/>
+		<!--{ ?; Arabic; Türkiye } => { Levantine Arabic; Arabic; Türkiye }-->
 		<likelySubtag from="und_Arab_YT" to="swb_Arab_YT"/>
 		<!--{ ?; Arabic; Mayotte } => { Comorian; Arabic; Mayotte }-->
 		<likelySubtag from="und_Armi" to="arc_Armi_IR"/>
@@ -3419,9 +3435,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Copt" to="cop_Copt_EG"/>
 		<!--{ ?; Coptic; ? } => { Coptic; Coptic; Egypt }-->
 		<likelySubtag from="und_Cpmn" to="und_Cpmn_CY"/>
-		<!--{ ?; Cypro-Minoan; ? } => { ?; Cypro-Minoan; Cyprus }-->
+		<!--{ ?; Cypro-Minoan; ? } => { ?; Cypro-Minoan; Cyprus } Manually re-added, revisit in CLDR-16424 -->
 		<likelySubtag from="und_Cpmn_CY" to="und_Cpmn_CY"/>
-		<!--{ ?; Cypro-Minoan; Cyprus } => { ?; Cypro-Minoan; Cyprus }-->
+		<!--{ ?; Cypro-Minoan; Cyprus } => { ?; Cypro-Minoan; Cyprus } Manually re-added, revisit in CLDR-16424 -->
 		<likelySubtag from="und_Cprt" to="grc_Cprt_CY"/>
 		<!--{ ?; Cypriot; ? } => { Ancient Greek; Cypriot; Cyprus }-->
 		<likelySubtag from="und_Cyrl" to="ru_Cyrl_RU"/>
@@ -3552,6 +3568,24 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Lanna; ? } => { Northern Thai; Lanna; Thailand }-->
 		<likelySubtag from="und_Laoo" to="lo_Laoo_LA"/>
 		<!--{ ?; Lao; ? } => { Lao; Lao; Laos }-->
+		<likelySubtag from="und_Laoo_AU" to="hnj_Laoo_AU"/>
+		<!--{ ?; Lao; Australia } => { Hmong Njua; Lao; Australia }-->
+		<likelySubtag from="und_Laoo_CN" to="hnj_Laoo_CN"/>
+		<!--{ ?; Lao; China } => { Hmong Njua; Lao; China }-->
+		<likelySubtag from="und_Laoo_FR" to="hnj_Laoo_FR"/>
+		<!--{ ?; Lao; France } => { Hmong Njua; Lao; France }-->
+		<likelySubtag from="und_Laoo_GF" to="hnj_Laoo_GF"/>
+		<!--{ ?; Lao; French Guiana } => { Hmong Njua; Lao; French Guiana }-->
+		<likelySubtag from="und_Laoo_MM" to="hnj_Laoo_MM"/>
+		<!--{ ?; Lao; Myanmar (Burma) } => { Hmong Njua; Lao; Myanmar (Burma) }-->
+		<likelySubtag from="und_Laoo_SR" to="hnj_Laoo_SR"/>
+		<!--{ ?; Lao; Suriname } => { Hmong Njua; Lao; Suriname }-->
+		<likelySubtag from="und_Laoo_TH" to="hnj_Laoo_TH"/>
+		<!--{ ?; Lao; Thailand } => { Hmong Njua; Lao; Thailand }-->
+		<likelySubtag from="und_Laoo_US" to="hnj_Laoo_US"/>
+		<!--{ ?; Lao; United States } => { Hmong Njua; Lao; United States }-->
+		<likelySubtag from="und_Laoo_VN" to="hnj_Laoo_VN"/>
+		<!--{ ?; Lao; Vietnam } => { Hmong Njua; Lao; Vietnam }-->
 		<likelySubtag from="und_Latn_AF" to="tk_Latn_AF"/>
 		<!--{ ?; Latin; Afghanistan } => { Turkmen; Latin; Afghanistan }-->
 		<likelySubtag from="und_Latn_AM" to="ku_Latn_AM"/>
@@ -3782,7 +3816,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Yi; ? } => { Sichuan Yi; Yi; China }-->
 		<likelySubtag from="und_Zanb" to="cmg_Zanb_MN"/>
 		<!--{ ?; Zanabazar Square; ? } => { Classical Mongolian; Zanabazar Square; Mongolia }-->
-		
+
 		<!-- Generated by GenerateAdditionalLikely.java -->
 		<likelySubtag from="aaa" to="aaa_Latn_NG" origin="sil1"/>	<!-- Ghotuo ➡︎ Ghotuo (Latin, Nigeria) -->
 		<likelySubtag from="aab" to="aab_Latn_NG" origin="sil1"/>	<!-- Alumu-Tesu ➡︎ Alumu-Tesu (Latin, Nigeria) -->
