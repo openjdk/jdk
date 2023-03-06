@@ -446,10 +446,12 @@ public class Net {
 
         boolean mayNeedConversion = (family == UNSPEC);
         setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, isIPv6);
-	if (isIPv6 && name == StandardSocketOptions.IP_TOS) {
-	    key = SocketOptionRegistry.findOption(name, StandardProtocolFamily.INET);
-	    setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, !isIPv6);
-	}
+
+        // Some platforms also require set IPPROTO level option when socket is IPv6.
+        if (isIPv6 && name == StandardSocketOptions.IP_TOS && shouldSetBothIPv4AndIPv6Options()) {
+             key = SocketOptionRegistry.findOption(name, StandardProtocolFamily.INET);
+             setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, !isIPv6);
+        }
     }
 
     static Object getSocketOption(FileDescriptor fd, SocketOption<?> name)
