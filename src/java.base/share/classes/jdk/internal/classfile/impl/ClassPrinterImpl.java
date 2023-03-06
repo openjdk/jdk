@@ -567,7 +567,7 @@ public final class ClassPrinterImpl {
                 .with(new ListNodeImpl(BLOCK, "fields", clm.fields().stream().map(f ->
                     fieldToTree(f, verbosity))))
                 .with(new ListNodeImpl(BLOCK, "methods", clm.methods().stream().map(mm ->
-                    (Node)methodToTree(mm, verbosity))));
+                    methodToTree(mm, verbosity))));
     }
 
     private static Node[] constantPoolToTree(ConstantPool cp, Verbosity verbosity) {
