@@ -19,7 +19,7 @@
         <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@">
             <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" moduleId="org.eclipse.cdt.core.settings" name="Java">
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" moduleId="org.eclipse.cdt.core.settings" name="C/C++">
                 <externalSettings/>
                 <extensions>
                     <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -32,7 +32,7 @@
             </storageModule>
 
             <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" name="Java" parent="org.eclipse.cdt.build.core.emptycfg">
+                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" name="C/C++" parent="org.eclipse.cdt.build.core.emptycfg">
                     <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@.@@MINOR@@" name="/" resourcePath="">
                         <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.@@MINOR@@" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">
                             <option id="cdt.managedbuild.option.gnu.cross.path.@@MINOR@@" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="@@ENV@@" valueType="string"/>

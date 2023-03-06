@@ -111,7 +111,9 @@ make eclipse-shared-<ENV>-env
 ```
 
 Eclipse support in the JDK is relatively new, so do keep in mind that not
-everything may work at the moment.
+everything may work at the moment. As such, the resulting Workspace also
+has compilation database parsing support enabled, so you can pass Eclipse
+the compile commands file (see below) if all else fails.
 
 #### Compilation Database
 
