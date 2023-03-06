@@ -410,7 +410,6 @@ public final class RemoteRecordingStream implements EventStream {
      *                                  state
      */
     public void setMaxAge(Duration maxAge) {
-        Objects.requireNonNull(maxAge);
         synchronized (lock) {
             repository.setMaxAge(maxAge);
             this.maxAge = maxAge;
