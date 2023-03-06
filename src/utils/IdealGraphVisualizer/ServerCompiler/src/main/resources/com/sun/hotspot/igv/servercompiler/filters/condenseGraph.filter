@@ -18,7 +18,7 @@ function replaceComparisonWithSign(dump_spec) {
 editSameProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign);
 
 // Add a more informative text for null-pointer input slots.
-editSameProperty(and([matches("name", "ConP"), matches("dump_spec", "#NULL")]),
+editSameProperty(and([matches("name", "ConP|ConN"), matches("dump_spec", "#.*NULL")]),
                  "short_name",
                  function(t) {return "null";});
 
