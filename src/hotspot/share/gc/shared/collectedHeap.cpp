@@ -152,7 +152,7 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
-bool CollectedHeap::contains_null(const oop* p) {
+bool CollectedHeap::contains_null(const oop* p) const {
   return *p == nullptr;
 }
 

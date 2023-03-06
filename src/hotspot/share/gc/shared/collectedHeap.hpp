@@ -450,7 +450,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // which is typically not observable when using the Access API. However, if for
   // some reason a context doesn't allow using the Access API, then this function
   // explicitly checks if the given memory location contains a null value.
-  bool contains_null(const oop* p);
+  virtual bool contains_null(const oop* p) const;
 
   // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
