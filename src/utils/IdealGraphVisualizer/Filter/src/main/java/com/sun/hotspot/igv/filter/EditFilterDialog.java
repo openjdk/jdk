@@ -24,12 +24,10 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.text.*;
 import org.openide.windows.WindowManager;
@@ -136,7 +134,9 @@ public class EditFilterDialog extends javax.swing.JDialog {
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+
         jScrollPane1 = new javax.swing.JScrollPane();
+        jPanel1 = new javax.swing.JPanel();
         sourceTextArea = new javax.swing.JTextPane();
         nameTextField = new javax.swing.JTextField();
         nameLabel = new javax.swing.JLabel();
@@ -146,26 +146,32 @@ public class EditFilterDialog extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "title")); // NOI18N
-        setResizable(true);
 
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(sourceTextArea);
-        jScrollPane1.setViewportView(panel);
+        jPanel1.setLayout(new java.awt.BorderLayout());
+        jPanel1.add(sourceTextArea, java.awt.BorderLayout.CENTER);
 
-        nameTextField.setText("null");
+        jScrollPane1.setViewportView(jPanel1);
+
+        nameTextField.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "nameTextField.text")); // NOI18N
 
         nameLabel.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "jLabel1.text")); // NOI18N
 
         sourceLabel.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "jLabel2.text")); // NOI18N
 
         okButton.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "jButton1.text")); // NOI18N
-        okButton.addActionListener(evt -> {
-            cancelButtonClicked(evt);
-            okButtonClicked(evt);
+        okButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelButtonClicked(evt);
+                okButtonClicked(evt);
+            }
         });
 
         cancelButton.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "jButton2.text")); // NOI18N
-        cancelButton.addActionListener(this::cancelButtonClicked);
+        cancelButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelButtonClicked(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -180,7 +186,7 @@ public class EditFilterDialog extends javax.swing.JDialog {
                             .add(nameLabel))
                         .add(25, 25, 25)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 695, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE)
+                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 695, Short.MAX_VALUE)
                             .add(nameTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 695, Short.MAX_VALUE)))
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                         .add(okButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 76, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -198,8 +204,8 @@ public class EditFilterDialog extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(sourceLabel)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 337, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE))
-                    .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 383, Short.MAX_VALUE))
+                .add(16, 16, 16)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cancelButton)
                     .add(okButton))
@@ -223,6 +229,7 @@ private void cancelButtonClicked(java.awt.event.ActionEvent evt) {//GEN-FIRST:ev
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel nameLabel;
     private javax.swing.JTextField nameTextField;
