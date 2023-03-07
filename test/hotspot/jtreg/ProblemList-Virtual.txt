@@ -3,47 +3,43 @@
 gc/g1/TestPeriodicCollectionJNI.java                                                            8254852 generic-all
 vmTestbase/nsk/stress/jni/gclocker/gcl001.java                                                  8254852 generic-all
 
+vmTestbase/vm/gc/compact/Humongous_Arrays5M/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Compact_NonbranchyTree_ArrayOf/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Compact_NonbranchyTree/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Compact_NonbranchyTree_TwoFields/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Compact_TwoFields_InternedStrings/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Compact_InternedStrings_NonbranchyTree/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Humongous_NonbranchyTree/TestDescription.java 8282492 generic-all
+vmTestbase/vm/gc/compact/Humongous_NonbranchyTree5M/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/malloc/malloclock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/malloc/malloclock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/malloc/malloclock04/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jni/jnilock001/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jni/jnilock003/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniglobalreflock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniglobalreflock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniglobalreflock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniglobalreflock04/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnireflock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnireflock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnireflock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnireflock04/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnilocalreflock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnilocalreflock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnilocalreflock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jnilocalreflock04/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniweakglobalreflock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniweakglobalreflock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniweakglobalreflock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jniref/jniweakglobalreflock04/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock01/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock03/TestDescription.java  8282492 generic-all
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock04/TestDescription.java  8282492 generic-all
 
 ##########
-
-# 8282492
-vmTestbase/vm/gc/compact/Humongous_Arrays5M/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Compact_NonbranchyTree_ArrayOf/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Compact_NonbranchyTree/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Compact_NonbranchyTree_TwoFields/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Compact_TwoFields_InternedStrings/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Compact_InternedStrings_NonbranchyTree/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Humongous_NonbranchyTree/TestDescription.java 0000000 generic-all
-vmTestbase/vm/gc/compact/Humongous_NonbranchyTree5M/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/malloc/malloclock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/malloc/malloclock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/malloc/malloclock04/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jni/jnilock001/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jni/jnilock003/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniglobalreflock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniglobalreflock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniglobalreflock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniglobalreflock04/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnireflock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnireflock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnireflock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnireflock04/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnilocalreflock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnilocalreflock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnilocalreflock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jnilocalreflock04/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniweakglobalreflock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniweakglobalreflock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniweakglobalreflock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jniref/jniweakglobalreflock04/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock01/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock03/TestDescription.java  0000000 generic-all
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock04/TestDescription.java  0000000 generic-all
-
-##########
-## Tests failing when main() is executed in additional kernel or virtual thread
+## Tests failing when virtual thread factory is enabled
 
 ####
 # Virtual thread/Continuation tests
