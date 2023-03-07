@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
                     output.shouldHaveExitValue(0);
                     if (mainArg.equals("both") || mainArg.equals("useOldInf")) {
                         output.shouldContain("Skipping OldProvider: Old class has been linked")
-                              .shouldMatch("Skipping.SimpleLambda[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked");
+                              .shouldMatch("Skipping.SimpleLambda[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
                     }
                     if (mainArg.equals("both") || mainArg.equals("redefineCaller")) {
                         output.shouldContain("Skipping SimpleLambda: Has been redefined");
@@ -94,7 +94,7 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
                 .assertNormalExit(output -> {
                     output.shouldHaveExitValue(0)
                           .shouldContain("RedefineCallerClass source: shared objects file (top)")
-                          .shouldMatch(".class.load. SimpleLambda[$][$]Lambda[$].*/0x.*source:.*SimpleLambda");
+                          .shouldMatch(".class.load. SimpleLambda[$][$]Lambda.*/0x.*source:.*SimpleLambda");
                     if (mainArg.equals("both") || mainArg.equals("useOldInf")) {
                         output.shouldMatch(".class.load. OldProvider.source:.*redefine_caller_class.jar");
                     }
