@@ -243,11 +243,18 @@ BitMap::get_next_one_offset_aligned_right(idx_t beg, idx_t end) const {
   return get_next_bit_impl<find_ones_flip, true>(beg, end);
 }
 
+// IterateInvoker supports conditionally stopping iteration early.  The
+// invoker is called with the function to apply to each set index, along with
+// the current index.  If the function returns void then the invoker always
+// returns true, so no early stopping.  Otherwise, the result of the function
+// is returned by the invoker.  Iteration stops early if conversion of that
+// result to bool is false.
+
 template<typename ReturnType>
 struct BitMap::IterateInvoker {
   template<typename Function>
   ReturnType operator()(Function function, idx_t index) const {
-    return function(index);
+    return function(index);     // Stop early if converting to bool is false.
   }
 };
 
@@ -255,18 +262,19 @@ template<>
 struct BitMap::IterateInvoker<void> {
   template<typename Function>
   bool operator()(Function function, idx_t index) const {
-    function(index);
-    return true;
+    function(index);            // Result is void.
+    return true;                // Never stop early.
   }
 };
 
 template <typename Function>
 inline bool BitMap::iterate(Function function, idx_t beg, idx_t end) const {
+  auto invoke = IterateInvoker<decltype(function(beg))>();
   for (idx_t index = beg; true; ++index) {
     index = get_next_one_offset(index, end);
     if (index >= end) {
       return true;
-    } else if (!IterateInvoker<decltype(function(index))>()(function, index)) {
+    } else if (!invoke(function, index)) {
       return false;
     }
   }
