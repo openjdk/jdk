@@ -24,43 +24,6 @@
 #
 
 ##########################################################################################
-# libfdlibm is statically linked with libjava below and not delivered into the
-# product on its own.
-
-BUILD_LIBFDLIBM_OPTIMIZATION := NONE
-
-# If FDLIBM_CFLAGS is non-empty we know that we can optimize
-# fdlibm when adding those extra C flags. Currently GCC,
-# and clang only.
-ifneq ($(FDLIBM_CFLAGS), )
-  BUILD_LIBFDLIBM_OPTIMIZATION := LOW
-endif
-
-LIBFDLIBM_SRC := $(TOPDIR)/src/java.base/share/native/libfdlibm
-LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC) $(FDLIBM_CFLAGS)
-
-$(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
-    NAME := fdlibm, \
-    TYPE := STATIC_LIBRARY, \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-    SRC := $(LIBFDLIBM_SRC), \
-    OPTIMIZATION := $(BUILD_LIBFDLIBM_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
-    CFLAGS_windows_debug := -DLOGGING, \
-    CFLAGS_aix := -qfloat=nomaf, \
-    DISABLED_WARNINGS_gcc := sign-compare, \
-    DISABLED_WARNINGS_gcc_k_rem_pio2.c := maybe-uninitialized, \
-    DISABLED_WARNINGS_clang := sign-compare, \
-    DISABLED_WARNINGS_microsoft := 4146, \
-    DISABLED_WARNINGS_microsoft_e_exp.c := 4244, \
-    DISABLED_WARNINGS_microsoft_s_ceil.c := 4018, \
-    DISABLED_WARNINGS_microsoft_s_expm1.c := 4244, \
-    DISABLED_WARNINGS_microsoft_s_floor.c := 4018, \
-    ARFLAGS := $(ARFLAGS), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
-))
-
-##########################################################################################
 
 LIBVERIFY_OPTIMIZATION := HIGH
 ifeq ($(call isTargetOs, linux), true)
@@ -96,14 +59,12 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
-    EXTRA_HEADER_DIRS := libfdlibm, \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
     LDFLAGS_windows := -delayload:shell32.dll, \
-    LIBS := $(BUILD_LIBFDLIBM_TARGET), \
     LIBS_unix := -ljvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL) $(LIBM),\
@@ -119,7 +80,6 @@ TARGETS += $(BUILD_LIBJAVA)
 
 $(BUILD_LIBJAVA): $(BUILD_LIBVERIFY)
 
-$(BUILD_LIBJAVA): $(BUILD_LIBFDLIBM)
 
 ##########################################################################################
 
