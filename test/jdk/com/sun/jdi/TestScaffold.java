@@ -1034,8 +1034,8 @@ abstract public class TestScaffold extends TargetAdapter {
         try {
             Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
             Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method start = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) start.invoke(builder, task);
+            java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
+            return (Thread) unstarted.invoke(builder, task);
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
