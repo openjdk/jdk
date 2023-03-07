@@ -8032,16 +8032,36 @@ instruct vslice32B(vec dst, vec src1, vec src2, immI origin, vec xtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct evslice64B(vec dst, vec src1, vec src2, immI origin, vec xtmp1, vec xtmp2) %{
+instruct evslice64B_near(vec dst, vec src1, vec src2, immI origin, vec xtmp) %{
   predicate(Matcher::vector_length_in_bytes(n) == 64 &&
-            (type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U != 0);
+            (type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U != 0 &&
+            (type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() < 16 ||
+             type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() > 48));
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP xtmp);
+  format %{ "vector_slice $dst, $src1, $src2, $origin\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    assert(shift_count % 4U != 0, "");
+    __ slice_64B($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                 $xtmp$$XMMRegister, xnoreg, shift_count);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct evslice64B_far(vec dst, vec src1, vec src2, immI origin, vec xtmp1, vec xtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n) == 64 &&
+            (type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int()) % 4U != 0 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() > 16 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) * n->in(2)->get_int() < 48);
   match(Set dst (VectorSlice (Binary src1 src2) origin));
   effect(TEMP xtmp1, TEMP xtmp2);
   format %{ "vector_slice $dst, $src1, $src2, $origin\t! using $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     int shift_count = $origin$$constant * type2aelembytes(bt);
-    assert(shift_count % 4 != 0, "");
+    assert(shift_count % 4U != 0, "");
     __ slice_64B($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
                  $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, shift_count);
   %}

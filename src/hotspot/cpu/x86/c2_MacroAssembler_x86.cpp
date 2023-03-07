@@ -6130,27 +6130,23 @@ void C2_MacroAssembler::slice_32B_avx2(XMMRegister dst, XMMRegister src1, XMMReg
 void C2_MacroAssembler::slice_64B(XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                   XMMRegister xtmp1, XMMRegister xtmp2, int shift_count) {
   assert(VM_Version::supports_avx512bw(), ""); // This is required for 512-bit byte or short vector
-  evshufi64x2(xtmp1, src1, src2, 0x4E, AVX_512bit);
-  if (shift_count > 32) {
-    evshufi64x2(xtmp2, xtmp1, src2, 0x99, AVX_512bit);
-  } else {
-    evshufi64x2(xtmp2, src1, xtmp1, 0x99, AVX_512bit);
-  }
-
-  XMMRegister first_operand;
-  XMMRegister second_operand;
   if (shift_count < 16) {
-    first_operand = src1;
-    second_operand = xtmp2;
+    assert(shift_count > 0, "");
+    assert(xtmp2 == xnoreg, "");
+    evalignd(xtmp1, src2, src1, 4, AVX_512bit);
+    vpalignr(dst, xtmp1, src1, shift_count % 16U, AVX_512bit);
   } else if (shift_count < 32) {
-    first_operand = xtmp2;
-    second_operand = xtmp1;
+    evalignd(xtmp1, src2, src1, 4, AVX_512bit);
+    evalignd(xtmp2, src2, src1, 8, AVX_512bit);
+    vpalignr(dst, xtmp2, xtmp1, shift_count % 16U, AVX_512bit);
   } else if (shift_count < 48) {
-    first_operand = xtmp1;
-    second_operand = xtmp2;
+    evalignd(xtmp1, src2, src1, 8, AVX_512bit);
+    evalignd(xtmp2, src2, src1, 12, AVX_512bit);
+    vpalignr(dst, xtmp2, xtmp1, shift_count % 16U, AVX_512bit);
   } else {
-    first_operand = xtmp2;
-    second_operand = src2;
+    assert(shift_count < 64, "");
+    assert(xtmp2 == xnoreg, "");
+    evalignd(xtmp1, src2, src1, 12, AVX_512bit);
+    vpalignr(dst, src2, xtmp1, shift_count % 16U, AVX_512bit);
   }
-  vpalignr(dst, second_operand, first_operand, shift_count & 0xF, AVX_512bit);
 }
