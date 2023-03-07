@@ -97,7 +97,7 @@ public final class TypeLibrary {
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_DURATION, Type.LONG, annos, 0, false, EventInstrumentation.FIELD_DURATION);
     }
 
-    public synchronized static void initialize() {
+    public static synchronized void initialize() {
         List<Type> jvmTypes;
         try {
             jvmTypes = MetadataLoader.createTypes();
@@ -112,12 +112,12 @@ public final class TypeLibrary {
         }
     }
 
-    public synchronized static Collection<Type> getTypes() {
+    public static synchronized Collection<Type> getTypes() {
         return new ArrayList<>(types.values());
     }
 
     // Returned list should be mutable (for in-place sorting)
-    public synchronized static List<Type> getVisibleTypes() {
+    public static synchronized List<Type> getVisibleTypes() {
         List<Type> visible = new ArrayList<>(types.size());
         types.values().forEach(t -> {
             if (t.isVisible()) {
@@ -127,7 +127,7 @@ public final class TypeLibrary {
         return visible;
     }
 
-    public synchronized static Type createAnnotationType(Class<? extends Annotation> a) {
+    public static synchronized Type createAnnotationType(Class<? extends Annotation> a) {
         if (shouldPersist(a)) {
             Type type = defineType(a, Type.SUPER_TYPE_ANNOTATION, false);
             if (type != null) {
@@ -149,7 +149,7 @@ public final class TypeLibrary {
         return null;
     }
 
-    public synchronized static AnnotationElement createAnnotation(Annotation annotation) {
+    public static synchronized AnnotationElement createAnnotation(Annotation annotation) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
         Type type = createAnnotationType(annotationType);
         if (type != null) {
@@ -213,11 +213,11 @@ public final class TypeLibrary {
         return null;
     }
 
-    public synchronized static Type createType(Class<?> clazz) {
+    public static synchronized Type createType(Class<?> clazz) {
         return createType(clazz, Collections.emptyList(), Collections.emptyList());
     }
 
-    public synchronized static Type createType(Class<?> clazz, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
+    public static synchronized Type createType(Class<?> clazz, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
 
         if (Thread.class == clazz) {
             return Type.THREAD;
@@ -417,7 +417,7 @@ public final class TypeLibrary {
     // from registered event types. Those types that are not reachable can
     // safely be removed
     // Returns true if type was removed
-    public synchronized static boolean clearUnregistered() {
+    public static synchronized boolean clearUnregistered() {
         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Cleaning out obsolete metadata");
         List<Type> registered = new ArrayList<>();
         for (Type type : types.values()) {
@@ -446,11 +446,11 @@ public final class TypeLibrary {
         return !removeIds.isEmpty();
     }
 
-    public synchronized static void addType(Type type) {
+    public static synchronized void addType(Type type) {
         addTypes(Collections.singletonList(type));
     }
 
-    public synchronized static void addTypes(List<Type> ts) {
+    public static synchronized void addTypes(List<Type> ts) {
         if (!ts.isEmpty()) {
             visitReachable(ts, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
         }
@@ -498,7 +498,7 @@ public final class TypeLibrary {
         }
     }
 
-    public synchronized static void removeType(long id) {
+    public static synchronized void removeType(long id) {
         types.remove(id);
     }
 }
