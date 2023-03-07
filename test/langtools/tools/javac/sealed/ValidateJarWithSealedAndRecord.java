@@ -45,9 +45,9 @@ public class ValidateJarWithSealedAndRecord {
     }
 
     void writeFile(String f, String contents) throws IOException {
-        PrintStream s = new PrintStream(new FileOutputStream(f));
-        s.println(contents);
-        s.close();
+        try (PrintStream s = new PrintStream(new FileOutputStream(f))) {
+            s.println(contents);
+        }
     }
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));

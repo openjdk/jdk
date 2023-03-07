@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,9 +518,6 @@ public class ComponentColorModel extends ColorModel {
         case DataBuffer.TYPE_BYTE:
             {
                 byte[] bpixel = new byte[numComponents];
-                for (int i = 0; i < numColorComponents; i++) {
-                    bpixel[i] = 0;
-                }
                 if (supportsAlpha) {
                     bpixel[numColorComponents] =
                         (byte) ((1 << nBits[numColorComponents]) - 1);
@@ -535,9 +532,6 @@ public class ComponentColorModel extends ColorModel {
         case DataBuffer.TYPE_USHORT:
             {
                 short[] uspixel = new short[numComponents];
-                for (int i = 0; i < numColorComponents; i++) {
-                    uspixel[i] = 0;
-                }
                 if (supportsAlpha) {
                     uspixel[numColorComponents] =
                         (short) ((1 << nBits[numColorComponents]) - 1);
@@ -552,9 +546,6 @@ public class ComponentColorModel extends ColorModel {
         case DataBuffer.TYPE_INT:
             {
                 int[] ipixel = new int[numComponents];
-                for (int i = 0; i < numColorComponents; i++) {
-                    ipixel[i] = 0;
-                }
                 if (supportsAlpha) {
                     ipixel[numColorComponents] =
                         ((1 << nBits[numColorComponents]) - 1);
@@ -569,9 +560,6 @@ public class ComponentColorModel extends ColorModel {
         case DataBuffer.TYPE_SHORT:
             {
                 short[] spixel = new short[numComponents];
-                for (int i = 0; i < numColorComponents; i++) {
-                    spixel[i] = 0;
-                }
                 if (supportsAlpha) {
                     spixel[numColorComponents] = 32767;
                 }
@@ -2486,7 +2474,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new byte[numComponents];
-                                    java.util.Arrays.fill(zpixel, (byte) 0);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }
@@ -2514,7 +2501,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new short[numComponents];
-                                    java.util.Arrays.fill(zpixel, (short) 0);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }
@@ -2541,7 +2527,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new int[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }
@@ -2568,7 +2553,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new short[numComponents];
-                                    java.util.Arrays.fill(zpixel, (short) 0);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }
@@ -2593,7 +2577,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new float[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0.0f);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }
@@ -2618,7 +2601,6 @@ public class ComponentColorModel extends ColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new double[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0.0);
                                 }
                                 raster.setDataElements(rX, rY, zpixel);
                             }

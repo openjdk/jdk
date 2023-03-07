@@ -159,7 +159,7 @@ public:
 
     // Otherwise check we are at proper operation type
     VM_Operation* vm_op = VMThread::vm_operation();
-    if (vm_op == NULL) return false;
+    if (vm_op == nullptr) return false;
 
     VM_Operation::VMOp_Type type = vm_op->type();
     return type == VM_Operation::VMOp_ShenandoahInitMark ||

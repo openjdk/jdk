@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class JVMCIRuntime;
     if (env->ExceptionCheck()) { \
       if (env != JavaThread::current()->jni_environment()) { \
         char* sl_path; \
-        if (::JVMCI::get_shared_library(sl_path, false) != NULL) { \
+        if (::JVMCI::get_shared_library(sl_path, false) != nullptr) { \
           tty->print_cr("In JVMCI shared library (%s):", sl_path); \
         } \
       } \
@@ -64,11 +64,11 @@ class JVMCIKlassHandle : public StackObj {
   Thread*    _thread;
 
   Klass*        klass() const                     { return _klass; }
-  Klass*        non_null_klass() const            { assert(_klass != NULL, "resolving NULL _klass"); return _klass; }
+  Klass*        non_null_klass() const            { assert(_klass != nullptr, "resolving null _klass"); return _klass; }
 
  public:
   /* Constructors */
-  JVMCIKlassHandle (Thread* thread) : _klass(NULL), _thread(thread) {}
+  JVMCIKlassHandle (Thread* thread) : _klass(nullptr), _thread(thread) {}
   JVMCIKlassHandle (Thread* thread, Klass* klass);
 
   JVMCIKlassHandle (const JVMCIKlassHandle &h): _klass(h._klass), _holder(h._holder), _thread(h._thread) {}
@@ -83,8 +83,8 @@ class JVMCIKlassHandle : public StackObj {
   bool    operator == (const JVMCIKlassHandle& h) const  { return klass() == h.klass(); }
 
   /* Null checks */
-  bool    is_null() const                      { return _klass == NULL; }
-  bool    not_null() const                     { return _klass != NULL; }
+  bool    is_null() const                      { return _klass == nullptr; }
+  bool    not_null() const                     { return _klass != nullptr; }
 };
 
 // A class that maintains the state needed for compilations requested
@@ -299,10 +299,10 @@ public:
   bool equals(JVMCIObject a, JVMCIObject b);
 
   // Convert into a JNI handle for the appropriate runtime
-  jobject get_jobject(JVMCIObject object)                       { assert(object.as_jobject() == NULL || is_hotspot() == object.is_hotspot(), "mismatch"); return object.as_jobject(); }
-  jarray get_jarray(JVMCIArray array)                           { assert(array.as_jobject() == NULL || is_hotspot() == array.is_hotspot(), "mismatch"); return array.as_jobject(); }
-  jobjectArray get_jobjectArray(JVMCIObjectArray objectArray)   { assert(objectArray.as_jobject() == NULL || is_hotspot() == objectArray.is_hotspot(), "mismatch"); return objectArray.as_jobject(); }
-  jbyteArray get_jbyteArray(JVMCIPrimitiveArray primitiveArray) { assert(primitiveArray.as_jobject() == NULL || is_hotspot() == primitiveArray.is_hotspot(), "mismatch"); return primitiveArray.as_jbyteArray(); }
+  jobject get_jobject(JVMCIObject object)                       { assert(object.as_jobject() == nullptr || is_hotspot() == object.is_hotspot(), "mismatch"); return object.as_jobject(); }
+  jarray get_jarray(JVMCIArray array)                           { assert(array.as_jobject() == nullptr || is_hotspot() == array.is_hotspot(), "mismatch"); return array.as_jobject(); }
+  jobjectArray get_jobjectArray(JVMCIObjectArray objectArray)   { assert(objectArray.as_jobject() == nullptr || is_hotspot() == objectArray.is_hotspot(), "mismatch"); return objectArray.as_jobject(); }
+  jbyteArray get_jbyteArray(JVMCIPrimitiveArray primitiveArray) { assert(primitiveArray.as_jobject() == nullptr || is_hotspot() == primitiveArray.is_hotspot(), "mismatch"); return primitiveArray.as_jbyteArray(); }
 
   JVMCIObject         wrap(jobject obj);
   JVMCIObjectArray    wrap(jobjectArray obj)  { return (JVMCIObjectArray)    wrap((jobject) obj); }
@@ -345,7 +345,7 @@ public:
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 
 #define DO_THROW(name) \
-  void throw_##name(const char* msg = NULL);
+  void throw_##name(const char* msg = nullptr);
 
   DO_THROW(InternalError)
   DO_THROW(ArrayIndexOutOfBoundsException)
@@ -447,7 +447,7 @@ public:
 
   JVMCICompileState* compile_state() { return _compile_state; }
   void set_compile_state(JVMCICompileState* compile_state) {
-    assert(_compile_state == NULL, "set only once");
+    assert(_compile_state == nullptr, "set only once");
     _compile_state = compile_state;
   }
   // Generate declarations for the initialize, new, isa, get and set methods for all the types and

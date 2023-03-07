@@ -70,6 +70,7 @@ class     TypeKlassPtr;
 class       TypeInstKlassPtr;
 class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
+class VerifyMeet;
 
 //------------------------------Type-------------------------------------------
 // Basic Type object, represents a set of primitive Values.
@@ -170,7 +171,7 @@ private:
 
 
   const Type *meet_helper(const Type *t, bool include_speculative) const;
-  void check_symmetrical(const Type *t, const Type *mt) const;
+  void check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& verify) const NOT_DEBUG_RETURN;
 
 protected:
   // Each class of type is also identified by its base.
@@ -181,8 +182,11 @@ protected:
   const Type *hashcons();       // Hash-cons the type
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
   const Type *join_helper(const Type *t, bool include_speculative) const {
+    assert_type_verify_empty();
     return dual()->meet_helper(t->dual(), include_speculative)->dual();
   }
+
+  void assert_type_verify_empty() const NOT_DEBUG_RETURN;
 
 public:
 
