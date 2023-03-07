@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -212,7 +183,7 @@ cmsBool  isFloatMatrixIdentity(const cmsMAT3* a)
 
        return TRUE;
 }
-// if two adjacent matrices are found, multiply them.
+// if two adjacent matrices are found, multiply them. 
 static
 cmsBool _MultiplyMatrix(cmsPipeline* Lut)
 {
@@ -235,10 +206,10 @@ cmsBool _MultiplyMatrix(cmsPipeline* Lut)
                      _cmsStageMatrixData* m1 = (_cmsStageMatrixData*) cmsStageData(*pt1);
                      _cmsStageMatrixData* m2 = (_cmsStageMatrixData*) cmsStageData(*pt2);
                      cmsMAT3 res;
-
+                     
                      // Input offset and output offset should be zero to use this optimization
-                     if (m1->Offset != NULL || m2 ->Offset != NULL ||
-                            cmsStageInputChannels(*pt1) != 3 || cmsStageOutputChannels(*pt1) != 3 ||
+                     if (m1->Offset != NULL || m2 ->Offset != NULL || 
+                            cmsStageInputChannels(*pt1) != 3 || cmsStageOutputChannels(*pt1) != 3 ||                            
                             cmsStageInputChannels(*pt2) != 3 || cmsStageOutputChannels(*pt2) != 3)
                             return FALSE;
 
@@ -252,10 +223,10 @@ cmsBool _MultiplyMatrix(cmsPipeline* Lut)
                      _RemoveElement(pt2);
                      _RemoveElement(pt1);
 
-                     // Now what if the result is a plain identity?
+                     // Now what if the result is a plain identity?                     
                      if (!isFloatMatrixIdentity(&res)) {
 
-                            // We can not get rid of full matrix
+                            // We can not get rid of full matrix                            
                             cmsStage* Multmat = cmsStageAllocMatrix(Lut->ContextID, 3, 3, (const cmsFloat64Number*) &res, NULL);
                             if (Multmat == NULL) return FALSE;  // Should never happen
 
@@ -306,7 +277,7 @@ cmsBool PreOptimize(cmsPipeline* Lut)
         // Remove float pcs Lab conversions
         Opt |= _Remove2Op(Lut, cmsSigXYZ2FloatPCS, cmsSigFloatPCS2XYZ);
 
-        // Simplify matrix.
+        // Simplify matrix. 
         Opt |= _MultiplyMatrix(Lut);
 
         if (Opt) AnyOpt = TRUE;
@@ -448,8 +419,8 @@ Prelin16Data* PrelinOpt16alloc(cmsContext ContextID,
 // Sampler implemented by another LUT. This is a clean way to precalculate the devicelink 3D CLUT for
 // almost any transform. We use floating point precision and then convert from floating point to 16 bits.
 static
-cmsInt32Number XFormSampler16(CMSREGISTER const cmsUInt16Number In[],
-                              CMSREGISTER cmsUInt16Number Out[],
+cmsInt32Number XFormSampler16(CMSREGISTER const cmsUInt16Number In[], 
+                              CMSREGISTER cmsUInt16Number Out[], 
                               CMSREGISTER void* Cargo)
 {
     cmsPipeline* Lut = (cmsPipeline*) Cargo;
@@ -538,11 +509,11 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
             px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
             py = ((cmsFloat64Number) At[1] * (p16->Domain[1])) / 65535.0;
             pz = ((cmsFloat64Number) At[2] * (p16->Domain[2])) / 65535.0;
-
+           
             x0 = (int) floor(px);
             y0 = (int) floor(py);
             z0 = (int) floor(pz);
-
+           
             if (((px - x0) != 0) ||
                 ((py - y0) != 0) ||
                 ((pz - z0) != 0)) return FALSE;  // Not on exact node
@@ -555,9 +526,9 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
             if (nChannelsIn == 1) {
 
                 px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
-
+                
                 x0 = (int) floor(px);
-
+                
                 if (((px - x0) != 0)) return FALSE; // Not on exact node
 
                 index = (int) p16 -> opta[0] * x0;
@@ -642,7 +613,7 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
 
             cmsToneCurve* InversePostLin = cmsReverseToneCurve(Curves[i]);
             if (InversePostLin == NULL) {
-                WhiteOut[i] = WhitePointOut[i];
+                WhiteOut[i] = WhitePointOut[i];    
 
             } else {
 
@@ -1092,7 +1063,7 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
     }
 
     OriginalLut = *Lut;
-
+   
     ColorSpace       = _cmsICCcolorSpace((int) T_COLORSPACE(*InputFormat));
     OutputColorSpace = _cmsICCcolorSpace((int) T_COLORSPACE(*OutputFormat));
 
@@ -1108,7 +1079,7 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
 
     // If the last stage of the original lut are curves, and those curves are
     // degenerated, it is likely the transform is squeezing and clipping
-    // the output from previous CLUT. We cannot optimize this case
+    // the output from previous CLUT. We cannot optimize this case     
     {
         cmsStage* last = cmsPipelineGetPtrToLastStage(OriginalLut);
 
@@ -1661,7 +1632,7 @@ cmsBool SetMatShaper(cmsPipeline* Dest, cmsToneCurve* Curve1[3], cmsMAT3* Mat, c
     FillSecondShaper(p ->Shaper2G, Curve2[1], Is8Bits);
     FillSecondShaper(p ->Shaper2B, Curve2[2], Is8Bits);
 
-    // Convert matrix to nFixed14. Note that those values may take more than 16 bits
+    // Convert matrix to nFixed14. Note that those values may take more than 16 bits 
     for (i=0; i < 3; i++) {
         for (j=0; j < 3; j++) {
             p ->Mat[i][j] = DOUBLE_TO_1FIXED14(Mat->v[i].n[j]);
@@ -1708,11 +1679,11 @@ cmsBool OptimizeMatrixShaper(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
        Src = *Lut;
 
        // Check for:
-       //
-       //    shaper-matrix-matrix-shaper
+       // 
+       //    shaper-matrix-matrix-shaper 
        //    shaper-matrix-shaper
-       //
-       // Both of those constructs are possible (first because abs. colorimetric).
+       // 
+       // Both of those constructs are possible (first because abs. colorimetric). 
        // additionally, In the first case, the input matrix offset should be zero.
 
        IdentityMat = FALSE;
@@ -1724,13 +1695,17 @@ cmsBool OptimizeMatrixShaper(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
               _cmsStageMatrixData* Data1 = (_cmsStageMatrixData*)cmsStageData(Matrix1);
               _cmsStageMatrixData* Data2 = (_cmsStageMatrixData*)cmsStageData(Matrix2);
 
+              // Only RGB to RGB
+              if (Matrix1->InputChannels != 3 || Matrix1->OutputChannels != 3 ||
+                  Matrix2->InputChannels != 3 || Matrix2->OutputChannels != 3) return FALSE;
+
               // Input offset should be zero
               if (Data1->Offset != NULL) return FALSE;
 
               // Multiply both matrices to get the result
               _cmsMAT3per(&res, (cmsMAT3*)Data2->Double, (cmsMAT3*)Data1->Double);
 
-              // Only 2nd matrix has offset, or it is zero
+              // Only 2nd matrix has offset, or it is zero 
               Offset = Data2->Offset;
 
               // Now the result is in res + Data2 -> Offset. Maybe is a plain identity?
@@ -1838,7 +1813,7 @@ _cmsOptimizationPluginChunkType _cmsOptimizationPluginChunk = { NULL };
 
 // Duplicates the zone of memory used by the plug-in in the new context
 static
-void DupPluginOptimizationList(struct _cmsContext_struct* ctx,
+void DupPluginOptimizationList(struct _cmsContext_struct* ctx, 
                                const struct _cmsContext_struct* src)
 {
    _cmsOptimizationPluginChunkType newHead = { NULL };
@@ -1855,15 +1830,15 @@ void DupPluginOptimizationList(struct _cmsContext_struct* ctx,
         entry = entry ->Next) {
 
             _cmsOptimizationCollection *newEntry = ( _cmsOptimizationCollection *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(_cmsOptimizationCollection));
-
-            if (newEntry == NULL)
+   
+            if (newEntry == NULL) 
                 return;
 
             // We want to keep the linked list order, so this is a little bit tricky
             newEntry -> Next = NULL;
             if (Anterior)
                 Anterior -> Next = newEntry;
-
+     
             Anterior = newEntry;
 
             if (newHead.OptimizationCollection == NULL)
@@ -1873,7 +1848,7 @@ void DupPluginOptimizationList(struct _cmsContext_struct* ctx,
   ctx ->chunks[OptimizationPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsOptimizationPluginChunkType));
 }
 
-void  _cmsAllocOptimizationPluginChunk(struct _cmsContext_struct* ctx,
+void  _cmsAllocOptimizationPluginChunk(struct _cmsContext_struct* ctx, 
                                          const struct _cmsContext_struct* src)
 {
   if (src != NULL) {
@@ -1946,7 +1921,7 @@ cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
         return TRUE;
     }
 
-    // Named color pipelines cannot be optimized
+    // Named color pipelines cannot be optimized 
     for (mpe = cmsPipelineGetPtrToFirstStage(*PtrLut);
         mpe != NULL;
         mpe = cmsStageNext(mpe)) {
@@ -1966,7 +1941,7 @@ cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
     if (*dwFlags & cmsFLAGS_NOOPTIMIZE)
         return FALSE;
 
-    // Try plug-in optimizations
+    // Try plug-in optimizations 
     for (Opts = ctx->OptimizationCollection;
          Opts != NULL;
          Opts = Opts ->Next) {
@@ -1978,14 +1953,14 @@ cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
             }
     }
 
-   // Try built-in optimizations
+   // Try built-in optimizations 
     for (Opts = DefaultOptimization;
          Opts != NULL;
          Opts = Opts ->Next) {
 
             if (Opts ->OptimizePtr(PtrLut, Intent, InputFormat, OutputFormat, dwFlags)) {
 
-                return TRUE;
+                return TRUE;  
             }
     }
 

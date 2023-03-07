@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -136,11 +107,11 @@ void CMSEXPORT cmsxyY2XYZ(cmsCIEXYZ* Dest, const cmsCIExyY* Source)
 }
 
 /*
-       The break point (24/116)^3 = (6/29)^3 is a very small amount of tristimulus
-       primary (0.008856).  Generally, this only happens for
-       nearly ideal blacks and for some orange / amber colors in transmission mode.
-       For example, the Z value of the orange turn indicator lamp lens on an
-       automobile will often be below this value.  But the Z does not
+       The break point (24/116)^3 = (6/29)^3 is a very small amount of tristimulus 
+       primary (0.008856).  Generally, this only happens for 
+       nearly ideal blacks and for some orange / amber colors in transmission mode.  
+       For example, the Z value of the orange turn indicator lamp lens on an 
+       automobile will often be below this value.  But the Z does not 
        contribute to the perceived color directly.
 */
 

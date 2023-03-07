@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -117,11 +88,11 @@
 #   define cmsINLINE static inline
 #endif
 
-// Allow signed overflow, we know this is harmless in this particular context
+// Allow signed overflow, we know this is harmless in this particular context 
 #if defined(__clang__)
 #   define CMS_NO_SANITIZE __attribute__((no_sanitize("signed-integer-overflow")))
 #else
-#   define CMS_NO_SANITIZE
+#   define CMS_NO_SANITIZE 
 #endif
 
 // Other replacement functions
@@ -229,8 +200,8 @@ cmsINLINE cmsUInt16Number _cmsQuickSaturateWord(cmsFloat64Number d)
 // Pthread support --------------------------------------------------------------------
 #ifndef CMS_NO_PTHREADS
 
-// This is the threading support. Unfortunately, it has to be platform-dependent because
-// windows does not support pthreads.
+// This is the threading support. Unfortunately, it has to be platform-dependent because 
+// windows does not support pthreads. 
 #ifdef CMS_IS_WINDOWS_
 
 #define WIN32_LEAN_AND_MEAN 1
@@ -266,22 +237,22 @@ cmsINLINE cmsUInt16Number _cmsQuickSaturateWord(cmsFloat64Number d)
 // versions of MSVC that don't have this API available.
 //
 // From: http://locklessinc.com/articles/pthreads_on_windows/
-// The pthreads API has an initialization macro that has no correspondence to anything in
-// the windows API. By investigating the internal definition of the critical section type,
-// one may work out how to initialize one without calling InitializeCriticalSection().
-// The trick here is that InitializeCriticalSection() is not allowed to fail. It tries
-// to allocate a critical section debug object, but if no memory is available, it sets
-// the pointer to a specific value. (One would expect that value to be NULL, but it is
-// actually (void *)-1 for some reason.) Thus we can use this special value for that
+// The pthreads API has an initialization macro that has no correspondence to anything in 
+// the windows API. By investigating the internal definition of the critical section type, 
+// one may work out how to initialize one without calling InitializeCriticalSection(). 
+// The trick here is that InitializeCriticalSection() is not allowed to fail. It tries 
+// to allocate a critical section debug object, but if no memory is available, it sets 
+// the pointer to a specific value. (One would expect that value to be NULL, but it is 
+// actually (void *)-1 for some reason.) Thus we can use this special value for that 
 // pointer, and the critical section code will work.
 
-// The other important part of the critical section type to initialize is the number
-// of waiters. This controls whether or not the mutex is locked. Fortunately, this
-// part of the critical section is unlikely to change. Apparently, many programs
-// already test critical sections to see if they are locked using this value, so
+// The other important part of the critical section type to initialize is the number 
+// of waiters. This controls whether or not the mutex is locked. Fortunately, this 
+// part of the critical section is unlikely to change. Apparently, many programs 
+// already test critical sections to see if they are locked using this value, so 
 // Microsoft felt that it was necessary to keep it set at -1 for an unlocked critical
-// section, even when they changed the underlying algorithm to be more scalable.
-// The final parts of the critical section object are unimportant, and can be set
+// section, even when they changed the underlying algorithm to be more scalable. 
+// The final parts of the critical section object are unimportant, and can be set 
 // to zero for their defaults. This yields to an initialization macro:
 
 typedef CRITICAL_SECTION _cmsMutex;
@@ -321,7 +292,7 @@ cmsINLINE int _cmsUnlockPrimitive(_cmsMutex *m)
     LeaveCriticalSection(m);
     return 0;
 }
-
+    
 cmsINLINE int _cmsInitMutexPrimitive(_cmsMutex *m)
 {
     InitializeCriticalSection(m);
@@ -364,7 +335,7 @@ cmsINLINE int _cmsUnlockPrimitive(_cmsMutex *m)
 {
     return pthread_mutex_unlock(m);
 }
-
+    
 cmsINLINE int _cmsInitMutexPrimitive(_cmsMutex *m)
 {
     return pthread_mutex_init(m, NULL);
@@ -403,7 +374,7 @@ cmsINLINE int _cmsUnlockPrimitive(_cmsMutex *m)
     cmsUNUSED_PARAMETER(m);
     return 0;
 }
-
+    
 cmsINLINE int _cmsInitMutexPrimitive(_cmsMutex *m)
 {
     cmsUNUSED_PARAMETER(m);
@@ -472,7 +443,7 @@ cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* P
 
 // ---------------------------------------------------------------------------------------------------------
 
-// Suballocators.
+// Suballocators. 
 typedef struct _cmsSubAllocator_chunk_st {
 
     cmsUInt8Number* Block;
@@ -499,13 +470,13 @@ void*             _cmsSubAllocDup(_cmsSubAllocator* s, const void *ptr, cmsUInt3
 
 // ----------------------------------------------------------------------------------
 
-// The context clients.
+// The context clients. 
 typedef enum {
 
     UserPtr,            // User-defined pointer
     Logger,
     AlarmCodesContext,
-    AdaptationStateContext,
+    AdaptationStateContext, 
     MemPlugin,
     InterpPlugin,
     CurvesPlugin,
@@ -528,7 +499,7 @@ typedef enum {
 // Container for memory management plug-in.
 typedef struct {
 
-    _cmsMallocFnPtrType     MallocPtr;
+    _cmsMallocFnPtrType     MallocPtr;    
     _cmsMalloZerocFnPtrType MallocZeroPtr;
     _cmsFreeFnPtrType       FreePtr;
     _cmsReallocFnPtrType    ReallocPtr;
@@ -542,21 +513,21 @@ void  _cmsInstallAllocFunctions(cmsPluginMemHandler* Plugin, _cmsMemPluginChunkT
 
 // Internal structure for context
 struct _cmsContext_struct {
-
+    
     struct _cmsContext_struct* Next;  // Points to next context in the new style
     _cmsSubAllocator* MemPool;        // The memory pool that stores context data
-
-    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is hold in the suballocator.
+    
+    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is hold in the suballocator. 
                                       // If NULL, then it reverts to global Context0
 
     _cmsMemPluginChunkType DefaultMemoryManager;  // The allocators used for creating the context itself. Cannot be overridden
 };
 
-// Returns a pointer to a valid context structure, including the global one if id is zero.
+// Returns a pointer to a valid context structure, including the global one if id is zero. 
 // Verifies the magic number.
 struct _cmsContext_struct* _cmsGetContext(cmsContext ContextID);
 
-// Returns the block assigned to the specific zone.
+// Returns the block assigned to the specific zone. 
 void*     _cmsContextGetClientChunk(cmsContext id, _cmsMemoryClient mc);
 
 
@@ -574,13 +545,13 @@ typedef struct {
 // The global Context0 storage for error logger
 extern  _cmsLogErrorChunkType  _cmsLogErrorChunk;
 
-// Allocate and init error logger container.
-void _cmsAllocLogErrorChunk(struct _cmsContext_struct* ctx,
+// Allocate and init error logger container. 
+void _cmsAllocLogErrorChunk(struct _cmsContext_struct* ctx, 
                             const struct _cmsContext_struct* src);
 
 // Container for alarm codes -- not a plug-in
 typedef struct {
-
+   
     cmsUInt16Number AlarmCodes[cmsMAXCHANNELS];
 
 } _cmsAlarmCodesChunkType;
@@ -588,13 +559,13 @@ typedef struct {
 // The global Context0 storage for alarm codes
 extern  _cmsAlarmCodesChunkType _cmsAlarmCodesChunk;
 
-// Allocate and init alarm codes container.
-void _cmsAllocAlarmCodesChunk(struct _cmsContext_struct* ctx,
+// Allocate and init alarm codes container. 
+void _cmsAllocAlarmCodesChunk(struct _cmsContext_struct* ctx, 
                             const struct _cmsContext_struct* src);
 
 // Container for adaptation state -- not a plug-in
 typedef struct {
-
+    
     cmsFloat64Number  AdaptationState;
 
 } _cmsAdaptationStateChunkType;
@@ -603,7 +574,7 @@ typedef struct {
 extern  _cmsAdaptationStateChunkType    _cmsAdaptationStateChunk;
 
 // Allocate and init adaptation state container.
-void _cmsAllocAdaptationStateChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocAdaptationStateChunk(struct _cmsContext_struct* ctx, 
                                    const struct _cmsContext_struct* src);
 
 
@@ -611,7 +582,7 @@ void _cmsAllocAdaptationStateChunk(struct _cmsContext_struct* ctx,
 extern  _cmsMemPluginChunkType _cmsMemPluginChunk;
 
 // Allocate and init memory management container.
-void _cmsAllocMemPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocMemPluginChunk(struct _cmsContext_struct* ctx, 
                              const struct _cmsContext_struct* src);
 
 // Container for interpolation plug-in
@@ -625,7 +596,7 @@ typedef struct {
 extern  _cmsInterpPluginChunkType _cmsInterpPluginChunk;
 
 // Allocate and init interpolation container.
-void _cmsAllocInterpPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocInterpPluginChunk(struct _cmsContext_struct* ctx, 
                                 const struct _cmsContext_struct* src);
 
 // Container for parametric curves plug-in
@@ -639,7 +610,7 @@ typedef struct {
 extern  _cmsCurvesPluginChunkType _cmsCurvesPluginChunk;
 
 // Allocate and init parametric curves container.
-void _cmsAllocCurvesPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocCurvesPluginChunk(struct _cmsContext_struct* ctx, 
                                                       const struct _cmsContext_struct* src);
 
 // Container for formatters plug-in
@@ -653,7 +624,7 @@ typedef struct {
 extern  _cmsFormattersPluginChunkType _cmsFormattersPluginChunk;
 
 // Allocate and init formatters container.
-void _cmsAllocFormattersPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocFormattersPluginChunk(struct _cmsContext_struct* ctx, 
                                                        const struct _cmsContext_struct* src);
 
 // This chunk type is shared by TagType plug-in and MPE Plug-in
@@ -672,14 +643,14 @@ extern  _cmsTagTypePluginChunkType      _cmsTagTypePluginChunk;
 extern  _cmsTagTypePluginChunkType      _cmsMPETypePluginChunk;
 
 // Allocate and init Tag types container.
-void _cmsAllocTagTypePluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocTagTypePluginChunk(struct _cmsContext_struct* ctx, 
                                                         const struct _cmsContext_struct* src);
 // Allocate and init MPE container.
-void _cmsAllocMPETypePluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocMPETypePluginChunk(struct _cmsContext_struct* ctx, 
                                                         const struct _cmsContext_struct* src);
 // Container for tag plug-in
 typedef struct {
-
+   
     struct _cmsTagLinkedList_st* Tag;
 
 } _cmsTagPluginChunkType;
@@ -689,8 +660,8 @@ typedef struct {
 extern  _cmsTagPluginChunkType _cmsTagPluginChunk;
 
 // Allocate and init Tag container.
-void _cmsAllocTagPluginChunk(struct _cmsContext_struct* ctx,
-                                                      const struct _cmsContext_struct* src);
+void _cmsAllocTagPluginChunk(struct _cmsContext_struct* ctx, 
+                                                      const struct _cmsContext_struct* src); 
 
 // Container for intents plug-in
 typedef struct {
@@ -704,8 +675,8 @@ typedef struct {
 extern  _cmsIntentsPluginChunkType _cmsIntentsPluginChunk;
 
 // Allocate and init intents container.
-void _cmsAllocIntentsPluginChunk(struct _cmsContext_struct* ctx,
-                                                        const struct _cmsContext_struct* src);
+void _cmsAllocIntentsPluginChunk(struct _cmsContext_struct* ctx, 
+                                                        const struct _cmsContext_struct* src); 
 
 // Container for optimization plug-in
 typedef struct {
@@ -719,7 +690,7 @@ typedef struct {
 extern  _cmsOptimizationPluginChunkType _cmsOptimizationPluginChunk;
 
 // Allocate and init optimizers container.
-void _cmsAllocOptimizationPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocOptimizationPluginChunk(struct _cmsContext_struct* ctx, 
                                          const struct _cmsContext_struct* src);
 
 // Container for transform plug-in
@@ -733,7 +704,7 @@ typedef struct {
 extern  _cmsTransformPluginChunkType _cmsTransformPluginChunk;
 
 // Allocate and init transform container.
-void _cmsAllocTransformPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocTransformPluginChunk(struct _cmsContext_struct* ctx, 
                                         const struct _cmsContext_struct* src);
 
 // Container for mutex plug-in
@@ -750,7 +721,7 @@ typedef struct {
 extern  _cmsMutexPluginChunkType _cmsMutexPluginChunk;
 
 // Allocate and init mutex container.
-void _cmsAllocMutexPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocMutexPluginChunk(struct _cmsContext_struct* ctx, 
                                         const struct _cmsContext_struct* src);
 
 // Container for parallelization plug-in
@@ -758,8 +729,8 @@ typedef struct {
 
     cmsInt32Number      MaxWorkers;       // Number of workers to do as maximum
     cmsInt32Number      WorkerFlags;      // reserved
-    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
-
+    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions 
+    
 } _cmsParallelizationPluginChunkType;
 
 // The global Context0 storage for parallelization plug-in
@@ -1055,7 +1026,7 @@ CMSCHECKPOINT cmsFormatter CMSEXPORT _cmsGetFormatter(cmsContext ContextID,
                                                       cmsUInt32Number dwFlags);
 
 
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
 
 // Half float
 CMSCHECKPOINT cmsFloat32Number CMSEXPORT _cmsHalf2Float(cmsUInt16Number h);
@@ -1132,7 +1103,7 @@ typedef struct _cmstransform_struct {
     // A way to provide backwards compatibility with full xform plugins
     _cmsTransformFn OldXform;
 
-    // A one-worker transform entry for parallelization
+    // A one-worker transform entry for parallelization 
     _cmsTransform2Fn Worker;
     cmsInt32Number   MaxWorkers;
     cmsUInt32Number  WorkerFlags;
@@ -1142,7 +1113,7 @@ typedef struct _cmstransform_struct {
 // Copies extra channels from input to output if the original flags in the transform structure
 // instructs to do so. This function is called on all standard transform functions.
 void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
-                             void* out,
+                             void* out, 
                              cmsUInt32Number PixelsPerLine,
                              cmsUInt32Number LineCount,
                              const cmsStride* Stride);

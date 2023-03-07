@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -136,11 +107,11 @@ cmsUInt8Number* UnrollChunkyBytes(CMSREGISTER _cmsTRANSFORM* info,
 
     cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt32Number v;
-    cmsUInt32Number i;
+    cmsUInt32Number i;  
     cmsUInt32Number alpha_factor = 1;
 
     if (ExtraFirst) {
-
+        
         if (Premul && Extra)
             alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(accum[0]));
 
@@ -148,7 +119,7 @@ cmsUInt8Number* UnrollChunkyBytes(CMSREGISTER _cmsTRANSFORM* info,
     }
     else
     {
-        if (Premul && Extra)
+        if (Premul && Extra)        
             alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(accum[nChan]));
     }
 
@@ -208,7 +179,7 @@ cmsUInt8Number* UnrollPlanarBytes(CMSREGISTER _cmsTRANSFORM* info,
 
     if (ExtraFirst) {
 
-        if (Premul && Extra)
+        if (Premul && Extra)        
             alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(accum[0]));
 
 
@@ -224,7 +195,7 @@ cmsUInt8Number* UnrollPlanarBytes(CMSREGISTER _cmsTRANSFORM* info,
 
         cmsUInt32Number index = DoSwap ? (nChan - i - 1) : i;
         cmsUInt32Number v = FROM_8_TO_16(*accum);
-
+        
         v = Reverse ? REVERSE_FLAVOR_16(v) : v;
 
         if (Premul && alpha_factor > 0)
@@ -362,8 +333,8 @@ cmsUInt8Number* Unroll3BytesSkip1Swap(CMSREGISTER _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3BytesSkip1SwapSwapFirst(CMSREGISTER _cmsTRANSFORM* info,
-                                              CMSREGISTER cmsUInt16Number wIn[],
+cmsUInt8Number* Unroll3BytesSkip1SwapSwapFirst(CMSREGISTER _cmsTRANSFORM* info, 
+                                              CMSREGISTER cmsUInt16Number wIn[], 
                                               CMSREGISTER cmsUInt8Number* accum,
                                               CMSREGISTER cmsUInt32Number Stride)
 {
@@ -379,8 +350,8 @@ cmsUInt8Number* Unroll3BytesSkip1SwapSwapFirst(CMSREGISTER _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3BytesSkip1SwapFirst(CMSREGISTER _cmsTRANSFORM* info,
-                                           CMSREGISTER cmsUInt16Number wIn[],
+cmsUInt8Number* Unroll3BytesSkip1SwapFirst(CMSREGISTER _cmsTRANSFORM* info, 
+                                           CMSREGISTER cmsUInt16Number wIn[], 
                                            CMSREGISTER cmsUInt8Number* accum,
                                            CMSREGISTER cmsUInt32Number Stride)
 {
@@ -602,7 +573,7 @@ cmsUInt8Number* UnrollAnyWordsPremul(CMSREGISTER _cmsTRANSFORM* info,
    cmsUInt32Number SwapEndian  = T_ENDIAN16(info -> InputFormat);
    cmsUInt32Number DoSwap      = T_DOSWAP(info ->InputFormat);
    cmsUInt32Number Reverse     = T_FLAVOR(info ->InputFormat);
-   cmsUInt32Number SwapFirst   = T_SWAPFIRST(info -> InputFormat);
+   cmsUInt32Number SwapFirst   = T_SWAPFIRST(info -> InputFormat);   
    cmsUInt32Number ExtraFirst  = DoSwap ^ SwapFirst;
    cmsUInt32Number i;
 
@@ -945,7 +916,7 @@ cmsUInt8Number* UnrollLabDoubleTo16(CMSREGISTER _cmsTRANSFORM* info,
         cmsUInt8Number* pos_L;
         cmsUInt8Number* pos_a;
         cmsUInt8Number* pos_b;
-
+        
         pos_L = accum;
         pos_a = accum + Stride;
         pos_b = accum + Stride * 2;
@@ -974,7 +945,7 @@ cmsUInt8Number* UnrollLabFloatTo16(CMSREGISTER _cmsTRANSFORM* info,
                                     CMSREGISTER cmsUInt32Number  Stride)
 {
     cmsCIELab Lab;
-
+    
     if (T_PLANAR(info -> InputFormat)) {
 
         cmsUInt8Number* pos_L;
@@ -993,7 +964,7 @@ cmsUInt8Number* UnrollLabFloatTo16(CMSREGISTER _cmsTRANSFORM* info,
         return accum + sizeof(cmsFloat32Number);
     }
     else {
-
+ 
         Lab.L = ((cmsFloat32Number*) accum)[0];
         Lab.a = ((cmsFloat32Number*) accum)[1];
         Lab.b = ((cmsFloat32Number*) accum)[2];
@@ -1273,7 +1244,7 @@ cmsUInt8Number* Unroll8ToFloat(_cmsTRANSFORM* info,
     cmsUInt32Number Planar = T_PLANAR(info->InputFormat);
     cmsFloat32Number v;
     cmsUInt32Number i, start = 0;
-
+    
     Stride /= PixelSize(info->InputFormat);
 
     if (ExtraFirst)
@@ -1385,11 +1356,11 @@ cmsUInt8Number* UnrollFloatsToFloat(_cmsTRANSFORM* info,
     Stride /= PixelSize(info->InputFormat);
 
     if (Premul && Extra)
-    {
+    {        
         if (Planar)
-            alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan * Stride]) / maximum;
+            alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan * Stride]) / maximum;            
         else
-            alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan]) / maximum;
+            alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan]) / maximum;        
     }
 
     if (ExtraFirst)
@@ -1458,7 +1429,7 @@ cmsUInt8Number* UnrollDoublesToFloat(_cmsTRANSFORM* info,
         else
             alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan]) / maximum;
     }
-
+   
     if (ExtraFirst)
             start = Extra;
 
@@ -1617,11 +1588,11 @@ cmsUInt8Number* UnrollXYZFloatToFloat(_cmsTRANSFORM* info,
 
 
 cmsINLINE void lab4toFloat(cmsFloat32Number wIn[], cmsUInt16Number lab4[3])
-{
+{        
     cmsFloat32Number L = (cmsFloat32Number) lab4[0] / 655.35F;
     cmsFloat32Number a = ((cmsFloat32Number) lab4[1] / 257.0F) - 128.0F;
     cmsFloat32Number b = ((cmsFloat32Number) lab4[2] / 257.0F) - 128.0F;
-
+    
     wIn[0] = (L / 100.0F);                    // from 0..100 to 0..1
     wIn[1] = ((a + 128.0F) / 255.0F);         // form -128..+127 to 0..1
     wIn[2] = ((b + 128.0F) / 255.0F);
@@ -1715,7 +1686,7 @@ cmsUInt8Number* PackChunkyBytes(CMSREGISTER _cmsTRANSFORM* info,
     swap1 = output;
 
     if (ExtraFirst) {
-
+        
         if (Premul && Extra)
             alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(output[0]));
 
@@ -1736,9 +1707,9 @@ cmsUInt8Number* PackChunkyBytes(CMSREGISTER _cmsTRANSFORM* info,
         if (Reverse)
             v = REVERSE_FLAVOR_16(v);
 
-        if (Premul && alpha_factor != 0)
+        if (Premul)
         {
-            v = (cmsUInt16Number)((cmsUInt32Number)((cmsUInt32Number)v * alpha_factor + 0x8000) >> 16);
+            v = (cmsUInt16Number)((cmsUInt32Number)((cmsUInt32Number)v * alpha_factor + 0x8000) >> 16);            
         }
 
         *output++ = FROM_16_TO_8(v);
@@ -1777,7 +1748,7 @@ cmsUInt8Number* PackChunkyWords(CMSREGISTER _cmsTRANSFORM* info,
     cmsUInt16Number v = 0;
     cmsUInt32Number i;
     cmsUInt32Number alpha_factor = 0;
-
+    
     swap1 = (cmsUInt16Number*) output;
 
     if (ExtraFirst) {
@@ -1805,7 +1776,7 @@ cmsUInt8Number* PackChunkyWords(CMSREGISTER _cmsTRANSFORM* info,
         if (Reverse)
             v = REVERSE_FLAVOR_16(v);
 
-        if (Premul && alpha_factor != 0)
+        if (Premul)
         {
             v = (cmsUInt16Number)((cmsUInt32Number)((cmsUInt32Number)v * alpha_factor + 0x8000) >> 16);
         }
@@ -1872,7 +1843,7 @@ cmsUInt8Number* PackPlanarBytes(CMSREGISTER _cmsTRANSFORM* info,
         if (Reverse)
             v = REVERSE_FLAVOR_16(v);
 
-        if (Premul && alpha_factor != 0)
+        if (Premul)
         {
             v = (cmsUInt16Number)((cmsUInt32Number)((cmsUInt32Number)v * alpha_factor + 0x8000) >> 16);
         }
@@ -1932,7 +1903,7 @@ cmsUInt8Number* PackPlanarWords(CMSREGISTER _cmsTRANSFORM* info,
         if (Reverse)
             v =  REVERSE_FLAVOR_16(v);
 
-        if (Premul && alpha_factor != 0)
+        if (Premul)
         {
             v = (cmsUInt16Number)((cmsUInt32Number)((cmsUInt32Number)v * alpha_factor + 0x8000) >> 16);
         }
@@ -2787,9 +2758,9 @@ cmsUInt8Number* PackLabFloatFrom16(CMSREGISTER _cmsTRANSFORM* info,
     cmsLabEncoded2Float(&Lab, wOut);
 
     if (T_PLANAR(info -> OutputFormat)) {
-
+       
         cmsFloat32Number* Out = (cmsFloat32Number*) output;
-
+    
         Stride /= PixelSize(info->OutputFormat);
 
         Out[0]        = (cmsFloat32Number)Lab.L;
@@ -2963,7 +2934,7 @@ cmsUInt8Number* PackFloatFrom16(CMSREGISTER _cmsTRANSFORM* info,
                      ((cmsFloat32Number*)output)[i + start] = (cmsFloat32Number)v;
        }
 
-
+       
        if (Extra == 0 && SwapFirst) {
 
               memmove(swap1 + 1, swap1, (nChan - 1)* sizeof(cmsFloat32Number));
@@ -3206,7 +3177,7 @@ cmsUInt8Number* PackXYZDoubleFromFloat(_cmsTRANSFORM* Info,
 
 // ----------------------------------------------------------------------------------------------------------------
 
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
 
 // Decodes an stream of half floats to wIn[] described by input format
 
@@ -3438,7 +3409,7 @@ static const cmsFormatters16 InputFormatters16[] = {
                                              ANYSWAP|ANYEXTRA|ANYSPACE,   UnrollDoubleTo16},
     { FLOAT_SH(1)|BYTES_SH(4), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
                                              ANYSWAP|ANYEXTRA|ANYSPACE,   UnrollFloatTo16},
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
     { FLOAT_SH(1)|BYTES_SH(2), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
                                             ANYEXTRA|ANYSWAP|ANYSPACE,   UnrollHalfTo16},
 #endif
@@ -3458,7 +3429,7 @@ static const cmsFormatters16 InputFormatters16[] = {
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1),     ANYSPACE,  Unroll3BytesSkip1Swap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|SWAPFIRST_SH(1),  ANYSPACE,  Unroll3BytesSkip1SwapFirst},
 
-    { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),
+    { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),  
                                                                ANYSPACE,  Unroll3BytesSkip1SwapSwapFirst},
 
     { CHANNELS_SH(4)|BYTES_SH(1),                              ANYSPACE,  Unroll4Bytes},
@@ -3472,7 +3443,7 @@ static const cmsFormatters16 InputFormatters16[] = {
 
     { BYTES_SH(1),    ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYPREMUL|
                                            ANYEXTRA|ANYCHANNELS|ANYSPACE, UnrollChunkyBytes},
-
+    
     { CHANNELS_SH(1)|BYTES_SH(2),                              ANYSPACE,  Unroll1Word},
     { CHANNELS_SH(1)|BYTES_SH(2)|FLAVOR_SH(1),                 ANYSPACE,  Unroll1WordReversed},
     { CHANNELS_SH(1)|BYTES_SH(2)|EXTRA_SH(3),                  ANYSPACE,  Unroll1WordSkip3},
@@ -3525,7 +3496,7 @@ static const cmsFormattersFloat InputFormattersFloat[] = {
 
     {     BYTES_SH(2),              ANYPLANAR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
                                                         ANYCHANNELS|ANYSPACE, Unroll16ToFloat},
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
     {     FLOAT_SH(1)|BYTES_SH(2), ANYPLANAR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
                                                         ANYCHANNELS|ANYSPACE, UnrollHalfToFloat},
 #endif
@@ -3582,12 +3553,12 @@ static const cmsFormatters16 OutputFormatters16[] = {
 
     { TYPE_Lab_FLT,                                      ANYPLANAR|ANYEXTRA,  PackLabFloatFrom16},
     { TYPE_XYZ_FLT,                                      ANYPLANAR|ANYEXTRA,  PackXYZFloatFrom16},
-
+    
     { FLOAT_SH(1)|BYTES_SH(0),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
                                     ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackDoubleFrom16},
     { FLOAT_SH(1)|BYTES_SH(4),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
                                     ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackFloatFrom16},
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
     { FLOAT_SH(1)|BYTES_SH(2),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
                                     ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackHalfFrom16},
 #endif
@@ -3634,7 +3605,7 @@ static const cmsFormatters16 OutputFormatters16[] = {
 
     { BYTES_SH(1)|PLANAR_SH(1),    ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
                                               ANYCHANNELS|ANYSPACE|ANYPREMUL, PackPlanarBytes},
-
+        
 
     { CHANNELS_SH(1)|BYTES_SH(2),                                  ANYSPACE,  Pack1Word},
     { CHANNELS_SH(1)|BYTES_SH(2)|EXTRA_SH(1),                      ANYSPACE,  Pack1WordSkip1},
@@ -3663,7 +3634,7 @@ static const cmsFormatters16 OutputFormatters16[] = {
                                      ANYEXTRA|ANYCHANNELS|ANYSPACE|ANYPREMUL, PackChunkyWords},
     { BYTES_SH(2)|PLANAR_SH(1),     ANYFLAVOR|ANYENDIAN|ANYSWAP|ANYEXTRA|
                                      ANYCHANNELS|ANYSPACE|ANYPREMUL,          PackPlanarWords}
-
+    
 };
 
 
@@ -3680,8 +3651,8 @@ static const cmsFormattersFloat OutputFormattersFloat[] = {
                              ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackFloatsFromFloat },
     {     FLOAT_SH(1)|BYTES_SH(0), ANYPLANAR|
                              ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackDoublesFromFloat },
-#ifndef CMS_NO_HALF_SUPPORT
-    {     FLOAT_SH(1)|BYTES_SH(2),
+#ifndef CMS_NO_HALF_SUPPORT 
+    {     FLOAT_SH(1)|BYTES_SH(2),                                   
                              ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackHalfFromFloat },
 #endif
 
@@ -3748,7 +3719,7 @@ _cmsFormattersPluginChunkType _cmsFormattersPluginChunk = { NULL };
 
 // Duplicates the zone of memory used by the plug-in in the new context
 static
-void DupFormatterFactoryList(struct _cmsContext_struct* ctx,
+void DupFormatterFactoryList(struct _cmsContext_struct* ctx, 
                                                const struct _cmsContext_struct* src)
 {
    _cmsFormattersPluginChunkType newHead = { NULL };
@@ -3765,7 +3736,7 @@ void DupFormatterFactoryList(struct _cmsContext_struct* ctx,
 
            cmsFormattersFactoryList *newEntry = ( cmsFormattersFactoryList *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(cmsFormattersFactoryList));
 
-           if (newEntry == NULL)
+           if (newEntry == NULL) 
                return;
 
            // We want to keep the linked list order, so this is a little bit tricky
@@ -3783,13 +3754,13 @@ void DupFormatterFactoryList(struct _cmsContext_struct* ctx,
 }
 
 // The interpolation plug-in memory chunk allocator/dup
-void _cmsAllocFormattersPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocFormattersPluginChunk(struct _cmsContext_struct* ctx, 
                                     const struct _cmsContext_struct* src)
 {
       _cmsAssert(ctx != NULL);
 
      if (src != NULL) {
-
+        
          // Duplicate the LIST
          DupFormatterFactoryList(ctx, src);
      }

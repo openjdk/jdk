@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -256,11 +227,11 @@ typedef struct _cmsPluginBaseStruct {
 
 // Memory handler. Each new plug-in type replaces current behaviour
 
-typedef void* (* _cmsMallocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
+typedef void* (* _cmsMallocFnPtrType)(cmsContext ContextID, cmsUInt32Number size); 
 typedef void  (* _cmsFreeFnPtrType)(cmsContext ContextID, void *Ptr);
 typedef void* (* _cmsReallocFnPtrType)(cmsContext ContextID, void* Ptr, cmsUInt32Number NewSize);
 
-typedef void* (* _cmsMalloZerocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
+typedef void* (* _cmsMalloZerocFnPtrType)(cmsContext ContextID, cmsUInt32Number size); 
 typedef void* (* _cmsCallocFnPtrType)(cmsContext ContextID, cmsUInt32Number num, cmsUInt32Number size);
 typedef void* (* _cmsDupFnPtrType)(cmsContext ContextID, const void* Org, cmsUInt32Number size);
 
@@ -632,9 +603,9 @@ typedef void     (* _cmsTransformFn)(struct _cmstransform_struct *CMMcargo,   //
 typedef void     (*_cmsTransform2Fn)(struct _cmstransform_struct *CMMcargo,
                                      const void* InputBuffer,
                                      void* OutputBuffer,
-                                     cmsUInt32Number PixelsPerLine,
-                                     cmsUInt32Number LineCount,
-                                     const cmsStride* Stride);
+                                     cmsUInt32Number PixelsPerLine,     
+                                     cmsUInt32Number LineCount,          
+                                     const cmsStride* Stride);  
 
 typedef cmsBool  (* _cmsTransformFactory)(_cmsTransformFn* xform,
                                          void** UserData,
@@ -677,7 +648,7 @@ typedef struct {
 }  cmsPluginTransform;
 
 //----------------------------------------------------------------------------------------------------------
-// Mutex
+// Mutex 
 
 typedef void*    (* _cmsCreateMutexFnPtrType)(cmsContext ContextID);
 typedef void     (* _cmsDestroyMutexFnPtrType)(cmsContext ContextID, void* mtx);
@@ -700,7 +671,7 @@ CMSAPI cmsBool CMSEXPORT _cmsLockMutex(cmsContext ContextID, void* mtx);
 CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
 
 //----------------------------------------------------------------------------------------------------------
-// Parallelization
+// Parallelization 
 
 CMSAPI _cmsTransform2Fn CMSEXPORT _cmsGetTransformWorker(struct _cmstransform_struct* CMMcargo);
 CMSAPI cmsInt32Number   CMSEXPORT _cmsGetTransformMaxWorkers(struct _cmstransform_struct* CMMcargo);
@@ -714,7 +685,7 @@ typedef struct {
 
     cmsInt32Number      MaxWorkers;       // Number of starts to do as maximum
     cmsUInt32Number     WorkerFlags;      // Reserved
-    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
+    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions     
 
 }  cmsPluginParalellization;
 

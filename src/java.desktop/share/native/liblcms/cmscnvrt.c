@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -128,7 +99,7 @@ _cmsIntentsPluginChunkType _cmsIntentsPluginChunk = { NULL };
 
 // Duplicates the zone of memory used by the plug-in in the new context
 static
-void DupPluginIntentsList(struct _cmsContext_struct* ctx,
+void DupPluginIntentsList(struct _cmsContext_struct* ctx, 
                                                const struct _cmsContext_struct* src)
 {
    _cmsIntentsPluginChunkType newHead = { NULL };
@@ -142,15 +113,15 @@ void DupPluginIntentsList(struct _cmsContext_struct* ctx,
         entry = entry ->Next) {
 
             cmsIntentsList *newEntry = ( cmsIntentsList *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(cmsIntentsList));
-
-            if (newEntry == NULL)
+   
+            if (newEntry == NULL) 
                 return;
 
             // We want to keep the linked list order, so this is a little bit tricky
             newEntry -> Next = NULL;
             if (Anterior)
                 Anterior -> Next = newEntry;
-
+     
             Anterior = newEntry;
 
             if (newHead.Intents == NULL)
@@ -160,7 +131,7 @@ void DupPluginIntentsList(struct _cmsContext_struct* ctx,
   ctx ->chunks[IntentPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsIntentsPluginChunkType));
 }
 
-void  _cmsAllocIntentsPluginChunk(struct _cmsContext_struct* ctx,
+void  _cmsAllocIntentsPluginChunk(struct _cmsContext_struct* ctx, 
                                          const struct _cmsContext_struct* src)
 {
     if (src != NULL) {
@@ -263,7 +234,7 @@ cmsFloat64Number CHAD2Temp(const cmsMAT3* Chad)
 
 // Compute a CHAD based on a given temperature
 static
-    void Temp2CHAD(cmsMAT3* Chad, cmsFloat64Number Temp)
+void Temp2CHAD(cmsMAT3* Chad, cmsFloat64Number Temp)
 {
     cmsCIEXYZ White;
     cmsCIExyY ChromaticityOfWhite;
@@ -307,7 +278,7 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
 
 
         if (AdaptationState == 0.0) {
-
+        
             m1 = *ChromaticAdaptationMatrixOut;
             _cmsMAT3per(&m2, &m1, &Scale);
             // m2 holds CHAD from output white to D50 times abs. col. scaling
@@ -379,7 +350,7 @@ cmsBool IsEmptyLayer(cmsMAT3* m, cmsVEC3* off)
 
 // Compute the conversion layer
 static
-cmsBool ComputeConversion(cmsUInt32Number i,
+cmsBool ComputeConversion(cmsUInt32Number i, 
                           cmsHPROFILE hProfiles[],
                           cmsUInt32Number Intent,
                           cmsBool BPC,
@@ -399,11 +370,11 @@ cmsBool ComputeConversion(cmsUInt32Number i,
         cmsCIEXYZ WhitePointIn, WhitePointOut;
         cmsMAT3 ChromaticAdaptationMatrixIn, ChromaticAdaptationMatrixOut;
 
-        _cmsReadMediaWhitePoint(&WhitePointIn,  hProfiles[i-1]);
-        _cmsReadCHAD(&ChromaticAdaptationMatrixIn, hProfiles[i-1]);
+        if (!_cmsReadMediaWhitePoint(&WhitePointIn, hProfiles[i - 1])) return FALSE;
+        if (!_cmsReadCHAD(&ChromaticAdaptationMatrixIn, hProfiles[i - 1])) return FALSE;
 
-        _cmsReadMediaWhitePoint(&WhitePointOut,  hProfiles[i]);
-        _cmsReadCHAD(&ChromaticAdaptationMatrixOut, hProfiles[i]);
+        if (!_cmsReadMediaWhitePoint(&WhitePointOut, hProfiles[i])) return FALSE;
+        if (!_cmsReadCHAD(&ChromaticAdaptationMatrixOut, hProfiles[i])) return FALSE;
 
         if (!ComputeAbsoluteIntent(AdaptationState,
                                   &WhitePointIn,  &ChromaticAdaptationMatrixIn,
@@ -772,7 +743,7 @@ cmsPipeline*  BlackPreservingKOnlyIntents(cmsContext     ContextID,
         ICCIntents[i] = TranslateNonICCIntents(TheIntents[i]);
 
 
-    // Trim all CMYK devicelinks at the end
+    // Trim all CMYK devicelinks at the end  
     lastProfilePos = nProfiles - 1;
     hLastProfile = hProfiles[lastProfilePos];
 
@@ -837,7 +808,7 @@ cmsPipeline*  BlackPreservingKOnlyIntents(cmsContext     ContextID,
     if (!cmsStageSampleCLut16bit(CLUT, BlackPreservingGrayOnlySampler, (void*) &bp, 0))
         goto Error;
 
-
+    
     // Insert possible devicelinks at the end
     for (i = lastProfilePos + 1; i < nProfiles; i++)
     {
@@ -998,17 +969,17 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
     for (i=0; i < nProfiles; i++)
         ICCIntents[i] = TranslateNonICCIntents(TheIntents[i]);
 
-    // Trim all CMYK devicelinks at the end
+    // Trim all CMYK devicelinks at the end  
     lastProfilePos = nProfiles - 1;
     hLastProfile = hProfiles[lastProfilePos];
 
     while (lastProfilePos > 1)
-    {
+    {   
         hLastProfile = hProfiles[--lastProfilePos];
         if (cmsGetColorSpace(hLastProfile) != cmsSigCmykData ||
             cmsGetDeviceClass(hLastProfile) != cmsSigLinkClass)
-            break;
-    }
+            break;        
+    } 
 
     preservationProfilesCount = lastProfilePos + 1;
 
@@ -1085,9 +1056,9 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
 
     cmsStageSampleCLut16bit(CLUT, BlackPreservingSampler, (void*) &bp, 0);
 
-    // Insert possible devicelinks at the end
+    // Insert possible devicelinks at the end    
     for (i = lastProfilePos + 1; i < nProfiles; i++)
-    {
+    {        
         cmsPipeline* devlink = _cmsReadDevicelinkLUT(hProfiles[i], ICCIntents[i]);
         if (devlink == NULL)
             goto Cleanup;

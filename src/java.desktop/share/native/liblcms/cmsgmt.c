@@ -1,32 +1,3 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
@@ -420,7 +391,7 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
             if (!cmsPipelineInsertStage(Gamut, cmsAT_BEGIN, CLUT)) {
                 cmsPipelineFree(Gamut);
                 Gamut = NULL;
-            }
+            } 
             else {
                 cmsStageSampleCLut16bit(CLUT, GamutSampler, (void*) &Chain, 0);
             }
@@ -623,9 +594,9 @@ cmsBool CMSEXPORT cmsDesaturateLab(cmsCIELab* Lab,
 
 // Detect whatever a given ICC profile works in linear (gamma 1.0) space
 // Actually, doing that "well" is quite hard, since every component may behave completely different.
-// Since the true point of this function is to detect suitable optimizations, I am imposing some requirements
+// Since the true point of this function is to detect suitable optimizations, I am imposing some requirements 
 // that simplifies things: only RGB, and only profiles that can got in both directions.
-// The algorithm obtains Y from a syntetical gray R=G=B. Then least squares fitting is used to estimate gamma.
+// The algorithm obtains Y from a syntetical gray R=G=B. Then least squares fitting is used to estimate gamma. 
 // For gamma close to 1.0, RGB is linear. On profiles not supported, -1 is returned.
 
 cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFloat64Number threshold)
@@ -645,7 +616,7 @@ cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFlo
         return -1;
 
     cl = cmsGetDeviceClass(hProfile);
-    if (cl != cmsSigInputClass && cl != cmsSigDisplayClass &&
+    if (cl != cmsSigInputClass && cl != cmsSigDisplayClass && 
         cl != cmsSigOutputClass && cl != cmsSigColorSpaceClass)
         return -1;
 
@@ -653,17 +624,17 @@ cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFlo
     hXYZ = cmsCreateXYZProfileTHR(ContextID);
     if (hXYZ == NULL)
         return -1;
-    xform = cmsCreateTransformTHR(ContextID, hProfile, TYPE_RGB_16, hXYZ, TYPE_XYZ_DBL,
+    xform = cmsCreateTransformTHR(ContextID, hProfile, TYPE_RGB_16, hXYZ, TYPE_XYZ_DBL, 
                                     INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE);
 
     if (xform == NULL) { // If not RGB or forward direction is not supported, regret with the previous error
 
-        cmsCloseProfile(hXYZ);
+        cmsCloseProfile(hXYZ);        
         return -1;
     }
 
     for (i = 0; i < 256; i++) {
-        rgb[i][0] = rgb[i][1] = rgb[i][2] = FROM_8_TO_16(i);
+        rgb[i][0] = rgb[i][1] = rgb[i][2] = FROM_8_TO_16(i);       
     }
 
     cmsDoTransform(xform, rgb, XYZ, 256);
@@ -676,9 +647,9 @@ cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFlo
     }
 
     Y_curve = cmsBuildTabulatedToneCurveFloat(ContextID, 256, Y_normalized);
-    if (Y_curve == NULL)
+    if (Y_curve == NULL)     
         return -1;
-
+    
     gamma = cmsEstimateGamma(Y_curve, threshold);
 
     cmsFreeToneCurve(Y_curve);

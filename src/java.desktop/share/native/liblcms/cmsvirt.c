@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -208,7 +179,7 @@ cmsHPROFILE CMSEXPORT cmsCreateRGBProfileTHR(cmsContext ContextID,
 
     if (TransferFunction) {
 
-        // Tries to minimize space. Thanks to Richard Hughes for this nice idea
+        // Tries to minimize space. Thanks to Richard Hughes for this nice idea         
         if (!cmsWriteTag(hICC, cmsSigRedTRCTag,   (void*) TransferFunction[0])) goto Error;
 
         if (TransferFunction[1] == TransferFunction[0]) {
@@ -785,7 +756,7 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
            cmsxyY2XYZ(&bchsw.WPsrc, &WhitePnt);
            cmsWhitePointFromTemp(&WhitePnt, TempDest);
            cmsxyY2XYZ(&bchsw.WPdest, &WhitePnt);
-
+     
     }
 
     hICC = cmsCreateProfilePlaceholder(ContextID);
@@ -880,7 +851,7 @@ cmsHPROFILE CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID)
     // Create a valid ICC 4 structure
     LUT = cmsPipelineAlloc(ContextID, 3, 1);
     if (LUT == NULL) goto Error;
-
+    
     EmptyTab[0] = EmptyTab[1] = EmptyTab[2] = cmsBuildTabulatedToneCurve16(ContextID, 2, Zero);
     PostLin = cmsStageAllocToneCurves(ContextID, 3, EmptyTab);
     OutLin  = cmsStageAllocToneCurves(ContextID, 1, EmptyTab);
@@ -1032,7 +1003,7 @@ typedef struct {
 
 } cmsAllowedLUT;
 
-#define cmsSig0 ((cmsTagSignature) 0)
+#define cmsSig0 ((cmsTagSignature) 0) 
 
 static const cmsAllowedLUT AllowedLUTTypes[] = {
 
@@ -1091,16 +1062,16 @@ const cmsAllowedLUT* FindCombination(const cmsPipeline* Lut, cmsBool IsV4, cmsTa
 cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat64Number Version, cmsUInt32Number dwFlags)
 {
     cmsHPROFILE hProfile = NULL;
-        cmsUInt32Number FrmIn, FrmOut;
-        cmsInt32Number ChansIn, ChansOut;
-        int ColorSpaceBitsIn, ColorSpaceBitsOut;
+	cmsUInt32Number FrmIn, FrmOut;
+	cmsInt32Number ChansIn, ChansOut;
+	int ColorSpaceBitsIn, ColorSpaceBitsOut;
     _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
     cmsPipeline* LUT = NULL;
     cmsStage* mpe;
     cmsContext ContextID = cmsGetTransformContextID(hTransform);
     const cmsAllowedLUT* AllowedLUT;
     cmsTagSignature DestinationTag;
-    cmsProfileClassSignature deviceClass;
+    cmsProfileClassSignature deviceClass; 
 
     _cmsAssert(hTransform != NULL);
 
@@ -1233,7 +1204,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
          if (!cmsWriteTag(hProfile, cmsSigMediaWhitePointTag, &xform ->ExitWhitePoint)) goto Error;
     }
 
-
+  
     // Per 7.2.15 in spec 4.3
     cmsSetHeaderRenderingIntent(hProfile, xform ->RenderingIntent);
 

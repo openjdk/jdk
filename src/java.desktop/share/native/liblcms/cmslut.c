@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -431,7 +402,7 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
 
     NewElem ->Double = (cmsFloat64Number*) _cmsCalloc(ContextID, n, sizeof(cmsFloat64Number));
     if (NewElem->Double == NULL) goto Error;
-
+   
     for (i=0; i < n; i++) {
         NewElem ->Double[i] = Matrix[i];
     }
@@ -440,12 +411,12 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
 
         NewElem ->Offset = (cmsFloat64Number*) _cmsCalloc(ContextID, Rows, sizeof(cmsFloat64Number));
         if (NewElem->Offset == NULL) goto Error;
-
+           
         for (i=0; i < Rows; i++) {
                 NewElem ->Offset[i] = Offset[i];
         }
     }
-
+    
     return NewMPE;
 
 Error:
@@ -1339,7 +1310,7 @@ cmsBool BlessLUT(cmsPipeline* lut)
     }
 }
 
-    return TRUE;
+    return TRUE;    
 }
 
 
@@ -1508,7 +1479,7 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
                  First = FALSE;
              }
              else {
-                if (Anterior != NULL)
+                if (Anterior != NULL) 
                     Anterior ->Next = NewMPE;
              }
 
@@ -1559,7 +1530,7 @@ int CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage
                 for (pt = lut ->Elements;
                      pt != NULL;
                      pt = pt -> Next) Anterior = pt;
-
+                
                 Anterior ->Next = mpe;
                 mpe ->Next = NULL;
             }
@@ -1568,7 +1539,7 @@ int CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage
             return FALSE;
     }
 
-    return BlessLUT(lut);
+    return BlessLUT(lut);    
 }
 
 // Unlink an element and return the pointer to it
@@ -1650,7 +1621,7 @@ cmsBool  CMSEXPORT cmsPipelineCat(cmsPipeline* l1, const cmsPipeline* l2)
                 return FALSE;
     }
 
-    return BlessLUT(l1);
+    return BlessLUT(l1);    
 }
 
 
@@ -1780,11 +1751,11 @@ cmsBool CMSEXPORT cmsPipelineEvalReverseFloat(cmsFloat32Number Target[],
     cmsFloat32Number  fx[4], x[4], xd[4], fxd[4];
     cmsVEC3 tmp, tmp2;
     cmsMAT3 Jacobian;
-
+    
     // Only 3->3 and 4->3 are supported
     if (lut ->InputChannels != 3 && lut ->InputChannels != 4) return FALSE;
     if (lut ->OutputChannels != 3) return FALSE;
-
+   
     // Take the hint as starting point if specified
     if (Hint == NULL) {
 

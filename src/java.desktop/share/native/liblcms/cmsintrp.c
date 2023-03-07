@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -79,9 +50,9 @@ void _cmsAllocInterpPluginChunk(struct _cmsContext_struct* ctx, const struct _cm
     _cmsAssert(ctx != NULL);
 
     if (src != NULL) {
-        from = src ->chunks[InterpPlugin];
+        from = src ->chunks[InterpPlugin];       
     }
-    else {
+    else { 
         static _cmsInterpPluginChunkType InterpPluginChunk = { NULL };
 
         from = &InterpPluginChunk;
@@ -112,7 +83,7 @@ cmsBool  _cmsRegisterInterpPlugin(cmsContext ContextID, cmsPluginBase* Data)
 
 // Set the interpolation method
 cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
-{
+{      
     _cmsInterpPluginChunkType* ptr = (_cmsInterpPluginChunkType*) _cmsContextGetClientChunk(ContextID, InterpPlugin);
 
     p ->Interpolation.Lerp16 = NULL;
@@ -120,7 +91,7 @@ cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
    // Invoke factory, possibly in the Plug-in
     if (ptr ->Interpolators != NULL)
         p ->Interpolation = ptr->Interpolators(p -> nInputs, p ->nOutputs, p ->dwFlags);
-
+    
     // If unsupported by the plug-in, go for the LittleCMS default.
     // If happens only if an extern plug-in is being used
     if (p ->Interpolation.Lerp16 == NULL)
@@ -187,7 +158,7 @@ cmsInterpParams* _cmsComputeInterpParamsEx(cmsContext ContextID,
 
 
 // This one is a wrapper on the anterior, but assuming all directions have same number of nodes
-cmsInterpParams* CMSEXPORT _cmsComputeInterpParams(cmsContext ContextID, cmsUInt32Number nSamples,
+cmsInterpParams* CMSEXPORT _cmsComputeInterpParams(cmsContext ContextID, cmsUInt32Number nSamples, 
                                                    cmsUInt32Number InputChan, cmsUInt32Number OutputChan, const void* Table, cmsUInt32Number dwFlags)
 {
     int i;
@@ -232,7 +203,7 @@ void LinLerp1D(CMSREGISTER const cmsUInt16Number Value[],
     // if last value or just one point
     if (Value[0] == 0xffff || p->Domain[0] == 0) {
 
-        Output[0] = LutTable[p -> Domain[0]];
+        Output[0] = LutTable[p -> Domain[0]];      
     }
     else
     {
@@ -250,7 +221,7 @@ void LinLerp1D(CMSREGISTER const cmsUInt16Number Value[],
 }
 
 // To prevent out of bounds indexing
-cmsINLINE cmsFloat32Number fclamp(cmsFloat32Number v)
+cmsINLINE cmsFloat32Number fclamp(cmsFloat32Number v) 
 {
     return ((v < 1.0e-9f) || isnan(v)) ? 0.0f : (v > 1.0f ? 1.0f : v);
 }
@@ -270,7 +241,7 @@ void LinLerp1Dfloat(const cmsFloat32Number Value[],
 
        // if last value...
        if (val2 == 1.0 || p->Domain[0] == 0) {
-           Output[0] = LutTable[p -> Domain[0]];
+           Output[0] = LutTable[p -> Domain[0]];          
        }
        else
        {
@@ -308,7 +279,7 @@ void Eval1Input(CMSREGISTER const cmsUInt16Number Input[],
        if (Input[0] == 0xffff || p16->Domain[0] == 0) {
 
            cmsUInt32Number y0 = p16->Domain[0] * p16->opta[0];
-
+           
            for (OutChan = 0; OutChan < p16->nOutputs; OutChan++) {
                Output[OutChan] = LutTable[y0 + OutChan];
            }
@@ -357,7 +328,7 @@ void Eval1InputFloat(const cmsFloat32Number Value[],
 
         for (OutChan = 0; OutChan < p->nOutputs; OutChan++) {
             Output[OutChan] = LutTable[start + OutChan];
-        }
+        }        
     }
     else
     {
@@ -779,7 +750,7 @@ void TetrahedralInterp16(CMSREGISTER const cmsUInt16Number Input[],
 
     Z0 = p -> opta[0] * z0;
     Z1 = (Input[2] == 0xFFFFU ? 0 : p->opta[0]);
-
+    
     LutTable += X0+Y0+Z0;
 
     // Output should be computed as x = ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest))
@@ -1302,14 +1273,14 @@ cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cm
                    Interpolation.Lerp16    =  Eval8Inputs;
                break;
 
-           case 9:
+           case 9: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval9InputsFloat;
                else
                    Interpolation.Lerp16 = Eval9Inputs;
                break;
 
-           case 10:
+           case 10: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval10InputsFloat;
                else
@@ -1323,28 +1294,28 @@ cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cm
                    Interpolation.Lerp16 = Eval11Inputs;
                break;
 
-           case 12:
+           case 12: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval12InputsFloat;
                else
                    Interpolation.Lerp16 = Eval12Inputs;
                break;
 
-           case 13:
+           case 13: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval13InputsFloat;
                else
                    Interpolation.Lerp16 = Eval13Inputs;
                break;
 
-           case 14:
+           case 14: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval14InputsFloat;
                else
                    Interpolation.Lerp16 = Eval14Inputs;
                break;
 
-           case 15:
+           case 15: 
                if (IsFloat)
                    Interpolation.LerpFloat = Eval15InputsFloat;
                else
