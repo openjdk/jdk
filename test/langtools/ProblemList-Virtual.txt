@@ -1,60 +1,19 @@
-#####
+####
 ## Filed bugs
 
-tools/javac/diags/RunExamples.java                                                              8253918 generic-all
-tools/javac/records/mandated_members/CheckRecordMembers.java                                    8253918 generic-all
-jdk/javadoc/doclet/testRecordTypes/TestRecordTypes.java                                         8253918 generic-all
-jdk/javadoc/tool/TestScriptInComment.java                                                       8254093 generic-all
-
-##########
-## Tests failing when main() is executed in additional vthread or in vthread instead of thread
-
+####
+# Incompatible tests.
 
 ####
 # Failed because jtreg wrapper can't catch exceptions in thread groups
 # or incorrently process negative tests
-
 tools/javac/NullQualifiedNew.java 0000000 generic-all
 tools/javac/NullQualifiedSuper2.java 0000000 generic-all
 tools/javac/generics/T5094318.java 0000000 generic-all
 tools/javac/api/T6395981.java 0000000 generic-all
 jdk/javadoc/tool/sourceOption/SourceOption.java 0000000 generic-all
 
-
-####
-# Incorrect stacktrace epxectectations
-tools/javac/launcher/SourceLauncherTest.java 0000000 generic-all
-
-
-####
-# result: Error. Agent communication error: java.io.EOFException; check console log for any additional details
-
-tools/javac/lambda/T8031967.java 0000000 generic-all
-tools/javac/lambda/LambdaParserTest.java 0000000 generic-all
-jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java 0000000 generic-all
-
-####
-# Exception: java.lang.ThreadDeath Error: Error while cleaning up threads after test
-
-jdk/jshell/ToolTabSnippetTest.java 0000000 generic-all
-
-
 ####
 # Tests failed because of unexpected --enable-preview
 tools/javac/launcher/GetResourceTest.java 0000000 generic-all
-
-
-###
-# NoClassDefFoundError/ExceptionInInitializerError due to use of Thread.stop
-jdk/jshell/PasteAndMeasurementsUITest.java 0000000 generic-all
-
-####
-# Uninvestigated jshell failures
-jdk/jshell/AnalyzeSnippetTest.java 0000000 generic-all
-jdk/jshell/ClassMembersTest.java 0000000 generic-all
-jdk/jshell/ClassesTest.java 0000000 generic-all
-jdk/jshell/CompletenessTest.java 0000000 generic-all
-jdk/jshell/CompletionSuggestionTest.java 0000000 generic-all
-jdk/jshell/ToolSimpleTest.java 0000000 generic-all
-jdk/jshell/ToolBasicTest.java 0000000 generic-all
-jdk/jshell/ToolRetainTest.java 0000000 generic-all
+tools/javac/launcher/SourceLauncherTest.java 0000000 generic-all
