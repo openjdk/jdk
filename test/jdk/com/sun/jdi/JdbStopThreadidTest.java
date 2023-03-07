@@ -111,8 +111,8 @@ public class JdbStopThreadidTest extends JdbTest {
     }
 
     private static final String DEBUGGEE_CLASS = JdbStopThreadidTestTarg.class.getName();
-    private static final String DEBUGGEE_THREAD_CLASS = JdbStopThreadidTestTarg.class.getName() + "$MyThread";
-    private static Pattern threadidPattern = Pattern.compile("MyThread\\)(\\S+)\\s+MYTHREAD-2");
+    private static final String DEBUGGEE_THREAD_CLASS = JdbStopThreadidTestTarg.class.getName() + "$MyTask";
+    private static Pattern threadidPattern = Pattern.compile("Thread\\)(\\S+)\\s+MYTHREAD-2");
 
     @Override
     protected void runCases() {
@@ -135,7 +135,7 @@ public class JdbStopThreadidTest extends JdbTest {
 
         // Continue until MYTHREAD-2 breakpoint is hit. If we hit any other breakpoint before
         // then (we aren't suppose to), then this test will fail.
-        jdb.command(JdbCommand.cont().waitForPrompt("Breakpoint hit: \"thread=MYTHREAD-2\", \\S+MyThread.brkMethod", true));
+        jdb.command(JdbCommand.cont().waitForPrompt("Breakpoint hit: \"thread=MYTHREAD-2\", \\S+MyTask.brkMethod", true));
         // Continue until the application exits. Once again, hitting a breakpoint will cause
         // a failure because we are not suppose to hit one.
         jdb.contToExit(1);
