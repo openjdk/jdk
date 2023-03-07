@@ -88,7 +88,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private static final String GLOBAL_LABEL = "Global";
 
 
-
     public static FilterChain createNewDefaultFilterChain() {
         FilterChain newCustomFilterChain = new FilterChain(CUSTOM_LABEL);
         newCustomFilterChain.addFilters(defaultFilterChain.getFilters());
@@ -103,7 +102,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
 
         public Component getListCellRendererComponent(JList jc, Object val, int idx,
                                                       boolean isSelected, boolean cellHasFocus) {
-            setText(val.toString());
+            setText(" " + val.toString());
             if (idx == 0) {
                 setForeground(Color.GRAY);
             } else {
@@ -137,11 +136,10 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         customFilterChain = createNewDefaultFilterChain();
         comboBox = new JComboBox<>();
         comboBox.setRenderer(new CustomCellRenderer());
-
         comboBox.addItem(customFilterChain);
         FilterChain globalFilterChain = new FilterChain(GLOBAL_LABEL);
+        globalFilterChain.addFilters(defaultFilterChain.getFilters());
         comboBox.addItem(globalFilterChain);
-
         comboBox.setSelectedItem(customFilterChain);
         filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
 
