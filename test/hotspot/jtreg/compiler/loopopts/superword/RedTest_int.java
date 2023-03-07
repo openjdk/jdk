@@ -70,34 +70,38 @@ public class RedTest_int {
         int[] c = new int[NUM];
         reductionInit1(a, b, c);
         int total = 0;
-        int valid = -753048064;
+        int valid = 1454604288;
         for (int j = 0; j < ITER; j++) {
-            total = sumReductionImplement(a, b, c);
+            total = sumReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Add Reduction");
 
+        total = 0;
         valid = 91586175;
         for (int j = 0; j < ITER; j++) {
-            total = orReductionImplement(a, b, c);
+            total = orReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Or Reduction");
 
+        total = -1;
         valid = 91492404;
         for (int j = 0; j < ITER; j++) {
-            total = andReductionImplement(a, b, c);
+            total = andReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "And Reduction");
 
+        total = -1;
         valid = -1;
         for (int j = 0; j < ITER; j++) {
-            total = xorReductionImplement(a, b, c);
+            total = xorReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Xor Reduction");
 
         reductionInit2(a, b, c);
-        valid = -801001471;
+        total = 1;
+        valid = 1690042369;
         for (int j = 0; j < ITER; j++) {
-            total = mulReductionImplement(a, b, c);
+            total = mulReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Mul Reduction");
     }
@@ -134,8 +138,8 @@ public class RedTest_int {
     public static int sumReductionImplement(
             int[] a,
             int[] b,
-            int[] c) {
-        int total = 0;
+            int[] c,
+            int total) {
         for (int i = 0; i < a.length; i++) {
             total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -151,8 +155,8 @@ public class RedTest_int {
     public static int orReductionImplement(
             int[] a,
             int[] b,
-            int[] c) {
-        int total = 0;
+            int[] c,
+            int total) {
         for (int i = 0; i < a.length; i++) {
             total |= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -168,8 +172,8 @@ public class RedTest_int {
     public static int andReductionImplement(
             int[] a,
             int[] b,
-            int[] c) {
-        int total = -1;
+            int[] c,
+            int total) {
         for (int i = 0; i < a.length; i++) {
             total &= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -185,8 +189,8 @@ public class RedTest_int {
     public static int xorReductionImplement(
             int[] a,
             int[] b,
-            int[] c) {
-        int total = -1;
+            int[] c,
+            int total) {
         for (int i = 0; i < a.length; i++) {
             total ^= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -202,8 +206,8 @@ public class RedTest_int {
     public static int mulReductionImplement(
             int[] a,
             int[] b,
-            int[] c) {
-        int total = 1;
+            int[] c,
+            int total) {
         for (int i = 0; i < a.length; i++) {
             total *= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -215,7 +219,9 @@ public class RedTest_int {
             int valid,
             String op) throws Exception {
         if (total != valid) {
-            throw new Exception(op + ": Failed");
+            throw new Exception(
+                "Invalid total: " + total + " " +
+                "Expected value = " + valid + " " + op + ": Failed");
         }
     }
 }

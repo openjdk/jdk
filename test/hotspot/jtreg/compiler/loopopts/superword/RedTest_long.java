@@ -71,34 +71,38 @@ public class RedTest_long {
         long[] c = new long[NUM];
         reductionInit1(a, b, c);
         long total = 0;
-        long valid = 46868116224L;
+        long valid = 374944929792000L;
         for (int j = 0; j < ITER; j++) {
-            total = sumReductionImplement(a, b, c);
+            total = sumReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Add Reduction");
 
+        total = 0;
         valid = 91586175;
         for (int j = 0; j < ITER; j++) {
-            total = orReductionImplement(a, b, c);
+            total = orReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Or Reduction");
 
+        total = -1;
         valid = 91492404;
         for (int j = 0; j < ITER; j++) {
-            total = andReductionImplement(a, b, c);
+            total = andReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "And Reduction");
 
+        total = -1;
         valid = -1;
         for (int j = 0; j < ITER; j++) {
-            total = xorReductionImplement(a, b, c);
+            total = xorReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Xor Reduction");
 
         reductionInit2(a, b, c);
-        valid = 2128241047975811073L;
+        total = 1;
+        valid = 2953257964269338625L;
         for (int j = 0; j < ITER; j++) {
-            total = mulReductionImplement(a, b, c);
+            total = mulReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Mul Reduction");
     }
@@ -137,8 +141,8 @@ public class RedTest_long {
     public static long sumReductionImplement(
             long[] a,
             long[] b,
-            long[] c) {
-        long total = 0;
+            long[] c,
+            long total) {
         for (int i = 0; i < a.length; i++) {
             total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -154,8 +158,8 @@ public class RedTest_long {
     public static long orReductionImplement(
             long[] a,
             long[] b,
-            long[] c) {
-        long total = 0;
+            long[] c,
+            long total) {
         for (int i = 0; i < a.length; i++) {
             total |= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -171,8 +175,8 @@ public class RedTest_long {
     public static long andReductionImplement(
             long[] a,
             long[] b,
-            long[] c) {
-        long total = -1;
+            long[] c,
+            long total) {
         for (int i = 0; i < a.length; i++) {
             total &= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -188,8 +192,8 @@ public class RedTest_long {
     public static long xorReductionImplement(
             long[] a,
             long[] b,
-            long[] c) {
-        long total = -1;
+            long[] c,
+            long total) {
         for (int i = 0; i < a.length; i++) {
             total ^= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -205,8 +209,8 @@ public class RedTest_long {
     public static long mulReductionImplement(
             long[] a,
             long[] b,
-            long[] c) {
-        long total = 1;
+            long[] c,
+            long total) {
         for (int i = 0; i < a.length; i++) {
             total *= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
@@ -218,7 +222,9 @@ public class RedTest_long {
             long valid,
             String op) throws Exception {
         if (total != valid) {
-            throw new Exception(op + ": Failed");
+            throw new Exception(
+                "Invalid total: " + total + " " +
+                "Expected value = " + valid + " " + op + ": Failed");
         }
     }
 }

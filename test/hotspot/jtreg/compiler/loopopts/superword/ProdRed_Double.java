@@ -113,7 +113,9 @@ public class ProdRed_Double {
             double valid,
             String op) throws Exception {
         if (total != valid) {
-            throw new Exception(op + ": Failed");
+            throw new Exception(
+                "Invalid total: " + total + " " +
+                "Expected value = " + valid + " " + op + ": Failed");
         }
     }
 
