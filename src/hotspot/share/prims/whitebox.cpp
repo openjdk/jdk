@@ -794,9 +794,12 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
     methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
     if (is_osr) {
       result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
-    } else if (mh->code() != nullptr) {
-      deopt_scope.mark(mh->code());
-      ++result;
+    } else {
+      MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      if (mh->code() != nullptr) {
+        deopt_scope.mark(mh->code());
+        ++result;
+      }
     }
     CodeCache::mark_for_deoptimization(&deopt_scope, mh());
   }
