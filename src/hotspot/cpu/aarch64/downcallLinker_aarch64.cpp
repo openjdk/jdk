@@ -90,7 +90,8 @@ public:
   }
 };
 
-static const int native_invoker_code_size = 1024;
+static const int native_invoker_code_base_size = 256;
+static const int native_invoker_size_per_arg = 8;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 int num_args,
@@ -100,8 +101,9 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 const GrowableArray<VMStorage>& output_registers,
                                                 bool needs_return_buffer,
                                                 int captured_state_mask) {
-  int locs_size = 64;
-  CodeBuffer code("nep_invoker_blob", native_invoker_code_size, locs_size);
+  int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_arg);
+  int locs_size = 1; // must be non-zero
+  CodeBuffer code("nep_invoker_blob", code_size, locs_size);
   DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
                           input_registers, output_registers,
                           needs_return_buffer, captured_state_mask);
