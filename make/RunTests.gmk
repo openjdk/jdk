@@ -763,7 +763,7 @@ define SetupRunJtregTestBody
   ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
     $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
-    $1_JTREG_BASIC_OPTIONS += -javaoption:--enable-preview
+    $1_JTREG_BASIC_OPTIONS += -vmoption:--enable-preview
     $1_JTREG_BASIC_OPTIONS += -exclude:$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt)
   endif
 

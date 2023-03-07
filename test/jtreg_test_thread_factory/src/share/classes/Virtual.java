@@ -38,25 +38,24 @@ public class Virtual implements ThreadFactory {
         System.setProperty("main.wrapper", "Virtual");
     }
 
+    private ThreadFactory factory;
+
     public Virtual() {
+        try {
+            factory = VirtualAPI.factory();
+        } catch (Throwable t) {
+            factory = task -> new Thread(task);
+        }
     }
+
 
     @Override
     public Thread newThread(Runnable task) {
         try {
-            ThreadFactory factory = VirtualAPI.instance().factory(true);
             return factory.newThread(task);
         } catch (Throwable t) {
-            ThreadFactory factory = new PlatformThreadFactory();
-            return factory.newThread(task);
+            throw new RuntimeException(t);
         }
-    }
-}
-
-
-class PlatformThreadFactory implements ThreadFactory {
-    public Thread newThread(Runnable command)  {
-        return new Thread(command);
     }
 }
 
@@ -65,32 +64,17 @@ class VirtualAPI {
     private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
 
     private ThreadFactory virtualThreadFactory;
-    private ThreadFactory platformThreadFactory;
 
 
     VirtualAPI() {
         try {
-
-            Class<?> vbuilderClass =Class.forName("java.lang.Thread$Builder$OfVirtual");
-            Class<?> pbuilderClass =Class.forName("java.lang.Thread$Builder$OfPlatform");
-
-
+            Class<?> vbuilderClass = Class.forName("java.lang.Thread$Builder$OfVirtual");
             MethodType vofMT = MethodType.methodType(vbuilderClass);
-            MethodType pofMT = MethodType.methodType(pbuilderClass);
-
             MethodHandle ofVirtualMH =  publicLookup.findStatic(Thread.class, "ofVirtual", vofMT);
-            MethodHandle ofPlatformMH =  publicLookup.findStatic(Thread.class, "ofPlatform", pofMT);
-
             Object virtualBuilder = ofVirtualMH.invoke();
-            Object platformBuilder = ofPlatformMH.invoke();
-
             MethodType factoryMT = MethodType.methodType(ThreadFactory.class);
             MethodHandle vfactoryMH =  publicLookup.findVirtual(vbuilderClass, "factory", factoryMT);
-            MethodHandle pfactoryMH =  publicLookup.findVirtual(pbuilderClass, "factory", factoryMT);
-
             virtualThreadFactory = (ThreadFactory) vfactoryMH.invoke(virtualBuilder);
-            platformThreadFactory = (ThreadFactory) pfactoryMH.invoke(platformBuilder);
-
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
@@ -98,11 +82,7 @@ class VirtualAPI {
 
     private static VirtualAPI instance = new VirtualAPI();
 
-    public static VirtualAPI instance() {
-        return instance;
-    }
-
-    public ThreadFactory factory(boolean isVirtual) {
-        return isVirtual ? virtualThreadFactory : platformThreadFactory;
+    public static ThreadFactory factory() {
+        return instance.virtualThreadFactory;
     }
 }

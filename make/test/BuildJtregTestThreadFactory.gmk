@@ -28,7 +28,6 @@ default: build
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include NativeCompilation.gmk
 
 TARGETS :=
 
@@ -38,22 +37,13 @@ TTF_BASEDIR := $(TOPDIR)/test/jtreg_test_thread_factory
 TTF_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_test_thread_factory
 TTF_JAR := $(TTF_SUPPORT)/jtregTestThreadFactory.jar
 
-JTREG_JAR := $(JT_HOME)/lib/jtreg.jar
-ifeq ($(wildcard $(JTREG_JAR)), )
-  $(error Cannot build main wrr without jtreg)
-endif
-
 TTF_CLASSPATH := $(JTREG_JAR)
 
 $(eval $(call SetupJavaCompilation, BUILD_JTREG_TEST_THREAD_FACTORY, \
-    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TTF_BASEDIR)/src/share/classes, \
     BIN := $(TTF_SUPPORT)/classes, \
-    DISABLED_WARNINGS := options serial try, \
-    COPY := .properties, \
-    CLASSPATH := $(JTREG_JAR), \
+    DISABLED_WARNINGS := preview, \
     JAR := $(TTF_JAR), \
-    JAVAC_FLAGS := -XDstringConcat=inline, \
 ))
 
 TARGETS += $(BUILD_JTREG_TEST_THREAD_FACTORY)
