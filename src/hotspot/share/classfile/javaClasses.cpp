@@ -2736,9 +2736,10 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
 }
 
 Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Handle throwable) {
-
-  // Throw ExceptionInInitializerError as the cause with this exception in
-  // the message and stack trace.
+  // Creates an ExceptionInInitializerError to be recorded as the initialization error when class initialization
+  // failed due to the passed in 'throwable'. We cannot save 'throwable' directly due to issues with keeping alive
+  // all objects referenced via its stacktrace. So instead we save a new EIIE instance, with the same message and
+  // symbolic stacktrace of 'throwable'.
 
   // Now create the message with the original exception and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
@@ -2753,14 +2754,12 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   }
 
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
-  Handle h_cause = Exceptions::new_exception(current, exception_name, st.as_string());
+  Handle h_eiie = Exceptions::new_exception(current, exception_name, st.as_string());
   // If new_exception returns a different exception while creating the exception,
-  // abandon the attempts to save initialization error and return null.
-  // We can't just return an original throwable (that is get passed as a parameter),
-  // because it would keep all the caller classes alive.
-  if (h_cause->klass()->name() != exception_name) {
+  // abandon the attempts to save the initialization error and return null.
+  if (h_eiie->klass()->name() != exception_name) {
     log_info(class, init)("Exception thrown while saving initialization exception %s",
-                        h_cause->klass()->external_name());
+                        h_eiie->klass()->external_name());
     return Handle();
   }
 
@@ -2777,16 +2776,16 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   if (!current->has_pending_exception()){
     Handle stack_trace(current, result.get_oop());
     assert(stack_trace->is_objArray(), "Should be an array");
-    java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
+    java_lang_Throwable::set_stacktrace(h_eiie(), stack_trace());
     // Clear backtrace because the stacktrace should be used instead.
-    set_backtrace(h_cause(), nullptr);
+    set_backtrace(h_eiie(), nullptr);
   } else {
     log_info(class, init)("Exception thrown while getting stack trace for initialization exception %s",
-                        h_cause->klass()->external_name());
+                        h_eiie->klass()->external_name());
     current->clear_pending_exception();
   }
 
-  return h_cause;
+  return h_eiie;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
