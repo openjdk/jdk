@@ -246,6 +246,18 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
+  // Neoverse V1
+  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+    if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
+      FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+  }
+
+  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
+    warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
+    FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }

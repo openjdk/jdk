@@ -190,7 +190,7 @@ public class TestFramework {
     /**
      * Creates an instance acting as a builder to test {@code testClass}.
      * Use this constructor if you want to use multiple run options (flags, helper classes, scenarios).
-     * Use the associated add methods ({@link #addFlags(String...)}, @link #addScenarios(Scenario...)},
+     * Use the associated add methods ({@link #addFlags(String...)}, {@link #addScenarios(Scenario...)},
      * {@link #addHelperClasses(Class...)}) to set up everything and then start the testing by invoking {@link #start()}.
      *
      * @param testClass the class to be tested by the framework.
