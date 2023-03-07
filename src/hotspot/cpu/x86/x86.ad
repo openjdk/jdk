@@ -7949,9 +7949,27 @@ instruct slice8B(vec dst, vec src, immI origin) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct slice16B(vec dst, vec src, immI origin) %{
+instruct slice16B_srldq(vec dst, vec src, immI origin, vec xtmp) %{
   predicate(Matcher::vector_length_in_bytes(n) == 16 &&
-            UseAVX == 0);
+            !VM_Version::supports_ssse3());
+  match(Set dst (VectorSlice (Binary dst src) origin));
+  effect(TEMP xtmp);
+  format %{ "vector_slice $dst, $src, $origin\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int shift_count = $origin$$constant * type2aelembytes(bt);
+    __ psrldq($dst$$XMMRegister, shift_count);
+    __ movdqu($xtmp$$XMMRegister, $src$$XMMRegister);
+    __ pslldq($xtmp$$XMMRegister, 16 - shift_count);
+    __ por($dst$$XMMRegister, $xtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct slice16B_alignr(vec dst, vec src, immI origin) %{
+  predicate(Matcher::vector_length_in_bytes(n) == 16 &&
+            UseAVX == 0 &&
+            VM_Version::supports_ssse3());
   match(Set dst (VectorSlice (Binary src dst) origin));
   format %{ "vector_slice $dst, $src, $origin" %}
   ins_encode %{

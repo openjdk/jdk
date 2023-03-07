@@ -911,7 +911,8 @@ public class TestVectorSlice {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.addFlags("--add-modules=jdk.incubator.vector")
+        testFramework.setDefaultWarmup(15000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
     }
 }
