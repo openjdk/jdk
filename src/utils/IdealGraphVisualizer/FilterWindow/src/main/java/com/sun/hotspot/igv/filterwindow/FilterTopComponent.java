@@ -85,7 +85,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
     private final ActionListener comboBoxSelectionChangedListener = l -> comboBoxSelectionChanged();
     private static final String CUSTOM_LABEL = "--Local--";
-    private static final String GLOBAL_LABEL = "Global";
+    private static final String GLOBAL_LABEL = "--Global--";
 
 
     public static FilterChain createNewDefaultFilterChain() {
@@ -140,7 +140,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         FilterChain globalFilterChain = new FilterChain(GLOBAL_LABEL);
         globalFilterChain.addFilters(defaultFilterChain.getFilters());
         comboBox.addItem(globalFilterChain);
-        comboBox.setSelectedItem(customFilterChain);
+        comboBox.setSelectedItem(globalFilterChain);
         filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
 
         manager = new ExplorerManager();
