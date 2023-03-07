@@ -191,6 +191,22 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * <p>
      * The current time will be used if the entry has no set modification time.
      *
+     * @apiNote When writing a directory entry, the STORED compression method
+     * should be used and the size and crc values should be set to 0:
+     *
+     * {@snippet lang="java" :
+     *     ZipEntry e = new ZipEntry("dir/");
+     *     if (e.isDirectory()) {
+     *         e.setMethod(ZipEntry.STORED);
+     *         e.setSize(0);
+     *         e.setCrc(0);
+     *     }
+     *     stream.putNextEntry(e);
+     * }
+     *
+     * This ensures strict compliance with the ZIP specification and
+     * allows optimal performance when processing directory entries.
+     *
      * @param     e the ZIP entry to be written
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
