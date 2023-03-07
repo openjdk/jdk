@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.ClassfileElement;
 import jdk.internal.classfile.ClassfileTransform;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
@@ -77,12 +78,12 @@ public class TransformImpl {
         }
     }
 
-    public record ClassTransformImpl(Consumer<ClassElement> consumer,
+    public record ResolvedTransformImpl<E extends ClassfileElement>(Consumer<E> consumer,
                                      Runnable endHandler,
                                      Runnable startHandler)
-            implements ClassfileTransform.ResolvedTransform<ClassElement> {
+            implements ClassfileTransform.ResolvedTransform<E> {
 
-        public ClassTransformImpl(Consumer<ClassElement> consumer) {
+        public ResolvedTransformImpl(Consumer<E> consumer) {
             this(consumer, NOTHING, NOTHING);
         }
     }
@@ -91,11 +92,11 @@ public class TransformImpl {
                                         ClassTransform next)
             implements UnresolvedClassTransform {
         @Override
-        public ClassTransformImpl resolve(ClassBuilder builder) {
+        public ResolvedTransformImpl<ClassElement> resolve(ClassBuilder builder) {
             ResolvedTransform<ClassElement> downstream = next.resolve(builder);
             ClassBuilder chainedBuilder = new ChainedClassBuilder(builder, downstream.consumer());
             ResolvedTransform<ClassElement> upstream = t.resolve(chainedBuilder);
-            return new ClassTransformImpl(upstream.consumer(),
+            return new ResolvedTransformImpl<>(upstream.consumer(),
                                           chainRunnable(upstream.endHandler(), downstream.endHandler()),
                                           chainRunnable(upstream.startHandler(), downstream.startHandler()));
         }
@@ -113,8 +114,8 @@ public class TransformImpl {
                                        Predicate<MethodModel> filter)
             implements UnresolvedClassTransform {
         @Override
-        public ClassTransformImpl resolve(ClassBuilder builder) {
-            return new ClassTransformImpl(ce -> {
+        public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
+            return new ResolvedTransformImpl<>(ce -> {
                 if (ce instanceof MethodModel mm && filter.test(mm))
                     builder.transformMethod(mm, transform);
                 else
@@ -136,8 +137,8 @@ public class TransformImpl {
                                       Predicate<FieldModel> filter)
             implements UnresolvedClassTransform {
         @Override
-        public ClassTransformImpl resolve(ClassBuilder builder) {
-            return new ClassTransformImpl(ce -> {
+        public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
+            return new ResolvedTransformImpl<>(ce -> {
                 if (ce instanceof FieldModel fm && filter.test(fm))
                     builder.transformField(fm, transform);
                 else
@@ -174,12 +175,6 @@ public class TransformImpl {
         }
     }
 
-    public record MethodTransformImpl(Consumer<MethodElement> consumer,
-                                      Runnable endHandler,
-                                      Runnable startHandler)
-            implements ClassfileTransform.ResolvedTransform<MethodElement> {
-    }
-
     public record ChainedMethodTransform(MethodTransform t,
                                          MethodTransform next)
             implements TransformImpl.UnresolvedMethodTransform {
@@ -188,7 +183,7 @@ public class TransformImpl {
             ResolvedTransform<MethodElement> downstream = next.resolve(builder);
             MethodBuilder chainedBuilder = new ChainedMethodBuilder(builder, downstream.consumer());
             ResolvedTransform<MethodElement> upstream = t.resolve(chainedBuilder);
-            return new MethodTransformImpl(upstream.consumer(),
+            return new ResolvedTransformImpl<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
                                            chainRunnable(upstream.startHandler(), downstream.startHandler()));
         }
@@ -206,7 +201,7 @@ public class TransformImpl {
             implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-            return new MethodTransformImpl(me -> {
+            return new ResolvedTransformImpl<>(me -> {
                 if (me instanceof CodeModel cm) {
                     builder.transformCode(cm, xform);
                 }
@@ -244,20 +239,14 @@ public class TransformImpl {
         }
     }
 
-    public record FieldTransformImpl(Consumer<FieldElement> consumer,
-                                     Runnable endHandler,
-                                     Runnable startHandler)
-            implements ClassfileTransform.ResolvedTransform<FieldElement> {
-    }
-
     public record ChainedFieldTransform(FieldTransform t, FieldTransform next)
             implements UnresolvedFieldTransform {
         @Override
-        public FieldTransformImpl resolve(FieldBuilder builder) {
+        public ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
             ResolvedTransform<FieldElement> downstream = next.resolve(builder);
             FieldBuilder chainedBuilder = new ChainedFieldBuilder(builder, downstream.consumer());
             ResolvedTransform<FieldElement> upstream = t.resolve(chainedBuilder);
-            return new FieldTransformImpl(upstream.consumer(),
+            return new ResolvedTransformImpl<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
                                            chainRunnable(upstream.startHandler(), downstream.startHandler()));
         }
@@ -290,20 +279,14 @@ public class TransformImpl {
         }
     }
 
-    public record CodeTransformImpl(Consumer<CodeElement> consumer,
-                                    Runnable endHandler,
-                                    Runnable startHandler)
-            implements ClassfileTransform.ResolvedTransform<CodeElement> {
-    }
-
     public record ChainedCodeTransform(CodeTransform t, CodeTransform next)
             implements UnresolvedCodeTransform {
         @Override
-        public CodeTransformImpl resolve(CodeBuilder builder) {
+        public ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
             ResolvedTransform<CodeElement> downstream = next.resolve(builder);
             CodeBuilder chainedBuilder = new ChainedCodeBuilder(builder, downstream.consumer());
             ResolvedTransform<CodeElement> upstream = t.resolve(chainedBuilder);
-            return new CodeTransformImpl(upstream.consumer(),
+            return new ResolvedTransformImpl<>(upstream.consumer(),
                                          chainRunnable(upstream.endHandler(), downstream.endHandler()),
                                          chainRunnable(upstream.startHandler(), downstream.startHandler()));
         }

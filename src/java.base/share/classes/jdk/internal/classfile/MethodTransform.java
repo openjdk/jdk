@@ -109,9 +109,9 @@ public non-sealed interface MethodTransform
 
     @Override
     default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-        return new TransformImpl.MethodTransformImpl(e -> accept(builder, e),
-                                                     () -> atEnd(builder),
-                                                     () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 
     @Override

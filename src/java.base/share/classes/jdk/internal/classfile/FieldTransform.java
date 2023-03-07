@@ -103,8 +103,8 @@ public non-sealed interface FieldTransform
 
     @Override
     default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-        return new TransformImpl.FieldTransformImpl(e -> accept(builder, e),
-                                                    () -> atEnd(builder),
-                                                    () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 }
