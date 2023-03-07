@@ -19,7 +19,7 @@ dnl Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 dnl or visit www.oracle.com if you need additional information or have any
 dnl questions.
 dnl
-dnl 
+dnl
 dnl Process this file with m4 cas.m4 to generate the CAE and wCAS
 dnl instructions used in aarch64.ad.
 dnl
