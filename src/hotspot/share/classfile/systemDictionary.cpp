@@ -1613,6 +1613,15 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   assert(k != nullptr, "just checking");
   assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
+
+  // In case we are not using CHA based vtables we need to make sure the loaded
+  // deopt is completed before anyone link this class.
+  // Linking is done with _init_monitor held, by loading and deopting with it
+  // held we make sure the deopt is completed before linking.
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->lock();
+  }
+
   DeoptimizationScope deopt_scope;
   {
     MutexLocker ml(current, Compile_lock);
@@ -1634,6 +1643,10 @@ void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   }
   // Perform the deopt handshake outside Compile_lock.
   deopt_scope.deoptimize_marked();
+
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->unlock();
+  }
 }
 
 // ----------------------------------------------------------------------------
