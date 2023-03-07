@@ -298,8 +298,6 @@ class JvmtiExport : public AllStatic {
   static void decode_version_values(jint version, int * major, int * minor,
                                     int * micro) NOT_JVMTI_RETURN;
 
-  static void check_vthread_and_suspend_at_safepoint(JavaThread *thread) NOT_JVMTI_RETURN;
-
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;

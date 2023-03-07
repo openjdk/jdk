@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,13 @@
 /*
  * @test
  * @bug 4851625 4900189 4939441
+ * @build Tests
+ * @build HyperbolicTests
+ * @run main HyperbolicTests
  * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh}
  */
+
+import static java.lang.Double.longBitsToDouble;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
@@ -248,19 +253,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testSinhCaseWithUlpDiff(nan, NaNd, 0);
+        }
+
         double [][] specialTestCases = {
             {0.0,                       0.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY}
         };
 
@@ -590,19 +588,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testCoshCaseWithUlpDiff(nan, NaNd, 0);
+        }
+
         double [][] specialTestCases = {
             {0.0,                       1.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY}
         };
 
@@ -938,19 +929,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testTanhCaseWithUlpDiff(nan, NaNd, 0);
+        }
+
         double [][] specialTestCases = {
             {0.0,                       0.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  1.0}
         };
 

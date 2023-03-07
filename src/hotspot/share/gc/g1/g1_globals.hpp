@@ -213,10 +213,9 @@
           "set container.")                                                 \
           range(1, 100)                                                     \
                                                                             \
-  develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failures to print.  "         \
-          "-1 means print all.")                                            \
-          range(-1, max_jint)                                               \
+  develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
+          "The maximum number of verification failures to print.")          \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
@@ -280,10 +279,6 @@
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
-                                                                            \
-  product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
-          "If true, perform verification of each heap region's "            \
-          "remembered set when verifying the heap during a full GC.")       \
                                                                             \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
