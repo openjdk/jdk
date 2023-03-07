@@ -587,7 +587,11 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
         if (!is_done) {
           // resolve it
           Handle recv;
-          LinkResolver::resolve_invoke(info, recv, pool, ConstantPool::encode_invokedynamic_index(indy_index), Bytecodes::_invokedynamic, CHECK);
+          LinkResolver::resolve_invoke(info,
+                                       recv,
+                                       pool,
+                                       ConstantPool::encode_invokedynamic_index(indy_index),
+                                       Bytecodes::_invokedynamic, CHECK);
           break;
         }
         cpcache->set_dynamic_call(info, indy_index);

@@ -411,12 +411,10 @@ class CompileReplay : public StackObj {
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
 
-      /*
-      ResolvedIndyEntry and ConstantPoolCacheEntry must currently coexist.
-      To address this, the variables below contain the values that *might*
-      be used to avoid multiple blocks of similar code. When CPCE is obsoleted
-      these can be removed
-      */
+      // ResolvedIndyEntry and ConstantPoolCacheEntry must currently coexist.
+      // To address this, the variables below contain the values that *might*
+      // be used to avoid multiple blocks of similar code. When CPCE is obsoleted
+      // these can be removed
       oop appendix = nullptr;
       Method* adapter_method = nullptr;
       int pool_index = 0;
@@ -450,7 +448,7 @@ class CompileReplay : public StackObj {
       } else if (strcmp(dyno_ref, "<adapter>") == 0) {
         if (!parse_terminator()) {
           report_error("no dynamic invoke found");
-          return NULL;
+          return nullptr;
         }
         Method* adapter = adapter_method;
         if (adapter == nullptr) {

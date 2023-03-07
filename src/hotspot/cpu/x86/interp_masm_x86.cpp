@@ -2072,6 +2072,10 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   // Get address of invokedynamic array
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  if (is_power_of_2(sizeof(ResolvedIndyEntry))) {
+    shll(index, log2i_exact(sizeof(ResolvedIndyEntry))); // Scale index by power of 2
+  } else {
+    imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  }
   lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyEntry>::base_offset_in_bytes()));
 }

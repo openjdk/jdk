@@ -930,9 +930,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
                 break;
             case "InvokeDynamic":
-                /*if (isInvokedynamicIndex(cpi)) {
-                    compilerToVM().resolveInvokeDynamicInPool(this, cpi);
-                }*/
+                // nothing
                 break;
             default:
                 // nothing

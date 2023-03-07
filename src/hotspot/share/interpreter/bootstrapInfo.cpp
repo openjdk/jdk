@@ -64,13 +64,14 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
   // Check if method is not null
-  if ( _pool->resolved_indy_entry_at(_indy_index)->method() != nullptr) {
-    methodHandle method(THREAD, _pool->resolved_indy_entry_at(_indy_index)->method());
+  ResolvedIndyEntry* indy_entry = _pool->resolved_indy_entry_at(_indy_index);
+  if (indy_entry->method() != nullptr) {
+    methodHandle method(THREAD, indy_entry->method());
     Handle appendix(THREAD, _pool->resolved_reference_from_indy(_indy_index));
     result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
-  } else if (_pool->resolved_indy_entry_at(_indy_index)->resolution_failed()) {
+  } else if (indy_entry->resolution_failed()) {
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(ConstantPool::encode_invokedynamic_index(_indy_index));
     ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;

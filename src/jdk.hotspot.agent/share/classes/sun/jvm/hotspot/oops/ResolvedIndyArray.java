@@ -25,8 +25,6 @@
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.oops.Metadata;
-import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;

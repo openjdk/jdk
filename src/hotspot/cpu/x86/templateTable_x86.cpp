@@ -2744,7 +2744,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(method, code); // this is essentially Bytecodes::_invokedynamic
-  __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
+  __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
   __ movptr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
@@ -2766,11 +2766,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
   // Push the appendix as a trailing parameter
   // since the parameter_size includes it.
-  __ push(rbx);
-  __ mov(rbx, index);
-  __ load_resolved_reference_at_index(appendix, rbx);
+  __ load_resolved_reference_at_index(appendix, index);
   __ verify_oop(appendix);
-  __ pop(rbx);
   __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
 

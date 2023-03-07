@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_OOPS_ResolvedIndyEntry_HPP
-#define SHARE_OOPS_ResolvedIndyEntry_HPP
+#ifndef SHARE_OOPS_RESOLVEDINDYENTRY_HPP
+#define SHARE_OOPS_RESOLVEDINDYENTRY_HPP
 
 // ResolvedIndyEntry contains the resolution information for invokedynamic bytecodes.
 // A member of this class can be initialized with the resolved references index and
@@ -68,7 +68,7 @@ public:
     _flags(0) {}
 
   // Bit shift to get flags
-  // Note: Only one flag exists at the moment but more could be added
+  // Note: Only two flags exists at the moment but more could be added
   enum {
       has_appendix_shift        = 1,
   };
@@ -80,11 +80,11 @@ public:
   u2 num_parameters()            const { return _number_of_parameters;      }
   u1 return_type()               const { return _return_type;               }
   bool is_resolved()             const { return _method != nullptr;         }
-  bool has_appendix()            const { return (_flags & (1 << has_appendix_shift))        != 0; }
-  bool resolution_failed()       const { return (_flags & 1)                                != 0; }
-  bool is_vfinal()               const { return false;                                            }
-  bool is_final()                const { return false;                                            }
-  bool has_local_signature()     const { return true;                                             }
+  bool has_appendix()            const { return (_flags & (1 << has_appendix_shift)) != 0; }
+  bool resolution_failed()       const { return (_flags & 1) != 0; }
+  bool is_vfinal()               const { return false; }
+  bool is_final()                const { return false; }
+  bool has_local_signature()     const { return true;  }
 
   // Printing
   void print_on(outputStream* st) const;
@@ -108,6 +108,8 @@ public:
     set_num_parameters(num_params);
     _return_type = return_type;
     set_flags(has_appendix);
+    // Set the method last since it is read lock free.
+    // Resolution is indicated by whether or not he method is set.
     Atomic::release_store(&_method, m);
   }
 
@@ -137,4 +139,4 @@ public:
   static ByteSize flags_offset()                     { return byte_offset_of(ResolvedIndyEntry, _flags);                     }
 };
 
-#endif // SHARE_OOPS_ResolvedIndyEntry_HPP
+#endif // SHARE_OOPS_RESOLVEDINDYENTRY_HPP

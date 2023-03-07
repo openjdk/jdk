@@ -1841,7 +1841,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
   mov(tmp, sizeof(ResolvedIndyEntry));
-  mul(index, index, tmp);
+  lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }

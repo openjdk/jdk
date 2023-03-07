@@ -636,7 +636,6 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   // Get the indy entry based on CP index
   int indy_index = -1;
   for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
-    tty->print_cr("Index: %d", cp->resolved_indy_entry_at(i)->constant_pool_index());
     if (cp->resolved_indy_entry_at(i)->constant_pool_index() == index) {
       indy_index = i;
     }
@@ -1523,9 +1522,6 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     if (cp->resolved_indy_entry_at(cp->decode_cpcache_index(index))->is_resolved()) {
       return Bytecodes::_invokedynamic;
     }
-  }
-  if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
-    return Bytecodes::_invokedynamic;
   }
   return -1;
 C2V_END
