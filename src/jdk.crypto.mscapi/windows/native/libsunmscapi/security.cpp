@@ -541,7 +541,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                 else
                 {
                     if ((dwKeySpec & CERT_NCRYPT_KEY_SPEC) == CERT_NCRYPT_KEY_SPEC) {
-                        PP("CNG %I64d", (__int64)hCryptProv);
+                        PP("CNG %lld", (long long) hCryptProv);
                     } else {
                         // Private key is available
                         BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey); //deprecated
@@ -556,7 +556,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         // Set cipher mode to ECB
                         DWORD dwCipherMode = CRYPT_MODE_ECB;
                         ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL); //deprecated
-                        PP("CAPI %I64d %I64d", (__int64)hCryptProv, (__int64)hUserKey);
+                        PP("CAPI %lld %lld", (long long) hCryptProv, (long long) hUserKey);
                     }
                     // If the private key is present in smart card, we may not be able to
                     // determine the key length by using the private key handle. However,
@@ -652,7 +652,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         {
                             // Generate certificate chain and store into cert chain
                             // collection
-                            jstring name = env->NewString(pszNameString, nameLen);
+                            jstring name = env->NewString((jchar*) pszNameString, nameLen);
                             if (name == NULL) {
                                 __leave;
                             }
@@ -672,7 +672,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                 {
                                     // Generate RSA certificate chain and store into cert
                                     // chain collection
-                                    jstring name = env->NewString(pszNameString, nameLen);
+                                    jstring name = env->NewString((jchar*) pszNameString, nameLen);
                                     if (name == NULL) {
                                         __leave;
                                     }
@@ -689,7 +689,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                 if (::NCryptGetProperty(
                                         hCryptProv, NCRYPT_ALGORITHM_PROPERTY,
                                         (PBYTE)buffer, 32, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
-                                    jstring name = env->NewString(pszNameString, nameLen);
+                                    jstring name = env->NewString((jchar*) pszNameString, nameLen);
                                     if (name == NULL) {
                                         __leave;
                                     }
@@ -1791,8 +1791,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
                 cchNameString);
 
             // Compare the certificate's friendly name with supplied alias name
-            if ((pszCertAliasName = env->GetStringChars(jCertAliasName, NULL))
-                == NULL) {
+            if ((pszCertAliasName = (wchar_t*) env->GetStringChars(jCertAliasName, NULL)) == NULL) {
                 __leave;
             }
             if (wcscmp(pszCertAliasName, pszNameString) == 0) {
@@ -1823,7 +1822,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             env->ReleaseStringUTFChars(jCertStoreName, pszCertStoreName);
 
         if (pszCertAliasName)
-            env->ReleaseStringChars(jCertAliasName, pszCertAliasName);
+            env->ReleaseStringChars(jCertAliasName, (jchar*) pszCertAliasName);
 
         if (pbCertEncoding)
             delete [] pbCertEncoding;
