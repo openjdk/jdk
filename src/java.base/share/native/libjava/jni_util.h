@@ -336,8 +336,7 @@ void* getProcessHandle();
 void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName);
 
-JNIEXPORT size_t JNICALL
-getLastErrorString(char *buf, size_t len);
+jstring getLastErrorString(JNIEnv *env);
 
 JNIEXPORT int JNICALL
 getErrorString(int err, char *buf, size_t len);

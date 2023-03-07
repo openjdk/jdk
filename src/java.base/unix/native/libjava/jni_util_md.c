@@ -60,12 +60,13 @@ void buildJniFunctionName(const char *sym, const char *cname,
     }
 }
 
-JNIEXPORT size_t JNICALL
-getLastErrorString(char *buf, size_t len)
+jstring
+getLastErrorString(JNIEnv *env)
 {
-    if (errno == 0 || len < 1) return 0;
-    getErrorString(errno, buf, len);
-    return strlen(buf);
+    char buf[256] = {0};
+    if (errno == 0) return NULL;
+    getErrorString(errno, buf, sizeof(buf));
+    return (*buf) ? JNU_NewStringPlatform(env, buf) : NULL;
 }
 
 JNIEXPORT int JNICALL
