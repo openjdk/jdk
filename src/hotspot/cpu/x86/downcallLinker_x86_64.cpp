@@ -101,7 +101,7 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 bool needs_return_buffer,
                                                 int captured_state_mask) {
   int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_arg);
-  int locs_size = 1; // can not be non-zero
+  int locs_size = 1; // can not be zero
   CodeBuffer code("nep_invoker_blob", code_size, locs_size);
   DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
                           input_registers, output_registers,
