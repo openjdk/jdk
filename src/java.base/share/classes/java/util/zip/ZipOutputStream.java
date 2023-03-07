@@ -195,7 +195,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * should be used and the size and crc values should be set to 0:
      *
      * {@snippet lang="java" :
-     *     ZipEntry e = new ZipEntry("dir/");
+     *     ZipEntry e = ...;
      *     if (e.isDirectory()) {
      *         e.setMethod(ZipEntry.STORED);
      *         e.setSize(0);
