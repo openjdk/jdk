@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_RESOURCEHASH_HPP
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -101,9 +102,11 @@ class ResourceHashtableBase : public STORAGE {
   template<typename Function>
   void unlink_impl(Function function) {
     const unsigned sz = table_size();
+    const int entries = _number_of_entries;
     int cnt = _number_of_entries;
+    unsigned int index = 0;
 
-    for (unsigned index = 0; cnt > 0 && index < sz; index++) {
+    for (; cnt > 0 && index < sz; index++) {
       Node** ptr = bucket_at(index);
       Node* node = *ptr;
 
@@ -124,6 +127,10 @@ class ResourceHashtableBase : public STORAGE {
         --cnt;
         assert(cnt > 0 || node == nullptr, "sanity check");
       }
+    }
+    if (!current_log_asynchronous()) {
+      log_debug(hashtables)("ResourceHashtableBase table_size = %d, break at %d, removed %d out of %d",
+                            sz, index, (entries - _number_of_entries), entries);
     }
   }
 

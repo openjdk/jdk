@@ -198,4 +198,5 @@ public:
 
 };
 
+bool current_log_asynchronous();
 #endif // SHARE_LOGGING_LOG_HPP
