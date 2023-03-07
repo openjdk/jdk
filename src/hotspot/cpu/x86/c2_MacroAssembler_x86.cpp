@@ -6113,7 +6113,7 @@ void C2_MacroAssembler::slice_32B_avx2(XMMRegister dst, XMMRegister src1, XMMReg
   assert(UseAVX >= 2, "");
   if (VM_Version::supports_avx512vl()) {
     // vperm2f128 requires legacy registers, so we switch to evalignd
-    evalignd(xtmp, src2, src1, 0x4, AVX_256bit);
+    evalignd(xtmp, src2, src1, 4, AVX_256bit);
   } else {
     vperm2i128(xtmp, src1, src2, 0x21);
   }
