@@ -40,7 +40,21 @@ import java.util.stream.Stream;
 
 public class TestLargeStub extends NativeTestHelper {
     @Test
-    public void testPCAssert() {
+    public void testDowncall() {
+        StructLayout doesNotFitInRegister = MemoryLayout.structLayout(
+            C_LONG_LONG,
+            C_LONG_LONG,
+            C_LONG_LONG
+        );
+
+        // Link a handle with a large number of arguments, to try and overflow the code buffer
+        Linker.nativeLinker().downcallHandle(
+                FunctionDescriptor.of(doesNotFitInRegister,
+                        Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)));
+    }
+
+    @Test
+    public void testUpcall() {
         StructLayout doesNotFitInRegister = MemoryLayout.structLayout(
             C_LONG_LONG,
             C_LONG_LONG,
