@@ -1,9 +1,8 @@
 ### Filed bugs
 
-vmTestbase/nsk/stress/jni/gclocker/gcl001.java                                                  8278569 generic-all
 gc/g1/TestPeriodicCollectionJNI.java                                                            8254852 generic-all
 vmTestbase/nsk/stress/jni/gclocker/gcl001.java                                                  8254852 generic-all
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id0                            8272791 generic-all
+
 
 ##########
 
