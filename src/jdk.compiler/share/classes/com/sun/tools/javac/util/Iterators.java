@@ -80,13 +80,13 @@ public class Iterators {
         }
     }
 
+    // Iterator is assumed to never return null from next()
     public static <E> Iterator<E> createFilterIterator(Iterator<E> input, Predicate<E> test) {
         return new Iterator<>() {
             private E current = update();
             private E update () {
                 while (input.hasNext()) {
                     E sym = input.next();
-                    assert sym != null; // otherwise, false positive EOF
                     if (test.test(sym)) {
                         return sym;
                     }
