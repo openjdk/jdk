@@ -49,7 +49,7 @@ Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz, jobject fdo,
     HANDLE h = (HANDLE)(handleval(env, fdo));
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOException(env, "Invalid handle");
         return IOS_THROWN;
     }
     result = ReadFile(h,          /* File handle to read */
@@ -85,7 +85,7 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz, jobject fdo
     HANDLE h = (HANDLE)(handleval(env, fdo));
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOException(env, "Invalid handle");
         return IOS_THROWN;
     }
 
@@ -131,7 +131,7 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
     OVERLAPPED ov;
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOException(env, "Invalid handle");
         return IOS_THROWN;
     }
 
@@ -199,9 +199,12 @@ Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz, jobject fdo
                            len,              /* number of bytes to write */
                            &written,         /* receives number of bytes written */
                            lpOv);            /* overlapped struct */
+    } else {
+        JNU_ThrowIOException(env, "Invalid handle");
+        return IOS_THROWN;
     }
 
-    if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
+    if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Write failed");
         return IOS_THROWN;
     }
@@ -248,9 +251,12 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
                 break;
             }
         }
+    } else {
+        JNU_ThrowIOException(env, "Invalid handle");
+        return IOS_THROWN;
     }
 
-    if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
+    if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Write failed");
         return IOS_THROWN;
     }
@@ -268,6 +274,10 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
     LARGE_INTEGER currPos;
     OVERLAPPED ov;
 
+    if (h == INVALID_HANDLE_VALUE) {
+        JNU_ThrowIOException(env, "Invalid handle");
+        return IOS_THROWN;
+    }
     currPos.QuadPart = 0;
     result = SetFilePointerEx(h, currPos, &currPos, FILE_CURRENT);
     if (result == 0) {
@@ -285,7 +295,7 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
                        &written,         /* receives number of bytes written */
                        &ov);             /* position to write at */
 
-    if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
+    if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Write failed");
         return IOS_THROWN;
     }
@@ -341,7 +351,7 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
             }
         }
     } else {
-        JNU_ThrowIOExceptionWithLastError(env, "Force failed");
+        JNU_ThrowIOException(env, "Invalid handle");
         return IOS_THROWN;
     }
     return 0;
