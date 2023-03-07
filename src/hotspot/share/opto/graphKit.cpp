@@ -3648,18 +3648,19 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
 }
 
 //
-// Position-Independent Materialization
+// Position-Agnostic Materialization
 // -------------------------------------
 // When PEA materializes a virtual object, it emits a cluster of nodes in the current position.
-// Unlike ordinary "floating" nodes, they are dependent on JVMState. An allocation is a safePointNode
-// and it also yields an exception. PEA can not use the current JVMState because those nodes are not native.
+// Unlike ordinary "floating" nodes, an AllocateNode is a subclass of SafePointNode so it is
+// dependent on JVMState. The JVMState of current position may not fit for an AllocateNode.
 //
-// To ensure we can safely embed them into the curren position, we have the following special handling:
+// To ensure we can safely embed nodes into the curren position, we have the following
+// measures:
 //
 // 1. Debug edges and JVMState of the cloned AllocateNode are not from current GraphKit.
 // We copy them from the original AllocateNode instead.
 //
-// 2. choose deoptimization on exception. A real exception may be accidentally dispatched to
+// 2. Choose deoptimization on exception. A real exception may be mistakenly dispatched to
 // the exception handler in current context.
 //
 Node* GraphKit::materialize_object(AllocateNode* alloc, const TypeOopPtr* oop_type) {

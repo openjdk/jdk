@@ -409,49 +409,45 @@ void PEAState::remove_alias(ObjID id, Node* var) {
 // lay in stack, locals or even argument section.
 static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
   PhaseGVN& gvn = kit->gvn();
-  JVMState* jvms = kit->jvms();
+  SafePointNode* map = kit->jvms()->map();
 
-  for (; jvms != nullptr; jvms = jvms->caller()) {
-    SafePointNode* map = jvms->map();
+  for (uint i = 0; i < map->req(); ++i) {
+    Node* x = map->in(i);
 
-    for (uint i = 0; i < map->req(); ++i) {
-      Node* x = map->in(i);
+    if (x == old) {
+      map->set_req(i, neww); // safepointNode is not hashashable.
+      map->record_replaced_node(old, neww); // flush to caller.
+    } else {
+      if (x->is_DecodeN()) {
+        x = x->in(1);
+        assert(x->Opcode() == Op_LoadN, "sanity check");
+      }
 
-      if (x == old) {
-        map->set_req(i, neww); // safepointNode is not hashashable.
-        map->record_replaced_node(old, neww); // flush to caller.
-      } else {
-        if (x->is_DecodeN()) {
-          x = x->in(1);
-          assert(x->Opcode() == Op_LoadN, "sanity check");
+      if (x->is_Load()) {
+        Node* addr = x->in(MemNode::Address);
+        Node_List stack(4);
+
+        while (addr->is_AddP() && addr->in(AddPNode::Base) == old) {
+          stack.push(addr);
+          addr = addr->in(AddPNode::Address);
         }
 
-        if (x->is_Load()) {
-          Node* addr = x->in(MemNode::Address);
-          Node_List stack(4);
+        if (stack.size() > 0) {
+          Node* prev = neww;
+          do {
+            addr = stack.pop();
+            prev = gvn.transform(new AddPNode(neww, prev, addr->in(AddPNode::Offset)));
+          } while (stack.size() > 0);
 
-          while (addr->is_AddP() && addr->in(AddPNode::Base) == old) {
-            stack.push(addr);
-            addr = addr->in(AddPNode::Address);
+          bool is_in_table = gvn.hash_delete(x);
+          x->set_req(MemNode::Address, prev);
+
+          // TODO: also need to update memory if it's from old object's memory!
+          if (is_in_table) {
+            gvn.hash_find_insert(x);
           }
-
-          if (stack.size() > 0) {
-            Node* prev = neww;
-            do {
-              addr = stack.pop();
-              prev = gvn.transform(new AddPNode(neww, prev, addr->in(AddPNode::Offset)));
-            } while (stack.size() > 0);
-
-            bool is_in_table = gvn.hash_delete(x);
-            x->set_req(MemNode::Address, prev);
-
-            // TODO: also need to update memory if it's from old object's memory!
-            if (is_in_table) {
-              gvn.hash_find_insert(x);
-            }
-          }
-        } // x->is_Load()
-      }
+        }
+      } // x->is_Load()
     }
   }
 }
