@@ -354,7 +354,18 @@ void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* obje
   PcDesc* last_pd = &_pcs[_pcs_length-1];
   if (objects != nullptr) {
     for (int i = objects->length() - 1; i >= 0; i--) {
-      objects->at(i)->as_ObjectValue()->set_visited(false);
+      ScopeValue* sv = objects->at(i);
+      if (sv->is_object()) {
+        sv->as_ObjectValue()->set_visited(false);
+      } else if (sv->is_object_merge()) {
+        ObjectMergeValue* obj = sv->as_ObjectMergeValue();
+        obj->set_visited(false);
+        for (int j = 0; j < obj->possible_objects()->length(); j++) {
+          obj->possible_objects()->at(j)->as_ObjectValue()->set_visited(false);
+        }
+      } else {
+        assert(false, "Unknown object type in object pool.");
+      }
     }
   }
   int offset = serialize_scope_values(objects);

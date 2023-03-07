@@ -238,7 +238,7 @@ public:
   int            mon_size() const { return scloff() - monoff(); }
   int            scl_size() const { return endoff() - scloff(); }
 
-  bool        is_loc(uint i) const { return locoff() <= i && i < stkoff(); }
+  bool        is_loc(uint i) const { return locoff()<= i && i < stkoff(); }
   bool        is_stk(uint i) const { return stkoff() <= i && i < monoff(); }
   bool        is_mon(uint i) const { return monoff() <= i && i < scloff(); }
   bool        is_scl(uint i) const { return scloff() <= i && i < endoff(); }
@@ -503,15 +503,76 @@ public:
 };
 
 //------------------------------SafePointScalarObjectNode----------------------
-// A SafePointScalarObjectNode represents the state of a scalarized object
-// at a safepoint.
+// A SafePointScalarObjectNode (aka spobj) represents the state of one or more
+// scalarized objects at a SafePointNode. There are two scenarios where a
+// 'spobj' is created: 1) A scalar replaced (SR) object is directly referenced
+// by a SafePoint; 2) A scalar replaced object is participating in an allocation
+// merge (Phi) and the Phi is referenced by a SafePoint. The schematics of how
+// 'spobj' is used in both scenarios are described below.
+//
+// Scenario 1: Representing an object directly referenced by a SafePoint.
+//   Only the _first_index, _n_fields and _alloc fields are required.
+//   _first_index : relative index in the SafePoint node's input array where pointers
+//                  to the values of the fields of the SR object are going to be stored.
+//   _nfields     : how many fields the SR object has.
+//   _alloc       : pointer to the Allocate object that previously created the SR object.
+//                  Only used for debug purposes.
+//
+// Scenario 2: Representing SR objects participating in merges.
+//  Only the _merge_pointer_idx and _number_of_objects fields are required.
+//  _number_of_objects : how many objects participating in the merge were SR
+//                       and are represented in this 'sobj'.
+//  _merge_pointer_idx : relative index in the SafePoint node's input array
+//                       where the description of the SR _allocation merge_
+//                       starts. The two entries in the SafePoint node's input
+//                       array starting at '_merge_pointer_idx` are Phi nodes
+//                       representing: 1) a pointer to any non-SR'ed object
+//                       participating in the merge, and 2) a "selector" Phi
+//                       identifying the input of the original allocation merge
+//                       that should be used during execution.
+//
+//    SafePoint->in(_merge_pointer_idx + 0) ----> Phi(Region, ccpp, NULL, NULL)
+//    SafePoint->in(_merge_pointer_idx + 1) ----> Phi(Region,   -1,    0,    1)
+//
+//    In the example above the last two objects participating in the merge were
+//    scalar replaced. Additional entries in the SafePoint node's input array
+//    are used to represent the scalar replaced objects in a similar fashion
+//    as in Scenario 1 above. The only difference is that we add a reference
+//    to the Klass of the SR'ed object before the list of fields.
+//
+//    SafePoint->in(_merge_pointer_idx + 0) ----> Phi(Region, ccpp, NULL, NULL)
+//    SafePoint->in(_merge_pointer_idx + 1) ----> Phi(Region,   -1,    0,    1)
+//    SafePoint->in(_merge_pointer_idx + 2) ----> "Point#Klass"
+//    SafePoint->in(_merge_pointer_idx + 3) --------> Parm4
+//    SafePoint->in(_merge_pointer_idx + 4) --------> Parm5
+//    SafePoint->in(_merge_pointer_idx + 5) ----> "Point#Klass"
+//    SafePoint->in(_merge_pointer_idx + 6) --------> Parm6
+//    SafePoint->in(_merge_pointer_idx + 6) --------> Parm7
+//
+//    The example above assumes that two objects of the class Point were scalar
+//    replaced. Each object has two non-static field.
 
 class SafePointScalarObjectNode: public TypeNode {
-  uint _first_index; // First input edge relative index of a SafePoint node where
-                     // states of the scalarized object fields are collected.
-                     // It is relative to the last (youngest) jvms->_scloff.
-  uint _n_fields;    // Number of non-static fields of the scalarized object.
-  DEBUG_ONLY(Node* _alloc;)
+  uint _first_index;              // First input edge relative index of a SafePoint node where
+                                  // states of the scalarized object fields are collected.
+                                  // It is relative to the last (youngest) jvms->_scloff.
+                                  // It will be zero if the Spobj is from a merge.
+
+  uint _n_fields;                 // Number of non-static fields of the scalarized object.
+                                  // It will be zero if the Spobj is from a merge.
+
+  DEBUG_ONLY(Node* _alloc;)       // Just for debugging purposes.
+
+  int _merge_pointer_idx;         // Only used when the Spobj is representing the scalar replacement
+                                  // of an allocation merge. This is the first input edge relative
+                                  // index of a SafePoint node where metadata information relative
+                                  // to restoring the merge is stored. The corresponding input
+                                  // in the associated SafePoint will point to a Phi representing
+                                  // potential non-scalar replaced objects.
+
+  uint _number_of_objects;        // How many scalar replaced objects this Spobj represents.
+                                  // It will always be >= 1. It can be more than 1 when Spobj
+                                  // was created for an allocation merge.
 
   virtual uint hash() const ; // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
@@ -523,7 +584,11 @@ public:
 #ifdef ASSERT
                             Node* alloc,
 #endif
-                            uint first_index, uint n_fields);
+                            uint first_index,
+                            uint n_fields,
+                            int merge_pointer_idx = -1,
+                            uint number_of_objects = 1);
+
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -541,6 +606,20 @@ public:
 #endif
 
   virtual uint size_of() const { return sizeof(*this); }
+
+  bool is_from_merge() const { return _merge_pointer_idx >= 0; }
+
+  int merge_pointer_idx(JVMState* jvms) const {
+    assert(jvms != NULL, "JVMS reference is NULL.");
+    return jvms->scloff() + _merge_pointer_idx;
+  }
+
+  int selector_idx(JVMState* jvms) const {
+    assert(jvms != NULL, "JVMS reference is NULL.");
+    return jvms->scloff() + _merge_pointer_idx + 1;
+  }
+
+  uint number_of_objects() const { return _number_of_objects; }
 
   // Assumes that "this" is an argument to a safepoint node "s", and that
   // "new_call" is being created to correspond to "s".  But the difference
@@ -735,6 +814,7 @@ public:
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
+  bool is_uncommon_trap() const;
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {

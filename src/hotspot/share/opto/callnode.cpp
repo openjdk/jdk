@@ -1103,13 +1103,16 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return CallNode::Ideal(phase, can_reshape);
 }
 
+//----------------------------is_uncommon_trap----------------------------
+// Returns true if this is an uncommon trap.
+bool CallStaticJavaNode::is_uncommon_trap() const {
+  return (_name != NULL && !strcmp(_name, "uncommon_trap"));
+}
+
 //----------------------------uncommon_trap_request----------------------------
 // If this is an uncommon trap, return the request code, else zero.
 int CallStaticJavaNode::uncommon_trap_request() const {
-  if (_name != NULL && !strcmp(_name, "uncommon_trap")) {
-    return extract_uncommon_trap_request(this);
-  }
-  return 0;
+  return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
@@ -1465,17 +1468,21 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
                                                      Node* alloc,
 #endif
                                                      uint first_index,
-                                                     uint n_fields) :
+                                                     uint n_fields,
+                                                     int merge_pointer_idx,
+                                                     uint number_of_objects) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
-  _n_fields(n_fields)
+  _n_fields(n_fields),
 #ifdef ASSERT
-  , _alloc(alloc)
+  _alloc(alloc),
 #endif
+  _merge_pointer_idx(merge_pointer_idx),
+  _number_of_objects(number_of_objects)
 {
 #ifdef ASSERT
-  if (!alloc->is_Allocate()
-      && !(alloc->Opcode() == Op_VectorBox)) {
+  if (merge_pointer_idx < 0 && // not a merge
+      !alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1521,8 +1528,8 @@ SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
 
 #ifndef PRODUCT
 void SafePointScalarObjectNode::dump_spec(outputStream *st) const {
-  st->print(" # fields@[%d..%d]", first_index(),
-             first_index() + n_fields() - 1);
+  st->print(" # fields@[%d..%d], ", first_index(), first_index() + n_fields() - 1);
+  st->print("merge_ptr_idx=%d, number_of_objects=%d", _merge_pointer_idx, _number_of_objects);
 }
 
 #endif

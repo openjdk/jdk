@@ -274,7 +274,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
-Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+Node* PhaseMacroExpand::make_arraycopy_load(Compile* comp, PhaseIterGVN* igvn, ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {
@@ -285,57 +285,57 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     Node* base = ac->in(ArrayCopyNode::Src);
-    Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
-    const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-    MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
+    Node* adr = igvn->transform(new AddPNode(base, base, igvn->MakeConX(offset)));
+    const TypePtr* adr_type = igvn->type(base)->is_ptr()->add_offset(offset);
+    MergeMemNode* mergemen = igvn->transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
+    res = ArrayCopyNode::load(bs, igvn, ctl, mergemen, adr, adr_type, type, bt);
   } else {
-    if (ac->modifies(offset, offset, &_igvn, true)) {
+    if (ac->modifies(offset, offset, igvn, true)) {
       assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
       uint shift = exact_log2(type2aelembytes(bt));
       Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
       Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
-      const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
-      const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
+      const TypeInt* src_pos_t = igvn->type(src_pos)->is_int();
+      const TypeInt* dest_pos_t = igvn->type(dest_pos)->is_int();
 
       Node* adr = NULL;
       const TypePtr* adr_type = NULL;
       if (src_pos_t->is_con() && dest_pos_t->is_con()) {
         intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, MakeConX(off)));
-        adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
+        adr = igvn->transform(new AddPNode(base, base, igvn->MakeConX(off)));
+        adr_type = igvn->type(base)->is_ptr()->add_offset(off);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Don't emit a new load from src if src == dst but try to get the value from memory instead
-          return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+          return value_from_mem(comp, igvn, ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
         }
       } else {
-        Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
+        Node* diff = igvn->transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
 #ifdef _LP64
-        diff = _igvn.transform(new ConvI2LNode(diff));
+        diff = igvn->transform(new ConvI2LNode(diff));
 #endif
-        diff = _igvn.transform(new LShiftXNode(diff, intcon(shift)));
+        diff = igvn->transform(new LShiftXNode(diff, igvn->intcon(shift)));
 
-        Node* off = _igvn.transform(new AddXNode(MakeConX(offset), diff));
+        Node* off = igvn->transform(new AddXNode(igvn->MakeConX(offset), diff));
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, off));
-        adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
+        adr = igvn->transform(new AddPNode(base, base, off));
+        adr_type = igvn->type(base)->is_ptr()->add_offset(Type::OffsetBot);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Non constant offset in the array: we can't statically
           // determine the value
           return NULL;
         }
       }
-      MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
+      MergeMemNode* mergemen = igvn->transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
+      res = ArrayCopyNode::load(bs, igvn, ctl, mergemen, adr, adr_type, type, bt);
     }
   }
   if (res != NULL) {
     if (ftype->isa_narrowoop()) {
       // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
-      res = _igvn.transform(new EncodePNode(res, ftype));
+      res = igvn->transform(new EncodePNode(res, ftype));
     }
     return res;
   }
@@ -347,9 +347,9 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 // on the input paths.
 // Note: this function is recursive, its depth is limited by the "level" argument
 // Returns the computed Phi, or NULL if it cannot compute it.
-Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
+Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
   assert(mem->is_Phi(), "sanity");
-  int alias_idx = C->get_alias_index(adr_t);
+  int alias_idx = comp->get_alias_index(adr_t);
   int offset = adr_t->offset();
   int instance_id = adr_t->instance_id();
 
@@ -370,7 +370,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   if (level <= 0) {
     return NULL; // Give up: phi tree too deep
   }
-  Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
+  Node *start_mem = comp->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
 
   uint length = mem->req();
@@ -378,7 +378,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 
   // create a new Phi for the value
   PhiNode *phi = new PhiNode(mem->in(0), phi_type, NULL, mem->_idx, instance_id, alias_idx, offset);
-  transform_later(phi);
+  igvn->register_new_node_with_optimizer(phi);
   value_phis->push(phi, mem->_idx);
 
   for (uint j = 1; j < length; j++) {
@@ -386,14 +386,14 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     if (in == NULL || in->is_top()) {
       values.at_put(j, in);
     } else  {
-      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, &_igvn);
+      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, igvn);
       if (val == start_mem || val == alloc_mem) {
         // hit a sentinel, return appropriate 0 value
-        values.at_put(j, _igvn.zerocon(ft));
+        values.at_put(j, igvn->zerocon(ft));
         continue;
       }
       if (val->is_Initialize()) {
-        val = val->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), &_igvn);
+        val = val->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), igvn);
       }
       if (val == NULL) {
         return NULL;  // can't find a value on this path
@@ -405,13 +405,13 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
         n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
-          n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
+          n = Compile::narrow_value(ft, n, phi_type, igvn, true);
         }
         values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
-        values.at_put(j, _igvn.zerocon(ft));
+        values.at_put(j, igvn->zerocon(ft));
       } else if (val->is_Phi()) {
-        val = value_from_mem_phi(val, ft, phi_type, adr_t, alloc, value_phis, level-1);
+        val = value_from_mem_phi(comp, igvn, val, ft, phi_type, adr_t, alloc, value_phis, level-1);
         if (val == NULL) {
           return NULL;
         }
@@ -423,7 +423,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return NULL;
       } else if (val->is_ArrayCopy()) {
-        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
+        Node* res = make_arraycopy_load(comp, igvn, val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
         if (res == NULL) {
           return NULL;
         }
@@ -447,14 +447,14 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 }
 
 // Search the last value stored into the object's field.
-Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
+Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
   assert(adr_t->is_known_instance_field(), "instance required");
   int instance_id = adr_t->instance_id();
   assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
-  int alias_idx = C->get_alias_index(adr_t);
+  int alias_idx = comp->get_alias_index(adr_t);
   int offset = adr_t->offset();
-  Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
+  Node *start_mem = comp->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
   VectorSet visited;
@@ -465,31 +465,31 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     if (visited.test_set(mem->_idx)) {
       return NULL;  // found a loop, give up
     }
-    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, &_igvn);
+    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, igvn);
     if (mem == start_mem || mem == alloc_mem) {
       done = true;  // hit a sentinel, return appropriate 0 value
     } else if (mem->is_Initialize()) {
-      mem = mem->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), &_igvn);
+      mem = mem->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), igvn);
       if (mem == NULL) {
         done = true; // Something go wrong.
       } else if (mem->is_Store()) {
         const TypePtr* atype = mem->as_Store()->adr_type();
-        assert(C->get_alias_index(atype) == Compile::AliasIdxRaw, "store is correct memory slice");
+        assert(comp->get_alias_index(atype) == Compile::AliasIdxRaw, "store is correct memory slice");
         done = true;
       }
     } else if (mem->is_Store()) {
       const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
       assert(atype != NULL, "address type must be oopptr");
-      assert(C->get_alias_index(atype) == alias_idx &&
+      assert(comp->get_alias_index(atype) == alias_idx &&
              atype->is_known_instance_field() && atype->offset() == offset &&
              atype->instance_id() == instance_id, "store is correct memory slice");
       done = true;
     } else if (mem->is_Phi()) {
       // try to find a phi's unique input
       Node *unique_input = NULL;
-      Node *top = C->top();
+      Node *top = comp->top();
       for (uint i = 1; i < mem->req(); i++) {
-        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, &_igvn);
+        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, igvn);
         if (n == NULL || n == top || n == mem) {
           continue;
         } else if (unique_input == NULL) {
@@ -514,7 +514,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   if (mem != NULL) {
     if (mem == start_mem || mem == alloc_mem) {
       // hit a sentinel, return appropriate 0 value
-      return _igvn.zerocon(ft);
+      return igvn->zerocon(ft);
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -523,14 +523,14 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
       Node_Stack value_phis(8);
-      Node* phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
+      Node* phi = value_from_mem_phi(comp, igvn, mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != NULL) {
         return phi;
       } else {
         // Kill all new Phis
         while(value_phis.is_nonempty()) {
           Node* n = value_phis.node();
-          _igvn.replace_node(n, C->top());
+          igvn->replace_node(n, comp->top());
           value_phis.pop();
         }
       }
@@ -542,7 +542,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
         ctl = sfpt_ctl;
         m = sfpt_mem;
       }
-      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
+      return make_arraycopy_load(comp, igvn, mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
     }
   }
   // Something go wrong.
@@ -550,7 +550,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, GrowableArray <SafePointNode *>* safepoints, bool ignore_merges) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = NULL; )
@@ -565,7 +565,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
     NOT_PRODUCT(fail_eliminate = "Allocation does not have unique CheckCastPP";)
     can_eliminate = false;
   } else {
-    res_type = _igvn.type(res)->isa_oopptr();
+    res_type = igvn->type(res)->isa_oopptr();
     if (res_type == NULL) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
@@ -585,7 +585,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
       Node* use = res->fast_out(j);
 
       if (use->is_AddP()) {
-        const TypePtr* addp_type = _igvn.type(use)->is_ptr();
+        const TypePtr* addp_type = igvn->type(use)->is_ptr();
         int offset = addp_type->offset();
 
         if (offset == Type::OffsetTop || offset == Type::OffsetBot) {
@@ -626,9 +626,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "NULL or TOP memory";)
           can_eliminate = false;
-        } else {
-          safepoints.append_if_missing(sfpt);
+        } else if (safepoints != NULL) {
+          safepoints->append_if_missing(sfpt);
         }
+      } else if (ignore_merges && use->is_Phi()) {
+        // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
           if (use->outcnt() == 1 && use->unique_out()->Opcode() == Op_Return) {
@@ -651,7 +653,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
   }
 
 #ifndef PRODUCT
-  if (PrintEliminateAllocations) {
+  if (PrintEliminateAllocations && safepoints != NULL) {
     if (can_eliminate) {
       tty->print("Scalar ");
       if (res == NULL)
@@ -765,7 +767,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
 
-      Node *field_val = value_from_mem(mem, ctl, basic_elem_type, field_type, field_addr_type, alloc);
+      Node *field_val = value_from_mem(C, &_igvn, mem, ctl, basic_elem_type, field_type, field_addr_type, alloc);
       if (field_val == NULL) {
         // We weren't able to find a value for this field,
         // give up on eliminating this allocation.
@@ -1030,7 +1032,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   GrowableArray <SafePointNode *> safepoints;
-  if (!can_eliminate_allocation(alloc, safepoints)) {
+  if (!can_eliminate_allocation(&_igvn, alloc, &safepoints)) {
     return false;
   }
 

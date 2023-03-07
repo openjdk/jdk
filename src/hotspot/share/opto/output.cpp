@@ -706,22 +706,30 @@ static LocationValue *new_loc_value( PhaseRegAlloc *ra, OptoReg::Name regnum, Lo
 }
 
 
-ObjectValue*
+ScopeValue*
 PhaseOutput::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
   for (int i = 0; i < objs->length(); i++) {
-    assert(objs->at(i)->is_object(), "corrupt object cache");
-    ObjectValue* sv = (ObjectValue*) objs->at(i);
-    if (sv->id() == id) {
-      return sv;
+    if (objs->at(i)->is_object()) {
+      ObjectValue* sv = (ObjectValue*) objs->at(i);
+      if (sv->id() == id) {
+        return sv;
+      }
+    } else if (objs->at(i)->is_object_merge()) {
+      ObjectMergeValue* sv = (ObjectMergeValue*) objs->at(i);
+      if (sv->id() == id) {
+        return sv;
+      }
+    } else {
+      assert(false, "corrupt object cache");
     }
   }
   // Otherwise..
   return NULL;
 }
 
-void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
-                                     ObjectValue* sv ) {
-  assert(sv_for_node_id(objs, sv->id()) == NULL, "Precondition");
+void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ScopeValue* sv ) {
+  assert(!sv->is_object() || (sv_for_node_id(objs, sv->as_ObjectValue()->id()) == NULL), "Precondition");
+  assert(!sv->is_object_merge() || (sv_for_node_id(objs, sv->as_ObjectMergeValue()->id()) == NULL), "Precondition");
   objs->append(sv);
 }
 
@@ -749,22 +757,63 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   if (local->is_SafePointScalarObject()) {
     SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
 
-    ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
-    if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->exact_klass();
-      assert(cik->is_instance_klass() ||
-             cik->is_array_klass(), "Not supported allocation.");
-      sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
-      set_sv_for_object_node(objs, sv);
+    if (!spobj->is_from_merge()) {
+      ObjectValue* sv = (ObjectValue*) sv_for_node_id(objs, spobj->_idx);
+      if (sv == NULL) {
+        ciKlass* cik = t->is_oopptr()->exact_klass();
+        assert(cik->is_instance_klass() ||
+              cik->is_array_klass(), "Not supported allocation.");
+        sv = new ObjectValue(spobj->_idx,
+                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+        set_sv_for_object_node(objs, sv);
 
-      uint first_ind = spobj->first_index(sfpt->jvms());
-      for (uint i = 0; i < spobj->n_fields(); i++) {
-        Node* fld_node = sfpt->in(first_ind+i);
-        (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
+        uint first_ind = spobj->first_index(sfpt->jvms());
+        for (uint i = 0; i < spobj->n_fields(); i++) {
+          Node* fld_node = sfpt->in(first_ind+i);
+          (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
+        }
       }
+
+      array->append(sv);
+    } else if (spobj->is_from_merge()) {
+      ObjectMergeValue* sv = (ObjectMergeValue*) sv_for_node_id(objs, spobj->_idx);
+      if (sv == NULL) {
+        GrowableArray<ScopeValue*> deps;
+
+        int merge_pointer_idx = spobj->merge_pointer_idx(sfpt->jvms());
+        (void)FillLocArray(0, NULL, sfpt->in(merge_pointer_idx), &deps, NULL);
+        assert(deps.length() == 1, "missing value");
+
+        int selector_idx = spobj->selector_idx(sfpt->jvms());
+        (void)FillLocArray(1, NULL, sfpt->in(selector_idx), &deps, NULL);
+        assert(deps.length() == 2, "missing value");
+
+        sv = new ObjectMergeValue(spobj->_idx, deps.at(0), deps.at(1));
+        set_sv_for_object_node(objs, sv);
+
+        uint number_of_sr_objects = spobj->number_of_objects();
+        uint field_index = selector_idx+1;
+        const uint CANDIDATE_OBJ_BASE_IDX = 100000;
+        for (uint i = 0; i < number_of_sr_objects; i++) {
+          Node* klass_node = sfpt->in(field_index++);
+          const Type *t = klass_node->bottom_type();
+          assert(t->is_instklassptr(), "Not supported allocation.");
+          ciInstanceKlass* cik = t->isa_instklassptr()->instance_klass();
+
+          ObjectValue* sv_o = new ObjectValue(CANDIDATE_OBJ_BASE_IDX + spobj->_idx + i,
+                              new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+          set_sv_for_object_node(sv->possible_objects(), sv_o);
+
+          uint nfields = cik->nof_nonstatic_fields();
+          for (uint j = 0; j < nfields; j++) {
+            Node* fld_node = sfpt->in(field_index++);
+            (void)FillLocArray(sv_o->field_values()->length(), sfpt, fld_node, sv_o->field_values(), sv->possible_objects());
+          }
+        }
+      }
+
+      array->append(sv);
     }
-    array->append(sv);
     return;
   }
 

@@ -114,7 +114,6 @@ GrowableArray<ScopeValue*>* ScopeDesc::decode_object_values(int decode_offset) {
     // object's fields could reference it (OBJECT_ID_CODE).
     (void)ScopeValue::read_from(stream);
   }
-  assert(result->length() == length, "inconsistent debug information");
   return result;
 }
 
@@ -237,11 +236,14 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != nullptr) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
-      ObjectValue* sv = (ObjectValue*) _objects->at(i);
-      st->print("    - %d: ", sv->id());
-      st->print("%s ", java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()())->external_name());
-      sv->print_fields_on(st);
-      st->cr();
+      ScopeValue* sv = (ScopeValue*) _objects->at(i);
+      if (sv->is_object()) {
+        sv->as_ObjectValue()->print_on(st);
+      } else if (sv->is_object_merge()) {
+        sv->as_ObjectMergeValue()->print_on(st);
+      } else {
+        st->print_cr("Unknown Object Type in Object Pool");
+      }
     }
   }
 #endif // COMPILER2_OR_JVMCI

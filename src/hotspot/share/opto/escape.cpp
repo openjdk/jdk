@@ -36,6 +36,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
+#include "opto/macro.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
@@ -56,11 +57,13 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   // Add unknown java object.
   add_java_object(C->top(), PointsToNode::GlobalEscape);
   phantom_obj = ptnode_adr(C->top()->_idx)->as_JavaObject();
+  set_not_scalar_replaceable(phantom_obj NOT_PRODUCT(COMMA "Phantom object"));
   // Add ConP(#NULL) and ConN(#NULL) nodes.
   Node* oop_null = igvn->zerocon(T_OBJECT);
   assert(oop_null->_idx < nodes_size(), "should be created already");
   add_java_object(oop_null, PointsToNode::NoEscape);
   null_obj = ptnode_adr(oop_null->_idx)->as_JavaObject();
+  set_not_scalar_replaceable(null_obj NOT_PRODUCT(COMMA "Null object"));
   if (UseCompressedOops) {
     Node* noop_null = igvn->zerocon(T_NARROWOOP);
     assert(noop_null->_idx < nodes_size(), "should be created already");
@@ -124,6 +127,7 @@ bool ConnectionGraph::compute_escape() {
 
   // Worklists used by EA.
   Unique_Node_List delayed_worklist;
+  Unique_Node_List reducible_merges;
   GrowableArray<Node*> alloc_worklist;
   GrowableArray<Node*> ptr_cmp_worklist;
   GrowableArray<MemBarStoreStoreNode*> storestore_worklist;
@@ -292,7 +296,7 @@ bool ConnectionGraph::compute_escape() {
       n->as_Allocate()->_is_non_escaping = noescape;
     }
     if (noescape && ptn->scalar_replaceable()) {
-      adjust_scalar_replaceable_state(ptn);
+      adjust_scalar_replaceable_state(ptn, reducible_merges);
       if (ptn->scalar_replaceable()) {
         jobj_worklist.push(ptn);
       } else {
@@ -359,7 +363,7 @@ bool ConnectionGraph::compute_escape() {
     assert(C->do_aliasing(), "Aliasing should be enabled");
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
-    split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
+    split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist, reducible_merges);
     if (C->failing()) {
       NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
       return false;
@@ -377,6 +381,17 @@ bool ConnectionGraph::compute_escape() {
     }
     tty->cr();
 #endif
+  }
+
+  // 6. Remove reducible allocation merges from ideal graph
+  if (ReduceAllocationMerges && reducible_merges.size() > 0) {
+    bool delay = _igvn->delay_transform();
+    _igvn->set_delay_transform(true);
+    for (uint i = 0; i < reducible_merges.size(); i++ ) {
+      Node* n = reducible_merges.at(i);
+      reduce_this_phi(ptnode_adr(n->_idx)->as_LocalVar());
+    }
+    _igvn->set_delay_transform(delay);
   }
 
   // Annotate at safepoints if they have <= ArgEscape objects in their scope and at
@@ -399,6 +414,239 @@ bool ConnectionGraph::compute_escape() {
 
   NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
+}
+
+// Check if it's profitable to reduce the Phi passed as parameter.  Returns true
+// if at least one scalar replaceable allocation participates in the merge and
+// no input to the Phi is nullable.
+bool ConnectionGraph::can_reduce_this_phi_inputs(PhiNode* phi) const {
+  // Check if there is an scalar replaceable allocate in the Phi
+  bool found_sr_allocate = false;
+
+  for (uint i = 1; i < phi->req(); i++) {
+    // Right now we can't restore a "null" pointer during deoptimization
+    if (_igvn->type(phi->in(i))->maybe_null()) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d. Input %d is nullable.", phi->_idx, i);)
+      return false;
+    }
+
+    // We are looking for at least one SR object in the merge
+    JavaObjectNode* ptn = unique_java_object(phi->in(i));
+    if (ptn != NULL && ptn->scalar_replaceable()) {
+      assert(ptn->ideal_node() != NULL && ptn->ideal_node()->is_Allocate(), "sanity");
+      Node* alloc = ptn->ideal_node()->as_Allocate();
+
+      if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc->as_Allocate(), NULL, true)) {
+        found_sr_allocate = true;
+      } else {
+        ptn->set_scalar_replaceable(false);
+      }
+    }
+  }
+
+  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("Can NOT reduce Phi %d. No SR Allocate as input.", phi->_idx);)
+  return found_sr_allocate;
+}
+
+// Check if we are able to untangle the merge. Right now we only reduce Phis
+// which are only used as debug information.
+bool ConnectionGraph::can_reduce_this_phi_users(PhiNode* phi) const {
+  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+    Node* use = phi->fast_out(i);
+
+    if (use->is_SafePoint()) {
+      if (use->is_Call() && use->as_Call()->has_non_debug_use(phi)) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d. Call has non_debug_use().", phi->_idx);)
+        return false;
+      }
+    } else {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d. One of the uses is: %d %s", phi->_idx, use->_idx, use->Name());)
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Returns true if: 1) It's profitable to reduce the merge, and 2) It The Phi is
+// only used in some certain code shapes. Check comments in
+// 'can_reduce_this_phi_inputs' and 'can_reduce_this_phi_users' for more
+// details.
+bool ConnectionGraph::can_reduce_this_phi(PointsToNode* var) const {
+  assert(var->escape_state() == PointsToNode::NoEscape, "Phi should be NoEscape");
+
+  PhiNode* phi = var->ideal_node()->as_Phi();
+  const Type* phi_t = _igvn->type(phi);
+  if (phi_t == NULL || phi_t->isa_instptr() == NULL || !phi_t->is_instptr()->klass_is_exact()) {
+    return false;
+  }
+
+  if (!can_reduce_this_phi_inputs(phi) || !can_reduce_this_phi_users(phi)) {
+    return false;
+  }
+
+  NOT_PRODUCT(if (TraceReduceAllocationMerges) { tty->print_cr("Can reduce this Phi during invocation %d: ", _invocation); phi->dump(); })
+  return true;
+}
+
+// This method will create SafePointScalarObjectNode for each combination of
+// scalar replaceable allocation in 'var' and SafePoint node in 'safepoints'.
+// Each SafePointScalarObjectNodes created here may describe multiple scalar
+// replaced objects - check detailed description in SafePointScalarObjectNode
+// class header.
+//
+// This method will set to 'NULL' entries in the Phi that are scalar replaceable.
+void ConnectionGraph::reduce_this_phi_on_safepoints(LocalVarNode* var, Unique_Node_List* safepoints) {
+  assert(var->ideal_node()->is_Phi(), "Not a Phi!");
+  PhiNode* ophi             = var->ideal_node()->as_Phi();
+  Node* minus_one           = _igvn->register_new_node_with_optimizer(ConINode::make(-1));
+  Node* selector            = _igvn->register_new_node_with_optimizer(PhiNode::make(ophi->region(), minus_one, TypeInt::INT));
+  Node* null_ptr            = _igvn->makecon(TypePtr::NULL_PTR);
+  const TypeOopPtr* merge_t = _igvn->type(ophi)->make_oopptr();
+  uint number_of_sr_objects = 0;
+
+  _igvn->hash_delete(ophi);
+
+ // Fill in the 'selector' Phi. If index 'i' of the selector is:
+ // -> a '-1' constant, the i'th input of the original Phi is NSR.
+ // -> a 'x' constant >=0, the i'th input of of original Phi will be SR and the
+ //    info about the scalarized object will be at index x of
+ //    ObjectMergeValue::possible_objects
+ for (uint i = 1; i < ophi->req(); i++) {
+   Node* base          = ophi->in(i);
+   JavaObjectNode* ptn = unique_java_object(base);
+
+   if (ptn != NULL && ptn->scalar_replaceable()) {
+     Node* sr_obj_idx = _igvn->register_new_node_with_optimizer(ConINode::make(number_of_sr_objects));
+     selector->set_req(i, sr_obj_idx);
+     number_of_sr_objects++;
+   }
+ }
+
+ // Update the debug information of all safepoints in turn
+ for (uint spi = 0; spi < safepoints->size(); spi++ ) {
+   Node* call               = safepoints->at(spi);
+   Node* ctrl               = call->in(TypeFunc::Control);
+   Node* memory             = call->in(TypeFunc::Memory);
+   JVMState *jvms           = call->jvms();
+   uint scalar_fields_index = (call->req() - jvms->scloff());
+   int debug_start          = jvms->debug_start();
+   int debug_end            = jvms->debug_end();
+
+   // Keep a copy of the original pointer to NSR objects
+   call->add_req(ophi);
+   // Add the selector so we know which direction the execution took
+   call->add_req(selector);
+
+   for (uint i = 1; i < ophi->req(); i++) {
+     Node* base               = ophi->in(i);
+     JavaObjectNode* ptn      = unique_java_object(base);
+
+     // If the base is not scalar replaceable we don't need to register information about
+     // it at this time.
+     if (ptn == NULL || !ptn->scalar_replaceable()) {
+       continue;
+     }
+
+     const TypeOopPtr* base_t   = _igvn->type(base)->make_oopptr();
+     ciInstanceKlass* iklass    = base_t->is_instptr()->instance_klass();
+     int nfields                = iklass->nof_nonstatic_fields();
+     AllocateNode* alloc        = ptn->ideal_node()->as_Allocate();
+     Node* ccpp                 = alloc->result_cast();
+     const TypeOopPtr* res_type = _igvn->type(ccpp)->isa_oopptr();
+     Node* base_klass_node      = alloc->in(AllocateNode::KlassNode);
+     assert(base_klass_node != NULL, "This shouldn't happen.");
+
+     call->add_req(base_klass_node);
+
+     for (int j = 0; j < nfields; j++) {
+       ciField* field            = iklass->nonstatic_field_at(j);
+       ciType* elem_type         = field->type();
+       BasicType basic_elem_type = field->layout_type();
+       const Type* field_type    = NULL;
+       const TypeOopPtr *field_adr_type = res_type->add_offset(field->offset())->isa_oopptr();
+
+       if (is_reference_type(basic_elem_type)) {
+         if (!elem_type->is_loaded()) {
+           field_type = TypeInstPtr::BOTTOM;
+         } else {
+           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+         }
+
+         if (UseCompressedOops) {
+           field_type = field_type->make_narrowoop();
+           basic_elem_type = T_NARROWOOP;
+         }
+       } else {
+         field_type = Type::get_const_basic_type(basic_elem_type);
+       }
+
+       Node* field_val = PhaseMacroExpand::value_from_mem(_compile, _igvn, memory, ctrl, basic_elem_type, field_type, field_adr_type, alloc);
+       assert(field_val != NULL, "field_val is NULL");
+
+       call->add_req(field_val);
+     }
+
+     JVMState *jvms = call->jvms();
+     jvms->set_endoff(call->req());
+   }
+
+   SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(merge_t,
+#ifdef ASSERT
+   NOT_PRODUCT(NULL),
+#endif
+                                                                   /* first_index */ 0,
+                                                                   /* n_fields */ 0,
+                                                                   scalar_fields_index,
+                                                                   number_of_sr_objects);
+   assert(sobj->is_from_merge(), "sanity");
+
+   sobj->init_req(0, _compile->root());
+   _igvn->register_new_node_with_optimizer(sobj);
+
+   // Replaces debug information references to "ophi" in "call" with references to "sobj"
+   call->replace_edges_in_range(ophi, sobj, debug_start, debug_end, _igvn);
+   _igvn->_worklist.push(call);
+ }
+
+  // Now we can change ophi since we don't need to know the types
+  // of the input allocations anymore.
+  const Type* new_t = merge_t->meet(TypePtr::NULL_PTR);
+  Node* new_phi = _igvn->register_new_node_with_optimizer(PhiNode::make(ophi->region(), null_ptr, new_t));
+  for (uint i = 1; i < ophi->req(); i++) {
+    Node* base          = ophi->in(i);
+    JavaObjectNode* ptn = unique_java_object(base);
+
+    if (ptn != NULL && ptn->scalar_replaceable()) {
+      new_phi->set_req(i, null_ptr);
+    }
+    else {
+      new_phi->set_req(i, ophi->in(i));
+    }
+  }
+
+  _igvn->replace_node(ophi, new_phi);
+  _igvn->hash_insert(ophi);
+  _igvn->_worklist.push(ophi);
+}
+
+void ConnectionGraph::reduce_this_phi(LocalVarNode* var) {
+  Node* phi = var->ideal_node();
+  Unique_Node_List safepoints;
+
+  for (uint i = 0; i < phi->outcnt(); i++) {
+    Node* use = phi->raw_out(i);
+
+    // All SafePoint nodes using the same Phi node uses the same debug
+    // information (regarding to the Phi). Furthermore, reducing the Phi used
+    // by a SafePoint requires changing the Phi Therefore, I collect all
+    // safepoints and patch them all at once later.
+    if (use->is_SafePoint()) {
+      safepoints.push(use->as_SafePoint());
+    }
+  }
+
+  reduce_this_phi_on_safepoints(var, &safepoints);
 }
 
 // Returns true if there is an object in the scope of sfn that does not escape globally.
@@ -580,7 +828,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       } else {
         es = PointsToNode::GlobalEscape;
       }
-      add_java_object(n, es);
+      PointsToNode* ptn_con = add_java_object(n, es);
+      set_not_scalar_replaceable(ptn_con NOT_PRODUCT(COMMA "Constant pointer"));
       break;
     }
     case Op_CreateEx: {
@@ -669,7 +918,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_ThreadLocal: {
-      add_java_object(n, PointsToNode::ArgEscape);
+      PointsToNode* ptn_thr = add_java_object(n, PointsToNode::ArgEscape);
+      set_not_scalar_replaceable(ptn_thr NOT_PRODUCT(COMMA "Constant pointer"));
       break;
     }
     case Op_Blackhole: {
@@ -1047,6 +1297,9 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         es = PointsToNode::GlobalEscape;
       }
       add_java_object(call, es);
+      if (es == PointsToNode::GlobalEscape) {
+        set_not_scalar_replaceable(ptnode_adr(call->_idx) NOT_PRODUCT(COMMA "object can be loaded from boxing cache"));
+      }
     } else {
       BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
       call_analyzer->copy_dependencies(_compile->dependencies());
@@ -1860,7 +2113,7 @@ int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseTransform* 
 }
 
 // Adjust scalar_replaceable state after Connection Graph is built.
-void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
+void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges) {
   // Search for non-escaping objects which are not scalar replaceable
   // and mark them to propagate the state to referenced objects.
 
@@ -1895,13 +2148,19 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
       }
     }
     assert(use->is_Field() || use->is_LocalVar(), "sanity");
-    // 3. An object is not scalar replaceable if it is merged with other objects.
+    // 3. An object is not scalar replaceable if it is merged with other objects
+    // and we can't remove the merge
     for (EdgeIterator j(use); j.has_next(); j.next()) {
       PointsToNode* ptn = j.get();
       if (ptn->is_JavaObject() && ptn != jobj) {
-        // Mark all objects.
-        set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA trace_merged_message(ptn)));
-        set_not_scalar_replaceable(ptn NOT_PRODUCT(COMMA trace_merged_message(jobj)));
+        if (ReduceAllocationMerges &&
+            use->ideal_node()->is_Phi() && can_reduce_this_phi(use)) {
+          reducible_merges.push(use->ideal_node());
+        } else {
+          // Mark all objects as NSR & NonUnique if we can't remove the merge
+          set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA trace_merged_message(ptn)));
+          set_not_scalar_replaceable(ptn NOT_PRODUCT(COMMA trace_merged_message(jobj)));
+        }
       }
     }
     if (!jobj->scalar_replaceable()) {
@@ -2243,15 +2502,16 @@ void ConnectionGraph::add_local_var(Node *n, PointsToNode::EscapeState es) {
   map_ideal_node(n, ptadr);
 }
 
-void ConnectionGraph::add_java_object(Node *n, PointsToNode::EscapeState es) {
+PointsToNode* ConnectionGraph::add_java_object(Node *n, PointsToNode::EscapeState es) {
   PointsToNode* ptadr = _nodes.at(n->_idx);
   if (ptadr != NULL) {
     assert(ptadr->is_JavaObject() && ptadr->ideal_node() == n, "sanity");
-    return;
+    return ptadr;
   }
   Compile* C = _compile;
   ptadr = new (C->comp_arena()) JavaObjectNode(this, n, es);
   map_ideal_node(n, ptadr);
+  return ptadr;
 }
 
 void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offset) {
@@ -2342,8 +2602,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
 }
 
 // Returns unique pointed java object or NULL.
-JavaObjectNode* ConnectionGraph::unique_java_object(Node *n) {
-  assert(!_collecting, "should not call when constructed graph");
+JavaObjectNode* ConnectionGraph::unique_java_object(Node *n) const {
   // If the node was created after the escape computation we can't answer.
   uint idx = n->_idx;
   if (idx >= nodes_size()) {
@@ -3182,7 +3441,8 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //
 void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                                          GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
-                                         GrowableArray<MergeMemNode*> &mergemem_worklist) {
+                                         GrowableArray<MergeMemNode*> &mergemem_worklist,
+                                         Unique_Node_List &reducible_merges) {
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
@@ -3349,6 +3609,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
         continue;  // already processed
+      }
+      // Reducible Phi's will be removed from the graph after split_unique_types finishes
+      if (reducible_merges.member(n)) {
+        continue;
       }
       JavaObjectNode* jobj = unique_java_object(n);
       if (jobj == NULL || jobj == phantom_obj) {

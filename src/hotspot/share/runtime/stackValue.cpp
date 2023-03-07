@@ -226,6 +226,9 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame
     Handle ov = ((ObjectValue *)sv)->value();
     return new StackValue(ov, (ov.is_null()) ? 1 : 0);
+  } else if (sv->is_object_merge()) {
+    Handle ov = ((ObjectMergeValue *)sv)->selected()->value();
+    return new StackValue(ov, (ov.is_null()) ? 1 : 0);
   } else if (sv->is_marker()) {
     // Should never need to directly construct a marker.
     ShouldNotReachHere();

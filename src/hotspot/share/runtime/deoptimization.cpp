@@ -176,14 +176,23 @@ JRT_END
 #if COMPILER2_OR_JVMCI
 // print information about reallocated objects
 static void print_objects(JavaThread* deoptee_thread,
-                          GrowableArray<ScopeValue*>* objects, bool realloc_failures) {
+                          GrowableArray<ScopeValue*>* objects, bool realloc_failures,
+                          frame* frame, RegisterMap* reg_map) {
   ResourceMark rm;
   stringStream st;  // change to logStream with logging
   st.print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, p2i(deoptee_thread));
   fieldDescriptor fd;
 
   for (int i = 0; i < objects->length(); i++) {
-    ObjectValue* sv = (ObjectValue*) objects->at(i);
+    ObjectValue* sv = NULL;
+
+    if (objects->at(i)->is_object()) {
+      sv = objects->at(i)->as_ObjectValue();
+    } else if (objects->at(i)->is_object_merge()) {
+      ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
+      sv = merged->select(frame, reg_map);
+    }
+
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
 
@@ -255,7 +264,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
     bool skip_internal = (compiled_method != nullptr) && !compiled_method->is_compiled_by_jvmci();
     Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
     if (TraceDeoptimization) {
-      print_objects(deoptee_thread, objects, realloc_failures);
+      print_objects(deoptee_thread, objects, realloc_failures, &deoptee, &map);
     }
   }
   if (save_oop_result) {
@@ -1078,8 +1087,33 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
   bool failures = false;
 
   for (int i = 0; i < objects->length(); i++) {
-    assert(objects->at(i)->is_object(), "invalid debug information");
-    ObjectValue* sv = (ObjectValue*) objects->at(i);
+    assert(objects->at(i)->is_object() || objects->at(i)->is_object_merge(), "invalid debug information");
+    ObjectValue* sv = nullptr;
+
+    if (objects->at(i)->is_object()) {
+      sv = objects->at(i)->as_ObjectValue();
+
+      // This object is only a candidate inside an ObjectMergeValue
+      if (sv->is_merge_candidate()) {
+        continue;
+      }
+    } else {
+      ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
+      sv = merged->select(fr, reg_map);
+
+      // If this is true it means that a candidate object became a
+      // real object and we are going to reach that object in a later
+      // iteration of the outer loop.
+      if (sv == NULL) {
+        continue;
+      }
+
+      // Will be non-null when it's a pointer from a merge where the
+      // executed path is of an object NOT scalar replaced.
+      if (!sv->value().is_null()) {
+        continue;
+      }
+    }
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     oop obj = nullptr;
@@ -1428,7 +1462,25 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 // restore fields of all eliminated objects and arrays
 void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
-    ObjectValue* sv = (ObjectValue*) objects->at(i);
+    assert(objects->at(i)->is_object() || objects->at(i)->is_object_merge(), "invalid debug information");
+    ObjectValue* sv = nullptr;
+
+    if (objects->at(i)->is_object()) {
+      sv = objects->at(i)->as_ObjectValue();
+
+      // If the object is only a candidate inside an ObjectMergeValue we
+      // skip processing it.
+      //
+      // If the pointer didn't came from a scalar replaced object then
+      // we don't need to do field reassignment.
+      if (sv->is_merge_candidate() || sv->skip_field_assignment()) {
+        continue;
+      }
+    } else {
+      // Merge objects don't need field reassignment
+      continue;
+    }
+
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
