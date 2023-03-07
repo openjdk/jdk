@@ -560,7 +560,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   if (AllowArchivingWithJavaAgent) {
-    log_info(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 

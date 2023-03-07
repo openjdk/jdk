@@ -1135,7 +1135,7 @@ void FileMapInfo::validate_non_existent_class_paths() {
        i++) {
     SharedClassPathEntry* ent = shared_path(i);
     if (!ent->check_non_existent()) {
-      log_warning("Archived non-system classes are disabled because the "
+      log_warning(cds)("Archived non-system classes are disabled because the "
               "file %s exists", ent->name());
       header()->set_has_platform_or_app_classes(false);
     }
@@ -2684,7 +2684,7 @@ bool FileMapHeader::validate() {
   }
 
   if (_allow_archiving_with_java_agent) {
-    log_info(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 

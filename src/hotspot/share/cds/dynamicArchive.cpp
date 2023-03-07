@@ -345,7 +345,7 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_info(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+      log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
     }
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
