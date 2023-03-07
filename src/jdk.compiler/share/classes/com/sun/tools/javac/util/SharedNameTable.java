@@ -119,8 +119,8 @@ public class SharedNameTable extends Name.Table {
     }
 
     @Override
-    public Name fromUtf(byte[] cs, int start, int len) throws InvalidUtfException {
-        Convert.utfValidate(cs, start, len);
+    public Name fromUtf(byte[] cs, int start, int len, boolean lenient) throws InvalidUtfException {
+        Convert.utfValidate(cs, start, len, lenient);
         int h = hashValue(cs, start, len) & hashMask;
         NameImpl n = hashes[h];
         byte[] names = this.bytes;

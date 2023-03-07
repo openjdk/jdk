@@ -102,10 +102,15 @@ public class Convert {
 
     /** Validate the given Modified UTF-8 encoding.
      *  Reject invalid data by throwing an {@link InvalidUtfException}.
+     *  @param buf        Buffer containing data
+     *  @param off        Data starting offset
+     *  @param len        Data length
+     *  @param lenient    Whether to allow longer-than-necessary encodings
+     *                    (for obsolete classfile versions &lt; 48)
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
-    public static void utfValidate(byte[] buf, int off, int len) throws InvalidUtfException {
-        utf2chars(buf, off, null, 0, len);
+    public static void utfValidate(byte[] buf, int off, int len, boolean lenient) throws InvalidUtfException {
+        utf2chars(buf, off, null, 0, len, lenient);
     }
 
     /** Decode characters encoded in Modified UTF-8 encoding.
@@ -118,10 +123,13 @@ public class Convert {
      *  @param doff       The start index from which converted characters
      *                    are written.
      *  @param len        The maximum number of bytes to convert.
+     *  @param lenient    Whether to allow longer-than-necessary encodings
+     *                    (for obsolete classfile versions &lt; 48)
      *  @return the index in {@code dst} just after the last copied char
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
-    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len) throws InvalidUtfException {
+    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len, boolean lenient)
+      throws InvalidUtfException {
         final int doff0 = doff;
         while (len-- > 0) {
             final int soff0 = soff;
@@ -134,7 +142,7 @@ public class Convert {
                     if ((value2 & 0xc0) != 0x80)
                         throw new InvalidUtfException(soff0);
                     value = ((value & 0x1f) << 6) | (value2 & 0x3f);
-                    if (value != 0 && (value & ~0x7f) == 0)
+                    if (!lenient && value != 0 && (value & ~0x7f) == 0)
                         throw new InvalidUtfException(soff0);   // could have been one byte
                 } else if ((value & 0xf0) == 0xe0) {
                     if ((len -= 2) < 0)
@@ -144,7 +152,7 @@ public class Convert {
                     if ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80)
                         throw new InvalidUtfException(soff0);
                     value = ((value & 0x0f) << 12) | ((value2 & 0x3f) << 6) | (value3 & 0x3f);
-                    if ((value & ~0x7ff) == 0)
+                    if (!lenient && (value & ~0x7ff) == 0)
                         throw new InvalidUtfException(soff0);   // could have been two bytes
                 } else
                     throw new InvalidUtfException(soff0);
@@ -161,45 +169,35 @@ public class Convert {
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
+     *  @param lenient    Whether to allow longer-than-necessary encodings
+     *                    (for obsolete classfile versions &lt; 48)
      *  @return           The decoded characters in an array.
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
-    public static char[] utf2chars(byte[] src, int sindex, int len) throws InvalidUtfException {
+    public static char[] utf2chars(byte[] src, int sindex, int len, boolean lenient)
+      throws InvalidUtfException {
         char[] dst = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len);
+        int len1 = utf2chars(src, sindex, dst, 0, len, lenient);
+        if (len1 == len)
+            return dst;
         char[] result = new char[len1];
         System.arraycopy(dst, 0, result, 0, len1);
         return result;
-    }
-
-    /** Decode characters encoded in Modified UTF-8 encoding.
-     *  as an array of characters.
-     *  @param src        The array holding the bytes.
-     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
-     */
-    public static char[] utf2chars(byte[] src) throws InvalidUtfException {
-        return utf2chars(src, 0, src.length);
     }
 
     /** Decode a {@link String} encoded in Modified UTF-8 encoding.
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
+     *  @param lenient    Whether to allow longer-than-necessary encodings
+     *                    (for obsolete classfile versions &lt; 48)
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
-    public static String utf2string(byte[] src, int sindex, int len) throws InvalidUtfException {
+    public static String utf2string(byte[] src, int sindex, int len, boolean lenient)
+      throws InvalidUtfException {
         char dst[] = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len);
+        int len1 = utf2chars(src, sindex, dst, 0, len, lenient);
         return new String(dst, 0, len1);
-    }
-
-    /** Return all bytes of a given array in Utf8 representation
-     *  as a string.
-     *  @param src        The array holding the bytes.
-     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
-     */
-    public static String utf2string(byte[] src) throws InvalidUtfException {
-        return utf2string(src, 0, src.length);
     }
 
     /** Copy characters in source array to bytes in target array,

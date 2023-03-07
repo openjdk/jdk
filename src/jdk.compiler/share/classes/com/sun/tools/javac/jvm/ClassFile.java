@@ -106,6 +106,7 @@ public class ClassFile {
 
     public enum Version {
         V45_3(45, 3), // base level for all attributes
+        V48(48, 0),   // JDK 1.4
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7

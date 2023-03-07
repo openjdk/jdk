@@ -160,9 +160,11 @@ public class ModuleNameReader {
 
     PoolReader.Utf8Mapper<String> utf8Mapper(boolean internalize) {
         return internalize ?
-                (buf, offset, len) ->
-                    Convert.utf2string(ClassFile.internalize(buf, offset, len)) :
-                Convert::utf2string;
+            (buf, offset, len) -> {
+                buf = ClassFile.internalize(buf, offset, len);
+                return Convert.utf2string(buf, 0, buf.length, false);
+            } :
+            (buf, offset, len) -> Convert.utf2string(buf, offset, len, false);
     }
 
 }

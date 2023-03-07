@@ -74,6 +74,7 @@ public class PoolReader {
     private final ByteBuffer buf;
     private final Names names;
     private final Symtab syms;
+    private final boolean lenientUtf8;
 
     private ImmutablePoolHelper pool;
 
@@ -90,6 +91,7 @@ public class PoolReader {
         this.buf = buf;
         this.names = names;
         this.syms = syms;
+        this.lenientUtf8 = reader != null && reader.majorVersion < ClassFile.Version.V48.major;
     }
 
     private static final BitSet classCP = new BitSet();
@@ -223,11 +225,11 @@ public class PoolReader {
         switch (tag) {
             case CONSTANT_Utf8: {
                 int len = poolbuf.getChar(offset);
-                return names.fromUtf(poolbuf.elems, offset + 2, len);
+                return names.fromUtf(poolbuf.elems, offset + 2, len, lenientUtf8);
             }
             case CONSTANT_Class: {
                 int index = poolbuf.getChar(offset);
-                Name name = names.fromUtf(getName(index).map(ClassFile::internalize));
+                Name name = internalize(getName(index));
                 return syms.enterClass(reader.currentModule, name);
             }
             case CONSTANT_NameandType: {

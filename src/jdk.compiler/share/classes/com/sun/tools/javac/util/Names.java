@@ -424,7 +424,7 @@ public class Names {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len) throws InvalidUtfException {
-        return table.fromUtf(cs, start, len);
+    public Name fromUtf(byte[] cs, int start, int len, boolean lenient) throws InvalidUtfException {
+        return table.fromUtf(cs, start, len, lenient);
     }
 }

@@ -657,7 +657,7 @@ public class ClassReader {
     String quoteBadSignature() {
         String sigString;
         try {
-            sigString = Convert.utf2string(signature, sigp, siglimit - sigp);
+            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, majorVersion < V48.major);
         } catch (InvalidUtfException e) {
             return diagFactory.fragment("bad.utf8.byte.sequence.at", sigp).toString();
         }
@@ -765,7 +765,7 @@ public class ClassReader {
 
     private Name readName(byte[] buf, int off, int len) {
         try {
-            return names.fromUtf(buf, off, len);
+            return names.fromUtf(buf, off, len, majorVersion < V48.major);
         } catch (InvalidUtfException e) {
            throw badClassFile("bad.utf8.byte.sequence.at", sigp);
         }
@@ -1125,7 +1125,7 @@ public class ClassReader {
                         ModuleSymbol msym = (ModuleSymbol) sym.owner;
                         ListBuffer<Directive> directives = new ListBuffer<>();
 
-                        Name moduleName = poolReader.peekModuleName(nextChar(), names::fromUtf);
+                        Name moduleName = poolReader.peekModuleName(nextChar(), ClassReader.this::readName);
                         if (currentModule.name != moduleName) {
                             throw badClassFile("module.name.mismatch", moduleName, currentModule.name);
                         }
@@ -1221,7 +1221,8 @@ public class ClassReader {
                 }
 
                 private Name classNameMapper(byte[] arr, int offset, int length) throws InvalidUtfException {
-                    return names.fromUtf(ClassFile.internalize(arr, offset, length));
+                    byte[] buf = ClassFile.internalize(arr, offset, length);
+                    return names.fromUtf(buf, 0, buf.length, majorVersion < V48.major);
                 }
             },
 
