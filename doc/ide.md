@@ -69,9 +69,12 @@ make eclipse-native-env
 
 After this is run, simply open and import the workspace in Eclipse through
 `File -> Import -> Projects from Folder or Archive` and at
-`Import source`
-click on the directory `ide\eclipse`, which can be found in the build output
-folder.
+`Import source` click on the directory `ide\eclipse`, which can be
+found in the build output folder.
+
+If this doesn't work, you can also try
+`File -> Import -> Existing Projects into Workspace`
+instead.
 
 Setting up an Eclipse Workspace is relatively lightweight compared to other
 supported IDEs, but requires that your CDT installation has Cross GCC support
@@ -173,6 +176,10 @@ you would with Eclipse CDT:
 Follow `File -> Import -> Projects from Folder or Archive` and select the
 `ide\eclipse` directory in the build output folder to import the newly created
 Java Workspace.
+
+If doing so results in an error, you can also import the JDK via
+`File -> Import -> Existing Projects into Workspace`
+as a last resort.
 
 Alternatively, if you want a Java Workspace inside the JDK's source directory,
 you can instead run:

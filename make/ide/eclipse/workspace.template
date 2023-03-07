@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-    <name>Java</name>
-    <comment>The official Java HotSpot Virtual Machine, Runtime Environment, and Development Kit</comment>
+    <name>jdk</name>
+    <comment>The HotSpot Virtual Machine, Runtime Environment, and Development Kit</comment>
     <projects>
     </projects>
     <buildSpec>

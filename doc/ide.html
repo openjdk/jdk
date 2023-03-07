@@ -92,6 +92,9 @@ through
 at <code>Import source</code> click on the directory
 <code>ide\eclipse</code>, which can be found in the build output
 folder.</p>
+<p>If this doesn't work, you can also try
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code>
+instead.</p>
 <p>Setting up an Eclipse Workspace is relatively lightweight compared to
 other supported IDEs, but requires that your CDT installation has Cross
 GCC support enabled at the moment, even if you aren't cross compiling.
@@ -158,6 +161,9 @@ way as you would with Eclipse CDT:</p>
 <code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
 select the <code>ide\eclipse</code> directory in the build output folder
 to import the newly created Java Workspace.</p>
+<p>If doing so results in an error, you can also import the JDK via
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code> as
+a last resort.</p>
 <p>Alternatively, if you want a Java Workspace inside the JDK's source
 directory, you can instead run:</p>
 <pre><code>make eclipse-shared-java-env</code></pre>
