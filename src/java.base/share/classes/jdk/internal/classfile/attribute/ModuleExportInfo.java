@@ -30,8 +30,8 @@ import java.util.Set;
 
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 
 import jdk.internal.classfile.Classfile;

@@ -32,8 +32,8 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
 import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.instruction.*;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {

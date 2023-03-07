@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.jdktypes;
+package jdk.internal.classfile.java.lang.constant;
 
 import static java.util.Objects.requireNonNull;
 import jdk.internal.classfile.impl.PackageDescImpl;

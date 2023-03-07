@@ -35,7 +35,7 @@ import java.util.function.Function;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 

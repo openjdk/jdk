@@ -61,7 +61,7 @@ import jdk.internal.classfile.instruction.ReturnInstruction;
 import jdk.internal.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;

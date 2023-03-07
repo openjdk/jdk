@@ -46,8 +46,8 @@ import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
 import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.jdktypes.PackageDesc;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 
 public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
