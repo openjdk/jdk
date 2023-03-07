@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,8 +58,13 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private String canonicalize(String csn) {
-        String acn = aliasMap().get(csn);
-        return (acn != null) ? acn : csn;
+        if (csn.startsWith("gb18030-")) {
+            return csn.equals("gb18030-2022") && !GB18030.IS_2000 ||
+                   csn.equals("gb18030-2000") && GB18030.IS_2000 ? "gb18030" : csn;
+        } else {
+            String acn = aliasMap().get(csn);
+            return (acn != null) ? acn : csn;
+        }
     }
 
     private Map<String,String> aliasMap() {

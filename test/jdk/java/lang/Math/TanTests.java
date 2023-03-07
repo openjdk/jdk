@@ -23,21 +23,74 @@
 
 /*
  * @test
- * @bug 5033578
+ * @bug 5033578 8302027
+ * @build Tests
+ * @run main TanTests
  * @summary Tests for {Math, StrictMath}.tan
  */
 
 public class TanTests {
     private TanTests(){}
 
-    static int testTanCase(double input, double expected, double ulps) {
+    private static final double NaNd = Double.NaN;
+    private static final double InfinityD = Double.POSITIVE_INFINITY;
+
+    public static void main(String... argv) {
+        int failures = 0;
+
+        failures += testTanNaN();
+        failures += testTanCardinal();
+        failures += testTan();
+
+        if (failures > 0) {
+            System.err.println("Testing tan incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
+    private static int testTanCase(double input, double expected, double ulps) {
         int failures = 0;
         failures += Tests.testUlpDiff("StrictMath.tan", input, StrictMath::tan, expected, ulps);
         failures += Tests.testUlpDiff("Math.tan",       input, Math::tan,       expected, ulps);
         return failures;
     }
 
-    static int testTan() {
+    private static int testTanNaN() {
+        int failures = 0;
+
+        // "If the argument is NaN or an infinity, then the result is NaN."
+        for(double nan : Tests.NaNs) {
+            failures += Tests.test("StrictMath.tan", nan, StrictMath::tan, NaNd);
+            failures += Tests.test("Math.tan",       nan, Math::tan,       NaNd);
+        }
+
+        return failures;
+    }
+
+    private static int testTanCardinal() {
+        int failures = 0;
+
+        double [][] testCases = {
+            // "If the argument is NaN or an infinity, then the result is NaN."
+            { InfinityD, NaNd},
+            {-InfinityD, NaNd},
+
+            // "If the argument is zero, then the result is a zero
+            // with the same sign as the argument."
+            {-0.0, -0.0},
+            {+0.0, +0.0},
+        };
+
+        for(double[] testCase : testCases) {
+            failures += Tests.test("StrictMath.tan", testCase[0], StrictMath::tan, testCase[1]);
+            failures += Tests.test("Math.tan",       testCase[0], Math::tan,       testCase[1]);
+        }
+
+        return failures;
+    }
+
+    private static int testTan() {
         int failures = 0;
 
         double [][] testCases = {
@@ -168,17 +221,5 @@ public class TanTests {
         }
 
         return failures;
-    }
-
-    public static void main(String... argv) {
-        int failures = 0;
-
-        failures += testTan();
-
-        if (failures > 0) {
-            System.err.println("Testing tan incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
-        }
     }
 }

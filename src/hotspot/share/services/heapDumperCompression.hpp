@@ -38,7 +38,7 @@ public:
   virtual char const* init(size_t block_size, size_t* needed_out_size,
                            size_t* needed_tmp_size) = 0;
 
-  // Does the actual compression. Returns NULL on success and a static error
+  // Does the actual compression. Returns null on success and a static error
   // message otherwise. Sets the 'compressed_size'.
   virtual char const* compress(char* in, size_t in_size, char* out, size_t out_size,
                                char* tmp, size_t tmp_size, size_t* compressed_size) = 0;
@@ -49,10 +49,10 @@ class AbstractWriter : public CHeapObj<mtInternal> {
 public:
   virtual ~AbstractWriter() { }
 
-  // Opens the writer. Returns NULL on success and a static error message otherwise.
+  // Opens the writer. Returns null on success and a static error message otherwise.
   virtual char const* open_writer() = 0;
 
-  // Does the write. Returns NULL on success and a static error message otherwise.
+  // Does the write. Returns null on success and a static error message otherwise.
   virtual char const* write_buf(char* buf, ssize_t size) = 0;
 };
 
@@ -69,10 +69,10 @@ public:
 
   ~FileWriter();
 
-  // Opens the writer. Returns NULL on success and a static error message otherwise.
+  // Opens the writer. Returns null on success and a static error message otherwise.
   virtual char const* open_writer();
 
-  // Does the write. Returns NULL on success and a static error message otherwise.
+  // Does the write. Returns null on success and a static error message otherwise.
   virtual char const* write_buf(char* buf, ssize_t size);
 };
 
@@ -108,12 +108,12 @@ struct WriteWork {
   size_t _in_used;
   size_t _in_max;
 
-  // The output buffer where the compressed data is. Is NULL when compression is disabled.
+  // The output buffer where the compressed data is. Is null when compression is disabled.
   char* _out;
   size_t _out_used;
   size_t _out_max;
 
-  // The temporary space needed for compression. Is NULL when compression is disabled.
+  // The temporary space needed for compression. Is null when compression is disabled.
   char* _tmp;
   size_t _tmp_max;
 
@@ -146,15 +146,15 @@ public:
   void add_by_id(WriteWork* work);
 
   // Returns the first element.
-  WriteWork* first() { return is_empty() ? NULL : _head._next; }
+  WriteWork* first() { return is_empty() ? nullptr : _head._next; }
 
   // Returns the last element.
-  WriteWork* last() { return is_empty() ? NULL : _head._prev; }
+  WriteWork* last() { return is_empty() ? nullptr : _head._prev; }
 
-  // Removes the first element. Returns NULL if empty.
+  // Removes the first element. Returns null if empty.
   WriteWork* remove_first() { return remove(first()); }
 
-  // Removes the last element. Returns NULL if empty.
+  // Removes the last element. Returns null if empty.
   WriteWork* remove_last() { return remove(first()); }
 };
 
@@ -207,7 +207,7 @@ class CompressionBackend : StackObj {
   void flush_buffer(MonitorLocker* ml);
 
 public:
-  // compressor can be NULL if no compression is used.
+  // compressor can be null if no compression is used.
   // Takes ownership of the writer and compressor.
   // block_size is the buffer size of a WriteWork.
   // max_waste is the maximum number of bytes to leave
