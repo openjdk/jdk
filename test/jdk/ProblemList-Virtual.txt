@@ -1,25 +1,9 @@
 # Filed bugs
 
-java/foreign/channels/TestSocketChannels.java                         8272749 windows-all
-java/lang/management/ThreadMXBean/Locks.java                          8278603 generic-all
-
-# JFR is not completely fixed to support vthreads
-jdk/jfr/event/gc/detailed/TestPromotionFailedEventWithDefNew.java            8279836 generic-all
-jdk/jfr/event/gc/detailed/TestPromotionFailedEventWithParallelScavenge.java  8279836 generic-all
-jdk/jfr/jcmd/TestJcmdDumpPathToGCRoots.java 0000000 generic-all
-jdk/jfr/tool/TestPrintXML.java 0000000 generic-all
-
-java/util/logging/Logger/logrb/TestLogrbResourceBundle.java                  8284779 generic-all
-
-com/sun/jdi/EATests.java#id0                                         8264699 generic-all
-
-jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8283508 generic-all
 
 
 ##########
-## Tests failing when main() is executed in additional vthread or in vthread instead of thread
-#
-
+## Tests failing when executed with virtual test thread factory
 
 ####
 # Incorrect stackwalking expectations for main thread stack trace
@@ -330,46 +314,46 @@ com/sun/jdi/sde/TemperatureTableTest.java 0000000 generic-all
 com/sun/jdi/sde/SourceDebugExtensionTest.java 0000000 generic-all
 
 # Tests using Thread.stop(), not supported on virtual threads
-jdk/jshell/PasteAndMeasurementsUITest.java                      0000000 generic-all
+jdk/jshell/PasteAndMeasurementsUITest.java 0000000 generic-all
 
 
 # Junit test fail to check permissions
-java/util/concurrent/tck/JSR166TestCase.java
+java/util/concurrent/tck/JSR166TestCase.java 0000000 generic-all
 
 ####
 # The testng tests using custom permissions don't with with wrapper
 
-java/io/Serializable/records/AbsentStreamValuesTest.java
-java/io/Serializable/records/BasicRecordSer.java
-java/io/Serializable/records/ConstructorAccessTest.java
-java/io/Serializable/records/ConstructorPermissionTest.java
-java/io/Serializable/records/CycleTest.java
-java/io/Serializable/records/DifferentStreamFieldsTest.java
-java/io/Serializable/records/ReadResolveTest.java
-java/io/Serializable/records/RecordClassTest.java
-java/io/Serializable/records/SerialVersionUIDTest.java
-java/io/Serializable/records/ThrowingConstructorTest.java
-java/io/Serializable/records/WriteReplaceTest.java
-jdk/dynalink/BeanLinkerTest.java
-jdk/dynalink/TrustedDynamicLinkerFactoryTest.java
-jdk/dynalink/UntrustedDynamicLinkerFactoryTest.java
-jdk/nio/zipfs/DirectoryStreamTests.java
-jdk/nio/zipfs/InvalidZipHeaderTests.java
-jdk/nio/zipfs/NewFileSystemTests.java
-jdk/nio/zipfs/PropertyPermissionTests.java
-jdk/nio/zipfs/TestPosix.java
-jdk/nio/zipfs/ZipFSPermissionsTest.java
-java/net/httpclient/AsFileDownloadTest.java
-java/net/httpclient/ConnectExceptionTest.java
-java/net/httpclient/DependentActionsTest.java
-java/net/httpclient/DependentPromiseActionsTest.java
-java/net/httpclient/FilePublisher/FilePublisherPermsTest.java
-java/net/httpclient/FilePublisher/FilePublisherTest.java
-java/net/httpclient/HttpClientLocalAddrTest.java
-java/net/httpclient/PathSubscriber/BodyHandlerOfFileDownloadTest.java
-java/net/httpclient/PathSubscriber/BodyHandlerOfFileTest.java
-java/net/httpclient/PathSubscriber/BodySubscriberOfFileTest.java
-java/net/httpclient/RequestBodyTest.java
-java/net/httpclient/security/filePerms/FileProcessorPermissionTest.java
-java/net/httpclient/security/filePerms/SecurityBeforeFile.java
-java/net/httpclient/websocket/security/WSURLPermissionTest.java
+java/io/Serializable/records/AbsentStreamValuesTest.java 0000000 generic-all
+java/io/Serializable/records/BasicRecordSer.java 0000000 generic-all
+java/io/Serializable/records/ConstructorAccessTest.java 0000000 generic-all
+java/io/Serializable/records/ConstructorPermissionTest.java 0000000 generic-all
+java/io/Serializable/records/CycleTest.java 0000000 generic-all
+java/io/Serializable/records/DifferentStreamFieldsTest.java 0000000 generic-all
+java/io/Serializable/records/ReadResolveTest.java 0000000 generic-all
+java/io/Serializable/records/RecordClassTest.java 0000000 generic-all
+java/io/Serializable/records/SerialVersionUIDTest.java 0000000 generic-all
+java/io/Serializable/records/ThrowingConstructorTest.java 0000000 generic-all
+java/io/Serializable/records/WriteReplaceTest.java 0000000 generic-all
+jdk/dynalink/BeanLinkerTest.java 0000000 generic-all
+jdk/dynalink/TrustedDynamicLinkerFactoryTest.java 0000000 generic-all
+jdk/dynalink/UntrustedDynamicLinkerFactoryTest.java 0000000 generic-all
+jdk/nio/zipfs/DirectoryStreamTests.java 0000000 generic-all
+jdk/nio/zipfs/InvalidZipHeaderTests.java 0000000 generic-all
+jdk/nio/zipfs/NewFileSystemTests.java 0000000 generic-all
+jdk/nio/zipfs/PropertyPermissionTests.java 0000000 generic-all
+jdk/nio/zipfs/TestPosix.java 0000000 generic-all
+jdk/nio/zipfs/ZipFSPermissionsTest.java 0000000 generic-all
+java/net/httpclient/AsFileDownloadTest.java 0000000 generic-all
+java/net/httpclient/ConnectExceptionTest.java 0000000 generic-all
+java/net/httpclient/DependentActionsTest.java 0000000 generic-all
+java/net/httpclient/DependentPromiseActionsTest.java 0000000 generic-all
+java/net/httpclient/FilePublisher/FilePublisherPermsTest.java 0000000 generic-all
+java/net/httpclient/FilePublisher/FilePublisherTest.java 0000000 generic-all
+java/net/httpclient/HttpClientLocalAddrTest.java 0000000 generic-all
+java/net/httpclient/PathSubscriber/BodyHandlerOfFileDownloadTest.jav 0000000 generic-alla
+java/net/httpclient/PathSubscriber/BodyHandlerOfFileTest.java 0000000 generic-all
+java/net/httpclient/PathSubscriber/BodySubscriberOfFileTest.java 0000000 generic-all
+java/net/httpclient/RequestBodyTest.java 0000000 generic-all
+java/net/httpclient/security/filePerms/FileProcessorPermissionTest.java 0000000 generic-all
+java/net/httpclient/security/filePerms/SecurityBeforeFile.java 0000000 generic-all
+java/net/httpclient/websocket/security/WSURLPermissionTest.java 0000000 generic-all
