@@ -716,7 +716,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
   return buf_offset;
 }
 
-void CodeBuffer::copy_code_to(CodeBlob* dest_blob, bool flushICache) {
+void CodeBuffer::copy_code_to(CodeBlob* dest_blob, bool flush_icache) {
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("done with CodeBuffer:");
@@ -741,8 +741,9 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob, bool flushICache) {
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
 
   // Flush generated code
-  if (flushICache)
+  if (flush_icache) {
     ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
+  }
 }
 
 // Move all my code into another code buffer.  Consult applicable
