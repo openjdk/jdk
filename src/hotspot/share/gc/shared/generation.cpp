@@ -284,7 +284,7 @@ void Generation::object_iterate(ObjectClosure* cl) {
 
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
-  CompactibleSpace* space = first_compaction_space();
+  ContiguousSpace* space = first_compaction_space();
   while (space != nullptr) {
     space->prepare_for_compaction(cp);
     space = space->next_compaction_space();
@@ -306,7 +306,7 @@ void Generation::adjust_pointers() {
 }
 
 void Generation::compact() {
-  CompactibleSpace* sp = first_compaction_space();
+  ContiguousSpace* sp = first_compaction_space();
   while (sp != nullptr) {
     sp->compact();
     sp = sp->next_compaction_space();
