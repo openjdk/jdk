@@ -159,6 +159,8 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dexp  : // fall thru
       case vmIntrinsics::_fmaD  : // fall thru
       case vmIntrinsics::_fmaF  : // fall thru
+      case vmIntrinsics::_floatToFloat16       : // fall thru
+      case vmIntrinsics::_float16ToFloat       : // fall thru
       case vmIntrinsics::_Continuation_doYield : // fall thru
         return false;
 
