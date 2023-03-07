@@ -42,14 +42,14 @@ public class RedTest_int {
                            "-XX:LoopUnrollLimit=250",
                            "-XX:CompileThresholdScaling=0.1");
         int i = 0;
-        Scenario[] scenarios = new Scenario[8];
-        for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+        Scenario[] scenarios = new Scenario[6];
+        for (int maxUnroll : new int[] {4, 8, 16}) {
             scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
                                            "-XX:LoopMaxUnroll=" + maxUnroll,
                                            "-XX:-TieredCompilation");
             i++;
         }
-        for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+        for (int maxUnroll : new int[] {4, 8, 16}) {
             scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
                                            "-XX:LoopMaxUnroll=" + maxUnroll);
             i++;

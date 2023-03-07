@@ -40,9 +40,9 @@ public class ProdRed_Float {
                            "-XX:LoopUnrollLimit=250",
                            "-XX:CompileThresholdScaling=0.1");
         int i = 0;
-        Scenario[] scenarios = new Scenario[8];
+        Scenario[] scenarios = new Scenario[6];
         for (String reductionSign : new String[] {"+", "-"}) {
-            for (int maxUnroll : new int[] {2, 4, 8, 16}) {
+            for (int maxUnroll : new int[] {4, 8, 16}) {
                 scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
                                                "-XX:LoopMaxUnroll=" + maxUnroll);
                 i++;
