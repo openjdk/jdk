@@ -3925,8 +3925,9 @@ void StubGenerator::generate_initial() {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
 
-  if (VM_Version::supports_f16c() || VM_Version::supports_avx512vl()) {
+  if (VM_Version::supports_float16()) {
     // For results consistency both intrinsics should be enabled.
+    // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
       StubRoutines::_hf2f = generate_float16ToFloat();

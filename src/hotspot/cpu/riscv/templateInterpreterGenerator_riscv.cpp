@@ -302,7 +302,8 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 }
 
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
-  if (!InlineIntrinsics || !UseZfhmin ||
+  // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+  if (!VM_Version::supports_float16() ||
       vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
       vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
     return nullptr;
@@ -323,7 +324,8 @@ address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
 }
 
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
-  if (!InlineIntrinsics || !UseZfhmin ||
+  // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+  if (!VM_Version::supports_float16() ||
       vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
       vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
     return nullptr;
