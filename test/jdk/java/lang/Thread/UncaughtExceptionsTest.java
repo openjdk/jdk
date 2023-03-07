@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,14 @@
  * questions.
  */
 
+import java.util.stream.Stream;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
@@ -36,35 +40,50 @@ import static java.lang.System.out;
  * @author Martin Buchholz
  * @library /test/lib
  * @build jdk.test.lib.process.*
- * @run testng UncaughtExceptionsTest
+ * @run junit UncaughtExceptionsTest
  */
-public class UncaughtExceptionsTest {
+class UncaughtExceptionsTest {
 
-    @DataProvider
-    public Object[][] testCases() {
-        return new Object[][] {
-            new Object[] { "ThreadIsDeadAfterJoin",
-                           0,
-                           UncaughtExitSimulator.EXPECTED_RESULT,
-                           "Exception in thread \"Thread-\\d+\".*simulateUncaughtExitEvent"
-            },
-            new Object[] {
-                            "MainThreadAbruptTermination",
-                            1,
-                            UncaughtExitSimulator.EXPECTED_RESULT,
-                            "Exception in thread \"main\".*simulateUncaughtExitEvent"
-            },
-            new Object[] { "MainThreadNormalTermination", 0, UncaughtExitSimulator.EXPECTED_RESULT, ""},
-            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThread", 1, UncaughtExitSimulator.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThreadOverride", 1, UncaughtExitSimulator.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThreadOverride", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThread", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" },
-            new Object[] { "ThreadGroupUncaughtExceptionHandlerOnNonMainThread", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" }
-        };
+    private static Stream<Arguments> testCases() {
+        return Stream.of(
+            Arguments.of("ThreadIsDeadAfterJoin",
+                         0,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         "Exception in thread \"Thread-\\d+\".*simulateUncaughtExitEvent"),
+            Arguments.of("MainThreadAbruptTermination",
+                         1,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         "Exception in thread \"main\".*simulateUncaughtExitEvent"),
+            Arguments.of("MainThreadNormalTermination",
+                         0,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         ""),
+            Arguments.of("DefaultUncaughtExceptionHandlerOnMainThread",
+                         1,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         ""),
+            Arguments.of("DefaultUncaughtExceptionHandlerOnMainThreadOverride",
+                         1,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         ""),
+            Arguments.of("DefaultUncaughtExceptionHandlerOnNonMainThreadOverride",
+                         0,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         ""),
+            Arguments.of("DefaultUncaughtExceptionHandlerOnNonMainThread",
+                         0,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         ""),
+            Arguments.of("ThreadGroupUncaughtExceptionHandlerOnNonMainThread",
+                         0,
+                         UncaughtExitSimulator.EXPECTED_RESULT,
+                         "")
+        );
     }
 
-    @Test(dataProvider = "testCases")
-    public void test(String className, int exitValue, String stdOutMatch, String stdErrMatch) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("testCases")
+    void test(String className, int exitValue, String stdOutMatch, String stdErrMatch) throws Throwable {
         String cmd = "UncaughtExitSimulator$" + className;
         ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(cmd);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
@@ -91,7 +110,9 @@ class UncaughtExitSimulator extends Thread implements Runnable {
 
     final static String EXPECTED_RESULT = "OK";
 
-    public static void throwRuntimeException() { throw new RuntimeException("simulateUncaughtExitEvent"); }
+    public static void throwRuntimeException() {
+        throw new RuntimeException("simulateUncaughtExitEvent");
+    }
 
     public void run() { throwRuntimeException(); }
 
