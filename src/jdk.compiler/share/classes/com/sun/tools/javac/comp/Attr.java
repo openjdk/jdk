@@ -1703,7 +1703,11 @@ public class Attr extends JCTree.Visitor {
                         } else if (enumSwitch) {
                             Symbol sym = enumConstant(expr, seltype);
                             if (sym == null) {
-                                log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
+                                if (allowPatternSwitch) {
+                                    attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
+                                } else {
+                                    log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
+                                }
                             } else if (!constants.add(sym)) {
                                 log.error(label.pos(), Errors.DuplicateCaseLabel);
                             }
@@ -1719,17 +1723,14 @@ public class Attr extends JCTree.Visitor {
                                 rs.basicLogResolveHelper = prevResolveHelper;
                             }
                         } else {
-                            ResultInfo valTypInfo = new ResultInfo(KindSelector.VAL_TYP,
-                                                                   !seltype.hasTag(ERROR) ? seltype
-                                                                                          : Type.noType);
-                            Type pattype = attribTree(expr, switchEnv, valTypInfo);
+                            Type pattype = attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
                             if (!pattype.hasTag(ERROR)) {
                                 if (pattype.constValue() == null) {
                                     Symbol s = TreeInfo.symbol(expr);
                                     if (s != null && s.kind == TYP && allowPatternSwitch) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else {
+                                    } else if ((s != null && !s.isEnum()) || !allowPatternSwitch) {
                                         log.error(expr.pos(),
                                                   (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
                                     }
@@ -1826,6 +1827,11 @@ public class Attr extends JCTree.Visitor {
         }
     }
     // where
+        private ResultInfo caseLabelResultInfo(Type seltype) {
+            return new ResultInfo(KindSelector.VAL_TYP,
+                                  !seltype.hasTag(ERROR) ? seltype
+                                                         : Type.noType);
+        }
         /** Add any variables defined in stats to the switch scope. */
         private static void addVars(List<JCStatement> stats, WriteableScope switchScope) {
             for (;stats.nonEmpty(); stats = stats.tail) {

@@ -773,8 +773,9 @@ public class Flow {
                     default -> {
                         Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
                         JCExpression expr = (JCExpression) labelValue;
-                        if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
-                            coveredSymbols.add(((JCIdent) expr).sym);
+                        Symbol sym = TreeInfo.symbol(expr);
+                        if (sym != null && sym.isEnum())
+                            coveredSymbols.add(sym);
                     }
                 }
             }

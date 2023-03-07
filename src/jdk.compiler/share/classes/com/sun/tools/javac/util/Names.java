@@ -221,6 +221,7 @@ public class Names {
     // pattern switches
     public final Name typeSwitch;
     public final Name enumSwitch;
+    public final Name enumConstant;
 
     public final Name.Table table;
 
@@ -398,6 +399,7 @@ public class Names {
         // pattern switches
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
+        enumConstant = fromString("enumConstant");
     }
 
     protected Name.Table createTable(Options options) {

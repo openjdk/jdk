@@ -1147,6 +1147,28 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testEnumExhaustiveness(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface Opt {}
+                   enum A implements Opt { A, B, C; }
+                   enum B implements Opt { B, C, D; }
+
+                   void test(Opt optValue) {
+                       switch (optValue) {
+                           case A.A, A.B -> {}
+                           case A.C, B.C -> {}
+                           case B.B, B.D -> {}
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");

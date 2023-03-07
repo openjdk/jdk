@@ -86,6 +86,8 @@ public class SwitchBootstraps {
      *       from the target's class; or</li>
      *   <li>the element is of type {@code String} or {@code Integer} and
      *       equals to the target.</li>
+     *   <li>the element is of type that is an enum and
+     *       equals to the target.</li>
      * </ul>
      * <p>
      * If no element in the {@code labels} array matches the target, then
@@ -106,7 +108,7 @@ public class SwitchBootstraps {
      * invocation type is not not a method type of first parameter of a reference type,
      * second parameter of type {@code int} and with {@code int} as its return type,
      * or if {@code labels} contains an element that is not of type {@code String},
-     * {@code Integer} or {@code Class}.
+     * {@code Integer}, {@code Class} or an enum type.
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -135,7 +137,8 @@ public class SwitchBootstraps {
         Class<?> labelClass = label.getClass();
         if (labelClass != Class.class &&
             labelClass != String.class &&
-            labelClass != Integer.class) {
+            labelClass != Integer.class &&
+            !labelClass.isEnum()) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
     }

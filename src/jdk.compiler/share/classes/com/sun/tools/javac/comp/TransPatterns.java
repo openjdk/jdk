@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
+import com.sun.tools.javac.code.Symbol.DynamicVarSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -833,10 +834,24 @@ public class TransPatterns extends TreeTranslator {
             } else {
                 return (LoadableConstant) principalType;
             }
-        } else if (l.hasTag(Tag.CONSTANTCASELABEL)&& !TreeInfo.isNullCaseLabel(l)) {
+        } else if (l.hasTag(Tag.CONSTANTCASELABEL) && !TreeInfo.isNullCaseLabel(l)) {
             JCExpression expr = ((JCConstantCaseLabel) l).expr;
-            if ((expr.type.tsym.flags_field & Flags.ENUM) != 0) {
-                return LoadableConstant.String(((JCIdent) expr).name.toString());
+            Symbol sym = TreeInfo.symbol(expr);
+            if (sym != null && sym.isEnum() && sym.kind == Kind.VAR) {
+                if (selector.tsym.isEnum()) {
+                    return LoadableConstant.String(sym.getSimpleName().toString());
+                } else {
+                    List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                                                        syms.stringType,
+                                                        new ClassType(syms.classType.getEnclosingType(),
+                                                                      List.of(sym.owner.type),
+                                                                      syms.classType.tsym));
+
+                    MethodSymbol bsm = rs.resolveInternalMethod(l.pos(), env, syms.constantBootstrapsType,
+                            names.enumConstant, bsm_staticArgs, List.nil());
+
+                    return new DynamicVarSymbol(sym.getSimpleName(), sym, bsm.asHandle(), sym.owner.type, new LoadableConstant[0]);
+                }
             } else {
                 Assert.checkNonNull(expr.type.constValue());
 

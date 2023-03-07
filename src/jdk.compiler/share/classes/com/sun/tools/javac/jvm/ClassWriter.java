@@ -929,6 +929,15 @@ public class ClassWriter extends ClassFile {
      */
     void writeBootstrapMethods() {
         int alenIdx = writeAttr(names.BootstrapMethods);
+        int lastBootstrapMethods;
+        do {
+            lastBootstrapMethods = poolWriter.bootstrapMethods.size();
+            for (BsmKey bsmKey : java.util.List.copyOf(poolWriter.bootstrapMethods.keySet())) {
+                for (LoadableConstant arg : bsmKey.staticArgs) {
+                    poolWriter.putConstant(arg);
+                }
+            }
+        } while (lastBootstrapMethods < poolWriter.bootstrapMethods.size());
         databuf.appendChar(poolWriter.bootstrapMethods.size());
         for (BsmKey bsmKey : poolWriter.bootstrapMethods.keySet()) {
             //write BSM handle
