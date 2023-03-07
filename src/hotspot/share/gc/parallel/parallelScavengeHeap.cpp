@@ -69,21 +69,17 @@ jint ParallelScavengeHeap::initialize() {
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
-
-  PSCardTable* card_table = new PSCardTable(heap_rs.region());
-  card_table->initialize();
-  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
-  barrier_set->initialize();
-  BarrierSet::set_barrier_set(barrier_set);
-
-  // Make up the generations
-  assert(MinOldSize <= OldSize && OldSize <= MaxOldSize, "Parameter check");
-  assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
-
   // Layout the reserved space for the generations.
   ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  PSCardTable* card_table = new PSCardTable(heap_rs.region());
+  card_table->initialize(old_rs.base(), young_rs.base());
+
+  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
+  barrier_set->initialize();
+  BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads
   _workers.initialize_workers();
