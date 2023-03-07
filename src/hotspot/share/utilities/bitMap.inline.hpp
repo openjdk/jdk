@@ -253,7 +253,7 @@ BitMap::get_next_one_offset_aligned_right(idx_t beg, idx_t end) const {
 template<typename ReturnType>
 struct BitMap::IterateInvoker {
   template<typename Function>
-  ReturnType operator()(Function function, idx_t index) const {
+  bool operator()(Function function, idx_t index) const {
     return function(index);     // Stop early if converting to bool is false.
   }
 };
