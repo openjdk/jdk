@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,6 @@ class BitMap {
   // Return the array of bitmap words, or a specific word from it.
   bm_word_t* map()                 { return _map; }
   const bm_word_t* map() const     { return _map; }
-  bm_word_t  map(idx_t word) const { return _map[word]; }
 
   // Return a pointer to the word containing the specified bit.
   bm_word_t* word_addr(idx_t bit) {
@@ -133,6 +132,11 @@ class BitMap {
   }
   const bm_word_t* word_addr(idx_t bit) const {
     return map() + to_words_align_down(bit);
+  }
+
+  // Get a word and flip its bits according to flip.
+  bm_word_t flipped_word(idx_t word, bm_word_t flip) const {
+    return _map[word] ^ flip;
   }
 
   // Set a word to a specified value or to all ones; clear a word.
@@ -212,8 +216,8 @@ class BitMap {
   // will CAS the value into the bitmap and is quite a bit slower.
   // The parallel version also returns a value indicating if the
   // calling thread was the one that changed the value of the bit.
-  void at_put(idx_t index, bool value);
-  bool par_at_put(idx_t index, bool value);
+  void at_put(idx_t bit, bool value);
+  bool par_at_put(idx_t bit, bool value);
 
   // Update a range of bits.  Ranges are half-open [beg, end).
   void set_range   (idx_t beg, idx_t end);
@@ -268,11 +272,11 @@ class BitMap {
   idx_t get_next_one_offset (idx_t beg, idx_t end) const;
   idx_t get_next_zero_offset(idx_t beg, idx_t end) const;
 
-  idx_t get_next_one_offset(idx_t offset) const {
-    return get_next_one_offset(offset, size());
+  idx_t get_next_one_offset(idx_t beg) const {
+    return get_next_one_offset(beg, size());
   }
-  idx_t get_next_zero_offset(idx_t offset) const {
-    return get_next_zero_offset(offset, size());
+  idx_t get_next_zero_offset(idx_t beg) const {
+    return get_next_zero_offset(beg, size());
   }
 
   // Like "get_next_one_offset", except requires that "end" is

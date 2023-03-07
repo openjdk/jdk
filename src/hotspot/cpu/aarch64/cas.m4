@@ -33,19 +33,23 @@ dnl
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_ad_cas.m4
+// This section is generated from cas.m4
 
-
+dnl Return Arg1 with two spaces before it. We need this because m4
+dnl strips leading spaces from macro args.
+define(`INDENT', `  $1')dnl
+dnl
 define(`CAS_INSN',
 `
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-  ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
-         $1,P,'predicate(n->as_LoadStore()->barrier_data() == 0);`,
-         $6,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
+ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       `dnl')
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
@@ -62,9 +66,9 @@ define(`CAS_INSN4',
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-  ifelse($7,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
+ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($7,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($7,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg$5`'ifelse($7,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
@@ -96,9 +100,9 @@ define(`CAS_INSN2',
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-  ifelse($6,Acq,'  predicate(needs_acquiring_load_exclusive(n));`)
+ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   match(Set res (WeakCompareAndSwap$1 mem (Binary oldval newval)));
-  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
   effect(KILL cr);
   format %{
     "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
@@ -117,11 +121,12 @@ define(`CAS_INSN3',
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-  ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
-         $1,P,'predicate(n->as_LoadStore()->barrier_data() == 0);`,
-         $6,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
+ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       `dnl')
   match(Set res (WeakCompareAndSwap$1 mem (Binary oldval newval)));
-  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
   effect(KILL cr);
   format %{
     "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"

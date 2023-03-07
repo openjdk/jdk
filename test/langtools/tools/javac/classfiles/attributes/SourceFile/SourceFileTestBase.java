@@ -25,6 +25,7 @@ import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.SourceFile_attribute;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +85,11 @@ public class SourceFileTestBase extends TestBase {
         Map<String, ? extends JavaFileObject> classes = compile(sourceCode).getClasses();
         String fileName = ToolBox.getJavaFileNameFromSource(sourceCode);
         for (String className : classesToTest) {
-            assertAttributePresent(ClassFile.read(classes.get(className).openInputStream()), fileName);
+            ClassFile classFile;
+            try (InputStream input = classes.get(className).openInputStream()) {
+                classFile = ClassFile.read(input);
+            }
+            assertAttributePresent(classFile, fileName);
         }
     }
 

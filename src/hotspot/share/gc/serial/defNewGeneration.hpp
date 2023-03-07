@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class DefNewYoungerGenClosure;
-class DefNewScanClosure;
+class OldGenScanClosure;
+class YoungGenScanClosure;
 class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
@@ -99,12 +99,6 @@ protected:
 
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
-
-  // Promotion failure handling
-  OopIterateClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
-    _promo_failure_scan_stack_closure = scan_stack_closure;
-  }
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
@@ -173,7 +167,7 @@ protected:
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual CompactibleSpace* first_compaction_space() const;
+  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;

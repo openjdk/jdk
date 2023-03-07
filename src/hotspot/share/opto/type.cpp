@@ -2958,7 +2958,7 @@ ciKlass* TypePtr::speculative_type() const {
   if (_speculative != nullptr && _speculative->isa_oopptr()) {
     const TypeOopPtr* speculative = _speculative->join(this)->is_oopptr();
     if (speculative->klass_is_exact()) {
-      return speculative->klass();
+      return speculative->exact_klass();
     }
   }
   return nullptr;
@@ -5050,6 +5050,11 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
       // instance_id = InstanceBot;
       elem = Type::BOTTOM;
       result = NOT_SUBTYPE;
+      if (above_centerline(ptr) || ptr == Constant) {
+        ptr = NotNull;
+        res_xk = false;
+        return NOT_SUBTYPE;
+      }
     }
   } else {// Non integral arrays.
     // Must fall to bottom if exact klasses in upper lattice
@@ -5085,7 +5090,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
       return result;
     case Constant: {
       if (this_ptr == Constant) {
-          res_xk = true;
+        res_xk = true;
       } else if(above_centerline(this_ptr)) {
         res_xk = true;
       } else {

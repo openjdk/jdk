@@ -2230,7 +2230,7 @@ FormatData/ar_YE/NumberElements/8=\u2030
 FormatData/ar_YE/NumberElements/9=\u221e
 FormatData/ar_YE/NumberElements/10=\ufffd
 
-# bug #4113654 (this is obviously not an exchaustive test; I'm trying it here for a single
+# bug #4113654 (this is obviously not an exhaustive test; I'm trying it here for a single
 # inheritance chain only.  This bug fix also gets tested fairly well by the tests for all
 # the other bugs as given above)
 FormatData//NumberPatterns/0=#,##0.###;-#,##0.###
@@ -8471,3 +8471,6 @@ LocaleNames/sr/SZ=\u0421\u0432\u0430\u0437\u0438\u043b\u0435\u043d\u0434
 LocaleNames/th/SZ=\u0e40\u0e2d\u0e2a\u0e27\u0e32\u0e15\u0e35\u0e19\u0e35
 LocaleNames/zh/SZ=\u65af\u5a01\u58eb\u5170
 LocaleNames/zh_TW/SZ=\u53f2\u74e6\u5e1d\u5c3c
+
+#bug 8303472
+LocaleNames//TR=T\u00fcrkiye
