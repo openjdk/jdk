@@ -725,7 +725,7 @@ public class Properties extends Hashtable<Object,Object> {
                     outBuffer.append('\\'); outBuffer.append(aChar);
                     break;
                 default:
-                    if (((aChar < 0x0020) || (aChar > 0x007e)) && escapeUnicode ) {
+                    if (escapeUnicode && ((aChar < 0x0020) || (aChar > 0x007e))) {
                         outBuffer.append("\\u");
                         outBuffer.append(hex.toHexDigits(aChar));
                     } else {
