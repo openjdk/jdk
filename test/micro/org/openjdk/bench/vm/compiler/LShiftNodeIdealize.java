@@ -97,7 +97,6 @@ public class LShiftNodeIdealize {
     @State(Scope.Benchmark)
     public static class BenchState {
         int[] ints;
-        Random random = new Random();
 
         public BenchState() {
 
@@ -105,6 +104,7 @@ public class LShiftNodeIdealize {
 
         @Setup
         public void setup() {
+            Random random = new Random(1000);
             ints = new int[64];
             for (int i = 0; i < 64; i++) {
                 ints[i] = random.nextInt();

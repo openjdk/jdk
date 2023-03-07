@@ -847,9 +847,9 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x >> C1) << C2" which just masks off low bits
+  // Check for "(x >> C1) << C2"
   if (add1_op == Op_RShiftI || add1_op == Op_URShiftI) {
-    // Special case C1 == C2
+    // Special case C1 == C2, which just masks off low bits
     if (add1->in(2) == in(2)) {
       // Convert to "(x & -(1 << C2))"
       return new AndINode(add1->in(1), phase->intcon(-(1 << con)));
@@ -887,12 +887,12 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "((x >> C1) & Y) << C2" which just masks off more low bits
+  // Check for "((x >> C1) & Y) << C2"
   if (add1_op == Op_AndI) {
     Node *add2 = add1->in(1);
     int add2_op = add2->Opcode();
     if (add2_op == Op_RShiftI || add2_op == Op_URShiftI) {
-      // Special case C1 == C2
+      // Special case C1 == C2, which just masks off low bits
       if (add2->in(2) == in(2)) {
         // Convert to "(x & (Y << C2))"
         Node* y_sh = phase->transform(new LShiftINode(add1->in(2), phase->intcon(con)));
@@ -1023,9 +1023,9 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x >> C1) << C2" which just masks off low bits
+  // Check for "(x >> C1) << C2"
   if (add1_op == Op_RShiftL || add1_op == Op_URShiftL) {
-    // Special case C1 == C2
+    // Special case C1 == C2, which just masks off low bits
     if (add1->in(2) == in(2)) {
       // Convert to "(x & -(1 << C2))"
       return new AndLNode(add1->in(1), phase->longcon(-(CONST64(1) << con)));
@@ -1063,12 +1063,12 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "((x >> C1) & Y) << C2" which just masks off more low bits
+  // Check for "((x >> C1) & Y) << C2"
   if (add1_op == Op_AndL) {
     Node* add2 = add1->in(1);
     int add2_op = add2->Opcode();
     if (add2_op == Op_RShiftL || add2_op == Op_URShiftL) {
-      // Special case C1 == C2
+      // Special case C1 == C2, which just masks off low bits
       if (add2->in(2) == in(2)) {
         // Convert to "(x & (Y << C2))"
         Node* y_sh = phase->transform(new LShiftLNode(add1->in(2), phase->intcon(con)));
