@@ -2862,7 +2862,7 @@ public class Types {
 
     /**
      * Merge multiple abstract methods. The preferred method is a method that is a subsignature
-     * of all the other signatures and whose return type is more specific {@see MostSpecificReturnCheck}.
+     * of all the other signatures and whose return type is more specific {@link MostSpecificReturnCheck}.
      * The resulting preferred method has a thrown clause that is the intersection of the merged
      * methods' clauses.
      */
