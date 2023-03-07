@@ -1,6 +1,7 @@
 Tips and tasks when updating harfbuzz sources to a newer version.
 -----------------------------------------------------------------
 
+Download and unzip the latest version from https://github.com/harfbuzz/harfbuzz/releases
 We only use files from the src directory and even then only the ones we need.
 So just C++ include and source files and only the ones needed for the library,
 and even then just the ones we use. Do NOT just copy everything.
@@ -28,11 +29,31 @@ So one way to update is to
     have their reasons.
 
 - we do not apply any header file changes so this is not an issue
+
 - verify the license text is unchanged (extra steps are needed if it is) and update
    src/java.desktop/share/legal/harfbuzz.md with the new version
+
 - clean up trailing white space and tabs to follow jcheck rules.
   Use "expand" and "sed" to remove tabs and trailing white space from the
   imported sources.
+  To clean up the extra spaces and tabs run the following script at each folder level
+  within libharfbuzz
+
+  (shopt -s nullglob
+   for f in *.c *.h *.cc *.hh;
+      do
+        # replace tabs with spaces
+        expand ${f} > ${f}.tmp;
+        mv ${f}.tmp $f;
+
+        # fix line endings to LF
+        sed -i -e 's/\r$//g' ${f};
+
+        # remove trailing spaces
+        sed -i -e 's/[ ]* $//g' ${f};
+      done
+  )
+
 - test using all the automated jtreg tests on all platforms
 - do manual verification of Arabic, Hebrew, Thai, Indic against previous releases. 
   Look for manual related layout jtreg tests and run on Windows,Linux and Mac.
