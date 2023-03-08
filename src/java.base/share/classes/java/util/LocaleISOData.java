@@ -292,7 +292,7 @@ class LocaleISOData {
         + "EE" + "EST"  // Estonia
         + "EG" + "EGY"  // Egypt, Arab Republic of
         + "EH" + "ESH"  // Western Sahara
-        + "ER" + "ERI"  // Eritrea
+        + "ER" + "ERI"  // Eritrea, State of
         + "ES" + "ESP"  // Spain, Spanish State
         + "ET" + "ETH"  // Ethiopia
         + "FI" + "FIN"  // Finland, Republic of
