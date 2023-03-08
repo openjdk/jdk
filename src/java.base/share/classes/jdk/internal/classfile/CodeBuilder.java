@@ -582,7 +582,7 @@ public sealed interface CodeBuilder
                  : fVal == 2.0f ? fconst_2()
                  : ldc(constantPool().floatEntry(fVal));
         if (value instanceof Double dVal)
-            return Double.doubleToRawLongBits(dVal) == 0 ? dconst_0()
+            return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
                  : dVal == 1.0d ? dconst_1()
                  : ldc(constantPool().doubleEntry(dVal));
         return ldc(BytecodeHelpers.constantEntry(constantPool(), value));

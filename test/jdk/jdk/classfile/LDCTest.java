@@ -68,6 +68,9 @@ class LDCTest {
                                     .constantInstruction(LDC, "string50")
                                     .constantInstruction(-0.0f)
                                     .constantInstruction(-0.0d)
+                                    //non-LDC test cases
+                                    .constantInstruction(0.0f)
+                                    .constantInstruction(0.0d)
                                     .returnInstruction(VoidType);
                               }));
         });
@@ -87,7 +90,7 @@ class LDCTest {
                           .map(e -> (Instruction)e)
                           .toList();
 
-        assertEquals(opcodes.size(), 6);
+        assertEquals(opcodes.size(), 8);
         assertEquals(opcodes.get(0).opcode(), LDC);
         assertEquals(opcodes.get(1).opcode(), LDC_W);
         assertEquals(opcodes.get(2).opcode(), LDC);
@@ -97,7 +100,9 @@ class LDCTest {
         assertEquals(
                 Double.doubleToRawLongBits((double)((ConstantInstruction)opcodes.get(4)).constantValue()),
                 Double.doubleToRawLongBits(-0.0d));
-        assertEquals(opcodes.get(5).opcode(), RETURN);
+        assertEquals(opcodes.get(5).opcode(), FCONST_0);
+        assertEquals(opcodes.get(6).opcode(), DCONST_0);
+        assertEquals(opcodes.get(7).opcode(), RETURN);
     }
 
     // TODO test for explicit LDC_W?
