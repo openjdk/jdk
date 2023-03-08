@@ -421,7 +421,7 @@ class LocaleISOData {
         + "SA" + "SAU"  // Saudi Arabia, Kingdom of
         + "SB" + "SLB"  // Solomon Islands
         + "SC" + "SYC"  // Seychelles, Republic of
-        + "SD" + "SDN"  // Sudan, Democratic Republic of the
+        + "SD" + "SDN"  // Sudan, Republic of the
         + "SE" + "SWE"  // Sweden, Kingdom of
         + "SG" + "SGP"  // Singapore, Republic of
         + "SH" + "SHN"  // Saint Helena, Ascension and Tristan da Cunha
@@ -433,7 +433,7 @@ class LocaleISOData {
         + "SN" + "SEN"  // Senegal, Republic of
         + "SO" + "SOM"  // Somalia, Somali Republic
         + "SR" + "SUR"  // Suriname, Republic of
-        + "SS" + "SSD"  // South Sudan
+        + "SS" + "SSD"  // South Sudan, Republic of
         + "ST" + "STP"  // Sao Tome and Principe, Democratic Republic of
         + "SV" + "SLV"  // El Salvador, Republic of
         + "SX" + "SXM"  // Sint Maarten (Dutch part)
