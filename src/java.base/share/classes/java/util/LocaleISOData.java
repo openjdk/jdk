@@ -366,7 +366,7 @@ class LocaleISOData {
         + "MC" + "MCO"  // Monaco, Principality of
         + "MD" + "MDA"  // Moldova, Republic of
         + "ME" + "MNE"  // Montenegro
-        + "MF" + "MAF"  // Saint Martin
+        + "MF" + "MAF"  // Saint Martin (French part)
         + "MG" + "MDG"  // Madagascar, Republic of
         + "MH" + "MHL"  // Marshall Islands
         + "MK" + "MKD"  // Macedonia, the former Yugoslav Republic of
