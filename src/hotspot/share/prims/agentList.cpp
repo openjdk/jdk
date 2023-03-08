@@ -339,8 +339,8 @@ static OnLoadEntry_t lookup_Agent_OnLoad_entry_point(Agent* agent) {
 }
 
 // For backwards compatibility with -Xrun, convert Xrun agents with no JVM_OnLoad,
-// but which have an Agent_OnLoad, to be treated like -agentpath (JVMTI agents)
-void AgentList::promote_xrun_to_jvmti() {
+// but which have an Agent_OnLoad, to be treated like -agentpath
+void AgentList::convert_xrun_agents() {
   Iterator it = xrun_agents();
   while (it.has_next()) {
     Agent* const agent = it.next();
@@ -349,20 +349,24 @@ void AgentList::promote_xrun_to_jvmti() {
     // If there is an JVM_OnLoad function it will get called later,
     // otherwise see if there is an Agent_OnLoad.
     if (on_load_entry == nullptr) {
-      vm_exit_during_initialization("Could not find JVM_OnLoad or Agent_OnLoad function in the library", agent->name());
+      on_load_entry = lookup_Agent_OnLoad_entry_point(agent);
+      if (on_load_entry != nullptr) {
+        agent->_is_xrun = false; // promoted
+      } else {
+        vm_exit_during_initialization("Could not find JVM_OnLoad or Agent_OnLoad function in the library", agent->name());
+      }
     }
-    agent->_is_xrun = false; // promoted
   }
 }
 
-// Invokes Agent_OnLoad for -agentlib:.. -agentpath:  and converted / promoted -Xrun agents.
+// Invokes Agent_OnLoad for -agentlib:.. -agentpath:  and converted -Xrun agents.
 // Called very early -- before JavaThreads exist
 void AgentList::load_agents() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
   extern struct JavaVM_ main_vm;
 
-  // Promote -Xrun to -agentlib: if there is no JVM_OnLoad
-  promote_xrun_to_jvmti();
+  // Convert -Xrun to -agentlib: if there is no JVM_OnLoad
+  convert_xrun_agents();
 
   JvmtiExport::enter_onload_phase();
 

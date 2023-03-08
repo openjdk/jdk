@@ -63,7 +63,7 @@ class AgentList : AllStatic {
 
   static void timestamp();
   static void invoke_JVM_OnLoad();
-  static void promote_xrun_to_jvmti();
+  static void convert_xrun_agents();
   static void link_jplis(Agent* agent);
 
  public:
