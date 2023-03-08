@@ -59,12 +59,7 @@ void LockStack::grow(size_t min_capacity) {
   size_t capacity = _limit - _base;
   size_t index = _current - _base;
   size_t new_capacity = MAX2(min_capacity, capacity * 2);
-  oop* new_stack = NEW_C_HEAP_ARRAY(oop, new_capacity, mtSynchronizer);
-  for (size_t i = 0; i < index; i++) {
-    *(new_stack + i) = *(_base + i);
-  }
-  FREE_C_HEAP_ARRAY(oop, _base);
-  _base = new_stack;
+  _base = REALLOC_C_HEAP_ARRAY(oop, _base, new_capacity, mtSynchronizer);
   _limit = _base + new_capacity;
   _current = _base + index;
   assert(_current < _limit, "must fit after growing");
