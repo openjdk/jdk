@@ -812,9 +812,18 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #endif
     jccb(Assembler::zero, Stacked);
     if (UseFastLocking) {
-      // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
+      // If the owner is ANONYMOUS, we need to fix it.
       testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
+#ifdef _LP64
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmpReg);
+      Compile::current()->output()->add_stub(stub);
+      jcc(Assembler::notEqual, stub->entry());
+      bind(stub->continuation());
+#else
+      // We can't easily implement this optimization on 32 bit because we don't have a thread register.
+      // Call the slow-path instead.
       jcc(Assembler::notEqual, NO_COUNT);
+#endif
     }
   }
 
