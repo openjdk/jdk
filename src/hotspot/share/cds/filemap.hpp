@@ -483,7 +483,8 @@ public:
   bool  remap_shared_readonly_as_readwrite();
 
   // Errors.
-  static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
+  ATTRIBUTE_PRINTF(1, 2) static void fail_stop(const char *msg, ...);
+
   static bool memory_mapping_failed() {
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
