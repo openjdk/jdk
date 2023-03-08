@@ -31,14 +31,16 @@
 #include "utilities/ostream.hpp"
 
 LockStack::LockStack() :
-  _base(UseFastLocking && !UseHeavyMonitors ? NEW_C_HEAP_ARRAY(oop, INITIAL_CAPACITY, mtSynchronizer) : NULL),
+  _base(UseFastLocking && !UseHeavyMonitors ? _initial : NULL),
   _limit(_base + INITIAL_CAPACITY),
   _current(_base) {
 }
 
 LockStack::~LockStack() {
   if (UseFastLocking && !UseHeavyMonitors) {
-    FREE_C_HEAP_ARRAY(oop, _base);
+    if (_base != _initial) {
+      FREE_C_HEAP_ARRAY(oop, _base);
+    }
   }
 }
 
@@ -59,12 +61,15 @@ void LockStack::grow(size_t min_capacity) {
   size_t capacity = _limit - _base;
   size_t index = _current - _base;
   size_t new_capacity = MAX2(min_capacity, capacity * 2);
-  oop* new_stack = NEW_C_HEAP_ARRAY(oop, new_capacity, mtSynchronizer);
-  for (size_t i = 0; i < index; i++) {
-    *(new_stack + i) = *(_base + i);
+  if (_base == _initial) {
+    oop* new_stack = NEW_C_HEAP_ARRAY(oop, new_capacity, mtSynchronizer);
+    for (size_t i = 0; i < index; i++) {
+      *(new_stack + i) = *(_base + i);
+    }
+    _base = new_stack;
+  } else {
+    _base = REALLOC_C_HEAP_ARRAY(oop, _base, new_capacity, mtSynchronizer);
   }
-  FREE_C_HEAP_ARRAY(oop, _base);
-  _base = new_stack;
   _limit = _base + new_capacity;
   _current = _base + index;
   assert(_current < _limit, "must fit after growing");
