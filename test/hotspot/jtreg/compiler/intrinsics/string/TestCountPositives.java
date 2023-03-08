@@ -23,9 +23,11 @@
 
 package compiler.intrinsics.string;
 
+import java.util.Arrays;
+
 /*
  * @test
- * @bug 8999999
+ * @bug 8281146 8303644
  * @summary Validates StringCoding.countPositives intrinsic with a small range of tests.
  * @library /compiler/patches
  *
@@ -98,6 +100,16 @@ public class TestCountPositives {
                             continue;
                         }
                         throw new Exception("Failed test countPositives " + "offset: " + off + " "
+                                + "length: " + len + " " + "return: " + calculated + " expected: " + expected + " negatives: "
+                                + ng);
+                    }
+
+                    // verify also the public API Arrays.countPositives, which
+                    // is using the intrinsic but additionally adjusts the result
+                    // to always be precise
+                    calculated = Arrays.numberOfLeadingPositives(tBa, off, len);
+                    if (calculated != expected) {
+                        throw new Exception("Failed test Arrays.countPositives " + "offset: " + off + " "
                                 + "length: " + len + " " + "return: " + calculated + " expected: " + expected + " negatives: "
                                 + ng);
                     }

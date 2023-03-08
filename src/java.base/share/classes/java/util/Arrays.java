@@ -25,6 +25,8 @@
 
 package java.util;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -7503,6 +7505,36 @@ public class Arrays {
         return aLength - bLength;
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    /**
+     * Returns the number of positive bytes preceding the first negative byte in
+     * the given array range, counting from the lowest index up.
+     *
+     * @param a the byte array to count leading positive bytes in
+     * @param fromIndex the index of the first element, inclusive, to be counted
+     * @param toIndex the index of the last element, exclusive, to be counted
+     * @return the number of positive bytes that precedes the first negative byte
+     *         in the range
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     * @since 21
+     */
+    public static int numberOfLeadingPositives(byte[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int len = toIndex - fromIndex;
+        int count = len > 7 ? JLA.countPositives(a, fromIndex, len) : 0;
+        // The count of the internal intrinsic may be imprecise if less than len,
+        // adjust accordingly
+        for (int i = fromIndex + count; i < toIndex; i++) {
+            if (a[i] < 0) {
+                return i - fromIndex;
+            }
+        }
+        return len;
+    }
 
     // Mismatch methods
 
