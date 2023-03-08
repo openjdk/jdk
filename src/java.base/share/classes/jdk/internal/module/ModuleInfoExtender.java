@@ -42,8 +42,8 @@ import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
 import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
 import jdk.internal.classfile.attribute.ModuleTargetAttribute;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 
 /**
