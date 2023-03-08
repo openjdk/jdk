@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -62,8 +62,6 @@ public:
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
-
-  static bool supports_float16() { return UseZfhmin; }
 
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl)               \

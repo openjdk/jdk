@@ -1220,15 +1220,6 @@ public:
   void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
 
-  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister tmp) {
-    fcvt_h_s(tmp, src);
-    fmv_x_h(dst, tmp);
-  }
-  void flt16_to_flt(FloatRegister dst, Register src, FloatRegister tmp) {
-    fmv_h_x(tmp, src);
-    fcvt_s_h(dst, tmp);
-  }
-
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {
