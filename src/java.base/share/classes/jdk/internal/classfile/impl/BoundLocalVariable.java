@@ -26,14 +26,10 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.ClassDesc;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.instruction.LocalVariable;
 
-/**
- * LocalVariableImpl
- */
 public final class BoundLocalVariable
         extends AbstractBoundLocalVariable
         implements LocalVariableInfo,

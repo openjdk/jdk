@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/safefetch.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,7 +37,7 @@
 #include <pthread.h>
 static pthread_key_t g_jmpbuf_key;
 
-struct InitTLSKey { InitTLSKey() { pthread_key_create(&g_jmpbuf_key, NULL); } };
+struct InitTLSKey { InitTLSKey() { pthread_key_create(&g_jmpbuf_key, nullptr); } };
 static InitTLSKey g_init_tly_key;
 
 // Handle safefetch, sigsetjmp style:
@@ -49,7 +50,7 @@ static InitTLSKey g_init_tly_key;
 // caller sites simple.
 bool handle_safefetch(int sig, address ignored1, void* ignored2) {
   if (sig == SIGSEGV || sig == SIGBUS) {
-    // Retrieve jump buffer pointer from TLS. If not NULL, it means we set the
+    // Retrieve jump buffer pointer from TLS. If not null, it means we set the
     // jump buffer and this is indeed a SafeFetch fault.
     // Note signal safety: pthread_getspecific is not safe for signal handler
     // usage, but in practice it works and we have done this in the JVM for many
@@ -63,7 +64,7 @@ bool handle_safefetch(int sig, address ignored1, void* ignored2) {
 }
 
 template <class T>
-static bool _SafeFetchXX_internal(const T *adr, T* result) {
+ATTRIBUTE_NO_ASAN static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
 
@@ -73,7 +74,7 @@ static bool _SafeFetchXX_internal(const T *adr, T* result) {
   sigjmp_buf jb;
   if (sigsetjmp(jb, 1) != 0) {
     // We faulted. Reset TLS slot, then return.
-    pthread_setspecific(g_jmpbuf_key, NULL);
+    pthread_setspecific(g_jmpbuf_key, nullptr);
     *result = 0;
     return false;
   }
@@ -86,7 +87,7 @@ static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   // Still here... All went well, adr was valid.
   // Reset TLS slot, then return result.
-  pthread_setspecific(g_jmpbuf_key, NULL);
+  pthread_setspecific(g_jmpbuf_key, nullptr);
   *result = n;
 
   return true;

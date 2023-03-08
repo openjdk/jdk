@@ -80,7 +80,7 @@ public class TestTranslatedException {
                     bufferSize = -res;
                 } else {
                     try {
-                        VMSupport.decodeAndThrowThrowable(buffer);
+                        VMSupport.decodeAndThrowThrowable(buffer, true);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
                     } catch (Throwable decoded) {
                         assertThrowableEquals(throwable, decoded);

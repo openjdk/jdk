@@ -24,8 +24,6 @@
  */
 package jdk.internal.classfile;
 
-import java.util.Set;
-
 /**
  * Bidirectional mapper between the classfile representation of an attribute and
  * how that attribute is modeled in the API.  The attribute mapper is used
@@ -61,11 +59,6 @@ public interface AttributeMapper<A> {
      * @param attr The attribute to write
      */
     void writeAttribute(BufWriter buf, A attr);
-
-    /**
-     * Indicates in what places in the classfile this attribute can appear.
-     */
-    Set<AttributedElement.Kind> whereApplicable();
 
     /**
      * {@return The earliest classfile version for which this attribute is

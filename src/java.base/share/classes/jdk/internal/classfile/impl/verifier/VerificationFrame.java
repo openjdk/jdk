@@ -152,8 +152,7 @@ class VerificationFrame {
         if (_stack_size <= 0) {
             _verifier.verifyError("Operand stack underflow");
         }
-        VerificationType top = _stack[--_stack_size];
-        return top;
+        return _stack[--_stack_size];
     }
 
     VerificationType pop_stack(VerificationType type) {
@@ -205,9 +204,9 @@ class VerificationFrame {
     }
 
     VerificationFrame frame_in_exception_handler(int flags) {
-        VerificationType[] stack = new VerificationType[1];
-        VerificationFrame frame = new VerificationFrame(_offset, flags, _locals_size, 0, _max_locals, _max_stack, _locals, stack, _verifier);
-        return frame;
+        return new VerificationFrame(_offset, flags, _locals_size, 0,
+                _max_locals, _max_stack, _locals, new VerificationType[1],
+                _verifier);
     }
 
     void initialize_object(VerificationType old_object, VerificationType new_object) {
@@ -268,21 +267,17 @@ class VerificationFrame {
 
     void copy_locals(VerificationFrame src) {
         int len = src.locals_size() < _locals_size ? src.locals_size() : _locals_size;
-        for (int i = 0; i < len; i++) {
-            _locals[i] = src.locals()[i];
-        }
+        if (len > 0) System.arraycopy(src.locals(), 0, _locals, 0, len);
     }
 
     void copy_stack(VerificationFrame src) {
         int len = src.stack_size() < _stack_size ? src.stack_size() : _stack_size;
-        for (int i = 0; i < len; i++) {
-            _stack[i] = src.stack()[i];
-        }
+        if (len > 0) System.arraycopy(src.stack(), 0, _stack, 0, len);
     }
 
     private int is_assignable_to(VerificationType[] from, VerificationType[] to, int len) {
         int i = 0;
-        for (i = 0; i < len; i++) {
+        for (; i < len; i++) {
             if (!to[i].is_assignable_from(from[i], verifier())) {
                 break;
             }

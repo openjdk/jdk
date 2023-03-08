@@ -32,74 +32,42 @@ import java.util.function.Consumer;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-
-import static jdk.internal.classfile.Classfile.ALOAD;
-import static jdk.internal.classfile.Classfile.ANEWARRAY;
-import static jdk.internal.classfile.Classfile.ASTORE;
-import static jdk.internal.classfile.Classfile.BIPUSH;
-import static jdk.internal.classfile.Classfile.CHECKCAST;
-import static jdk.internal.classfile.Classfile.DLOAD;
-import static jdk.internal.classfile.Classfile.DSTORE;
-import static jdk.internal.classfile.Classfile.FLOAD;
-import static jdk.internal.classfile.Classfile.FSTORE;
-import static jdk.internal.classfile.Classfile.GETFIELD;
-import static jdk.internal.classfile.Classfile.GETSTATIC;
-import static jdk.internal.classfile.Classfile.GOTO;
-import static jdk.internal.classfile.Classfile.GOTO_W;
-import static jdk.internal.classfile.Classfile.IFEQ;
-import static jdk.internal.classfile.Classfile.IFGE;
-import static jdk.internal.classfile.Classfile.IFGT;
-import static jdk.internal.classfile.Classfile.IFLE;
-import static jdk.internal.classfile.Classfile.IFLT;
-import static jdk.internal.classfile.Classfile.IFNE;
-import static jdk.internal.classfile.Classfile.IFNONNULL;
-import static jdk.internal.classfile.Classfile.IFNULL;
-import static jdk.internal.classfile.Classfile.IF_ACMPEQ;
-import static jdk.internal.classfile.Classfile.IF_ACMPNE;
-import static jdk.internal.classfile.Classfile.IF_ICMPEQ;
-import static jdk.internal.classfile.Classfile.IF_ICMPGE;
-import static jdk.internal.classfile.Classfile.IF_ICMPGT;
-import static jdk.internal.classfile.Classfile.IF_ICMPLE;
-import static jdk.internal.classfile.Classfile.IF_ICMPLT;
-import static jdk.internal.classfile.Classfile.IF_ICMPNE;
-import static jdk.internal.classfile.Classfile.IINC;
-import static jdk.internal.classfile.Classfile.ILOAD;
-import static jdk.internal.classfile.Classfile.INSTANCEOF;
-import static jdk.internal.classfile.Classfile.INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.INVOKEINTERFACE;
-import static jdk.internal.classfile.Classfile.INVOKESPECIAL;
-import static jdk.internal.classfile.Classfile.INVOKESTATIC;
-import static jdk.internal.classfile.Classfile.INVOKEVIRTUAL;
-import static jdk.internal.classfile.Classfile.ISTORE;
-import static jdk.internal.classfile.Classfile.JSR;
-import static jdk.internal.classfile.Classfile.JSR_W;
-import static jdk.internal.classfile.Classfile.LDC;
-import static jdk.internal.classfile.Classfile.LDC2_W;
-import static jdk.internal.classfile.Classfile.LDC_W;
-import static jdk.internal.classfile.Classfile.LLOAD;
-import static jdk.internal.classfile.Classfile.LOOKUPSWITCH;
-import static jdk.internal.classfile.Classfile.LSTORE;
-import static jdk.internal.classfile.Classfile.MULTIANEWARRAY;
-import static jdk.internal.classfile.Classfile.NEW;
-import static jdk.internal.classfile.Classfile.NEWARRAY;
-import static jdk.internal.classfile.Classfile.PUTFIELD;
-import static jdk.internal.classfile.Classfile.PUTSTATIC;
-import static jdk.internal.classfile.Classfile.RET;
-import static jdk.internal.classfile.Classfile.SIPUSH;
-import static jdk.internal.classfile.Classfile.TABLESWITCH;
-import static jdk.internal.classfile.Classfile.WIDE;
 import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import jdk.internal.classfile.attribute.StackMapTableAttribute;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.instruction.*;
 
-/**
- * CodeAttr
- */
+import static jdk.internal.classfile.Classfile.*;
+
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
         implements CodeModel, LabelContext {
+
+    static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
+
+    static {
+        for (var o : Opcode.values()) {
+            if (o.sizeIfFixed() == 1) {
+                SINGLETON_INSTRUCTIONS[o.bytecode()] = switch (o.kind()) {
+                    case ARRAY_LOAD -> ArrayLoadInstruction.of(o);
+                    case ARRAY_STORE -> ArrayStoreInstruction.of(o);
+                    case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
+                    case CONVERT -> ConvertInstruction.of(o);
+                    case LOAD -> LoadInstruction.of(o, o.slot());
+                    case MONITOR -> MonitorInstruction.of(o);
+                    case NOP -> NopInstruction.of();
+                    case OPERATOR -> OperatorInstruction.of(o);
+                    case RETURN -> ReturnInstruction.of(o);
+                    case STACK -> StackInstruction.of(o);
+                    case STORE -> StoreInstruction.of(o, o.slot());
+                    case THROW_EXCEPTION -> ThrowInstruction.of();
+                    default -> throw new AssertionError("invalid opcode: " + o);
+                };
+            }
+        }
+    }
+
     List<ExceptionCatch> exceptionTable;
     List<Attribute<?>> attributes;
 
@@ -143,14 +111,14 @@ public final class CodeImpl
         if (lab.labelContext() != this)
             throw new IllegalArgumentException(String.format("Illegal label reuse; context=%s, label=%s",
                                                              this, lab.labelContext()));
-        return lab.getContextInfo();
+        return lab.getBCI();
     }
 
     private void inflateMetadata() {
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (classReader.optionValue(Classfile.Option.Key.PROCESS_LINE_NUMBERS))
+            if (((ClassReaderImpl)classReader).options().processLineNumbers)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -181,7 +149,7 @@ public final class CodeImpl
                                             forEachElement(cb);
                                         }
                                     },
-                                    buf.constantPool(),
+                                    (SplitConstantPool)buf.constantPool(),
                                     null).writeTo(buf);
         }
     }
@@ -194,16 +162,11 @@ public final class CodeImpl
     }
 
     @Override
-    public Kind attributedElementKind() {
-        return Kind.CODE_ATTRIBUTE;
-    }
-
-    @Override
     public void forEachElement(Consumer<CodeElement> consumer) {
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (classReader.optionValue(Classfile.Option.Key.PROCESS_DEBUG))
+        if (((ClassReaderImpl)classReader).options().processDebug)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
@@ -493,7 +456,7 @@ public final class CodeImpl
             case RET -> throw new UnsupportedOperationException("RET instruction not supported");
             case JSR_W -> throw new UnsupportedOperationException("JSR_W instruction not supported");
             default -> {
-                Instruction instr = InstructionData.singletonInstructions[bc];
+                Instruction instr = SINGLETON_INSTRUCTIONS[bc];
                 if (instr == null)
                     throw new UnsupportedOperationException("unknown instruction: " + bc);
                 yield instr;

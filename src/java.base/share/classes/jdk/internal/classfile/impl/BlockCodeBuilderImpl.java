@@ -26,7 +26,6 @@ package jdk.internal.classfile.impl;
 
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.instruction.LabelTarget;
@@ -34,9 +33,6 @@ import jdk.internal.classfile.instruction.LabelTarget;
 import java.util.Objects;
 import jdk.internal.classfile.Instruction;
 
-/**
- * BlockCodeBuilder
- */
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder
         implements CodeBuilder.BlockCodeBuilder {

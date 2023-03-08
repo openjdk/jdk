@@ -24,15 +24,15 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 
 /**
  * Models a {@code CONSTANT_Module_info} constant in the constant pool of a
  * classfile.
  */
 public sealed interface ModuleEntry extends PoolEntry
-        permits ConcreteEntry.ConcreteModuleEntry {
+        permits AbstractPoolEntry.ModuleEntryImpl {
     /**
      * {@return the name of the module}
      */

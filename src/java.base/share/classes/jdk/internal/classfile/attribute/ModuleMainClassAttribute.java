@@ -32,10 +32,9 @@ import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the {@code ModuleMainClass} attribute (JVMS 4.7.27), which can
+ * Models the {@code ModuleMainClass} attribute {@jvms 4.7.27}, which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.
@@ -62,6 +61,6 @@ public sealed interface ModuleMainClassAttribute
      * @param mainClass the main class
      */
     static ModuleMainClassAttribute of(ClassDesc mainClass) {
-        return new UnboundAttribute.UnboundModuleMainClassAttribute(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(mainClass))));
+        return new UnboundAttribute.UnboundModuleMainClassAttribute(TemporaryConstantPool.INSTANCE.classEntry(mainClass));
     }
 }

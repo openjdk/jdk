@@ -238,7 +238,7 @@ public final class AnnotationImpl implements Annotation {
             implements AnnotationValue.OfArray {
 
         public OfArrayImpl(List<AnnotationValue> values) {
-            this.values = List.copyOf(values);;
+            this.values = List.copyOf(values);
         }
 
         @Override

@@ -33,19 +33,16 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * BufferedFieldBuilder
- */
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
-    private final ConstantPoolBuilder constantPool;
+    private final SplitConstantPool constantPool;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
     private AccessFlags flags;
     private final FieldModel original;
 
-    public BufferedFieldBuilder(ConstantPoolBuilder constantPool,
+    public BufferedFieldBuilder(SplitConstantPool constantPool,
                                 Utf8Entry name,
                                 Utf8Entry type,
                                 FieldModel original) {
@@ -86,7 +83,7 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements, Kind.FIELD);
+            super(elements);
         }
 
         @Override
