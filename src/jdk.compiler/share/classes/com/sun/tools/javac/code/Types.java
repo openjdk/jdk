@@ -3713,7 +3713,7 @@ public class Types {
                     cl = List.of(t);
                 }
             } else {
-                cl = closure(st);
+                cl = closure(supertype(t));
             }
             for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail)
                 cl = union(cl, closure(l.head));

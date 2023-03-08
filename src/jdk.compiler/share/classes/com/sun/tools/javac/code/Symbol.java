@@ -837,11 +837,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return false;
             if (type.hasTag(that.type.getTag())) {
                 if (type.hasTag(CLASS)) {
-                    int thatRank = types.rank(that.type);
-                    int thisRank = types.rank(this.type);
-                    return thatRank < thisRank
-                            || (thatRank == thisRank
-                                && that.getQualifiedName().compareTo(this.getQualifiedName()) < 0);
+                    return
+                        types.rank(that.type) < types.rank(this.type) ||
+                        (types.rank(that.type) == types.rank(this.type) &&
+                         that.getQualifiedName().compareTo(this.getQualifiedName()) < 0);
                 } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
                 }
