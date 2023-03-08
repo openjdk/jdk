@@ -315,13 +315,13 @@ cmsFloat64Number RootOfLeastSquaresFitQuadraticCurve(int n, cmsFloat64Number x[]
 
     if (!_cmsMAT3solve(&res, &m, &v)) return 0;
 
-      
+
     a = res.n[2];
     b = res.n[1];
     c = res.n[0];
 
     if (fabs(a) < 1.0E-10) {
-    
+
         if (fabs(b) < 1.0E-10) return 0;
         return cmsmin(0, cmsmax(50, -c/b ));
     }
@@ -334,7 +334,7 @@ cmsFloat64Number RootOfLeastSquaresFitQuadraticCurve(int n, cmsFloat64Number x[]
          else {
 
              double rt;
-             
+
              if (fabs(a) < 1.0E-10) return 0;
 
              rt = (-b + sqrt(d)) / (2.0 * a);
@@ -356,7 +356,7 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
     cmsCIELab InitialLab, destLab, Lab;
     cmsFloat64Number inRamp[256], outRamp[256];
     cmsFloat64Number MinL, MaxL;
-    cmsBool NearlyStraightMidrange = TRUE;  
+    cmsBool NearlyStraightMidrange = TRUE;
     cmsFloat64Number yRamp[256];
     cmsFloat64Number x[256], y[256];
     cmsFloat64Number lo, hi;
@@ -411,7 +411,7 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
 
     // It is one of the valid cases!, use Adobe algorithm
 
-    
+
     // Set a first guess, that should work on good profiles.
     if (Intent == INTENT_RELATIVE_COLORIMETRIC) {
 
@@ -473,17 +473,17 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
     NearlyStraightMidrange = TRUE;
     MinL = outRamp[0]; MaxL = outRamp[255];
     if (Intent == INTENT_RELATIVE_COLORIMETRIC) {
-      
+
         for (l=0; l < 256; l++) {
 
-            if (! ((inRamp[l] <= MinL + 0.2 * (MaxL - MinL) ) ||   
+            if (! ((inRamp[l] <= MinL + 0.2 * (MaxL - MinL) ) ||
                 (fabs(inRamp[l] - outRamp[l]) < 4.0 )))
                 NearlyStraightMidrange = FALSE;
         }
 
-        // If the mid range is straight (as determined above) then the 
-        // DestinationBlackPoint shall be the same as initialLab. 
-        // Otherwise, the DestinationBlackPoint shall be determined 
+        // If the mid range is straight (as determined above) then the
+        // DestinationBlackPoint shall be the same as initialLab.
+        // Otherwise, the DestinationBlackPoint shall be determined
         // using curve fitting.
         if (NearlyStraightMidrange) {
 
@@ -493,11 +493,11 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
         }
     }
 
- 
+
     // curve fitting: The round-trip curve normally looks like a nearly constant section at the black point,
-    // with a corner and a nearly straight line to the white point.  
+    // with a corner and a nearly straight line to the white point.
     for (l=0; l < 256; l++) {
-    
+
         yRamp[l] = (outRamp[l] - MinL) / (MaxL - MinL);
     }
 
@@ -516,17 +516,17 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
     // Capture shadow points for the fitting.
     n = 0;
     for (l=0; l < 256; l++) {
-    
+
         cmsFloat64Number ff = yRamp[l];
 
         if (ff >= lo && ff < hi) {
             x[n] = inRamp[l];
             y[n] = yRamp[l];
             n++;
-        }    
+        }
     }
 
-    
+
     // No suitable points
     if (n < 3 ) {
         cmsDeleteTransform(hRoundTrip);
@@ -534,7 +534,7 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROF
         return FALSE;
     }
 
-  
+
     // fit and get the vertex of quadratic curve
     Lab.L = RootOfLeastSquaresFitQuadraticCurve(n, x, y);
 

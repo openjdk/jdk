@@ -227,11 +227,11 @@ typedef struct _cmsPluginBaseStruct {
 
 // Memory handler. Each new plug-in type replaces current behaviour
 
-typedef void* (* _cmsMallocFnPtrType)(cmsContext ContextID, cmsUInt32Number size); 
+typedef void* (* _cmsMallocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
 typedef void  (* _cmsFreeFnPtrType)(cmsContext ContextID, void *Ptr);
 typedef void* (* _cmsReallocFnPtrType)(cmsContext ContextID, void* Ptr, cmsUInt32Number NewSize);
 
-typedef void* (* _cmsMalloZerocFnPtrType)(cmsContext ContextID, cmsUInt32Number size); 
+typedef void* (* _cmsMalloZerocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
 typedef void* (* _cmsCallocFnPtrType)(cmsContext ContextID, cmsUInt32Number num, cmsUInt32Number size);
 typedef void* (* _cmsDupFnPtrType)(cmsContext ContextID, const void* Org, cmsUInt32Number size);
 
@@ -603,9 +603,9 @@ typedef void     (* _cmsTransformFn)(struct _cmstransform_struct *CMMcargo,   //
 typedef void     (*_cmsTransform2Fn)(struct _cmstransform_struct *CMMcargo,
                                      const void* InputBuffer,
                                      void* OutputBuffer,
-                                     cmsUInt32Number PixelsPerLine,     
-                                     cmsUInt32Number LineCount,          
-                                     const cmsStride* Stride);  
+                                     cmsUInt32Number PixelsPerLine,
+                                     cmsUInt32Number LineCount,
+                                     const cmsStride* Stride);
 
 typedef cmsBool  (* _cmsTransformFactory)(_cmsTransformFn* xform,
                                          void** UserData,
@@ -648,7 +648,7 @@ typedef struct {
 }  cmsPluginTransform;
 
 //----------------------------------------------------------------------------------------------------------
-// Mutex 
+// Mutex
 
 typedef void*    (* _cmsCreateMutexFnPtrType)(cmsContext ContextID);
 typedef void     (* _cmsDestroyMutexFnPtrType)(cmsContext ContextID, void* mtx);
@@ -671,7 +671,7 @@ CMSAPI cmsBool CMSEXPORT _cmsLockMutex(cmsContext ContextID, void* mtx);
 CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
 
 //----------------------------------------------------------------------------------------------------------
-// Parallelization 
+// Parallelization
 
 CMSAPI _cmsTransform2Fn CMSEXPORT _cmsGetTransformWorker(struct _cmstransform_struct* CMMcargo);
 CMSAPI cmsInt32Number   CMSEXPORT _cmsGetTransformMaxWorkers(struct _cmstransform_struct* CMMcargo);
@@ -685,7 +685,7 @@ typedef struct {
 
     cmsInt32Number      MaxWorkers;       // Number of starts to do as maximum
     cmsUInt32Number     WorkerFlags;      // Reserved
-    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions     
+    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
 
 }  cmsPluginParalellization;
 

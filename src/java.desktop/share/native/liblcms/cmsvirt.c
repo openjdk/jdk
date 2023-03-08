@@ -179,7 +179,7 @@ cmsHPROFILE CMSEXPORT cmsCreateRGBProfileTHR(cmsContext ContextID,
 
     if (TransferFunction) {
 
-        // Tries to minimize space. Thanks to Richard Hughes for this nice idea         
+        // Tries to minimize space. Thanks to Richard Hughes for this nice idea
         if (!cmsWriteTag(hICC, cmsSigRedTRCTag,   (void*) TransferFunction[0])) goto Error;
 
         if (TransferFunction[1] == TransferFunction[0]) {
@@ -756,7 +756,7 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
            cmsxyY2XYZ(&bchsw.WPsrc, &WhitePnt);
            cmsWhitePointFromTemp(&WhitePnt, TempDest);
            cmsxyY2XYZ(&bchsw.WPdest, &WhitePnt);
-     
+
     }
 
     hICC = cmsCreateProfilePlaceholder(ContextID);
@@ -851,7 +851,7 @@ cmsHPROFILE CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID)
     // Create a valid ICC 4 structure
     LUT = cmsPipelineAlloc(ContextID, 3, 1);
     if (LUT == NULL) goto Error;
-    
+
     EmptyTab[0] = EmptyTab[1] = EmptyTab[2] = cmsBuildTabulatedToneCurve16(ContextID, 2, Zero);
     PostLin = cmsStageAllocToneCurves(ContextID, 3, EmptyTab);
     OutLin  = cmsStageAllocToneCurves(ContextID, 1, EmptyTab);
@@ -1003,7 +1003,7 @@ typedef struct {
 
 } cmsAllowedLUT;
 
-#define cmsSig0 ((cmsTagSignature) 0) 
+#define cmsSig0 ((cmsTagSignature) 0)
 
 static const cmsAllowedLUT AllowedLUTTypes[] = {
 
@@ -1062,16 +1062,16 @@ const cmsAllowedLUT* FindCombination(const cmsPipeline* Lut, cmsBool IsV4, cmsTa
 cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat64Number Version, cmsUInt32Number dwFlags)
 {
     cmsHPROFILE hProfile = NULL;
-	cmsUInt32Number FrmIn, FrmOut;
-	cmsInt32Number ChansIn, ChansOut;
-	int ColorSpaceBitsIn, ColorSpaceBitsOut;
+        cmsUInt32Number FrmIn, FrmOut;
+        cmsInt32Number ChansIn, ChansOut;
+        int ColorSpaceBitsIn, ColorSpaceBitsOut;
     _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
     cmsPipeline* LUT = NULL;
     cmsStage* mpe;
     cmsContext ContextID = cmsGetTransformContextID(hTransform);
     const cmsAllowedLUT* AllowedLUT;
     cmsTagSignature DestinationTag;
-    cmsProfileClassSignature deviceClass; 
+    cmsProfileClassSignature deviceClass;
 
     _cmsAssert(hTransform != NULL);
 
@@ -1204,7 +1204,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
          if (!cmsWriteTag(hProfile, cmsSigMediaWhitePointTag, &xform ->ExitWhitePoint)) goto Error;
     }
 
-  
+
     // Per 7.2.15 in spec 4.3
     cmsSetHeaderRenderingIntent(hProfile, xform ->RenderingIntent);
 

@@ -437,7 +437,7 @@ void CMSEXPORT cmsCIECAM02Forward(cmsHANDLE hModel, const cmsCIEXYZ* pIn, cmsJCh
 {
     CAM02COLOR clr;
     cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
-  
+
     _cmsAssert(lpMod != NULL);
     _cmsAssert(pIn != NULL);
     _cmsAssert(pOut != NULL);
@@ -463,7 +463,7 @@ void CMSEXPORT cmsCIECAM02Reverse(cmsHANDLE hModel, const cmsJCh* pIn, cmsCIEXYZ
 {
     CAM02COLOR clr;
     cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
-    
+
     _cmsAssert(lpMod != NULL);
     _cmsAssert(pIn != NULL);
     _cmsAssert(pOut != NULL);

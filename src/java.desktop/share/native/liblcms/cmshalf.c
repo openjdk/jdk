@@ -26,7 +26,7 @@
 //
 #include "lcms2_internal.h"
 
-#ifndef CMS_NO_HALF_SUPPORT 
+#ifndef CMS_NO_HALF_SUPPORT
 
 // This code is inspired in the paper "Fast Half Float Conversions"
 // by Jeroen van der Zijp

@@ -402,7 +402,7 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
 
     NewElem ->Double = (cmsFloat64Number*) _cmsCalloc(ContextID, n, sizeof(cmsFloat64Number));
     if (NewElem->Double == NULL) goto Error;
-   
+
     for (i=0; i < n; i++) {
         NewElem ->Double[i] = Matrix[i];
     }
@@ -411,12 +411,12 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
 
         NewElem ->Offset = (cmsFloat64Number*) _cmsCalloc(ContextID, Rows, sizeof(cmsFloat64Number));
         if (NewElem->Offset == NULL) goto Error;
-           
+
         for (i=0; i < Rows; i++) {
                 NewElem ->Offset[i] = Offset[i];
         }
     }
-    
+
     return NewMPE;
 
 Error:
@@ -1310,7 +1310,7 @@ cmsBool BlessLUT(cmsPipeline* lut)
     }
 }
 
-    return TRUE;    
+    return TRUE;
 }
 
 
@@ -1479,7 +1479,7 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
                  First = FALSE;
              }
              else {
-                if (Anterior != NULL) 
+                if (Anterior != NULL)
                     Anterior ->Next = NewMPE;
              }
 
@@ -1530,7 +1530,7 @@ int CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage
                 for (pt = lut ->Elements;
                      pt != NULL;
                      pt = pt -> Next) Anterior = pt;
-                
+
                 Anterior ->Next = mpe;
                 mpe ->Next = NULL;
             }
@@ -1539,7 +1539,7 @@ int CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage
             return FALSE;
     }
 
-    return BlessLUT(lut);    
+    return BlessLUT(lut);
 }
 
 // Unlink an element and return the pointer to it
@@ -1621,7 +1621,7 @@ cmsBool  CMSEXPORT cmsPipelineCat(cmsPipeline* l1, const cmsPipeline* l2)
                 return FALSE;
     }
 
-    return BlessLUT(l1);    
+    return BlessLUT(l1);
 }
 
 
@@ -1751,11 +1751,11 @@ cmsBool CMSEXPORT cmsPipelineEvalReverseFloat(cmsFloat32Number Target[],
     cmsFloat32Number  fx[4], x[4], xd[4], fxd[4];
     cmsVEC3 tmp, tmp2;
     cmsMAT3 Jacobian;
-    
+
     // Only 3->3 and 4->3 are supported
     if (lut ->InputChannels != 3 && lut ->InputChannels != 4) return FALSE;
     if (lut ->OutputChannels != 3) return FALSE;
-   
+
     // Take the hint as starting point if specified
     if (Hint == NULL) {
 

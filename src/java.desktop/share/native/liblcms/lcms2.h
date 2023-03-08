@@ -23,7 +23,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.15 
+// Version 2.15
 //
 
 #ifndef _lcms2_H
@@ -290,7 +290,7 @@ typedef int                  cmsBool;
 // Base ICC type definitions
 typedef enum {
     cmsSigChromaticityType                  = 0x6368726D,  // 'chrm'
-    cmsSigcicpType                          = 0x63696370,  // 'cicp' 
+    cmsSigcicpType                          = 0x63696370,  // 'cicp'
     cmsSigColorantOrderType                 = 0x636C726F,  // 'clro'
     cmsSigColorantTableType                 = 0x636C7274,  // 'clrt'
     cmsSigCrdInfoType                       = 0x63726469,  // 'crdi'
@@ -536,7 +536,7 @@ typedef enum {
     cmsSigNamedColorElemType            = 0x6E636C20,  // 'ncl '
     cmsSigLabV2toV4                     = 0x32203420,  // '2 4 '
     cmsSigLabV4toV2                     = 0x34203220,  // '4 2 '
-  
+
     // Identities
     cmsSigIdentityElemType              = 0x69646E20,  // 'idn '
 
@@ -544,7 +544,7 @@ typedef enum {
     cmsSigLab2FloatPCS                  = 0x64326C20,  // 'd2l '
     cmsSigFloatPCS2Lab                  = 0x6C326420,  // 'l2d '
     cmsSigXYZ2FloatPCS                  = 0x64327820,  // 'd2x '
-    cmsSigFloatPCS2XYZ                  = 0x78326420,  // 'x2d '  
+    cmsSigFloatPCS2XYZ                  = 0x78326420,  // 'x2d '
     cmsSigClipNegativesElemType         = 0x636c7020   // 'clp '
 
 } cmsStageSignature;
@@ -1346,7 +1346,7 @@ CMSAPI cmsBool           CMSEXPORT cmsMLUtranslationsCodes(const cmsMLU* mlu,
                                                              cmsUInt32Number idx,
                                                              char LanguageCode[3],
                                                              char CountryCode[3]);
- 
+
 // Undercolorremoval & black generation -------------------------------------------------------------------------------------
 
 typedef struct {
@@ -1538,7 +1538,7 @@ CMSAPI cmsUInt32Number   CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpa
 // Get number of channels of color space or -1 if color space is not listed/supported
 CMSAPI cmsInt32Number CMSEXPORT cmsChannelsOfColorSpace(cmsColorSpaceSignature ColorSpace);
 
-// Build a suitable formatter for the colorspace of this profile. nBytes=1 means 8 bits, nBytes=2 means 16 bits. 
+// Build a suitable formatter for the colorspace of this profile. nBytes=1 means 8 bits, nBytes=2 means 16 bits.
 CMSAPI cmsUInt32Number   CMSEXPORT cmsFormatterForColorspaceOfProfile(cmsHPROFILE hProfile, cmsUInt32Number nBytes, cmsBool lIsFloat);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsFormatterForPCSOfProfile(cmsHPROFILE hProfile, cmsUInt32Number nBytes, cmsBool lIsFloat);
 
@@ -1705,7 +1705,7 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID
 // Specific to unbounded mode
 #define cmsFLAGS_NONEGATIVES              0x8000    // Prevent negative numbers in floating point transforms
 
-// Copy alpha channels when transforming           
+// Copy alpha channels when transforming
 #define cmsFLAGS_COPY_ALPHA               0x04000000 // Alpha channels are copied on cmsDoTransform()
 
 // Fine-tune control over number of gridpoints
@@ -1806,9 +1806,9 @@ CMSAPI void             CMSEXPORT cmsSetAlarmCodes(const cmsUInt16Number NewAlar
 CMSAPI void             CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS]);
 
 
-CMSAPI void             CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID, 
+CMSAPI void             CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID,
                                                           const cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
-CMSAPI void             CMSEXPORT cmsGetAlarmCodesTHR(cmsContext ContextID, 
+CMSAPI void             CMSEXPORT cmsGetAlarmCodesTHR(cmsContext ContextID,
                                                           cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
 
 
