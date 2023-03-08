@@ -42,28 +42,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Library," <a
  * href="https://www.netlib.org/fdlibm/">{@code fdlibm}</a>. These
  * algorithms, which are written in the C programming language, are
- * then to be understood to be transliterated into Java and executed
- * with all floating-point and integer operations following the rules
- * of Java arithmetic. The following transformations are used in the
- * transliteration:
- *
- * <ul>
- * <li>Extraction and setting of the high and low halves of a 64-bit
- * {@code double} in C is expressed using Java platform methods that
- * perform bit-wise conversions {@linkplain
- * Double#doubleToRawLongBits(double) from {@code double} to {@code
- * long}} and {@linkplain Double#longBitsToDouble(long) {@code long}
- * to {@code double}}.
- *
- * <li>Unsigned {@code int} values in C are mapped to signed {@code
- * int} values in Java with updates to operations to replicate
- * unsigned semantics where the results on the same textual operation
- * would differ. For example, {@code >>} shifts on unsigned C values
- * are replaced with {@code >>>} shifts on signed Java values. Sized
- * comparisons on unsigned C values ({@code <}, {@code <=}, {@code >},
- * {@code >=}) are replaced with semantically equivalent calls to
- * {@link Integer#compareUnsigned(int, int) compareUnsigned}.
- * </ul>
+ * then to be understood as executed with all floating-point
+ * operations following the rules of Java floating-point arithmetic.
  *
  * <p>The Java math library is defined with respect to
  * {@code fdlibm} version 5.3. Where {@code fdlibm} provides
