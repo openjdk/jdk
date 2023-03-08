@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,14 +66,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p> The following is an example of a GET request that prints the response
  * body as a String:
  *
- * <pre>{@code    HttpClient client = HttpClient.newHttpClient();
+ * {@snippet :
+ *   HttpClient client = HttpClient.newHttpClient();
+ *
  *   HttpRequest request = HttpRequest.newBuilder()
  *         .uri(URI.create("http://foo.com/"))
  *         .build();
+ *
  *   client.sendAsync(request, BodyHandlers.ofString())
  *         .thenApply(HttpResponse::body)
  *         .thenAccept(System.out::println)
- *         .join(); }</pre>
+ *         .join(); }
  *
  * <p>The class {@link BodyPublishers BodyPublishers} provides implementations
  * of many common publishers. Alternatively, a custom {@code BodyPublisher}
@@ -341,13 +344,16 @@ public abstract class HttpRequest {
      * <br><br>
      * <ul>
      *  <li> Retain all headers:
-     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> true)}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> true) }
      *
      *  <li> Remove all headers:
-     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> false)}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (n, v) -> false) }
      *
      *  <li> Remove a particular header (e.g. Foo-Bar):
-     *  <pre>{@code HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar"))}</pre>
+     *  {@snippet :
+     *  HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar")) }
      * </ul>
      *
      * @param request the original request
@@ -561,25 +567,28 @@ public abstract class HttpRequest {
      * convert common high-level Java objects into a flow of data suitable for
      * sending as a request body:
      *
-     *  <pre>{@code    // Request body from a String
+     * {@snippet :
+     *   // Request body from a String
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "text/plain; charset=UTF-8")
      *        .POST(BodyPublishers.ofString("some body text"))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a File
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "application/json")
      *        .POST(BodyPublishers.ofFile(Paths.get("file.json")))
-     *        .build();
+     *        .build(); }
      *
+     * {@snippet :
      *   // Request body from a byte array
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .POST(BodyPublishers.ofByteArray(new byte[] { ... }))
-     *        .build(); }</pre>
+     *        .build(); }
      *
      * @since 11
      */

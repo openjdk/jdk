@@ -45,9 +45,6 @@ import jdk.internal.classfile.constantpool.MemberRefEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 
-/**
- * BytecodeHelpers
- */
 public class BytecodeHelpers {
 
     private BytecodeHelpers() {

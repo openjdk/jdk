@@ -35,6 +35,7 @@ import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * A pseudo-instruction which models a single entry in the {@link
@@ -77,4 +78,34 @@ public sealed interface LocalVariableType extends PseudoInstruction
     Label endScope();
 
     boolean writeTo(BufWriter buf);
+
+    /**
+     * {@return a local variable type pseudo-instruction}
+     *
+     * @param slot the local variable slot
+     * @param nameEntry the local variable name
+     * @param signatureEntry the local variable signature
+     * @param startScope the start range of the local variable scope
+     * @param endScope the end range of the local variable scope
+     */
+    static LocalVariableType of(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
+        return new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
+                                                                      startScope, endScope);
+    }
+
+    /**
+     * {@return a local variable type pseudo-instruction}
+     *
+     * @param slot the local variable slot
+     * @param name the local variable name
+     * @param signature the local variable signature
+     * @param startScope the start range of the local variable scope
+     * @param endScope the end range of the local variable scope
+     */
+    static LocalVariableType of(int slot, String name, Signature signature, Label startScope, Label endScope) {
+        return of(slot,
+                  TemporaryConstantPool.INSTANCE.utf8Entry(name),
+                  TemporaryConstantPool.INSTANCE.utf8Entry(signature.signatureString()),
+                  startScope, endScope);
+    }
 }

@@ -31,9 +31,6 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * ChainedClassBuilder
- */
 public final class ChainedClassBuilder
         implements ClassBuilder, Consumer<ClassElement> {
     private final ClassBuilder downstream;
@@ -44,10 +41,10 @@ public final class ChainedClassBuilder
                                Consumer<ClassElement> consumer) {
         this.downstream = downstream;
         this.consumer = consumer;
-        ClassBuilder b = downstream;
-        while (b instanceof ChainedClassBuilder cb)
-            b = cb.downstream;
-        terminal = (DirectClassBuilder) b;
+        this.terminal = switch (downstream) {
+            case ChainedClassBuilder cb -> cb.terminal;
+            case DirectClassBuilder db -> db;
+        };
     }
 
     @Override
@@ -81,7 +78,7 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder withMethod(Utf8Entry name, Utf8Entry descriptor, int flags,
                                    Consumer<? super MethodBuilder> handler) {
-        return downstream.with(new BufferedMethodBuilder(terminal.constantPool, terminal.thisClassEntry,
+        return downstream.with(new BufferedMethodBuilder(terminal.constantPool,
                                                          name, descriptor, null)
                                        .run(handler)
                                        .toModel());
@@ -89,7 +86,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
-        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool, terminal.thisClassEntry,
+        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool,
                                                                   method.methodName(), method.methodType(), method);
         builder.transform(method, transform);
         return downstream.with(builder.toModel());

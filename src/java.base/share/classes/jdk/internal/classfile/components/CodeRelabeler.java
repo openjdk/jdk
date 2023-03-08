@@ -34,13 +34,14 @@ import jdk.internal.classfile.instruction.LookupSwitchInstruction;
 import jdk.internal.classfile.instruction.SwitchCase;
 import jdk.internal.classfile.instruction.TableSwitchInstruction;
 import jdk.internal.classfile.Label;
+import jdk.internal.classfile.instruction.CharacterRange;
 import jdk.internal.classfile.instruction.ExceptionCatch;
 import jdk.internal.classfile.instruction.LabelTarget;
 import jdk.internal.classfile.instruction.LocalVariable;
 import jdk.internal.classfile.instruction.LocalVariableType;
 
 /**
- * CodeRelabeler is a {@link jdk.internal.classfile.CodeTransform} replacing all occurrences
+ * A code relabeler is a {@link CodeTransform} replacing all occurrences
  * of {@link jdk.internal.classfile.Label} in the transformed code with new instances.
  * All {@link jdk.internal.classfile.instruction.LabelTarget} instructions are adjusted accordingly.
  * Relabeled code graph is identical to the original.
@@ -139,6 +140,13 @@ public sealed interface CodeRelabeler extends CodeTransform {
                             lvt.signatureSymbol(),
                             relabel(lvt.startScope(), cob),
                             relabel(lvt.endScope(), cob));
+                case CharacterRange chr ->
+                    cob.characterRange(
+                            relabel(chr.startScope(), cob),
+                            relabel(chr.endScope(), cob),
+                            chr.characterRangeStart(),
+                            chr.characterRangeEnd(),
+                            chr.flags());
                 default ->
                     cob.with(coe);
             }

@@ -36,7 +36,6 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import jdk.internal.classfile.components.ClassRemapper;
@@ -46,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.util.LinkedList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.internal.classfile.Attributes;
@@ -57,19 +55,19 @@ import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.Signature;
 import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.instruction.InvokeInstruction;
 import jdk.internal.classfile.instruction.ReturnInstruction;
 import jdk.internal.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayDeque;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
 class AdvancedTransformationsTest {
@@ -294,7 +292,7 @@ class AdvancedTransformationsTest {
     private static byte[] instrument(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
         var instrumentorCodeMap = instrumentor.methods().stream()
                                               .filter(instrumentedMethodsFilter)
-                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
@@ -316,13 +314,13 @@ class AdvancedTransformationsTest {
                                                 && mm.methodType().stringValue().equals(inv.type().stringValue())) {
 
                                                 //store stacked method parameters into locals
-                                                var storeStack = new LinkedList<StoreInstruction>();
+                                                var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.fromDescriptor(pt.descriptorString());
-                                                    storeStack.addFirst(StoreInstruction.of(tk, slot));
+                                                    storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }
                                                 storeStack.forEach(codeBuilder::with);

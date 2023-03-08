@@ -61,7 +61,7 @@ import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.math.FormattedFloatingDecimal;
+import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -1260,6 +1260,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     id="scientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
+ *     <p> A {@code float} or {@link Float} argument is first converted to
+ *     {@code double} or {@link Double}, without loss of precision.
+ *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
  *
  *     <p> If <i>m</i> is NaN or infinite, the literal strings "NaN" or
@@ -1291,8 +1294,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
- *     the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     the string returned by {@link
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
@@ -1342,6 +1345,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
+ *     <p> A {@code float} or {@link Float} argument is first converted to
+ *     {@code double} or {@link Double}, without loss of precision.
+ *
  *     <p> The result is a string that represents the sign and magnitude
  *     (absolute value) of the argument.  The formatting of the sign is
  *     described in the <a href="#L10nAlgorithm">localization
@@ -1360,8 +1366,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
- *     the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     the string returned by {@link
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
@@ -3512,19 +3518,16 @@ public final class Formatter implements Closeable, Flushable {
             appendJustified(fmt.a, sb);
         }
 
-        // !Double.isInfinite(value) && !Double.isNaN(value)
+        // !Double.isInfinite(value) && !Double.isNaN(value) && value sign bit is 0
         private void print(Formatter fmt, StringBuilder sb, double value, Locale l,
-                           int flags, char c, int precision, boolean neg)
-            throws IOException
-        {
+                           int flags, char c, int precision, boolean neg) {
             if (c == Conversion.SCIENTIFIC) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.SCIENTIFIC);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.SCIENTIFIC);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3552,13 +3555,12 @@ public final class Formatter implements Closeable, Flushable {
 
                 localizedMagnitudeExp(fmt, sb, exp, 1, l);
             } else if (c == Conversion.DECIMAL_FLOAT) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.PLAIN);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3587,9 +3589,8 @@ public final class Formatter implements Closeable, Flushable {
                     mant.append('0');
                     expRounded = 0;
                 } else {
-                    FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.GENERAL);
+                    FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                            value, prec, FormattedFPDecimal.GENERAL);
                     exp = fd.getExponent();
                     mant.append(fd.getMantissa());
                     expRounded = fd.getExponentRounded();

@@ -52,7 +52,7 @@ import jdk.internal.classfile.attribute.CharacterRangeInfo;
 import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 /**
  * Main entry points for parsing, transforming, and generating classfiles.

@@ -77,9 +77,6 @@ import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
 import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
 import static jdk.internal.classfile.Classfile.TAG_STRING;
 
-/**
- * ConstantPool.
- */
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;

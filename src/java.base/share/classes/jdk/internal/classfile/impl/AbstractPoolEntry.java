@@ -51,8 +51,8 @@ import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.StringEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -113,6 +113,7 @@ public abstract sealed class AbstractPoolEntry {
 
     public int index() { return index; }
 
+    @Override
     public int hashCode() {
         return hash;
     }
@@ -284,7 +285,7 @@ public abstract sealed class AbstractPoolEntry {
                             if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
                                 throw new CpException("malformed input around byte " + (px - 1));
                             }
-                            char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
+                            char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
                             chararr[chararr_count++] = v;
                             hash = 31 * hash + v;
                             break;
@@ -492,6 +493,7 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU2(ref1.index());
         }
 
+        @Override
         public String toString() {
             return tag() + " " + ref1();
         }
@@ -542,6 +544,7 @@ public abstract sealed class AbstractPoolEntry {
             return ref1.stringValue();
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o == this) { return true; }
             if (o instanceof AbstractNamedEntry ne) {
@@ -919,6 +922,7 @@ public abstract sealed class AbstractPoolEntry {
             super(cpm, Classfile.TAG_METHODTYPE, index, descriptor);
         }
 
+        @Override
         public Utf8Entry descriptor() {
             return ref1;
         }

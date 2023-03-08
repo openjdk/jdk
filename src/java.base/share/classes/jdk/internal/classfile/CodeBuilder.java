@@ -51,12 +51,12 @@ import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.CatchBuilderImpl;
 import jdk.internal.classfile.impl.ChainedCodeBuilder;
 import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.classfile.impl.LineNumberImpl;
 import jdk.internal.classfile.impl.NonterminalCodeBuilder;
 import jdk.internal.classfile.impl.TerminalCodeBuilder;
 import jdk.internal.classfile.instruction.ArrayLoadInstruction;
 import jdk.internal.classfile.instruction.ArrayStoreInstruction;
 import jdk.internal.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.instruction.CharacterRange;
 import jdk.internal.classfile.instruction.ConstantInstruction;
 import jdk.internal.classfile.instruction.ConvertInstruction;
 import jdk.internal.classfile.instruction.ExceptionCatch;
@@ -64,7 +64,10 @@ import jdk.internal.classfile.instruction.FieldInstruction;
 import jdk.internal.classfile.instruction.IncrementInstruction;
 import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
 import jdk.internal.classfile.instruction.InvokeInstruction;
+import jdk.internal.classfile.instruction.LineNumber;
 import jdk.internal.classfile.instruction.LoadInstruction;
+import jdk.internal.classfile.instruction.LocalVariable;
+import jdk.internal.classfile.instruction.LocalVariableType;
 import jdk.internal.classfile.instruction.LookupSwitchInstruction;
 import jdk.internal.classfile.instruction.MonitorInstruction;
 import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
@@ -82,7 +85,6 @@ import jdk.internal.classfile.instruction.ThrowInstruction;
 import jdk.internal.classfile.instruction.TypeCheckInstruction;
 
 import static java.util.Objects.requireNonNull;
-import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
 import jdk.internal.classfile.impl.TransformingCodeBuilder;
 
@@ -575,12 +577,12 @@ public sealed interface CodeBuilder
                  : lVal == 1l ? lconst_1()
                  : ldc(constantPool().longEntry(lVal));
         if (value instanceof Float fVal)
-            return fVal == 0.0f ? fconst_0()
+            return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
                  : fVal == 1.0f ? fconst_1()
                  : fVal == 2.0f ? fconst_2()
                  : ldc(constantPool().floatEntry(fVal));
         if (value instanceof Double dVal)
-            return dVal == 0.0d ? dconst_0()
+            return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
                  : dVal == 1.0d ? dconst_1()
                  : ldc(constantPool().doubleEntry(dVal));
         return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
@@ -615,7 +617,7 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder lineNumber(int line) {
-        with(LineNumberImpl.of(line));
+        with(LineNumber.of(line));
         return this;
     }
 
@@ -640,13 +642,12 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
-        with(new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
+        with(CharacterRange.of(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
         return this;
     }
 
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
-        with(new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
-                                                          startScope, endScope));
+        with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
         return this;
     }
 
@@ -658,8 +659,7 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
-        with(new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
-                                                              startScope, endScope));
+        with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
         return this;
     }
 

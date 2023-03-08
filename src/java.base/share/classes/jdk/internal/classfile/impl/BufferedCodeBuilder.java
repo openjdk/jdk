@@ -42,9 +42,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/**
- * BufferedCodeBuilder
- */
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder, LabelContext {
     private final SplitConstantPool constantPool;

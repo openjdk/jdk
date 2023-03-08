@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 

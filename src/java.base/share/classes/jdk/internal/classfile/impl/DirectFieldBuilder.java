@@ -35,7 +35,7 @@ import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 public final class DirectFieldBuilder
-        extends AbstractDirectBuilder<FieldBuilder, FieldModel>
+        extends AbstractDirectBuilder<FieldModel>
         implements TerminalFieldBuilder, WritableElement<FieldModel> {
     private final Utf8Entry name;
     private final Utf8Entry desc;
@@ -67,6 +67,7 @@ public final class DirectFieldBuilder
         this.flags = flags;
     }
 
+    @Override
     public void writeTo(BufWriter buf) {
         buf.writeU2(flags);
         buf.writeIndex(name);

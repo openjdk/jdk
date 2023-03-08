@@ -34,9 +34,6 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
 
-/**
- * Options
- */
 public class Options {
 
     public enum Key {

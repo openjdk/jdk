@@ -31,9 +31,6 @@ import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * NonterminalCodeBuilder
- */
 public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     permits ChainedCodeBuilder, BlockCodeBuilderImpl {
     protected final TerminalCodeBuilder terminal;

@@ -40,8 +40,8 @@ import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.Options;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -157,7 +157,7 @@ public sealed interface ConstantPoolBuilder
      * @param classDesc the symbolic descriptor for the class
      */
     default ClassEntry classEntry(ClassDesc classDesc) {
-        return classEntry(utf8Entry(Util.toInternalName(classDesc)));
+        return classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
     }
 
     /**
@@ -485,7 +485,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Long l) return longEntry(l);
         if (c instanceof Float f) return floatEntry(f);
         if (c instanceof Double d) return doubleEntry(d);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 
     /**
@@ -507,7 +507,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return methodTypeEntry(mtd);
         if (c instanceof DirectMethodHandleDesc dmhd) return methodHandleEntry(dmhd);
         if (c instanceof DynamicConstantDesc<?> dcd) return constantDynamicEntry(dcd);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 
     /**
@@ -526,7 +526,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Double d) return doubleEntry(d);
         if (c instanceof ClassDesc cd) return utf8Entry(cd);
         if (c instanceof MethodTypeDesc mtd) return utf8Entry(mtd);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 
     /**

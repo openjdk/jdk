@@ -24,9 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-/**
- * AbstractElement
- */
 public abstract class AbstractElement {
     public AbstractElement() { }
 

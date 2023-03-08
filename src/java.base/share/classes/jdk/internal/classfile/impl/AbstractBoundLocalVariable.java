@@ -28,9 +28,6 @@ import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * AbstractLocalVariableImpl
- */
 public class AbstractBoundLocalVariable
         extends AbstractElement {
     protected final CodeImpl code;

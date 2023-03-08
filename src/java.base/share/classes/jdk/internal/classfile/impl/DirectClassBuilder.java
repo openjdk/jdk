@@ -47,7 +47,7 @@ import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 public final class DirectClassBuilder
-        extends AbstractDirectBuilder<ClassBuilder, ClassModel>
+        extends AbstractDirectBuilder<ClassModel>
         implements ClassBuilder {
 
     final ClassEntry thisClassEntry;

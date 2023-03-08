@@ -30,8 +30,8 @@ import jdk.internal.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 import java.lang.constant.ClassDesc;
 import java.util.*;
@@ -127,7 +127,7 @@ public final class ModuleAttributeBuilderImpl
     @Override
     public ModuleAttributeBuilder uses(ClassDesc service) {
         Objects.requireNonNull(service);
-        return uses(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(service))));
+        return uses(TemporaryConstantPool.INSTANCE.classEntry(service));
     }
 
     @Override
@@ -142,8 +142,8 @@ public final class ModuleAttributeBuilderImpl
         Objects.requireNonNull(service);
         var impls = new ArrayList<ClassEntry>(implClasses.length);
         for (var seq : implClasses)
-            impls.add(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(seq))));
-        return provides(ModuleProvideInfo.of(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(service))), impls));
+            impls.add(TemporaryConstantPool.INSTANCE.classEntry(seq));
+        return provides(ModuleProvideInfo.of(TemporaryConstantPool.INSTANCE.classEntry(service), impls));
     }
 
     @Override

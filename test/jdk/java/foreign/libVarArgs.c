@@ -128,6 +128,7 @@ enum NativeType {
     T_S_PPF,
     T_S_PPD,
     T_S_PPP,
+    T_S_FFFF,
 };
 
 // need to pass `num` separately as last argument preceding varargs according to spec (and for MSVC)
@@ -227,6 +228,7 @@ EXPORT void varargs(call_info* info, int num, ...) {
             CASE(T_S_PPF, struct S_PPF)
             CASE(T_S_PPD, struct S_PPD)
             CASE(T_S_PPP, struct S_PPP)
+            CASE(T_S_FFFF, struct S_FFFF)
             default: exit(-1); // invalid id
         }
     }

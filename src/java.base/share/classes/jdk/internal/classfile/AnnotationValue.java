@@ -462,6 +462,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
         } else if (value instanceof Enum<?> e) {
             return ofEnum(ClassDesc.ofDescriptor(e.getDeclaringClass().descriptorString()), e.name());
         }
-        throw new IllegalArgumentException("Illegal annotation constant value type " + value.getClass());
+        throw new IllegalArgumentException("Illegal annotation constant value type " + (value == null ? null : value.getClass()));
     }
 }

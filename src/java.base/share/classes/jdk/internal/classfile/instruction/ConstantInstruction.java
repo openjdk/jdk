@@ -65,6 +65,7 @@ public sealed interface ConstantInstruction extends Instruction {
         /**
          * {@return the type of the constant}
          */
+        @Override
         default TypeKind typeKind() {
             return opcode().primaryTypeKind();
         }
@@ -84,6 +85,7 @@ public sealed interface ConstantInstruction extends Instruction {
         /**
          * {@return the type of the constant}
          */
+        @Override
         default TypeKind typeKind() {
             return opcode().primaryTypeKind();
         }
@@ -105,6 +107,7 @@ public sealed interface ConstantInstruction extends Instruction {
         /**
          * {@return the type of the constant}
          */
+        @Override
         default TypeKind typeKind() {
             return constantEntry().typeKind();
         }

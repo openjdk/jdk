@@ -30,9 +30,6 @@ import java.util.stream.Collectors;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.Interfaces;
 
-/**
- * InterfacesImpl
- */
 public final class InterfacesImpl
         extends AbstractElement
         implements Interfaces {

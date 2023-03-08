@@ -63,9 +63,6 @@ import jdk.internal.classfile.CompoundElement;
 import jdk.internal.classfile.FieldModel;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
-/**
- * ClassPrinterImpl
- */
 public final class ClassPrinterImpl {
 
     public enum Style { BLOCK, FLOW }
@@ -567,7 +564,7 @@ public final class ClassPrinterImpl {
                 .with(new ListNodeImpl(BLOCK, "fields", clm.fields().stream().map(f ->
                     fieldToTree(f, verbosity))))
                 .with(new ListNodeImpl(BLOCK, "methods", clm.methods().stream().map(mm ->
-                    (Node)methodToTree(mm, verbosity))));
+                    methodToTree(mm, verbosity))));
     }
 
     private static Node[] constantPoolToTree(ConstantPool cp, Verbosity verbosity) {
@@ -694,7 +691,7 @@ public final class ClassPrinterImpl {
                     for (var smf : smta.entries()) {
                         stackMap.with(frameToTree(com.labelToBci(smf.target()), com, smf));
                     }
-                } else if (verbosity == Verbosity.TRACE_ALL) switch (attr) {
+                } else if (verbosity == Verbosity.TRACE_ALL && attr != null) switch (attr) {
                     case LocalVariableTableAttribute lvta -> {
                         locals = lvta.localVariables();
                         codeNode.with(new ListNodeImpl(BLOCK, "local variables",

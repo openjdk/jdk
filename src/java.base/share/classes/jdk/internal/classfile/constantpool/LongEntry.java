@@ -43,6 +43,7 @@ public sealed interface LongEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.LongType;
     }

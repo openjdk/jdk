@@ -69,11 +69,8 @@ import static jdk.internal.classfile.Opcode.IINC_W;
 import static jdk.internal.classfile.Opcode.LDC2_W;
 import static jdk.internal.classfile.Opcode.LDC_W;
 
-/**
- * CodeWriter
- */
 public final class DirectCodeBuilder
-        extends AbstractDirectBuilder<CodeBuilder, CodeModel>
+        extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder, LabelContext {
     private final List<CharacterRange> characterRanges = new ArrayList<>();
     private final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();

@@ -140,19 +140,23 @@ class StubGenerator: public StubCodeGenerator {
 
   // This is used in places where r10 is a scratch register, and can
   // be adapted if r9 is needed also.
-  void setup_arg_regs_using_thread();
+  void setup_arg_regs_using_thread(int nargs = 3);
 
   void restore_arg_regs_using_thread();
 
   // Copy big chunks forward
   void copy_bytes_forward(Register end_from, Register end_to,
-                          Register qword_count, Register to,
-                          Label& L_copy_bytes, Label& L_copy_8_bytes);
+                          Register qword_count, Register tmp1,
+                          Register tmp2, Label& L_copy_bytes,
+                          Label& L_copy_8_bytes, DecoratorSet decorators,
+                          BasicType type);
 
   // Copy big chunks backward
   void copy_bytes_backward(Register from, Register dest,
-                           Register qword_count, Register to,
-                           Label& L_copy_bytes, Label& L_copy_8_bytes);
+                           Register qword_count, Register tmp1,
+                           Register tmp2, Label& L_copy_bytes,
+                           Label& L_copy_8_bytes, DecoratorSet decorators,
+                           BasicType type);
 
   void setup_argument_regs(BasicType type);
 
@@ -441,6 +445,8 @@ class StubGenerator: public StubCodeGenerator {
   address base64_vbmi_join_1_2_addr();
   address base64_vbmi_join_2_3_addr();
   address base64_decoding_table_addr();
+  address base64_AVX2_decode_tables_addr();
+  address base64_AVX2_decode_LUT_tables_addr();
 
   // Code for generating Base64 decoding.
   //

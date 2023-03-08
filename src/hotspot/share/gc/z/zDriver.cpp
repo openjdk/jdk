@@ -319,12 +319,7 @@ void ZDriver::concurrent_reset_relocation_set() {
 }
 
 void ZDriver::pause_verify() {
-  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
-    // Full verification
-    VM_Verify op;
-    VMThread::execute(&op);
-  } else if (ZVerifyRoots || ZVerifyObjects) {
-    // Limited verification
+  if (ZVerifyRoots || ZVerifyObjects) {
     VM_ZVerify op;
     VMThread::execute(&op);
   }

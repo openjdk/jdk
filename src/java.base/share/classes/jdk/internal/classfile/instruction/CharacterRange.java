@@ -85,4 +85,17 @@ public sealed interface CharacterRange extends PseudoInstruction
      * @return the flags
      */
     int flags();
+
+    /**
+     * {@return a character range pseudo-instruction}
+     *
+     * @param startScope the start of the instruction range
+     * @param endScope the end of the instruction range
+     * @param characterRangeStart the encoded start of the character range region (inclusive)
+     * @param characterRangeEnd the encoded end of the character range region (exclusive)
+     * @param flags a flags word, indicating the kind of range
+     */
+    static CharacterRange of(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
+        return new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags);
+    }
 }

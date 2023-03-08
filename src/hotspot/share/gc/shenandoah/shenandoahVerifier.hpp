@@ -39,7 +39,7 @@ class ShenandoahHeap;
 
 class ShenandoahVerifierTask {
 public:
-  ShenandoahVerifierTask(oop o = NULL, int idx = 0): _obj(o) { }
+  ShenandoahVerifierTask(oop o = nullptr, int idx = 0): _obj(o) { }
   ShenandoahVerifierTask(oop o, size_t idx): _obj(o) { }
   // Trivially copyable.
 

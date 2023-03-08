@@ -113,9 +113,9 @@ class VerificationType {
                             // special reference values
                             Null                             = 0x00000000, // A reference with a 0 sym is null
                             // Primitives categories (the second byte determines the category)
-                            Category1                    = (Category1Flag         << 1 * BitsPerByte) | Primitive,
-                            Category2                    = (Category2Flag         << 1 * BitsPerByte) | Primitive,
-                            Category2_2nd            = (Category2_2ndFlag << 1 * BitsPerByte) | Primitive,
+                            Category1                    = (Category1Flag         << BitsPerByte) | Primitive,
+                            Category2                    = (Category2Flag         << BitsPerByte) | Primitive,
+                            Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
                             // Primitive values (type descriminator stored in most-signifcant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
                             Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
@@ -130,26 +130,21 @@ class VerificationType {
                             Long_2nd                     = (ITEM_Long_2nd     << 2 * BitsPerByte) | Category2_2nd,
                             Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
-                            BciMask                        = 0xffff << 1 * BitsPerByte,
+                            BciMask                        = 0xffff << BitsPerByte,
                             // A bci of -1 is an Unintialized-This
                             BciForThis = 0xffff,
                             // Query values
-                            ReferenceQuery         = (ReferenceFlag         << 1 * BitsPerByte) | TypeQuery,
-                            Category1Query         = (Category1Flag         << 1 * BitsPerByte) | TypeQuery,
-                            Category2Query         = (Category2Flag         << 1 * BitsPerByte) | TypeQuery,
-                            Category2_2ndQuery = (Category2_2ndFlag << 1 * BitsPerByte) | TypeQuery;
+                            ReferenceQuery         = (ReferenceFlag         << BitsPerByte) | TypeQuery,
+                            Category1Query         = (Category1Flag         << BitsPerByte) | TypeQuery,
+                            Category2Query         = (Category2Flag         << BitsPerByte) | TypeQuery,
+                            Category2_2ndQuery = (Category2_2ndFlag << BitsPerByte) | TypeQuery;
 
     VerificationType(int raw_data) {
         this._data = raw_data;
         this._sym = null;
     }
 
-    VerificationType() {
-        this(Bogus);
-    }
-
     static final VerificationType bogus_type = new VerificationType(Bogus),
-            top_type = bogus_type,
             null_type = new VerificationType(Null),
             integer_type = new VerificationType(Integer),
             float_type = new VerificationType(Float),
@@ -167,8 +162,7 @@ class VerificationType {
             // any reference is assignable to reference_check.
             reference_check = new VerificationType(ReferenceQuery),
             category1_check = new VerificationType(Category1Query),
-            category2_check = new VerificationType(Category2Query),
-            category2_2nd_check = new VerificationType(Category2_2ndQuery);
+            category2_check = new VerificationType(Category2Query);
 
     static VerificationType reference_type(String sh) {
         return new VerificationType(sh);
@@ -188,32 +182,12 @@ class VerificationType {
         return (_data == Null);
     }
 
-    boolean is_boolean() {
-        return (_data == Boolean);
-    }
-
-    boolean is_byte() {
-        return (_data == Byte);
-    }
-
-    boolean is_char() {
-        return (_data == Char);
-    }
-
-    boolean is_short() {
-        return (_data == Short);
-    }
-
     boolean is_integer() {
         return (_data == Integer);
     }
 
     boolean is_long() {
         return (_data == Long);
-    }
-
-    boolean is_float() {
-        return (_data == Float);
     }
 
     boolean is_double() {
