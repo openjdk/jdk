@@ -346,17 +346,10 @@ public abstract class CallArranger {
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
                         }
-                        bindings.bufferLoad(offset, type)
+                        bindings.bufferLoad(offset, type, (int) size)
                                 .vmStore(storage, type);
                         offset += size;
                     }
-                }
-                case STRUCT_REFERENCE -> {
-                    assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.copy(layout)
-                            .unboxAddress()
-                            .vmStore(storage, long.class);
                 }
                 case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;
@@ -430,15 +423,9 @@ public abstract class CallArranger {
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
                         bindings.dup()
                                 .vmLoad(storage, type)
-                                .bufferStore(offset, type);
+                                .bufferStore(offset, type, (int) size);
                         offset += size;
                     }
-                }
-                case STRUCT_REFERENCE -> {
-                    assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.vmLoad(storage, long.class)
-                            .boxAddress(layout);
                 }
                 case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;

@@ -35,13 +35,11 @@ import java.util.ArrayList;
 
 public enum TypeClass {
     STRUCT_REGISTER,
-    STRUCT_REFERENCE,
     STRUCT_HFA, // Homogeneous Float Aggregate
     POINTER,
     INTEGER,
     FLOAT;
 
-    private static final int MAX_AGGREGATE_REGS_SIZE = 8;
     private static final int MAX_RETURN_AGGREGATE_REGS_SIZE = 2;
 
     private static TypeClass classifyValueType(ValueLayout type) {
@@ -56,10 +54,6 @@ public enum TypeClass {
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
         }
-    }
-
-    static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
     }
 
     static boolean isReturnRegisterAggregate(MemoryLayout type) {
@@ -121,10 +115,8 @@ public enum TypeClass {
     private static TypeClass classifyStructType(MemoryLayout layout, boolean useABIv2) {
         if (isHomogeneousFloatAggregate(layout, useABIv2)) {
             return TypeClass.STRUCT_HFA;
-        } else if (!useABIv2 || isRegisterAggregate(layout)) {
-            return TypeClass.STRUCT_REGISTER;
         }
-        return TypeClass.STRUCT_REFERENCE;
+        return TypeClass.STRUCT_REGISTER;
     }
 
     static boolean isStructHFAorReturnRegisterAggregate(MemoryLayout layout, boolean useABIv2) {
