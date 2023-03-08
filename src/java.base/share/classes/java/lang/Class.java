@@ -4145,7 +4145,7 @@ public final class Class<T> implements java.io.Serializable,
 
     // Annotations cache
     @SuppressWarnings("UnusedDeclaration")
-    private transient volatile AnnotationData annotationData;
+    private transient AnnotationData annotationData;
 
     private AnnotationData annotationData() {
         while (true) { // retry loop
