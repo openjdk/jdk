@@ -365,7 +365,7 @@ class LocaleISOData {
         + "MA" + "MAR"  // Morocco, Kingdom of
         + "MC" + "MCO"  // Monaco, Principality of
         + "MD" + "MDA"  // Moldova, Republic of
-        + "ME" + "MNE"  // Montenegro, Republic of
+        + "ME" + "MNE"  // Montenegro
         + "MF" + "MAF"  // Saint Martin
         + "MG" + "MDG"  // Madagascar, Republic of
         + "MH" + "MHL"  // Marshall Islands
