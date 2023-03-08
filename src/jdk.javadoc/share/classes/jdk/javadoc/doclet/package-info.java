@@ -79,7 +79,7 @@
  *   </dd>
  *
  *   <dt><a id="included"></a>Included</dt>
- *   <dd>An element is considered to be <em>included</em>, if it is <em>selected</em> and any of the following it true:
+ *   <dd>An element is considered to be <em>included</em>, if it is <em>selected</em> and any of the following is true:
  *     <ul>
  *       <li>the element is <em>specified</em>, or
  *       <li>the element contains a <em>specified</em> element, or

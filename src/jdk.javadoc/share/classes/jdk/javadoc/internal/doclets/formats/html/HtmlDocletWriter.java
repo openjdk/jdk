@@ -291,13 +291,13 @@ public class HtmlDocletWriter {
     private void addMethodInfo(ExecutableElement method, Content dl) {
         var enclosing = (TypeElement) method.getEnclosingElement();
         var overrideInfo = utils.overriddenMethod(method);
-        var vmt = configuration.getVisibleMemberTable(enclosing);
-        var implementedMethods = vmt.getImplementedMethods(method);
+        var enclosingVmt = configuration.getVisibleMemberTable(enclosing);
+        var implementedMethods = enclosingVmt.getImplementedMethods(method);
         if ((!enclosing.getInterfaces().isEmpty()
                 && !implementedMethods.isEmpty())
                 || overrideInfo != null) {
             // TODO note that if there are any overridden interface methods throughout the
-            //   hierarchy, !vmt.getImplementedMethods(method).isEmpty(), their information
+            //   hierarchy, !enclosingVmt.getImplementedMethods(method).isEmpty(), their information
             //   will be printed if *any* of the below is true:
             //     * the enclosing has _directly_ implemented interfaces
             //     * the overridden method is not null
@@ -305,7 +305,7 @@ public class HtmlDocletWriter {
             //   "Specified by" documentation. The examples of that can be seen in documentation
             //   for these methods:
             //     * ForkJoinPool.execute(java.lang.Runnable)
-            //  This is a long-standing bug, which must be fixed separately.
+            //  This is a long-standing bug, which must be fixed separately: JDK-8302316
             MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
         }
         if (overrideInfo != null) {
