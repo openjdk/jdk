@@ -36,35 +36,28 @@ import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.MethodBuilder;
 import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-
-/**
- * BufferedMethodBuilder
- */
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
-    private final List<MethodElement> elements = new ArrayList<>();
-    private final ConstantPoolBuilder constantPool;
-    private final ClassEntry thisClass;
+    private final List<MethodElement> elements;
+    private final SplitConstantPool constantPool;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private AccessFlags flags;
     private final MethodModel original;
     private int[] parameterSlots;
 
-    public BufferedMethodBuilder(ConstantPoolBuilder constantPool,
-                                 ClassEntry thisClass,
+    public BufferedMethodBuilder(SplitConstantPool constantPool,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
                                  MethodModel original) {
+        this.elements = new ArrayList<>();
         this.constantPool = constantPool;
-        this.thisClass = thisClass;
         this.name = nameInfo;
         this.desc = typeInfo;
         this.flags = AccessFlags.ofMethod();
@@ -126,7 +119,7 @@ public final class BufferedMethodBuilder
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool(), original);
+        return new BufferedCodeBuilder(this, constantPool, original);
     }
 
     public BufferedMethodBuilder run(Consumer<? super MethodBuilder> handler) {

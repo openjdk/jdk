@@ -1334,7 +1334,7 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_CREATE_PRINTED_PIXELS)
         WIN_MSG(WM_AWT_OBJECTLISTCLEANUP)
         default:
-            sprintf(szBuf, "0x%8.8x(%s):Unknown message 0x%8.8x\n",
+            snprintf(szBuf, sizeof(szBuf), "0x%8.8x(%s):Unknown message 0x%8.8x\n",
                 hwnd, szComment, message);
             break;
     }
@@ -3399,7 +3399,7 @@ static void
 resetKbdState( BYTE kstate[256]) {
     BYTE tmpState[256];
     WCHAR wc[2];
-    memmove(tmpState, kstate, sizeof(kstate));
+    memmove(tmpState, kstate, 256 * sizeof(BYTE));
     tmpState[VK_SHIFT] = 0;
     tmpState[VK_CONTROL] = 0;
     tmpState[VK_MENU] = 0;

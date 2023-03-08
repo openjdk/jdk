@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.util.Objects;
 
 import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.instruction.LabelTarget;
 
 /**
@@ -50,23 +49,23 @@ public final class LabelImpl
         implements Label, LabelTarget {
 
     private final LabelContext labelContext;
-    private int contextInfo;
+    private int bci;
 
-    public LabelImpl(LabelContext labelContext, int contextInfo) {
+        public LabelImpl(LabelContext labelContext, int bci) {
         this.labelContext = Objects.requireNonNull(labelContext);
-        this.contextInfo = contextInfo;
+        this.bci = bci;
     }
 
     public LabelContext labelContext() {
         return labelContext;
     }
 
-    public int getContextInfo() {
-        return contextInfo;
+    public int getBCI() {
+        return bci;
     }
 
-    public void setContextInfo(int contextInfo) {
-        this.contextInfo = contextInfo;
+    public void setBCI(int bci) {
+        this.bci = bci;
     }
 
     @Override
@@ -81,6 +80,6 @@ public final class LabelImpl
 
     @Override
     public String toString() {
-        return String.format("Label[context=%s, contextInfo=%d]", labelContext, contextInfo);
+        return String.format("Label[context=%s, bci=%d]", labelContext, bci);
     }
 }

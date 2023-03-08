@@ -76,7 +76,7 @@ public sealed interface ModuleProvideInfo
      */
     static ModuleProvideInfo of(ClassDesc provides,
                                        List<ClassDesc> providesWith) {
-        return of(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(provides))), Util.entryList(providesWith));
+        return of(TemporaryConstantPool.INSTANCE.classEntry(provides), Util.entryList(providesWith));
     }
 
     /**

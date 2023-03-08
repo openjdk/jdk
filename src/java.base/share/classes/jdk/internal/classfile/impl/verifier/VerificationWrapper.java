@@ -65,10 +65,6 @@ public final class VerificationWrapper {
         return Util.mappedList(clm.interfaces(), ClassEntry::asInternalName);
     }
 
-    ConstantPoolWrapper constantPool() {
-        return cp;
-    }
-
     Iterable<MethodWrapper> methods() {
         return clm.methods().stream().map(m -> new MethodWrapper(m)).toList();
     }
@@ -181,7 +177,8 @@ public final class VerificationWrapper {
 
         private NameAndTypeEntry _refNameType(int index) {
             var e = cp.entryByIndex(index);
-            return (e instanceof DynamicConstantPoolEntry de) ? de.nameAndType() : ((MemberRefEntry)e).nameAndType();
+            return (e instanceof DynamicConstantPoolEntry de) ? de.nameAndType() :
+                    e != null ? ((MemberRefEntry)e).nameAndType() : null;
         }
 
         String refNameAt(int index) {

@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Integer_info} constant in the constant pool of a
@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface IntegerEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits ConcreteEntry.ConcreteIntegerEntry {
+        permits AbstractPoolEntry.IntegerEntryImpl {
 
     /**
      * {@return the integer value}
@@ -43,6 +43,7 @@ public sealed interface IntegerEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.IntType;
     }

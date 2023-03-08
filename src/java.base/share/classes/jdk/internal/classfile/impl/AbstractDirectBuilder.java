@@ -27,21 +27,17 @@ package jdk.internal.classfile.impl;
 import java.util.Optional;
 
 import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * AbstractDirectBuilder
- */
-public class AbstractDirectBuilder<B, M> {
-    protected final ConstantPoolBuilder constantPool;
+public class AbstractDirectBuilder<M> {
+    protected final SplitConstantPool constantPool;
     protected final AttributeHolder attributes = new AttributeHolder();
     protected M original;
 
-    public AbstractDirectBuilder(ConstantPoolBuilder constantPool) {
+    public AbstractDirectBuilder(SplitConstantPool constantPool) {
         this.constantPool = constantPool;
     }
 
-    public ConstantPoolBuilder constantPool() {
+    public SplitConstantPool constantPool() {
         return constantPool;
     }
 

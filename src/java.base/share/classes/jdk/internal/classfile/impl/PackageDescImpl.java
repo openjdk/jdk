@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 public record PackageDescImpl(String packageInternalName) implements PackageDesc {
 

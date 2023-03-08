@@ -51,17 +51,9 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the table of custom attribute mappers}  This is derived from
-     * the processing option {@link Classfile.Option.Key#ATTRIBUTE_MAPPER}.
+     * the processing option {@link Classfile.Option#attributeMapper(Function)}.
      */
     Function<Utf8Entry, AttributeMapper<?>> customAttributes();
-
-    /**
-     * {@return the value corresponding to the specified processing option}
-     *
-     * @param option the option key to fetch
-     * @param <T> the type of the option value (unchecked)
-     */
-    <T> T optionValue(Classfile.Option.Key option);
 
     // Class context
 
@@ -148,7 +140,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a module entry
      */
     ModuleEntry readModuleEntry(int offset);
@@ -159,7 +151,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a package entry
      */
     PackageEntry readPackageEntry(int offset);
@@ -170,7 +162,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a class entry
      */
     ClassEntry readClassEntry(int offset);
@@ -181,7 +173,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a name-and-type entry
      */
     NameAndTypeEntry readNameAndTypeEntry(int offset);
@@ -192,7 +184,7 @@ public sealed interface ClassReader extends ConstantPool
      * @param offset the offset of the index within the classfile
      * @throws IndexOutOfBoundsException if the index is out of range of the
      *         constant pool size, or zero
-     * @throws ClassCastException if the index does not correspond to
+     * @throws IllegalArgumentException if the index does not correspond to
      *         a method handle entry
      */
     MethodHandleEntry readMethodHandleEntry(int offset);
@@ -275,4 +267,4 @@ public sealed interface ClassReader extends ConstantPool
                     int bufWriterOffset,
                     int classReaderOffset,
                     int length);
-    }
+}

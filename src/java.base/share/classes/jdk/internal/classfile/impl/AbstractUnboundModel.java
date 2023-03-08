@@ -33,9 +33,6 @@ import jdk.internal.classfile.AttributedElement;
 import jdk.internal.classfile.ClassfileElement;
 import jdk.internal.classfile.CompoundElement;
 
-/**
- * AbstractUnboundModel
- */
 public abstract sealed class AbstractUnboundModel<E extends ClassfileElement>
         extends AbstractElement
         implements CompoundElement<E>, AttributedElement

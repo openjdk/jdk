@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Float_info} constant in the constant pool of a
@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface FloatEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits ConcreteEntry.ConcreteFloatEntry {
+        permits AbstractPoolEntry.FloatEntryImpl {
 
     /**
      * {@return the float value}
@@ -44,6 +44,7 @@ public sealed interface FloatEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.FloatType;
     }

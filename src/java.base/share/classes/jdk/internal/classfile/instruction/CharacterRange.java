@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.BoundCharacterRange;
  * A pseudo-instruction which models a single entry in the
  * {@link CharacterRangeTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
+ * the setting of the {@link Classfile.Option#processDebug(boolean)} option.
  */
 public sealed interface CharacterRange extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundCharacterRange, BoundCharacterRange {
@@ -85,4 +85,17 @@ public sealed interface CharacterRange extends PseudoInstruction
      * @return the flags
      */
     int flags();
+
+    /**
+     * {@return a character range pseudo-instruction}
+     *
+     * @param startScope the start of the instruction range
+     * @param endScope the end of the instruction range
+     * @param characterRangeStart the encoded start of the character range region (inclusive)
+     * @param characterRangeEnd the encoded end of the character range region (exclusive)
+     * @param flags a flags word, indicating the kind of range
+     */
+    static CharacterRange of(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
+        return new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags);
+    }
 }

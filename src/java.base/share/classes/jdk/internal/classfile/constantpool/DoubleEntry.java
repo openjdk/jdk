@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Double_info} constant in the constant pool of a
@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface DoubleEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits ConcreteEntry.ConcreteDoubleEntry {
+        permits AbstractPoolEntry.DoubleEntryImpl {
 
     /**
      * {@return the double value}
@@ -43,6 +43,7 @@ public sealed interface DoubleEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.DoubleType;
     }

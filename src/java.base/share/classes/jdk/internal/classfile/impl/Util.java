@@ -32,9 +32,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ModuleEntry;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
@@ -58,7 +60,7 @@ public class Util {
         BitSet bs = new BitSet();
         if (type.charAt(0) != '(')
             throw new IllegalArgumentException();
-        for (int i = 1; i < type.length(); ++i) {
+        loop: for (int i = 1; i < type.length(); ++i) {
             switch (type.charAt(i)) {
                 case '[':
                     bs.set(i);
@@ -70,8 +72,7 @@ public class Util {
                     }
                     break;
                 case ')':
-                    i = type.length();
-                    break;
+                    break loop;
                 default:
                     bs.set(i);
                     if (type.charAt(i) == 'L') {
@@ -115,7 +116,7 @@ public class Util {
 
     public static String toClassString(String desc) {
         //TODO: this doesn't look right L ... ;
-        return desc.replaceAll("/", ".");
+        return desc.replace('/', '.');
     }
 
     public static Iterator<String> parameterTypes(String s) {
@@ -123,10 +124,12 @@ public class Util {
         return new Iterator<>() {
             int ch = 1;
 
+            @Override
             public boolean hasNext() {
                 return s.charAt(ch) != ')';
             }
 
+            @Override
             public String next() {
                 char curr = s.charAt(ch);
                 switch (curr) {
@@ -156,7 +159,6 @@ public class Util {
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
         return switch (desc.charAt(0)) {
-            case '[' -> desc;
             case 'L' -> desc.substring(1, desc.length() - 1);
             default -> throw new IllegalArgumentException(desc);
         };
@@ -186,6 +188,14 @@ public class Util {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(toInternalName(list.get(i))));
+        }
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+    }
+
+    public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
+        var result = new Object[list.size()]; // null check
+        for (int i = 0; i < result.length; i++) {
+            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).moduleName()));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }

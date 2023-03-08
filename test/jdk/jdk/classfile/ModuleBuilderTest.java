@@ -38,8 +38,8 @@ import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.attribute.ModuleProvideInfo;
 import jdk.internal.classfile.attribute.ModuleRequireInfo;
 import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;

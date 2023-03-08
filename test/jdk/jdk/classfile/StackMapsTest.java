@@ -217,7 +217,7 @@ class StackMapsTest {
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
-    private static void testTransformedStackMaps(String classPath, Classfile.Option<?>... options) throws Exception {
+    private static void testTransformedStackMaps(String classPath, Classfile.Option... options) throws Exception {
         testTransformedStackMaps(
                 classPath.startsWith("/")
                             ? StackMapsTest.class.getResourceAsStream(classPath).readAllBytes()
@@ -225,7 +225,7 @@ class StackMapsTest {
                 options);
     }
 
-    private static void testTransformedStackMaps(byte[] originalBytes, Classfile.Option<?>... options) throws Exception {
+    private static void testTransformedStackMaps(byte[] originalBytes, Classfile.Option... options) throws Exception {
         //transform the class model
         var classModel = Classfile.parse(originalBytes, options);
         var transformedBytes = Classfile.build(classModel.thisClass().asSymbol(), List.of(options),

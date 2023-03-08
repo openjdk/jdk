@@ -113,7 +113,7 @@ public class GenerateStackMaps {
                 d.methodDesc(),
                 d.isStatic(),
                 d.bytecode().rewind(),
-                d.constantPool(),
+                (SplitConstantPool)d.constantPool(),
                 d.handlers());
     }
 }

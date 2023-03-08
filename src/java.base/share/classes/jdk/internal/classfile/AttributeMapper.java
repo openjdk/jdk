@@ -24,8 +24,6 @@
  */
 package jdk.internal.classfile;
 
-import java.util.Set;
-
 /**
  * Bidirectional mapper between the classfile representation of an attribute and
  * how that attribute is modeled in the API.  The attribute mapper is used

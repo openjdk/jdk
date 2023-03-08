@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
+import java.util.stream.Stream;
 
 /**
  * An instance of this class holds a set of the third party implementations of a particular
@@ -138,13 +139,23 @@ public final class LocaleServiceProviderPool {
                     LocaleServiceProviderPool.getPool(c);
                 all.addAll(pool.getAvailableLocaleSet());
             }
-
             allAvailableLocales = all.toArray(new Locale[0]);
         }
 
         // No instantiation
         private AllAvailableLocales() {
         }
+    }
+
+    /**
+     * Returns a stream of the available locales for all the provider classes.
+     * This stream is constructed from all the locales
+     * that are provided by each provider, including the JRE.
+     *
+     * @return a stream of the available locales for all provider classes
+     */
+    public static Stream<Locale> streamAllAvailableLocales() {
+        return Arrays.stream(AllAvailableLocales.allAvailableLocales);
     }
 
     /**

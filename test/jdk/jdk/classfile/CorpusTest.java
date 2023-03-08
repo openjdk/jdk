@@ -228,13 +228,13 @@ class CorpusTest {
         var cp1 = Classfile.parse(orig).constantPool();
         var cp2 = Classfile.parse(transformed).constantPool();
 
-        for (int i = 1; i < cp1.entryCount(); i += cp1.entryByIndex(i).poolEntries()) {
+        for (int i = 1; i < cp1.entryCount(); i += cp1.entryByIndex(i).width()) {
             assertEquals(cpiToString(cp1.entryByIndex(i)), cpiToString(cp2.entryByIndex(i)));
         }
 
         if (cp1.entryCount() != cp2.entryCount()) {
             StringBuilder failMsg = new StringBuilder("Extra entries in constant pool (" + (cp2.entryCount() - cp1.entryCount()) + "): ");
-            for (int i = cp1.entryCount(); i < cp2.entryCount(); i += cp2.entryByIndex(i).poolEntries())
+            for (int i = cp1.entryCount(); i < cp2.entryCount(); i += cp2.entryByIndex(i).width())
                 failMsg.append("\n").append(cp2.entryByIndex(i));
             fail(failMsg.toString());
         }
@@ -252,10 +252,10 @@ class CorpusTest {
         var cf = Classfile.parse(bytes);
         var pool = cf.constantPool();
         Set<String> entryStrings = new HashSet<>();
-        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).poolEntries()) {
+        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).width()) {
             String s = cpiToString(pool.entryByIndex(i));
             if (entryStrings.contains(s)) {
-                for (int j=1; j<i; j += pool.entryByIndex(j).poolEntries()) {
+                for (int j=1; j<i; j += pool.entryByIndex(j).width()) {
                     var e2 = pool.entryByIndex(j);
                     if (s.equals(cpiToString(e2)))
                         dups.put(i, j);

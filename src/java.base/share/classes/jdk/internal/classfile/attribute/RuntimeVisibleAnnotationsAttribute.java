@@ -29,7 +29,6 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**

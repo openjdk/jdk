@@ -29,9 +29,6 @@ import jdk.internal.classfile.Superclass;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * SuperclassImpl
- */
 public final class SuperclassImpl
         extends AbstractElement
         implements Superclass {
