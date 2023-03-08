@@ -69,8 +69,6 @@ import jdk.test.lib.jfr.TestClassLoader;
  */
 public final class TestAgentEvent {
     private static final String JAVA_AGENT_JAR = "JavaAgent.jar";
-    private final static String JAVA_AGENT_EVENT_NAME = "jdk.JavaAgent";
-    private final static String NATIVE_AGENT_EVENT_NAME = "jdk.NativeAgent";
 
     public static void main(String[] args) throws Throwable {
         String testMethod = args[0];
@@ -83,7 +81,7 @@ public final class TestAgentEvent {
 
     private static void testJavaStatic() throws Throwable {
         try (Recording r = new Recording()) {
-            r.enable(JAVA_AGENT_EVENT_NAME);
+            r.enable(EventNames.JavaAgent);
             r.start();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
@@ -102,7 +100,7 @@ public final class TestAgentEvent {
 
     private static void testNativeStatic() throws Throwable {
         try (Recording r = new Recording()) {
-            r.enable(NATIVE_AGENT_EVENT_NAME);
+            r.enable(EventNames.NativeAgent);
             r.start();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
@@ -116,7 +114,7 @@ public final class TestAgentEvent {
 
     private static void testJavaDynamic() throws Throwable {
         try (Recording r = new Recording()) {
-            r.enable(JAVA_AGENT_EVENT_NAME);
+            r.enable(EventNames.JavaAgent);
             r.start();
             long pid = ProcessHandle.current().pid();
             VirtualMachine vm = VirtualMachine.attach(Long.toString(pid));
