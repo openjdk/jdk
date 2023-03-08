@@ -1690,6 +1690,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       {
         ForkAndExecCheckPoint chechpoint;
         fork_and_exec_res = os::fork_and_exec(cmd);
+        if ( check_timeout() ) break;
       }
       if (fork_and_exec_res < 0) {
         out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
