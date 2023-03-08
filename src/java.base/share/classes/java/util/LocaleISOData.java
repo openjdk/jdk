@@ -253,7 +253,7 @@ class LocaleISOData {
         + "BL" + "BLM"  // Saint Barth\u00e9lemy
         + "BM" + "BMU"  // Bermuda
         + "BN" + "BRN"  // Brunei Darussalam
-        + "BO" + "BOL"  // Bolivia, Republic of
+        + "BO" + "BOL"  // Bolivia, Plurinational State of
         + "BQ" + "BES"  // Bonaire, Sint Eustatius and Saba
         + "BR" + "BRA"  // Brazil, Federative Republic of
         + "BS" + "BHS"  // Bahamas, Commonwealth of the
