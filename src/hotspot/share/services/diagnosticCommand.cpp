@@ -1044,9 +1044,9 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   const char *error = "Could not find jdwp agent.";
 
   if (!dvc_start_ptr) {
-    AgentList::Iterator iter = AgentList::agents();
-    while (iter.has_next()) {
-      Agent* agent = iter.next();
+    AgentList::Iterator it = AgentList::agents();
+    while (it.has_next()) {
+      Agent* agent = it.next();
       if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == nullptr)) {
         char const* func = "debugInit_startDebuggingViaCommand";
         dvc_start_ptr = (debugInit_startDebuggingViaCommandPtr) os::find_agent_function(agent, false, &func, 1);
