@@ -182,7 +182,7 @@ char *printError(const char *msg) {
 
         va_start(argprt, msg);          // set up argptr
         snprintf(charmsg, sizeof(charmsg), "%ls", msg);  // convert format string to multi-byte
-        vsnprintf(buf, charmsg, argprt);
+        vsnprintf(buf, sizeof(buf), charmsg, argprt);
 #ifdef SEND_TO_OUTPUT_DEBUG_STRING
         OutputDebugString(buf);
 #endif
