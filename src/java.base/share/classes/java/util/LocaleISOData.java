@@ -296,7 +296,7 @@ class LocaleISOData {
         + "ES" + "ESP"  // Spain, Spanish State
         + "ET" + "ETH"  // Ethiopia
         + "FI" + "FIN"  // Finland, Republic of
-        + "FJ" + "FJI"  // Fiji, Republic of the Fiji Islands
+        + "FJ" + "FJI"  // Fiji, Republic of
         + "FK" + "FLK"  // Falkland Islands (Malvinas)
         + "FM" + "FSM"  // Micronesia, Federated States of
         + "FO" + "FRO"  // Faeroe Islands
@@ -371,7 +371,7 @@ class LocaleISOData {
         + "MH" + "MHL"  // Marshall Islands
         + "MK" + "MKD"  // Macedonia, the former Yugoslav Republic of
         + "ML" + "MLI"  // Mali, Republic of
-        + "MM" + "MMR"  // Myanmar
+        + "MM" + "MMR"  // Myanmar, Republic of the Union of
         + "MN" + "MNG"  // Mongolia, Mongolian People's Republic
         + "MO" + "MAC"  // Macao, Special Administrative Region of China
         + "MP" + "MNP"  // Northern Mariana Islands
@@ -395,7 +395,7 @@ class LocaleISOData {
         + "NO" + "NOR"  // Norway, Kingdom of
         + "NP" + "NPL"  // Nepal, Kingdom of
         + "NR" + "NRU"  // Nauru, Republic of
-        + "NU" + "NIU"  // Niue, Republic of
+        + "NU" + "NIU"  // Niue
         + "NZ" + "NZL"  // New Zealand
         + "OM" + "OMN"  // Oman, Sultanate of
         + "PA" + "PAN"  // Panama, Republic of
