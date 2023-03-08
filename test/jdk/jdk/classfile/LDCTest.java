@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
 import static jdk.internal.classfile.Opcode.*;
 import static jdk.internal.classfile.TypeKind.VoidType;
+import jdk.internal.classfile.instruction.ConstantInstruction;
 
 class LDCTest {
     @Test
@@ -65,6 +66,8 @@ class LDCTest {
                                   c0.constantInstruction(LDC, "string0")
                                     .constantInstruction(LDC, "string131")
                                     .constantInstruction(LDC, "string50")
+                                    .constantInstruction(-0.0f)
+                                    .constantInstruction(-0.0d)
                                     .returnInstruction(VoidType);
                               }));
         });
@@ -84,11 +87,17 @@ class LDCTest {
                           .map(e -> (Instruction)e)
                           .toList();
 
-        assertEquals(opcodes.size(), 4);
+        assertEquals(opcodes.size(), 6);
         assertEquals(opcodes.get(0).opcode(), LDC);
         assertEquals(opcodes.get(1).opcode(), LDC_W);
         assertEquals(opcodes.get(2).opcode(), LDC);
-        assertEquals(opcodes.get(3).opcode(), RETURN);
+        assertEquals(
+                Float.floatToRawIntBits((float)((ConstantInstruction)opcodes.get(3)).constantValue()),
+                Float.floatToRawIntBits(-0.0f));
+        assertEquals(
+                Double.doubleToRawLongBits((double)((ConstantInstruction)opcodes.get(4)).constantValue()),
+                Double.doubleToRawLongBits(-0.0d));
+        assertEquals(opcodes.get(5).opcode(), RETURN);
     }
 
     // TODO test for explicit LDC_W?

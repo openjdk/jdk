@@ -577,12 +577,12 @@ public sealed interface CodeBuilder
                  : lVal == 1l ? lconst_1()
                  : ldc(constantPool().longEntry(lVal));
         if (value instanceof Float fVal)
-            return fVal == 0.0f ? fconst_0()
+            return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
                  : fVal == 1.0f ? fconst_1()
                  : fVal == 2.0f ? fconst_2()
                  : ldc(constantPool().floatEntry(fVal));
         if (value instanceof Double dVal)
-            return dVal == 0.0d ? dconst_0()
+            return Double.doubleToRawLongBits(dVal) == 0 ? dconst_0()
                  : dVal == 1.0d ? dconst_1()
                  : ldc(constantPool().doubleEntry(dVal));
         return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
