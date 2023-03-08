@@ -25,9 +25,8 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Attribute.TypeCompound;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 
 /**
  * A type metadata is an object that can be stapled on a type. This is typically done using
@@ -56,26 +55,19 @@ public sealed interface TypeMetadata {
      * the existing type (rather than creating a new one), as the type might already have been
      * saved inside other symbols.
      */
-    final class Annotations implements TypeMetadata {
-        private List<Attribute.TypeCompound> annos;
+    record Annotations(ListBuffer<Attribute.TypeCompound> annotationBuffer) implements TypeMetadata {
 
-        public static final List<Attribute.TypeCompound> TO_BE_SET = List.nil();
-
-        public Annotations() {
-            this.annos = TO_BE_SET;
+        Annotations() {
+            this(new ListBuffer<>());
         }
 
-        public Annotations(List<Attribute.TypeCompound> annos) {
-            this.annos = annos;
+        Annotations(List<Attribute.TypeCompound> annotations) {
+            this();
+            annotationBuffer.appendList(annotations);
         }
 
-        public List<Attribute.TypeCompound> getAnnotations() {
-            return annos;
-        }
-
-        public void setAnnotations(List<TypeCompound> annos) {
-            Assert.check(this.annos == TO_BE_SET);
-            this.annos = annos;
+        List<Attribute.TypeCompound> annotations() {
+            return annotationBuffer.toList();
         }
     }
 

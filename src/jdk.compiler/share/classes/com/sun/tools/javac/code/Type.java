@@ -438,10 +438,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     }
 
     public Type annotatedType(final List<Attribute.TypeCompound> annos) {
-        return getMetadata(Annotations.class)
-                .map(a -> { a.setAnnotations(annos) ; return this; })
-                .orElseGet(() ->
-                    addMetadata(new Annotations(annos)));
+        return addMetadata(new Annotations(annos));
     }
 
     public boolean isAnnotated() {
@@ -451,7 +448,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return getMetadata(TypeMetadata.Annotations.class)
-                .map(Annotations::getAnnotations).orElse(List.nil());
+                .map(Annotations::annotations).orElse(List.nil());
     }
 
 
