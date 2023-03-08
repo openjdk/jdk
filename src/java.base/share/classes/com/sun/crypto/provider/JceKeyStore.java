@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,9 +475,7 @@ public final class JceKeyStore extends KeyStoreSpi {
     public String engineGetCertificateAlias(Certificate cert) {
         Certificate certElem;
 
-        Enumeration<String> e = entries.keys();
-        while (e.hasMoreElements()) {
-            String alias = e.nextElement();
+        for (String alias : entries.keySet()) {
             Object entry = entries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 certElem = ((TrustedCertEntry)entry).cert;
@@ -573,10 +571,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 dos.writeInt(entries.size());
 
-                Enumeration<String> e = entries.keys();
-                while (e.hasMoreElements()) {
-
-                    String alias = e.nextElement();
+                for (String alias : entries.keySet()) {
                     Object entry = entries.get(alias);
 
                     if (entry instanceof PrivateKeyEntry) {
