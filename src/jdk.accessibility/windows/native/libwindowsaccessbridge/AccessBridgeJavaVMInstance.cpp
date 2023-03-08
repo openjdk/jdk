@@ -174,7 +174,7 @@ AccessBridgeJavaVMInstance::initiateIPC() {
         DEBUG_CODE(AppendToCallInfo(debugBuf));
         return -1;
     } else {
-        DEBUG_CODE(snprintf(debugBuf, "sizeof(debugBuf),   Success!  JavaVM accpeted our file\r\n"));
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), "  Success!  JavaVM accpeted our file\r\n"));
         DEBUG_CODE(AppendToCallInfo(debugBuf));
     }
 
