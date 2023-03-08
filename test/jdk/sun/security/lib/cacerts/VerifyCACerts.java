@@ -37,11 +37,7 @@ import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.*;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.HexFormat;
-import java.util.Map;
+import java.util.*;
 
 public class VerifyCACerts {
 
@@ -266,6 +262,9 @@ public class VerifyCACerts {
         }
     };
 
+    // Ninety days in milliseconds
+    private static final long NINETY_DAYS = 7776000000L;
+
     private static boolean atLeastOneFailed = false;
 
     private static MessageDigest md;
@@ -296,7 +295,7 @@ public class VerifyCACerts {
         System.out.println("Trusted CA Certificate count: " + ks.size());
 
         // also ensure FINGERPRINT_MAP lists correct count
-        if(FINGERPRINT_MAP.size() != COUNT) {
+        if (FINGERPRINT_MAP.size() != COUNT) {
             atLeastOneFailed = true;
             System.err.println("ERROR: " + FINGERPRINT_MAP.size()
                     + " FINGERPRINT_MAP entries, should be " + COUNT);
@@ -349,6 +348,16 @@ public class VerifyCACerts {
             } catch (CertificateNotYetValidException cne) {
                 atLeastOneFailed = true;
                 System.err.println("ERROR: cert is not yet valid");
+            }
+
+            // If cert is within 90 days of expiring, mark as warning so
+            // that cert can be scheduled to be removed/renewed.
+            Date notAfter = cert.getNotAfter();
+            if (notAfter.getTime() - System.currentTimeMillis() < NINETY_DAYS) {
+                if (!EXPIRY_EXC_ENTRIES.contains(alias)) {
+                    System.err.println("WARNING: cert \"" + alias + "\" expiry \""
+                            + notAfter + "\" will expire within 90 days");
+                }
             }
         }
 
