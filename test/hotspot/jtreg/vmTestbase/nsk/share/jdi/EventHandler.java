@@ -267,7 +267,7 @@ public class EventHandler implements Runnable {
                 handled = false;
                 if (event instanceof ThreadStartEvent) {
                     if (EventFilters.filtered(event)) {
-                        display(owner +": Ignoring spurious thread creation: " + event);
+                        display(owner + ": Ignoring spurious thread creation: " + event);
                         handled = true;
                     }
                 }

@@ -154,7 +154,7 @@ public class resume008 extends TestDebuggerType1 {
             } else {
 
                 String property = (String) newEvent.request().getProperty("number");
-                display("       got new ThreadStartEvent with propety 'number' == "
+                display("       got new ThreadStartEvent with property 'number' == "
                         + property);
 
                 display("......checking up on EventSet.resume()");
