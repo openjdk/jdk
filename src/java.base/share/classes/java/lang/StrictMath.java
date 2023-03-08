@@ -389,7 +389,9 @@ public final class StrictMath {
      * @return  the remainder when {@code f1} is divided by
      *          {@code f2}.
      */
-    public static native double IEEEremainder(double f1, double f2);
+    public static double IEEEremainder(double f1, double f2) {
+        return Fdlibm.Remainder.compute(f1, f2);
+    }
 
     /**
      * Returns the smallest (closest to negative infinity)
