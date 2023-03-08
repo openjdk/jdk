@@ -1356,6 +1356,24 @@ void VMError::report_and_die(Thread* thread, const char* filename, int lineno, s
   report_and_die(vm_err_type, nullptr, detail_fmt, detail_args, thread, nullptr, nullptr, nullptr, filename, lineno, size);
 }
 
+namespace {
+  class ForkAndExecCheckPoint : public StackObj {
+    NONCOPYABLE( ForkAndExecCheckPoint );
+    static int _in_progress;
+  public:
+    ForkAndExecCheckPoint() {
+      assert(Atomic::load(&_in_progress) == 0, "fork_and_exec() is already in progress");
+      Atomic::store(&_in_progress, 1);
+    }
+    ~ForkAndExecCheckPoint() {
+      assert(Atomic::load(&_in_progress) == 1, "no fork_and_exec() in progress");
+      Atomic::store(&_in_progress, 0);
+    }
+    static bool in_progress() { return Atomic::load(&_in_progress) == 1; }
+  };
+  int ForkAndExecCheckPoint::_in_progress = 0;
+}
+
 void VMError::report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
@@ -1668,7 +1686,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw   (cmd);
       out.print_raw_cr("\" ...");
 
-      if (os::fork_and_exec(cmd) < 0) {
+      int fork_and_exec_res = 0;
+      {
+        ForkAndExecCheckPoint chechpoint;
+        fork_and_exec_res = os::fork_and_exec(cmd);
+      }
+      if (fork_and_exec_res < 0) {
         out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
       }
@@ -1760,7 +1783,7 @@ bool VMError::check_timeout() {
   // Do not check for timeouts if we still have a message box to show to the
   // user or if there are OnError handlers to be run.
   if (ShowMessageBoxOnError
-      || (OnError != nullptr && OnError[0] != '\0')
+      || ForkAndExecCheckPoint::in_progress()
       || Arguments::abort_hook() != nullptr) {
     return false;
   }
