@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  * questions.
  */
 
-#include <sys/sendfile.h>
 #include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
 
 #include "jni.h"
 #include "nio.h"
@@ -44,12 +46,10 @@ Java_sun_nio_ch_FileDispatcherImpl_init0(JNIEnv *env, jclass klass)
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
-                                              jobject srcFDO, jobject dstFDO,
-                                              jlong position, jlong count,
-                                              jboolean append)
+                                                 jobject srcFDO, jobject dstFDO,
+                                                 jlong position, jlong count,
+                                                 jboolean append)
 {
-    if (my_copy_file_range_func == NULL)
-        return IOS_UNSUPPORTED;
     // copy_file_range fails with EBADF when appending
     if (append == JNI_TRUE)
         return IOS_UNSUPPORTED_CASE;
@@ -59,29 +59,54 @@ Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
 
     off64_t offset = (off64_t)position;
     size_t len = (size_t)count;
-    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
-    if (n < 0) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if (errno == ENOSYS)
-            return IOS_UNSUPPORTED_CASE;
-        if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
-            ((ssize_t)count >= 0))
-            return IOS_UNSUPPORTED_CASE;
-        if (errno == EINTR) {
-            return IOS_INTERRUPTED;
+    jlong n;
+    if (my_copy_file_range_func != NULL) {
+        n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
+        if (n < 0) {
+            switch (errno) {
+                case EAGAIN:
+                    return IOS_UNAVAILABLE;
+                case EINTR:
+                    return IOS_INTERRUPTED;
+                case EBADF:
+                case ENOSYS:
+                case EXDEV:
+                    return IOS_UNSUPPORTED_CASE;
+                case EINVAL:
+                    // ignore and try splice()
+                    break;
+                default:
+                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                    return IOS_THROWN;
+            }
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-        return IOS_THROWN;
+        if (n >= 0)
+            return n;
     }
-    return n;
+
+    n = splice(srcFD, NULL, dstFD, &offset, len, 0);
+    if (n < 0) {
+        switch (errno) {
+            case EAGAIN:
+                return IOS_UNAVAILABLE;
+            case EINVAL:
+                return IOS_UNSUPPORTED_CASE;
+            default:
+                JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+                return IOS_THROWN;
+        }
+    }
+    if (n >= 0)
+        return n;
+
+    return IOS_UNSUPPORTED_CASE;
 }
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
-                                            jobject srcFDO,
-                                            jlong position, jlong count,
-                                            jobject dstFDO, jboolean append)
+                                               jobject srcFDO,
+                                               jlong position, jlong count,
+                                               jobject dstFDO, jboolean append)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.Pipe.SourceChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
@@ -839,6 +840,19 @@ public class FileChannelImpl
         return transferFromDirectlyInternal(srcFD, position, count);
     }
 
+    private long transferFromDirectly(SourceChannelImpl src,
+                                      long position, long count)
+        throws IOException
+    {
+        if (transferFromNotSupported)
+            return IOStatus.UNSUPPORTED;
+        FileDescriptor srcFD = src.getFD();
+        if (srcFD == null)
+            return IOStatus.UNSUPPORTED_CASE;
+
+        return transferFromDirectlyInternal(srcFD, position, count);
+    }
+
     private long transferFromFileChannel(FileChannelImpl src,
                                          long position, long count)
         throws IOException
@@ -945,6 +959,10 @@ public class FileChannelImpl
             if ((n = transferFromDirectly(fci, position, count)) >= 0)
                 return n;
             if ((n = transferFromFileChannel(fci, position, count)) >= 0)
+                return n;
+        } else if (src instanceof SourceChannelImpl sci) {
+            long n;
+            if ((n = transferFromDirectly(sci, position, count)) >= 0)
                 return n;
         }
 

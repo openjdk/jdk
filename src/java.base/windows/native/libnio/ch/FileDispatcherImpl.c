@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz, jobject fdo,
-                                      jlong address, jint len)
+                                         jlong address, jint len)
 {
     DWORD read = 0;
     BOOL result = 0;
@@ -73,7 +73,7 @@ Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz, jobject fdo,
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz, jobject fdo,
-                                       jlong address, jint len)
+                                          jlong address, jint len)
 {
     DWORD read = 0;
     BOOL result = 0;
@@ -122,7 +122,7 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz, jobject fdo
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo,
-                            jlong address, jint len, jlong offset)
+                                          jlong address, jint len, jlong offset)
 {
     DWORD read = 0;
     BOOL result = 0;
@@ -260,7 +260,7 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fdo,
-                            jlong address, jint len, jlong offset)
+                                           jlong address, jint len, jlong offset)
 {
     BOOL result = 0;
     DWORD written = 0;
@@ -384,8 +384,8 @@ Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
-                                      jboolean block, jlong pos, jlong size,
-                                      jboolean shared)
+                                         jboolean block, jlong pos, jlong size,
+                                         jboolean shared)
 {
     HANDLE h = (HANDLE)(handleval(env, fdo));
     DWORD lowPos = (DWORD)pos;
@@ -430,7 +430,7 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
-                                        jobject fdo, jlong pos, jlong size)
+                                            jobject fdo, jlong pos, jlong size)
 {
     HANDLE h = (HANDLE)(handleval(env, fdo));
     DWORD lowPos = (DWORD)pos;
@@ -600,8 +600,8 @@ Java_sun_nio_ch_FileDispatcherImpl_maxDirectTransferSize0(JNIEnv* env, jclass kl
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jclass klass,
                                                jobject srcFD,
-                                            jlong position, jlong count,
-                                            jobject dstFD, jboolean append)
+                                               jlong position, jlong count,
+                                               jobject dstFD, jboolean append)
 {
     const int PACKET_SIZE = 524288;
 
