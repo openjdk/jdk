@@ -361,7 +361,7 @@ class LocaleISOData {
         + "LT" + "LTU"  // Lithuania
         + "LU" + "LUX"  // Luxembourg, Grand Duchy of
         + "LV" + "LVA"  // Latvia
-        + "LY" + "LBY"  // Libyan Arab Jamahiriya
+        + "LY" + "LBY"  // Libya
         + "MA" + "MAR"  // Morocco, Kingdom of
         + "MC" + "MCO"  // Monaco, Principality of
         + "MD" + "MDA"  // Moldova, Republic of
