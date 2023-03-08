@@ -22,25 +22,16 @@
  */
 
 /*
- * @test
- * @bug 8298935
- * @summary Test SuperWord vectorization with different access offsets
- *          and various MaxVectorSize values, and +- AlignVector.
- *          Note: CompileCommand Option Vectorize is enabled.
- * @requires vm.compiler2.enabled
- * @library /test/lib /
- * @run driver/timeout=400 compiler.loopopts.superword.TestDependencyOffsets
- */
-
-package compiler.loopopts.superword;
-import compiler.lib.ir_framework.*;
-
-/*
+ * Summary:
+ *   Test SuperWord vectorization with different access offsets
+ *   and various MaxVectorSize values, and +- AlignVector.
+ *   Note: CompileCommand Option Vectorize is enabled.
+ *
  * Note: this test is auto-generated. Please modify / generate with script:
  *       https://bugs.openjdk.org/browse/JDK-8298935
  *
  * Types: int, long, short, char, byte, float, double
- * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -15, 15, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
+ * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -14, 14, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
  *
  * Checking if we should vectorize is a bit complicated. It depends on
  * Matcher::vector_width_in_bytes, of the respective platforms (eg. x86.ad)
@@ -98,6 +89,373 @@ import compiler.lib.ir_framework.*;
  *
  */
 
+/*
+ * @test id=sse4-v016-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
+ */
+
+/*
+ * @test id=sse4-v016-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
+ */
+
+/*
+ * @test id=sse4-v008-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
+ */
+
+/*
+ * @test id=sse4-v008-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
+ */
+
+/*
+ * @test id=sse4-v004-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
+ */
+
+/*
+ * @test id=sse4-v004-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
+ */
+
+/*
+ * @test id=sse4-v002-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v002-A
+ */
+
+/*
+ * @test id=sse4-v002-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v002-U
+ */
+
+/*
+ * @test id=avx1-v032-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
+ */
+
+/*
+ * @test id=avx1-v032-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
+ */
+
+/*
+ * @test id=avx1-v016-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
+ */
+
+/*
+ * @test id=avx1-v016-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
+ */
+
+/*
+ * @test id=avx2-v032-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
+ */
+
+/*
+ * @test id=avx2-v032-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
+ */
+
+/*
+ * @test id=avx2-v016-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
+ */
+
+/*
+ * @test id=avx2-v016-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
+ */
+
+/*
+ * @test id=avx512-v064-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
+ */
+
+/*
+ * @test id=avx512-v064-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
+ */
+
+/*
+ * @test id=avx512-v032-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
+ */
+
+/*
+ * @test id=avx512-v032-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
+ */
+
+/*
+ * @test id=avx512bw-v064-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512bw.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
+ */
+
+/*
+ * @test id=avx512bw-v064-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512bw.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
+ */
+
+/*
+ * @test id=avx512bw-v032-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512bw.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
+ */
+
+/*
+ * @test id=avx512bw-v032-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cpu.features ~= ".*avx512bw.*"
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
+ */
+
+/*
+ * @test id=vec-v064-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
+ */
+
+/*
+ * @test id=vec-v064-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
+ */
+
+/*
+ * @test id=vec-v032-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
+ */
+
+/*
+ * @test id=vec-v032-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
+ */
+
+/*
+ * @test id=vec-v016-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
+ */
+
+/*
+ * @test id=vec-v016-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
+ */
+
+/*
+ * @test id=vec-v008-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
+ */
+
+/*
+ * @test id=vec-v008-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
+ */
+
+/*
+ * @test id=vec-v004-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
+ */
+
+/*
+ * @test id=vec-v004-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
+ */
+
+package compiler.loopopts.superword;
+import compiler.lib.ir_framework.*;
+
 public class TestDependencyOffsets {
     static final int RANGE = 512;
 
@@ -114,8 +472,8 @@ public class TestDependencyOffsets {
     static int[] goldIntP7 = new int[RANGE];
     static int[] goldIntM8 = new int[RANGE];
     static int[] goldIntP8 = new int[RANGE];
-    static int[] goldIntM15 = new int[RANGE];
-    static int[] goldIntP15 = new int[RANGE];
+    static int[] goldIntM14 = new int[RANGE];
+    static int[] goldIntP14 = new int[RANGE];
     static int[] goldIntM16 = new int[RANGE];
     static int[] goldIntP16 = new int[RANGE];
     static int[] goldIntM18 = new int[RANGE];
@@ -151,8 +509,8 @@ public class TestDependencyOffsets {
     static long[] goldLongP7 = new long[RANGE];
     static long[] goldLongM8 = new long[RANGE];
     static long[] goldLongP8 = new long[RANGE];
-    static long[] goldLongM15 = new long[RANGE];
-    static long[] goldLongP15 = new long[RANGE];
+    static long[] goldLongM14 = new long[RANGE];
+    static long[] goldLongP14 = new long[RANGE];
     static long[] goldLongM16 = new long[RANGE];
     static long[] goldLongP16 = new long[RANGE];
     static long[] goldLongM18 = new long[RANGE];
@@ -188,8 +546,8 @@ public class TestDependencyOffsets {
     static short[] goldShortP7 = new short[RANGE];
     static short[] goldShortM8 = new short[RANGE];
     static short[] goldShortP8 = new short[RANGE];
-    static short[] goldShortM15 = new short[RANGE];
-    static short[] goldShortP15 = new short[RANGE];
+    static short[] goldShortM14 = new short[RANGE];
+    static short[] goldShortP14 = new short[RANGE];
     static short[] goldShortM16 = new short[RANGE];
     static short[] goldShortP16 = new short[RANGE];
     static short[] goldShortM18 = new short[RANGE];
@@ -225,8 +583,8 @@ public class TestDependencyOffsets {
     static char[] goldCharP7 = new char[RANGE];
     static char[] goldCharM8 = new char[RANGE];
     static char[] goldCharP8 = new char[RANGE];
-    static char[] goldCharM15 = new char[RANGE];
-    static char[] goldCharP15 = new char[RANGE];
+    static char[] goldCharM14 = new char[RANGE];
+    static char[] goldCharP14 = new char[RANGE];
     static char[] goldCharM16 = new char[RANGE];
     static char[] goldCharP16 = new char[RANGE];
     static char[] goldCharM18 = new char[RANGE];
@@ -262,8 +620,8 @@ public class TestDependencyOffsets {
     static byte[] goldByteP7 = new byte[RANGE];
     static byte[] goldByteM8 = new byte[RANGE];
     static byte[] goldByteP8 = new byte[RANGE];
-    static byte[] goldByteM15 = new byte[RANGE];
-    static byte[] goldByteP15 = new byte[RANGE];
+    static byte[] goldByteM14 = new byte[RANGE];
+    static byte[] goldByteP14 = new byte[RANGE];
     static byte[] goldByteM16 = new byte[RANGE];
     static byte[] goldByteP16 = new byte[RANGE];
     static byte[] goldByteM18 = new byte[RANGE];
@@ -299,8 +657,8 @@ public class TestDependencyOffsets {
     static float[] goldFloatP7 = new float[RANGE];
     static float[] goldFloatM8 = new float[RANGE];
     static float[] goldFloatP8 = new float[RANGE];
-    static float[] goldFloatM15 = new float[RANGE];
-    static float[] goldFloatP15 = new float[RANGE];
+    static float[] goldFloatM14 = new float[RANGE];
+    static float[] goldFloatP14 = new float[RANGE];
     static float[] goldFloatM16 = new float[RANGE];
     static float[] goldFloatP16 = new float[RANGE];
     static float[] goldFloatM18 = new float[RANGE];
@@ -336,8 +694,8 @@ public class TestDependencyOffsets {
     static double[] goldDoubleP7 = new double[RANGE];
     static double[] goldDoubleM8 = new double[RANGE];
     static double[] goldDoubleP8 = new double[RANGE];
-    static double[] goldDoubleM15 = new double[RANGE];
-    static double[] goldDoubleP15 = new double[RANGE];
+    static double[] goldDoubleM14 = new double[RANGE];
+    static double[] goldDoubleP14 = new double[RANGE];
     static double[] goldDoubleM16 = new double[RANGE];
     static double[] goldDoubleP16 = new double[RANGE];
     static double[] goldDoubleM18 = new double[RANGE];
@@ -389,10 +747,10 @@ public class TestDependencyOffsets {
         testIntM8(goldIntM8);
         init(goldIntP8);
         testIntP8(goldIntP8);
-        init(goldIntM15);
-        testIntM15(goldIntM15);
-        init(goldIntP15);
-        testIntP15(goldIntP15);
+        init(goldIntM14);
+        testIntM14(goldIntM14);
+        init(goldIntP14);
+        testIntP14(goldIntP14);
         init(goldIntM16);
         testIntM16(goldIntM16);
         init(goldIntP16);
@@ -463,10 +821,10 @@ public class TestDependencyOffsets {
         testLongM8(goldLongM8);
         init(goldLongP8);
         testLongP8(goldLongP8);
-        init(goldLongM15);
-        testLongM15(goldLongM15);
-        init(goldLongP15);
-        testLongP15(goldLongP15);
+        init(goldLongM14);
+        testLongM14(goldLongM14);
+        init(goldLongP14);
+        testLongP14(goldLongP14);
         init(goldLongM16);
         testLongM16(goldLongM16);
         init(goldLongP16);
@@ -537,10 +895,10 @@ public class TestDependencyOffsets {
         testShortM8(goldShortM8);
         init(goldShortP8);
         testShortP8(goldShortP8);
-        init(goldShortM15);
-        testShortM15(goldShortM15);
-        init(goldShortP15);
-        testShortP15(goldShortP15);
+        init(goldShortM14);
+        testShortM14(goldShortM14);
+        init(goldShortP14);
+        testShortP14(goldShortP14);
         init(goldShortM16);
         testShortM16(goldShortM16);
         init(goldShortP16);
@@ -611,10 +969,10 @@ public class TestDependencyOffsets {
         testCharM8(goldCharM8);
         init(goldCharP8);
         testCharP8(goldCharP8);
-        init(goldCharM15);
-        testCharM15(goldCharM15);
-        init(goldCharP15);
-        testCharP15(goldCharP15);
+        init(goldCharM14);
+        testCharM14(goldCharM14);
+        init(goldCharP14);
+        testCharP14(goldCharP14);
         init(goldCharM16);
         testCharM16(goldCharM16);
         init(goldCharP16);
@@ -685,10 +1043,10 @@ public class TestDependencyOffsets {
         testByteM8(goldByteM8);
         init(goldByteP8);
         testByteP8(goldByteP8);
-        init(goldByteM15);
-        testByteM15(goldByteM15);
-        init(goldByteP15);
-        testByteP15(goldByteP15);
+        init(goldByteM14);
+        testByteM14(goldByteM14);
+        init(goldByteP14);
+        testByteP14(goldByteP14);
         init(goldByteM16);
         testByteM16(goldByteM16);
         init(goldByteP16);
@@ -759,10 +1117,10 @@ public class TestDependencyOffsets {
         testFloatM8(goldFloatM8);
         init(goldFloatP8);
         testFloatP8(goldFloatP8);
-        init(goldFloatM15);
-        testFloatM15(goldFloatM15);
-        init(goldFloatP15);
-        testFloatP15(goldFloatP15);
+        init(goldFloatM14);
+        testFloatM14(goldFloatM14);
+        init(goldFloatP14);
+        testFloatP14(goldFloatP14);
         init(goldFloatM16);
         testFloatM16(goldFloatM16);
         init(goldFloatP16);
@@ -833,10 +1191,10 @@ public class TestDependencyOffsets {
         testDoubleM8(goldDoubleM8);
         init(goldDoubleP8);
         testDoubleP8(goldDoubleP8);
-        init(goldDoubleM15);
-        testDoubleM15(goldDoubleM15);
-        init(goldDoubleP15);
-        testDoubleP15(goldDoubleP15);
+        init(goldDoubleM14);
+        testDoubleM14(goldDoubleM14);
+        init(goldDoubleP14);
+        testDoubleP14(goldDoubleP14);
         init(goldDoubleM16);
         testDoubleM16(goldDoubleM16);
         init(goldDoubleP16);
@@ -892,16 +1250,116 @@ public class TestDependencyOffsets {
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::verify",
                            "-XX:LoopUnrollLimit=250");
 
-        int i = 0;
-        Scenario[] scenarios = new Scenario[16];
-        for (int maxVectorSize : new int[] {1, 2, 4, 8, 16, 32, 64, 128}) {
-            for (String alignVectorSign : new String[] {"+", "-"}) {
-                scenarios[i] = new Scenario(i, "-XX:" + alignVectorSign + "AlignVector",
-                                               "-XX:MaxVectorSize=" + maxVectorSize);
-                i++;
-            }
+        if (args.length != 1) {
+            throw new RuntimeException("Test requires exactly one argument!");
         }
-        framework.addScenarios(scenarios);
+
+        switch (args[0]) {
+        case "sse4-v016-A":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
+            break;
+        case "sse4-v016-U":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
+            break;
+        case "sse4-v008-A":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:+AlignVector");
+            break;
+        case "sse4-v008-U":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:-AlignVector");
+            break;
+        case "sse4-v004-A":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector");
+            break;
+        case "sse4-v004-U":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector");
+            break;
+        case "sse4-v002-A":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector");
+            break;
+        case "sse4-v002-U":
+            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector");
+            break;
+        case "avx1-v032-A":
+            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
+            break;
+        case "avx1-v032-U":
+            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
+            break;
+        case "avx1-v016-A":
+            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
+            break;
+        case "avx1-v016-U":
+            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
+            break;
+        case "avx2-v032-A":
+            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
+            break;
+        case "avx2-v032-U":
+            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
+            break;
+        case "avx2-v016-A":
+            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
+            break;
+        case "avx2-v016-U":
+            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
+            break;
+        case "avx512-v064-A":
+            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:+AlignVector");
+            break;
+        case "avx512-v064-U":
+            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:-AlignVector");
+            break;
+        case "avx512-v032-A":
+            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
+            break;
+        case "avx512-v032-U":
+            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
+            break;
+        case "avx512bw-v064-A":
+            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:+AlignVector");
+            break;
+        case "avx512bw-v064-U":
+            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:-AlignVector");
+            break;
+        case "avx512bw-v032-A":
+            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
+            break;
+        case "avx512bw-v032-U":
+            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
+            break;
+        case "vec-v064-A":
+            framework.addFlags("-XX:MaxVectorSize=64", "-XX:+AlignVector");
+            break;
+        case "vec-v064-U":
+            framework.addFlags("-XX:MaxVectorSize=64", "-XX:-AlignVector");
+            break;
+        case "vec-v032-A":
+            framework.addFlags("-XX:MaxVectorSize=32", "-XX:+AlignVector");
+            break;
+        case "vec-v032-U":
+            framework.addFlags("-XX:MaxVectorSize=32", "-XX:-AlignVector");
+            break;
+        case "vec-v016-A":
+            framework.addFlags("-XX:MaxVectorSize=16", "-XX:+AlignVector");
+            break;
+        case "vec-v016-U":
+            framework.addFlags("-XX:MaxVectorSize=16", "-XX:-AlignVector");
+            break;
+        case "vec-v008-A":
+            framework.addFlags("-XX:MaxVectorSize=8", "-XX:+AlignVector");
+            break;
+        case "vec-v008-U":
+            framework.addFlags("-XX:MaxVectorSize=8", "-XX:-AlignVector");
+            break;
+        case "vec-v004-A":
+            framework.addFlags("-XX:MaxVectorSize=4", "-XX:+AlignVector");
+            break;
+        case "vec-v004-U":
+            framework.addFlags("-XX:MaxVectorSize=4", "-XX:-AlignVector");
+            break;
+        default:
+            throw new RuntimeException("Test argument not recognized: " + args[0]);
+        }
         framework.start();
     }
 
@@ -1403,47 +1861,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntM15(int[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (int)(data[j] * (int)-11);
+    public static void testIntM14(int[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (int)(data[j] * (int)-11);
         }
     }
 
-    @Run(test = "testIntM15")
+    @Run(test = "testIntM14")
     @Warmup(0)
-    public static void runIntM15() {
+    public static void runIntM14() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM15(data);
-        verify("testIntM15", data, goldIntM15);
+        testIntM14(data);
+        verify("testIntM14", data, goldIntM14);
     }
 
     @Test
@@ -1456,27 +1898,27 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
-    //   positive byte_offset 60 can lead to cyclic dependency
+    //   positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntP15(int[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (int)(data[j] * (int)-11);
+    public static void testIntP14(int[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (int)(data[j] * (int)-11);
         }
     }
 
-    @Run(test = "testIntP15")
+    @Run(test = "testIntP14")
     @Warmup(0)
-    public static void runIntP15() {
+    public static void runIntP14() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP15(data);
-        verify("testIntP15", data, goldIntP15);
+        testIntP14(data);
+        verify("testIntP14", data, goldIntP14);
     }
 
     @Test
@@ -2836,47 +3278,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.ADD_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongM15(long[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (long)(data[j] + (long)-11);
+    public static void testLongM14(long[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (long)(data[j] + (long)-11);
         }
     }
 
-    @Run(test = "testLongM15")
+    @Run(test = "testLongM14")
     @Warmup(0)
-    public static void runLongM15() {
+    public static void runLongM14() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM15(data);
-        verify("testLongM15", data, goldLongM15);
+        testLongM14(data);
+        verify("testLongM14", data, goldLongM14);
     }
 
     @Test
@@ -2884,6 +3310,10 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
@@ -2896,19 +3326,19 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongP15(long[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (long)(data[j] + (long)-11);
+    public static void testLongP14(long[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (long)(data[j] + (long)-11);
         }
     }
 
-    @Run(test = "testLongP15")
+    @Run(test = "testLongP14")
     @Warmup(0)
-    public static void runLongP15() {
+    public static void runLongP14() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP15(data);
-        verify("testLongP15", data, goldLongP15);
+        testLongP14(data);
+        verify("testLongP14", data, goldLongP14);
     }
 
     @Test
@@ -4263,47 +4693,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512bw", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortM15(short[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (short)(data[j] * (short)-11);
+    public static void testShortM14(short[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (short)(data[j] * (short)-11);
         }
     }
 
-    @Run(test = "testShortM15")
+    @Run(test = "testShortM14")
     @Warmup(0)
-    public static void runShortM15() {
+    public static void runShortM14() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM15(data);
-        verify("testShortM15", data, goldShortM15);
+        testShortM14(data);
+        verify("testShortM14", data, goldShortM14);
     }
 
     @Test
@@ -4312,33 +4726,33 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 16
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortP15(short[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (short)(data[j] * (short)-11);
+    public static void testShortP14(short[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (short)(data[j] * (short)-11);
         }
     }
 
-    @Run(test = "testShortP15")
+    @Run(test = "testShortP14")
     @Warmup(0)
-    public static void runShortP15() {
+    public static void runShortP14() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP15(data);
-        verify("testShortP15", data, goldShortP15);
+        testShortP14(data);
+        verify("testShortP14", data, goldShortP14);
     }
 
     @Test
@@ -5677,47 +6091,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
-        applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"avx512bw", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512bw", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testCharM15(char[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (char)(data[j] * (char)-11);
+    public static void testCharM14(char[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (char)(data[j] * (char)-11);
         }
     }
 
-    @Run(test = "testCharM15")
+    @Run(test = "testCharM14")
     @Warmup(0)
-    public static void runCharM15() {
+    public static void runCharM14() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM15(data);
-        verify("testCharM15", data, goldCharM15);
+        testCharM14(data);
+        verify("testCharM14", data, goldCharM14);
     }
 
     @Test
@@ -5726,33 +6124,33 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 16
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // CPU: avx512bw -> vector_width: 64 -> elements in vector: 32
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 16
-    //   positive byte_offset 30 can lead to cyclic dependency
+    //   positive byte_offset 28 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 30"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testCharP15(char[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (char)(data[j] * (char)-11);
+    public static void testCharP14(char[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (char)(data[j] * (char)-11);
         }
     }
 
-    @Run(test = "testCharP15")
+    @Run(test = "testCharP14")
     @Warmup(0)
-    public static void runCharP15() {
+    public static void runCharP14() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP15(data);
-        verify("testCharP15", data, goldCharP15);
+        testCharP14(data);
+        verify("testCharP14", data, goldCharP14);
     }
 
     @Test
@@ -7116,55 +7514,55 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteM15(byte[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (byte)(data[j] * (byte)11);
+    public static void testByteM14(byte[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (byte)(data[j] * (byte)11);
         }
     }
 
-    @Run(test = "testByteM15")
+    @Run(test = "testByteM14")
     @Warmup(0)
-    public static void runByteM15() {
+    public static void runByteM14() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM15(data);
-        verify("testByteM15", data, goldByteM15);
+        testByteM14(data);
+        verify("testByteM14", data, goldByteM14);
     }
 
     @Test
     // CPU: sse4.1 to avx -> vector_width: 16 -> elements in vector: 16
-    //   positive byte_offset 15 can lead to cyclic dependency
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "false"})
     // CPU: avx2 to avx512 without avx512bw -> vector_width: 32 -> elements in vector: 32
-    //   positive byte_offset 15 can lead to cyclic dependency
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx512bw", "false"})
     // CPU: avx512bw -> vector_width: 64 -> elements in vector: 64
-    //   positive byte_offset 15 can lead to cyclic dependency
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"avx512bw", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 32
-    //   positive byte_offset 15 can lead to cyclic dependency
+    //   positive byte_offset 14 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 15"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteP15(byte[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (byte)(data[j] * (byte)11);
+    public static void testByteP14(byte[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (byte)(data[j] * (byte)11);
         }
     }
 
-    @Run(test = "testByteP15")
+    @Run(test = "testByteP14")
     @Warmup(0)
-    public static void runByteP15() {
+    public static void runByteP14() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP15(data);
-        verify("testByteP15", data, goldByteP15);
+        testByteP14(data);
+        verify("testByteP14", data, goldByteP14);
     }
 
     @Test
@@ -8525,47 +8923,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"avx512", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testFloatM15(float[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (float)(data[j] * (float)1.001f);
+    public static void testFloatM14(float[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (float)(data[j] * (float)1.001f);
         }
     }
 
-    @Run(test = "testFloatM15")
+    @Run(test = "testFloatM14")
     @Warmup(0)
-    public static void runFloatM15() {
+    public static void runFloatM14() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM15(data);
-        verify("testFloatM15", data, goldFloatM15);
+        testFloatM14(data);
+        verify("testFloatM14", data, goldFloatM14);
     }
 
     @Test
@@ -8578,27 +8960,27 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 16
-    //   positive byte_offset 60 can lead to cyclic dependency
+    //   positive byte_offset 56 can lead to cyclic dependency
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 60"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testFloatP15(float[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (float)(data[j] * (float)1.001f);
+    public static void testFloatP14(float[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (float)(data[j] * (float)1.001f);
         }
     }
 
-    @Run(test = "testFloatP15")
+    @Run(test = "testFloatP14")
     @Warmup(0)
-    public static void runFloatP15() {
+    public static void runFloatP14() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP15(data);
-        verify("testFloatP15", data, goldFloatP15);
+        testFloatP14(data);
+        verify("testFloatP14", data, goldFloatP14);
     }
 
     @Test
@@ -9958,47 +10340,31 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
-        applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx512", "false"})
     // CPU: avx512 -> vector_width: 64 -> elements in vector: 8
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"avx512", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"avx512", "true"})
     // CPU: asimd -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    //   Strict alignment not possible.
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.MUL_V, IRNode.STORE_VECTOR},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeature = {"asimd", "true"})
-    public static void testDoubleM15(double[] data) {
-        for (int j = 15; j < RANGE; j++) {
-            data[j + -15] = (double)(data[j] * (double)1.001);
+    public static void testDoubleM14(double[] data) {
+        for (int j = 14; j < RANGE; j++) {
+            data[j + -14] = (double)(data[j] * (double)1.001);
         }
     }
 
-    @Run(test = "testDoubleM15")
+    @Run(test = "testDoubleM14")
     @Warmup(0)
-    public static void runDoubleM15() {
+    public static void runDoubleM14() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM15(data);
-        verify("testDoubleM15", data, goldDoubleM15);
+        testDoubleM14(data);
+        verify("testDoubleM14", data, goldDoubleM14);
     }
 
     @Test
@@ -10006,6 +10372,10 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
+    //   Vectorize when strict alignment guaranteed.
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx", "false"})
     // CPU: avx and avx2 -> vector_width: 32 -> elements in vector: 4
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
@@ -10018,19 +10388,19 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.MUL_V, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testDoubleP15(double[] data) {
-        for (int j = 0; j < RANGE - 15; j++) {
-            data[j + 15] = (double)(data[j] * (double)1.001);
+    public static void testDoubleP14(double[] data) {
+        for (int j = 0; j < RANGE - 14; j++) {
+            data[j + 14] = (double)(data[j] * (double)1.001);
         }
     }
 
-    @Run(test = "testDoubleP15")
+    @Run(test = "testDoubleP14")
     @Warmup(0)
-    public static void runDoubleP15() {
+    public static void runDoubleP14() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP15(data);
-        verify("testDoubleP15", data, goldDoubleP15);
+        testDoubleP14(data);
+        verify("testDoubleP14", data, goldDoubleP14);
     }
 
     @Test
