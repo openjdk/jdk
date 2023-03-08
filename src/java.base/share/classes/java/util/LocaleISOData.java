@@ -325,7 +325,7 @@ class LocaleISOData {
         + "HN" + "HND"  // Honduras, Republic of
         + "HR" + "HRV"  // Hrvatska (Croatia)
         + "HT" + "HTI"  // Haiti, Republic of
-        + "HU" + "HUN"  // Hungary, Hungarian People's Republic
+        + "HU" + "HUN"  // Hungary
         + "ID" + "IDN"  // Indonesia, Republic of
         + "IE" + "IRL"  // Ireland
         + "IL" + "ISR"  // Israel, State of
