@@ -594,7 +594,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     /**
      * A compound type is a special class type whose supertypes are used to store a list
      * of component types. There are two kinds of compound types: (i) intersection types
-     * {@see IntersectionClassType} and (ii) union types {@see UnionClassType}.
+     * {@link IntersectionClassType} and (ii) union types {@link UnionClassType}.
      */
     public boolean isCompound() {
         return false;

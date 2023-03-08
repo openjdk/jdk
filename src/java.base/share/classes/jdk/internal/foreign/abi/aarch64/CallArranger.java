@@ -236,7 +236,7 @@ public abstract class CallArranger {
             return carrier;
         }
 
-        record StructStorage(long offset, Class<?> carrier, VMStorage storage) {}
+        record StructStorage(long offset, Class<?> carrier, int byteWidth, VMStorage storage) {}
 
         /*
         In the simplest case structs are copied in chunks. i.e. the fields don't matter, just the size.
@@ -305,12 +305,14 @@ public abstract class CallArranger {
             long offset = 0;
             for (int i = 0; i < structStorages.length; i++) {
                 ValueLayout copyLayout;
+                long copySize;
                 if (isFieldWise) {
                     // We should only get here for HFAs, which can't have padding
                     copyLayout = (ValueLayout) scalarLayouts.get(i);
+                    copySize = Utils.byteWidthOfPrimitive(copyLayout.carrier());
                 } else {
                     // chunk-wise copy
-                    long copySize = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                    copySize = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
                     boolean useFloat = false; // never use float for chunk-wise copies
                     copyLayout = SharedUtils.primitiveLayoutForSize(copySize, useFloat);
                 }
@@ -322,7 +324,7 @@ public abstract class CallArranger {
                     // Don't use floats on the stack
                     carrier = adjustCarrierForStack(carrier);
                 }
-                structStorages[i] = new StructStorage(offset, carrier, storage);
+                structStorages[i] = new StructStorage(offset, carrier, (int) copySize, storage);
                 offset += copyLayout.byteSize();
             }
 
@@ -421,7 +423,7 @@ public abstract class CallArranger {
                         if (i < structStorages.length - 1) {
                             bindings.dup();
                         }
-                        bindings.bufferLoad(structStorage.offset(), structStorage.carrier())
+                        bindings.bufferLoad(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth())
                                 .vmStore(structStorage.storage(), structStorage.carrier());
                     }
                 }
@@ -483,7 +485,7 @@ public abstract class CallArranger {
                     for (StorageCalculator.StructStorage structStorage : structStorages) {
                         bindings.dup();
                         bindings.vmLoad(structStorage.storage(), structStorage.carrier())
-                                .bufferStore(structStorage.offset(), structStorage.carrier());
+                                .bufferStore(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth());
                     }
                 }
                 case STRUCT_REFERENCE -> {
