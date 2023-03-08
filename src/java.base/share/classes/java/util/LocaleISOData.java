@@ -408,7 +408,7 @@ class LocaleISOData {
         + "PM" + "SPM"  // St. Pierre and Miquelon
         + "PN" + "PCN"  // Pitcairn Island
         + "PR" + "PRI"  // Puerto Rico
-        + "PS" + "PSE"  // Palestinian Territory, Occupied
+        + "PS" + "PSE"  // Palestine, State of
         + "PT" + "PRT"  // Portugal, Portuguese Republic
         + "PW" + "PLW"  // Palau
         + "PY" + "PRY"  // Paraguay, Republic of
