@@ -82,5 +82,7 @@ public abstract class Negotiator {
             logger.finest("NegotiateAuthentication: " + e);
         }
     }
+
+    public abstract void disposeContext() throws IOException;
 }
 

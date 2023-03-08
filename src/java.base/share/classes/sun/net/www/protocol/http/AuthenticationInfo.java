@@ -519,4 +519,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         s2 = new String (pw.getPassword());
         s.defaultWriteObject ();
     }
+
+    public void disposeContext() {
+        // do nothing
+    }
 }
