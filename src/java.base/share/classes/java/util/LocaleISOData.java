@@ -424,7 +424,7 @@ class LocaleISOData {
         + "SD" + "SDN"  // Sudan, Democratic Republic of the
         + "SE" + "SWE"  // Sweden, Kingdom of
         + "SG" + "SGP"  // Singapore, Republic of
-        + "SH" + "SHN"  // St. Helena
+        + "SH" + "SHN"  // Saint Helena, Ascension and Tristan da Cunha
         + "SI" + "SVN"  // Slovenia
         + "SJ" + "SJM"  // Svalbard & Jan Mayen Islands
         + "SK" + "SVK"  // Slovakia (Slovak Republic)
