@@ -59,7 +59,7 @@ class UninitializedType extends Type.DelegatedType {
     }
 
     @Override
-    public UninitializedType cloneWithMetadata(final List<TypeMetadata> md) {
+    protected UninitializedType cloneWithMetadata(final List<TypeMetadata> md) {
         return new UninitializedType(tag, qtype, offset, md);
     }
 

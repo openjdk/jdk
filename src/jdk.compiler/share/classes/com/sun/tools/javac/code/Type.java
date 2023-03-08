@@ -30,6 +30,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import javax.lang.model.type.*;
@@ -88,17 +89,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * entry of that class.
      */
     protected final List<TypeMetadata> metadata;
-
-    public List<TypeMetadata> getMetadata() {
-        return metadata;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <M extends TypeMetadata> M getMetadata(Class<M> metadataClass) {
-        return (M)metadata.stream()
-                .filter(m -> metadataClass.isAssignableFrom(m.getClass()))
-                .findFirst().orElse(null);
-    }
 
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType() {
@@ -192,9 +182,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * @return the constant value attribute of this type
      */
     public Object constValue() {
-        ConstantValue cv = getMetadata(TypeMetadata.ConstantValue.class);
-        return cv != null ?
-                cv.value() : null;
+        return getMetadata(TypeMetadata.ConstantValue.class)
+                .map(ConstantValue::value).orElse(null);
     }
 
     /** Is this a constant type whose value is false?
@@ -358,16 +347,36 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * Create a new copy of this type but with the specified TypeMetadata.
      * Only to be used internally!
      */
-    public Type cloneWithMetadata(List<TypeMetadata> metadata) {
+    protected Type cloneWithMetadata(List<TypeMetadata> metadata) {
         throw new AssertionError("Cannot add metadata to this type: " + getTag());
     }
 
+    /**
+     * Get all the type metadata associated with this type.
+     */
+    public List<TypeMetadata> getMetadata() {
+        return metadata;
+    }
+
+    /**
+     * Get the type metadata of the given kind associated with this type (if any).
+     */
+    public <M extends TypeMetadata> Optional<M> getMetadata(Class<M> metadataClass) {
+        return metadata.stream()
+                .filter(m -> metadataClass.isAssignableFrom(m.getClass()))
+                .map(m -> metadataClass.cast(m))
+                .findFirst();
+    }
+
+    /**
+     * Create a new copy of this type but with the specified type metadata.
+     */
     public Type addMetadata(TypeMetadata md) {
         return cloneWithMetadata(metadata.append(md));
     }
 
     /**
-     * Create a new copy of this type but with the specified TypeMetadata.
+     * Create a new copy of this type but without the specified type metadata.
      */
     public Type dropMetadata(Class<? extends TypeMetadata> metadataClass) {
         List<TypeMetadata> newMetadata = metadata.stream()
@@ -422,30 +431,24 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         };
 
     public Type preannotatedType() {
-        Annotations annotations = getMetadata(Annotations.class);
-        Assert.checkNull(annotations);
         return addMetadata(new Annotations());
     }
 
     public Type annotatedType(final List<Attribute.TypeCompound> annos) {
-        Annotations annotations = getMetadata(Annotations.class);
-        if (annotations != null) {
-            annotations.setAnnotations(annos);
-            return this;
-        } else {
-            return addMetadata(new Annotations(annos));
-        }
+        return getMetadata(Annotations.class)
+                .map(a -> { a.setAnnotations(annos) ; return this; })
+                .orElseGet(() ->
+                    addMetadata(new Annotations(annos)));
     }
 
     public boolean isAnnotated() {
-        return getMetadata(TypeMetadata.Annotations.class) != null;
+        return getMetadata(TypeMetadata.Annotations.class).isPresent();
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
-        Annotations annotations = getMetadata(TypeMetadata.Annotations.class);
-        return annotations != null ?
-                annotations.getAnnotations() : List.nil();
+        return getMetadata(TypeMetadata.Annotations.class)
+                .map(Annotations::getAnnotations).orElse(List.nil());
     }
 
 
@@ -728,7 +731,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public JCPrimitiveType cloneWithMetadata(List<TypeMetadata> md) {
+        protected JCPrimitiveType cloneWithMetadata(List<TypeMetadata> md) {
             return new JCPrimitiveType(tag, tsym, md) {
                 @Override
                 public Type baseType() { return JCPrimitiveType.this.baseType(); }
@@ -863,7 +866,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public WildcardType cloneWithMetadata(List<TypeMetadata> md) {
+        protected WildcardType cloneWithMetadata(List<TypeMetadata> md) {
             return new WildcardType(type, kind, tsym, bound, md) {
                 @Override
                 public Type baseType() { return WildcardType.this.baseType(); }
@@ -1008,7 +1011,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public ClassType cloneWithMetadata(List<TypeMetadata> md) {
+        protected ClassType cloneWithMetadata(List<TypeMetadata> md) {
             return new ClassType(outer_field, typarams_field, tsym, md) {
                 @Override
                 public Type baseType() { return ClassType.this.baseType(); }
@@ -1326,7 +1329,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public ArrayType cloneWithMetadata(List<TypeMetadata> md) {
+        protected ArrayType cloneWithMetadata(List<TypeMetadata> md) {
             return new ArrayType(elemtype, tsym, md) {
                 @Override
                 public Type baseType() { return ArrayType.this.baseType(); }
@@ -1652,7 +1655,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public TypeVar cloneWithMetadata(List<TypeMetadata> md) {
+        protected TypeVar cloneWithMetadata(List<TypeMetadata> md) {
             return new TypeVar(tsym, getUpperBound(), lower, md) {
                 @Override
                 public Type baseType() { return TypeVar.this.baseType(); }
@@ -1741,7 +1744,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public CapturedType cloneWithMetadata(List<TypeMetadata> md) {
+        protected CapturedType cloneWithMetadata(List<TypeMetadata> md) {
             return new CapturedType(tsym, getUpperBound(), getUpperBound(), lower, wildcard, md) {
                 @Override
                 public Type baseType() { return CapturedType.this.baseType(); }
@@ -2309,7 +2312,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         @Override
-        public ErrorType cloneWithMetadata(List<TypeMetadata> md) {
+        protected ErrorType cloneWithMetadata(List<TypeMetadata> md) {
             return new ErrorType(originalType, tsym, md) {
                 @Override
                 public Type baseType() { return ErrorType.this.baseType(); }

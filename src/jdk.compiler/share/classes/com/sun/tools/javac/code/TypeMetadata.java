@@ -41,7 +41,7 @@ import com.sun.tools.javac.util.List;
  * In other cases, type metadata can be mutable and support complex state transitions
  * (see {@link Annotations}).
  * <p>
- * The only invariant the implementation requires is that there is only <em>one</em> metadata
+ * The only invariant the implementation requires is that there must be <em>one</em> metadata
  * of a given kind attached to a type, as this makes accessing and dropping metadata simpler.
  * If clients wish to store multiple metadata values that are logically related, they should
  * define a metadata type that collects such values in e.g. a list.
@@ -53,9 +53,10 @@ public sealed interface TypeMetadata {
      * because type annotations are sometimes set in two steps. That is, a type can be created with
      * an empty set of annotations (e.g. during member enter). At some point later, the type
      * is then updated to contain the correct annotations. At this point we need to augment
-     * the existing type, as the type has already been saved inside other symbols.
+     * the existing type (rather than creating a new one), as the type might already have been
+     * saved inside other symbols.
      */
-    class Annotations implements TypeMetadata {
+    final class Annotations implements TypeMetadata {
         private List<Attribute.TypeCompound> annos;
 
         public static final List<Attribute.TypeCompound> TO_BE_SET = List.nil();

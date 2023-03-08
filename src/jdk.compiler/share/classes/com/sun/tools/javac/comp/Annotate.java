@@ -1049,7 +1049,10 @@ public class Annotate {
         typeAnnotation(() -> {
             List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
             Assert.check(annotations.size() == compounds.size());
-            storeAt.getMetadata(Annotations.class).setAnnotations(compounds);
+            // the type already has annotation metadata, but it's empty
+            Annotations metadata = storeAt.getMetadata(Annotations.class).orElseThrow(AssertionError::new);
+            Assert.check(metadata.getAnnotations() == Annotations.TO_BE_SET);
+            storeAt.getMetadata(Annotations.class).get().setAnnotations(compounds);
         });
     }
 
