@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code Deprecated} attribute (JVMS 4.7.15), which can appear on
+ * Models the {@code Deprecated} attribute {@jvms 4.7.15}, which can appear on
  * classes, methods, and fields.  Delivered as a  {@link ClassElement},
  * {@link MethodElement}, or  {@link FieldElement} when traversing the elements
  * of a corresponding model.

@@ -29,11 +29,10 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
- * Models the {@code RuntimeInvisibleAnnotations} attribute (JVMS 4.7.17), which
+ * Models the {@code RuntimeInvisibleAnnotations} attribute {@jvms 4.7.17}, which
  * can appear on classes, methods, and fields. Delivered as a
  * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement}, or
  * {@link jdk.internal.classfile.MethodElement} when traversing the corresponding model type.

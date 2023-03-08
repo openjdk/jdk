@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the {@code Exceptions} attribute (JVMS 4.7.5), which can appear on
+ * Models the {@code Exceptions} attribute {@jvms 4.7.5}, which can appear on
  * methods, and records the exceptions declared to be thrown by this method.
  * Delivered as a {@link MethodElement} when traversing the elements of a
  * {@link jdk.internal.classfile.MethodModel}.

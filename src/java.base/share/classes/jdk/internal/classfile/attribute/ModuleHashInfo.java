@@ -25,7 +25,7 @@
 package jdk.internal.classfile.attribute;
 
 import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 

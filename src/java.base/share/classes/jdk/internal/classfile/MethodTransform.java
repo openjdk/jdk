@@ -42,7 +42,7 @@ public non-sealed interface MethodTransform
     /**
      * A method transform that sends all elements to the builder.
      */
-    public static final MethodTransform ACCEPT_ALL = new MethodTransform() {
+    MethodTransform ACCEPT_ALL = new MethodTransform() {
         @Override
         public void accept(MethodBuilder builder, MethodElement element) {
             builder.with(element);
@@ -109,9 +109,9 @@ public non-sealed interface MethodTransform
 
     @Override
     default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-        return new TransformImpl.MethodTransformImpl(e -> accept(builder, e),
-                                                     () -> atEnd(builder),
-                                                     () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 
     @Override

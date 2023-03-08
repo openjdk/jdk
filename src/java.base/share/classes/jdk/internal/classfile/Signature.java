@@ -33,7 +33,7 @@ import java.util.Optional;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models generic Java type signatures, as defined in JVMS 4.7.9.1.
+ * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
  */
 public sealed interface Signature {
 
@@ -100,7 +100,7 @@ public sealed interface Signature {
      */
     public sealed interface RefTypeSig
             extends Signature
-            permits ArrayTypeSig, ClassTypeSig, TypeArg, TypeVarSig {
+            permits ArrayTypeSig, ClassTypeSig, TypeVarSig {
     }
 
     /**
@@ -122,14 +122,14 @@ public sealed interface Signature {
         }
 
         /** {@return the type arguments of the class} */
-        List<Signature> typeArgs();
+        List<TypeArg> typeArgs();
 
         /**
          * {@return a class type signature}
          * @param className the name of the class
          * @param typeArgs signatures of the type arguments
          */
-        public static ClassTypeSig of(ClassDesc className, Signature... typeArgs) {
+        public static ClassTypeSig of(ClassDesc className, TypeArg... typeArgs) {
             return of(null, className, typeArgs);
         }
 
@@ -139,7 +139,7 @@ public sealed interface Signature {
          * @param className the name of the class
          * @param typeArgs signatures of the type arguments
          */
-        public static ClassTypeSig of(ClassTypeSig outerType, ClassDesc className, Signature... typeArgs) {
+        public static ClassTypeSig of(ClassTypeSig outerType, ClassDesc className, TypeArg... typeArgs) {
             requireNonNull(className);
             return of(outerType, Util.toInternalName(className), typeArgs);
         }
@@ -149,7 +149,7 @@ public sealed interface Signature {
          * @param className the name of the class
          * @param typeArgs signatures of the type arguments
          */
-        public static ClassTypeSig of(String className, Signature... typeArgs) {
+        public static ClassTypeSig of(String className, TypeArg... typeArgs) {
             return of(null, className, typeArgs);
         }
 
@@ -159,29 +159,24 @@ public sealed interface Signature {
          * @param className the name of the class
          * @param typeArgs signatures of the type arguments
          */
-        public static ClassTypeSig of(ClassTypeSig outerType, String className, Signature... typeArgs) {
+        public static ClassTypeSig of(ClassTypeSig outerType, String className, TypeArg... typeArgs) {
             requireNonNull(className);
             return new SignaturesImpl.ClassTypeSigImpl(Optional.ofNullable(outerType), className.replace(".", "/"), List.of(typeArgs));
         }
     }
 
     /**
-     * Models the signature of a type argument.
+     * Models the type argument.
      */
-    public sealed interface TypeArg extends RefTypeSig
+    public sealed interface TypeArg
             permits SignaturesImpl.TypeArgImpl {
 
         /**
-         * Indicator for whether a wildcard has no bound, an upper bound, or a lower bound
+         * Indicator for whether a wildcard has default bound, no bound,
+         * an upper bound, or a lower bound
          */
         public enum WildcardIndicator {
-            UNBOUNDED('*'), EXTENDS('+'), SUPER('-');
-
-            public final char indicator;
-
-            WildcardIndicator(char indicator) {
-                this.indicator = indicator;
-            }
+            DEFAULT, UNBOUNDED, EXTENDS, SUPER;
         }
 
         /** {@return the wildcard indicator} */
@@ -191,28 +186,46 @@ public sealed interface Signature {
         Optional<RefTypeSig> boundType();
 
         /**
-         * {@return a signature for an unbounded wildcard}
+         * {@return a bounded type arg}
+         * @param boundType the bound
          */
-        public static TypeArg unbounded() {
-            return new SignaturesImpl.TypeArgImpl(WildcardIndicator.UNBOUNDED, Optional.empty());
+        public static TypeArg of(RefTypeSig boundType) {
+            requireNonNull(boundType);
+            return of(WildcardIndicator.DEFAULT, Optional.of(boundType));
         }
 
         /**
-         * {@return a signature for an upper-bounded wildcard}
+         * {@return an unbounded type arg}
+         */
+        public static TypeArg unbounded() {
+            return of(WildcardIndicator.UNBOUNDED, Optional.empty());
+        }
+
+        /**
+         * {@return an upper-bounded type arg}
          * @param boundType the upper bound
          */
         public static TypeArg extendsOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return new SignaturesImpl.TypeArgImpl(WildcardIndicator.EXTENDS, Optional.of(boundType));
+            return of(WildcardIndicator.EXTENDS, Optional.of(boundType));
         }
 
         /**
-         * {@return a signature for a lower-bounded wildcard}
+         * {@return a lower-bounded type arg}
          * @param boundType the lower bound
          */
         public static TypeArg superOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return new SignaturesImpl.TypeArgImpl(WildcardIndicator.SUPER, Optional.of(boundType));
+            return of(WildcardIndicator.SUPER, Optional.of(boundType));
+        }
+
+        /**
+         * {@return a bounded type arg}
+         * @param wildcard the wild card
+         * @param boundType optional bound type
+         */
+        public static TypeArg of(WildcardIndicator wildcard, Optional<RefTypeSig> boundType) {
+            return new SignaturesImpl.TypeArgImpl(wildcard, boundType);
         }
     }
 

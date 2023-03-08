@@ -33,6 +33,7 @@ import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import java.io.File;
@@ -140,9 +141,12 @@ public class Depend implements Plugin {
     public void init(JavacTask jt, String... args) {
         addExports();
 
+        Path internalAPIDigestFile;
+        Map<String, String> internalAPI = new HashMap<>();
         AtomicBoolean noApiChange = new AtomicBoolean();
+        Context context = ((BasicJavacTask) jt).getContext();
+        JavaCompiler compiler = JavaCompiler.instance(context);
         try {
-            Context context = ((BasicJavacTask) jt).getContext();
             Options options = Options.instance(context);
             String modifiedInputs = options.get("modifiedInputs");
             if (modifiedInputs == null) {
@@ -157,8 +161,18 @@ public class Depend implements Plugin {
             Set<Path> modified = Files.readAllLines(Paths.get(modifiedInputs)).stream()
                                                                               .map(Paths::get)
                                                                               .collect(Collectors.toSet());
-            Path internalAPIDigestFile = Paths.get(internalAPIPath);
-            JavaCompiler compiler = JavaCompiler.instance(context);
+            internalAPIDigestFile = Paths.get(internalAPIPath);
+            if (Files.isReadable(internalAPIDigestFile)) {
+                try {
+                    Files.readAllLines(internalAPIDigestFile, StandardCharsets.UTF_8)
+                         .forEach(line -> {
+                             String[] keyAndValue = line.split("=");
+                             internalAPI.put(keyAndValue[0], keyAndValue[1]);
+                         });
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
             Class<?> initialFileParserIntf = Class.forName("com.sun.tools.javac.main.JavaCompiler$InitialFileParserIntf");
             Class<?> initialFileParser = Class.forName("com.sun.tools.javac.main.JavaCompiler$InitialFileParser");
             Field initialParserKeyField = initialFileParser.getDeclaredField("initialParserKey");
@@ -169,7 +183,7 @@ public class Depend implements Plugin {
                                            new Class<?>[] {initialFileParserIntf},
                                            new FilteredInitialFileParser(compiler,
                                                                          modified,
-                                                                         internalAPIDigestFile,
+                                                                         internalAPI,
                                                                          noApiChange,
                                                                          debug));
             context.<Object>put(key, initialParserInstance);
@@ -213,7 +227,17 @@ public class Depend implements Plugin {
                         }
                     }
                 }
-                if (te.getKind() == Kind.COMPILATION && !noApiChange.get()) {
+                if (te.getKind() == Kind.COMPILATION && !noApiChange.get() &&
+                    compiler.errorCount() == 0) {
+                    try (OutputStream out = Files.newOutputStream(internalAPIDigestFile)) {
+                        String hashes = internalAPI.entrySet()
+                                                   .stream()
+                                                   .map(e -> e.getKey() + "=" + e.getValue())
+                                                   .collect(Collectors.joining("\n"));
+                        out.write(hashes.getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException ex) {
+                        throw new IllegalStateException(ex);
+                    }
                     String previousSignature = null;
                     File digestFile = new File(args[0]);
                     try (InputStream in = new FileInputStream(digestFile)) {
@@ -258,20 +282,8 @@ public class Depend implements Plugin {
 
     private com.sun.tools.javac.util.List<JCCompilationUnit> doFilteredParse(
             JavaCompiler compiler, Iterable<JavaFileObject> fileObjects, Set<Path> modified,
-            Path internalAPIDigestFile, AtomicBoolean noApiChange,
+            Map<String, String> internalAPI, AtomicBoolean noApiChange,
             boolean debug) {
-        Map<String, String> internalAPI = new LinkedHashMap<>();
-        if (Files.isReadable(internalAPIDigestFile)) {
-            try {
-                Files.readAllLines(internalAPIDigestFile, StandardCharsets.UTF_8)
-                     .forEach(line -> {
-                         String[] keyAndValue = line.split("=");
-                         internalAPI.put(keyAndValue[0], keyAndValue[1]);
-                     });
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-        }
         Map<JavaFileObject, JCCompilationUnit> files2CUT = new IdentityHashMap<>();
         boolean fullRecompile = modified.stream()
                                         .map(Path::toString)
@@ -289,7 +301,6 @@ public class Depend implements Plugin {
                 result.add(parsed);
             }
         }
-
         if (fullRecompile) {
             for (JavaFileObject jfo : fileObjects) {
                 if (!modified.contains(Path.of(jfo.getName()))) {
@@ -300,15 +311,6 @@ public class Depend implements Plugin {
                     }
                     result.add(parsed);
                 }
-            }
-            try (OutputStream out = Files.newOutputStream(internalAPIDigestFile)) {
-                String hashes = internalAPI.entrySet()
-                                           .stream()
-                                           .map(e -> e.getKey() + "=" + e.getValue())
-                                           .collect(Collectors.joining("\n"));
-                out.write(hashes.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
             }
         } else {
             noApiChange.set(true);
@@ -835,7 +837,7 @@ public class Depend implements Plugin {
                     !isPrivate(((VariableTree) m).getModifiers()) ||
                     isRecordComponent((VariableTree) m);
                 case BLOCK -> false;
-                default -> throw new IllegalStateException("Unexpected tree kind: " + m.getKind());
+                default -> false;
             };
         }
 
@@ -878,24 +880,30 @@ public class Depend implements Plugin {
             return super.visitModifiers(node, p);
         }
 
+        @Override
+        public Void visitPrimitiveType(PrimitiveTypeTree node, Void p) {
+            update(node.getPrimitiveTypeKind().name());
+            return super.visitPrimitiveType(node, p);
+        }
+
     }
 
     private class FilteredInitialFileParser implements InvocationHandler {
 
         private final JavaCompiler compiler;
         private final Set<Path> modified;
-        private final Path internalAPIDigestFile;
+        private final Map<String, String> internalAPI;
         private final AtomicBoolean noApiChange;
         private final boolean debug;
 
         public FilteredInitialFileParser(JavaCompiler compiler,
                                          Set<Path> modified,
-                                         Path internalAPIDigestFile,
+                                         Map<String, String> internalAPI,
                                          AtomicBoolean noApiChange,
                                          boolean debug) {
             this.compiler = compiler;
             this.modified = modified;
-            this.internalAPIDigestFile = internalAPIDigestFile;
+            this.internalAPI = internalAPI;
             this.noApiChange = noApiChange;
             this.debug = debug;
         }
@@ -907,7 +915,7 @@ public class Depend implements Plugin {
                 case "parse" -> doFilteredParse(compiler,
                                                 (Iterable<JavaFileObject>) args[0],
                                                 modified,
-                                                internalAPIDigestFile,
+                                                internalAPI,
                                                 noApiChange,
                                                 debug);
                 default -> throw new UnsupportedOperationException();

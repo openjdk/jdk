@@ -57,11 +57,6 @@ public sealed interface RecordComponentInfo
         return ClassDesc.ofDescriptor(descriptor().stringValue());
     }
 
-    @Override
-    default Kind attributedElementKind() {
-        return Kind.RECORD_COMPONENT;
-    }
-
     /**
      * {@return a record component description}
      * @param name the component name

@@ -35,9 +35,6 @@ import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * ChainedMethodBuilder
- */
 public final class ChainedMethodBuilder implements MethodBuilder {
     final MethodBuilder downstream;
     final TerminalMethodBuilder terminal;
@@ -47,10 +44,10 @@ public final class ChainedMethodBuilder implements MethodBuilder {
                                 Consumer<MethodElement> consumer) {
         this.downstream = downstream;
         this.consumer = consumer;
-        MethodBuilder b = downstream;
-        while (b instanceof ChainedMethodBuilder cb)
-            b = cb.downstream;
-        terminal = (TerminalMethodBuilder) b;
+        this.terminal = switch (downstream) {
+            case ChainedMethodBuilder cb -> cb.terminal;
+            case TerminalMethodBuilder tb -> tb;
+        };
     }
 
     @Override

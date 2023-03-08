@@ -96,7 +96,7 @@ class AnnotationReader {
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(annotations);
     }
 
-    public static List<List<Annotation>> readParameterAnnotations(ClassReader classReader, int p, boolean isVisible) {
+    public static List<List<Annotation>> readParameterAnnotations(ClassReader classReader, int p) {
         int cnt = classReader.readU1(p++);
         var pas = new Object[cnt];
         for (int i = 0; i < cnt; ++i) {
@@ -228,7 +228,15 @@ class AnnotationReader {
         int pathLength = classReader.readU1(p++);
         TypeAnnotation.TypePathComponent[] typePath = new TypeAnnotation.TypePathComponent[pathLength];
         for (int i = 0; i < pathLength; ++i) {
-            typePath[i] = TypeAnnotation.TypePathComponent.of(classReader.readU1(p++), classReader.readU1(p++));
+            int typePathKindTag = classReader.readU1(p++);
+            int typeArgumentIndex = classReader.readU1(p++);
+            typePath[i] = switch (typePathKindTag) {
+                case 0 -> TypeAnnotation.TypePathComponent.ARRAY;
+                case 1 -> TypeAnnotation.TypePathComponent.INNER_TYPE;
+                case 2 -> TypeAnnotation.TypePathComponent.WILDCARD;
+                case 3 -> new UnboundAttribute.TypePathComponentImpl(TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT, typeArgumentIndex);
+                default -> throw new IllegalArgumentException("Unknown type annotation path component kind: " + typePathKindTag);
+            };
         }
         // the annotation info for this annotation
         Utf8Entry type = classReader.readUtf8Entry(p);

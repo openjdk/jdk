@@ -163,8 +163,8 @@ public non-sealed interface ClassTransform
 
     @Override
     default ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-        return new TransformImpl.ClassTransformImpl(e -> accept(builder, e),
-                                                    () -> atEnd(builder),
-                                                    () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 }

@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code EnclosingMethod} attribute (JVMS 4.7.7), which can appear
+ * Models the {@code EnclosingMethod} attribute {@jvms 4.7.7}, which can appear
  * on classes, and indicates that the class is a local or anonymous class.
  * Delivered as a {@link ClassElement} when traversing the elements of a {@link
  * jdk.internal.classfile.ClassModel}.
@@ -106,7 +106,7 @@ public sealed interface EnclosingMethodAttribute
         return new UnboundAttribute.UnboundEnclosingMethodAttribute(
                         TemporaryConstantPool.INSTANCE.classEntry(className),
                         methodName.isPresent() && methodType.isPresent()
-                                ? TemporaryConstantPool.INSTANCE.natEntry(methodName.get(), methodType.get())
+                                ? TemporaryConstantPool.INSTANCE.nameAndTypeEntry(methodName.get(), methodType.get())
                                 : null);
     }
 }

@@ -31,9 +31,6 @@ import jdk.internal.classfile.Label;
 
 import java.util.function.Consumer;
 
-/**
- * PipedCodeBuilder
- */
 public final class ChainedCodeBuilder
         extends NonterminalCodeBuilder
         implements CodeBuilder {

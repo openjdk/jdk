@@ -28,7 +28,6 @@ import java.lang.constant.ClassDesc;
 
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Label;
@@ -37,12 +36,13 @@ import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariable;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * A pseudo-instruction which models a single entry in the
  * {@link LocalVariableTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
+ * the setting of the {@link Classfile.Option#processDebug(boolean)} option.
  *
  * @see PseudoInstruction
  */
@@ -81,4 +81,34 @@ public sealed interface LocalVariable extends PseudoInstruction
     Label endScope();
 
     boolean writeTo(BufWriter buf);
+
+    /**
+     * {@return a local variable pseudo-instruction}
+     *
+     * @param slot the local variable slot
+     * @param nameEntry the local variable name
+     * @param descriptorEntry the local variable descriptor
+     * @param startScope the start range of the local variable scope
+     * @param endScope the end range of the local variable scope
+     */
+    static LocalVariable of(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
+        return new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
+                                                                  startScope, endScope);
+    }
+
+    /**
+     * {@return a local variable pseudo-instruction}
+     *
+     * @param slot the local variable slot
+     * @param name the local variable name
+     * @param descriptor the local variable descriptor
+     * @param startScope the start range of the local variable scope
+     * @param endScope the end range of the local variable scope
+     */
+    static LocalVariable of(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
+        return of(slot,
+                  TemporaryConstantPool.INSTANCE.utf8Entry(name),
+                  TemporaryConstantPool.INSTANCE.utf8Entry(descriptor.descriptorString()),
+                  startScope, endScope);
+    }
 }

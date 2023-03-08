@@ -25,7 +25,6 @@
 
 package jdk.internal.classfile.attribute;
 
-import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.Attribute;
@@ -34,7 +33,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code Record} attribute (JVMS 4.7.30), which can
+ * Models the {@code Record} attribute {@jvms 4.7.30}, which can
  * appear on classes to indicate that this class is a record class.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.

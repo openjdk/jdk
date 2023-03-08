@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class GenerationSpec;
-class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
@@ -119,7 +118,7 @@ class Generation: public CHeapObj<mtGC> {
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
-    assert(_ref_processor == NULL, "clobbering existing _ref_processor");
+    assert(_ref_processor == nullptr, "clobbering existing _ref_processor");
     _ref_processor = rp;
   }
 
@@ -194,15 +193,15 @@ class Generation: public CHeapObj<mtGC> {
   }
 
   // If some space in the generation contains the given "addr", return a
-  // pointer to that space, else return "NULL".
+  // pointer to that space, else return "null".
   virtual Space* space_containing(const void* addr) const;
 
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns the first space, if any, in the generation that can participate
-  // in compaction, or else "NULL".
-  virtual CompactibleSpace* first_compaction_space() const = 0;
+  // in compaction, or else "null".
+  virtual ContiguousSpace* first_compaction_space() const = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -218,7 +217,7 @@ class Generation: public CHeapObj<mtGC> {
     return result;
   }
 
-  // Allocate and returns a block of the requested size, or returns "NULL".
+  // Allocate and returns a block of the requested size, or returns "null".
   // Assumes the caller has done any necessary locking.
   virtual HeapWord* allocate(size_t word_size, bool is_tlab) = 0;
 
@@ -242,7 +241,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // "obj" is the address of an object in a younger generation.  Allocate space
   // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or NULL if
+  // the newly allocated space, if possible, returning the result (or null if
   // the allocation failed).
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
@@ -288,7 +287,7 @@ class Generation: public CHeapObj<mtGC> {
   // space to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the resulting
   // "oop" (initializing the allocated block). If the allocation is
-  // still unsuccessful, return "NULL".
+  // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
   // Some generations may require some cleanup or preparation actions before
@@ -420,7 +419,7 @@ public:
   virtual CollectorCounters* counters() { return _gc_counters; }
 
   GCMemoryManager* gc_manager() const {
-    assert(_gc_manager != NULL, "not initialized yet");
+    assert(_gc_manager != nullptr, "not initialized yet");
     return _gc_manager;
   }
 

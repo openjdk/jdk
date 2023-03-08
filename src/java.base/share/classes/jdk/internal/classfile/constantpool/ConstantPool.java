@@ -27,25 +27,6 @@ package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.impl.ClassReaderImpl;
-
-import static jdk.internal.classfile.Classfile.TAG_CLASS;
-import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_DOUBLE;
-import static jdk.internal.classfile.Classfile.TAG_FIELDREF;
-import static jdk.internal.classfile.Classfile.TAG_FLOAT;
-import static jdk.internal.classfile.Classfile.TAG_INTEGER;
-import static jdk.internal.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static jdk.internal.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_LONG;
-import static jdk.internal.classfile.Classfile.TAG_METHODHANDLE;
-import static jdk.internal.classfile.Classfile.TAG_METHODREF;
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
-import static jdk.internal.classfile.Classfile.TAG_MODULE;
-import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
-import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
-import static jdk.internal.classfile.Classfile.TAG_STRING;
-import static jdk.internal.classfile.Classfile.TAG_UTF8;
 
 /**
  * Provides read access to the constant pool and bootstrap method table of a

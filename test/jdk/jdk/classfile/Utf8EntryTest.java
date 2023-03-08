@@ -76,7 +76,8 @@ class Utf8EntryTest {
             "prefix\uFFFF\uFFFF\uFFFFpostfix",
             "prefix\uFFFF\uFFFF\uFFFF",
             "\uFFFF\uFFFF\uFFFFpostfix",
-            "\uFFFF\uFFFF\uFFFF"
+            "\uFFFF\uFFFF\uFFFF",
+            "\ud83d\ude01"
         }
     )
     void testParse(String s) {

@@ -83,7 +83,7 @@ public sealed interface ClassModel
      * <p>This method behaves as if:
      * {@snippet lang=java :
      *     Classfile.build(thisClass(), ConstantPoolBuilder.of(this),
-     *                     b -> b.transform(this, transform);
+     *                     b -> b.transform(this, transform));
      * }
      *
      * @param transform the transform
