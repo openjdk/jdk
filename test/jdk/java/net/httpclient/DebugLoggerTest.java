@@ -24,6 +24,7 @@
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.ref.Reference;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -262,6 +263,7 @@ public class DebugLoggerTest {
                 && thrown.equals(r.getThrown());
         doTest(() -> debug.log(MESSAGE2, thrown), debug, logHandler, dest, MESSAGE2, matcher2);
         stdOut.printf("Test [\"%s\", %s] passed%n", prop, Arrays.asList(args));
+        Reference.reachabilityFence(julLogger);
     }
 
     private static void doTest(Runnable test,
