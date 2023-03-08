@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ char *printError(const char *msg) {
         va_list argprt;
 
         va_start(argprt, msg);     // set up argptr
-        vsprintf(buf, msg, argprt);
+        vsnprintf(buf, sizeof(buf), msg, argprt);
 #ifdef SEND_TO_OUTPUT_DEBUG_STRING
         OutputDebugString(buf);
 #endif
@@ -153,7 +153,7 @@ char *printError(const char *msg) {
         va_list argprt;
 
         va_start(argprt, msg);     // set up argptr
-        vsprintf(buf, msg, argprt);
+        vsnprintf(buf, sizeof(buf), msg, argprt);
 #ifdef SEND_TO_OUTPUT_DEBUG_STRING
         OutputDebugString(buf);
 #endif
@@ -181,8 +181,8 @@ char *printError(const char *msg) {
         va_list argprt;
 
         va_start(argprt, msg);          // set up argptr
-        sprintf(charmsg, "%ls", msg);  // convert format string to multi-byte
-        vsprintf(buf, charmsg, argprt);
+        snprintf(charmsg, sizeof(charmsg), "%ls", msg);  // convert format string to multi-byte
+        vsnprintf(buf, charmsg, argprt);
 #ifdef SEND_TO_OUTPUT_DEBUG_STRING
         OutputDebugString(buf);
 #endif
@@ -211,8 +211,8 @@ char *printError(const char *msg) {
         va_list argprt;
 
         va_start(argprt, msg);          // set up argptr
-        sprintf(charmsg, "%ls", msg);  // convert format string to multi-byte
-        vsprintf(buf, charmsg, argprt);
+        snprintf(charmsg, sizeof(charmsg), "%ls", msg);  // convert format string to multi-byte
+        vsnprintf(buf, sizeof(buf), charmsg, argprt);
 #ifdef SEND_TO_OUTPUT_DEBUG_STRING
         OutputDebugString(buf);
 #endif
