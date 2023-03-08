@@ -90,6 +90,24 @@
  */
 
 /*
+ * @test id=vanilla-A
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
+ */
+
+/*
+ * @test id=vanilla-U
+ * @bug 8298935
+ * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
+ */
+
+/*
  * @test id=sse4-v016-A
  * @bug 8298935
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
@@ -1255,6 +1273,12 @@ public class TestDependencyOffsets {
         }
 
         switch (args[0]) {
+        case "vanilla-A":
+            framework.addFlags("-XX:+AlignVector");
+            break;
+        case "vanilla-U":
+            framework.addFlags("-XX:-AlignVector");
+            break;
         case "sse4-v016-A":
             framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
             break;
