@@ -427,8 +427,23 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
-  static address f2hf()                { return _f2hf; }
-  static address hf2f()                { return _hf2f; }
+  // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
+  // methods which perform the same operations as the intrinsic version.
+  // They are used for constant folding in JIT compiler to ensure equivalence.
+  //
+  static address f2hf_adr()            { return _f2hf; }
+  static address hf2f_adr()            { return _hf2f; }
+
+  static jshort f2hf(jfloat x) {
+    assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    typedef jshort (*f2hf_stub_t)(jfloat x);
+    return ((f2hf_stub_t)_f2hf)(x);
+  }
+  static jfloat hf2f(jshort x) {
+    assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    typedef jfloat (*hf2f_stub_t)(jshort x);
+    return ((hf2f_stub_t)_hf2f)(x);
+  }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }

@@ -445,17 +445,6 @@ JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
 JRT_END
 
-JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  assert(StubRoutines::f2hf() != nullptr, "floatToFloat16 intrinsic is not supported on this platform");
-  typedef jshort (*f2hf_stub_t)(jfloat x);
-  return ((f2hf_stub_t)StubRoutines::f2hf())(x);
-JRT_END
-
-JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
-  assert(StubRoutines::hf2f() != nullptr, "float16ToFloat intrinsic is not supported on this platform");
-  typedef jfloat (*hf2f_stub_t)(jshort x);
-  return ((hf2f_stub_t)StubRoutines::hf2f())(x);
-JRT_END
 
 // Exception handling across interpreter/compiler boundaries
 //

@@ -3524,12 +3524,11 @@ address StubGenerator::generate_float16ToFloat() {
   address start = __ pc();
 
   BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
+  // No need for RuntimeStub frame since it is called only during JIT compilation
 
   // Load value into xmm0 and convert
   __ flt16_to_flt(xmm0, c_rarg0);
 
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
   return start;
@@ -3550,12 +3549,11 @@ address StubGenerator::generate_floatToFloat16() {
   address start = __ pc();
 
   BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
+  // No need for RuntimeStub frame since it is called only during JIT compilation
 
   // Convert and put result into rax
   __ flt_to_flt16(rax, xmm0, xmm1);
 
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
   return start;
