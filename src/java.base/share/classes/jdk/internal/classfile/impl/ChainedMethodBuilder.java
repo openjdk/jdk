@@ -35,9 +35,6 @@ import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * ChainedMethodBuilder
- */
 public final class ChainedMethodBuilder implements MethodBuilder {
     final MethodBuilder downstream;
     final TerminalMethodBuilder terminal;

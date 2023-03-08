@@ -31,9 +31,6 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * ChainedClassBuilder
- */
 public final class ChainedClassBuilder
         implements ClassBuilder, Consumer<ClassElement> {
     private final ClassBuilder downstream;

@@ -61,9 +61,6 @@ import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
 import static jdk.internal.classfile.Classfile.TAG_STRING;
 import static jdk.internal.classfile.Classfile.TAG_UTF8;
 
-/**
- * ClassReaderImpl
- */
 public final class ClassReaderImpl
         implements ClassReader {
     static final int CP_ITEM_START = 10;

@@ -30,9 +30,6 @@ import jdk.internal.classfile.BufWriter;
 
 import static jdk.internal.classfile.Classfile.JAVA_1_VERSION;
 
-/**
- * AbstractAttributeMapper
- */
 public abstract class AbstractAttributeMapper<T extends Attribute<T>>
         implements AttributeMapper<T> {
 

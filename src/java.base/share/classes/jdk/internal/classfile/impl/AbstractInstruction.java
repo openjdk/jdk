@@ -65,10 +65,6 @@ import jdk.internal.classfile.Label;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 
-
-/**
- * AbstractInstruction.
- */
 public abstract sealed class AbstractInstruction
         extends AbstractElement
         implements Instruction {

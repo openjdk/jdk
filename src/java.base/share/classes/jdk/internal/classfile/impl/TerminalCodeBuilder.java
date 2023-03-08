@@ -26,9 +26,6 @@ package jdk.internal.classfile.impl;
 
 import jdk.internal.classfile.CodeBuilder;
 
-/**
- * TerminalCodeBuilder
- */
 public sealed interface TerminalCodeBuilder extends CodeBuilder
         permits DirectCodeBuilder, BufferedCodeBuilder, TransformingCodeBuilder {
 

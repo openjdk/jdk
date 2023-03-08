@@ -32,9 +32,6 @@ import jdk.internal.classfile.FieldElement;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * ChainedFieldBuilder
- */
 public final class ChainedFieldBuilder implements FieldBuilder {
     private final TerminalFieldBuilder terminal;
     private final Consumer<FieldElement> consumer;

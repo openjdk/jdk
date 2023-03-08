@@ -28,9 +28,6 @@ import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.instruction.LocalVariableType;
 
-/**
- * LocalVariableTypeImpl
- */
 public final class BoundLocalVariableType
         extends AbstractBoundLocalVariable
         implements LocalVariableTypeInfo,

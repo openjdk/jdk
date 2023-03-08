@@ -30,9 +30,6 @@ import jdk.internal.classfile.Label;
 import jdk.internal.classfile.TypeAnnotation.*;
 import static jdk.internal.classfile.Classfile.*;
 
-/**
- * TargetInfoImpl
- */
 public final class TargetInfoImpl {
 
     private TargetInfoImpl() {

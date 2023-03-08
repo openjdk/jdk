@@ -69,9 +69,6 @@ import static jdk.internal.classfile.Opcode.IINC_W;
 import static jdk.internal.classfile.Opcode.LDC2_W;
 import static jdk.internal.classfile.Opcode.LDC_W;
 
-/**
- * CodeWriter
- */
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder, LabelContext {

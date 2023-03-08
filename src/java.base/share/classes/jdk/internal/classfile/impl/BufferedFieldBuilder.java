@@ -33,9 +33,6 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * BufferedFieldBuilder
- */
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;

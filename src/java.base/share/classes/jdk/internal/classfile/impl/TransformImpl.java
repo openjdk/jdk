@@ -46,9 +46,6 @@ import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.MethodTransform;
 
-/**
- * TransformImpl
- */
 public class TransformImpl {
     // ClassTransform
 

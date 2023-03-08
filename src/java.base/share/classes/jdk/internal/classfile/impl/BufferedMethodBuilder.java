@@ -42,10 +42,6 @@ import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-
-/**
- * BufferedMethodBuilder
- */
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
     private final List<MethodElement> elements;

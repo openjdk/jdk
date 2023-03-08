@@ -42,9 +42,6 @@ import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
-/**
- * BoundAttribute
- */
 public abstract sealed class BoundAttribute<T extends Attribute<T>>
         extends AbstractElement
         implements Attribute<T> {

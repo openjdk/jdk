@@ -63,9 +63,6 @@ import jdk.internal.classfile.CompoundElement;
 import jdk.internal.classfile.FieldModel;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
-/**
- * ClassPrinterImpl
- */
 public final class ClassPrinterImpl {
 
     public enum Style { BLOCK, FLOW }

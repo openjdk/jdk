@@ -40,9 +40,6 @@ import jdk.internal.classfile.instruction.*;
 
 import static jdk.internal.classfile.Classfile.*;
 
-/**
- * CodeAttr
- */
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
         implements CodeModel, LabelContext {

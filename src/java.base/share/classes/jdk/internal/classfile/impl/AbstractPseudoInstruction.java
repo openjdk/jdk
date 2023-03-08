@@ -36,10 +36,6 @@ import jdk.internal.classfile.instruction.LocalVariableType;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.PseudoInstruction;
 
-
-/**
- * AbstractInstruction.
- */
 public abstract sealed class AbstractPseudoInstruction
         extends AbstractElement
         implements PseudoInstruction {

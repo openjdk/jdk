@@ -93,9 +93,6 @@ import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-/**
- * UnboundAttribute
- */
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
         implements Attribute<T> {

@@ -26,9 +26,6 @@ package jdk.internal.classfile.impl;
 
 import jdk.internal.classfile.ClassfileVersion;
 
-/**
- * ClassfileVersionImpl
- */
 public final class ClassfileVersionImpl
         extends AbstractElement
         implements ClassfileVersion {
