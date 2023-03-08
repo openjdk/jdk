@@ -2388,19 +2388,19 @@ void CookPointers(cmsIT8* it8)
                             snprintf(Buffer, 255, "%s %d %s", Label, nTable, Type);
 
                             SetData(it8, i, idField, Buffer);
-                                                }
-                                        }
-
-
-                                }
-
                         }
+                    }
 
 
                 }
 
+            }
+
+
         }
-        }
+
+    }
+    }
 
     it8 ->nTable = nOldTable;
 }
