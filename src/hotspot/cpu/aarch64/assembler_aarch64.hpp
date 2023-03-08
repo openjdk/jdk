@@ -1597,7 +1597,9 @@ public:
 public:
 
   enum SIMD_Arrangement {
-    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
+    T8B = 0b000, T16B = 0b001, T4H = 0b010, T8H = 0b011,
+    T2S = 0b100,  T4S = 0b101, T1D = 0b110, T2D = 0b111,
+    T1Q, INVALID_ARRANGEMENT
   };
 
   enum SIMD_RegVariant {
@@ -2710,11 +2712,11 @@ template<typename R, typename... Rx>
 #undef INSN
 
 // Advanced SIMD three same
-#define INSN(NAME, op1, op2, op3)                                                       \
+#define INSN(NAME, U, op2, op3)                                                       \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     starti;                                                                             \
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                    \
-    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);            \
+    f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24), f(op2, 23);            \
     f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
   }
 
@@ -2733,6 +2735,8 @@ template<typename R, typename... Rx>
   INSN(fcmge, 1, 0, 0b111001);
   INSN(facgt, 1, 1, 0b111011);
 
+  INSN(add, 0, 1, 0b100001);
+  INSN(sub, 1, 1, 0b100001);
 #undef INSN
 
 #define INSN(NAME, opc)                                                                 \
@@ -2836,7 +2840,9 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-#define INSN(NAME, op1, op2) \
+  // Advanced SIMD vector x indexed element
+
+#define INSN(NAME, op1, op2)                                                               \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index = 0) { \
     starti;                                                                                            \
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                                   \
@@ -2852,6 +2858,40 @@ template<typename R, typename... Rx>
   INSN(fmlsvs, 0, 0b0101);
   // FMULX - Vector - Scalar
   INSN(fmulxvs, 1, 0b1001);
+
+#undef INSN
+
+// NB: When using Arrangement T4S, Vm is restricted to v0-v15
+#define INSN(NAME, opc, upper, U)                                                          \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index) { \
+    starti;                                                                                \
+    f(0, 31); f(upper, 30); f(U, 29); f(0b01111,28, 24);                                   \
+    switch(T) {                                                                            \
+      case T4S: {                                                                          \
+        f(0b01, 23, 22);                                                                   \
+        int H = index >> 2, L = (index >> 1) & 1, M = index & 1;                           \
+        f(H, 11); f(L, 21); f(M, 20);                                                      \
+        f(Vm->encoding(), 19, 16);                                                         \
+        break;                                                                             \
+      }                                                                                    \
+      case T2D: {                                                                          \
+        f(0b10, 23, 22);                                                                   \
+        int H = index >> 1, L = index & 1;                                                 \
+        f(H, 11); f(L, 21);                                                                \
+        rf(Vm, 16);                                                                        \
+        break;                                                                             \
+      }                                                                                    \
+      default:                                                                             \
+        ShouldNotReachHere();                                                              \
+    }                                                                                      \
+    f(opc, 15, 12); f(0, 10);                                                              \
+    rf(Vn, 5); rf(Vd, 0);                                                                  \
+  }
+
+  INSN(umull, 0b1010, false, 1);
+  INSN(umull2, 0b1010, true, 1);
+  INSN(umlal, 0b0010, false, 1);
+  INSN(umlal2, 0b0010, true, 1);
 
 #undef INSN
 

@@ -150,6 +150,28 @@ void print52(u64 hi, u64 mid, u64 lo) {
   printf("\n");
 }
 
+void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0) {
+  x1 += x0 >> 26; x0 %= 1 <<26;
+  x4 += x3 >> 26; x3 %= 1 <<26;
+  x2 += x1 >> 26; x1 %= 1 <<26;
+  x0 += 5 * (x4 >> 26); x4 %= 1 <<26;
+  x3 += x2 >> 26; x2 %= 1 <<26;
+  x1 += x0 >> 26; x0 %= 1 <<26;
+  x4 += x3 >> 26; x3 %= 1 <<26;
+
+  u128 sum = 0;
+  sum = sum
+    + x0
+    + ((u128)x1 << 26)
+    + ((u128)x2 << 52)
+    + ((u128)x3 << 78)
+    + ((u128)x4 << 104);
+
+  u64 top = x4 >> 24; printf("%lx:", top);
+  print128(sum);
+  printf("\n");
+}
+
 #define is_token_break(ch) (isspace(ch) || (ch) == ',')
 
 static const char* last_file_name = NULL;

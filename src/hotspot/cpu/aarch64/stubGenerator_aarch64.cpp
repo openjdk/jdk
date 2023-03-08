@@ -61,7 +61,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 
-static address poo;
+address poo;
 int trips;
 
 
@@ -7228,8 +7228,6 @@ typedef uint32_t u32;
       __ subsw(length, length, BLOCK_LENGTH);
       __ br(Assembler::GE, LOOP);
     }
-
-    poo = __ pc();
 
     // Fully reduce modulo 2^130 - 5
     __ adds(u[0]._lo, u[0]._lo, u[1]._lo, __ LSL, 52);

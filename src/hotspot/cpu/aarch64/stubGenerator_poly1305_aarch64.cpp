@@ -28,6 +28,8 @@
 
 #ifdef INCLUDE_GEN2
 
+typedef AbstractRegSet<FloatRegister> vRegSet;
+
 address generate_poly1305_processBlocks2() {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
@@ -38,6 +40,7 @@ address generate_poly1305_processBlocks2() {
   __ push(callee_saved, sp);
 
   RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
 
   // Arguments
   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
@@ -89,6 +92,8 @@ address generate_poly1305_processBlocks2() {
 
   static constexpr int BLOCK_LENGTH = 16;
 
+  const FloatRegister v_u1[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
+
   {
     Label DONE, LOOP;
 
@@ -97,16 +102,23 @@ address generate_poly1305_processBlocks2() {
     __ br(Assembler::LT, DONE);
 
     __ poly1305_step(S1, u1, input_start);
+    auto vregs = (AbstractRegSet<FloatRegister>::range(v0, v31)).begin();
+    FloatRegister u_v[] = {*vregs++, *vregs++, *vregs++,
+                           *vregs++, *vregs++};
+
+    __ poly1305_multiply_foo(u_v, vregs.remaining(), u1, S1, R);
+    __ poly1305_reduce_foo(u_v, vregs.remaining());
+
     __ poly1305_multiply(u1, S1, R, RR2, regs);
     __ poly1305_reduce(u1);
+    poo = __ pc();
+    __ poly1305_transfer(u1, u_v, *vregs);
 
     __ poly1305_step(S0, u0, input_start);
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
     __ incrementw(Address(&trips), 1);
-
-    poo = __ pc();
 
     __ subw(length, length, BLOCK_LENGTH * 2);
     __ b(LOOP);
@@ -154,7 +166,6 @@ address generate_poly1305_processBlocks2() {
     __ b(LOOP);
     __ bind(DONE);
   }
-
   __ poly1305_fully_reduce(S0, u0);
 
   // And store it all back

@@ -58,6 +58,7 @@ class MacroAssembler: public Assembler {
  public:
   using Assembler::mov;
   using Assembler::movi;
+  using Assembler::umull;
 
  protected:
 
@@ -165,9 +166,10 @@ class MacroAssembler: public Assembler {
 
   void membar(Membar_mask_bits order_constraint);
 
+  // using Assembler::add;
   using Assembler::ldr;
-  using Assembler::str;
   using Assembler::ldrw;
+  using Assembler::str;
   using Assembler::strw;
 
   void ldr(Register Rx, const Address &adr);
@@ -1578,9 +1580,29 @@ public:
   // Widening multiply s * r -> u
   void poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
                        RegSetIterator<Register> scratch);
+  void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
+                             const FloatRegister r[], const FloatRegister rr[]);
+
+  void poly1305_multiply_foo(const FloatRegister u_v[],
+                              AbstractRegSet<FloatRegister> vregs,
+                              const RegPair u[], Register s[], Register r[]);
+
+  void poly1305_reduce_foo(const FloatRegister u[], AbstractRegSet<FloatRegister> scratch);
+
+  void mov26(FloatRegister d, Register s, int lsb);
+  void expand26(Register d, Register r);
+  void split26(const FloatRegister d[], Register s);
+  void copy_3_to_5_regs(const FloatRegister d[],
+                                        Register s0, Register s1, Register s2);
+  void copy_3_regs_to_5_elements(const FloatRegister d[],
+                                 Register s0, Register s1, Register s2);
+
   void poly1305_reduce(const RegPair u[]);
+  void poly1305_reduce_step(FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
   void poly1305_fully_reduce(Register dest[], const RegPair u[]);
   void poly1305_step(Register s[], const RegPair u[], Register input_start);
+  void poly1305_transfer(const RegPair d[], const FloatRegister s[],
+                         FloatRegister vscratch);
   void copy_3_regs(const Register dest[], const Register src[]);
   void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
 

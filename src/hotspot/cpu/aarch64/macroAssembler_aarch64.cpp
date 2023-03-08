@@ -75,6 +75,7 @@
 
 #ifdef ASSERT
 extern "C" void disnm(intptr_t p);
+extern address poo;
 #endif
 // Target-dependent relocation processing
 //
@@ -5953,6 +5954,156 @@ void MacroAssembler::poly1305_multiply(const RegPair u[], Register s[], Register
   wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
 }
 
+// Widening multiply s * r -> u
+void MacroAssembler::poly1305_multiply_vec(const FloatRegister u[],
+                     const FloatRegister m[],
+                     const FloatRegister r[], const FloatRegister rr[]) {
+
+  // Five limbs of r and rr (5·r) are packed as 32-bit integers into
+  // two 128-bit vectors.
+
+  // // (h + c) * r, without carry propagation
+  // u64 u0 = r0*m0 + 5·r1*m4 + 5·r2*m3 + 5·r3*m2 + 5·r4*m1
+  // u64 u1 = r0*m1 +   r1*m0 + 5·r2*m4 + 5·r3*m3 + 5·r4*m2
+  // u64 u2 = r0*m2 +   r1*m1 +   r2*m0 + 5·r3*m4 + 5·r4*m3
+  // u64 u3 = r0*m3 +   r1*m2 +   r2*m1 +   r3*m0 + 5·r4*m4
+  // u64 u4 = r0*m4 +   r1*m3 +   r2*m2 +   r3*m1 +   r4*m0
+
+  umull(u[0], T2D, m[0], r[0], 0);
+  umull(u[1], T2D, m[1], r[0], 0);
+  umull(u[2], T2D, m[2], r[0], 0);
+  umull(u[3], T2D, m[3], r[0], 0);
+  umull(u[4], T2D, m[4], r[0], 0);
+
+  umlal(u[0], T2D, m[4], rr[0], 1);
+  umlal(u[1], T2D, m[0],  r[0], 1);
+  umlal(u[2], T2D, m[1],  r[0], 1);
+  umlal(u[3], T2D, m[2],  r[0], 1);
+  umlal(u[4], T2D, m[3],  r[0], 1);
+
+  umlal(u[0], T2D, m[3], rr[0], 2);
+  umlal(u[1], T2D, m[4], rr[0], 2);
+  umlal(u[2], T2D, m[0],  r[0], 2);
+  umlal(u[3], T2D, m[1],  r[0], 2);
+  umlal(u[4], T2D, m[2],  r[0], 2);
+
+  umlal(u[0], T2D, m[2], rr[0], 3);
+  umlal(u[1], T2D, m[3], rr[0], 3);
+  umlal(u[2], T2D, m[4], rr[0], 3);
+  umlal(u[3], T2D, m[0],  r[0], 3);
+  umlal(u[4], T2D, m[1],  r[0], 3);
+
+  umlal(u[0], T2D, m[1], rr[1], 0);
+  umlal(u[1], T2D, m[2], rr[1], 0);
+  umlal(u[2], T2D, m[3], rr[1], 0);
+  umlal(u[3], T2D, m[4], rr[1], 0);
+  umlal(u[4], T2D, m[0],  r[1], 0);
+
+}
+
+void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
+  ubfx(rscratch1, s, lsb, 26);
+  mov(d, S, 0, rscratch1);
+}
+void MacroAssembler::expand26(Register d, Register r) {
+  lsr(d, r, 26);
+  lsl(d, d, 32);
+  bfxil(d, r, 0, 26);
+}
+
+void MacroAssembler::split26(const FloatRegister d[], Register s) {
+  ubfx(rscratch1, s, 0, 26);
+  mov(d[0], S, 0, rscratch1);
+  lsr(rscratch1, s, 26);
+  mov(d[1], S, 0, rscratch1);
+}
+
+void MacroAssembler::copy_3_to_5_regs(const FloatRegister d[],
+                                 Register s0, Register s1, Register s2) {
+  split26(&d[0], s0);
+  split26(&d[2], s1);
+  mov(d[4], S, 0, s2);
+}
+
+void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
+                                 Register s0, Register s1, Register s2) {
+  expand26(rscratch2, s0);
+  mov(d[0], D, 0, rscratch2);
+  expand26(rscratch2, s1);
+  mov(d[0], D, 1, rscratch2);
+  mov(d[1], S, 0, s2);
+}
+
+void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
+                                           AbstractRegSet<FloatRegister> remaining,
+                                           const RegPair u[], Register s[], Register r[]) {
+  auto vregs = remaining.begin();
+  FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++,
+                          *vregs++, *vregs++};
+  FloatRegister r_v[] = {*vregs++, *vregs++};
+  FloatRegister rr_v[] = {*vregs++, *vregs++};
+
+  FloatRegister vtmp = *vregs++;
+
+  copy_3_to_5_regs(s_v, s[0], s[1], s[2]);
+  copy_3_regs_to_5_elements(r_v, r[0], r[1], r[2]);
+
+  // 5·r -> rr
+   shl(vtmp, T4S, r_v[0], 2);
+  addv(rr_v[0], T4S, r_v[0], vtmp);
+   shl(vtmp, T4S, r_v[1], 2);
+  addv(rr_v[1], T4S, r_v[1], vtmp);
+
+  poly1305_multiply_vec(u_v, s_v, r_v, rr_v);
+
+  nop();
+}
+
+void MacroAssembler::poly1305_reduce_step(FloatRegister d, FloatRegister s,
+                                          FloatRegister upper_bits, FloatRegister scratch) {
+  ushr(scratch, T2D, s, 26);
+  Assembler::add(d, T2D, d, scratch);
+  bic(s, T16B, s, upper_bits);
+}
+void MacroAssembler::poly1305_reduce_foo(const FloatRegister u[],
+                                         AbstractRegSet<FloatRegister> scratch) {
+
+  auto r = scratch.begin();
+  FloatRegister upper_bits = *r++, vtmp2 = *r++, vtmp3 = *r++;
+  // Partial reduction mod 2**130 - 5
+  movi(upper_bits, T16B, 0xff);
+  shl(upper_bits, T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
+
+  // Goll-Guerin reduction
+  poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
+  poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
+  poly1305_reduce_step(u[2], u[1], upper_bits, vtmp2);
+  {
+    ushr(vtmp2, T2D, u[4], 26);
+    shl(vtmp3, T2D, vtmp2, 2);
+    Assembler::add(vtmp2, T2D, vtmp2, vtmp3); // vtmp2 == 5 * (u[4] >> 26)
+    Assembler::add(u[0], T2D, u[0], vtmp2);
+    bic(u[4], T16B, u[4], upper_bits);
+  }
+  poly1305_reduce_step(u[3], u[2], upper_bits, vtmp2);
+  poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
+  poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
+}
+
+void MacroAssembler::poly1305_transfer(const RegPair u0[],
+                                       const FloatRegister s[],
+                                       FloatRegister vscratch) {
+  shl(vscratch, T2D, s[1], 26);
+  Assembler::add(vscratch, T2D, s[0], vscratch);
+  umov(u0[0]._lo, vscratch, D, 0);
+
+  shl(vscratch, T2D, s[3], 26);
+  Assembler::add(vscratch, T2D, s[2], vscratch);
+  umov(u0[1]._lo, vscratch, D, 0);
+
+  umov(u0[2]._lo, s[4], D, 0);
+}
+
 void MacroAssembler::poly1305_reduce(const RegPair u[]) {
   // Partial reduction mod 2**130 - 5
 
@@ -6022,7 +6173,7 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
   bfc(u[1]._lo, 52, 64-52);
   DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
 
-  // Multiply bits 26-63 of u2 by 5 and add to u0
+  // Multiply bits 26-63 of u2 by 5 and add to u0, clearing the top bits
   // FIXME: This is probably unnecessary
   ubfx(rscratch1, u[2]._lo, 26, 64-26);
   bfc(u[2]._lo, 26, 64-26);

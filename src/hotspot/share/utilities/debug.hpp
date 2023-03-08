@@ -35,7 +35,7 @@
 class oopDesc;
 
 // ShowRegistersOnAssert support (for now Linux only)
-#if defined(LINUX) && !defined(ZERO)
+#if 0 && defined(LINUX) && !defined(ZERO)
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
 #define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';

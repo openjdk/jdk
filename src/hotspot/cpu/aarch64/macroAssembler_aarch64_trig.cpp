@@ -289,7 +289,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
       lea(ih, ExternalAddress(npio2_hw));
       ld1(v4, v5, v6, v7, T1D, ih);
       fabsd(v31, v0);          // v31 = t = |x|
-      add(ih, ih, 64);
+      add(ih, ih, 64u);
       fmaddd(v2, v31, v5, v4); // v2 = t * invpio2 + half (invpio2 = 53 bits of 2/pi, half = 0.5)
       fcvtzdw(n, v2);          // n = (int) v2
       frintzd(v2, v2);
@@ -381,7 +381,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
 
       block_comment("nx calculation with unrolled while(tx[nx-1]==zeroA) nx--;"); {
         fcmpd(v26, 0.0);                           // if NE then jx == 2. else it's 1 or 0
-        add(iqBase, sp, 480);                      // base of iq[]
+        add(iqBase, sp, 480u);                      // base of iq[]
         fmuld(v3, v26, v24);
         br(NE, NX_SET);
         fcmpd(v7, 0.0);                            // v7 == 0 => jx = 0. Else jx = 1
@@ -698,7 +698,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
     fmovd(v26, 0.0);
     addw(tmp5, jv, 1);                    // jv+1
     subsw(j, jv, jx);
-    add(qBase, sp, 320);                  // base of q[]
+    add(qBase, sp, 320u);                  // base of q[]
     msubw(rscratch1, i, tmp5, rscratch1); // q0 =  e0-24*(jv+1)
     // use double f[20], fq[20], q[20], iq[20] on stack, which is
     // (20 + 20 + 20) x 8 + 20 x 4 = 560 bytes. From lower to upper addresses it
@@ -785,7 +785,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
       lsl(tmp5, tmp5, 52);                     // now it's 2^q0 double value
       lsl(tmp4, tmp4, 52);                     // now it's 2^-q0 double value
       br(LT, JX_IS_0);
-      add(i, sp, 8);
+      add(i, sp, 8u);
       ldpq(v26, v27, i);                       // load f[1..4]
       br(GT, JX_IS_2);
       // jx == 1
@@ -842,7 +842,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
           fcvtzdw(tmp1, v28);                              // (int)(z-two24A*fw)
           strw(tmp1, Address(iqBase, i, Address::lsl(2)));
           faddd(v18, v27, v29);
-          add(i, i, 1);
+          add(i, i, 1u);
           subs(j, j, 1);
           br(GT, RECOMP_FIRST_FOR);
       }
@@ -1043,7 +1043,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
             subsw(i, i, 1);
             br(GE, CONVERTION_FOR);
         }
-        add(rscratch2, sp, 160); // base for fq
+        add(rscratch2, sp, 160u); // base for fq
         // reusing twoOverPiBase
         lea(twoOverPiBase, ExternalAddress(pio2));
 
@@ -1070,7 +1070,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
               br(LE, COMP_INNER_LOOP);
           }
           strd(v30, Address(rscratch2, tmp2, Address::lsl(3)));         // fq[jz-i]
-          add(tmp2, tmp2, 1);
+          add(tmp2, tmp2, 1u);
           subsw(i, i, 1);
           br(GE, COMP_FOR);
       }
@@ -1110,7 +1110,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
           cbz(ih, FW_Y1_NO_NEGATION);
           fnegd(v5, v5);
         bind(FW_Y1_NO_NEGATION);
-          add(sp, sp, 560);
+          add(sp, sp, 560u);
       }
 }
 

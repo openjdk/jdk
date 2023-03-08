@@ -131,9 +131,9 @@ void Address::lea(MacroAssembler *as, Register r) const {
     if (offset() == 0 && base() == r) // it's a nop
       break;
     if (offset() > 0)
-      __ add(r, base(), offset());
+      __ add(r, base(), uabs(offset()));
     else
-      __ sub(r, base(), -offset());
+      __ sub(r, base(), uabs(-offset()));
     break;
   }
   case base_plus_offset_reg: {

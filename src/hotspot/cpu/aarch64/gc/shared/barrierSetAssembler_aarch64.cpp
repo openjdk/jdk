@@ -170,7 +170,7 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
   if (var_size_in_bytes->is_valid()) {
     __ add(t1, t1, var_size_in_bytes);
   } else {
-    __ add(t1, t1, con_size_in_bytes);
+    __ add(t1, t1, uabs(con_size_in_bytes));
   }
   __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
 }
