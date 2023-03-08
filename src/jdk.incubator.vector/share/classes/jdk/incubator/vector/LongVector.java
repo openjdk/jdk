@@ -2138,6 +2138,9 @@ public abstract class LongVector extends AbstractVector<Long> {
             getClass(), long.class, length(),
             this, that, origin,
             new VectorSliceOp<LongVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public LongVector apply(LongVector v1, LongVector v2, int o) {
                     VectorMask<Long> blendMask = v1.vspecies().indexInRange(o, v1.length());

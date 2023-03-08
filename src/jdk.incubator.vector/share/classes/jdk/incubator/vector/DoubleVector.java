@@ -2129,6 +2129,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             getClass(), double.class, length(),
             this, that, origin,
             new VectorSliceOp<DoubleVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public DoubleVector apply(DoubleVector v1, DoubleVector v2, int o) {
                     VectorMask<Double> blendMask = v1.vspecies().indexInRange(o, v1.length());

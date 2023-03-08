@@ -2287,6 +2287,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             getClass(), byte.class, length(),
             this, that, origin,
             new VectorSliceOp<ByteVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public ByteVector apply(ByteVector v1, ByteVector v2, int o) {
                     VectorMask<Byte> blendMask = v1.vspecies().indexInRange(o, v1.length());

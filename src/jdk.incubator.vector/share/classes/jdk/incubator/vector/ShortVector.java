@@ -2288,6 +2288,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
             getClass(), short.class, length(),
             this, that, origin,
             new VectorSliceOp<ShortVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public ShortVector apply(ShortVector v1, ShortVector v2, int o) {
                     VectorMask<Short> blendMask = v1.vspecies().indexInRange(o, v1.length());

@@ -2272,6 +2272,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
             getClass(), int.class, length(),
             this, that, origin,
             new VectorSliceOp<IntVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public IntVector apply(IntVector v1, IntVector v2, int o) {
                     VectorMask<Integer> blendMask = v1.vspecies().indexInRange(o, v1.length());

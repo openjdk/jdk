@@ -2141,6 +2141,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
             getClass(), float.class, length(),
             this, that, origin,
             new VectorSliceOp<FloatVector>() {
+                // Use anonymous class to use ForceInline here since the intrinsics
+                // does not cover all the cases, hence the Java implementation needs
+                // to be performant
                 @ForceInline
                 public FloatVector apply(FloatVector v1, FloatVector v2, int o) {
                     VectorMask<Float> blendMask = v1.vspecies().indexInRange(o, v1.length());
