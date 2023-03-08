@@ -38,5 +38,6 @@ public sealed interface ConstantValueEntry extends LoadableConstantEntry
      * {@return the constant value}  The constant value will be an {@link Integer},
      * {@link Long}, {@link Float}, {@link Double}, or {@link String}.
      */
+    @Override
     ConstantDesc constantValue();
 }

@@ -65,7 +65,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models a classfile attribute (JVMS 4.7).  Many, though not all, subtypes of
+ * Models a classfile attribute {@jvms 4.7}.  Many, though not all, subtypes of
  * {@linkplain Attribute} will implement {@link ClassElement}, {@link
  * MethodElement}, {@link FieldElement}, or {@link CodeElement}; attributes that
  * are also elements will be delivered when traversing the elements of the

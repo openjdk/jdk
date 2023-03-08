@@ -28,9 +28,6 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
-/**
- * MethodInfo
- */
 public interface MethodInfo {
     Utf8Entry methodName();
     Utf8Entry methodType();

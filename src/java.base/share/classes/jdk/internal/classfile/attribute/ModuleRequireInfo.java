@@ -31,7 +31,7 @@ import java.util.Set;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;

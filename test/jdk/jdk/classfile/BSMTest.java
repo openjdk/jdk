@@ -77,7 +77,7 @@ public class BSMTest {
                                     MemberRefEntry memberRefEntry = cpb.methodRefEntry(ClassDesc.of("BSMTest"), "bootstrap", MethodTypeDesc.ofDescriptor(TYPE));
                                     MethodHandleEntry methodHandleEntry = cpb.methodHandleEntry(6, memberRefEntry);
                                     BootstrapMethodEntry bme = cpb.bsmEntry(methodHandleEntry, staticArgs);
-                                    ConstantDynamicEntry cde = cpb.constantDynamicEntry(bme, cpb.natEntry("name", CD_String));
+                                    ConstantDynamicEntry cde = cpb.constantDynamicEntry(bme, cpb.nameAndTypeEntry("name", CD_String));
 
                                     codeB.constantInstruction(Opcode.LDC, cde.constantValue());
                                 }

@@ -52,16 +52,5 @@ public sealed interface PoolEntry extends WritableElement<PoolEntry>
     /**
      * {@return the number of constant pool slots this entry consumes}
      */
-    int poolEntries();
-
-    /**
-     * {@return a constant pool entry, with the same contents as this entry,
-     * compatible with the specified constant pool}  If {@code cp} describes
-     * the pool this entry is from, or a pool this constant pool has been
-     * copied from, then {@code this} is returned, otherwise the entry is
-     * cloned to the specified pool.
-     *
-     * @param cp the constant pool with which a compatible entry is desired
-     */
-    PoolEntry clone(ConstantPoolBuilder cp);
+    int width();
 }

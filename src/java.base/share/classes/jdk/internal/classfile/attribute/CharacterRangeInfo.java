@@ -67,9 +67,9 @@ public sealed interface CharacterRangeInfo
      * may be set within flags.
      * <ul>
      * <li>{@link jdk.internal.classfile.Classfile#CRT_STATEMENT} Range is a Statement
-     * (except ExpressionStatement), StatementExpression (14.8), as well as each
+     * (except ExpressionStatement), StatementExpression {@jls 14.8}, as well as each
      * VariableDeclaratorId = VariableInitializer of
-     * LocalVariableDeclarationStatement (14.4) or FieldDeclaration (8.3) in the
+     * LocalVariableDeclarationStatement {@jls 14.4} or FieldDeclaration {@jls 8.3} in the
      * grammar.
      * <li>{@link jdk.internal.classfile.Classfile#CRT_BLOCK} Range is a Block in the
      * grammar.
@@ -77,7 +77,7 @@ public sealed interface CharacterRangeInfo
      * expression - Expression1 AssignmentOperator Expression1 in the grammar as
      * well as increment and decrement expressions (both prefix and postfix).
      * <li>{@link jdk.internal.classfile.Classfile#CRT_FLOW_CONTROLLER} An expression
-     * whose value will effect control flow. Flowcon in the following:
+     * whose value will effect control flow. {@code Flowcon} in the following:
      * <pre>
      * if ( Flowcon ) Statement [else Statement]
      * for ( ForInitOpt ; [Flowcon] ; ForUpdateOpt ) Statement
@@ -89,7 +89,7 @@ public sealed interface CharacterRangeInfo
      * Flowcon ? Expression : Expression1
      * </pre>
      * <li>{@link jdk.internal.classfile.Classfile#CRT_FLOW_TARGET} Statement or
-     * expression effected by a CRT_FLOW_CONTROLLER. Flowtarg in the following:
+     * expression effected by a CRT_FLOW_CONTROLLER. {@code Flowtarg} in the following:
      * <pre>
      * if ( Flowcon ) Flowtarg [else Flowtarg]
      * for ( ForInitOpt ; [Flowcon] ; ForUpdateOpt ) Flowtarg

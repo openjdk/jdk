@@ -35,13 +35,12 @@ public final class BoundRecordComponentInfo
         implements RecordComponentInfo {
 
     private final ClassReader reader;
-    private final int startPos, endPos, attributesPos;
+    private final int startPos, attributesPos;
     private List<Attribute<?>> attributes;
 
-    public BoundRecordComponentInfo(ClassReader reader, int startPos, int endPos) {
+    public BoundRecordComponentInfo(ClassReader reader, int startPos) {
         this.reader = reader;
         this.startPos = startPos;
-        this.endPos = endPos;
         attributesPos = startPos + 4;
     }
 

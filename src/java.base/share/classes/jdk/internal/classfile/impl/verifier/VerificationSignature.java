@@ -81,16 +81,12 @@ final class VerificationSignature {
         }
     }
 
-    static final char JVM_SIGNATURE_SLASH = '/',
-            JVM_SIGNATURE_DOT = '.',
-            JVM_SIGNATURE_SPECIAL = '<',
-            JVM_SIGNATURE_ENDSPECIAL = '>',
+    static final char JVM_SIGNATURE_DOT = '.',
             JVM_SIGNATURE_ARRAY = '[',
             JVM_SIGNATURE_BYTE = 'B',
             JVM_SIGNATURE_CHAR = 'C',
             JVM_SIGNATURE_CLASS = 'L',
             JVM_SIGNATURE_ENDCLASS = ';',
-            JVM_SIGNATURE_ENUM = 'E',
             JVM_SIGNATURE_FLOAT = 'F',
             JVM_SIGNATURE_DOUBLE = 'D',
             JVM_SIGNATURE_FUNC = '(',
@@ -101,16 +97,8 @@ final class VerificationSignature {
             JVM_SIGNATURE_VOID = 'V',
             JVM_SIGNATURE_BOOLEAN = 'Z';
 
-    static boolean isJavaPrimitive(BasicType t) {
-        return BasicType.T_BOOLEAN.type <= t.type && t.type <= BasicType.T_LONG.type;
-    }
-
     static boolean isReferenceType(BasicType t) {
         return t == BasicType.T_OBJECT || t == BasicType.T_ARRAY;
-    }
-
-    static char type2Char(BasicType t) {
-        return t.type < TYPE2CHAR_TAB.length ? TYPE2CHAR_TAB[t.type] : 0;
     }
 
     private static final char TYPE2CHAR_TAB[] = new char[]{
@@ -137,10 +125,6 @@ final class VerificationSignature {
 
     boolean atReturnType() {
         return state == S_METHOD_RETURN;
-    }
-
-    VerificationSignature(String signature, boolean is_method) {
-        this(signature, is_method, null);
     }
 
     boolean isReference() {

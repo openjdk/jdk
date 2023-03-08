@@ -93,6 +93,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.lang.String.format;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -705,13 +706,13 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         HttpTestHandler h2_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h2_chunkedHandler = new HTTP_ChunkedHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_fixedLengthHandler, "/http2/fixed");
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/chunk");
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
@@ -728,7 +729,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(5000);
         try {
             http2TestServer.stop();
             https2TestServer.stop();

@@ -60,8 +60,7 @@ public sealed interface InvokeInstruction extends Instruction
     boolean isInterface();
 
     /**
-     * {@return for an {@code invokeinterface}, the {@code count} value, as
-     * defined in JVMS 6.5}
+     * @return for an {@code invokeinterface}, the {@code count} value, as defined in {@jvms 6.5}
      */
     int count();
 
@@ -121,7 +120,7 @@ public sealed interface InvokeInstruction extends Instruction
                                 Utf8Entry name,
                                 Utf8Entry type,
                                 boolean isInterface) {
-        return of(op, owner, TemporaryConstantPool.INSTANCE.natEntry(name, type), isInterface);
+        return of(op, owner, TemporaryConstantPool.INSTANCE.nameAndTypeEntry(name, type), isInterface);
     }
 
     /**

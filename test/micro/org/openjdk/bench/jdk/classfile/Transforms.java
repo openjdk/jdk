@@ -168,18 +168,18 @@ public class Transforms {
         public final UnaryOperator<byte[]> transform;
         public final boolean shared;
         public final ClassTransform classTransform;
-        public final Classfile.Option<?>[] options;
+        public final Classfile.Option[] options;
 
         NoOpTransform(UnaryOperator<byte[]> transform) {
             this.transform = transform;
             classTransform = null;
             shared = false;
-            options = new Classfile.Option<?>[0];
+            options = new Classfile.Option[0];
         }
 
         NoOpTransform(boolean shared,
                       ClassTransform classTransform,
-                      Classfile.Option<?>... options) {
+                      Classfile.Option... options) {
             this.shared = shared;
             this.classTransform = classTransform;
             this.options = shared

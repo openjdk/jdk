@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the generic signature of a method, as defined by JVMS 4.7.9.
+ * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
  */
 public sealed interface MethodSignature
         permits SignaturesImpl.MethodSignatureImpl {

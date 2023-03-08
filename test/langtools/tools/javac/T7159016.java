@@ -78,13 +78,8 @@ public class T7159016 {
                 return false;
             }
             messager.printNote("writing Generated.java");
-            try {
-                Writer w = processingEnv.getFiler().createSourceFile("p.Generated").openWriter();
-                try {
-                    w.write("package p; public class Generated { public static void m() { } }");
-                } finally {
-                    w.close();
-                }
+            try (Writer w = processingEnv.getFiler().createSourceFile("p.Generated").openWriter()) {
+                w.write("package p; public class Generated { public static void m() { } }");
             } catch (IOException x) {
                 messager.printError(x.toString());
             }

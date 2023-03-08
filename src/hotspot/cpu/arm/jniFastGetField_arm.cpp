@@ -38,8 +38,8 @@
 #define BUFFER_SIZE 120
 
 address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
-  const char* name = NULL;
-  address slow_case_addr = NULL;
+  const char* name = nullptr;
+  address slow_case_addr = nullptr;
   switch (type) {
     case T_BOOLEAN:
       name = "jni_fast_GetBooleanField";
@@ -220,7 +220,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
 address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 address JNI_FastGetField::generate_fast_get_boolean_field() {

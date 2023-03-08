@@ -65,20 +65,41 @@ import jdk.internal.classfile.Label;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 
-
-/**
- * AbstractInstruction.
- */
 public abstract sealed class AbstractInstruction
         extends AbstractElement
         implements Instruction {
+
+    private static final String
+            FMT_ArgumentConstant = "ArgumentConstant[OP=%s, val=%s]",
+            FMT_Branch = "Branch[OP=%s]",
+            FMT_Field = "Field[OP=%s, field=%s.%s:%s]",
+            FMT_Increment = "Increment[OP=%s, slot=%d, val=%d]",
+            FMT_Invoke = "Invoke[OP=%s, m=%s.%s%s]",
+            FMT_InvokeDynamic = "InvokeDynamic[OP=%s, bsm=%s %s]",
+            FMT_InvokeInterface = "InvokeInterface[OP=%s, m=%s.%s%s]",
+            FMT_Load = "Load[OP=%s, slot=%d]",
+            FMT_LoadConstant = "LoadConstant[OP=%s, val=%s]",
+            FMT_LookupSwitch = "LookupSwitch[OP=%s]",
+            FMT_NewMultiArray = "NewMultiArray[OP=%s, type=%s[%d]]",
+            FMT_NewObj = "NewObj[OP=%s, type=%s]",
+            FMT_NewPrimitiveArray = "NewPrimitiveArray[OP=%s, type=%s]",
+            FMT_NewRefArray = "NewRefArray[OP=%s, type=%s]",
+            FMT_Return = "Return[OP=%s]",
+            FMT_Store = "Store[OP=%s, slot=%d]",
+            FMT_TableSwitch = "TableSwitch[OP=%s]",
+            FMT_Throw = "Throw[OP=%s]",
+            FMT_TypeCheck = "TypeCheck[OP=%s, type=%s]",
+            FMT_Unbound = "%s[op=%s]";
+
     final Opcode op;
     final int size;
 
+    @Override
     public Opcode opcode() {
         return op;
     }
 
+    @Override
     public int sizeInBytes() {
         return size;
     }
@@ -88,6 +109,7 @@ public abstract sealed class AbstractInstruction
         this.size = size;
     }
 
+    @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
     public static abstract sealed class BoundInstruction extends AbstractInstruction {
@@ -104,6 +126,7 @@ public abstract sealed class AbstractInstruction
             return code.getLabel(pos - code.codeStart + offset);
         }
 
+        @Override
         public void writeTo(DirectCodeBuilder writer) {
             // Override this if the instruction has any CP references or labels!
             code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, size);
@@ -125,7 +148,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Load[OP=%s, slot=%d]", this.opcode(), slot());
+            return String.format(FMT_Load, this.opcode(), slot());
         }
 
         @Override
@@ -153,7 +176,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Store[OP=%s, slot=%d]", this.opcode(), slot());
+            return String.format(FMT_Store, this.opcode(), slot());
         }
 
         @Override
@@ -186,7 +209,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Inc[OP=%s, slot=%d, val=%d]", this.opcode(), slot(), constant());
+            return String.format(FMT_Increment, this.opcode(), slot(), constant());
         }
 
     }
@@ -216,7 +239,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Branch[OP=%s]", this.opcode());
+            return String.format(FMT_Branch, this.opcode());
         }
 
     }
@@ -272,7 +295,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("LookupSwitch[OP=%s]", this.opcode());
+            return String.format(FMT_LookupSwitch, this.opcode());
         }
 
     }
@@ -341,7 +364,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("TableSwitch[OP=%s]", this.opcode());
+            return String.format(FMT_TableSwitch, this.opcode());
         }
 
     }
@@ -355,6 +378,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
                 fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
@@ -371,7 +395,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Field[OP=%s, field=%s.%s:%s]", this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
+            return String.format(FMT_Field, this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
         }
 
     }
@@ -384,6 +408,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
                 methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
@@ -410,7 +435,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Invoke[OP=%s, m=%s.%s%s]", this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
+            return String.format(FMT_Invoke, this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
         }
 
     }
@@ -423,6 +448,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
                 methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
@@ -449,7 +475,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("InvokeInterface[OP=%s, m=%s.%s%s]", this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
+            return String.format(FMT_InvokeInterface, this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
         }
 
     }
@@ -462,6 +488,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
                 indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
@@ -478,7 +505,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("InvokeDynamic[OP=%s, bsm=%s %s]", this.opcode(), bootstrapMethod(), bootstrapArgs());
+            return String.format(FMT_InvokeDynamic, this.opcode(), bootstrapMethod(), bootstrapArgs());
         }
 
     }
@@ -491,6 +518,7 @@ public abstract sealed class AbstractInstruction
             super(Opcode.NEW, Opcode.NEW.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry className() {
             if (classEntry == null)
                 classEntry = code.classReader.readClassEntry(pos + 1);
@@ -507,7 +535,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewObj[OP=%s, type=%s]", this.opcode(), className().asInternalName());
+            return String.format(FMT_NewObj, this.opcode(), className().asInternalName());
         }
 
     }
@@ -519,13 +547,14 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public TypeKind typeKind() {
             return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
         }
 
         @Override
         public String toString() {
-            return String.format("NewPrimitiveArray[OP=%s, type=%s]", this.opcode(), typeKind());
+            return String.format(FMT_NewPrimitiveArray, this.opcode(), typeKind());
         }
 
     }
@@ -537,6 +566,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry componentType() {
             return code.classReader.readClassEntry(pos + 1);
         }
@@ -551,7 +581,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewRefArray[OP=%s, type=%s]", this.opcode(), componentType().asInternalName());
+            return String.format(FMT_NewRefArray, this.opcode(), componentType().asInternalName());
         }
     }
 
@@ -567,6 +597,7 @@ public abstract sealed class AbstractInstruction
             return code.classReader.readU1(pos + 3);
         }
 
+        @Override
         public ClassEntry arrayType() {
             return code.classReader.readClassEntry(pos + 1);
         }
@@ -581,7 +612,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewMultiArray[OP=%s, type=%s[%d]]", this.opcode(), arrayType().asInternalName(), dimensions());
+            return String.format(FMT_NewMultiArray, this.opcode(), arrayType().asInternalName(), dimensions());
         }
 
     }
@@ -594,6 +625,7 @@ public abstract sealed class AbstractInstruction
             super(op, op.sizeIfFixed(), code, pos);
         }
 
+        @Override
         public ClassEntry type() {
             if (typeEntry == null)
                 typeEntry = code.classReader.readClassEntry(pos + 1);
@@ -610,7 +642,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("TypeCheck[OP=%s, type=%s]", this.opcode(), type().asInternalName());
+            return String.format(FMT_TypeCheck, this.opcode(), type().asInternalName());
         }
 
     }
@@ -633,7 +665,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("ArgumentConstant[OP=%s, val=%s]", this.opcode(), constantValue());
+            return String.format(FMT_ArgumentConstant, this.opcode(), constantValue());
         }
 
     }
@@ -668,18 +700,15 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("LoadConstant[OP=%s, val=%s]", this.opcode(), constantValue());
+            return String.format(FMT_LoadConstant, this.opcode(), constantValue());
         }
 
     }
 
     public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+
         UnboundInstruction(Opcode op) {
             super(op, op.sizeIfFixed());
-        }
-
-        public UnboundInstruction(Opcode op, int size) {
-            super(op, size);
         }
 
         @Override
@@ -690,7 +719,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("%s[op=%s]", this.getClass().getSimpleName(), op);
+            return String.format(FMT_Unbound, this.getClass().getSimpleName(), op);
         }
     }
 
@@ -720,7 +749,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Load[OP=%s, slot=%d]", this.opcode(), slot());
+            return String.format(FMT_Load, this.opcode(), slot());
         }
 
     }
@@ -751,7 +780,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Store[OP=%s, slot=%d]", this.opcode(), slot());
+            return String.format(FMT_Store, this.opcode(), slot());
         }
 
     }
@@ -786,7 +815,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Increment[OP=%s, slot=%d, constant=%d]", this.opcode(), slot(), constant());
+            return String.format(FMT_Increment, this.opcode(), slot(), constant());
         }
     }
 
@@ -811,7 +840,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Branch[OP=%s]", this.opcode());
+            return String.format(FMT_Branch, this.opcode());
         }
     }
 
@@ -844,7 +873,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("LookupSwitch[OP=%s]", this.opcode());
+            return String.format(FMT_LookupSwitch, this.opcode());
         }
     }
 
@@ -890,7 +919,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("LookupSwitch[OP=%s]", this.opcode());
+            return String.format(FMT_TableSwitch, this.opcode());
         }
     }
 
@@ -908,7 +937,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Return[OP=%s]", this.opcode());
+            return String.format(FMT_Return, this.opcode());
         }
 
     }
@@ -922,7 +951,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Throw[OP=%s]", this.opcode());
+            return String.format(FMT_Throw, this.opcode());
         }
 
     }
@@ -949,7 +978,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("FieldAccess[OP=%s, field=%s.%s:%s]", this.opcode(), this.owner().asInternalName(), this.name().stringValue(), this.type().stringValue());
+            return String.format(FMT_Field, this.opcode(), this.owner().asInternalName(), this.name().stringValue(), this.type().stringValue());
         }
     }
 
@@ -989,7 +1018,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Invoke[OP=%s, m=%s.%s%s]", this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
+            return String.format(FMT_Invoke, this.opcode(), owner().asInternalName(), name().stringValue(), type().stringValue());
         }
     }
 
@@ -1014,7 +1043,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("InvokeDynamic[OP=%s, bsm=%s %s]", this.opcode(), bootstrapMethod(), bootstrapArgs());
+            return String.format(FMT_InvokeDynamic, this.opcode(), bootstrapMethod(), bootstrapArgs());
         }
     }
 
@@ -1027,6 +1056,7 @@ public abstract sealed class AbstractInstruction
             this.classEntry = classEntry;
         }
 
+        @Override
         public ClassEntry className() {
             return classEntry;
         }
@@ -1038,7 +1068,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewObj[OP=%s, type=%s]", this.opcode(), className().asInternalName());
+            return String.format(FMT_NewObj, this.opcode(), className().asInternalName());
         }
     }
 
@@ -1051,6 +1081,7 @@ public abstract sealed class AbstractInstruction
             this.typeKind = typeKind;
         }
 
+        @Override
         public TypeKind typeKind() {
             return typeKind;
         }
@@ -1062,7 +1093,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewPrimitiveArray[OP=%s, type=%s]", this.opcode(), typeKind());
+            return String.format(FMT_NewPrimitiveArray, this.opcode(), typeKind());
         }
     }
 
@@ -1075,6 +1106,7 @@ public abstract sealed class AbstractInstruction
             this.componentTypeEntry = componentTypeEntry;
         }
 
+        @Override
         public ClassEntry componentType() {
             return componentTypeEntry;
         }
@@ -1086,7 +1118,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewRefArray[OP=%s, type=%s]", this.opcode(), componentType().asInternalName());
+            return String.format(FMT_NewRefArray, this.opcode(), componentType().asInternalName());
         }
     }
 
@@ -1107,6 +1139,7 @@ public abstract sealed class AbstractInstruction
             return dimensions;
         }
 
+        @Override
         public ClassEntry arrayType() {
             return arrayTypeEntry;
         }
@@ -1118,7 +1151,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("NewMultiArray[OP=%s, type=%s[%d]]", this.opcode(), arrayType().asInternalName(), dimensions());
+            return String.format(FMT_NewMultiArray, this.opcode(), arrayType().asInternalName(), dimensions());
         }
 
     }
@@ -1158,6 +1191,7 @@ public abstract sealed class AbstractInstruction
             this.typeEntry = typeEntry;
         }
 
+        @Override
         public ClassEntry type() {
             return typeEntry;
         }
@@ -1169,7 +1203,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("TypeCheck[OP=%s, type=%s]", this.opcode(), type().asInternalName());
+            return String.format(FMT_TypeCheck, this.opcode(), type().asInternalName());
         }
     }
 
@@ -1254,7 +1288,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("ArgumentConstant[OP=%s, val=%s]", this.opcode(), constantValue());
+            return String.format(FMT_ArgumentConstant, this.opcode(), constantValue());
         }
     }
 
@@ -1284,7 +1318,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("LoadConstant[OP=%s, val=%s]", this.opcode(), constantValue());
+            return String.format(FMT_LoadConstant, this.opcode(), constantValue());
         }
     }
 

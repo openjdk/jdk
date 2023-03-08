@@ -109,7 +109,7 @@ class ConstantPoolCopyTest {
             PoolEntry cp1i = cp.entryByIndex(i);
             PoolEntry cp2i = cp2.entryByIndex(i);
             assertTrue(representsTheSame(cp1i, cp2i), cp2i + " does not represent the same constant pool entry as " + cp1i);
-            i+= cp1i.poolEntries();
+            i+= cp1i.width();
         }
 
         // Bootstrap methods

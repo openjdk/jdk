@@ -67,24 +67,16 @@ public final class VerifierImpl {
             JVM_CONSTANT_Package                = 20,
             JVM_CONSTANT_ExternalMax            = 20;
 
-static final char JVM_SIGNATURE_SLASH = '/',
-            JVM_SIGNATURE_DOT = '.',
-            JVM_SIGNATURE_SPECIAL = '<',
-            JVM_SIGNATURE_ENDSPECIAL = '>',
+static final char JVM_SIGNATURE_SPECIAL = '<',
             JVM_SIGNATURE_ARRAY = '[',
             JVM_SIGNATURE_BYTE = 'B',
             JVM_SIGNATURE_CHAR = 'C',
             JVM_SIGNATURE_CLASS = 'L',
-            JVM_SIGNATURE_ENDCLASS = ';',
-            JVM_SIGNATURE_ENUM = 'E',
             JVM_SIGNATURE_FLOAT = 'F',
             JVM_SIGNATURE_DOUBLE = 'D',
-            JVM_SIGNATURE_FUNC = '(',
-            JVM_SIGNATURE_ENDFUNC = ')',
             JVM_SIGNATURE_INT = 'I',
             JVM_SIGNATURE_LONG = 'J',
             JVM_SIGNATURE_SHORT = 'S',
-            JVM_SIGNATURE_VOID = 'V',
             JVM_SIGNATURE_BOOLEAN = 'Z';
 
     static final String java_lang_String = "java/lang/String";
@@ -170,10 +162,6 @@ static final char JVM_SIGNATURE_SLASH = '/',
         ArrayList<VerificationType> sig_verif_types() {
             return _sig_verif_types;
         }
-
-        void set_sig_verif_types(ArrayList<VerificationType> sig_verif_types) {
-            _sig_verif_types = sig_verif_types;
-        }
     }
 
     VerificationType cp_ref_index_to_type(int index, ConstantPoolWrapper cp) {
@@ -186,10 +174,6 @@ static final char JVM_SIGNATURE_SLASH = '/',
     VerificationType _this_type;
 
     static final int BYTECODE_OFFSET = 1, NEW_OFFSET = 2;
-
-    VerificationWrapper.MethodWrapper method() {
-        return _method;
-    }
 
     VerificationWrapper current_class() {
         return _klass;
@@ -300,6 +284,7 @@ static final char JVM_SIGNATURE_SLASH = '/',
         } catch (VerifyError err) {
             errorsCollector.add(err);
         } catch (Error | Exception e) {
+            e.printStackTrace();
             errorsCollector.add(new VerifyError(e.toString()));
         }
     }
@@ -1474,30 +1459,26 @@ static final char JVM_SIGNATURE_SLASH = '/',
         var sig_stream = new VerificationSignature(field_sig, false, this);
         VerificationType stack_object_type = null;
         int n = change_sig_to_verificationType(sig_stream, field_type, 0);
-        int bci = bcs.bci;
         boolean is_assignable;
         switch (bcs.rawCode) {
-            case Classfile.GETSTATIC: {
+            case Classfile.GETSTATIC ->  {
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
                 }
-                break;
             }
-            case Classfile.PUTSTATIC: {
+            case Classfile.PUTSTATIC ->  {
                 for (int i = n - 1; i >= 0; i--) {
                     current_frame.pop_stack(field_type[i]);
                 }
-                break;
             }
-            case Classfile.GETFIELD: {
+            case Classfile.GETFIELD ->  {
                 stack_object_type = current_frame.pop_stack(
                     target_class_type);
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
                 }
-                break;
             }
-            case Classfile.PUTFIELD: {
+            case Classfile.PUTFIELD ->  {
                 for (int i = n - 1; i >= 0; i--) {
                     current_frame.pop_stack(field_type[i]);
                 }
@@ -1511,9 +1492,8 @@ static final char JVM_SIGNATURE_SLASH = '/',
                 if (!is_assignable) {
                     verifyError("Bad type on operand stack in putfield");
                 }
-                break;
             }
-            default: verifyError("Should not reach here");
+            default -> verifyError("Should not reach here");
         }
     }
 
@@ -1645,9 +1625,8 @@ static final char JVM_SIGNATURE_SLASH = '/',
                              && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
                              && !ref_class_type.equals(VerificationType.reference_type(
                                         current_class().superclassName()))) {
-            boolean subtype = false;
             boolean have_imr_indirect = cp.tagAt(index) == JVM_CONSTANT_InterfaceMethodref;
-            subtype = ref_class_type.is_assignable_from(current_type(), this);
+            boolean subtype = ref_class_type.is_assignable_from(current_type(), this);
             if (!subtype) {
                 verifyError("Bad invokespecial instruction: current class isn't assignable to reference class.");
             } else if (have_imr_indirect) {
@@ -1666,18 +1645,21 @@ static final char JVM_SIGNATURE_SLASH = '/',
                 this_uninit = verify_invoke_init(bcs, index, ref_class_type, current_frame,
                     code_length, in_try_block, this_uninit, cp, stackmap_table);
             } else {
-                if (opcode == Classfile.INVOKESPECIAL) {
+                switch (opcode) {
+                    case Classfile.INVOKESPECIAL ->
                         current_frame.pop_stack(current_type());
-                } else if (opcode == Classfile.INVOKEVIRTUAL) {
-                    VerificationType stack_object_type =
-                        current_frame.pop_stack(ref_class_type);
-                    if (current_type() != stack_object_type) {
-                        String ref_class_name =
+                    case Classfile.INVOKEVIRTUAL -> {
+                        VerificationType stack_object_type =
+                                current_frame.pop_stack(ref_class_type);
+                        if (current_type() != stack_object_type) {
                             cp.classNameAt(cp.refClassIndexAt(index));
+                        }
                     }
-                } else {
-                    if (opcode != Classfile.INVOKEINTERFACE) verifyError("Unexpected opcode encountered");
-                    current_frame.pop_stack(ref_class_type);
+                    default -> {
+                        if (opcode != Classfile.INVOKEINTERFACE)
+                            verifyError("Unexpected opcode encountered");
+                        current_frame.pop_stack(ref_class_type);
+                    }
                 }
             }
         }

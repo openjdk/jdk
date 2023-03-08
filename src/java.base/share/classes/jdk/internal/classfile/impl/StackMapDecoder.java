@@ -33,7 +33,8 @@ import java.util.TreeMap;
 import jdk.internal.classfile.BufWriter;
 
 import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.attribute.StackMapTableAttribute.*;
+import jdk.internal.classfile.attribute.StackMapFrameInfo;
+import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
 import jdk.internal.classfile.ClassReader;
 
 import static jdk.internal.classfile.Classfile.*;
@@ -182,13 +183,13 @@ public class StackMapDecoder {
                 stack = List.of();
             } else if (frameType < 128) {
                 bci += frameType - 63;
-                stack = List.of(readVerificationTypeInfo(bci));
+                stack = List.of(readVerificationTypeInfo());
             } else {
                 if (frameType < SAME_LOCALS_1_STACK_ITEM_EXTENDED)
                     throw new IllegalArgumentException("Invalid stackmap frame type: " + frameType);
                 bci += u2() + 1;
                 if (frameType == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
-                    stack = List.of(readVerificationTypeInfo(bci));
+                    stack = List.of(readVerificationTypeInfo());
                 } else if (frameType < SAME_EXTENDED) {
                     locals = locals.subList(0, locals.size() + frameType - SAME_EXTENDED);
                     stack = List.of();
@@ -198,16 +199,16 @@ public class StackMapDecoder {
                     int actSize = locals.size();
                     var newLocals = locals.toArray(new VerificationTypeInfo[actSize + frameType - SAME_EXTENDED]);
                     for (int i = actSize; i < newLocals.length; i++)
-                        newLocals[i] = readVerificationTypeInfo(bci);
+                        newLocals[i] = readVerificationTypeInfo();
                     locals = List.of(newLocals);
                     stack = List.of();
                 } else {
                     var newLocals = new VerificationTypeInfo[u2()];
                     for (int i=0; i<newLocals.length; i++)
-                        newLocals[i] = readVerificationTypeInfo(bci);
+                        newLocals[i] = readVerificationTypeInfo();
                     var newStack = new VerificationTypeInfo[u2()];
                     for (int i=0; i<newStack.length; i++)
-                        newStack[i] = readVerificationTypeInfo(bci);
+                        newStack[i] = readVerificationTypeInfo();
                     locals = List.of(newLocals);
                     stack = List.of(newStack);
                 }
@@ -220,7 +221,7 @@ public class StackMapDecoder {
         return List.of(entries);
     }
 
-    private VerificationTypeInfo readVerificationTypeInfo(int bci) {
+    private VerificationTypeInfo readVerificationTypeInfo() {
         int tag = classReader.readU1(p++);
         return switch (tag) {
             case VT_TOP -> SimpleVerificationTypeInfo.ITEM_TOP;

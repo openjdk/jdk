@@ -42,7 +42,7 @@ public non-sealed interface FieldTransform
     /**
      * A field transform that sends all elements to the builder.
      */
-    public static final FieldTransform ACCEPT_ALL = new FieldTransform() {
+    FieldTransform ACCEPT_ALL = new FieldTransform() {
         @Override
         public void accept(FieldBuilder builder, FieldElement element) {
             builder.with(element);
@@ -96,14 +96,15 @@ public non-sealed interface FieldTransform
         };
     }
 
+    @Override
     default FieldTransform andThen(FieldTransform t) {
         return new TransformImpl.ChainedFieldTransform(this, t);
     }
 
     @Override
     default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-        return new TransformImpl.FieldTransformImpl(e -> accept(builder, e),
-                                                    () -> atEnd(builder),
-                                                    () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 }

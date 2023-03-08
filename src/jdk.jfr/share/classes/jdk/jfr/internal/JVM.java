@@ -48,7 +48,7 @@ public final class JVM {
      * The monitor type is used to exclude jdk.JavaMonitorWait events from being generated
      * when Object.wait() is called on this monitor.
      */
-    static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
+    public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
     private volatile boolean nativeOK;
 

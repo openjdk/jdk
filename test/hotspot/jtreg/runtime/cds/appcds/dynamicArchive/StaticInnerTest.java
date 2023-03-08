@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class StaticInnerTest extends DynamicArchiveTestBase {
             "-Xlog:class+load=info,class+nestmates=trace,cds+dynamic=info",
             "-cp", appJar, mainClass, "dump")
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden HelloStaticInner$InnerHello$$Lambda$")
+                output.shouldContain("Archiving hidden HelloStaticInner$InnerHello$$Lambda")
                       .shouldHaveExitValue(0);
             });
 
@@ -63,7 +63,7 @@ public class StaticInnerTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain("HelloStaticInner source: shared objects file (top)")
-                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)");
+                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)");
             });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,6 +672,15 @@ final class Float512Vector extends FloatVector {
             Objects.requireNonNull(mask);
             Float512Mask m = (Float512Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Float512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Float512Mask) VectorSupport.indexPartiallyInUpperRange(
+                Float512Mask.class, float.class, VLENGTH, offset, limit,
+                (o, l) -> (Float512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

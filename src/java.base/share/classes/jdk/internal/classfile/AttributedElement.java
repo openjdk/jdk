@@ -27,7 +27,6 @@ package jdk.internal.classfile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import jdk.internal.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
@@ -39,11 +38,6 @@ import jdk.internal.classfile.impl.AbstractUnboundModel;
 public sealed interface AttributedElement extends ClassfileElement
         permits ClassModel, CodeModel, FieldModel, MethodModel,
                 RecordComponentInfo, AbstractUnboundModel {
-
-    /**
-     * {@return the kind of the attributed element}
-     */
-    Kind attributedElementKind();
 
     /**
      * {@return the attributes of this element}
@@ -85,24 +79,5 @@ public sealed interface AttributedElement extends ClassfileElement
             }
         }
         return list;
-    }
-
-    /**
-     * Enum constants describing locations in the classfile where attributes
-     * are permitted.
-     */
-    enum Kind {
-        CLASS, METHOD, FIELD, CODE_ATTRIBUTE, RECORD_COMPONENT;
-
-        public static final Set<Kind> CLASS_ONLY
-                = Set.of(CLASS);
-        public static final Set<Kind> METHOD_ONLY
-                = Set.of(METHOD);
-        public static final Set<Kind> FIELD_ONLY
-                = Set.of(FIELD);
-        public static final Set<Kind> CODE_ONLY
-                = Set.of(CODE_ATTRIBUTE);
-        public static final Set<Kind> EVERYWHERE
-                = Set.of(CLASS, METHOD, FIELD, CODE_ATTRIBUTE, RECORD_COMPONENT);
     }
 }

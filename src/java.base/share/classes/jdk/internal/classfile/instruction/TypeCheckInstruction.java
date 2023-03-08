@@ -65,6 +65,6 @@ public sealed interface TypeCheckInstruction extends Instruction
      * @param type the type against which to check or cast
      */
     static TypeCheckInstruction of(Opcode op, ClassDesc type) {
-        return of(op, TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(type))));
+        return of(op, TemporaryConstantPool.INSTANCE.classEntry(type));
     }
 }
