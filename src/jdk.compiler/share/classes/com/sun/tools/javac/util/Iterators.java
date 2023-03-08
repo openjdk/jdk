@@ -80,7 +80,7 @@ public class Iterators {
         }
     }
 
-    // Iterator is assumed to never return null from next()
+    // input.next() is assumed to never return null
     public static <E> Iterator<E> createFilterIterator(Iterator<E> input, Predicate<E> test) {
         return new Iterator<>() {
             private E current = update();
