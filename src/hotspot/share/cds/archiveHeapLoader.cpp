@@ -410,7 +410,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
       bm.iterate(&patcher);
     }
 
-    r->set_mapped_base((char*)load_address);
+    assert(r->mapped_base() == (char*)load_address, "sanity");
     load_address += r->used();
   }
 
@@ -472,7 +472,9 @@ void ArchiveHeapLoader::finish_initialization() {
       verify_loaded_heap();
     }
   }
-  patch_native_pointers();
+  if (is_fully_available()) {
+    patch_native_pointers();
+  }
 }
 
 void ArchiveHeapLoader::finish_loaded_heap() {

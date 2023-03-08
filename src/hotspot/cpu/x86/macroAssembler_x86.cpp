@@ -42,7 +42,6 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -403,7 +402,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
 
 void MacroAssembler::print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
   if ((WizardMode || Verbose) && PrintMiscellaneous) {
@@ -832,7 +831,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
 
 void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("rip = 0x%016lx", (intptr_t)pc);
 #ifndef PRODUCT
   tty->cr();
@@ -1273,9 +1272,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // red zones.
   Label loop;
   bind(loop);
-  movl(Address(tmp, (-os::vm_page_size())), size );
-  subptr(tmp, os::vm_page_size());
-  subl(size, os::vm_page_size());
+  movl(Address(tmp, (-(int)os::vm_page_size())), size );
+  subptr(tmp, (int)os::vm_page_size());
+  subl(size, (int)os::vm_page_size());
   jcc(Assembler::greater, loop);
 
   // Bang down shadow pages too.
@@ -1284,10 +1283,10 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down including all pages in the shadow zone.
-  for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / os::vm_page_size()); i++) {
+  for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / (int)os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    movptr(Address(tmp, (-i*os::vm_page_size())), size );
+    movptr(Address(tmp, (-i*(int)os::vm_page_size())), size );
   }
 }
 
@@ -5130,6 +5129,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   } else
 #endif
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+}
+
+void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {

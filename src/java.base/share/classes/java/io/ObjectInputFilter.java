@@ -187,8 +187,11 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * This class shows how an application provided filter factory can combine filters
  * to check every deserialization operation that takes place in a thread.
- * It defines a thread-local variable to hold the thread-specific filter, and constructs a filter factory
- * that composes that filter with the static JVM-wide filter and the stream-specific filter.
+ * It defines a thread-local variable to hold the thread-specific filter, and construct a filter factory
+ * that composes that filter with the static JVM-wide filter and the stream-specific filter,
+ * rejecting any classes not handled by those two filters.
+ * If a stream specific filter is set and does not accept or reject a class,
+ * the combined JVM-wide filter and thread filter is applied.
  * The {@code doWithSerialFilter} method does the setup of the thread-specific filter
  * and invokes the application provided {@link Runnable Runnable}.
  *
@@ -207,26 +210,18 @@ import static java.lang.System.Logger.Level.ERROR;
  *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
  *             var filter = filterThreadLocal.get();
  *             if (filter != null) {
- *                 // Wrap the filter to reject UNDECIDED results
- *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
+ *                 // Merge to invoke the thread local filter and then the JVM-wide filter (if any)
+ *                 filter = ObjectInputFilter.merge(filter, next);
+ *                 return ObjectInputFilter.rejectUndecidedClass(filter);
  *             }
- *             if (next != null) {
- *                 // Merge the next filter with the thread filter, if any
- *                 // Initially this is the static JVM-wide filter passed from the OIS constructor
- *                 // Wrap the filter to reject UNDECIDED results
- *                 filter = ObjectInputFilter.merge(next, filter);
- *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
- *             }
- *             return filter;
+ *             return (next == null) ? null : ObjectInputFilter.rejectUndecidedClass(next);
  *         } else {
  *             // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
  *             // The curr filter already incorporates the thread filter and static JVM-wide filter
  *             // and rejection of undecided classes
- *             // If there is a stream-specific filter wrap it and a filter to recheck for undecided
+ *             // If there is a stream-specific filter merge to invoke it and then the current filter.
  *             if (next != null) {
- *                 next = ObjectInputFilter.merge(next, curr);
- *                 next = ObjectInputFilter.rejectUndecidedClass(next);
- *                 return next;
+ *                 return ObjectInputFilter.merge(next, curr);
  *             }
  *             return curr;
  *         }

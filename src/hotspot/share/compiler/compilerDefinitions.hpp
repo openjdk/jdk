@@ -121,10 +121,12 @@ public:
   // Returns threshold scaled with CompileThresholdScaling
   static intx scaled_compile_threshold(intx threshold, double scale);
   static intx scaled_compile_threshold(intx threshold);
+  static intx jvmflag_scaled_compile_threshold(intx threshold);
 
   // Returns freq_log scaled with CompileThresholdScaling
   static intx scaled_freq_log(intx freq_log, double scale);
   static intx scaled_freq_log(intx freq_log);
+  static intx jvmflag_scaled_freq_log(intx freq_log);
 
   static bool check_args_consistency(bool status);
 

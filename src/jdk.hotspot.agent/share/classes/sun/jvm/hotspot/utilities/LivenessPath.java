@@ -30,9 +30,9 @@ import sun.jvm.hotspot.oops.*;
 
 /** Describes a path from an object back to the root which is keeping
     it alive. Elements of the path are (object, field) pairs, where
-    the object is expressed as a @link{sun.jvm.hotspot.oops.Oop}, and
+    the object is expressed as a {@link sun.jvm.hotspot.oops.Oop}, and
     where the field is expressed as a
-    @link{sun.jvm.hotspot.oops.FieldIdentifier}. If the element
+    {@link sun.jvm.hotspot.oops.FieldIdentifier}. If the element
     reflects a root, the Oop will be null. If the element is the end
     of the path, the FieldIdentifier will be null. */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package sun.tools.attach;
 
-import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
@@ -33,6 +32,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
+/*
+ * Windows implementation of HotSpotVirtualMachine
+ */
 public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // the enqueue code stub (copied into each target VM)
@@ -45,12 +47,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     {
         super(provider, id);
 
-        int pid;
-        try {
-            pid = Integer.parseInt(id);
-        } catch (NumberFormatException x) {
-            throw new AttachNotSupportedException("Invalid process identifier");
-        }
+        int pid = Integer.parseInt(id);
         hProcess = openProcess(pid);
 
         // The target VM might be a pre-6.0 VM so we enqueue a "null" command
@@ -108,26 +105,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             connectPipe(hPipe);
 
             // create an input stream for the pipe
-            PipedInputStream in = new PipedInputStream(hPipe);
+            SocketInputStreamImpl in = new SocketInputStreamImpl(hPipe);
 
-            // read completion status
-            int status = readInt(in);
-            if (status != 0) {
-                // read from the stream and use that as the error message
-                String message = readErrorMessage(in);
-                in.close();
-                // special case the load command so that the right exception is thrown
-                if (cmd.equals("load")) {
-                    String msg = "Failed to load agent library";
-                    if (!message.isEmpty())
-                        msg += ": " + message;
-                    throw new AgentLoadException(msg);
-                } else {
-                    if (message.isEmpty())
-                        message = "Command failed in target VM";
-                    throw new AttachOperationFailedException(message);
-                }
-            }
+            // Process the command completion status
+            processCompletionStatus(null, cmd, in);
 
             // return the input stream
             return in;
@@ -139,40 +120,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // An InputStream based on a pipe to the target VM
-    private static class PipedInputStream extends InputStream {
-
-        private long hPipe;
-
-        public PipedInputStream(long hPipe) {
-            this.hPipe = hPipe;
+    private static class SocketInputStreamImpl extends SocketInputStream {
+        public SocketInputStreamImpl(long fd) {
+            super(fd);
         }
 
-        public synchronized int read() throws IOException {
-            byte b[] = new byte[1];
-            int n = this.read(b, 0, 1);
-            if (n == 1) {
-                return b[0] & 0xff;
-            } else {
-                return -1;
-            }
+        @Override
+        protected int read(long fd, byte[] bs, int off, int len) throws IOException {
+            return VirtualMachineImpl.readPipe(fd, bs, off, len);
         }
 
-        public synchronized int read(byte[] bs, int off, int len) throws IOException {
-            if ((off < 0) || (off > bs.length) || (len < 0) ||
-                ((off + len) > bs.length) || ((off + len) < 0)) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0)
-                return 0;
-
-            return VirtualMachineImpl.readPipe(hPipe, bs, off, len);
-        }
-
-        public synchronized void close() throws IOException {
-            if (hPipe != -1) {
-                long toClose = hPipe;
-                hPipe = -1;
-                VirtualMachineImpl.closePipe(toClose);
-           }
+        @Override
+        protected void close(long fd) throws IOException {
+            VirtualMachineImpl.closePipe(fd);
         }
     }
 

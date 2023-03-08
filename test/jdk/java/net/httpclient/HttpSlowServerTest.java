@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,20 +50,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
  * @summary This test verifies that the HttpClient works correctly when connected to a
  *          slow server.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpSlowServerTest
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer HttpSlowServerTest
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
@@ -131,9 +129,7 @@ public class HttpSlowServerTest implements HttpServerAdapters {
             InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, executor);
             http1Server.addHandler(new HttpTestSlowHandler(), "/HttpSlowServerTest/http1/");
             http1Server.start();
             http1URI = new URI("http://" + http1Server.serverAuthority() + "/HttpSlowServerTest/http1/");
@@ -149,15 +145,13 @@ public class HttpSlowServerTest implements HttpServerAdapters {
             https1URI = new URI("https://" + https1Server.serverAuthority() + "/HttpSlowServerTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new HttpTestSlowHandler(), "/HttpSlowServerTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority() + "/HttpSlowServerTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new HttpTestSlowHandler(), "/HttpSlowServerTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/HttpSlowServerTest/https2/");

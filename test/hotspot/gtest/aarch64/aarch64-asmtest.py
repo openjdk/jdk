@@ -350,6 +350,67 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class SystemRegOp(Instruction):
+    def __init__(self, args):
+        name, self.system_reg = args
+        Instruction.__init__(self, name)
+        if self.system_reg == 'fpsr':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0100
+            self.op2 = 0b001
+        elif self.system_reg == 'dczid_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b111
+        elif self.system_reg == 'ctr_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b001
+        elif self.system_reg == 'nzcv':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0010
+            self.op2 = 0b000
+
+    def generate(self):
+        self.reg = [GeneralRegister().generate()]
+        return self
+
+class SystemOneRegOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(SystemOneRegOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(SystemOneRegOp, self).astr()
+                + '%s' % self.system_reg
+                + ', %s' % self.reg[0].astr(prefix))
+
+class OneRegSystemOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(OneRegSystemOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(OneRegSystemOp, self).astr()
+                + '%s' % self.reg[0].astr(prefix)
+                + ', %s' % self.system_reg)
+
 class PostfixExceptionOneRegOp(OneRegOp):
 
     def __init__(self, op):
@@ -1302,6 +1363,28 @@ class TwoRegNEONOp(CommonNEONInstruction):
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
 
+class NEONFloatCompareWithZero(TwoRegNEONOp):
+    def __init__(self, args):
+        self._name = 'fcm'
+        self.arrangement, self.condition = args
+        self.insname = self._name + (self.condition).lower()
+
+    def cstr(self):
+        return ("%s(%s, %s, %s, %s);"
+                % ("__ " + self._name,
+                   "Assembler::" + self.condition,
+                   self._firstSIMDreg,
+                   "__ T" + self.arrangement,
+                   self._firstSIMDreg.nextReg()))
+
+    def astr(self):
+        return ("%s\t%s.%s, %s.%s, #0.0"
+                % (self.insname,
+                   self._firstSIMDreg,
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self.arrangement))
+
 class SpecialCases(Instruction):
     def __init__(self, data):
         self._name = data[0]
@@ -1395,6 +1478,12 @@ generate (OneRegOp, ["br", "blr",
                      "paciza", "pacizb", "pacdza", "pacdzb",
                      "autiza", "autizb", "autdza", "autdzb", "xpacd",
                      "braaz", "brabz", "blraaz", "blrabz"])
+
+for system_reg in ["fpsr", "nzcv"]:
+    generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+    generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])
@@ -1528,6 +1617,16 @@ generate(NEONReduceInstruction,
           ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
+
+neonFloatCompareWithZeroConditions = ['GT', 'GE', 'EQ', 'LT', 'LE']
+neonFloatArrangement = ['2S', '4S', '2D']
+neonFloatCompareWithZeroArgs = []
+for condition in neonFloatCompareWithZeroConditions:
+    for currentArrangement in neonFloatArrangement:
+        currentArgs = [currentArrangement, condition]
+        neonFloatCompareWithZeroArgs.append(currentArgs)
+
+generate(NEONFloatCompareWithZero, neonFloatCompareWithZeroArgs)
 
 generate(TwoRegNEONOp,
          [["absr", "abs", "8B"], ["absr", "abs", "16B"],

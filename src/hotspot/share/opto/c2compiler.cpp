@@ -782,6 +782,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorExtract:
   case vmIntrinsics::_VectorMaskOp:
   case vmIntrinsics::_IndexVector:
+  case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
     break;

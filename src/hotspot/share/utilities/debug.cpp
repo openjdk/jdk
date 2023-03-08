@@ -76,8 +76,16 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
+
+DebuggingContext::DebuggingContext() {
+  _enabled += 1;                // Increase nesting count.
+}
+
+DebuggingContext::~DebuggingContext() {
+  assert(is_enabled(), "Debugging nesting confusion");
+  _enabled -= 1;                // Decrease nesting count.
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -131,111 +139,6 @@ void warning(const char* format, ...) {
   }
 }
 
-#ifndef PRODUCT
-
-#define is_token_break(ch) (isspace(ch) || (ch) == ',')
-
-static const char* last_file_name = nullptr;
-static int         last_line_no   = -1;
-
-// assert/guarantee/... may happen very early during VM initialization.
-// Don't rely on anything that is initialized by Threads::create_vm(). For
-// example, don't use tty.
-bool error_is_suppressed(const char* file_name, int line_no) {
-  // The following 1-element cache requires that passed-in
-  // file names are always only constant literals.
-  if (file_name == last_file_name && line_no == last_line_no)  return true;
-
-  int file_name_len = (int)strlen(file_name);
-  char separator = os::file_separator()[0];
-  const char* base_name = strrchr(file_name, separator);
-  if (base_name == nullptr)
-    base_name = file_name;
-
-  // scan the SuppressErrorAt option
-  const char* cp = SuppressErrorAt;
-  for (;;) {
-    const char* sfile;
-    int sfile_len;
-    int sline;
-    bool noisy;
-    while ((*cp) != '\0' && is_token_break(*cp))  cp++;
-    if ((*cp) == '\0')  break;
-    sfile = cp;
-    while ((*cp) != '\0' && !is_token_break(*cp) && (*cp) != ':')  cp++;
-    sfile_len = cp - sfile;
-    if ((*cp) == ':')  cp++;
-    sline = 0;
-    while ((*cp) != '\0' && isdigit(*cp)) {
-      sline *= 10;
-      sline += (*cp) - '0';
-      cp++;
-    }
-    // "file:line!" means the assert suppression is not silent
-    noisy = ((*cp) == '!');
-    while ((*cp) != '\0' && !is_token_break(*cp))  cp++;
-    // match the line
-    if (sline != 0) {
-      if (sline != line_no)  continue;
-    }
-    // match the file
-    if (sfile_len > 0) {
-      const char* look = file_name;
-      const char* look_max = file_name + file_name_len - sfile_len;
-      const char* foundp;
-      bool match = false;
-      while (!match
-             && (foundp = strchr(look, sfile[0])) != nullptr
-             && foundp <= look_max) {
-        match = true;
-        for (int i = 1; i < sfile_len; i++) {
-          if (sfile[i] != foundp[i]) {
-            match = false;
-            break;
-          }
-        }
-        look = foundp + 1;
-      }
-      if (!match)  continue;
-    }
-    // got a match!
-    if (noisy) {
-      fdStream out(defaultStream::output_fd());
-      out.print_raw("[error suppressed at ");
-      out.print_raw(base_name);
-      char buf[16];
-      jio_snprintf(buf, sizeof(buf), ":%d]", line_no);
-      out.print_raw_cr(buf);
-    } else {
-      // update 1-element cache for fast silent matches
-      last_file_name = file_name;
-      last_line_no   = line_no;
-    }
-    return true;
-  }
-
-  if (!VMError::is_error_reported() && !SuppressFatalErrorMessage) {
-    // print a friendly hint:
-    fdStream out(defaultStream::output_fd());
-    out.print_raw_cr("# To suppress the following error report, specify this argument");
-    out.print_raw   ("# after -XX: or in .hotspotrc:  SuppressErrorAt=");
-    out.print_raw   (base_name);
-    char buf[16];
-    jio_snprintf(buf, sizeof(buf), ":%d", line_no);
-    out.print_raw_cr(buf);
-  }
-  return false;
-}
-
-#undef is_token_break
-
-#else
-
-// Place-holder for non-existent suppression check:
-#define error_is_suppressed(file_name, line_no) (false)
-
-#endif // !PRODUCT
-
 void report_vm_error(const char* file, int line, const char* error_msg)
 {
   report_vm_error(file, line, error_msg, "%s", "");
@@ -271,7 +174,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -293,7 +195,6 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -313,7 +214,6 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
@@ -383,13 +283,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -397,7 +295,6 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
