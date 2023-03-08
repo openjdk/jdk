@@ -27,6 +27,7 @@
 #define SHARE_SERVICES_MALLOCHEADER_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -155,7 +156,6 @@ public:
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
-STATIC_ASSERT(sizeof(MallocHeader) == (sizeof(uint64_t) * 2));
-
+STATIC_ASSERT(is_aligned(sizeof(MallocHeader), minimum_malloc_alignment));
 
 #endif // SHARE_SERVICES_MALLOCHEADER_HPP

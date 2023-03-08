@@ -1302,4 +1302,14 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
+// The minimum natural alignment malloc should guarantee
+// Note that in practice libc's will typically use higher alignments
+// (typically 8 for 32-bit, 16 for 64-bit) but that's not guaranteed.
+union AllTheBigTypes {
+  void* p;
+  uint64_t i64;
+  long double d;
+};
+constexpr int minimum_malloc_alignment = alignof(AllTheBigTypes);
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

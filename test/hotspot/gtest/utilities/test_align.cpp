@@ -195,3 +195,9 @@ TEST(Align, alignments) {
 
   test_alignments<int8_t, int8_t>();
 }
+
+TEST(Align, test_minimum_malloc_alignment) {
+  // Test for reasonable values (ranges can go from 4 to 16 on our platforms)
+  ASSERT_GT(minimum_malloc_alignment, 0);
+  ASSERT_LE(minimum_malloc_alignment, 16);
+}
