@@ -364,14 +364,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public <M extends TypeMetadata> Optional<M> getMetadata(Class<M> metadataClass) {
         return metadata.stream()
                 .filter(m -> metadataClass.isAssignableFrom(m.getClass()))
-                .map(m -> metadataClass.cast(m))
+                .map(metadataClass::cast)
                 .findFirst();
     }
 
     /**
      * Create a new copy of this type but with the specified type metadata.
+     * If this type is already associated with a type metadata of the same class,
+     * an exception is thrown.
      */
     public Type addMetadata(TypeMetadata md) {
+        Assert.check(getMetadata(md.getClass()).isEmpty());
         return cloneWithMetadata(metadata.append(md));
     }
 
