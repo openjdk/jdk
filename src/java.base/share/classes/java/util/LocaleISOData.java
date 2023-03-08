@@ -306,7 +306,7 @@ class LocaleISOData {
         + "GD" + "GRD"  // Grenada
         + "GE" + "GEO"  // Georgia
         + "GF" + "GUF"  // French Guiana
-        + "GG" + "GGY"  // Guernsey
+        + "GG" + "GGY"  // Guernsey, Bailiwick of
         + "GH" + "GHA"  // Ghana, Republic of
         + "GI" + "GIB"  // Gibraltar
         + "GL" + "GRL"  // Greenland
@@ -336,7 +336,7 @@ class LocaleISOData {
         + "IR" + "IRN"  // Iran, Islamic Republic of
         + "IS" + "ISL"  // Iceland, Republic of
         + "IT" + "ITA"  // Italy, Italian Republic
-        + "JE" + "JEY"  // Jersey
+        + "JE" + "JEY"  // Jersey, Bailiwick of
         + "JM" + "JAM"  // Jamaica
         + "JO" + "JOR"  // Jordan, Hashemite Kingdom of
         + "JP" + "JPN"  // Japan
